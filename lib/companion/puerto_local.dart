@@ -1,0 +1,1130 @@
+// Implementación de `ServicioCompanion` contra una base propia del celular
+// (companion Android sin depender del escritorio, fase 2 del rediseño
+// 2026-09-15) — llama exactamente a los mismos repositorios de `lib/data/`
+// que ya usa `lib/servidor/servidor_companion.dart` para el celular vía
+// HTTP, pero directo, en el mismo proceso, sin red. Mismo dominio, mismas
+// reglas de negocio, la única diferencia es el transporte (Regla 3: ninguna
+// fórmula nueva vive acá).
+//
+// Import con prefijo para cada archivo de `data/` que tiene una función con
+// el mismo nombre que un método de esta clase (`crearProducto`,
+// `abrirSesion`, etc.) — sin el prefijo, Dart resuelve el nombre sin
+// calificar dentro de un método de instancia contra el propio método (`this`
+// implícito) antes que contra la función top-level importada, así que
+// `crearProducto(db, ...)` adentro de `PuertoLocal.crearProducto` se
+// llamaría a sí mismo en vez de al repositorio.
+
+import '../data/busqueda_productos.dart' as busqueda;
+import '../data/database.dart';
+import '../data/repositorio_arqueo_intermedio.dart' as repo_arqueo;
+import '../data/cobro_posnet.dart' as mp;
+import '../data/repositorio_carga_historica.dart' as repo_carga_historica;
+import '../data/repositorio_cierre.dart' as repo_cierre;
+import '../data/repositorio_cobro.dart' as repo_cobro;
+import '../data/repositorio_configuracion.dart' as repo_configuracion;
+import '../data/repositorio_edicion_venta.dart' as repo_edicion_venta;
+import '../data/repositorio_gastos.dart' as repo_gastos;
+import '../data/repositorio_historial.dart' as repo_historial;
+import '../data/repositorio_historial_ventas.dart' as repo_historial_ventas;
+import '../data/repositorio_ingresos.dart' as repo_ingresos;
+import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
+import '../data/repositorio_productos.dart' as repo_productos;
+import '../data/repositorio_ticket.dart' as repo_ticket;
+import '../data/repositorio_usuarios.dart' as repo_usuarios;
+import '../data/repositorio_ventas.dart' as repo_ventas;
+import '../data/transporte_supabase.dart' show leerConfigCobro;
+import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, clasificarEstadoOrden;
+import '../domain/caja.dart' show diferenciaArqueo;
+import '../domain/descuento.dart' show TipoDescuento;
+import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
+import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
+import '../domain/medio_pago.dart' show composicionPagoDesdeTexto;
+import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta, Venta;
+import 'cliente_companion.dart';
+import 'servicio_companion.dart';
+
+/// Convierte una fila de drift en el mismo DTO que hoy arma
+/// `ProductoCompanion.desdeJson` a partir de la respuesta HTTP — un solo
+/// lugar para esta traducción (Regla 3), reusado por cada método de acá
+/// abajo que devuelve productos.
+ProductoCompanion _productoDesdeFila(Producto p) => ProductoCompanion(
+  id: p.id,
+  nombre: p.nombre,
+  codigoBarras: p.codigoBarras,
+  categoriaId: p.categoriaId,
+  proveedorId: p.proveedorId,
+  esPesable: p.esPesable,
+  precioCentavos: p.precioCentavos,
+  costoCentavos: p.costoCentavos,
+  precioPorKiloCentavos: p.precioPorKiloCentavos,
+  costoPorKiloCentavos: p.costoPorKiloCentavos,
+  stock: p.stock,
+  stockGramos: p.stockGramos,
+  activo: p.activo,
+  tipoCigarrillo: p.tipoCigarrillo,
+);
+
+/// Mismo mapeo, campo por campo, que `_resumenDiaAJson` en
+/// `servidor_companion.dart` — ahí arma un JSON, acá el DTO Dart
+/// directo, pero es la misma traducción de `ResumenDiaHistorico` (dominio)
+/// a `ResumenDiaHistoricoCompanion` (Regla 3: nunca dos veces la misma
+/// fórmula, y esto no es más que reordenar nombres de campos).
+ResumenDiaHistoricoCompanion _resumenDesdeDominio(
+  repo_carga_historica.ResumenDiaHistorico resumen,
+) => ResumenDiaHistoricoCompanion(
+  totalCentavos: resumen.totalCentavos,
+  efectivoCentavos: resumen.efectivoCentavos,
+  mercadoPagoCentavos: resumen.mercadoPagoCentavos,
+  cigarrillosListaCentavos: resumen.cigarrillosListaCentavos,
+  vendidoSinCostoCentavos: resumen.vendidoSinCostoCentavos,
+  productosSinDatos: [
+    for (final p in resumen.productosSinDatos)
+      ProductoSinDatosCompanion(
+        productoId: p.productoId,
+        nombreProducto: p.nombreProducto,
+        vendidoCentavos: p.vendidoCentavos,
+        sinProveedor: p.sinProveedor,
+        sinCosto: p.sinCosto,
+      ),
+  ],
+  porProveedor: [
+    for (final p in resumen.porProveedor)
+      ResumenProveedorDiaCompanion(
+        proveedorId: p.proveedorId,
+        nombreProveedor: p.nombreProveedor,
+        vendidoCentavos: p.vendidoCentavos,
+        costoRealCentavos: p.costoRealCentavos,
+        gananciaCentavos: p.gananciaCentavos,
+      ),
+  ],
+);
+
+/// Combina `ResumenCierre` (arqueo/cigarrillos/redondeo/reserva) con
+/// `ResumenDiaHistorico` (desglose por proveedor, ya traducido por
+/// `_resumenDesdeDominio`) en un solo DTO — usado tanto por [calcularCierre]
+/// como por [detalleCierre] (Regla 3, mismo criterio que
+/// `_resumenCierreAJson` del servidor).
+ResumenCierreCompanion _resumenCierreCompanionDesde(
+  repo_cierre.ResumenCierre resumen,
+  repo_carga_historica.ResumenDiaHistorico resumenDiaDominio, {
+  String? nota,
+  int? efectivoContadoCentavos,
+  int? mpContadoCentavos,
+  int? lataContadoCentavos,
+}) {
+  final resumenDia = _resumenDesdeDominio(resumenDiaDominio);
+  return ResumenCierreCompanion(
+    efectivoEsperadoCentavos: resumen.efectivoEsperadoCentavos,
+    diferenciaCentavos: resumen.diferenciaCentavos,
+    mpEsperadoCentavos: resumen.mpEsperadoCentavos,
+    mpDiferenciaCentavos: resumen.mpDiferenciaCentavos,
+    lataFinalCentavos: resumen.lataFinalCentavos,
+    lataDiferenciaCentavos: resumen.lataDiferenciaCentavos,
+    separadoCentavos: resumen.separacionCigarrillos.separadoCentavos,
+    pendienteCentavos: resumen.separacionCigarrillos.pendienteCentavos,
+    esSeparacionParcial: resumen.separacionCigarrillos.esSeparacionParcial,
+    redondeoAcumuladoCentavos: resumen.redondeoAcumuladoCentavos,
+    reservaDiariaFijosCentavos: resumen.reservaDiariaFijosCentavos,
+    totalCentavos: resumenDia.totalCentavos,
+    efectivoCentavos: resumenDia.efectivoCentavos,
+    mercadoPagoCentavos: resumenDia.mercadoPagoCentavos,
+    cigarrillosListaCentavos: resumenDia.cigarrillosListaCentavos,
+    vendidoSinCostoCentavos: resumenDia.vendidoSinCostoCentavos,
+    productosSinDatos: resumenDia.productosSinDatos,
+    porProveedor: resumenDia.porProveedor,
+    nota: nota,
+    efectivoContadoCentavos: efectivoContadoCentavos,
+    mpContadoCentavos: mpContadoCentavos,
+    lataContadoCentavos: lataContadoCentavos,
+  );
+}
+
+class PuertoLocal implements ServicioCompanion {
+  PuertoLocal(this.db);
+
+  final AppDatabase db;
+
+  @override
+  Future<List<UsuarioCompanion>> usuarios() async {
+    final filas = await db.select(db.usuarios).get();
+    return [
+      for (final u in filas) UsuarioCompanion(id: u.id, nombre: u.nombre, activo: u.activo),
+    ];
+  }
+
+  @override
+  Future<List<ProveedorCompanion>> proveedores() async {
+    final filas = await repo_productos.listarProveedores(db);
+    return [
+      for (final p in filas)
+        ProveedorCompanion(id: p.id, codigo: p.codigo, nombre: p.nombre),
+    ];
+  }
+
+  @override
+  Future<List<CategoriaCompanion>> categorias() async {
+    final filas = await repo_productos.listarCategorias(db);
+    return [
+      for (final c in filas)
+        CategoriaCompanion(id: c.id, nombre: c.nombre, markupDefaultBp: c.markupDefaultBp),
+    ];
+  }
+
+  // ─── Configuración (Bruno, 2026-09-19) ──────────────────────────────────
+
+  @override
+  Future<ConfiguracionNegocioCompanion> configuracionNegocio() async {
+    final c = await repo_configuracion.configuracionNegocioActual(db);
+    return ConfiguracionNegocioCompanion(
+      recargoPrimerAtadoCentavos: c.recargoPrimerAtadoCentavos,
+      recargoAtadoAdicionalCentavos: c.recargoAtadoAdicionalCentavos,
+      recargoSueltoCentavos: c.recargoSueltoCentavos,
+      pasoRedondeoCentavos: c.pasoRedondeoCentavos,
+      productoVueltoId: c.productoVueltoId,
+    );
+  }
+
+  @override
+  Future<void> actualizarRecargoCigarrillos({
+    required int primerAtadoCentavos,
+    required int atadoAdicionalCentavos,
+    required int sueltoCentavos,
+  }) => repo_configuracion.configurarRecargoCigarrillos(
+    db,
+    primerAtadoCentavos: primerAtadoCentavos,
+    atadoAdicionalCentavos: atadoAdicionalCentavos,
+    sueltoCentavos: sueltoCentavos,
+  );
+
+  @override
+  Future<void> actualizarPasoRedondeo(int montoCentavos) =>
+      repo_configuracion.configurarPasoRedondeo(db, montoCentavos);
+
+  @override
+  Future<void> actualizarProductoVuelto(int? productoId) =>
+      repo_configuracion.configurarProductoVuelto(db, productoId);
+
+  @override
+  Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp) =>
+      repo_productos.actualizarMarkupCategoria(db, categoriaId: categoriaId, markupBp: markupBp);
+
+  @override
+  Future<List<MedioDePagoCompanion>> mediosDePago() async {
+    final filas = await repo_medios_pago.listarMediosDePago(db);
+    return [
+      for (final m in filas)
+        MedioDePagoCompanion(id: m.id, nombre: m.nombre, esEfectivo: m.esEfectivo, activo: m.activo),
+    ];
+  }
+
+  @override
+  Future<void> renombrarMedioPago(int id, String nombre) =>
+      repo_medios_pago.renombrarMedioDePago(db, id, nombre);
+
+  @override
+  Future<void> alternarActivoMedioPago(int id, bool activo) => activo
+      ? repo_medios_pago.activarMedioDePago(db, id)
+      : repo_medios_pago.desactivarMedioDePago(db, id);
+
+  @override
+  Future<int> crearUsuarioNuevo(String nombre) => repo_usuarios.crearUsuario(db, nombre);
+
+  @override
+  Future<void> renombrarUsuarioExistente(int id, String nombre) =>
+      repo_usuarios.renombrarUsuario(db, id, nombre);
+
+  @override
+  Future<void> alternarActivoUsuarioExistente(int id, bool activo) =>
+      activo ? repo_usuarios.activarUsuario(db, id) : repo_usuarios.desactivarUsuario(db, id);
+
+  @override
+  Future<List<ProductoCompanion>> productos({
+    String? busqueda,
+    int? proveedorId,
+    bool sinProveedor = false,
+    bool sinCosto = false,
+    bool sinCategoria = false,
+    bool sinCodigoBarras = false,
+  }) async {
+    final filas = await repo_productos.listarProductos(
+      db,
+      busqueda: busqueda,
+      proveedorId: proveedorId,
+      sinProveedor: sinProveedor,
+      sinCosto: sinCosto,
+      sinCategoria: sinCategoria,
+      sinCodigoBarras: sinCodigoBarras,
+    );
+    return [for (final p in filas) _productoDesdeFila(p)];
+  }
+
+  /// Mismo criterio que `/productos/sin-stock` del servidor: agotados o en
+  /// negativo, de todos los proveedores juntos, agotados primero y
+  /// alfabético dentro de cada grupo.
+  @override
+  Future<List<ProductoCompanion>> productosSinStock() async {
+    final filas = await repo_productos.listarProductos(db);
+    final agotados = repo_productos.ordenarAgotadosPrimero(
+      filas.where(repo_productos.productoAgotado).toList(),
+    );
+    return [for (final p in agotados) _productoDesdeFila(p)];
+  }
+
+  @override
+  Future<ProductoCompanion?> porCodigoBarras(String codigo) async {
+    final producto = await repo_productos.productoPorCodigoBarras(db, codigo);
+    return producto == null ? null : _productoDesdeFila(producto);
+  }
+
+  @override
+  Future<int> crearProducto({
+    required String nombre,
+    String? codigoBarras,
+    int? categoriaId,
+    int? proveedorId,
+    required bool esPesable,
+    int? precioCentavos,
+    int? costoCentavos,
+    int? precioPorKiloCentavos,
+    int? costoPorKiloCentavos,
+    int stock = 0,
+    int? stockGramos,
+    required int usuarioId,
+  }) {
+    return repo_productos.crearProducto(
+      db,
+      nombre: nombre,
+      codigoBarras: codigoBarras,
+      categoriaId: categoriaId,
+      proveedorId: proveedorId,
+      esPesable: esPesable,
+      precioCentavos: precioCentavos,
+      costoCentavos: costoCentavos,
+      precioPorKiloCentavos: precioPorKiloCentavos,
+      costoPorKiloCentavos: costoPorKiloCentavos,
+      stock: stock,
+      stockGramos: stockGramos,
+      usuarioId: usuarioId,
+    );
+  }
+
+  @override
+  Future<void> actualizarProducto(
+    int id, {
+    required String nombre,
+    String? codigoBarras,
+    int? categoriaId,
+    int? proveedorId,
+    required bool esPesable,
+    int? precioCentavos,
+    int? costoCentavos,
+    int? precioPorKiloCentavos,
+    int? costoPorKiloCentavos,
+    required int stock,
+    int? stockGramos,
+    required bool activo,
+    required int usuarioId,
+  }) {
+    return repo_productos.actualizarProducto(
+      db,
+      id: id,
+      nombre: nombre,
+      codigoBarras: codigoBarras,
+      categoriaId: categoriaId,
+      proveedorId: proveedorId,
+      esPesable: esPesable,
+      precioCentavos: precioCentavos,
+      costoCentavos: costoCentavos,
+      precioPorKiloCentavos: precioPorKiloCentavos,
+      costoPorKiloCentavos: costoPorKiloCentavos,
+      stock: stock,
+      stockGramos: stockGramos,
+      activo: activo,
+      usuarioId: usuarioId,
+    );
+  }
+
+  @override
+  Future<void> ajustarStock(
+    int productoId, {
+    required int stock,
+    int? stockGramos,
+    String? motivo,
+    required int usuarioId,
+  }) {
+    return repo_productos.ajustarStockRapido(
+      db,
+      productoId: productoId,
+      usuarioId: usuarioId,
+      stock: stock,
+      stockGramos: stockGramos,
+      motivo: motivo,
+    );
+  }
+
+  // Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  // costo stock etc etc") — delegado directo a cada función en lote de
+  // `repositorio_productos.dart` (Regla 3: mismo camino que `ClienteCompanion`
+  // usa por HTTP, acá sin red de por medio).
+  @override
+  Future<void> ajustarMontoEnLote({
+    required List<int> productoIds,
+    required CampoMonto campo,
+    required TipoAjustePrecio tipo,
+    required int valor,
+    required int usuarioId,
+  }) {
+    return repo_productos.ajustarMontoEnLote(
+      db,
+      productoIds: productoIds,
+      campo: campo,
+      tipo: tipo,
+      valor: valor,
+      usuarioId: usuarioId,
+    );
+  }
+
+  @override
+  Future<void> ajustarStockEnLote({
+    required List<int> productoIds,
+    required TipoAjusteStock tipo,
+    required int valor,
+    required int usuarioId,
+    String motivo = 'Ajuste masivo',
+  }) {
+    return repo_productos.ajustarStockEnLote(
+      db,
+      productoIds: productoIds,
+      tipo: tipo,
+      valor: valor,
+      usuarioId: usuarioId,
+      motivo: motivo,
+    );
+  }
+
+  @override
+  Future<void> asignarCategoriaEnLote({
+    required List<int> productoIds,
+    int? categoriaId,
+    required int usuarioId,
+  }) {
+    return repo_productos.asignarCategoriaEnLote(
+      db,
+      productoIds: productoIds,
+      categoriaId: categoriaId,
+      usuarioId: usuarioId,
+    );
+  }
+
+  @override
+  Future<void> asignarProveedorEnLote({
+    required List<int> productoIds,
+    int? proveedorId,
+    required int usuarioId,
+  }) {
+    return repo_productos.asignarProveedorEnLote(
+      db,
+      productoIds: productoIds,
+      proveedorId: proveedorId,
+      usuarioId: usuarioId,
+    );
+  }
+
+  /// Mismo criterio que `GET /sesion` del servidor — ver ese comentario en
+  /// `servidor_companion.dart` para el porqué de cada campo.
+  @override
+  Future<SesionCompanion> sesion() async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      final sugerido = await repo_cierre.fondoInicialSugeridoCentavos(db);
+      final lataQueSeArrastra = await repo_ventas.lataQueSeArrastraCentavos(db);
+      return SesionCompanion(
+        abierta: false,
+        fondoInicialSugeridoCentavos: sugerido,
+        lataQueSeArrastraCentavos: lataQueSeArrastra,
+      );
+    }
+    final ultimoArqueo = await repo_arqueo.fechaUltimoArqueoIntermedio(db, sesion.id);
+    final ultimo = (await repo_arqueo.arqueosDelTurno(db, sesion.id)).lastOrNull;
+    return SesionCompanion(
+      abierta: true,
+      id: sesion.id,
+      fechaApertura: sesion.fechaApertura,
+      fechaUltimoArqueoIntermedio: ultimoArqueo,
+      ultimoArqueoEfectivoCentavos: ultimo?.efectivoContadoCentavos,
+      ultimoArqueoMpCentavos: ultimo?.mpContadoCentavos,
+    );
+  }
+
+  /// Mismo criterio que `GET /caja/estado` del servidor (`estadoCajaEnVivo`
+  /// + `resumenDiaHistorico` + `cantidadVentasDelDia`, las tres en
+  /// paralelo) — ver ese comentario en `servidor_companion.dart` para el
+  /// porqué completo. Acá no hay JSON de por medio: se arman los DTOs
+  /// directo desde los tipos de dominio (Regla 3, misma fórmula que ya usa
+  /// el servidor, solo sin la vuelta HTTP).
+  @override
+  Future<EstadoCajaCompanion> estadoCaja() async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      throw const ErrorCompanion(409, 'No hay caja abierta');
+    }
+    final futuroEstado = repo_cierre.estadoCajaEnVivo(db, sesion.id);
+    final futuroResumen = repo_carga_historica.resumenDiaHistorico(db, sesion.id);
+    final futuroCantidadVentas = repo_cierre.cantidadVentasDelDia(db, sesion.id);
+    final estado = await futuroEstado;
+    final resumen = await futuroResumen;
+    final cantidadVentas = await futuroCantidadVentas;
+    return EstadoCajaCompanion(
+      sesionId: sesion.id,
+      fechaApertura: sesion.fechaApertura,
+      efectivoEsperadoCentavos: estado.efectivoEsperadoCentavos,
+      mpEsperadoCentavos: estado.mpEsperadoCentavos,
+      redondeoAcumuladoCentavos: estado.redondeoAcumuladoCentavos,
+      lataInicialCentavos: estado.lataInicialCentavos,
+      cantidadVentas: cantidadVentas,
+      resumen: _resumenDesdeDominio(resumen),
+    );
+  }
+
+  /// Mismo criterio que `POST /sesion/arqueo-intermedio/calcular` del
+  /// servidor: `calcularResumenCierre` para efectivo/MP, `lataEsperadaIntermedia`
+  /// aparte para la lata (no la de un cierre real, que asume separado todo
+  /// lo vendido hasta ahora — acá se compara contra lo que debería seguir
+  /// habiendo SIN separar).
+  @override
+  Future<EstadoArqueoIntermedioCompanion> calcularArqueoIntermedio({
+    required int efectivoContadoCentavos,
+    int? mpContadoCentavos,
+    int? lataContadoCentavos,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      throw const ErrorCompanion(409, 'No hay caja abierta');
+    }
+    final futuroResumen = repo_cierre.calcularResumenCierre(
+      db,
+      sesionId: sesion.id,
+      efectivoContadoCentavos: efectivoContadoCentavos,
+      mpContadoCentavos: mpContadoCentavos,
+    );
+    final futuroLataEsperada = repo_arqueo.lataEsperadaIntermedia(db, sesion.id);
+    final resumen = await futuroResumen;
+    final lataEsperada = await futuroLataEsperada;
+    return EstadoArqueoIntermedioCompanion(
+      efectivoEsperadoCentavos: resumen.efectivoEsperadoCentavos,
+      diferenciaCentavos: resumen.diferenciaCentavos,
+      mpEsperadoCentavos: resumen.mpEsperadoCentavos,
+      mpDiferenciaCentavos: resumen.mpDiferenciaCentavos,
+      lataEsperadoCentavos: lataEsperada,
+      lataDiferenciaCentavos: lataContadoCentavos == null
+          ? null
+          : diferenciaArqueo(contadoCentavos: lataContadoCentavos, esperadoCentavos: lataEsperada),
+    );
+  }
+
+  @override
+  Future<void> confirmarArqueoIntermedio({
+    required int usuarioId,
+    required int efectivoContadoCentavos,
+    required int mpContadoCentavos,
+    required int lataContadoCentavos,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      throw const ErrorCompanion(409, 'No hay caja abierta');
+    }
+    await repo_arqueo.registrarArqueoIntermedio(
+      db,
+      sesionId: sesion.id,
+      usuarioId: usuarioId,
+      efectivoContadoCentavos: efectivoContadoCentavos,
+      mpContadoCentavos: mpContadoCentavos,
+      lataContadoCentavos: lataContadoCentavos,
+    );
+  }
+
+  /// Mismo criterio que `POST /sesion/cerrar/calcular` del servidor
+  /// (Bruno, 2026-09-19: "que deje cerrar caja desde el celular") —
+  /// `calcularResumenCierre` para el arqueo, `resumenDiaHistorico` para el
+  /// desglose por proveedor, reusando `_resumenDesdeDominio` (Regla 3, la
+  /// misma traducción que ya usa `resumenDiaHistorico` de acá abajo).
+  @override
+  Future<ResumenCierreCompanion> calcularCierre({
+    required int efectivoContadoCentavos,
+    int? mpContadoCentavos,
+    int? lataContadoCentavos,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      throw const ErrorCompanion(409, 'No hay caja abierta');
+    }
+    final futuroResumen = repo_cierre.calcularResumenCierre(
+      db,
+      sesionId: sesion.id,
+      efectivoContadoCentavos: efectivoContadoCentavos,
+      mpContadoCentavos: mpContadoCentavos,
+      lataContadoCentavos: lataContadoCentavos,
+    );
+    final futuroResumenDia = repo_carga_historica.resumenDiaHistorico(db, sesion.id);
+    return _resumenCierreCompanionDesde(await futuroResumen, await futuroResumenDia);
+  }
+
+  /// Detalle de un cierre YA cerrado (Bruno, 2026-09-19) — mismo cálculo
+  /// que `GET /sesiones/cerradas/<id>/detalle` del servidor:
+  /// `calcularResumenCierre` no exige sesión `ABIERTA`, así que recalcularlo
+  /// con los conteos ya guardados en la fila da el mismo desglose que se
+  /// vio al cerrar, sin haber cacheado nada de esto aparte.
+  @override
+  Future<ResumenCierreCompanion> detalleCierre(int sesionId) async {
+    final sesion = await (db.select(
+      db.sesionesDeCaja,
+    )..where((s) => s.id.equals(sesionId))).getSingleOrNull();
+    if (sesion == null || sesion.estado != 'CERRADA') {
+      throw const ErrorCompanion(404, 'No hay ningún cierre real con ese id');
+    }
+    final futuroResumen = repo_cierre.calcularResumenCierre(
+      db,
+      sesionId: sesionId,
+      efectivoContadoCentavos: sesion.efectivoContadoCentavos ?? 0,
+      mpContadoCentavos: sesion.mpContadoCentavos,
+      lataContadoCentavos: sesion.lataContadoCentavos,
+    );
+    final futuroResumenDia = repo_carga_historica.resumenDiaHistorico(db, sesionId);
+    return _resumenCierreCompanionDesde(
+      await futuroResumen,
+      await futuroResumenDia,
+      nota: sesion.nota,
+      efectivoContadoCentavos: sesion.efectivoContadoCentavos,
+      mpContadoCentavos: sesion.mpContadoCentavos,
+      lataContadoCentavos: sesion.lataContadoCentavos,
+    );
+  }
+
+  /// Bruno, 2026-09-19: "que funcione también sin la PC" — a diferencia de
+  /// `abrirSesion` (bloqueada en `ServicioCompanionOffline`, nunca llega
+  /// hasta acá sin PC), cerrar sí escribe directo sobre la base local
+  /// sincronizada por Supabase: no arriesga duplicar ninguna sesión, solo
+  /// cierra la que ya existe. El riesgo de que el cálculo no refleje algo
+  /// que todavía no sincronizó a este celular se avisa en la UI, no acá.
+  @override
+  Future<void> confirmarCierre({
+    required int usuarioId,
+    required int efectivoContadoCentavos,
+    required int mpContadoCentavos,
+    required int lataContadoCentavos,
+    String? nota,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) {
+      throw const ErrorCompanion(409, 'No hay caja abierta');
+    }
+    try {
+      await repo_cierre.cerrarSesion(
+        db,
+        sesionId: sesion.id,
+        usuarioId: usuarioId,
+        efectivoContadoCentavos: efectivoContadoCentavos,
+        mpContadoCentavos: mpContadoCentavos,
+        lataContadoCentavos: lataContadoCentavos,
+        nota: nota,
+      );
+    } on repo_cierre.SesionYaNoAbiertaException {
+      throw const ErrorCompanion(409, 'La caja ya se cerró desde otro lado mientras tanto');
+    }
+  }
+
+  /// Mismo criterio que `GET /historial/ventas` del servidor — traduce el
+  /// enum de dominio (`MedioVentaHistorial`) al de la companion por
+  /// nombre, mismo mecanismo que ya usa el servidor para el filtro entrante.
+  @override
+  Future<List<VentaDelHistorialCompanion>> historialDeVentas({
+    required DateTime desde,
+    required DateTime hasta,
+    MedioVentaHistorialCompanion? filtroMedio,
+  }) async {
+    final filtroDominio = filtroMedio == null
+        ? null
+        : repo_historial_ventas.MedioVentaHistorial.values.firstWhere(
+            (m) => m.name == filtroMedio.name,
+          );
+    final ventas = await repo_historial_ventas.historialDeVentas(
+      db,
+      desde: desde,
+      hasta: hasta,
+      filtroMedio: filtroDominio,
+    );
+    return [
+      for (final v in ventas)
+        VentaDelHistorialCompanion(
+          ventaId: v.ventaId,
+          fecha: v.fecha,
+          totalCentavos: v.totalCentavos,
+          medio: MedioVentaHistorialCompanion.values.firstWhere((m) => m.name == v.medio.name),
+          detalle: v.detalle,
+          anulada: v.anulada,
+          sesionAbierta: v.sesionAbierta,
+        ),
+    ];
+  }
+
+  @override
+  Future<void> anularVenta({
+    required int ventaId,
+    required int usuarioId,
+    required String motivo,
+  }) => repo_edicion_venta.anularVenta(
+    db,
+    ventaId: ventaId,
+    usuarioId: usuarioId,
+    motivo: motivo,
+  );
+
+  /// Mismo criterio que `GET /ventas/<id>/detalle` del servidor —
+  /// `ticketDeVenta` es el mismo `Ticket` de dominio que arma la impresión
+  /// (Regla 3), acá traducido a `DetalleVentaCompanion` en vez de a JSON.
+  @override
+  Future<DetalleVentaCompanion> detalleVenta(int ventaId) async {
+    final ticket = await repo_ticket.ticketDeVenta(db, ventaId);
+    return DetalleVentaCompanion(
+      fecha: ticket.fecha,
+      vendedor: ticket.vendedor,
+      lineas: [
+        for (final l in ticket.lineas)
+          LineaTicketCompanion(
+            nombreProducto: l.nombreProducto,
+            cantidad: l.cantidad,
+            gramos: l.gramos,
+            subtotalCentavos: l.subtotalCentavos,
+          ),
+      ],
+      recargoCigarrillosCentavos: ticket.desglose.recargoCigarrillosCentavos,
+      descuentoCentavos: ticket.desglose.descuentoCentavos,
+      redondeoCentavos: ticket.desglose.redondeoCentavos,
+      totalCentavos: ticket.totalCentavos,
+    );
+  }
+
+  /// Mismo criterio que `GET /sesiones/cerradas` del servidor —
+  /// `listarDias` es el mismo `listarDias` que ya usa el Historial de
+  /// escritorio (Regla 3), excluyendo acá los días de carga histórica
+  /// (nunca tuvieron un arqueo de verdad).
+  @override
+  Future<List<SesionCerradaCompanion>> sesionesCerradas({int limite = 30}) async {
+    final dias = await repo_historial.listarDias(db);
+    final reales = dias
+        .where((d) => d.sesion.nota != repo_carga_historica.notaCargaHistorica)
+        .take(limite);
+    return [
+      for (final d in reales)
+        SesionCerradaCompanion(
+          sesionId: d.sesion.id,
+          fechaApertura: d.sesion.fechaApertura,
+          fechaCierre: d.sesion.fechaCierre,
+          nombreEmpleado: d.nombreEmpleado,
+          totalVendidoCentavos: d.totalVendidoCentavos,
+          efectivoContadoCentavos: d.sesion.efectivoContadoCentavos,
+          efectivoEsperadoCentavos: d.sesion.efectivoEsperadoCentavos,
+          diferenciaCentavos: d.sesion.diferenciaCentavos,
+          mpContadoCentavos: d.sesion.mpContadoCentavos,
+          mpEsperadoCentavos: d.sesion.mpEsperadoCentavos,
+          mpDiferenciaCentavos: d.sesion.mpDiferenciaCentavos,
+          lataContadoCentavos: d.sesion.lataContadoCentavos,
+          lataFinalCentavos: d.sesion.lataFinalCentavos,
+          lataDiferenciaCentavos: d.sesion.lataDiferenciaCentavos,
+        ),
+    ];
+  }
+
+  /// Mismo criterio que `_pendientesHistoricosDesdeBody` del servidor
+  /// (Regla 3) — la única diferencia es que acá no hay JSON de por medio:
+  /// [VentaHistoricaPendienteCompanion.lineas] ya son `LineaVenta` de
+  /// dominio. `config`/medios se resuelven una sola vez para TODA la lista
+  /// (el que llama los pasa), no una vez por venta.
+  Future<repo_carga_historica.VentaHistoricaPendiente> _pendienteDesdeCompanion(
+    VentaHistoricaPendienteCompanion v, {
+    required ConfiguracionNegocio config,
+    required MedioDePago medioEfectivo,
+    required MedioDePago medioVirtual,
+  }) async {
+    final medio = composicionPagoDesdeTexto(v.medio);
+    final resultado = await repo_ventas.calcularResultadoVenta(
+      db,
+      lineas: v.lineas,
+      medio: medio,
+      configuracionNegocio: config,
+    );
+    final pagos = await repo_ventas.pagosSegunMedio(
+      db,
+      medio: medio,
+      totalCentavos: resultado.totalCentavos,
+      montoEfectivoMixtoCentavos: v.montoEfectivoMixtoCentavos,
+      medioEfectivoResuelto: medioEfectivo,
+      medioVirtualResuelto: medioVirtual,
+    );
+    return repo_carga_historica.VentaHistoricaPendiente(
+      venta: Venta(lineas: v.lineas),
+      resultado: resultado,
+      pagos: pagos,
+    );
+  }
+
+  Future<List<repo_carga_historica.VentaHistoricaPendiente>> _pendientesDesdeCompanion(
+    List<VentaHistoricaPendienteCompanion> ventas,
+  ) async {
+    final config = await repo_configuracion.configuracionNegocioActual(db);
+    final medioEfectivo = await (db.select(
+      db.mediosDePago,
+    )..where((m) => m.esEfectivo.equals(true))).getSingle();
+    final medioVirtual = await (db.select(
+      db.mediosDePago,
+    )..where((m) => m.esEfectivo.equals(false))).getSingle();
+    return [
+      for (final v in ventas)
+        await _pendienteDesdeCompanion(
+          v,
+          config: config,
+          medioEfectivo: medioEfectivo,
+          medioVirtual: medioVirtual,
+        ),
+    ];
+  }
+
+  @override
+  Future<int> guardarDiaHistorico({
+    required DateTime fecha,
+    required int usuarioId,
+    required List<VentaHistoricaPendienteCompanion> ventas,
+  }) async {
+    final pendientes = await _pendientesDesdeCompanion(ventas);
+    return repo_carga_historica.cargarDiaHistoricoDesdeVentas(
+      db,
+      fecha: fecha,
+      usuarioId: usuarioId,
+      ventas: pendientes,
+    );
+  }
+
+  @override
+  Future<List<DiaHistoricoCompanion>> diasHistoricos() async {
+    final dias = await repo_carga_historica.listarDiasHistoricos(db);
+    return [
+      for (final d in dias)
+        DiaHistoricoCompanion(
+          sesionId: d.sesionId,
+          fecha: d.fecha,
+          totalCentavos: d.totalCentavos,
+          cantidadVentas: d.cantidadVentas,
+        ),
+    ];
+  }
+
+  @override
+  Future<List<VentaHistoricaResumenCompanion>> ventasDeDiaHistorico(int sesionId) async {
+    final ventas = await repo_carga_historica.ventasDeDiaHistorico(db, sesionId);
+    return [
+      for (final v in ventas)
+        VentaHistoricaResumenCompanion(
+          ventaId: v.ventaId,
+          totalCentavos: v.totalCentavos,
+          medioResumen: v.medioResumen,
+          detalle: v.detalle,
+        ),
+    ];
+  }
+
+  @override
+  Future<ResumenDiaHistoricoCompanion> resumenDiaHistorico(int sesionId) async {
+    final resumen = await repo_carga_historica.resumenDiaHistorico(db, sesionId);
+    return _resumenDesdeDominio(resumen);
+  }
+
+  @override
+  Future<void> agregarVentasADiaHistorico({
+    required int sesionId,
+    required int usuarioId,
+    required List<VentaHistoricaPendienteCompanion> ventas,
+  }) async {
+    final pendientes = await _pendientesDesdeCompanion(ventas);
+    await repo_carga_historica.agregarVentasADiaHistorico(
+      db,
+      sesionId: sesionId,
+      usuarioId: usuarioId,
+      ventas: pendientes,
+    );
+  }
+
+  @override
+  Future<void> eliminarVentaHistorica({
+    required int sesionId,
+    required int ventaId,
+    required int usuarioId,
+  }) => repo_carga_historica.eliminarVentaHistorica(db, ventaId: ventaId, usuarioId: usuarioId);
+
+  @override
+  Future<void> eliminarDiaHistorico(int sesionId) =>
+      repo_carga_historica.eliminarDiaHistorico(db, sesionId: sesionId);
+
+  @override
+  Future<int> abrirSesion({
+    required int usuarioId,
+    required int fondoInicialCentavos,
+  }) {
+    return repo_ventas.abrirSesion(
+      db,
+      usuarioId: usuarioId,
+      fondoInicialCentavos: fondoInicialCentavos,
+    );
+  }
+
+  repo_gastos.MedioGasto _medioGastoDesde(MedioGastoCompanion medio) => switch (medio) {
+    MedioGastoCompanion.cajonNormal => repo_gastos.MedioGasto.cajonNormal,
+    MedioGastoCompanion.lata => repo_gastos.MedioGasto.lata,
+    MedioGastoCompanion.mercadoPago => repo_gastos.MedioGasto.mercadoPago,
+  };
+
+  @override
+  Future<int> registrarGasto({
+    required int sesionCajaId,
+    required int usuarioId,
+    required int montoCentavos,
+    required MedioGastoCompanion medio,
+    String? motivo,
+  }) {
+    return repo_gastos.registrarGastoRapido(
+      db,
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      montoCentavos: montoCentavos,
+      medio: _medioGastoDesde(medio),
+      motivo: motivo,
+    );
+  }
+
+  @override
+  Future<int> registrarIngreso({
+    required int sesionCajaId,
+    required int usuarioId,
+    required int montoCentavos,
+    required MedioGastoCompanion medio,
+    String? motivo,
+  }) {
+    return repo_ingresos.registrarIngresoRapido(
+      db,
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      montoCentavos: montoCentavos,
+      medio: _medioGastoDesde(medio),
+      motivo: motivo,
+    );
+  }
+
+  /// Mismo criterio que `GET /ventas/buscar` del servidor: "Varios" no entra
+  /// en esta primera versión (decisión de Bruno) — `tieneStock` ya lo trata
+  /// como que siempre tiene stock, así que sin este filtro aparecería igual.
+  @override
+  Future<({int? gramos, List<ProductoCompanion> resultados})> buscarVenta(
+    String texto, {
+    bool exigirStock = true,
+  }) async {
+    final catalogo = await db.select(db.productos).get();
+    final consulta = busqueda.interpretarTexto(texto);
+    final resultados = busqueda
+        .buscarProductos(catalogo: catalogo, textoBuscado: texto, exigirStock: exigirStock)
+        .where((p) => !p.esVarios)
+        .toList();
+    return (
+      gramos: consulta.gramos,
+      resultados: [for (final p in resultados) _productoDesdeFila(p)],
+    );
+  }
+
+  @override
+  Future<ResultadoTotalVenta> calcularVenta({
+    required List<LineaVenta> lineas,
+    required String medio,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+  }) {
+    return repo_ventas.calcularResultadoVenta(
+      db,
+      lineas: lineas,
+      medio: composicionPagoDesdeTexto(medio),
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+  }
+
+  @override
+  Future<({int ventaId, int totalCentavos})> cobrarEfectivo({
+    required List<LineaVenta> lineas,
+    required int sesionCajaId,
+    required int usuarioId,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+  }) {
+    return repo_ventas.registrarVentaSegunMedio(
+      db,
+      lineas: lineas,
+      medio: composicionPagoDesdeTexto('efectivo'),
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+  }
+
+  @override
+  Future<({int ventaId, int totalCentavos})> cobrarVirtualAMano({
+    required List<LineaVenta> lineas,
+    required int sesionCajaId,
+    required int usuarioId,
+    required String canal,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+  }) {
+    return repo_ventas.registrarVentaSegunMedio(
+      db,
+      lineas: lineas,
+      medio: composicionPagoDesdeTexto('virtual'),
+      canal: canal,
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+  }
+
+  /// Credenciales de cobro por terminal Point — a diferencia de todo lo
+  /// demás acá, no salen de `db` (la companion nunca sincronizó
+  /// `configuracion_tabla`, y esto es un token de pago, no un dato de
+  /// catálogo): salen de Supabase (`leerConfigCobro`,
+  /// `transporte_supabase.dart`), la misma fila que el escritorio
+  /// mantiene actualizada. Tira el mismo mensaje que el escritorio si
+  /// todavía no hay nada configurado o sincronizado.
+  Future<({String accessToken, String terminalId})> _credencialesCobro() async {
+    final config = await leerConfigCobro();
+    final accessToken = config?.mpAccessToken;
+    final terminalId = config?.mpTerminalCobroId;
+    if (accessToken == null || terminalId == null) {
+      throw const ErrorCompanion(
+        400,
+        'Configurá el access token y la terminal de cobro en Configuración → '
+        'Impresión (en la PC) antes de cobrar por acá.',
+      );
+    }
+    return (accessToken: accessToken, terminalId: terminalId);
+  }
+
+  /// Mismo criterio que `POST /ventas/posnet/iniciar` del servidor — la
+  /// única diferencia real es de dónde salen las credenciales (arriba). El
+  /// resto es exactamente la misma secuencia: sembrar la orden pendiente
+  /// ANTES del POST a Mercado Pago (para poder reintentar sin arriesgar un
+  /// doble cobro si la respuesta se pierde), después crear la orden de
+  /// verdad.
+  @override
+  Future<({int ordenPendienteId, String ordenIdMp, int totalCentavos})> iniciarCobroPosnet({
+    required List<LineaVenta> lineas,
+    required String canal,
+    required int sesionCajaId,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+  }) async {
+    final credenciales = await _credencialesCobro();
+    final resultado = await repo_ventas.calcularResultadoVenta(
+      db,
+      lineas: lineas,
+      medio: composicionPagoDesdeTexto('virtual'),
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+    final pendiente = await repo_cobro.crearOrdenPendiente(
+      db,
+      sesionCajaId: sesionCajaId,
+      canal: canal,
+      montoCentavos: resultado.totalCentavos,
+    );
+    try {
+      final creada = await mp.crearOrdenCobro(
+        accessToken: credenciales.accessToken,
+        terminalId: credenciales.terminalId,
+        externalReference: pendiente.externalReference,
+        idempotencyKey: pendiente.idempotencyKey,
+        montoCentavos: resultado.totalCentavos,
+        canal: canal,
+      );
+      await repo_cobro.marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
+      return (
+        ordenPendienteId: pendiente.id,
+        ordenIdMp: creada.ordenIdMp,
+        totalCentavos: resultado.totalCentavos,
+      );
+    } on mp.CobroPosnetException catch (e) {
+      throw ErrorCompanion(502, e.mensaje);
+    }
+  }
+
+  @override
+  Future<ResultadoOrdenCobro> consultarEstadoPosnet(String ordenIdMp) async {
+    final credenciales = await _credencialesCobro();
+    try {
+      final estado = await mp.consultarOrden(
+        accessToken: credenciales.accessToken,
+        ordenIdMp: ordenIdMp,
+      );
+      return clasificarEstadoOrden(estado);
+    } on mp.CobroPosnetException catch (e) {
+      throw ErrorCompanion(502, e.mensaje);
+    }
+  }
+
+  @override
+  Future<({int ventaId, int totalCentavos})> confirmarCobroPosnet({
+    required int ordenPendienteId,
+    required List<LineaVenta> lineas,
+    required String canal,
+    required int sesionCajaId,
+    required int usuarioId,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+  }) async {
+    final resultado = await repo_ventas.registrarVentaSegunMedio(
+      db,
+      lineas: lineas,
+      medio: composicionPagoDesdeTexto('virtual'),
+      canal: canal,
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+    await repo_cobro.marcarOrdenResuelta(
+      db,
+      id: ordenPendienteId,
+      estado: 'aprobada',
+      ventaId: resultado.ventaId,
+    );
+    return resultado;
+  }
+
+  @override
+  Future<void> resolverCobroPosnetNoAprobado({
+    required int ordenPendienteId,
+    required String estado,
+  }) => repo_cobro.marcarOrdenResuelta(db, id: ordenPendienteId, estado: estado);
+
+  @override
+  Future<void> cancelarCobroPosnet({
+    required int ordenPendienteId,
+    String? ordenIdMp,
+  }) async {
+    if (ordenIdMp != null) {
+      final credenciales = await _credencialesCobro();
+      try {
+        await mp.cancelarOrdenCobro(accessToken: credenciales.accessToken, ordenIdMp: ordenIdMp);
+      } on mp.CobroPosnetException catch (e) {
+        throw ErrorCompanion(502, e.mensaje);
+      }
+    }
+    await repo_cobro.marcarOrdenResuelta(db, id: ordenPendienteId, estado: 'cancelada');
+  }
+}

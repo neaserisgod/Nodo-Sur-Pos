@@ -1,0 +1,51 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-29T14:20:00Z"
+  },
+  "title": "POS La Plazoleta · Ventana",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 300,
+      "w": 1280,
+      "h": 800,
+      "title": "Ventana — Vender"
+    },
+    "Barra.dc.html": {
+      "x": 1360,
+      "y": 300,
+      "w": 1280,
+      "h": 760,
+      "title": "Barra de título — estados"
+    },
+    "Cierre.dc.html": {
+      "x": 2720,
+      "y": 300,
+      "w": 1280,
+      "h": 800,
+      "title": "Cerrar con la caja abierta",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Barra.dc.html",
+    "Cierre.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "kind": "title1",
+      "text": "Ventana propia · barra de título",
+      "x": 0,
+      "y": 0,
+      "maxW": 4000
+    }
+  },
+  "designSystems": []
+}

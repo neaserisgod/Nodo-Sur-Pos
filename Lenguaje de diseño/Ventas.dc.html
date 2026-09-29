@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vender</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1024px; box-sizing: border-box; padding: 24px 40px 28px 40px; display: flex; flex-direction: column; gap: 18px; background: #f0f4f9; font-family: 'Figtree', system-ui, sans-serif; color: #1f1f1f; font-variant-numeric: tabular-nums;">
+
+  <!-- Header with dropdown navigation -->
+  <div style="position: relative; z-index: 5; display: flex; align-items: center; gap: 16px;">
+    <div style="position: relative; flex-grow: 1; display: flex; align-items: center; gap: 16px;">
+      <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" aria-controls="nav-menu" style="{{triggerStyle}}">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">LP</span>
+        <span style="font-size: 26px; font-weight: 600; letter-spacing: -0.2px;">Vender</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+
+      <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+        <div id="nav-menu" role="menu" aria-label="Secciones" style="position: absolute; top: 68px; left: 0; width: 340px; box-sizing: border-box; background: #ffffff; border-radius: 20px; padding: 8px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 2px;">
+          <div style="padding: 10px 14px 8px; display: flex; flex-direction: column;">
+            <span style="font-size: 15px; font-weight: 700;">La Plazoleta</span>
+            <span style="font-size: 13px; color: #444746;">Punto de venta</span>
+          </div>
+          <sc-for list="{{navItems}}" as="n" hint-placeholder-count="7">
+            <a href="{{n.href}}" role="menuitem" aria-current="{{n.current}}" style="{{n.rowStyle}}">
+              <span style="{{n.iconStyle}}">{{n.letter}}</span>
+              <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="{{n.labelStyle}}">{{n.label}}</span><span style="{{n.subStyle}}">{{n.sub}}</span></span>
+            </a>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #444746;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #146c2e;"></span>Caja abierta desde 8:30</span>
+  </div>
+
+  <div style="display: flex; gap: 20px; flex-grow: 1; min-height: 0;">
+
+    <!-- LEFT: scan + quick products -->
+    <section aria-label="Productos" style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="position: relative; z-index: 4;">
+        <label style="display: flex; align-items: center; gap: 14px; height: 72px; padding: 0 22px; box-sizing: border-box; border-radius: 22px; background: #ffffff; border: 2px solid #0b57d0;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0b57d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Escanear o buscar producto</span>
+          <input type="search" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{onSearchKey}}" placeholder="Escaneá o escribí el producto" style="flex-grow: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 22px; font-weight: 500; color: #1f1f1f;">
+        </label>
+        <sc-if value="{{searching}}" hint-placeholder-val="{{false}}">
+          <div role="listbox" aria-label="Resultados" style="position: absolute; top: 80px; left: 0; right: 0; background: #ffffff; border-radius: 22px; padding: 8px; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 4px;">
+            <sc-for list="{{results}}" as="r" hint-placeholder-count="4">
+              <button type="button" role="option" aria-selected="{{r.firstStr}}" onClick="{{r.add}}" style="{{r.style}}">
+                <span style="font-size: 19px; font-weight: 600; flex-grow: 1; text-align: left;">{{r.name}}</span>
+                <span style="font-size: 20px; font-weight: 700;">{{r.price}}</span>
+              </button>
+            </sc-for>
+            <sc-if value="{{noResults}}" hint-placeholder-val="{{false}}">
+              <span style="padding: 18px 16px; font-size: 18px; color: #444746;">No hay nada con ese nombre.</span>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 12px;">
+        <sc-for list="{{quick}}" as="k" hint-placeholder-count="12">
+          <button type="button" onClick="{{k.add}}" aria-label="{{k.addLabel}}" style="{{k.style}}">
+            <span style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 18px; font-weight: 700; line-height: 1.25; flex-grow: 1; text-align: left;">{{k.name}}</span>
+              <sc-if value="{{k.inCart}}" hint-placeholder-val="{{false}}">
+                <span style="flex-shrink: 0; min-width: 32px; height: 32px; padding: 0 8px; box-sizing: border-box; border-radius: 16px; background: #0b57d0; color: #ffffff; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{k.qty}}</span>
+              </sc-if>
+            </span>
+            <span style="font-size: 22px; font-weight: 600; color: #444746; text-align: left;">{{k.price}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- RIGHT: ticket as a receipt -->
+    <section aria-label="Venta actual" style="width: 540px; flex-shrink: 0; background: #ffffff; border-radius: 24px; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 20px 24px 12px;">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 700;">Venta {{num}}</h2>
+        <span style="font-size: 16px; color: #5e5e5e; flex-grow: 1;">{{itemsTxt}}</span>
+        <sc-if value="{{hasItems}}" hint-placeholder-val="{{true}}">
+          <button type="button" onClick="{{askDiscard}}" style="height: 44px; padding: 0 14px; border-radius: 22px; border: none; background: transparent; color: #5e5e5e; font-size: 15px; font-weight: 600;">Descartar</button>
+        </sc-if>
+      </div>
+
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 0 12px; display: flex; flex-direction: column; gap: 4px;">
+        <sc-for list="{{lines}}" as="l" hint-placeholder-count="5">
+          <div style="{{l.rowStyle}}">
+            <span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 18px; font-weight: 700;">{{l.name}}</span>
+              <span style="font-size: 14px; color: #5e5e5e;">{{l.unit}}</span>
+            </span>
+            <span style="display: flex; align-items: center; border-radius: 14px; background: #f0f4f9;">
+              <button type="button" onClick="{{l.dec}}" aria-label="{{l.decLabel}}" style="width: 46px; height: 46px; border: none; background: transparent; color: #1f1f1f; font-size: 22px; font-weight: 600;">−</button>
+              <span style="width: 30px; text-align: center; font-size: 18px; font-weight: 700;">{{l.qty}}</span>
+              <button type="button" onClick="{{l.inc}}" aria-label="{{l.incLabel}}" style="width: 46px; height: 46px; border: none; background: transparent; color: #1f1f1f; font-size: 22px; font-weight: 600;">+</button>
+            </span>
+            <span style="width: 110px; text-align: right; font-size: 20px; font-weight: 700;">{{l.sub}}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+          <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #5e5e5e;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+            <span style="font-size: 19px; font-weight: 600;">Escaneá un producto para empezar</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="padding: 18px 24px 24px; border-top: 1px dashed #c4c7c5; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 20px; font-weight: 600; color: #444746;">Total</span>
+          <span style="font-size: 56px; font-weight: 700; letter-spacing: -1px;">{{totalTxt}}</span>
+        </div>
+        <button type="button" onClick="{{openCobro}}" disabled="{{cobrarDisabled}}" style="{{cobrarStyle}}">Cobrar</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ MODALS ============ -->
+  <sc-if value="{{anyModal}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; z-index: 20; background: rgba(31, 31, 31, 0.5); display: flex; align-items: center; justify-content: center;">
+
+      <!-- 1. Confirmar cobro -->
+      <sc-if value="{{mConfirm}}" hint-placeholder-val="{{false}}">
+        <div role="dialog" aria-modal="true" aria-labelledby="m-confirm-title" style="width: 640px; box-sizing: border-box; background: #ffffff; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="display: flex; flex-direction: column; flex-grow: 1;">
+              <h2 id="m-confirm-title" style="margin: 0; font-size: 24px; font-weight: 700;">Cobrar venta {{num}}</h2>
+              <span style="font-size: 15px; color: #444746;">{{itemsTxt}}</span>
+            </span>
+            <button type="button" onClick="{{closeModal}}" aria-label="Cerrar" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center; padding: 0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 16px 20px; border-radius: 20px; background: #1f1f1f; color: #ffffff;">
+            <span style="font-size: 16px; font-weight: 600; color: #c4c7c5;">Total a cobrar</span>
+            <span style="font-size: 44px; font-weight: 700; letter-spacing: -0.6px;">{{totalTxt}}</span>
+          </div>
+
+          <div role="tablist" aria-label="Medio de pago" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 18px; background: #e1e6ee;">
+            <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+              <button type="button" role="tab" aria-selected="{{t.selStr}}" onClick="{{t.pick}}" style="{{t.style}}"><span style="{{t.dot}}"></span>{{t.label}}</button>
+            </sc-for>
+          </div>
+
+          <!-- Efectivo -->
+          <sc-if value="{{tabEf}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <label style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 15px; font-weight: 600; color: #444746;">¿Con cuánto paga?</span>
+                <span style="display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 18px; border-radius: 16px; border: 2px solid #b45309; background: #ffffff;">
+                  <span style="font-size: 26px; color: #444746;">$</span>
+                  <input type="text" inputmode="numeric" value="{{paidStr}}" onChange="{{onPaid}}" placeholder="0" style="flex-grow: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 30px; font-weight: 700; color: #1f1f1f;">
+                </span>
+              </label>
+              <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+                <sc-for list="{{bills}}" as="b" hint-placeholder-count="5">
+                  <button type="button" onClick="{{b.pick}}" aria-pressed="{{b.selStr}}" style="{{b.style}}">{{b.label}}</button>
+                </sc-for>
+              </div>
+              <div style="{{vueltoBox}}">
+                <span style="font-size: 18px; font-weight: 700;">{{vueltoLabel}}</span>
+                <span style="font-size: 36px; font-weight: 700;">{{vueltoTxt}}</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Mercado Pago -->
+          <sc-if value="{{tabMp}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 20px; background: #e8f0fe; color: #0842a0;">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+              <span style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 17px; font-weight: 700;">Se genera un QR por {{totalTxt}}</span>
+                <span style="font-size: 15px;">El cliente lo escanea con la app de Mercado Pago.</span>
+              </span>
+            </div>
+          </sc-if>
+
+          <!-- Mixto -->
+          <sc-if value="{{tabMix}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+                <label style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #7a3a04;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>En efectivo</span>
+                  <span style="display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 16px; border-radius: 16px; border: 2px solid #b45309; background: #ffffff;">
+                    <span style="font-size: 24px; color: #444746;">$</span>
+                    <input type="text" inputmode="numeric" value="{{mixStr}}" onChange="{{onMix}}" placeholder="0" style="flex-grow: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 28px; font-weight: 700; color: #1f1f1f;">
+                  </span>
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #0842a0;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #0b57d0;"></span>Resto por Mercado Pago</span>
+                  <span style="display: flex; align-items: center; height: 64px; padding: 0 16px; box-sizing: border-box; border-radius: 16px; background: #e8f0fe; font-size: 28px; font-weight: 700; color: #041e49;">{{mixMpTxt}}</span>
+                </div>
+              </div>
+              <sc-if value="{{mixInvalid}}" hint-placeholder-val="{{false}}">
+                <span style="font-size: 14px; font-weight: 600; color: #8c1d18;">El efectivo tiene que ser mayor a $0 y menor al total.</span>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display: grid; grid-template-columns: 1fr 1.7fr; gap: 10px;">
+            <button type="button" onClick="{{closeModal}}" style="height: 60px; border-radius: 30px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 17px; font-weight: 600;">Volver</button>
+            <button type="button" onClick="{{confirmCobro}}" disabled="{{confirmDisabled}}" style="{{confirmStyle}}">{{confirmLabel}}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 2. Esperando pago MP -->
+      <sc-if value="{{mWaiting}}" hint-placeholder-val="{{false}}">
+        <div role="dialog" aria-modal="true" aria-labelledby="m-wait-title" style="width: 640px; box-sizing: border-box; background: #ffffff; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <span style="display: flex; flex-direction: column; flex-grow: 1;">
+              <h2 id="m-wait-title" style="margin: 0; font-size: 24px; font-weight: 700;">Esperando el pago</h2>
+              <span style="font-size: 15px; color: #444746;">Venta {{num}} · {{waitSub}}</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 18px; background: #e8f0fe; color: #0842a0; font-size: 14px; font-weight: 700;">
+              <span style="width: 10px; height: 10px; border-radius: 5px; background: #0b57d0; box-shadow: 0 0 0 4px #a8c7fa;"></span>Esperando…</span>
+          </div>
+
+          <div style="display: flex; gap: 24px; align-items: center;">
+            <div style="flex-shrink: 0; width: 252px; height: 252px; box-sizing: border-box; padding: 14px; border-radius: 20px; border: 2px solid #e3e3e3; background: #ffffff;">
+              <div aria-label="Código QR de ejemplo" style="width: 220px; height: 220px; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr));">
+                <sc-for list="{{qr}}" as="q" hint-placeholder-count="441">
+                  <span style="{{q.style}}"></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <span style="font-size: 15px; font-weight: 600; color: #444746;">A cobrar por Mercado Pago</span>
+              <span style="font-size: 44px; font-weight: 700; letter-spacing: -0.6px; color: #041e49;">{{mpAmountTxt}}</span>
+              <sc-if value="{{waitHasEf}}" hint-placeholder-val="{{false}}">
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #7a3a04; font-weight: 600;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>+ {{mixEfTxt}} en efectivo</span>
+              </sc-if>
+              <span style="font-size: 15px; color: #444746; line-height: 1.4;">Pedile al cliente que escanee el QR. Se confirma solo cuando se acredita.</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" onClick="{{backToConfirm}}" style="height: 56px; padding: 0 22px; border-radius: 28px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 16px; font-weight: 600;">Cambiar medio</button>
+            <button type="button" onClick="{{toRejected}}" style="height: 56px; padding: 0 16px; border-radius: 28px; border: none; background: transparent; color: #b3261e; font-size: 16px; font-weight: 600;">No llegó el pago</button>
+            <span style="flex-grow: 1;"></span>
+            <button type="button" onClick="{{confirmMp}}" style="height: 56px; padding: 0 26px; border-radius: 28px; border: none; background: #0b57d0; color: #ffffff; font-size: 17px; font-weight: 700;">Pago recibido</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 3. Rechazado -->
+      <sc-if value="{{mRejected}}" hint-placeholder-val="{{false}}">
+        <div role="alertdialog" aria-modal="true" aria-labelledby="m-rej-title" style="width: 560px; box-sizing: border-box; background: #ffffff; border-radius: 28px; padding: 32px 28px 28px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);">
+          <span style="width: 72px; height: 72px; border-radius: 36px; background: #fce8e6; color: #b3261e; display: flex; align-items: center; justify-content: center;">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <h2 id="m-rej-title" style="margin: 0; font-size: 24px; font-weight: 700;">El pago no se acreditó</h2>
+            <span style="font-size: 16px; color: #444746;">No entró el pago de {{mpAmountTxt}}. La venta sigue abierta, no se cobró nada.</span>
+          </span>
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" onClick="{{retryMp}}" style="height: 56px; border-radius: 28px; border: none; background: #0b57d0; color: #ffffff; font-size: 17px; font-weight: 700;">Volver a intentar con QR</button>
+            <button type="button" onClick="{{switchToEf}}" style="height: 56px; border-radius: 28px; border: 1px solid #747775; background: #ffffff; color: #1f1f1f; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>Cobrar en efectivo</button>
+            <button type="button" onClick="{{closeModal}}" style="height: 48px; border-radius: 24px; border: none; background: transparent; color: #444746; font-size: 15px; font-weight: 600;">Volver a la venta</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 4. Cobrada -->
+      <sc-if value="{{mDone}}" hint-placeholder-val="{{false}}">
+        <div role="dialog" aria-modal="true" aria-labelledby="m-done-title" style="width: 600px; box-sizing: border-box; background: #ffffff; border-radius: 28px; padding: 32px 28px 28px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);">
+          <span style="width: 80px; height: 80px; border-radius: 40px; background: #e6f4ea; color: #146c2e; display: flex; align-items: center; justify-content: center;">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 4px;">
+            <h2 id="m-done-title" style="margin: 0; font-size: 26px; font-weight: 700;">Venta {{doneNum}} cobrada</h2>
+            <span style="font-size: 16px; color: #444746;">{{doneTotal}} · {{doneMedio}}</span>
+          </span>
+
+          <sc-if value="{{doneHasVuelto}}" hint-placeholder-val="{{true}}">
+            <div style="width: 100%; box-sizing: border-box; background: #1f1f1f; color: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 15px; font-weight: 600; color: #c4c7c5;">Dale el vuelto</span>
+              <span style="font-size: 56px; font-weight: 700; letter-spacing: -0.8px;">{{doneVuelto}}</span>
+              <span style="font-size: 14px; color: #c4c7c5;">Pagó con {{donePaid}}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{doneIsMix}}" hint-placeholder-val="{{false}}">
+            <div style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+              <span style="display: flex; flex-direction: column; padding: 12px 16px; border-radius: 16px; background: #fdf3e7; text-align: left;"><span style="font-size: 13px; font-weight: 600; color: #7a3a04;">Efectivo</span><span style="font-size: 22px; font-weight: 700;">{{doneEf}}</span></span>
+              <span style="display: flex; flex-direction: column; padding: 12px 16px; border-radius: 16px; background: #e8f0fe; text-align: left;"><span style="font-size: 13px; font-weight: 600; color: #0842a0;">Mercado Pago</span><span style="font-size: 22px; font-weight: 700;">{{doneMp}}</span></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{doneHasLow}}" hint-placeholder-val="{{true}}">
+            <div style="width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 14px; background: #fef1e0; color: #7a3a04; font-size: 14px; font-weight: 600; text-align: left;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0;"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+              {{doneLowTxt}}
+            </div>
+          </sc-if>
+
+          <div style="width: 100%; display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 10px;">
+            <button type="button" style="height: 56px; border-radius: 28px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 15px; font-weight: 600;">Imprimir ticket</button>
+            <button type="button" style="height: 56px; border-radius: 28px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 15px; font-weight: 600;">Enviar por WhatsApp</button>
+            <button type="button" onClick="{{newSale}}" style="height: 56px; border-radius: 28px; border: none; background: #0b57d0; color: #ffffff; font-size: 17px; font-weight: 700;">Nueva venta</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 5. Descartar -->
+      <sc-if value="{{mDiscard}}" hint-placeholder-val="{{false}}">
+        <div role="alertdialog" aria-modal="true" aria-labelledby="m-dis-title" style="width: 520px; box-sizing: border-box; background: #ffffff; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);">
+          <h2 id="m-dis-title" style="margin: 0; font-size: 24px; font-weight: 700;">¿Descartar la venta {{num}}?</h2>
+          <span style="font-size: 16px; color: #444746; line-height: 1.4;">Se sacan los {{itemsTxt}} del ticket ({{totalTxt}}). No queda registrada en el historial.</span>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px;">
+            <button type="button" onClick="{{closeModal}}" style="height: 52px; padding: 0 22px; border-radius: 26px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 16px; font-weight: 600;">Seguir vendiendo</button>
+            <button type="button" onClick="{{doDiscard}}" style="height: 52px; padding: 0 22px; border-radius: 26px; border: none; background: #b3261e; color: #ffffff; font-size: 16px; font-weight: 700;">Descartar venta</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["vender","buscando","confirmar","mixto","esperando","rechazado","cobrada","descartar"],"default":"vender"},"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var paso = props.paso || 'vender';
+    var s = {
+      menuOpen: false, query: '', cat: 'Todos', num: 143, modal: null, tab: 'ef', paidStr: '', mixStr: '', done: null,
+      cart: [{ id: 'cerveza', qty: 2 }, { id: 'cola', qty: 1 }, { id: 'pan', qty: 1 }, { id: 'jamon', qty: 1 }, { id: 'alfajor', qty: 3 }], lastId: 'alfajor'
+    };
+    if (paso === 'buscando') { s.query = 'le'; }
+    if (paso === 'confirmar') { s.modal = 'confirm'; s.tab = 'ef'; s.paidStr = '20000'; }
+    if (paso === 'mixto') { s.modal = 'confirm'; s.tab = 'mix'; s.mixStr = '5000'; }
+    if (paso === 'esperando') { s.modal = 'waiting'; s.tab = 'mp'; }
+    if (paso === 'rechazado') { s.modal = 'rejected'; s.tab = 'mp'; }
+    if (paso === 'cobrada') { s.modal = 'done'; s.done = { num: 143, total: 16950, medio: 'ef', paid: 20000, vuelto: 3050, ef: 16950, mp: 0, low: ['Gaseosa cola 2,25 L (quedan 4)', 'Pan francés (kg) (quedan 1)'] }; }
+    if (paso === 'descartar') { s.modal = 'discard'; }
+    this.state = s;
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var num = function (x) { return parseInt(String(x || '').replace(/\D/g, ''), 10) || 0; };
+    var CAT = [
+      ['cerveza', 'Cerveza lata 473 ml', 'Bebidas', 2100, 48, 24], ['cola', 'Gaseosa cola 2,25 L', 'Bebidas', 2900, 5, 12],
+      ['agua', 'Agua mineral 1,5 L', 'Bebidas', 1200, 30, 12], ['leche', 'Leche entera 1 L', 'Lácteos', 1600, 3, 15],
+      ['yogur', 'Yogur bebible 1 L', 'Lácteos', 2200, 8, 6], ['ddl', 'Dulce de leche 400 g', 'Lácteos', 2900, 11, 5],
+      ['pan', 'Pan francés (kg)', 'Panificados', 2600, 2, 5], ['facturas', 'Facturas (docena)', 'Panificados', 6500, 3, 2],
+      ['yerba', 'Yerba 1 kg', 'Almacén', 4600, 22, 10], ['fideos', 'Fideos 500 g', 'Almacén', 1350, 40, 15],
+      ['aceite', 'Aceite girasol 1,5 L', 'Almacén', 3800, 9, 8], ['jamon', 'Jamón cocido ¼ kg', 'Fiambres', 3650, 20, 8],
+      ['queso', 'Queso de máquina ¼ kg', 'Fiambres', 3000, 16, 8], ['alfajor', 'Alfajor triple', 'Kiosco', 1200, 36, 24],
+      ['chocolate', 'Chocolate 100 g', 'Kiosco', 2800, 9, 6], ['papel', 'Papel higiénico x4', 'Limpieza', 2900, 15, 8]
+    ];
+    var byId = {};
+    CAT.forEach(function (c) { byId[c[0]] = c; });
+    var qtyOf = {};
+    st.cart.forEach(function (l) { qtyOf[l.id] = l.qty; });
+
+    var setQty = function (id, q) {
+      var cart = self.state.cart.slice();
+      var i = cart.findIndex(function (l) { return l.id === id; });
+      if (q <= 0) { if (i >= 0) { cart.splice(i, 1); } }
+      else if (i >= 0) { cart[i] = { id: id, qty: q }; }
+      else { cart.push({ id: id, qty: q }); }
+      self.setState({ cart: cart, lastId: q > 0 ? id : self.state.lastId });
+    };
+    var addOne = function (id) { setQty(id, curQty(id) + 1); self.setState({ query: '' }); };
+    var curQty = function (id) { var l = self.state.cart.filter(function (x) { return x.id === id; })[0]; return l ? l.qty : 0; };
+
+    var q = st.query.trim().toLowerCase();
+    var visible = CAT.filter(function (c) { return (st.cat === 'Todos' || c[2] === st.cat) && (!q || c[1].toLowerCase().indexOf(q) >= 0); });
+    var results = q ? visible.slice(0, 6) : [];
+
+    var total = 0, items = 0;
+    var lines = st.cart.map(function (l) {
+      var c = byId[l.id];
+      total += c[3] * l.qty; items += l.qty;
+      return {
+        name: c[1], unit: fmt(c[3]) + ' c/u', qty: l.qty, sub: fmt(c[3] * l.qty),
+        rowStyle: 'display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 0 12px; border-radius: 16px; ' + (l.id === st.lastId ? 'background: #eef3fd;' : 'background: #ffffff; box-shadow: inset 0 -1px 0 #eceff3;'),
+        decLabel: 'Restar ' + c[1], incLabel: 'Sumar ' + c[1],
+        dec: function () { setQty(l.id, curQty(l.id) - 1); },
+        inc: function () { setQty(l.id, curQty(l.id) + 1); }
+      };
+    });
+    var lowAfter = function () {
+      return self.state.cart.map(function (l) { var c = byId[l.id]; var left = c[4] - l.qty; return left < c[5] ? c[1] + ' (quedan ' + Math.max(0, left) + ')' : null; }).filter(Boolean);
+    };
+
+    // payment calcs
+    var paidN = num(st.paidStr);
+    var efOk = st.paidStr !== '' && paidN >= total;
+    var mixEf = num(st.mixStr);
+    var mixOk = mixEf > 0 && mixEf < total;
+    var tab = st.tab;
+    var confirmOk = total > 0 && (tab === 'ef' ? efOk : (tab === 'mix' ? mixOk : true));
+    var mpAmount = tab === 'mix' ? total - mixEf : total;
+
+    var finish = function (medio) {
+      var s = self.state;
+      var t = 0;
+      s.cart.forEach(function (l) { t += byId[l.id][3] * l.qty; });
+      var pN = num(s.paidStr), mE = num(s.mixStr);
+      self.setState({ modal: 'done', done: {
+        num: s.num, total: t, medio: medio,
+        paid: medio === 'ef' ? pN : 0, vuelto: medio === 'ef' ? pN - t : 0,
+        ef: medio === 'mix' ? mE : (medio === 'ef' ? t : 0), mp: medio === 'mix' ? t - mE : (medio === 'mp' ? t : 0),
+        low: lowAfter()
+      } });
+    };
+
+    var vLabel, vBox;
+    if (st.paidStr === '') { vLabel = 'Vuelto'; vBox = 'background: #f0f4f9; color: #444746;'; }
+    else if (!efOk) { vLabel = 'Falta'; vBox = 'background: #fce8e6; color: #8c1d18;'; }
+    else { vLabel = 'Vuelto'; vBox = 'background: #e6f4ea; color: #0d652d;'; }
+
+    // pseudo QR
+    var qr = [];
+    var seed = 11;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    var finder = function (r, c) {
+      var inBox = function (r0, c0) {
+        var dr = r - r0, dc = c - c0;
+        if (dr < 0 || dc < 0 || dr > 6 || dc > 6) { return null; }
+        if (dr === 0 || dr === 6 || dc === 0 || dc === 6) { return true; }
+        if (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4) { return true; }
+        return false;
+      };
+      var a = inBox(0, 0); if (a !== null) { return a; }
+      a = inBox(0, 14); if (a !== null) { return a; }
+      a = inBox(14, 0); if (a !== null) { return a; }
+      if ((r === 7 && (c < 8 || c > 12)) || (c === 7 && (r < 8 || r > 12)) || (r === 13 && c < 8) || (c === 13 && r < 8)) { return false; }
+      return undefined;
+    };
+    for (var r = 0; r < 21; r++) {
+      for (var c = 0; c < 21; c++) {
+        var f = finder(r, c);
+        var on = f === undefined ? rnd() < 0.48 : f;
+        qr.push({ style: 'display: block; aspect-ratio: 1; background: ' + (on ? '#1f1f1f' : 'transparent') + ';' });
+      }
+    }
+
+    var NAV = [
+      ['Dashboard', 'Cómo viene el día', 'Dashboard.dc.html', 'D'], ['Ventas', 'Cobrar y ver tickets', 'Ventas.dc.html', 'V'], ['Caja', 'Apertura y cierre', '#', 'C'],
+      ['Separaciones', 'Qué apartar para proveedores', 'Main.dc.html', 'S'], ['Productos', 'Precios y stock', '#', 'P'],
+      ['Proveedores', 'Datos y productos', 'Proveedores.dc.html', 'P'], ['Historial', 'Ventas y cierres de caja', 'HistorialVentas.dc.html', 'H']
+    ];
+    var d = st.done;
+    var medioName = { ef: 'Efectivo', mp: 'Mercado Pago', mix: 'Efectivo + Mercado Pago' };
+
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 56px; padding: 0 14px 0 8px; border-radius: 28px; display: flex; align-items: center; gap: 12px; color: #1f1f1f; ' +
+        (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      navItems: NAV.map(function (n) {
+        var on = n[0] === 'Ventas';
+        return {
+          label: n[0], sub: n[1], href: n[2], letter: n[3], current: on ? 'page' : 'false',
+          rowStyle: 'display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; text-decoration: none; ' + (on ? 'background: #d3e3fd; color: #041e49;' : 'color: #1f1f1f;'),
+          iconStyle: 'width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; ' + (on ? 'background: #0b57d0; color: #ffffff;' : 'background: #f0f4f9; color: #444746;'),
+          labelStyle: 'font-size: 16px; font-weight: ' + (on ? '700' : '600') + ';',
+          subStyle: 'font-size: 13px; color: ' + (on ? '#0842a0' : '#5e5e5e') + ';'
+        };
+      }),
+      query: st.query,
+      onQuery: function (e) { self.setState({ query: e.target.value }); },
+      onSearchKey: function (e) {
+        if (e.key === 'Enter' && results.length) { e.preventDefault(); addOne(results[0][0]); }
+        if (e.key === 'Escape') { self.setState({ query: '' }); }
+      },
+      searching: !!q,
+      results: results.map(function (c, i) {
+        return {
+          name: c[1], price: fmt(c[3]), firstStr: i === 0 ? 'true' : 'false',
+          add: function () { addOne(c[0]); },
+          style: 'display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 0 16px; border-radius: 14px; border: none; font: inherit; color: #1f1f1f; ' + (i === 0 ? 'background: #eef3fd;' : 'background: transparent;')
+        };
+      }),
+      quick: ['cerveza', 'cola', 'agua', 'pan', 'facturas', 'leche', 'yerba', 'fideos', 'jamon', 'queso', 'alfajor', 'papel'].map(function (id) {
+        var c = byId[id], inCart = !!qtyOf[id];
+        return {
+          name: c[1], price: fmt(c[3]), qty: qtyOf[id] || 0, inCart: inCart, addLabel: 'Sumar ' + c[1],
+          add: function () { setQty(id, curQty(id) + 1); },
+          style: 'min-height: 0; box-sizing: border-box; padding: 16px 18px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; font: inherit; color: #1f1f1f; background: #ffffff; border: 2px solid ' + (inCart ? '#0b57d0' : 'transparent') + ';'
+        };
+      }),
+      cats: ['Todos', 'Bebidas', 'Almacén', 'Lácteos', 'Panificados', 'Fiambres', 'Kiosco', 'Limpieza'].map(function (cn) {
+        var sel = st.cat === cn;
+        return { label: cn, selStr: sel ? 'true' : 'false', pick: function () { self.setState({ cat: cn }); },
+          style: 'height: 40px; padding: 0 16px; border-radius: 10px; font-size: 14px; font-weight: 600; ' + (sel ? 'background: #d3e3fd; color: #041e49; border: 1px solid #d3e3fd;' : 'background: #ffffff; color: #444746; border: 1px solid #c4c7c5;') };
+      }),
+      products: visible.map(function (c) {
+        var inCart = !!qtyOf[c[0]], low = c[4] < c[5];
+        return {
+          name: c[1], price: fmt(c[3]), qty: qtyOf[c[0]] || 0, inCart: inCart,
+          stock: low ? 'Quedan ' + c[4] : 'Stock ' + c[4],
+          addLabel: 'Sumar ' + c[1],
+          add: function () { setQty(c[0], curQty(c[0]) + 1); },
+          cardStyle: 'min-height: 104px; box-sizing: border-box; padding: 14px 16px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; font: inherit; color: #1f1f1f; text-align: left; background: #ffffff; ' +
+            (inCart ? 'border: 2px solid #0b57d0;' : 'border: 2px solid transparent;'),
+          stockStyle: 'font-size: 12px; font-weight: 700; ' + (low ? 'color: #7a3a04;' : 'color: #5e5e5e;')
+        };
+      }),
+      noResults: visible.length === 0,
+      num: '#' + String(st.num).padStart(4, '0'),
+      hasItems: st.cart.length > 0, empty: st.cart.length === 0,
+      lines: lines,
+      itemsTxt: items + (items === 1 ? ' artículo' : ' artículos'),
+      totalTxt: fmt(total),
+      cobrarDisabled: total === 0,
+      cobrarLabel: total > 0 ? 'Cobrar ' + fmt(total) : 'Cobrar',
+      cobrarStyle: 'height: 84px; border-radius: 42px; border: none; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 26px; font-weight: 700; ' +
+        (total > 0 ? 'background: #1f1f1f; color: #ffffff; cursor: pointer;' : 'background: #e3e3e3; color: #5e5e5e; cursor: not-allowed;'),
+      openCobro: function () { if (total > 0) { self.setState({ modal: 'confirm', paidStr: '', mixStr: '' }); } },
+      askDiscard: function () { self.setState({ modal: 'discard' }); },
+
+      anyModal: !!st.modal,
+      mConfirm: st.modal === 'confirm', mWaiting: st.modal === 'waiting', mRejected: st.modal === 'rejected', mDone: st.modal === 'done', mDiscard: st.modal === 'discard',
+      closeModal: function () { self.setState({ modal: null }); },
+
+      tabs: [['ef', 'Efectivo', '#b45309', '#fdf3e7', '#7a3a04'], ['mp', 'Mercado Pago', '#0b57d0', '#e8f0fe', '#0842a0'], ['mix', 'Mixto', '#444746', '#ffffff', '#1f1f1f']].map(function (t) {
+        var sel = tab === t[0];
+        return {
+          label: t[1], selStr: sel ? 'true' : 'false',
+          pick: function () { self.setState({ tab: t[0] }); },
+          dot: t[0] === 'mix' ? 'width: 18px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #b45309 50%, #0b57d0 50%);' : 'width: 10px; height: 10px; border-radius: 5px; background: ' + t[2] + ';',
+          style: 'height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 700; ' +
+            (sel ? 'background: ' + t[3] + '; color: ' + t[4] + '; border: 2px solid ' + t[2] + '; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);' : 'background: transparent; color: #444746; border: 2px solid transparent;')
+        };
+      }),
+      tabEf: tab === 'ef', tabMp: tab === 'mp', tabMix: tab === 'mix',
+      paidStr: st.paidStr,
+      onPaid: function (e) { self.setState({ paidStr: e.target.value.replace(/\D/g, '') }); },
+      bills: [['justo', 'Justo'], [2000, '$2.000'], [5000, '$5.000'], [10000, '$10.000'], [20000, '$20.000']].map(function (b) {
+        var val = b[0] === 'justo' ? String(total) : String(b[0]);
+        var sel = st.paidStr === val;
+        return {
+          label: b[1], selStr: sel ? 'true' : 'false',
+          pick: function () { self.setState({ paidStr: val }); },
+          style: 'height: 52px; border-radius: 14px; font-size: 16px; font-weight: 700; ' + (sel ? 'background: #1f1f1f; color: #ffffff; border: 1px solid #1f1f1f;' : 'background: #ffffff; color: #1f1f1f; border: 1px solid #c4c7c5;')
+        };
+      }),
+      vueltoLabel: vLabel,
+      vueltoTxt: st.paidStr === '' ? '—' : fmt(Math.abs(paidN - total)),
+      vueltoBox: 'display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 20px; border-radius: 18px; ' + vBox,
+      mixStr: st.mixStr,
+      onMix: function (e) { self.setState({ mixStr: e.target.value.replace(/\D/g, '') }); },
+      mixMpTxt: fmt(Math.max(0, total - mixEf)),
+      mixInvalid: st.mixStr !== '' && !mixOk,
+      confirmDisabled: !confirmOk,
+      confirmLabel: tab === 'ef' ? 'Confirmar cobro' : 'Generar QR de ' + fmt(mpAmount),
+      confirmStyle: 'height: 60px; border-radius: 30px; border: none; font-size: 18px; font-weight: 700; ' + (confirmOk ? 'background: #1f1f1f; color: #ffffff; cursor: pointer;' : 'background: #e3e3e3; color: #5e5e5e; cursor: not-allowed;'),
+      confirmCobro: function () {
+        if (!confirmOk) { return; }
+        if (tab === 'ef') { finish('ef'); } else { self.setState({ modal: 'waiting' }); }
+      },
+
+      waitSub: tab === 'mix' ? 'pago mixto' : 'Mercado Pago',
+      mpAmountTxt: fmt(mpAmount),
+      waitHasEf: tab === 'mix',
+      mixEfTxt: fmt(mixEf),
+      qr: qr,
+      backToConfirm: function () { self.setState({ modal: 'confirm' }); },
+      toRejected: function () { self.setState({ modal: 'rejected' }); },
+      confirmMp: function () { finish(tab === 'mix' ? 'mix' : 'mp'); },
+      retryMp: function () { self.setState({ modal: 'waiting' }); },
+      switchToEf: function () { self.setState({ modal: 'confirm', tab: 'ef', paidStr: '' }); },
+
+      doneNum: d ? '#' + String(d.num).padStart(4, '0') : '',
+      doneTotal: d ? fmt(d.total) : '',
+      doneMedio: d ? medioName[d.medio] : '',
+      doneHasVuelto: !!(d && d.medio === 'ef' && d.vuelto > 0),
+      doneVuelto: d ? fmt(d.vuelto) : '',
+      donePaid: d ? fmt(d.paid) : '',
+      doneIsMix: !!(d && d.medio === 'mix'),
+      doneEf: d ? fmt(d.ef) : '', doneMp: d ? fmt(d.mp) : '',
+      doneHasLow: !!(d && d.low.length),
+      doneLowTxt: d && d.low.length ? 'Stock bajo después de esta venta: ' + d.low.join(', ') : '',
+      newSale: function () { self.setState({ modal: null, done: null, cart: [], paidStr: '', mixStr: '', tab: 'ef', num: self.state.num + 1, query: '', lastId: null }); },
+
+      doDiscard: function () { self.setState({ modal: null, cart: [], paidStr: '', mixStr: '' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

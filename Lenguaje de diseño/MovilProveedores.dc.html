@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Proveedores móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 900px; box-sizing: border-box; background: #f0f4f9; display: flex; flex-direction: column;">
+
+  <header style="position: relative; z-index: 12; display: flex; align-items: center; gap: 8px; padding: 12px 16px 4px;">
+    <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" style="{{triggerStyle}}">
+      <span style="width: 34px; height: 34px; border-radius: 10px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">LP</span>
+      <span style="font-size: 21px; font-weight: 700;">Proveedores</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </header>
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{toggleMenu}}" style="position: absolute; inset: 0; z-index: 10; background: rgba(31, 31, 31, 0.35);"></div>
+    <div style="position: absolute; top: 72px; left: 16px; z-index: 13;">
+      <dc-import name="MovilNav" current="proveedores" hint-size="358px,452px"></dc-import>
+    </div>
+  </sc-if>
+
+  <div style="padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 10px;">
+    <label style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px; border-radius: 26px; background: #ffffff; margin-bottom: 4px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#444746" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Buscar proveedor</span>
+      <input type="search" placeholder="Buscar proveedor o producto" style="flex-grow: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 16px; color: #1f1f1f;">
+    </label>
+    <sc-for list="{{suppliers}}" as="s" hint-placeholder-count="7">
+      <a href="MovilProveedor.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 0 14px; border-radius: 20px; background: #ffffff; color: #1f1f1f; text-decoration: none;">
+        <span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #e8f0fe; color: #0b57d0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700;">{{s.initials}}</span>
+        <span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 16px; font-weight: 700;">{{s.name}}</span>
+          <span style="font-size: 13px; color: #444746;">{{s.cat}} · {{s.count}} productos</span>
+        </span>
+        <sc-if value="{{s.hasLow}}" hint-placeholder-val="{{false}}">
+          <span style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 10px; background: #fef1e0; color: #7a3a04; font-size: 13px; font-weight: 700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/></svg>{{s.low}}</span>
+        </sc-if>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#747775" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0;"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menuOpen: false };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var L = [['Bebidas Patagonia', 'Bebidas', 6, 1], ['Distribuidora Andina', 'Almacén seco', 6, 0], ['Lácteos del Sur', 'Lácteos', 5, 1], ['Fiambrería Nahuel', 'Fiambres', 4, 0], ['Panadería Centro', 'Panificados', 4, 1], ['Limpieza Total', 'Limpieza', 4, 1], ['Golosinas Lago', 'Kiosco', 4, 0]];
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 50px; padding: 0 12px 0 6px; border-radius: 25px; display: flex; align-items: center; gap: 10px; color: #1f1f1f; ' + (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5;' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      suppliers: L.map(function (s) {
+        var p = s[0].split(' ');
+        return { name: s[0], cat: s[1], count: s[2], low: s[3], hasLow: s[3] > 0, initials: (p[0][0] + p[1][0]).toUpperCase() };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Historial de cierres</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1024px; box-sizing: border-box; padding: 24px 40px 28px 40px; display: flex; flex-direction: column; gap: 18px; background: #f0f4f9; font-variant-numeric: tabular-nums;">
+
+  <!-- Header with dropdown navigation -->
+  <div style="position: relative; z-index: 5; display: flex; align-items: center; gap: 16px;">
+    <div style="position: relative; flex-grow: 1; display: flex; align-items: center; gap: 16px;">
+      <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" aria-controls="nav-menu" style="{{triggerStyle}}">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">LP</span>
+        <span style="font-size: 26px; font-weight: 600; letter-spacing: -0.2px;">Historial</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+
+      <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+        <div id="nav-menu" role="menu" aria-label="Secciones" style="position: absolute; top: 68px; left: 0; width: 340px; box-sizing: border-box; background: #ffffff; border-radius: 20px; padding: 8px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 2px;">
+          <div style="padding: 10px 14px 8px; display: flex; flex-direction: column;">
+            <span style="font-size: 15px; font-weight: 700;">La Plazoleta</span>
+            <span style="font-size: 13px; color: #444746;">Punto de venta</span>
+          </div>
+          <sc-for list="{{navItems}}" as="n" hint-placeholder-count="7">
+            <a href="{{n.href}}" role="menuitem" aria-current="{{n.current}}" style="{{n.rowStyle}}">
+              <span style="{{n.iconStyle}}">{{n.letter}}</span>
+              <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="{{n.labelStyle}}">{{n.label}}</span><span style="{{n.subStyle}}">{{n.sub}}</span></span>
+            </a>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <nav aria-label="Tipo de historial" style="display: flex; gap: 4px; padding: 4px; border-radius: 26px; background: #e1e6ee;">
+      <a href="HistorialVentas.dc.html" style="height: 44px; padding: 0 22px; border-radius: 22px; color: #444746; text-decoration: none; font-size: 15px; font-weight: 700; display: flex; align-items: center;">Ventas</a>
+      <a href="HistorialCierres.dc.html" aria-current="page" style="height: 44px; padding: 0 22px; border-radius: 22px; background: #ffffff; color: #1f1f1f; text-decoration: none; font-size: 15px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);">Cierres de caja</a>
+    </nav>
+  </div>
+
+  <div style="display: flex; gap: 20px; flex-grow: 1; min-height: 0;">
+
+    <!-- List of closures -->
+    <section aria-label="Cierres" style="width: 460px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; min-height: 0;">
+      <div style="background: #ffffff; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 14px;">
+        <span style="display: flex; flex-direction: column; flex-grow: 1;">
+          <span style="font-size: 13px; font-weight: 600; color: #444746;">Últimos 10 cierres</span>
+          <span style="font-size: 18px; font-weight: 700;">{{okCount}} cuadraron · {{badCount}} con diferencia</span>
+        </span>
+        <span style="text-align: right; display: flex; flex-direction: column;">
+          <span style="font-size: 13px; font-weight: 600; color: #444746;">Diferencia neta</span>
+          <span style="font-size: 18px; font-weight: 700;">{{netDiff}}</span>
+        </span>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+        <sc-for list="{{list}}" as="c" hint-placeholder-count="10">
+          <button type="button" onClick="{{c.pick}}" aria-pressed="{{c.selStr}}" style="{{c.cardStyle}}">
+            <span style="width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+              <span style="font-size: 12px; font-weight: 700; color: #5e5e5e; text-transform: uppercase;">{{c.dow}}</span>
+              <span style="font-size: 22px; font-weight: 700; line-height: 1.1;">{{c.dayNum}}</span>
+            </span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1; text-align: left;">
+              <span style="font-size: 16px; font-weight: 700;">{{c.vendido}}</span>
+              <span style="font-size: 13px; color: #5e5e5e;">{{c.tickets}} tickets · cerró {{c.cierre}}</span>
+            </span>
+            <span style="{{c.chipStyle}}">
+              <sc-if value="{{c.ok}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></sc-if>
+              <sc-if value="{{c.bad}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/></svg></sc-if>
+              {{c.status}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Detail -->
+    <section aria-label="Detalle del cierre" style="flex-grow: 1; min-width: 0; background: #ffffff; border-radius: 24px; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box;">
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+          <h2 style="margin: 0; font-size: 26px; font-weight: 700;">Cierre del {{s.fechaLarga}}</h2>
+          <span style="font-size: 15px; color: #444746;">Abrió 8:30 · Cerró {{s.cierre}} · {{s.tickets}} tickets</span>
+        </div>
+        <span style="{{s.chipStyle}}">{{s.statusLong}}</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; flex-grow: 1; min-height: 0;">
+
+        <!-- Cash reconciliation -->
+        <div style="border: 1px solid #e3e3e3; border-radius: 20px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px;">
+          <h3 style="margin: 0 0 8px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>Efectivo en caja</h3>
+          <div style="display: flex; justify-content: space-between; height: 40px; align-items: center; font-size: 16px;"><span style="color: #444746;">Cambio inicial</span><span style="font-weight: 600;">{{s.cambio}}</span></div>
+          <div style="display: flex; justify-content: space-between; height: 40px; align-items: center; font-size: 16px;"><span style="color: #444746;">+ Ventas en efectivo</span><span style="font-weight: 600;">{{s.ventasEf}}</span></div>
+          <div style="display: flex; justify-content: space-between; height: 40px; align-items: center; font-size: 16px;"><span style="color: #444746;">− Pagos a proveedores</span><span style="font-weight: 600;">{{s.pagos}}</span></div>
+          <div style="display: flex; justify-content: space-between; height: 40px; align-items: center; font-size: 16px;"><span style="color: #444746;">− Retiros</span><span style="font-weight: 600;">{{s.retiros}}</span></div>
+          <div style="display: flex; justify-content: space-between; height: 48px; align-items: center; font-size: 17px; border-top: 2px solid #dfe3e8; margin-top: 4px;"><span style="font-weight: 700;">= Debería haber</span><span style="font-weight: 700;">{{s.esperado}}</span></div>
+          <div style="display: flex; justify-content: space-between; height: 44px; align-items: center; font-size: 17px;"><span style="font-weight: 700;">Contado al cerrar</span><span style="font-weight: 700;">{{s.contado}}</span></div>
+          <div style="flex-grow: 1;"></div>
+          <div style="{{s.diffBox}}">
+            <span style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;">
+              <sc-if value="{{s.ok}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></sc-if>
+              <sc-if value="{{s.bad}}" hint-placeholder-val="{{true}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg></sc-if>
+              Diferencia
+            </span>
+            <span style="font-size: 28px; font-weight: 700;">{{s.diff}}</span>
+          </div>
+          <sc-if value="{{s.hasNote}}" hint-placeholder-val="{{true}}">
+            <span style="font-size: 14px; color: #444746; padding: 8px 4px 0;">Nota del cierre: “{{s.note}}”</span>
+          </sc-if>
+        </div>
+
+        <!-- Right column -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: #1f1f1f; color: #ffffff; border-radius: 20px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 14px; font-weight: 600; color: #c4c7c5;">Vendido en el día</span>
+            <span style="font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">{{s.vendido}}</span>
+            <span style="font-size: 14px; color: #c4c7c5;">Ganancia <strong style="color: #6dd58c;">{{s.ganancia}}</strong></span>
+          </div>
+          <div style="background: #e8f0fe; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="display: flex; flex-direction: column;">
+              <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #0842a0;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #0b57d0;"></span>Mercado Pago</span>
+              <span style="font-size: 13px; color: #0842a0;">{{s.opsMp}} operaciones</span>
+            </span>
+            <span style="font-size: 22px; font-weight: 700;">{{s.ventasMp}}</span>
+          </div>
+          <div style="background: #f0f4f9; border-radius: 20px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px;">
+            <span style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 14px; font-weight: 600; color: #444746;">Separaciones del día</span>
+              <span style="{{s.sepChip}}">{{s.sepTxt}}</span>
+            </span>
+            <div style="height: 8px; border-radius: 4px; background: #dfe3e8; overflow: hidden;"><div style="{{s.sepBar}}"></div></div>
+            <span style="font-size: 14px; color: #444746;">Separado {{s.separado}} de {{s.aSeparar}}</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <a href="HistorialVentas.dc.html" style="height: 48px; border-radius: 24px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">Ver las ventas de ese día
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+          <button type="button" style="height: 48px; border-radius: 24px; border: none; background: #1f1f1f; color: #ffffff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir cierre</button>
+        </div>
+      </div>
+      <span style="font-size: 12px; color: #5e5e5e; text-align: right; margin-top: -8px;">Datos de ejemplo</span>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menuOpen: false, selected: 25 };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var sfmt = function (n) { return n === 0 ? '$ 0' : (n > 0 ? '+ ' : '− ') + fmt(Math.abs(n)); };
+    var DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+    var DOWL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+    // [día, vendido, % efectivo, tickets, pagos proveedores, retiros, diferencia, hora cierre, separados de 7, nota]
+    var RAW = [
+      [25, 1386400, 0.52, 131, 262000, 50000, -1200, '21:10', 7, 'Faltó cobrar una carga de SUBE, lo reviso mañana.'],
+      [24, 1212800, 0.49, 118, 188500, 0, 0, '21:05', 7, ''],
+      [23, 1154300, 0.51, 112, 140000, 30000, 500, '21:12', 6, 'Sobró cambio de un cliente que no esperó el vuelto.'],
+      [22, 1098700, 0.47, 104, 96000, 0, 0, '21:02', 7, ''],
+      [21, 1021500, 0.50, 99, 212300, 0, 0, '21:00', 7, ''],
+      [20, 642900, 0.58, 61, 0, 0, 0, '13:30', 7, ''],
+      [19, 1512600, 0.53, 149, 305400, 80000, -300, '21:20', 7, ''],
+      [18, 1342100, 0.50, 128, 174900, 0, 0, '21:08', 7, ''],
+      [17, 1188000, 0.48, 114, 121600, 0, 0, '21:04', 5, ''],
+      [16, 1101200, 0.49, 107, 98700, 0, 0, '21:01', 7, '']
+    ];
+    var CAMBIO = 20000;
+    var MARGIN = 0.29;
+    var rows = RAW.map(function (r) {
+      var date = new Date(2026, 8, r[0]);
+      var ef = Math.round(r[1] * r[2] / 100) * 100, mp = r[1] - ef;
+      var esperado = CAMBIO + ef - r[4] - r[5];
+      return {
+        day: r[0], dow: DOW[date.getDay()], dowL: DOWL[date.getDay()], vendido: r[1], ef: ef, mp: mp, tickets: r[3],
+        pagos: r[4], retiros: r[5], diff: r[6], cierre: r[7], sep: r[8], note: r[9],
+        esperado: esperado, contado: esperado + r[6], ops: Math.round(r[3] * (1 - r[2]))
+      };
+    });
+
+    var statusOf = function (d) {
+      if (d === 0) { return { ok: true, bad: false, short: 'Cuadró', long: 'Cuadró', chip: 'background: #e6f4ea; color: #0d652d;', box: 'background: #e6f4ea; color: #0d652d;' }; }
+      if (d < 0) { return { ok: false, bad: true, short: 'Faltan ' + fmt(-d), long: 'Faltante de ' + fmt(-d), chip: 'background: #fce8e6; color: #8c1d18;', box: 'background: #fce8e6; color: #8c1d18;' }; }
+      return { ok: false, bad: true, short: 'Sobran ' + fmt(d), long: 'Sobrante de ' + fmt(d), chip: 'background: #fef1e0; color: #7a3a04;', box: 'background: #fef1e0; color: #7a3a04;' };
+    };
+
+    var okCount = 0, net = 0;
+    var list = rows.map(function (r) {
+      var s = statusOf(r.diff), sel = st.selected === r.day;
+      if (r.diff === 0) { okCount++; }
+      net += r.diff;
+      return {
+        dow: r.dow, dayNum: r.day, vendido: fmt(r.vendido), tickets: r.tickets, cierre: r.cierre,
+        ok: s.ok, bad: s.bad, status: s.short, selStr: sel ? 'true' : 'false',
+        pick: function () { self.setState({ selected: r.day }); },
+        cardStyle: 'width: 100%; box-sizing: border-box; min-height: 72px; padding: 0 16px; border-radius: 18px; display: flex; align-items: center; gap: 14px; font: inherit; color: #1f1f1f; ' +
+          (sel ? 'background: #d3e3fd; border: 2px solid #0b57d0;' : 'background: #ffffff; border: 2px solid transparent;'),
+        chipStyle: 'flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; ' + s.chip
+      };
+    });
+
+    var R = rows.filter(function (r) { return r.day === st.selected; })[0] || rows[0];
+    var S = statusOf(R.diff);
+    var aSep = R.vendido * (1 - MARGIN), sepDone = aSep * R.sep / 7;
+
+    var NAV = [
+      ['Dashboard', 'Cómo viene el día', 'Dashboard.dc.html', 'D'], ['Ventas', 'Cobrar y ver tickets', 'Ventas.dc.html', 'V'], ['Caja', 'Apertura y cierre', '#', 'C'],
+      ['Separaciones', 'Qué apartar para proveedores', 'Main.dc.html', 'S'], ['Productos', 'Precios y stock', '#', 'P'],
+      ['Proveedores', 'Datos y productos', 'Proveedores.dc.html', 'P'], ['Historial', 'Ventas y cierres de caja', 'HistorialVentas.dc.html', 'H']
+    ];
+
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 56px; padding: 0 14px 0 8px; border-radius: 28px; display: flex; align-items: center; gap: 12px; color: #1f1f1f; ' +
+        (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      navItems: NAV.map(function (n) {
+        var on = n[0] === 'Historial';
+        return {
+          label: n[0], sub: n[1], href: n[2], letter: n[3], current: on ? 'page' : 'false',
+          rowStyle: 'display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; text-decoration: none; ' + (on ? 'background: #d3e3fd; color: #041e49;' : 'color: #1f1f1f;'),
+          iconStyle: 'width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; ' + (on ? 'background: #0b57d0; color: #ffffff;' : 'background: #f0f4f9; color: #444746;'),
+          labelStyle: 'font-size: 16px; font-weight: ' + (on ? '700' : '600') + ';',
+          subStyle: 'font-size: 13px; color: ' + (on ? '#0842a0' : '#5e5e5e') + ';'
+        };
+      }),
+      okCount: okCount, badCount: rows.length - okCount, netDiff: sfmt(net),
+      list: list,
+      s: {
+        fechaLarga: R.dowL + ' ' + R.day + ' de septiembre', cierre: R.cierre, tickets: R.tickets,
+        statusLong: S.long, chipStyle: 'padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 700; ' + S.chip,
+        cambio: fmt(CAMBIO), ventasEf: fmt(R.ef), pagos: fmt(R.pagos), retiros: fmt(R.retiros),
+        esperado: fmt(R.esperado), contado: fmt(R.contado), diff: sfmt(R.diff), ok: S.ok, bad: S.bad,
+        diffBox: 'display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 16px; ' + S.box,
+        hasNote: R.note !== '', note: R.note,
+        vendido: fmt(R.vendido), ganancia: fmt(R.vendido * MARGIN), ventasMp: fmt(R.mp), opsMp: R.ops,
+        separado: fmt(sepDone), aSeparar: fmt(aSep),
+        sepTxt: R.sep + ' de 7 proveedores',
+        sepChip: 'padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; ' + (R.sep === 7 ? 'background: #e6f4ea; color: #0d652d;' : 'background: #fef1e0; color: #7a3a04;'),
+        sepBar: 'height: 8px; border-radius: 4px; background: #146c2e; width: ' + (R.sep / 7 * 100).toFixed(1) + '%;'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

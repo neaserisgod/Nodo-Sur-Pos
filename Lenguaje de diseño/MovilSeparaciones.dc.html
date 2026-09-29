@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Separaciones móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1760px; box-sizing: border-box; background: #f0f4f9; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+
+  <header style="position: relative; z-index: 12; display: flex; align-items: center; gap: 8px; padding: 12px 16px 4px;">
+    <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" style="{{triggerStyle}}">
+      <span style="width: 34px; height: 34px; border-radius: 10px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">LP</span>
+      <span style="font-size: 21px; font-weight: 700;">Separaciones</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </header>
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{toggleMenu}}" style="position: absolute; inset: 0; z-index: 10; background: rgba(31, 31, 31, 0.35);"></div>
+    <div style="position: absolute; top: 72px; left: 16px; z-index: 13;">
+      <dc-import name="MovilNav" current="separaciones" hint-size="358px,452px"></dc-import>
+    </div>
+  </sc-if>
+
+  <div style="padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 14px;">
+    <!-- Period -->
+    <div role="group" aria-label="Período" style="display: flex; border: 1px solid #747775; border-radius: 22px; overflow: hidden; height: 44px; background: #ffffff;">
+      <sc-for list="{{periods}}" as="p" hint-placeholder-count="3">
+        <button type="button" onClick="{{p.pick}}" aria-pressed="{{p.sel}}" style="{{p.style}}">{{p.label}}</button>
+      </sc-for>
+    </div>
+
+    <!-- Main number -->
+    <section aria-label="Resumen" style="background: #1f1f1f; color: #ffffff; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 14px; font-weight: 600; color: #c4c7c5;">Separar para proveedores · {{periodShort}}</span>
+        <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.5px;">{{tot.separar}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+        <div style="background: #2d2e30; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #c4c7c5;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #f6a55a;"></span>De efectivo</span>
+          <span style="font-size: 20px; font-weight: 700;">{{ef.separar}}</span>
+        </div>
+        <div style="background: #2d2e30; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #c4c7c5;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #7cacf8;"></span>De Mercado Pago</span>
+          <span style="font-size: 20px; font-weight: 700;">{{mp.separar}}</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px; color: #c4c7c5; padding: 0 2px;">
+        <span>Cobrado <strong style="color: #ffffff;">{{tot.cobrado}}</strong></span>
+        <span>Te queda <strong style="color: #6dd58c;">{{tot.queda}}</strong></span>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div role="tablist" aria-label="Vista" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 26px; background: #e1e6ee;">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isSeparar}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Progress -->
+        <div style="background: #ffffff; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px; font-weight: 700; flex-grow: 1;">{{doneTxt}}</span>
+            <button type="button" onClick="{{resetAll}}" style="height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid #c4c7c5; background: #ffffff; color: #0b57d0; font-size: 13px; font-weight: 600;">Desmarcar</button>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #e9eef6; overflow: hidden;"><div style="height: 8px; border-radius: 4px; background: #146c2e; width: {{donePct}};"></div></div>
+          <div style="display: flex; gap: 16px; font-size: 14px; color: #444746;">
+            <span>Falta</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #b45309;"></span><strong style="color: #1f1f1f;">{{faltaEf}}</strong></span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #0b57d0;"></span><strong style="color: #1f1f1f;">{{faltaMp}}</strong></span>
+          </div>
+        </div>
+
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+          <div style="{{r.cardStyle}}">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="display: flex; flex-direction: column; flex-grow: 1;">
+                <span style="font-size: 16px; font-weight: 700;">{{r.name}}</span>
+                <span style="font-size: 26px; font-weight: 700; color: #041e49; letter-spacing: -0.3px;">{{r.total}}</span>
+              </span>
+              <button type="button" onClick="{{r.toggle}}" aria-pressed="{{r.doneStr}}" aria-label="{{r.checkLabel}}" style="{{r.checkStyle}}">
+                <sc-if value="{{r.done}}" hint-placeholder-val="{{false}}">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>
+                </sc-if>
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+              <div style="display: flex; flex-direction: column; padding: 8px 12px; border-radius: 12px; background: #fdf3e7;">
+                <span style="font-size: 12px; font-weight: 600; color: #7a3a04;">Efectivo</span>
+                <span style="font-size: 17px; font-weight: 700;">{{r.ef}}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; padding: 8px 12px; border-radius: 12px; background: #e8f0fe;">
+                <span style="font-size: 12px; font-weight: 600; color: #0842a0;">Mercado Pago</span>
+                <span style="font-size: 17px; font-weight: 700;">{{r.mp}}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isVendido}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{sold}}" as="s" hint-placeholder-count="7">
+          <div style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px; font-weight: 700; flex-grow: 1;">{{s.name}}</span>
+              <span style="padding: 3px 9px; border-radius: 10px; background: #e6f4ea; color: #0d652d; font-size: 13px; font-weight: 700;">{{s.margen}}</span>
+            </div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 13px; font-weight: 600; color: #444746;">Vendido</span>
+              <span style="font-size: 24px; font-weight: 700;">{{s.total}}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #444746;">
+              <span>Ef {{s.ef}}</span><span>MP {{s.mp}}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+              <div style="padding: 8px 12px; border-radius: 12px; background: #f0f4f9; display: flex; flex-direction: column;"><span style="font-size: 12px; font-weight: 600; color: #444746;">Costo</span><span style="font-size: 16px; font-weight: 700;">{{s.costo}}</span></div>
+              <div style="padding: 8px 12px; border-radius: 12px; background: #e6f4ea; display: flex; flex-direction: column;"><span style="font-size: 12px; font-weight: 600; color: #0d652d;">Ganancia</span><span style="font-size: 16px; font-weight: 700; color: #146c2e;">{{s.ganancia}}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <span style="font-size: 12px; color: #5e5e5e; text-align: center;">Datos de ejemplo</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1760}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menuOpen: false, period: 'hoy', tab: 'separar', done: { 'Bebidas Patagonia': true, 'Distribuidora Andina': true } };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var mult = st.period === 'hoy' ? 1 : (st.period === 'semana' ? 6.4 : 27);
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var pct = function (n) { return Math.round(n) + '%'; };
+    var BASE = [
+      { name: 'Bebidas Patagonia', ef: [120500, 168300], mp: [140900, 197100] },
+      { name: 'Distribuidora Andina', ef: [142300, 189500], mp: [98600, 131200] },
+      { name: 'Lácteos del Sur', ef: [88400, 112700], mp: [101200, 129000] },
+      { name: 'Fiambrería Nahuel', ef: [63100, 88400], mp: [57400, 80300] },
+      { name: 'Panadería Centro', ef: [46200, 69300], mp: [21800, 32700] },
+      { name: 'Limpieza Total', ef: [22600, 33900], mp: [38200, 57300] },
+      { name: 'Golosinas Lago', ef: [31800, 50900], mp: [14500, 23200] }
+    ];
+    var efC = 0, efT = 0, mpC = 0, mpT = 0, fEf = 0, fMp = 0, nDone = 0, rows = [], sold = [];
+    BASE.forEach(function (s) {
+      var eC = s.ef[0] * mult, eT = s.ef[1] * mult, mC = s.mp[0] * mult, mT = s.mp[1] * mult;
+      efC += eC; efT += eT; mpC += mC; mpT += mT;
+      var done = !!st.done[s.name];
+      if (done) { nDone++; } else { fEf += eC; fMp += mC; }
+      rows.push({
+        name: s.name, ef: fmt(eC), mp: fmt(mC), total: fmt(eC + mC), done: done, doneStr: done ? 'true' : 'false',
+        checkLabel: (done ? 'Desmarcar ' : 'Marcar separado ') + s.name,
+        toggle: function () { var d = Object.assign({}, self.state.done); d[s.name] = !d[s.name]; self.setState({ done: d }); },
+        cardStyle: 'background: #ffffff; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; ' + (done ? 'opacity: 0.45; box-shadow: inset 0 0 0 2px #146c2e;' : ''),
+        checkStyle: 'width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; padding: 0; ' + (done ? 'background: #146c2e; border: 2px solid #146c2e; color: #ffffff;' : 'background: #ffffff; border: 2px solid #747775; color: #ffffff;')
+      });
+      var t = eT + mT, c = eC + mC;
+      sold.push({ name: s.name, ef: fmt(eT), mp: fmt(mT), total: fmt(t), costo: fmt(c), ganancia: fmt(t - c), margen: pct((t - c) / t * 100) });
+    });
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 50px; padding: 0 12px 0 6px; border-radius: 25px; display: flex; align-items: center; gap: 10px; color: #1f1f1f; ' + (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5;' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      periodShort: st.period === 'hoy' ? 'hoy' : (st.period === 'semana' ? '7 días' : 'septiembre'),
+      periods: [['hoy', 'Hoy'], ['semana', 'Semana'], ['mes', 'Mes']].map(function (p, i) {
+        var sel = st.period === p[0];
+        return { label: p[1], sel: sel ? 'true' : 'false', pick: function () { self.setState({ period: p[0], done: {} }); },
+          style: 'flex: 1 1 0; height: 42px; border: none; font-size: 15px; font-weight: 600; ' + (i > 0 ? 'border-left: 1px solid #747775; ' : '') + (sel ? 'background: #c2e7ff; color: #001d35;' : 'background: transparent; color: #1f1f1f;') };
+      }),
+      tabs: [['separar', 'Qué separar'], ['vendido', 'Lo vendido']].map(function (t) {
+        var sel = st.tab === t[0];
+        return { label: t[1], sel: sel ? 'true' : 'false', pick: function () { self.setState({ tab: t[0] }); },
+          style: 'height: 44px; border-radius: 22px; border: none; font-size: 15px; font-weight: 700; ' + (sel ? 'background: #ffffff; color: #1f1f1f; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);' : 'background: transparent; color: #444746;') };
+      }),
+      isSeparar: st.tab === 'separar', isVendido: st.tab === 'vendido',
+      ef: { separar: fmt(efC) }, mp: { separar: fmt(mpC) },
+      tot: { cobrado: fmt(efT + mpT), separar: fmt(efC + mpC), queda: fmt(efT + mpT - efC - mpC) },
+      rows: rows, sold: sold,
+      doneTxt: nDone + ' de ' + BASE.length + ' separados',
+      donePct: (nDone / BASE.length * 100).toFixed(1) + '%',
+      faltaEf: fmt(fEf), faltaMp: fmt(fMp),
+      resetAll: function () { self.setState({ done: {} }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

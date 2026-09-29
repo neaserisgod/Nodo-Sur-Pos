@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<title>Cerrar con la caja abierta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;font-family:'Figtree',system-ui,sans-serif">
+  <dc-import name="Main" hint-size="1280px,800px"></dc-import>
+  <div style="position:absolute;left:0;top:0;width:1280px;height:800px;background:rgba(31,31,31,0.42);display:flex;align-items:center;justify-content:center">
+    <div style="width:480px;box-sizing:border-box;background:#ffffff;border-radius:28px;padding:32px;display:flex;flex-direction:column;gap:16px">
+      <div style="width:48px;height:48px;border-radius:16px;background:#fef1e0;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7a3a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 17h.01"></path><circle cx="12" cy="12" r="10"></circle></svg></div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#1f1f1f">¿Cerrar La Plazoleta?</div>
+      <div style="font-size:16px;line-height:1.5;color:#444746">La caja de hoy sigue abierta. Si cerrás el sistema ahora, no se hace el arqueo.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px">
+        <a href="Main.dc.html" style="height:52px;border-radius:999px;background:#0b57d0;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;text-decoration:none">Ir a cerrar la caja</a>
+        <a href="Main.dc.html" style="height:52px;border-radius:999px;background:#d3e3fd;color:#041e49;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;text-decoration:none">Seguir trabajando</a>
+        <a href="Main.dc.html" style="height:52px;border-radius:999px;color:#b3261e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;text-decoration:none">Cerrar igual</a>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

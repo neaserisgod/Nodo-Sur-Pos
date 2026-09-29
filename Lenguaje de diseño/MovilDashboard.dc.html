@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dashboard móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1880px; box-sizing: border-box; background: #f0f4f9; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+
+  <header style="position: relative; z-index: 12; display: flex; align-items: center; gap: 8px; padding: 12px 16px 4px;">
+    <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" style="{{triggerStyle}}">
+      <span style="width: 34px; height: 34px; border-radius: 10px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">LP</span>
+      <span style="font-size: 21px; font-weight: 700;">Dashboard</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </header>
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{toggleMenu}}" style="position: absolute; inset: 0; z-index: 10; background: rgba(31, 31, 31, 0.35);"></div>
+    <div style="position: absolute; top: 72px; left: 16px; z-index: 13;">
+      <dc-import name="MovilNav" current="dashboard" hint-size="358px,452px"></dc-import>
+    </div>
+  </sc-if>
+
+  <div style="padding: 0 16px 24px; display: flex; flex-direction: column; gap: 14px;">
+    <span style="font-size: 14px; color: #444746; padding: 0 4px;">Hoy · sáb 26 de septiembre · 16:55</span>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <div style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 14px; font-weight: 600; color: #444746;">Vendido</span>
+        <span style="font-size: 22px; font-weight: 700;">{{kVendido}}</span>
+        <span style="font-size: 13px; font-weight: 600; color: #146c2e;">▲ 8% vs. sáb.</span>
+      </div>
+      <div style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 14px; font-weight: 600; color: #444746;">Ganancia</span>
+        <span style="font-size: 22px; font-weight: 700; color: #146c2e;">{{kGanancia}}</span>
+        <span style="font-size: 13px; color: #444746;">Margen {{kMargen}}</span>
+      </div>
+      <div style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 14px; font-weight: 600; color: #444746;">Tickets</span>
+        <span style="font-size: 22px; font-weight: 700;">142</span>
+      </div>
+      <div style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 14px; font-weight: 600; color: #444746;">Ticket prom.</span>
+        <span style="font-size: 22px; font-weight: 700;">{{kTicket}}</span>
+      </div>
+    </div>
+
+    <a href="MovilSeparaciones.dc.html" style="background: #1f1f1f; color: #ffffff; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 12px; text-decoration: none;">
+      <span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 14px; font-weight: 600; color: #c4c7c5;">Falta separar · 5 de 7</span>
+        <span style="font-size: 28px; font-weight: 700;">{{kFalta}}</span>
+      </span>
+      <span style="height: 44px; padding: 0 16px; border-radius: 22px; background: #ffffff; color: #1f1f1f; font-size: 15px; font-weight: 700; display: flex; align-items: center;">Separar</span>
+    </a>
+
+    <section aria-label="Ventas por hora" style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 8px;">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700; flex-grow: 1;">Ventas por hora</h2>
+        <span style="font-size: 13px; color: #444746;">{{readLabel}}</span>
+        <span style="font-size: 17px; font-weight: 700;">{{readValue}}</span>
+      </div>
+      <div style="position: relative; height: 140px; display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid #c4c7c5;">
+        <div style="position: absolute; left: 0; right: 0; bottom: 50%; border-top: 1px dashed #e3e3e3;"></div>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <button type="button" onClick="{{b.pick}}" aria-label="{{b.title}}" style="position: relative; flex: 1 1 0; height: 100%; padding: 0; border: none; background: transparent; display: flex; align-items: flex-end; justify-content: center;">
+            <span style="{{b.barStyle}}"></span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 4px; margin-top: -6px;">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <span style="flex: 1 1 0; text-align: center; font-size: 10px; color: #5e5e5e;">{{b.hour}}</span>
+        </sc-for>
+      </div>
+      <span style="font-size: 12px; color: #5e5e5e;">Tocá una barra para ver el monto.</span>
+    </section>
+
+    <section aria-label="Cómo te pagaron" style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700;">Cómo te pagaron</h2>
+      <div style="height: 14px; border-radius: 7px; display: flex; gap: 2px; overflow: hidden;">
+        <div style="height: 14px; background: #b45309; width: {{efPct}};"></div>
+        <div style="height: 14px; background: #0b57d0; flex-grow: 1;"></div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 14px; border-radius: 14px; background: #fdf3e7;">
+        <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #7a3a04;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>Efectivo · {{efPct}}</span>
+        <span style="font-size: 18px; font-weight: 700;">{{efTotal}}</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 14px; border-radius: 14px; background: #e8f0fe;">
+        <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #0842a0;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #0b57d0;"></span>Mercado Pago · {{mpPct}}</span>
+        <span style="font-size: 18px; font-weight: 700;">{{mpTotal}}</span>
+      </div>
+      <span style="font-size: 14px; color: #444746;">En caja debería haber <strong style="color: #1f1f1f;">{{efTotal}}</strong> + el cambio inicial.</span>
+    </section>
+
+    <section aria-label="Más vendidos" style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700;">Más vendidos hoy</h2>
+      <sc-for list="{{top}}" as="t" hint-placeholder-count="5">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 15px;"><span style="font-weight: 600;">{{t.name}}</span><span style="font-weight: 700;">{{t.qty}}</span></div>
+          <div style="height: 6px; border-radius: 3px; background: #f0f4f9;"><div style="{{t.barStyle}}"></div></div>
+        </div>
+      </sc-for>
+    </section>
+
+    <section aria-label="Stock bajo" style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700; flex-grow: 1;">Stock bajo</h2>
+        <span style="padding: 4px 10px; border-radius: 10px; background: #fef1e0; color: #7a3a04; font-size: 13px; font-weight: 700;">4</span>
+      </div>
+      <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+        <div style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; border-radius: 14px; background: #f8fafd;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+          <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 600;">{{s.name}}</span><span style="font-size: 13px; color: #5e5e5e;">{{s.prov}}</span></span>
+          <span style="font-size: 14px; font-weight: 700; color: #7a3a04;">{{s.left}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <section aria-label="Reparaciones" style="background: #ffffff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700; flex-grow: 1;">Reparaciones</h2>
+        <span style="padding: 4px 10px; border-radius: 10px; background: #e6f4ea; color: #0d652d; font-size: 13px; font-weight: 700;">1 para retirar</span>
+      </div>
+      <sc-for list="{{repairs}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 0 12px; border-radius: 14px; background: #f8fafd;">
+          <span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">{{r.device}}</span><span style="font-size: 13px; color: #5e5e5e;">{{r.job}}</span></span>
+          <span style="{{r.chipStyle}}">{{r.status}}</span>
+        </div>
+      </sc-for>
+    </section>
+    <span style="font-size: 12px; color: #5e5e5e; text-align: center;">Datos de ejemplo</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1880}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menuOpen: false, sel: -1 };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var pct = function (n) { return Math.round(n) + '%'; };
+    var BASE = [
+      [120500, 168300, 140900, 197100, 1], [142300, 189500, 98600, 131200, 1], [88400, 112700, 101200, 129000, 0],
+      [63100, 88400, 57400, 80300, 0], [46200, 69300, 21800, 32700, 0], [22600, 33900, 38200, 57300, 0], [31800, 50900, 14500, 23200, 0]
+    ];
+    var efT = 0, mpT = 0, cost = 0, falta = 0;
+    BASE.forEach(function (b) { efT += b[1]; mpT += b[3]; cost += b[0] + b[2]; if (!b[4]) { falta += b[0] + b[2]; } });
+    var total = efT + mpT;
+    var HOURS = [['8', 12], ['9', 38], ['10', 62], ['11', 88], ['12', 104], ['13', 71], ['14', 22], ['15', 18], ['16', 34], ['17', 79], ['18', 121], ['19', 138], ['20', 96], ['21', 41]];
+    var sumW = 0, maxW = 0, peak = 0;
+    HOURS.forEach(function (h, i) { sumW += h[1]; if (h[1] > maxW) { maxW = h[1]; peak = i; } });
+    var shown = st.sel >= 0 ? st.sel : peak;
+    var bars = HOURS.map(function (h, i) {
+      return {
+        hour: h[0],
+        title: h[0] + ' h · ' + fmt(total * h[1] / sumW),
+        pick: function () { self.setState({ sel: i }); },
+        barStyle: 'width: 100%; border-radius: 4px 4px 0 0; height: ' + (h[1] / maxW * 100).toFixed(1) + '%; background: ' + (i === shown ? '#0b57d0' : '#a8c7fa') + ';'
+      };
+    });
+    var TOP = [['Cerveza lata 473 ml', 46], ['Gaseosa cola 2,25 L', 38], ['Leche entera 1 L', 34], ['Pan francés (kg)', 21], ['Yerba 1 kg', 17]];
+    var chip = function (k) {
+      return 'flex-shrink: 0; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; ' + (k === 'ok' ? 'background: #e6f4ea; color: #0d652d;' : (k === 'wait' ? 'background: #fef1e0; color: #7a3a04;' : 'background: #e8f0fe; color: #0842a0;'));
+    };
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 50px; padding: 0 12px 0 6px; border-radius: 25px; display: flex; align-items: center; gap: 10px; color: #1f1f1f; ' + (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5;' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      kVendido: fmt(total), kGanancia: fmt(total - cost), kMargen: pct((total - cost) / total * 100), kTicket: fmt(total / 142), kFalta: fmt(falta),
+      bars: bars,
+      readLabel: (st.sel >= 0 ? '' : 'Pico · ') + HOURS[shown][0] + ' h',
+      readValue: fmt(total * HOURS[shown][1] / sumW),
+      efTotal: fmt(efT), mpTotal: fmt(mpT), efPct: pct(efT / total * 100), mpPct: pct(mpT / total * 100),
+      top: TOP.map(function (t) { return { name: t[0], qty: t[1] + ' u.', barStyle: 'height: 6px; border-radius: 3px; background: #0b57d0; width: ' + (t[1] / 46 * 100).toFixed(1) + '%;' }; }),
+      stock: [
+        { name: 'Leche entera 1 L', prov: 'Lácteos del Sur', left: 'Quedan 3' },
+        { name: 'Pan francés', prov: 'Panadería Centro', left: 'Quedan 2 kg' },
+        { name: 'Gaseosa cola 2,25 L', prov: 'Bebidas Patagonia', left: 'Quedan 5' },
+        { name: 'Lavandina 1 L', prov: 'Limpieza Total', left: 'Quedan 4' }
+      ],
+      repairs: [
+        { device: 'Celular Samsung A32', job: 'Cambio de pantalla', status: 'Listo', chipStyle: chip('ok') },
+        { device: 'Notebook Lenovo', job: 'Limpieza y pasta térmica', status: 'En curso', chipStyle: chip('run') },
+        { device: 'Celular Moto G22', job: 'Pin de carga', status: 'Falta repuesto', chipStyle: chip('wait') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

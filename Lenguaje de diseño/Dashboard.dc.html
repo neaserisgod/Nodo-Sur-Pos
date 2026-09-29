@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dashboard POS</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1024px; box-sizing: border-box; padding: 24px 40px 28px 40px; display: flex; flex-direction: column; gap: 20px; background: #f0f4f9; font-variant-numeric: tabular-nums;">
+
+  <!-- Header with dropdown navigation -->
+  <div style="position: relative; z-index: 5; display: flex; align-items: center; gap: 16px;">
+    <div style="position: relative; flex-grow: 1; display: flex; align-items: center; gap: 16px;">
+      <button type="button" onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpenStr}}" aria-controls="nav-menu" style="{{triggerStyle}}">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;">LP</span>
+        <span style="font-size: 26px; font-weight: 600; letter-spacing: -0.2px;">Dashboard</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{chevronStyle}}"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <span style="font-size: 15px; color: #444746;">Hoy · sábado 26 de septiembre · actualizado 16:55</span>
+
+      <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+        <div id="nav-menu" role="menu" aria-label="Secciones" style="position: absolute; top: 68px; left: 0; width: 340px; box-sizing: border-box; background: #ffffff; border-radius: 20px; padding: 8px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 2px;">
+          <div style="padding: 10px 14px 8px; display: flex; flex-direction: column;">
+            <span style="font-size: 15px; font-weight: 700;">La Plazoleta</span>
+            <span style="font-size: 13px; color: #444746;">Punto de venta</span>
+          </div>
+          <a href="#" role="menuitem" aria-current="page" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; background: #d3e3fd; color: #041e49; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 700;">Dashboard</span><span style="font-size: 13px; color: #0842a0;">Cómo viene el día</span></span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>
+          </a>
+          <a href="Ventas.dc.html" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Ventas</span><span style="font-size: 13px; color: #5e5e5e;">Cobrar y ver tickets</span></span>
+          </a>
+          <a href="#" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12.5h2M3 10h18"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Caja</span><span style="font-size: 13px; color: #5e5e5e;">Apertura y cierre</span></span>
+          </a>
+          <a href="Main.dc.html" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 7h5v10H4zM15 4h5v16h-5z"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Separaciones</span><span style="font-size: 13px; color: #5e5e5e;">Qué apartar para proveedores</span></span>
+          </a>
+          <a href="#" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Productos</span><span style="font-size: 13px; color: #5e5e5e;">Precios y stock</span></span>
+          </a>
+          <a href="Proveedores.dc.html" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 10h4l4 4v2h-8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Proveedores</span><span style="font-size: 13px; color: #5e5e5e;">Datos y pedidos</span></span>
+          </a>
+          <a href="HistorialVentas.dc.html" role="menuitem" style="display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 14px; border-radius: 14px; color: #1f1f1f; text-decoration: none;">
+            <span style="width: 36px; height: 36px; border-radius: 10px; background: #f0f4f9; color: #444746; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></span>
+            <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600;">Historial</span><span style="font-size: 13px; color: #5e5e5e;">Ventas y cierres de caja</span></span>
+          </a>
+        </div>
+      </sc-if>
+    </div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 20px 0 16px; border-radius: 22px; background: #1f1f1f; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 7h5v10H4zM15 4h5v16h-5z"/></svg>Ir a separar</a>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+    <div style="background: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 15px; font-weight: 600; color: #444746;">Vendido hoy</span>
+      <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.5px;">{{kVendido}}</span>
+      <span style="font-size: 14px; color: #146c2e; font-weight: 600;">▲ 8% vs. sábado pasado</span>
+    </div>
+    <div style="background: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 15px; font-weight: 600; color: #444746;">Ganancia hoy</span>
+      <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.5px; color: #146c2e;">{{kGanancia}}</span>
+      <span style="font-size: 14px; color: #444746;">Margen {{kMargen}}</span>
+    </div>
+    <div style="background: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 15px; font-weight: 600; color: #444746;">Tickets</span>
+      <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.5px;">142</span>
+      <span style="font-size: 14px; color: #444746;">Promedio {{kTicket}}</span>
+    </div>
+    <a href="Main.dc.html" style="background: #1f1f1f; color: #ffffff; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px; text-decoration: none;">
+      <span style="font-size: 15px; font-weight: 600; color: #c4c7c5; display: flex; align-items: center; justify-content: space-between;">Falta separar<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.5px; color: #ffffff;">{{kFalta}}</span>
+      <span style="font-size: 14px; color: #c4c7c5;">5 de 7 proveedores pendientes</span>
+    </a>
+  </div>
+
+  <!-- Chart + medios -->
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+    <section aria-label="Ventas por hora" style="background: #ffffff; border-radius: 20px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 700; flex-grow: 1;">Ventas por hora</h2>
+        <span style="font-size: 14px; color: #444746;">{{readLabel}}</span>
+        <span style="font-size: 20px; font-weight: 700;">{{readValue}}</span>
+      </div>
+      <div style="position: relative; height: 200px; display: flex; align-items: flex-end; gap: 8px; border-bottom: 1px solid #c4c7c5;">
+        <div style="position: absolute; left: 0; right: 0; bottom: 50%; border-top: 1px dashed #e3e3e3;"></div>
+        <div style="position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed #e3e3e3;"></div>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <div onMouseEnter="{{b.enter}}" onMouseLeave="{{leave}}" title="{{b.title}}" style="position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center;">
+            <div style="{{b.barStyle}}"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: -8px;">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <span style="flex: 1 1 0; text-align: center; font-size: 12px; color: #5e5e5e;">{{b.hour}}</span>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-label="Efectivo y Mercado Pago" style="background: #ffffff; border-radius: 20px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700;">Cómo te pagaron</h2>
+      <div style="height: 16px; border-radius: 8px; display: flex; gap: 2px; overflow: hidden;">
+        <div style="height: 16px; background: #b45309; width: {{efPct}};"></div>
+        <div style="height: 16px; background: #0b57d0; flex-grow: 1;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 16px; border-radius: 14px; background: #fdf3e7;">
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #7a3a04;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #b45309;"></span>Efectivo · {{efPct}}</span>
+          <span style="font-size: 20px; font-weight: 700;">{{efTotal}}</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 16px; border-radius: 14px; background: #e8f0fe;">
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #0842a0;"><span style="width: 10px; height: 10px; border-radius: 5px; background: #0b57d0;"></span>Mercado Pago · {{mpPct}}</span>
+          <span style="font-size: 20px; font-weight: 700;">{{mpTotal}}</span>
+        </div>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <span style="font-size: 14px; color: #444746;">En caja debería haber <strong style="color: #1f1f1f;">{{efTotal}}</strong> en efectivo, más el cambio inicial.</span>
+    </section>
+  </div>
+
+  <!-- Bottom row -->
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; flex-grow: 1; min-height: 0;">
+
+    <section aria-label="Más vendidos" style="background: #ffffff; border-radius: 20px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700;">Más vendidos hoy</h2>
+      <sc-for list="{{top}}" as="t" hint-placeholder-count="5">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 15px;">
+            <span style="font-weight: 600;">{{t.name}}</span>
+            <span style="font-weight: 700;">{{t.qty}}</span>
+          </div>
+          <div style="height: 6px; border-radius: 3px; background: #f0f4f9;"><div style="{{t.barStyle}}"></div></div>
+        </div>
+      </sc-for>
+    </section>
+
+    <section aria-label="Stock bajo" style="background: #ffffff; border-radius: 20px; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 700; flex-grow: 1;">Stock bajo</h2>
+        <span style="padding: 4px 10px; border-radius: 10px; background: #fef1e0; color: #7a3a04; font-size: 13px; font-weight: 700;">4 productos</span>
+      </div>
+      <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+        <div style="display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px; border-radius: 14px; background: #f8fafd;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+          <span style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 600;">{{s.name}}</span><span style="font-size: 13px; color: #5e5e5e;">{{s.prov}}</span></span>
+          <span style="font-size: 14px; font-weight: 700; color: #7a3a04;">{{s.left}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <section aria-label="Reparaciones" style="background: #ffffff; border-radius: 20px; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 700; flex-grow: 1;">Reparaciones</h2>
+        <span style="padding: 4px 10px; border-radius: 10px; background: #e6f4ea; color: #0d652d; font-size: 13px; font-weight: 700;">1 para retirar</span>
+      </div>
+      <sc-for list="{{repairs}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 14px; border-radius: 14px; background: #f8fafd;">
+          <span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">{{r.device}}</span><span style="font-size: 13px; color: #5e5e5e;">{{r.job}}</span></span>
+          <span style="{{r.chipStyle}}">{{r.status}}</span>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+
+  <span style="font-size: 12px; color: #5e5e5e; text-align: right; margin-top: -8px;">Datos de ejemplo</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menuOpen: false, hover: -1 };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var pct = function (n) { return Math.round(n) + '%'; };
+
+    // Same sample data as Separaciones (costo, total)
+    var BASE = [
+      { name: 'Bebidas Patagonia', ef: [120500, 168300], mp: [140900, 197100], done: true },
+      { name: 'Distribuidora Andina', ef: [142300, 189500], mp: [98600, 131200], done: true },
+      { name: 'Lácteos del Sur', ef: [88400, 112700], mp: [101200, 129000] },
+      { name: 'Fiambrería Nahuel', ef: [63100, 88400], mp: [57400, 80300] },
+      { name: 'Panadería Centro', ef: [46200, 69300], mp: [21800, 32700] },
+      { name: 'Limpieza Total', ef: [22600, 33900], mp: [38200, 57300] },
+      { name: 'Golosinas Lago', ef: [31800, 50900], mp: [14500, 23200] }
+    ];
+    var efT = 0, mpT = 0, cost = 0, falta = 0;
+    BASE.forEach(function (s) {
+      efT += s.ef[1]; mpT += s.mp[1]; cost += s.ef[0] + s.mp[0];
+      if (!s.done) { falta += s.ef[0] + s.mp[0]; }
+    });
+    var total = efT + mpT;
+
+    var HOURS = [['8', 12], ['9', 38], ['10', 62], ['11', 88], ['12', 104], ['13', 71], ['14', 22], ['15', 18], ['16', 34], ['17', 79], ['18', 121], ['19', 138], ['20', 96], ['21', 41]];
+    var sumW = HOURS.reduce(function (a, h) { return a + h[1]; }, 0);
+    var maxW = HOURS.reduce(function (a, h) { return Math.max(a, h[1]); }, 0);
+    var peakIdx = 0;
+    HOURS.forEach(function (h, i) { if (h[1] === maxW) { peakIdx = i; } });
+    var bars = HOURS.map(function (h, i) {
+      var v = total * h[1] / sumW;
+      var on = st.hover === i || (st.hover < 0 && i === peakIdx);
+      return {
+        hour: h[0] + ' h',
+        title: h[0] + ' h · ' + fmt(v),
+        enter: function () { self.setState({ hover: i }); },
+        barStyle: 'width: 100%; max-width: 40px; border-radius: 4px 4px 0 0; height: ' + (h[1] / maxW * 100).toFixed(1) + '%; background: ' + (on ? '#0b57d0' : '#a8c7fa') + ';'
+      };
+    });
+    var shown = st.hover >= 0 ? st.hover : peakIdx;
+    var shownV = total * HOURS[shown][1] / sumW;
+
+    var TOP = [['Cerveza lata 473 ml', 46], ['Gaseosa cola 2,25 L', 38], ['Leche entera 1 L', 34], ['Pan francés (kg)', 21], ['Yerba 1 kg', 17]];
+    var topMax = TOP[0][1];
+
+    var chip = function (kind) {
+      var c = kind === 'ok' ? 'background: #e6f4ea; color: #0d652d;' : (kind === 'wait' ? 'background: #fef1e0; color: #7a3a04;' : 'background: #e8f0fe; color: #0842a0;');
+      return 'flex-shrink: 0; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; ' + c;
+    };
+
+    return {
+      menuOpen: st.menuOpen,
+      menuOpenStr: st.menuOpen ? 'true' : 'false',
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); },
+      triggerStyle: 'height: 56px; padding: 0 14px 0 8px; border-radius: 28px; display: flex; align-items: center; gap: 12px; color: #1f1f1f; ' +
+        (st.menuOpen ? 'background: #ffffff; border: 1px solid #c4c7c5; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);' : 'background: transparent; border: 1px solid transparent;'),
+      chevronStyle: 'color: #444746; transition: transform 0.15s; transform: rotate(' + (st.menuOpen ? '180deg' : '0deg') + ');',
+      kVendido: fmt(total),
+      kGanancia: fmt(total - cost),
+      kMargen: pct((total - cost) / total * 100),
+      kTicket: fmt(total / 142),
+      kFalta: fmt(falta),
+      bars: bars,
+      leave: function () { self.setState({ hover: -1 }); },
+      readLabel: (st.hover >= 0 ? '' : 'Pico · ') + HOURS[shown][0] + ' a ' + (Number(HOURS[shown][0]) + 1) + ' h',
+      readValue: fmt(shownV),
+      efTotal: fmt(efT),
+      mpTotal: fmt(mpT),
+      efPct: pct(efT / total * 100),
+      mpPct: pct(mpT / total * 100),
+      top: TOP.map(function (t) {
+        return { name: t[0], qty: t[1] + ' u.', barStyle: 'height: 6px; border-radius: 3px; background: #0b57d0; width: ' + (t[1] / topMax * 100).toFixed(1) + '%;' };
+      }),
+      stock: [
+        { name: 'Leche entera 1 L', prov: 'Lácteos del Sur', left: 'Quedan 3' },
+        { name: 'Pan francés', prov: 'Panadería Centro', left: 'Quedan 2 kg' },
+        { name: 'Gaseosa cola 2,25 L', prov: 'Bebidas Patagonia', left: 'Quedan 5' },
+        { name: 'Lavandina 1 L', prov: 'Limpieza Total', left: 'Quedan 4' }
+      ],
+      repairs: [
+        { device: 'Celular Samsung A32', job: 'Cambio de pantalla', status: 'Listo', chipStyle: chip('ok') },
+        { device: 'Notebook Lenovo', job: 'Limpieza y pasta térmica', status: 'En curso', chipStyle: chip('run') },
+        { device: 'Celular Moto G22', job: 'Pin de carga', status: 'Falta repuesto', chipStyle: chip('wait') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

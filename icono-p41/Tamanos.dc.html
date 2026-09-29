@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Prueba de tamaños P41</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f0f4f9}</style>
+</helmet>
+<div style="width: 1280px; height: 900px; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; gap: 24px; background: #f0f4f9; font-family: 'Figtree', system-ui, sans-serif; color: #1f1f1f;">
+
+  <!-- Sizes per variant -->
+  <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+    <section style="background: #ffffff; border-radius: 24px; padding: 20px 28px; display: flex; align-items: center; gap: 32px;">
+      <span style="width: 110px; font-size: 18px; font-weight: 700;">{{r.name}}</span>
+      <sc-for list="{{r.sizes}}" as="s" hint-placeholder-count="6">
+        <svg width="{{s.px}}" height="{{s.px}}" viewBox="0 0 1024 1024" role="img" aria-label="{{s.label}}">
+          <rect width="1024" height="1024" rx="230" fill="{{r.bg}}"/>
+          <text x="512" y="668" text-anchor="middle" font-family="Figtree, system-ui, sans-serif" font-size="440" letter-spacing="-12"><tspan fill="{{r.p}}" font-weight="400">P</tspan><tspan fill="{{r.n}}" font-weight="700">41</tspan></text>
+        </svg>
+      </sc-for>
+    </section>
+  </sc-for>
+
+  <!-- In the POS header -->
+  <section style="background: #ffffff; border-radius: 24px; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px;">
+    <span style="font-size: 18px; font-weight: 700;">En el POS</span>
+    <div style="display: flex; align-items: center; gap: 24px; padding: 16px 20px; border-radius: 20px; background: #f0f4f9;">
+      <span style="height: 56px; padding: 0 14px 0 8px; border-radius: 28px; display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1px solid #c4c7c5;">
+        <svg width="40" height="40" viewBox="0 0 1024 1024" aria-hidden="true">
+          <rect width="1024" height="1024" rx="230" fill="#0b57d0"/>
+          <text x="512" y="668" text-anchor="middle" font-family="Figtree, system-ui, sans-serif" font-size="440" letter-spacing="-12"><tspan fill="#a8c7fa" font-weight="400">P</tspan><tspan fill="#ffffff" font-weight="700">41</tspan></text>
+        </svg>
+        <span style="font-size: 26px; font-weight: 600;">Separaciones</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444746" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <span style="display: flex; align-items: flex-end; gap: 2px; background: #dfe3e8; border-radius: 12px 12px 0 0; padding: 8px 8px 0; align-self: flex-end;">
+        <span style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px 10px 0 0; background: #ffffff; font-size: 13px; font-weight: 600; width: 180px;">
+          <svg width="16" height="16" viewBox="0 0 1024 1024" aria-hidden="true">
+            <rect width="1024" height="1024" rx="230" fill="#0b57d0"/>
+            <text x="512" y="668" text-anchor="middle" font-family="Figtree, system-ui, sans-serif" font-size="440" letter-spacing="-12"><tspan fill="#a8c7fa" font-weight="400">P</tspan><tspan fill="#ffffff" font-weight="700">41</tspan></text>
+          </svg>
+          P41 · Separaciones
+        </span>
+      </span>
+      <svg width="88" height="88" viewBox="0 0 1024 1024" role="img" aria-label="P41 en círculo">
+        <circle cx="512" cy="512" r="512" fill="#0b57d0"/>
+        <text x="512" y="652" text-anchor="middle" font-family="Figtree, system-ui, sans-serif" font-size="400" letter-spacing="-12"><tspan fill="#a8c7fa" font-weight="400">P</tspan><tspan fill="#ffffff" font-weight="700">41</tspan></text>
+      </svg>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var sizes = [180, 120, 64, 48, 32, 16].map(function (px) { return { px: px, label: 'P41 a ' + px + ' px' }; });
+    return {
+      rows: [
+        { name: 'Azul', bg: '#0b57d0', p: '#a8c7fa', n: '#ffffff', sizes: sizes },
+        { name: 'Claro', bg: '#d3e3fd', p: '#0b57d0', n: '#041e49', sizes: sizes },
+        { name: 'Oscuro', bg: '#1f1f1f', p: '#a8c7fa', n: '#ffffff', sizes: sizes }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

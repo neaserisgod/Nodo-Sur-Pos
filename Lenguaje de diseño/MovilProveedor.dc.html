@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Proveedor móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:#f0f4f9;color:#1f1f1f}
+a{color:#0b57d0}a:hover{color:#041e49}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 1120px; box-sizing: border-box; background: #f0f4f9; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+
+  <header style="display: flex; align-items: center; gap: 4px; padding: 10px 8px 4px;">
+    <a href="MovilProveedores.dc.html" aria-label="Volver a proveedores" style="width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; color: #1f1f1f;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <span style="font-size: 17px; font-weight: 600; flex-grow: 1;">Proveedores</span>
+    <button type="button" style="height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #747775; background: #ffffff; color: #0b57d0; font-size: 15px; font-weight: 600; margin-right: 8px;">Editar</button>
+  </header>
+
+  <div style="padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="width: 52px; height: 52px; border-radius: 16px; background: #0b57d0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">LS</span>
+      <span style="display: flex; flex-direction: column;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Lácteos del Sur</h1>
+        <span style="font-size: 14px; color: #444746;">Lácteos · Visita [DÍA]</span>
+      </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+      <div style="background: #ffffff; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 12px; font-weight: 600; color: #444746;">Vendido hoy</span>
+        <span style="font-size: 16px; font-weight: 700;">$ 241.700</span>
+      </div>
+      <div style="background: #eef3fd; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 12px; font-weight: 600; color: #041e49;">A separar</span>
+        <span style="font-size: 16px; font-weight: 700; color: #041e49;">$ 189.600</span>
+      </div>
+      <div style="background: #e6f4ea; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 12px; font-weight: 600; color: #0d652d;">Ganancia</span>
+        <span style="font-size: 16px; font-weight: 700; color: #146c2e;">$ 52.100</span>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <h2 style="margin: 0 4px 0 0; font-size: 18px; font-weight: 700; flex-grow: 1;">Productos</h2>
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="2">
+        <button type="button" onClick="{{f.pick}}" aria-pressed="{{f.selStr}}" style="{{f.style}}">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{products}}" as="p" hint-placeholder-count="5">
+      <a href="MovilEditar.dc.html" aria-label="{{p.editLabel}}" style="{{p.cardStyle}}">
+        <span style="display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 16px; font-weight: 700; flex-grow: 1;">{{p.name}}</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#747775" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>
+        </span>
+        <span style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.3px; flex-grow: 1;">{{p.precio}}</span>
+          <span style="padding: 3px 9px; border-radius: 10px; background: #e6f4ea; color: #0d652d; font-size: 13px; font-weight: 700;">+{{p.margen}}</span>
+        </span>
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 13px; color: #444746; flex-grow: 1;">Costo {{p.costo}} · Hoy {{p.vendidos}} u.</span>
+          <span style="{{p.stockStyle}}">{{p.stockTxt}}</span>
+        </span>
+      </a>
+    </sc-for>
+
+    <div style="flex-grow: 1;"></div>
+    <button type="button" style="height: 56px; border-radius: 28px; border: none; background: #1f1f1f; color: #ffffff; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 12h6M9 16h4"/></svg>Armar pedido (1)</button>
+    <span style="font-size: 12px; color: #5e5e5e; text-align: center;">Datos de ejemplo</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'todos' };
+  }
+  renderVals() {
+    var self = this;
+    var fmt = function (n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+    var ITEMS = [['Leche entera 1 L', 1050, 1600, 3, 15, 34], ['Yogur bebible 1 L', 1400, 2200, 8, 6, 9], ['Dulce de leche 400 g', 1900, 2900, 11, 5, 6], ['Manteca 200 g', 1600, 2400, 7, 5, 4], ['Queso cremoso (kg)', 6800, 9900, 4, 2, 2]];
+    var list = this.state.filter === 'bajo' ? ITEMS.filter(function (i) { return i[3] < i[4]; }) : ITEMS;
+    return {
+      filters: [['todos', 'Todos'], ['bajo', 'Stock bajo (1)']].map(function (f) {
+        var sel = self.state.filter === f[0];
+        return { label: f[1], selStr: sel ? 'true' : 'false', pick: function () { self.setState({ filter: f[0] }); },
+          style: 'height: 40px; padding: 0 14px; border-radius: 10px; font-size: 14px; font-weight: 600; ' + (sel ? 'background: #d3e3fd; color: #041e49; border: 1px solid #d3e3fd;' : 'background: #ffffff; color: #444746; border: 1px solid #c4c7c5;') };
+      }),
+      products: list.map(function (it) {
+        var low = it[3] < it[4];
+        return {
+          name: it[0], costo: fmt(it[1]), precio: fmt(it[2]), margen: Math.round((it[2] - it[1]) / it[1] * 100) + '%', vendidos: it[5],
+          editLabel: 'Editar ' + it[0],
+          stockTxt: low ? 'Quedan ' + it[3] + ' · pedir' : 'Stock ' + it[3],
+          cardStyle: 'display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 20px; text-decoration: none; color: #1f1f1f; ' + (low ? 'background: #fffaf3; border: 1px solid #f6c38a;' : 'background: #ffffff; border: 1px solid transparent;'),
+          stockStyle: 'flex-shrink: 0; padding: 5px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; ' + (low ? 'background: #fef1e0; color: #7a3a04;' : 'background: #f0f4f9; color: #444746;')
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

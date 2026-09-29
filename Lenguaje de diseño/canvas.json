@@ -1,0 +1,312 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "CobroConfirmar.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "1 · Confirmar cobro (efectivo)",
+      "w": 1440,
+      "x": 0,
+      "y": 3700
+    },
+    "CobroDescartar.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Descartar venta",
+      "w": 1440,
+      "x": 7600,
+      "y": 3700
+    },
+    "CobroEsperando.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "2 · Esperando pago de Mercado Pago",
+      "w": 1440,
+      "x": 3040,
+      "y": 3700
+    },
+    "CobroListo.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "3 · Venta cobrada",
+      "w": 1440,
+      "x": 6080,
+      "y": 3700
+    },
+    "CobroMixto.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "1b · Confirmar cobro (mixto)",
+      "w": 1440,
+      "x": 1520,
+      "y": 3700
+    },
+    "CobroRechazado.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "2b · Pago no acreditado",
+      "w": 1440,
+      "x": 4560,
+      "y": 3700
+    },
+    "Dashboard.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Dashboard — desktop",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "HistorialCierres.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Historial de cierres — desktop",
+      "w": 1440,
+      "x": 6080,
+      "y": 0
+    },
+    "HistorialVentas.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Historial de ventas — desktop",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Separaciones — desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "MovilDashboard.dc.html": {
+      "h": 1880,
+      "is_interactive": true,
+      "title": "Dashboard — móvil",
+      "w": 390,
+      "x": 0,
+      "y": 1400
+    },
+    "MovilEditar.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Editar producto — móvil",
+      "w": 390,
+      "x": 1880,
+      "y": 1400
+    },
+    "MovilNav.dc.html": {
+      "h": 452,
+      "title": "Menú desplegable — móvil",
+      "w": 358,
+      "x": 2350,
+      "y": 1400
+    },
+    "MovilProveedor.dc.html": {
+      "h": 1120,
+      "is_interactive": true,
+      "title": "Proveedor — móvil",
+      "w": 390,
+      "x": 1410,
+      "y": 1400
+    },
+    "MovilProveedores.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Proveedores — móvil",
+      "w": 390,
+      "x": 940,
+      "y": 1400
+    },
+    "MovilSeparaciones.dc.html": {
+      "h": 1760,
+      "is_interactive": true,
+      "title": "Separaciones — móvil",
+      "w": 390,
+      "x": 470,
+      "y": 1400
+    },
+    "Proveedores.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Proveedores — desktop",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "Ventas.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Vender — desktop",
+      "w": 1440,
+      "x": 7600,
+      "y": 0
+    },
+    "VentasBuscando.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Vender · buscando un producto",
+      "w": 1440,
+      "x": 9120,
+      "y": 0
+    },
+    "DetalleDia.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Detalle del día — desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 5300
+    },
+    "EditorVenta.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Editor de venta — desktop",
+      "w": 1440,
+      "x": 1520,
+      "y": 5300
+    },
+    "CierreCaja.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Cierre de caja — modal",
+      "w": 1440,
+      "x": 3040,
+      "y": 5300
+    },
+    "ConteoStock.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Conteo de stock — desktop",
+      "w": 1440,
+      "x": 4560,
+      "y": 5300
+    },
+    "CargaHistorica.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Carga histórica — desktop",
+      "w": 1440,
+      "x": 6080,
+      "y": 5300
+    },
+    "ConfigImpresion.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Impresión y respaldo — desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 6500
+    },
+    "CompararPrecios.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Comparar precios — desktop",
+      "w": 1440,
+      "x": 1520,
+      "y": 6500
+    },
+    "DialogosVenta.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Diálogos de Venta",
+      "w": 1440,
+      "x": 3040,
+      "y": 6500
+    },
+    "DialogosProveedores.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Diálogos de Proveedores",
+      "w": 1440,
+      "x": 4560,
+      "y": 6500
+    },
+    "DialogosSeparaciones.dc.html": {
+      "h": 1024,
+      "is_interactive": true,
+      "title": "Diálogos de Separaciones",
+      "w": 1440,
+      "x": 6080,
+      "y": 6500
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-26T17:40:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "cobro": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Flujo de cobro",
+      "w": 240,
+      "x": 0,
+      "y": 3400
+    },
+    "desktop": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Desktop",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "movil": {
+      "kind": "title1",
+      "maxW": 2710,
+      "text": "Móvil",
+      "w": 240,
+      "x": 0,
+      "y": 1120
+    },
+    "pendientes": {
+      "kind": "title1",
+      "maxW": 7600,
+      "text": "Desktop · lo que faltaba",
+      "w": 420,
+      "x": 0,
+      "y": 5000
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Dashboard.dc.html",
+    "Proveedores.dc.html",
+    "HistorialVentas.dc.html",
+    "HistorialCierres.dc.html",
+    "Ventas.dc.html",
+    "VentasBuscando.dc.html",
+    "MovilDashboard.dc.html",
+    "MovilSeparaciones.dc.html",
+    "MovilProveedores.dc.html",
+    "MovilProveedor.dc.html",
+    "MovilEditar.dc.html",
+    "MovilNav.dc.html",
+    "CobroConfirmar.dc.html",
+    "CobroMixto.dc.html",
+    "CobroEsperando.dc.html",
+    "CobroRechazado.dc.html",
+    "CobroListo.dc.html",
+    "CobroDescartar.dc.html",
+    "DetalleDia.dc.html",
+    "EditorVenta.dc.html",
+    "CierreCaja.dc.html",
+    "ConteoStock.dc.html",
+    "CargaHistorica.dc.html",
+    "ConfigImpresion.dc.html",
+    "CompararPrecios.dc.html",
+    "DialogosVenta.dc.html",
+    "DialogosProveedores.dc.html",
+    "DialogosSeparaciones.dc.html"
+  ],
+  "pages": [],
+  "title": "POS Separaciones"
+}

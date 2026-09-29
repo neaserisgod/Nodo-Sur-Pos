@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Icono P41 claro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:transparent}</style>
+</helmet>
+<div style="width: 1024px; height: 1024px;">
+  <svg width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="P41">
+    <rect width="1024" height="1024" rx="230" fill="{{bg}}"/>
+    <text x="512" y="668" text-anchor="middle" font-family="Figtree, system-ui, sans-serif" font-size="440" letter-spacing="-12"><tspan fill="{{p}}" font-weight="400">P</tspan><tspan fill="{{n}}" font-weight="700">41</tspan></text>
+  </svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variante":{"editor":"enum","options":["azul","claro","oscuro"],"default":"claro"},"$preview":{"width":1024,"height":1024}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var V = { azul: ['#0b57d0', '#a8c7fa', '#ffffff'], claro: ['#d3e3fd', '#0b57d0', '#041e49'], oscuro: ['#1f1f1f', '#a8c7fa', '#ffffff'] };
+    var c = V[this.props.variante ?? 'claro'] || V.claro;
+    return { bg: c[0], p: c[1], n: c[2] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'companion/companion_app.dart';
+import 'data/database.dart';
+import 'data/notificador_cambios.dart';
+import 'data/sincronizacion_supabase.dart';
+import 'servicios/comparador_precios.dart';
+import 'servicios/comparador_precios_todoatucasa.dart';
+import 'servidor/servidor_companion.dart';
+import 'supabase_init.dart';
+import 'ui/dashboard/pantalla_dashboard.dart';
+import 'ui/navegacion/route_observer.dart';
+import 'ui/tema/simulador_resolucion.dart';
+import 'ui/tema/tema.dart';
+import 'ui/ventana/ventana_escritorio.dart';
+
+Future<void> main() async {
+  // Bruno, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
+  // fue una migración de base de datos que tiraba una excepción sin
+  // capturar (ver el comentario de la migración v32 en `database.dart`),
+  // pero cualquier excepción sin capturar en el arranque tiene el mismo
+  // efecto: la ventana nativa se crea igual (por eso no se veía como un
+  // crash), pero Flutter nunca llega a dibujar nada adentro. `runZonedGuarded`
+  // es la red de seguridad general — que quede un rastro en la consola en
+  // vez de una pantalla negra muda, sea cual sea la próxima causa.
+  runZonedGuarded(_main, (error, stack) {
+    debugPrint('Error sin capturar en el arranque: $error\n$stack');
+  });
+}
+
+Future<void> _main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Login (fase 1, "POS aparte", Bruno 2026-09-18) — una sola vez, para las
+  // dos plataformas: a diferencia de Firebase, el SDK de Supabase no tiene
+  // ningún bug de plataforma en Windows, así que no hace falta bifurcar
+  // esto por `Platform.isAndroid`/`isWindows` como antes.
+  //
+  // Con timeout y sin dejar que una falla tire abajo el arranque: sin
+  // conexión al arrancar, la app tiene que abrir igual — Venta no depende
+  // de esto para nada (`CLAUDE.md`, "arranque vs. operación"); la sync se
+  // retoma sola más tarde si el problema era de red.
+  try {
+    await inicializarSupabase().timeout(const Duration(seconds: 8));
+  } catch (error) {
+    debugPrint('Supabase: no se pudo inicializar al arrancar ($error)');
+  }
+
+  // Android es la companion app (2026-09-07): mismo proyecto, entrada
+  // totalmente distinta — sin base de datos propia, sin servidor, solo un
+  // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que
+  // cualquier otra cosa: ni `window_manager` (plugin de escritorio) ni
+  // `AppDatabase()` tienen sentido acá.
+  if (Platform.isAndroid) {
+    runApp(const CompanionApp());
+    return;
+  }
+
+  // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la
+  // barra de título nativa y deja que la app decida el cierre. También
+  // arranca el plugin que el simulador de resolución de debug necesita.
+  await configurarVentanaEscritorio();
+  runApp(LaPlazoletaApp(db: AppDatabase(), conVentanaPropia: true));
+}
+
+class LaPlazoletaApp extends StatefulWidget {
+  const LaPlazoletaApp({super.key, required this.db, this.conVentanaPropia = false});
+
+  final AppDatabase db;
+
+  /// Solo la app real (`main`) dibuja la barra propia: los tests de widget
+  /// pumpean esto sin plugin de ventana.
+  final bool conVentanaPropia;
+
+  @override
+  State<LaPlazoletaApp> createState() => _LaPlazoletaAppState();
+}
+
+class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
+  Timer? _tickHorario;
+  HttpServer? _servidorCompanion;
+  StreamSubscription<AuthState>? _sesionSub;
+  SincronizacionSupabase? _syncSupabase;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // El tema automático depende del reloj, no de ningún stream de la base
+    // — sin este timer, la app quedaría en el modo de la hora en que
+    // arrancó hasta el próximo cambio en `configuracion` (Regla: revisión
+    // visual fase 13). Un minuto alcanza de sobra para un corte que solo
+    // importa dos veces por día (10 y 22).
+    _tickHorario = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => setState(() {}),
+    );
+    _iniciarServidorCompanion();
+    _actualizarComparacionPrecios();
+    _actualizarComparacionPreciosTodoATuCasa();
+    _inicializarSesion();
+  }
+
+  // Login del escritorio con la misma cuenta que la companion (Bruno,
+  // 2026-09-18: "mismo login"). Supabase persiste la sesión sola (a
+  // diferencia de la sesión REST manual que hacía falta con Firebase por el
+  // bug de `firebase_auth` en Windows) — `onAuthStateChange` emite el estado
+  // actual apenas se suscribe, así que no hace falta restaurar nada a mano.
+  //
+  // El try/catch es por los tests de widget (`main_test.dart`): pumpean
+  // `LaPlazoletaApp` directo, sin pasar por `main()`, así que Supabase nunca
+  // llegó a inicializarse ahí — sin esto, `Supabase.instance` explota en
+  // pleno `initState`. En la app real `main()` siempre lo inicializa antes
+  // de `runApp`, así que acá nunca debería fallar de verdad.
+  void _inicializarSesion() {
+    try {
+      _sesionSub = Supabase.instance.client.auth.onAuthStateChange.listen(_alCambiarSesion);
+    } catch (error) {
+      debugPrint('Supabase: no se pudo suscribir a la sesión ($error)');
+    }
+  }
+
+  void _alCambiarSesion(AuthState estado) {
+    _syncSupabase?.detener();
+    _syncSupabase = estado.session == null ? null : (SincronizacionSupabase(widget.db)..iniciar());
+  }
+
+  // Comparador de precios — dos fuentes independientes (Bruno,
+  // 2026-09-14), cada una dispara sola, nunca bloquea el arranque ni un
+  // frame de la venta, silenciosa si falla (sin internet, el sitio caído,
+  // lo que sea). Cada servicio decide solo si hace falta bajar algo nuevo
+  // (nada si su propia última actualización tiene menos de 20hs) y guarda
+  // sin pisar lo de la otra fuente (`precios_referencia_externa.fuente`).
+  Future<void> _actualizarComparacionPrecios() async {
+    try {
+      await actualizarComparacionPrecios(widget.db);
+    } catch (error) {
+      debugPrint('Comparador de precios (SEPA): no se pudo actualizar ($error)');
+    }
+  }
+
+  Future<void> _actualizarComparacionPreciosTodoATuCasa() async {
+    try {
+      await actualizarComparacionPreciosTodoATuCasa(widget.db);
+    } catch (error) {
+      debugPrint('Comparador de precios (Todo a tu Casa): no se pudo actualizar ($error)');
+    }
+  }
+
+  // Companion app Android (spike 2026-09-07): arranca en segundo plano, sin
+  // bloquear el arranque de la app (CLAUDE.md, "prioridad arranque vs.
+  // operación" — esto no es parte de la venta, no puede demorarla ni un
+  // frame). Si el puerto ya está ocupado (dos instancias de la app, u otro
+  // programa usándolo) o falla por cualquier otro motivo, la app de
+  // escritorio sigue andando igual — la companion queda inalcanzable, pero
+  // eso nunca puede tirar abajo la caja.
+  Future<void> _iniciarServidorCompanion() async {
+    // Antes que el servidor: `/companion/eventos` y las pantallas escuchan
+    // este aviso para la sync instantánea por wifi (2026-09-28).
+    notificadorCambios ??= NotificadorCambios(widget.db);
+    try {
+      _servidorCompanion = await iniciarServidorCompanion(widget.db);
+    } catch (error) {
+      debugPrint('Companion: no se pudo levantar el servidor local ($error)');
+    }
+  }
+
+  @override
+  void dispose() {
+    _tickHorario?.cancel();
+    _servidorCompanion?.close(force: true);
+    _sesionSub?.cancel();
+    _syncSupabase?.detener();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Reactivo a `configuracion.temaOscuro`/`temaAutomatico`: cambiar el
+    // switch en Configuración aplica el modo sin reiniciar la app.
+    return StreamBuilder<Configuracion>(
+      stream: widget.db.select(widget.db.configuracionTabla).watchSingle(),
+      builder: (context, snapshot) {
+        final automatico = snapshot.data?.temaAutomatico ?? true;
+        final oscuro = automatico
+            ? oscuroPorHorarioDelLocal(DateTime.now())
+            : (snapshot.data?.temaOscuro ?? true);
+        return MaterialApp(
+          title: 'La Plazoleta',
+          debugShowCheckedModeBanner: false,
+          theme: TemaPlazoleta.claro,
+          darkTheme: TemaPlazoleta.oscuro,
+          themeMode: oscuro ? ThemeMode.dark : ThemeMode.light,
+          navigatorKey: _navigatorKey,
+          navigatorObservers: [routeObserver],
+          builder: (context, child) {
+            final app = SimuladorResolucion(child: child!);
+            if (!widget.conVentanaPropia) return app;
+            return MarcoVentana(db: widget.db, navigatorKey: _navigatorKey, child: app);
+          },
+          // Dashboard es la raíz de la app (Bruno, 2026-09-14: "es la
+          // pantalla principal, totalmente aparte") — Venta pasa a ser una
+          // sección fija más, alcanzable con un clic desde acá (o desde
+          // cualquier otra pantalla, `navegacion_gestion.dart`). Antes
+          // Venta era la raíz porque resolvía sola los tres estados
+          // posibles al arrancar (sin sesión, sesión de un día anterior sin
+          // cerrar, sesión normal) sin bloquear el resto de la app (Bruno,
+          // 2026-09-06: "que no salga obligatoriamente al abrir" — sigue
+          // igual, `VentaControlador.sesionVencida` sigue bloqueando solo
+          // la venta cuando corresponde, no la app entera).
+          home: PantallaDashboard(db: widget.db),
+        );
+      },
+    );
+  }
+}
