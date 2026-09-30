@@ -4,13 +4,13 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import '../data/database.dart';
+import '../domain/respaldo.dart';
 import 'cuenta_nube.dart';
 
 /// Lo que se ve de un intento de subir.
@@ -75,16 +75,6 @@ Future<CopiaArmada> armarCopia(AppDatabase db, {required Directory carpetaTempor
   } finally {
     if (await crudo.exists()) await crudo.delete();
   }
-}
-
-/// `user_version` de un archivo SQLite, leído de su cabecera (bytes 60–63). Null si no es una base SQLite.
-int? versionDeEsquemaDeArchivo(List<int> bytes) {
-  const magia = 'SQLite format 3\u0000';
-  if (bytes.length < 100) return null;
-  for (var i = 0; i < magia.length; i++) {
-    if (bytes[i] != magia.codeUnitAt(i)) return null;
-  }
-  return ByteData.sublistView(Uint8List.fromList(bytes.sublist(60, 64))).getUint32(0);
 }
 
 class ErrorRestauracion implements Exception {

@@ -27,6 +27,22 @@ void main() {
     });
   });
 
+  group('importar una base', () {
+    testWidgets('se ofrece en la pantalla de respaldo', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: ContenidoRespaldo(db: db, usuarioId: 1))));
+      await tester.pumpAndSettle();
+      expect(find.text('Importar una base'), findsOneWidget);
+      final boton = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Importar desde un archivo…'));
+      expect(boton.onPressed, isNotNull);
+    });
+  });
+
   group('mostrarDialogoConfirmarRestaurar — con datos y funciones inyectadas, sin tocar disco', () {
     final archivoFalso = ArchivoRespaldo(
       ruta: 'no-se-usa-porque-se-cancela',

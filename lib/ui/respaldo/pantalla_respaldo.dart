@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/database.dart';
+import '../../data/repositorio_respaldo.dart' show ArchivoRespaldo;
 import '../comun/botones.dart';
 import '../comun/estado_vacio.dart';
 import '../comun/tarjetas.dart';
@@ -46,6 +47,25 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
   Future<void> _elegirCarpeta() async {
     final ruta = await getDirectoryPath();
     if (ruta != null) await _c.elegirCarpeta(ruta);
+  }
+
+  Future<void> _importar() async {
+    final elegido = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Base de datos', extensions: ['sqlite', 'db', 'gz']),
+      ],
+    );
+    if (elegido == null) return;
+    final lista = await _c.prepararImportacionDeArchivo(elegido.path);
+    if (lista == null || !mounted) return;
+    final fecha = await elegido.lastModified();
+    if (!mounted) return;
+    await mostrarDialogoConfirmarRestaurar(
+      context,
+      db: widget.db,
+      archivo: ArchivoRespaldo(ruta: lista.ruta, nombre: elegido.name, fecha: fecha, tamanioBytes: lista.tamanioBytes),
+      fechaFormateada: _formatearFecha(fecha),
+    );
   }
 
   // "Lenguaje de diseño" (mock `ConfigImpresion` → Respaldo): el estado
@@ -114,6 +134,29 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
                           Text(
                             'Se respalda solo al cerrar la caja de cada día. Las copias más viejas se borran.',
                             style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: Espaciado.md),
+                    TarjetaSeccion(
+                      titulo: 'Importar una base',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Si solo te quedó el archivo de la base (la PC se rompió, o la pasás a otra), elegilo acá: reemplaza TODOS los datos '
+                            'actuales y la app se reinicia. Si es de una versión anterior, se actualiza sola al abrirla. '
+                            'Sirve el archivo .sqlite o la copia comprimida (.gz) que baja de tu cuenta.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: Espaciado.md),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: BotonSecundario(
+                              texto: 'Importar desde un archivo…',
+                              onPressed: c.hayCajaAbierta ? null : _importar,
+                            ),
                           ),
                         ],
                       ),

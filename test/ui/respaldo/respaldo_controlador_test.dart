@@ -26,6 +26,13 @@ void main() {
     await carpeta.delete(recursive: true);
   });
 
+  /// Un respaldo real de la base de prueba, como archivo .sqlite suelto.
+  Future<String> hacerRespaldoDeTest() async {
+    final destino = '${carpeta.path}/una_base.sqlite';
+    await db.customStatement('VACUUM INTO ?', [destino]);
+    return destino;
+  }
+
   test('cargarTodo trae carpeta, cantidad de copias, respaldos existentes y si hay caja abierta', () async {
     await configurarCarpetaRespaldo(db, carpeta.path);
 
@@ -81,4 +88,24 @@ void main() {
 
     expect(c.error, isNotNull);
   });
+
+  group('importar una base desde un archivo', () {
+    test('un .sqlite bueno queda listo; uno malo deja el motivo en error y no devuelve nada', () async {
+      final copia = await hacerRespaldoDeTest();
+      final c = RespaldoControlador(db, carpetaTemporal: Directory('${carpeta.path}/listas'));
+
+      final buena = await c.prepararImportacionDeArchivo(copia);
+      expect(buena, isNotNull);
+      expect(c.error, isNull);
+
+      final mala = File('${carpeta.path}/foto.png')..writeAsBytesSync(List.filled(300, 7));
+      expect(await c.prepararImportacionDeArchivo(mala.path), isNull);
+      expect(c.error, contains('no es una base'));
+
+      // Un intento bueno después limpia el error.
+      expect(await c.prepararImportacionDeArchivo(copia), isNotNull);
+      expect(c.error, isNull);
+    });
+  });
 }
+
