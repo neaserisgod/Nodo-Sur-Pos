@@ -12,6 +12,7 @@ import '../../data/repositorio_usuarios.dart';
 import '../../servidor/servidor_companion.dart';
 
 enum SeccionConfiguracion {
+  comercio,
   cigarrillos,
   cajaYRedondeo,
   vuelto,
@@ -148,6 +149,12 @@ class ConfiguracionControlador extends ChangeNotifier {
 
   Future<void> guardarFondoFijo(int monto) async {
     await configurarFondoFijo(db, monto);
+    await cargarTodo();
+  }
+
+  Future<void> guardarDatosComercio({required String nombre, required String encabezadoTicket}) async {
+    await configurarNombreComercio(db, nombre);
+    await configurarEncabezadoTicket(db, encabezadoTicket);
     await cargarTodo();
   }
 

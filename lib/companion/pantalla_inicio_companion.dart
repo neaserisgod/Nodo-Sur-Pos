@@ -28,6 +28,8 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import '../domain/marca.dart';
+import '../servicios/marca_actual.dart';
 
 class PantallaInicioCompanion extends StatelessWidget {
   const PantallaInicioCompanion({
@@ -196,7 +198,10 @@ class PantallaInicioCompanion extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(nombreUsuario == null ? 'La Plazoleta' : 'Hola, $nombreUsuario', style: Theme.of(context).textTheme.headlineMedium),
+            child: ValueListenableBuilder<MarcaNegocio>(
+              valueListenable: marcaActual,
+              builder: (context, marca, _) => Text(nombreUsuario == null ? marca.nombre : 'Hola, $nombreUsuario', style: Theme.of(context).textTheme.headlineMedium),
+            ),
           ),
           // Arqueo opcional (Bruno, 2026-09-28): la campanita está siempre
           // que haya caja abierta, para contar cuando se quiera; a las 2hs

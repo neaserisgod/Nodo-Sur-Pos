@@ -10,6 +10,8 @@ import '../ui/tema/tokens.dart';
 import 'autenticacion.dart';
 import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
+import '../domain/marca.dart';
+import '../servicios/marca_actual.dart';
 
 class PantallaLogin extends StatefulWidget {
   const PantallaLogin({
@@ -125,10 +127,13 @@ class _PantallaLoginState extends State<PantallaLogin> {
                 children: [
                   Icon(IconosPlazoleta.storefrontRounded, size: 56, color: colores.acento),
                   const SizedBox(height: EspacioCompanion.md),
-                  Text(
-                    'La Plazoleta',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  ValueListenableBuilder<MarcaNegocio>(
+                    valueListenable: marcaActual,
+                    builder: (context, marca, _) => Text(
+                      marca.nombre,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                   ),
                   const SizedBox(height: EspacioCompanion.xs),
                   Text(

@@ -28,6 +28,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../domain/marca.dart';
 
 // Cliente OAuth "escritorio" de Google. No se versionan: se pasan al compilar
 // (`flutter build windows --dart-define=GOOGLE_OAUTH_CLIENT_ID=... --dart-define=GOOGLE_OAUTH_CLIENT_SECRET=...`).
@@ -80,7 +81,7 @@ Future<void> iniciarSesionConGoogleDesdeEscritorio({
     }
     return Response.ok(
       '<html><body style="font-family: sans-serif; text-align: center; padding-top: 80px;">'
-      '<h2>Listo — ya podés cerrar esta pestaña y volver a La Plazoleta.</h2>'
+      '<h2>Listo — ya podés cerrar esta pestaña y volver a $nombreProducto.</h2>'
       '</body></html>',
       headers: {'content-type': 'text/html; charset=utf-8'},
     );

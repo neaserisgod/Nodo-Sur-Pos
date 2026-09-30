@@ -22,6 +22,8 @@ import 'ui/tema/simulador_resolucion.dart';
 import 'ui/tema/tema.dart';
 import 'ui/venta/venta_en_curso.dart';
 import 'ui/ventana/ventana_escritorio.dart';
+import 'domain/marca.dart';
+import 'servicios/marca_actual.dart';
 
 Future<void> main() async {
   // Bruno, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
@@ -89,6 +91,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   HttpServer? _servidorCompanion;
   StreamSubscription<AuthState>? _sesionSub;
   SincronizacionSupabase? _syncSupabase;
+  StreamSubscription<MarcaNegocio>? _marcaSub;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -103,6 +106,8 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       const Duration(minutes: 1),
       (_) => setState(() {}),
     );
+    // El nombre del comercio que se ve en la ventana, el menú y el ticket sigue a la configuración.
+    _marcaSub = seguirMarca(widget.db);
     _iniciarServidorCompanion();
     _actualizarComparacionPrecios();
     _actualizarComparacionPreciosTodoATuCasa();
@@ -194,6 +199,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   @override
   void dispose() {
     _tickHorario?.cancel();
+    _marcaSub?.cancel();
     _servidorCompanion?.close(force: true);
     _sesionSub?.cancel();
     _syncSupabase?.detener();
@@ -212,7 +218,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
             ? oscuroPorHorarioDelLocal(DateTime.now())
             : (snapshot.data?.temaOscuro ?? true);
         return MaterialApp(
-          title: 'La Plazoleta',
+          onGenerateTitle: (_) => marcaActual.value.nombre,
           debugShowCheckedModeBanner: false,
           theme: TemaPlazoleta.claro,
           darkTheme: TemaPlazoleta.oscuro,

@@ -74,7 +74,17 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `test/helpers/base_para_tests.dart` (`baseDeTest()`); los que prueban una base
   nueva usan `AppDatabase(NativeDatabase.memory())` directo. Suite: 1289 tests
   verdes + 4 que no compilan por `test/capturas/`; `schemaVersion` sigue en 44.
-- **Fases que siguen**: 3 marca visible; 4 desacoplar el proveedor `'SC'`;
+- **Fase 3 (marca visible) — hecha**: la ventana, el menú, el login, el celular,
+  el PDF y el encabezado del ticket toman el nombre de `configuracion_negocio`
+  (`domain/marca.dart`, `servicios/marca_actual.dart`); sin nombre cargado
+  muestran "Nodo Sur POS". La dirección del local ya no está escrita en el
+  código. Nuevo: Configuración → "Mi comercio" (nombre + encabezado multilínea
+  con vista previa) y un aviso de primer arranque (`ui/comun/dialogo_datos_comercio.dart`,
+  "Más tarde" lo pospone hasta la próxima apertura). **Falta en la PC de origen**:
+  cargar nombre y dirección una vez. El celular muestra "Nodo Sur POS" hasta que
+  el companion reciba la marca por sync. Suite: 1315 verdes + 4 que no compilan por
+  `test/capturas/`. Sin migración.
+- **Fases que siguen**: 4 desacoplar el proveedor `'SC'`;
   5 módulos activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 

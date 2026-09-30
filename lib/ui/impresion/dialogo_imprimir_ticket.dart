@@ -10,8 +10,8 @@ import '../../data/database.dart';
 import '../../data/impresion_posnet.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
-import '../../domain/ticket.dart';
 import '../tema/tokens.dart';
+import '../../servicios/marca_actual.dart';
 
 Future<void> mostrarDialogoImprimirTicket(
   BuildContext context, {
@@ -75,7 +75,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
           accessToken: config.mpAccessToken!,
           terminalId: config.mpTerminalId!,
           ticket: ticket,
-          encabezadoNegocio: encabezadoTicketLaPlazoleta,
+          encabezadoNegocio: (await marcaDeBase(widget.db)).encabezadoTicketEfectivo,
         );
         return 'Enviado a la terminal';
       });
@@ -96,7 +96,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
           widget.db,
           ventaId: widget.ventaId,
           carpetaDestino: carpeta,
-          encabezadoNegocio: encabezadoTicketLaPlazoleta,
+          encabezadoNegocio: (await marcaDeBase(widget.db)).encabezadoTicketEfectivo,
         );
         return 'Guardado en $ruta';
       });

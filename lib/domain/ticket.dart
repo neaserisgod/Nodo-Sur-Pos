@@ -3,12 +3,6 @@
 
 import 'dinero.dart';
 
-/// Encabezado fijo del ticket (CLAUDE.md: "fijo en el código", no
-/// configurable). Un solo lugar para el nombre, dirección y ciudad del
-/// negocio — lo usan tanto el ticket del posnet como el PDF local.
-const String encabezadoTicketLaPlazoleta =
-    'La Plazoleta\nFrancisco de Biedma 179 - Km 8\nBariloche';
-
 /// Una línea del ticket. `cantidad` queda en 1 para pesables (una línea = un
 /// lote pesado) y `gramos` es no nulo solo en ese caso.
 class LineaTicket {

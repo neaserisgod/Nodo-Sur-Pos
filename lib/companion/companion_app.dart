@@ -17,6 +17,7 @@ import 'pantalla_elegir_usuario.dart';
 import 'pantalla_login.dart';
 import 'pantalla_menu_companion.dart';
 import 'tema/tema_companion.dart';
+import '../servicios/marca_actual.dart';
 
 class CompanionApp extends StatelessWidget {
   const CompanionApp({super.key});
@@ -24,7 +25,7 @@ class CompanionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'La Plazoleta — Companion',
+      onGenerateTitle: (_) => '${marcaActual.value.nombre} — Companion',
       debugShowCheckedModeBanner: false,
       theme: TemaCompanion.claro,
       darkTheme: TemaCompanion.oscuro,

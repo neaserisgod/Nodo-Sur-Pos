@@ -10,6 +10,7 @@ import '../../data/impresion_posnet.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
 import '../../domain/ticket.dart';
+import '../../servicios/marca_actual.dart';
 
 class ImpresionControlador extends ChangeNotifier {
   ImpresionControlador(this.db, {this.httpClientDePrueba});
@@ -112,7 +113,7 @@ class ImpresionControlador extends ChangeNotifier {
       db,
       ventaId: ventaId,
       carpetaDestino: carpeta,
-      encabezadoNegocio: encabezadoTicketLaPlazoleta,
+      encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
     );
     return 'Guardado en $ruta';
   });
@@ -125,7 +126,7 @@ class ImpresionControlador extends ChangeNotifier {
       accessToken: mpAccessToken!,
       terminalId: mpTerminalId!,
       ticket: ticket,
-      encabezadoNegocio: encabezadoTicketLaPlazoleta,
+      encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
       client: httpClientDePrueba,
     );
   }

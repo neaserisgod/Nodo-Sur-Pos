@@ -40,10 +40,16 @@ class CampoTexto extends StatelessWidget {
     this.keyboardType,
     this.pista,
     this.sobreElFondo = false,
+    this.maxLines = 1,
+    this.minLines,
   });
 
   final TextEditingController controller;
   final String? etiqueta;
+
+  /// Más de una línea (ej. el encabezado del ticket: una línea por renglón). Por defecto, una sola.
+  final int maxLines;
+  final int? minLines;
 
   /// Texto gris adentro del campo vacío ("Buscar N° de venta o producto").
   final String? pista;
@@ -83,7 +89,9 @@ class CampoTexto extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
         obscureText: obscureText,
-        keyboardType: keyboardType,
+        keyboardType: keyboardType ?? (maxLines == 1 ? null : TextInputType.multiline),
+        maxLines: obscureText ? 1 : maxLines,
+        minLines: obscureText ? null : minLines,
         decoration: InputDecoration(
           fillColor: sobreElFondo ? context.colores.fondoBloque : context.colores.fondo,
           hintText: pista,

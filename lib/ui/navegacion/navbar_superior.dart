@@ -17,6 +17,8 @@ import 'package:flutter/services.dart';
 import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import '../tema/iconos.dart';
+import '../../domain/marca.dart';
+import '../../servicios/marca_actual.dart';
 
 class ItemNavbarSuperior {
   const ItemNavbarSuperior({required this.clave, required this.etiqueta});
@@ -313,7 +315,10 @@ class _MenuDesplegado extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('La Plazoleta', style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                ValueListenableBuilder<MarcaNegocio>(
+                  valueListenable: marcaActual,
+                  builder: (context, marca, _) => Text(marca.nombre, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                ),
                 Text('Punto de venta', style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario)),
               ],
             ),

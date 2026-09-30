@@ -17,6 +17,8 @@ import '../tema/superficie.dart';
 import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'impresion_controlador.dart';
+import '../../domain/marca.dart';
+import '../../servicios/marca_actual.dart';
 
 class ContenidoImpresion extends StatefulWidget {
   const ContenidoImpresion({super.key, required this.db, required this.usuarioId});
@@ -360,12 +362,20 @@ class _AsiSale extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final l in encabezadoTicketLaPlazoleta.split('\n'))
-                    Text(
-                      l,
-                      textAlign: TextAlign.center,
-                      style: textTheme.titleSmall?.copyWith(fontWeight: Pesos.fuerte),
+                  ValueListenableBuilder<MarcaNegocio>(
+                    valueListenable: marcaActual,
+                    builder: (context, marca, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final l in marca.encabezadoTicketEfectivo.split('\n'))
+                          Text(
+                            l,
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleSmall?.copyWith(fontWeight: Pesos.fuerte),
+                          ),
+                      ],
                     ),
+                  ),
                   const SizedBox(height: Espaciado.xs),
                   Text(
                     '${dos(t.fecha.day)}/${dos(t.fecha.month)}/${t.fecha.year} ${dos(t.fecha.hour)}:${dos(t.fecha.minute)}',
