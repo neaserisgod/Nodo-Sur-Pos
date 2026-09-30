@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/ui/impresion/impresion_controlador.dart';
 import '../../helpers/base_para_tests.dart';
 
@@ -127,7 +128,20 @@ void main() {
     await c.reimprimirEnPosnet(ventaId);
 
     expect(c.mensaje, contains('Enviado'));
-    expect(capturada!.body, contains('La Plazoleta'));
+    // Sin encabezado cargado, el ticket lleva el nombre del comercio (el que trae el fixture).
+    expect(capturada!.body, contains('Comercio de prueba'));
+
+    await configurarEncabezadoTicket(db, 'Kiosco Del Centro\nSan Martín 123');
+    await c.reimprimirEnPosnet(ventaId);
+    expect(capturada!.body, contains('Kiosco Del Centro'));
+    expect(capturada!.body, contains('San Martín 123'));
+    expect(capturada!.body, isNot(contains('Comercio de prueba')));
+
+    // Comercio sin cargar: sale el nombre del producto, nunca un espacio en blanco ni el nombre de otro.
+    await configurarEncabezadoTicket(db, '');
+    await configurarNombreComercio(db, '');
+    await c.reimprimirEnPosnet(ventaId);
+    expect(capturada!.body, contains('Nodo Sur POS'));
   });
 
   test(

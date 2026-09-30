@@ -1255,3 +1255,18 @@ Decididas con el dueño antes de empezar (fase 1):
   personales salen con la limpieza final (fase 9).
 - **Bases existentes**: no cambian. La fase no agrega migración.
 
+### Fase 3: marca visible (2026-09-30)
+
+- **Un solo origen del nombre.** `MarcaNegocio` (nombre + encabezado del ticket)
+  se lee de `configuracion_negocio`; `marcaActual` (un `ValueNotifier`, como
+  `notificadorCambios`) la reparte a la UI, y `marcaDeBase` la da a quien no
+  tiene UI (PDF, servidor, login). Sin nombre → "Nodo Sur POS"; sin encabezado
+  → el nombre. El ticket nunca sale sin encabezado ni con datos de otro local.
+- **Rutas y archivos de la tienda de origen no cambian** (base `la_plazoleta`,
+  respaldos, APK, `applicationId`): renombrarlos dejaría a las instalaciones
+  existentes sin actualizar ni emparejar.
+- **Aviso de primer arranque, no bloqueante.** Se ofrece una vez por apertura
+  mientras no haya nombre; "Más tarde" no guarda nada. Si no se escribe
+  encabezado, se guarda el nombre como encabezado.
+- **Celular**: hasta que reciba la marca por sync muestra el nombre del producto
+  (pendiente con el asistente de la fase 7).

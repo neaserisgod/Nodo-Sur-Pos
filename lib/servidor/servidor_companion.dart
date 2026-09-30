@@ -76,9 +76,9 @@ import '../domain/descuento.dart';
 import '../domain/edicion_masiva_precios.dart';
 import '../domain/edicion_masiva_stock.dart';
 import '../domain/medio_pago.dart';
-import '../domain/ticket.dart';
 import '../domain/venta.dart';
 import '../domain/venta_json.dart';
+import '../servicios/marca_actual.dart';
 
 /// Dónde vive el .apk que se ofrece para actualizar la companion app — al
 /// lado de la base real (misma carpeta `Documents`, `driftDatabase`), NO
@@ -1314,7 +1314,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         accessToken: config.mpAccessToken!,
         terminalId: config.mpTerminalId!,
         ticket: ticket,
-        encabezadoNegocio: encabezadoTicketLaPlazoleta,
+        encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
         client: httpClientDePrueba,
       );
       return _json({'ok': true});

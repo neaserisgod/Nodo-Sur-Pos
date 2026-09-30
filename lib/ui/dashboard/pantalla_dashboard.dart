@@ -35,6 +35,8 @@ import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
+import '../../servicios/marca_actual.dart';
+import '../comun/dialogo_datos_comercio.dart';
 
 enum _Vista { hoy, mes }
 
@@ -63,10 +65,22 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
   /// controlador lee la base una vez al montarse).
   int _version = 0;
 
+  /// El aviso de "Datos de tu comercio" se ofrece una vez por apertura de la app.
+  bool _preguntoComercio = false;
+
   @override
   void initState() {
     super.initState();
     _cargarTodo();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _pedirDatosDelComercio());
+  }
+
+  Future<void> _pedirDatosDelComercio() async {
+    if (_preguntoComercio) return;
+    _preguntoComercio = true;
+    final marca = await marcaDeBase(widget.db);
+    if (marca.configurada || !mounted) return;
+    await mostrarDialogoDatosComercio(context, widget.db);
   }
 
   @override

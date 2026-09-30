@@ -22,6 +22,8 @@ import '../cierre/pantalla_cierre.dart';
 import '../comun/modal.dart';
 import '../tema/acentos.dart';
 import '../tema/tokens.dart';
+import '../../domain/marca.dart';
+import '../../servicios/marca_actual.dart';
 
 const double _alturaBarra = 40;
 const double _anchoBoton = 46;
@@ -33,7 +35,7 @@ Future<void> configurarVentanaEscritorio() async {
   const opciones = WindowOptions(
     titleBarStyle: TitleBarStyle.hidden,
     windowButtonVisibility: false,
-    title: 'La Plazoleta',
+    title: nombreProducto,
   );
   await windowManager.waitUntilReadyToShow(opciones, () async {
     await windowManager.show();
@@ -72,6 +74,8 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
   void initState() {
     super.initState();
     windowManager.addListener(this);
+    marcaActual.addListener(_poneTituloDeVentana);
+    _poneTituloDeVentana();
     windowManager.isMaximized().then((v) {
       if (mounted) setState(() => _maximizada = v);
     });
@@ -83,8 +87,14 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
     );
   }
 
+  // El título de la ventana (barra de tareas, Alt+Tab) acompaña al nombre del comercio.
+  void _poneTituloDeVentana() {
+    windowManager.setTitle(marcaActual.value.nombre).catchError((_) {});
+  }
+
   @override
   void dispose() {
+    marcaActual.removeListener(_poneTituloDeVentana);
     windowManager.removeListener(this);
     _tickRespaldo?.cancel();
     super.dispose();
@@ -294,12 +304,15 @@ class _BarraVentana extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          'La Plazoleta',
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontSize: 14,
-                            fontWeight: Pesos.medium,
-                            color: colorTitulo,
+                        ValueListenableBuilder<MarcaNegocio>(
+                          valueListenable: marcaActual,
+                          builder: (context, marca, _) => Text(
+                            marca.nombre,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontSize: 14,
+                              fontWeight: Pesos.medium,
+                              color: colorTitulo,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -624,7 +637,7 @@ class _DialogoCerrarConCajaAbierta extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                '¿Cerrar La Plazoleta?',
+                '¿Cerrar ${marcaActual.value.nombre}?',
                 style: textTheme.headlineSmall?.copyWith(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,

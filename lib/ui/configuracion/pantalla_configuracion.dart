@@ -22,6 +22,7 @@ import '../tema/tokens.dart';
 import '../navegacion/busqueda_contextual.dart';
 import 'configuracion_controlador.dart';
 import '../tema/iconos.dart';
+import '../../domain/marca.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
   const PantallaConfiguracion({
@@ -142,6 +143,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 
   Widget _contenido(ConfiguracionControlador c) {
     switch (c.seccionActual) {
+      case SeccionConfiguracion.comercio:
+        return _SeccionComercio(c: c);
       case SeccionConfiguracion.cigarrillos:
         return _SeccionRecargoCigarrillos(c: c);
       case SeccionConfiguracion.cajaYRedondeo:
@@ -174,6 +177,7 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 
 /// Lo que alguien escribiría buscando esa sección sin saber cómo se llama.
 String _palabrasClave(SeccionConfiguracion s) => switch (s) {
+  SeccionConfiguracion.comercio => 'nombre negocio comercio ticket encabezado direccion datos',
   SeccionConfiguracion.cigarrillos => 'atado suelto lata serra recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
   SeccionConfiguracion.vuelto => 'caramelo vuelto producto alt c',
@@ -190,6 +194,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
 };
 
 String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
+  SeccionConfiguracion.comercio => 'Mi comercio',
   SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
   SeccionConfiguracion.vuelto => 'Botón de vuelto',
@@ -204,6 +209,88 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cuentaGoogle => 'Cuenta de Google',
   SeccionConfiguracion.actualizaciones => 'Versión y actualizaciones',
 };
+
+class _SeccionComercio extends StatefulWidget {
+  const _SeccionComercio({required this.c});
+  final ConfiguracionControlador c;
+
+  @override
+  State<_SeccionComercio> createState() => _SeccionComercioState();
+}
+
+class _SeccionComercioState extends State<_SeccionComercio> {
+  late final TextEditingController _nombreCtrl;
+  late final TextEditingController _encabezadoCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final config = widget.c.configuracionNegocio;
+    _nombreCtrl = TextEditingController(text: config?.nombreComercio ?? '');
+    _encabezadoCtrl = TextEditingController(text: config?.encabezadoTicket ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    _encabezadoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() => widget.c.guardarDatosComercio(nombre: _nombreCtrl.text, encabezadoTicket: _encabezadoCtrl.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Mi comercio', style: textTheme.titleMedium),
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            'El nombre se ve en la ventana, el menú y el celular. El encabezado es lo que sale arriba de cada ticket, una línea por renglón (nombre, dirección, ciudad…); si lo dejás vacío, el ticket lleva solo el nombre.',
+            style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          CampoTexto(key: const Key('campo_nombre_comercio'), controller: _nombreCtrl, etiqueta: 'Nombre del comercio'),
+          const SizedBox(height: Espaciado.md),
+          CampoTexto(
+            key: const Key('campo_encabezado_ticket'),
+            controller: _encabezadoCtrl,
+            etiqueta: 'Encabezado del ticket',
+            pista: 'Mi comercio\nCalle 123\nCiudad',
+            maxLines: 5,
+            minLines: 3,
+          ),
+          const SizedBox(height: Espaciado.lg),
+          Text('Así sale en el ticket', style: textTheme.labelMedium?.copyWith(color: context.colores.textoSecundario)),
+          const SizedBox(height: Espaciado.xs),
+          AnimatedBuilder(
+            animation: Listenable.merge([_nombreCtrl, _encabezadoCtrl]),
+            builder: (context, _) {
+              final marca = MarcaNegocio(nombreComercio: _nombreCtrl.text, encabezadoTicket: _encabezadoCtrl.text);
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(Espaciado.md),
+                decoration: BoxDecoration(color: context.colores.fondo, borderRadius: BorderRadius.circular(radioControlEscritorio)),
+                child: Column(
+                  children: [
+                    for (final linea in marca.encabezadoTicketEfectivo.split('\n'))
+                      Text(linea, textAlign: TextAlign.center, style: textTheme.titleSmall?.copyWith(fontWeight: Pesos.fuerte)),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: Espaciado.lg),
+          Align(alignment: Alignment.centerLeft, child: BotonPrimario(texto: 'Guardar', onPressed: _guardar)),
+        ],
+      ),
+    );
+  }
+}
 
 class _SeccionRecargoCigarrillos extends StatefulWidget {
   const _SeccionRecargoCigarrillos({required this.c});
