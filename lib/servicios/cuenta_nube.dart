@@ -1,0 +1,359 @@
+// La cuenta de Nodo Sur vinculada a esta PC y el cliente de su API (horsepos.com): vincular, avisar que la PC
+// está viva, subir y bajar copias de la base. Nada de esto toca la base del comercio: el token vive en un archivo
+// aparte (si vivía en la base, restaurar una copia lo pisaría), y cualquier falla es un error tipado que la
+// pantalla muestra sin romper la caja. Vender nunca depende de esto.
+
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as h;
+import 'package:path/path.dart' as p;
+
+import '../domain/vinculacion.dart';
+
+/// Lo que guarda la PC después de vincularse.
+class CuentaVinculada {
+  const CuentaVinculada({
+    required this.token,
+    required this.email,
+    required this.idDispositivo,
+    required this.nombreDispositivo,
+    required this.vence,
+  });
+
+  /// Token de dispositivo (1 año, se renueva solo con cada aviso).
+  final String token;
+  final String email;
+  final String idDispositivo;
+  final String nombreDispositivo;
+
+  /// Segundos desde la época, como lo informa el servidor.
+  final int vence;
+
+  CuentaVinculada conToken(String nuevo, {int? vence}) => CuentaVinculada(
+    token: nuevo,
+    email: email,
+    idDispositivo: idDispositivo,
+    nombreDispositivo: nombreDispositivo,
+    vence: vence ?? this.vence,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'token': token,
+    'email': email,
+    'idDispositivo': idDispositivo,
+    'nombreDispositivo': nombreDispositivo,
+    'vence': vence,
+  };
+
+  static CuentaVinculada? desdeJson(Object? j) {
+    if (j is! Map) return null;
+    final token = j['token'], email = j['email'], id = j['idDispositivo'];
+    if (token is! String || email is! String || id is! String) return null;
+    return CuentaVinculada(
+      token: token,
+      email: email,
+      idDispositivo: id,
+      nombreDispositivo: j['nombreDispositivo'] is String ? j['nombreDispositivo'] as String : 'Mi PC',
+      vence: j['vence'] is int ? j['vence'] as int : 0,
+    );
+  }
+}
+
+abstract class AlmacenCuenta {
+  Future<CuentaVinculada?> leer();
+  Future<void> guardar(CuentaVinculada cuenta);
+  Future<void> borrar();
+}
+
+class AlmacenCuentaEnMemoria implements AlmacenCuenta {
+  CuentaVinculada? _cuenta;
+  @override
+  Future<CuentaVinculada?> leer() async => _cuenta;
+  @override
+  Future<void> guardar(CuentaVinculada cuenta) async => _cuenta = cuenta;
+  @override
+  Future<void> borrar() async => _cuenta = null;
+}
+
+/// Un archivo JSON en la carpeta de datos de la app. Un archivo roto o ausente es "sin vincular", nunca un error.
+class AlmacenCuentaEnArchivo implements AlmacenCuenta {
+  AlmacenCuentaEnArchivo(this.carpeta);
+  final String carpeta;
+
+  File get _archivo => File(p.join(carpeta, 'nodosur_cuenta.json'));
+
+  @override
+  Future<CuentaVinculada?> leer() async {
+    try {
+      if (!await _archivo.exists()) return null;
+      return CuentaVinculada.desdeJson(jsonDecode(await _archivo.readAsString()));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> guardar(CuentaVinculada cuenta) async {
+    await Directory(carpeta).create(recursive: true);
+    // Se escribe a un temporal y se renombra: un corte a mitad de camino no deja el token a medias.
+    final temporal = File('${_archivo.path}.tmp');
+    await temporal.writeAsString(jsonEncode(cuenta.toJson()), flush: true);
+    await temporal.rename(_archivo.path);
+  }
+
+  @override
+  Future<void> borrar() async {
+    try {
+      if (await _archivo.exists()) await _archivo.delete();
+    } catch (_) {}
+  }
+}
+
+/// Una falla del servicio, con un texto que se puede mostrar tal cual.
+class ErrorNube implements Exception {
+  const ErrorNube(this.codigo, this.mensaje, {this.estado});
+
+  /// Código del servidor (`no_upload`, `hash_mismatch`…) o uno propio (`sin_red`, `vinculacion_cancelada`).
+  final String codigo;
+  final String mensaje;
+  final int? estado;
+
+  /// La sesión del dispositivo ya no vale (se desvinculó desde el sitio o venció): hay que volver a vincular.
+  bool get pideVincularDeNuevo => estado == 401;
+
+  @override
+  String toString() => mensaje;
+}
+
+String _mensajeDe(String codigo) => switch (codigo) {
+  'no_device' || 'no_session' => 'Esta PC ya no está vinculada a la cuenta. Volvé a vincularla.',
+  'no_upload' => 'Tu suscripción no está activa: por ahora solo podés restaurar copias, no guardar nuevas.',
+  'no_restore' => 'No hay copias disponibles para restaurar con esta cuenta.',
+  'backups_no_configurados' => 'El servicio de copias todavía no está listo. Probá más tarde.',
+  'mp_error' => 'No se pudo comprobar la suscripción en este momento. Probá más tarde.',
+  'too_large' => 'La base es demasiado grande para subirla.',
+  'hash_mismatch' => 'La copia se dañó en el camino. Probá de nuevo.',
+  'not_found' => 'Esa copia ya no existe.',
+  'corrupt' => 'Esa copia no se pudo recuperar del servidor.',
+  _ => 'El servicio respondió con un error ($codigo).',
+};
+
+class CopiaEnNube {
+  const CopiaEnNube({
+    required this.id,
+    required this.creada,
+    required this.tamanio,
+    required this.sha256,
+    required this.schemaVersion,
+    required this.appVersion,
+    required this.nombreDispositivo,
+  });
+
+  final int id;
+  final DateTime creada;
+  final int tamanio;
+  final String sha256;
+  final int? schemaVersion;
+  final String? appVersion;
+  final String? nombreDispositivo;
+
+  static CopiaEnNube desdeJson(Map<String, dynamic> j) => CopiaEnNube(
+    id: (j['id'] as num).toInt(),
+    creada: DateTime.fromMillisecondsSinceEpoch((j['createdAt'] as num).toInt() * 1000),
+    tamanio: (j['size'] as num?)?.toInt() ?? 0,
+    sha256: (j['sha256'] as String?) ?? '',
+    schemaVersion: (j['schemaVersion'] as num?)?.toInt(),
+    appVersion: j['appVersion'] as String?,
+    nombreDispositivo: j['deviceName'] as String?,
+  );
+}
+
+class EstadoCopias {
+  const EstadoCopias({required this.puedeSubir, required this.puedeRestaurar, required this.maximo, required this.copias});
+  final bool puedeSubir;
+  final bool puedeRestaurar;
+  final int maximo;
+  final List<CopiaEnNube> copias;
+}
+
+class RespuestaAviso {
+  const RespuestaAviso({required this.canal, this.tokenNuevo});
+
+  /// 'beta' para el administrador (recibe las versiones de prueba antes), 'stable' para el resto.
+  final String canal;
+
+  /// Si al token le quedaban menos de 60 días, el servidor manda uno nuevo.
+  final String? tokenNuevo;
+}
+
+class ClienteNube {
+  ClienteNube({required this.http, this.host = hostNodoSur, this.esquema = 'https', this.puerto});
+
+  final h.Client http;
+  final String host;
+  final String esquema;
+  final int? puerto;
+
+  static const _limite = Duration(seconds: 30);
+
+  Uri _uri(String ruta, [Map<String, String>? consulta]) =>
+      Uri(scheme: esquema, host: host, port: puerto, path: ruta, queryParameters: consulta);
+
+  Map<String, String> _auth(String token, [Map<String, String> extra = const {}]) => {'Authorization': 'Bearer $token', ...extra};
+
+  Never _falla(int estado, String cuerpo) {
+    var codigo = 'http_$estado';
+    try {
+      final j = jsonDecode(cuerpo);
+      if (j is Map && j['error'] is String) codigo = j['error'] as String;
+    } catch (_) {}
+    throw ErrorNube(codigo, _mensajeDe(codigo), estado: estado);
+  }
+
+  Future<T> _conRed<T>(Future<T> Function() f) async {
+    try {
+      return await f().timeout(const Duration(minutes: 3));
+    } on ErrorNube {
+      rethrow;
+    } on TimeoutException {
+      throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
+    } on SocketException {
+      throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
+    } on h.ClientException {
+      throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
+    }
+  }
+
+  /// Paso final de la vinculación: cambia el código de un solo uso por el token del dispositivo.
+  Future<CuentaVinculada> canjear({required String code, required String verificador, required String nombre}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/device/token'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code, 'verifier': verificador}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) {
+      if (r.statusCode == 400) throw ErrorNube('invalid_code', 'La vinculación no se pudo completar. Volvé a intentarla.', estado: 400);
+      _falla(r.statusCode, r.body);
+    }
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return CuentaVinculada(
+      token: j['token'] as String,
+      email: j['email'] as String,
+      idDispositivo: j['deviceId'] as String,
+      nombreDispositivo: nombre,
+      vence: (j['expiresAt'] as num?)?.toInt() ?? 0,
+    );
+  });
+
+  Future<RespuestaAviso> avisar(String token, {required String cid, required String version, required String sistema}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/device/ping'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'cid': cid, 'version': version, 'os': sistema}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return RespuestaAviso(canal: (j['channel'] as String?) ?? 'stable', tokenNuevo: j['token'] as String?);
+  });
+
+  Future<EstadoCopias> estado(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/backups'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return EstadoCopias(
+      puedeSubir: j['upload'] == true,
+      puedeRestaurar: j['restore'] == true,
+      maximo: (j['max'] as num?)?.toInt() ?? 5,
+      copias: [for (final c in (j['backups'] as List? ?? const [])) CopiaEnNube.desdeJson(c as Map<String, dynamic>)],
+    );
+  });
+
+  /// Sube una copia ya comprimida. [sha256] es el hex de [bytes].
+  Future<({int id, int guardadas})> subir(
+    String token, {
+    required List<int> bytes,
+    required String sha256,
+    required int schemaVersion,
+    required String appVersion,
+  }) => _conRed(() async {
+    final r = await http.put(
+      _uri('/api/backup'),
+      headers: _auth(token, {
+        'Content-Type': 'application/octet-stream',
+        'X-Sha256': sha256,
+        'X-Schema-Version': '$schemaVersion',
+        'X-App-Version': appVersion,
+      }),
+      body: bytes,
+    ).timeout(const Duration(minutes: 2));
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (id: (j['id'] as num).toInt(), guardadas: (j['guardadas'] as num?)?.toInt() ?? 0);
+  });
+
+  /// Baja una copia propia. Devuelve los bytes y el hash que informó el servidor.
+  Future<({List<int> bytes, String sha256, int? schemaVersion})> bajar(String token, int id) => _conRed(() async {
+    final r = await http.get(_uri('/api/backup', {'id': '$id'}), headers: _auth(token)).timeout(const Duration(minutes: 2));
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (
+      bytes: r.bodyBytes,
+      sha256: r.headers['x-sha256'] ?? '',
+      schemaVersion: int.tryParse(r.headers['x-schema-version'] ?? ''),
+    );
+  });
+}
+
+/// Abre la página de vinculación, espera el aviso en el servidor local y canjea el código. Devuelve la cuenta ya
+/// guardada. [abrirNavegador] y [cliente] se inyectan para probarlo sin navegador ni red.
+Future<CuentaVinculada> vincularEstaPc({
+  required ClienteNube cliente,
+  required AlmacenCuenta almacen,
+  required String idDispositivo,
+  required String nombre,
+  required Future<void> Function(Uri) abrirNavegador,
+  Duration espera = const Duration(minutes: 5),
+  String host = hostNodoSur,
+}) async {
+  final verificador = generarVerificador();
+  final state = generarState();
+  final servidor = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  final codigo = Completer<String>();
+  final escucha = servidor.listen((pedido) async {
+    final code = codigoDeCallback(pedido.uri, stateEsperado: state);
+    pedido.response.headers.contentType = ContentType.html;
+    if (code == null) {
+      pedido.response.statusCode = 400;
+      pedido.response.write('<!doctype html><meta charset="utf-8"><p>Este enlace no es de esta vinculación.</p>');
+    } else {
+      pedido.response.write(
+        '<!doctype html><meta charset="utf-8"><title>Nodo Sur POS</title>'
+        '<body style="font-family:sans-serif;text-align:center;margin-top:15vh">'
+        '<h2>Listo, tu PC quedó vinculada</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
+      );
+      if (!codigo.isCompleted) codigo.complete(code);
+    }
+    await pedido.response.close();
+  });
+  try {
+    await abrirNavegador(urlVincular(
+      puerto: servidor.port,
+      state: state,
+      desafio: desafioDe(verificador),
+      idDispositivo: idDispositivo,
+      nombre: nombre,
+      host: host,
+    ));
+    final code = await codigo.future.timeout(
+      espera,
+      onTimeout: () => throw const ErrorNube('vinculacion_cancelada', 'No se completó la vinculación a tiempo. Volvé a intentarlo.'),
+    );
+    final cuenta = await cliente.canjear(code: code, verificador: verificador, nombre: nombre);
+    await almacen.guardar(cuenta);
+    return cuenta;
+  } finally {
+    await escucha.cancel();
+    await servidor.close(force: true);
+  }
+}

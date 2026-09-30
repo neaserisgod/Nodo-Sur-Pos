@@ -13,6 +13,7 @@ import '../../servidor/servidor_companion.dart';
 
 enum SeccionConfiguracion {
   comercio,
+  cuentaNube,
   modulos,
   cigarrillos,
   cajaYRedondeo,

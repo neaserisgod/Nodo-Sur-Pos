@@ -146,6 +146,18 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `pagosAProveedorDesdeLataCentavos`). Quedan nombres internos con "Plazoleta"
   a propósito. Suite: 1330 verdes + 4 que no compilan por `test/capturas/`.
 - **La generalización del POS está completa** (fases 6 y 7 descartadas).
+- **Nube, parte A (app) — hecha**: Configuración → "Cuenta de Nodo Sur". Vincular la
+  PC a la cuenta de Google del sitio (navegador + servidor local 127.0.0.1 + PKCE,
+  `servicios/cuenta_nube.dart`, `domain/vinculacion.dart`), guardar una copia de la
+  base (VACUUM INTO → gzip → hash → `PUT /api/backup`), listar y **restaurar** copias
+  de la cuenta (baja, verifica hash y versión de esquema, y reusa la confirmación y el
+  reinicio del respaldo local), y desvincular. Las copias salen solas al cerrar caja
+  (en segundo plano, una falla no afecta el cierre) y una vez por día mientras la app
+  esté abierta; al arrancar la PC avisa al servidor (versión, sistema, id) y renueva su
+  token; una cuenta de administrador recibe las versiones beta antes. El token vive en
+  `nodosur_cuenta.json` (carpeta de datos de la app), fuera de la base: restaurar no
+  lo pisa. Suite: 1375 verdes + 4 que no compilan por `test/capturas/`.
+  Falta: probar contra el servidor real con una cuenta (ver PR).
 
 ---
 

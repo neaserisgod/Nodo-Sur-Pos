@@ -25,16 +25,22 @@ import '../tema/iconos.dart';
 import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
+import '../../servicios/nube.dart';
+import 'seccion_cuenta_nube.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
   const PantallaConfiguracion({
     super.key,
     required this.db,
     required this.usuarioId,
+    this.nube,
   });
 
   final AppDatabase db;
   final int usuarioId;
+
+  /// Null = la cuenta global de la app real; los tests pasan la suya.
+  final NubeApp? nube;
 
   @override
   State<PantallaConfiguracion> createState() => _PantallaConfiguracionState();
@@ -159,6 +165,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
     switch (c.seccionActual) {
       case SeccionConfiguracion.comercio:
         return _SeccionComercio(c: c);
+      case SeccionConfiguracion.cuentaNube:
+        return SeccionCuentaNube(db: widget.db, nube: widget.nube);
       case SeccionConfiguracion.modulos:
         return _SeccionModulos(c: c);
       case SeccionConfiguracion.cigarrillos:
@@ -192,6 +200,7 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 /// Lo que alguien escribiría buscando esa sección sin saber cómo se llama.
 String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.comercio => 'nombre negocio comercio ticket encabezado direccion datos',
+  SeccionConfiguracion.cuentaNube => 'cuenta nodo sur nube copias respaldo google vincular restaurar beta',
   SeccionConfiguracion.modulos => 'modulos funciones activar desactivar apagar promos fiado pesables turnos',
   SeccionConfiguracion.cigarrillos => 'atado suelto lata cigarrillos recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
@@ -209,6 +218,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
 
 String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.comercio => 'Mi comercio',
+  SeccionConfiguracion.cuentaNube => 'Cuenta de Nodo Sur',
   SeccionConfiguracion.modulos => 'Módulos',
   SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
