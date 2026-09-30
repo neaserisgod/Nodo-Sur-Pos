@@ -32,7 +32,6 @@ import '../data/repositorio_productos.dart' as repo_productos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
 import '../data/repositorio_ventas.dart' as repo_ventas;
-import '../data/transporte_supabase.dart' show leerConfigCobro;
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, clasificarEstadoOrden;
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/descuento.dart' show TipoDescuento;
@@ -994,25 +993,15 @@ class PuertoLocal implements ServicioCompanion {
     );
   }
 
-  /// Credenciales de cobro por terminal Point — a diferencia de todo lo
-  /// demás acá, no salen de `db` (la companion nunca sincronizó
-  /// `configuracion_tabla`, y esto es un token de pago, no un dato de
-  /// catálogo): salen de Supabase (`leerConfigCobro`,
-  /// `transporte_supabase.dart`), la misma fila que el escritorio
-  /// mantiene actualizada. Tira el mismo mensaje que el escritorio si
-  /// todavía no hay nada configurado o sincronizado.
+  /// El cobro con la terminal Point necesita el access token de Mercado Pago, que vive en la PC (no se
+  /// sincroniza al celular: es un token de pago, no un dato de catálogo). Sin la PC al alcance no hay de
+  /// dónde sacarlo: se avisa en vez de intentar.
   Future<({String accessToken, String terminalId})> _credencialesCobro() async {
-    final config = await leerConfigCobro();
-    final accessToken = config?.mpAccessToken;
-    final terminalId = config?.mpTerminalCobroId;
-    if (accessToken == null || terminalId == null) {
-      throw const ErrorCompanion(
-        400,
-        'Configurá el access token y la terminal de cobro en Configuración → '
-        'Impresión (en la PC) antes de cobrar por acá.',
-      );
-    }
-    return (accessToken: accessToken, terminalId: terminalId);
+    throw const ErrorCompanion(
+      400,
+      'El cobro con la terminal Point se hace conectado a la PC del local. '
+      'Conectate al wifi del local o cobrá a mano.',
+    );
   }
 
   /// Mismo criterio que `POST /ventas/posnet/iniciar` del servidor — la

@@ -3,19 +3,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'companion/companion_app.dart';
 import 'data/database.dart';
 import 'data/notificador_cambios.dart';
-import 'data/sincronizacion_supabase.dart';
 import 'domain/actualizacion.dart';
 import 'servicios/comparador_precios.dart';
 import 'servicios/actualizaciones.dart';
 import 'servicios/actualizador_nativo.dart';
 import 'servicios/comparador_precios_todoatucasa.dart';
 import 'servidor/servidor_companion.dart';
-import 'supabase_init.dart';
 import 'ui/dashboard/pantalla_dashboard.dart';
 import 'ui/navegacion/route_observer.dart';
 import 'ui/tema/simulador_resolucion.dart';
@@ -44,21 +41,6 @@ Future<void> main() async {
 
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Login (fase 1, "POS aparte", Bruno 2026-09-18) — una sola vez, para las
-  // dos plataformas: a diferencia de Firebase, el SDK de Supabase no tiene
-  // ningún bug de plataforma en Windows, así que no hace falta bifurcar
-  // esto por `Platform.isAndroid`/`isWindows` como antes.
-  //
-  // Con timeout y sin dejar que una falla tire abajo el arranque: sin
-  // conexión al arrancar, la app tiene que abrir igual — Venta no depende
-  // de esto para nada (`CLAUDE.md`, "arranque vs. operación"); la sync se
-  // retoma sola más tarde si el problema era de red.
-  try {
-    await inicializarSupabase().timeout(const Duration(seconds: 8));
-  } catch (error) {
-    debugPrint('Supabase: no se pudo inicializar al arrancar ($error)');
-  }
-
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
   // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que
@@ -92,8 +74,6 @@ class LaPlazoletaApp extends StatefulWidget {
 class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   Timer? _tickHorario;
   HttpServer? _servidorCompanion;
-  StreamSubscription<AuthState>? _sesionSub;
-  SincronizacionSupabase? _syncSupabase;
   StreamSubscription<MarcaNegocio>? _marcaSub;
   StreamSubscription<ModulosNegocio>? _modulosSub;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
@@ -117,7 +97,6 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     _iniciarServidorCompanion();
     _actualizarComparacionPrecios();
     _actualizarComparacionPreciosTodoATuCasa();
-    _inicializarSesion();
     _iniciarActualizaciones();
   }
 
@@ -136,30 +115,6 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       ventaAbierta: hayVentaEnCurso,
       abrirInstalador: abrirActualizadorNativo,
     )..iniciar();
-  }
-
-  // Login del escritorio con la misma cuenta que la companion (Bruno,
-  // 2026-09-18: "mismo login"). Supabase persiste la sesión sola (a
-  // diferencia de la sesión REST manual que hacía falta con Firebase por el
-  // bug de `firebase_auth` en Windows) — `onAuthStateChange` emite el estado
-  // actual apenas se suscribe, así que no hace falta restaurar nada a mano.
-  //
-  // El try/catch es por los tests de widget (`main_test.dart`): pumpean
-  // `LaPlazoletaApp` directo, sin pasar por `main()`, así que Supabase nunca
-  // llegó a inicializarse ahí — sin esto, `Supabase.instance` explota en
-  // pleno `initState`. En la app real `main()` siempre lo inicializa antes
-  // de `runApp`, así que acá nunca debería fallar de verdad.
-  void _inicializarSesion() {
-    try {
-      _sesionSub = Supabase.instance.client.auth.onAuthStateChange.listen(_alCambiarSesion);
-    } catch (error) {
-      debugPrint('Supabase: no se pudo suscribir a la sesión ($error)');
-    }
-  }
-
-  void _alCambiarSesion(AuthState estado) {
-    _syncSupabase?.detener();
-    _syncSupabase = estado.session == null ? null : (SincronizacionSupabase(widget.db)..iniciar());
   }
 
   // Comparador de precios — dos fuentes independientes (Bruno,
@@ -212,8 +167,6 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     _marcaSub?.cancel();
     _modulosSub?.cancel();
     _servidorCompanion?.close(force: true);
-    _sesionSub?.cancel();
-    _syncSupabase?.detener();
     super.dispose();
   }
 
