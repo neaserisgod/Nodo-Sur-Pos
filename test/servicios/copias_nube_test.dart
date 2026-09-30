@@ -63,6 +63,32 @@ void main() {
       expect((await otra.select(otra.usuarios).get()).single.nombre, 'Dueño');
     });
 
+    test('la copia de la nube no lleva el token de Mercado Pago ni el del celular, ni rastros en el archivo', () async {
+      await db.customStatement("UPDATE configuracion_tabla SET mp_access_token = 'APP_USR-secreto-mp-123456', mp_terminal_cobro_id = 'TERM-1', companion_token = 'tokencelularsecreto0123456789abcd'");
+      final copia = await armarCopia(db, carpetaTemporal: tmp);
+      final crudo = gzip.decode(copia.bytes);
+      final texto = String.fromCharCodes(crudo);
+      expect(texto.contains('APP_USR-secreto-mp-123456'), isFalse);
+      expect(texto.contains('tokencelularsecreto0123456789abcd'), isFalse);
+      // Lo demás de la configuración sí viaja.
+      final archivo = File('${tmp.path}/sin_secretos.sqlite')..writeAsBytesSync(crudo);
+      final otra = AppDatabase(NativeDatabase(archivo));
+      addTearDown(otra.close);
+      final cfg = await otra.select(otra.configuracionTabla).getSingle();
+      expect(cfg.mpAccessToken, isNull);
+      expect(cfg.companionToken, isNull);
+      expect(cfg.mpTerminalCobroId, 'TERM-1');
+      // La base en uso no se toca.
+      final propia = await db.select(db.configuracionTabla).getSingle();
+      expect(propia.mpAccessToken, 'APP_USR-secreto-mp-123456');
+    });
+
+    test('con sinSecretos: false (un respaldo propio) el token se conserva', () async {
+      await db.customStatement("UPDATE configuracion_tabla SET mp_access_token = 'APP_USR-secreto-mp-123456'");
+      final copia = await armarCopia(db, carpetaTemporal: tmp, sinSecretos: false);
+      expect(String.fromCharCodes(gzip.decode(copia.bytes)).contains('APP_USR-secreto-mp-123456'), isTrue);
+    });
+
     test('la versión de esquema de algo que no es SQLite es null', () {
       expect(versionDeEsquemaDeArchivo(List.filled(200, 7)), isNull);
       expect(versionDeEsquemaDeArchivo([1, 2, 3]), isNull);

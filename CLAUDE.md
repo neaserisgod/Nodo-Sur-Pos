@@ -172,7 +172,7 @@ no código a copiar**. Sirve consultar únicamente:
 o Prisma. Ese diseño no aplica acá y solo contamina las decisiones.
 
 Del modelo de datos anterior **se descarta**: `Organization`, `User` con contraseñas,
-multi-tenant, suscripciones, AFIP, webhooks de Mercado Pago, `OrdenMpPendiente`,
+multi-tenant en un servidor compartido, suscripciones dentro de la app, AFIP, webhooks de Mercado Pago, `OrdenMpPendiente`,
 `Comprobante`, `RecuentoPendiente`.
 
 ---

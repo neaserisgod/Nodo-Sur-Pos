@@ -158,6 +158,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `nodosur_cuenta.json` (carpeta de datos de la app), fuera de la base: restaurar no
   lo pisa. Suite: 1375 verdes + 4 que no compilan por `test/capturas/`.
   Falta: probar contra el servidor real con una cuenta (ver PR).
+- **Copias sin secretos**: la copia de la nube ya no lleva `mp_access_token` ni `companion_token` (vaciados con `secure_delete` + `VACUUM`; el respaldo local sigue completo). Tras restaurar se vuelven a cargar. Documentado en `DECISIONES.md`, `README.md` y `CLAUDE.md`. Suite: 1377 verdes + 4 que no compilan por `test/capturas/`.
 
 ---
 
