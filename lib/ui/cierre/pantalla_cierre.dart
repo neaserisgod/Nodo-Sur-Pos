@@ -20,6 +20,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_carga_historica.dart' show ResumenDiaHistorico;
 import '../../data/repositorio_cierre.dart' show ResumenCierre;
@@ -254,13 +256,15 @@ class _ContenidoRevisado extends StatelessWidget {
                     child: _BloqueMercadoPago(c: c, r: r),
                   ),
                 ),
-                const SizedBox(width: Espaciado.lg),
-                Expanded(
-                  child: Superficie(
-                    relleno: context.colores.fondo,
-                    child: _BloqueCigarrillos(c: c, r: r),
+                if (moduloActivo(Modulo.cajaAparte)) ...[
+                  const SizedBox(width: Espaciado.lg),
+                  Expanded(
+                    child: Superficie(
+                      relleno: context.colores.fondo,
+                      child: _BloqueCigarrillos(c: c, r: r),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -356,10 +360,11 @@ class _DeberiaHaber extends StatelessWidget {
               Text(formatearARS(r.efectivoEsperadoCentavos), style: textTheme.headlineMedium?.tabular),
             ],
           ),
-          Text(
-            'Los cigarrillos cobrados en efectivo están adentro: se separan a la lata después.',
-            style: textTheme.bodySmall,
-          ),
+          if (moduloActivo(Modulo.cajaAparte))
+            Text(
+              'Los cigarrillos cobrados en efectivo están adentro: se separan a la lata después.',
+              style: textTheme.bodySmall,
+            ),
         ],
       ),
     );
@@ -678,21 +683,23 @@ class _ContenidoCerrado extends StatelessWidget {
         // saldo acumulado de la lata — mismo criterio que en la fase
         // "revisado": lo que hay que haber movido de plata primero, el
         // total resultante después.
-        FilaDato(
-          etiqueta: 'Separado a la lata en este cierre',
-          valor: formatearARS(r.separacionCigarrillos.separadoCentavos),
-          enfasis: true,
-        ),
-        FilaDato(
-          etiqueta: 'Lata al cierre',
-          valor: formatearARS(r.lataFinalCentavos),
-        ),
-        if (r.separacionCigarrillos.esSeparacionParcial)
+        if (moduloActivo(Modulo.cajaAparte)) ...[
+          FilaDato(
+            etiqueta: 'Separado a la lata en este cierre',
+            valor: formatearARS(r.separacionCigarrillos.separadoCentavos),
+            enfasis: true,
+          ),
+          FilaDato(
+            etiqueta: 'Lata al cierre',
+            valor: formatearARS(r.lataFinalCentavos),
+          ),
+        ],
+        if (moduloActivo(Modulo.cajaAparte) && r.separacionCigarrillos.esSeparacionParcial)
           FilaDato(
             etiqueta: 'De eso, no alcanzó y quedó pendiente para el próximo cierre',
             valor: formatearARS(r.separacionCigarrillos.pendienteCentavos),
           ),
-        if (r.lataDiferenciaCentavos != null)
+        if (moduloActivo(Modulo.cajaAparte) && r.lataDiferenciaCentavos != null)
           FilaDato(
             etiqueta: 'Diferencia lata',
             valor: formatearARS(r.lataDiferenciaCentavos!),
@@ -755,14 +762,16 @@ class _TresTotalesGrandes extends StatelessWidget {
         Expanded(child: FilaMedio(color: acentos.dinero, etiqueta: 'Efectivo del día', monto: formatearARS(r.efectivoEsperadoCentavos))),
         const SizedBox(width: Espaciado.md),
         Expanded(child: FilaMedio(color: acentos.qr, etiqueta: 'Mercado Pago del día', monto: formatearARS(r.mpEsperadoCentavos))),
-        const SizedBox(width: Espaciado.md),
-        Expanded(
-          child: FilaMedio(
-            color: context.colores.textoSecundario,
-            etiqueta: 'A la lata de cigarrillos',
-            monto: formatearARS(r.separacionCigarrillos.separadoCentavos),
+        if (moduloActivo(Modulo.cajaAparte)) ...[
+          const SizedBox(width: Espaciado.md),
+          Expanded(
+            child: FilaMedio(
+              color: context.colores.textoSecundario,
+              etiqueta: 'A la lata de cigarrillos',
+              monto: formatearARS(r.separacionCigarrillos.separadoCentavos),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

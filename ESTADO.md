@@ -112,7 +112,18 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   el arqueo del cierre siguen). Sin **Cobro con Point**, QR y Débito se cobran
   directo, sin terminal (el mismo camino que "Cobrar a mano"); la configuración de
   la terminal queda visible en Configuración → Impresión. Faltan: pesables y caja aparte.
-- **Fases que siguen**: 5d pesables y caja aparte (los dos que tocan cálculos) activables; 6 vocabulario; 7 asistente de primer arranque;
+- **Fase 5d (pesables y caja aparte) — hecha**: sin **Pesables**, el producto
+  nuevo no ofrece "Es pesable" (un producto que ya lo es conserva el interruptor);
+  ventas y stock de los pesables existentes no cambian. Sin **Caja aparte** se
+  esconden: el bloque de cigarrillos y la lata del cierre y de las hojas de
+  apertura/arqueo, la opción "Lata cigarrillos" del movimiento rápido, el
+  selector "Cigarrillo" del producto y Configuración → "Recargo de cigarrillos"
+  (la pantalla inicial pasa a "Mi comercio"). El cierre y el arqueo dan por buena
+  la lata esperada (diferencia 0): no se exige contar lo que no se usa. Los
+  datos (caja lata, columnas) siguen; al prender el módulo vuelve todo.
+  **Con esto están los 10 módulos.** Suite: ver PR.
+- **Fases que siguen**: 8 retirar Firebase/Supabase; 9 documentación y limpieza
+  de datos personales (las fases 6 y 7 se descartaron) activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---

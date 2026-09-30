@@ -14,6 +14,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_gastos.dart';
 import '../../data/repositorio_ingresos.dart';
@@ -182,9 +184,9 @@ class _DialogoMovimientoRapidoState extends State<_DialogoMovimientoRapido> {
             spacing: Espaciado.sm,
             runSpacing: Espaciado.sm,
             children: [
-              for (final (medio, texto) in const [
+              for (final (medio, texto) in [
                 (MedioGasto.cajonNormal, 'Cajón normal'),
-                (MedioGasto.lata, 'Lata cigarrillos'),
+                if (moduloActivo(Modulo.cajaAparte)) (MedioGasto.lata, 'Lata cigarrillos'),
                 (MedioGasto.mercadoPago, 'Mercado Pago'),
               ])
                 ChipAtajo(texto: texto, elegido: _medio == medio, onTap: () => setState(() => _medio = medio)),

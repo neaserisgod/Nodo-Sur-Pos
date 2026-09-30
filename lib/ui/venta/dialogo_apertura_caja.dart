@@ -17,6 +17,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_cierre.dart';
 import '../../data/repositorio_reposicion.dart';
@@ -316,19 +318,21 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
           ),
         ],
 
-        const SizedBox(height: Espaciado.lg),
-        CampoPlata(
-          key: const Key('campo_lata_inicial'),
-          controller: _lataInicialCtrl,
-          etiqueta: 'Caja cigarrillos',
-          onSubmitted: (_) => _confirmar(),
-        ),
-        if (_lataPrecargada) ...[
-          const SizedBox(height: Espaciado.xs),
-          Text(
-            'Precargado con lo que quedó en la lata del cierre anterior — se puede corregir.',
-            style: TextStyle(color: context.colores.textoSecundario),
+        if (moduloActivo(Modulo.cajaAparte)) ...[
+          const SizedBox(height: Espaciado.lg),
+          CampoPlata(
+            key: const Key('campo_lata_inicial'),
+            controller: _lataInicialCtrl,
+            etiqueta: 'Caja cigarrillos',
+            onSubmitted: (_) => _confirmar(),
           ),
+          if (_lataPrecargada) ...[
+            const SizedBox(height: Espaciado.xs),
+            Text(
+              'Precargado con lo que quedó en la lata del cierre anterior — se puede corregir.',
+              style: TextStyle(color: context.colores.textoSecundario),
+            ),
+          ],
         ],
 
         const SizedBox(height: Espaciado.lg),

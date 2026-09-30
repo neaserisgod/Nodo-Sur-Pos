@@ -5,6 +5,8 @@
 
 import 'package:flutter/widgets.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/pdf_planilla.dart';
 import '../../data/repositorio_carga_historica.dart' show ResumenDiaHistorico, resumenDiaHistorico;
@@ -196,7 +198,8 @@ class CierreControlador extends ChangeNotifier {
     }
     final efectivo = _parsear(efectivoContadoCtrl.text);
     final mpContado = _parsear(mpContadoCtrl.text);
-    final lataContado = _parsear(lataContadoCtrl.text);
+    // Sin el módulo de caja aparte no hay lata que contar: se da por buena la esperada (diferencia 0).
+    final lataContado = moduloActivo(Modulo.cajaAparte) ? _parsear(lataContadoCtrl.text) : (resumen?.lataFinalCentavos ?? 0);
     if (efectivo == null || mpContado == null || lataContado == null) {
       error = 'Falta el efectivo contado, el MP contado o la lata contada';
       notifyListeners();

@@ -820,5 +820,30 @@ void main() {
       expect(find.text('Comparar precios'), findsNothing);
       expect(find.text('Importar CSV'), findsOneWidget);
     });
+
+    testWidgets('en "Nuevo producto", sin los módulos Pesables y Caja aparte no se ofrece ser pesable ni cigarrillo', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+      final p = await preparar(db);
+      await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
+      await _entrarAProveedor(tester, 'Serra');
+
+      await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+      await tester.pumpAndSettle();
+      expect(find.text('Es pesable (se carga por gramos)'), findsOneWidget);
+      expect(find.text('Cigarrillo'), findsOneWidget);
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      modulosActuales.value = ModulosNegocio.todosActivos
+          .conModulo(Modulo.pesables, activo: false)
+          .conModulo(Modulo.cajaAparte, activo: false);
+      await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+      await tester.pumpAndSettle();
+      expect(find.text('Es pesable (se carga por gramos)'), findsNothing);
+      expect(find.text('Cigarrillo'), findsNothing);
+      expect(find.text('Categoría'), findsOneWidget);
+    });
   });
 }

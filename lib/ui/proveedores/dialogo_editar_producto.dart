@@ -12,6 +12,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart';
 import '../../domain/dinero.dart';
@@ -624,6 +626,9 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                     icon: const Icon(IconosPlazoleta.add),
                     tooltip: 'Nueva categoría',
                   ),
+                  // Sin el módulo de caja aparte no se ofrece, salvo que este producto ya sea un cigarrillo
+                  // (para poder corregirlo).
+                  if (moduloActivo(Modulo.cajaAparte) || _tipoCigarrillo != 'ninguno') ...[
                   const SizedBox(width: Espaciado.sm),
                   Expanded(
                     child: _selector<String>(
@@ -648,15 +653,18 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                           setState(() => _tipoCigarrillo = v ?? 'ninguno'),
                     ),
                   ),
+                  ],
                 ],
               ),
               const SizedBox(height: Espaciado.sm),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Es pesable (se carga por gramos)'),
-                value: _esPesable,
-                onChanged: (v) => _cambiarEsPesable(v),
-              ),
+              // Sin el módulo de pesables no se ofrece, salvo que este producto ya sea pesable.
+              if (moduloActivo(Modulo.pesables) || _esPesable)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Es pesable (se carga por gramos)'),
+                  value: _esPesable,
+                  onChanged: (v) => _cambiarEsPesable(v),
+                ),
               if (!_esNuevo)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,

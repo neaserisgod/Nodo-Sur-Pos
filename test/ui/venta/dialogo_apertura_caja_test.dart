@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/dialogo_apertura_caja.dart';
 import '../../helpers/base_para_tests.dart';
@@ -385,4 +387,21 @@ void main() {
       expect(find.textContaining('Serra: \$600'), findsOneWidget);
     },
   );
+
+  testWidgets('sin el módulo de caja aparte no se pide la caja de cigarrillos y se abre igual', (tester) async {
+    final db = baseDeTest();
+    addTearDown(db.close);
+    addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+    modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
+    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+
+    await _abrirDialogo(tester, db);
+    expect(find.byKey(const Key('campo_lata_inicial')), findsNothing);
+    expect(find.byKey(const Key('campo_fondo_inicial')), findsOneWidget);
+
+    await tester.tap(find.descendant(of: find.byType(Dialog), matching: find.widgetWithText(ElevatedButton, 'Abrir caja')));
+    await tester.pumpAndSettle();
+    final sesion = await (db.select(db.sesionesDeCaja)..where((x) => x.estado.equals('ABIERTA'))).getSingle();
+    expect(sesion.lataInicialCentavos, 0);
+  });
 }

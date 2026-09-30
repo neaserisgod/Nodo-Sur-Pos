@@ -24,6 +24,7 @@ import 'configuracion_controlador.dart';
 import '../tema/iconos.dart';
 import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
   const PantallaConfiguracion({
@@ -47,8 +48,11 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 
   List<SeccionConfiguracion> get _seccionesVisibles => [
     for (final s in SeccionConfiguracion.values)
-      if (coincideBusqueda('${_etiquetaSeccion(s)} ${_palabrasClave(s)}', _busqueda)) s,
+      if (_seccionDisponible(s) && coincideBusqueda('${_etiquetaSeccion(s)} ${_palabrasClave(s)}', _busqueda)) s,
   ];
+
+  /// La sección de recargo de cigarrillos es parte del módulo de caja aparte.
+  bool _seccionDisponible(SeccionConfiguracion s) => s != SeccionConfiguracion.cigarrillos || moduloActivo(Modulo.cajaAparte);
 
   void _buscar(String texto) {
     setState(() => _busqueda = texto);
@@ -62,10 +66,19 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
     super.initState();
     _c = ConfiguracionControlador(widget.db);
     _c.cargarTodo();
+    // Apagar un módulo desde acá esconde sus secciones al instante.
+    modulosActuales.addListener(_alCambiarModulos);
+  }
+
+  void _alCambiarModulos() {
+    if (!mounted) return;
+    setState(() {});
+    if (!_seccionesVisibles.contains(_c.seccionActual)) _c.irASeccion(SeccionConfiguracion.modulos);
   }
 
   @override
   void dispose() {
+    modulosActuales.removeListener(_alCambiarModulos);
     _c.dispose();
     super.dispose();
   }

@@ -6,6 +6,8 @@
 
 import 'package:flutter/widgets.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_arqueo_intermedio.dart';
 import '../../data/repositorio_cierre.dart'
@@ -99,7 +101,8 @@ class ArqueoIntermedioControlador extends ChangeNotifier {
   Future<bool> confirmarArqueo({required int usuarioId}) async {
     final efectivo = _parsear(efectivoContadoCtrl.text);
     final mp = _parsear(mpContadoCtrl.text);
-    final lata = _parsear(lataContadoCtrl.text);
+    // Sin el módulo de caja aparte no hay lata que contar: se da por buena la esperada.
+    final lata = moduloActivo(Modulo.cajaAparte) ? _parsear(lataContadoCtrl.text) : (lataEsperadaCentavos ?? 0);
     if (efectivo == null || mp == null || lata == null) {
       error = 'Falta el efectivo contado, el MP contado o la lata contada';
       notifyListeners();

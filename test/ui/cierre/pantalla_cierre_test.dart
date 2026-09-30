@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
 import 'package:la_plazoleta/ui/tema/superficie.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
@@ -190,6 +192,38 @@ void main() {
 
       final sesion = await (db.select(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId))).getSingle();
       expect(sesion.estado, 'ABIERTA');
+    });
+  });
+
+  group('sin el módulo de caja aparte', () {
+    testWidgets('no hay lata en el cierre y se cierra sin contarla', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+      modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await tester.enterText(find.byType(TextField).first, '0');
+      await tester.tap(find.text('Confirmar conteo'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('campo_lata_contada')), findsNothing);
+      expect(find.text('A la lata de cigarrillos'), findsNothing);
+      expect(find.text('Efectivo del día'), findsOneWidget);
+
+      final campoMpContado = _campo('campo_mp_contado');
+      await tester.ensureVisible(campoMpContado);
+      await tester.enterText(campoMpContado, '0');
+      await tester.ensureVisible(find.text('Cerrar caja'));
+      await tester.tap(find.text('Cerrar caja'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Caja cerrada'), findsOneWidget);
+      final sesion = await (db.select(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId))).getSingle();
+      expect(sesion.estado, 'CERRADA');
+      expect(sesion.lataDiferenciaCentavos, 0);
     });
   });
 }
