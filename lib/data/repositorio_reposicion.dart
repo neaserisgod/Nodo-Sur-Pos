@@ -339,7 +339,7 @@ Future<List<SeparacionDelDia>> separacionesDelDia(AppDatabase db, {DateTime? aho
   final antesDelInicio = inicio.subtract(const Duration(microseconds: 1));
   final proveedores = await (db.select(
     db.proveedores,
-  )..where((p) => p.activo.equals(true) & p.codigo.equals('SC').not())).get();
+  )..where((p) => p.activo.equals(true) & p.cajaAparte.equals(false))).get();
   final filasPorProveedor = await _lineasPorProveedorDesde(db, proveedores.map((p) => p.id).toList());
   final parteMp = await _parteMpDeLineasDesde(db, inicio);
 
@@ -728,7 +728,7 @@ Future<List<ResumenReposicionProveedor>> reposicionActual(
 ) async {
   final proveedores = await (db.select(
     db.proveedores,
-  )..where((p) => p.activo.equals(true) & p.codigo.equals('SC').not())).get();
+  )..where((p) => p.activo.equals(true) & p.cajaAparte.equals(false))).get();
   final filasPorProveedor = await _lineasPorProveedorDesde(
     db,
     proveedores.map((p) => p.id).toList(),
@@ -819,7 +819,7 @@ Future<List<GananciaPendienteProveedor>> gananciaPendienteDeProveedores(
 ) async {
   final proveedores = await (db.select(
     db.proveedores,
-  )..where((p) => p.activo.equals(true) & p.codigo.equals('SC').not())).get();
+  )..where((p) => p.activo.equals(true) & p.cajaAparte.equals(false))).get();
   final filasPorProveedor = await _lineasPorProveedorDesde(
     db,
     proveedores.map((p) => p.id).toList(),
@@ -1349,6 +1349,7 @@ Future<void> actualizarProveedorAvanzado(
   String? diaEntrega,
   required bool activo,
   String? medioPago,
+  bool? cajaAparte,
   int? colchonReposicionCentavos,
 }) {
   return (db.update(
@@ -1361,6 +1362,7 @@ Future<void> actualizarProveedorAvanzado(
       diaEntrega: Value(diaEntrega),
       activo: Value(activo),
       medioPago: medioPago == null ? const Value.absent() : Value(medioPago),
+      cajaAparte: cajaAparte == null ? const Value.absent() : Value(cajaAparte),
       colchonReposicionCentavos: colchonReposicionCentavos == null
           ? const Value.absent()
           : Value(colchonReposicionCentavos),

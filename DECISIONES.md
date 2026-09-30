@@ -1270,3 +1270,15 @@ Decididas con el dueño antes de empezar (fase 1):
   encabezado, se guarda el nombre como encabezado.
 - **Celular**: hasta que reciba la marca por sync muestra el nombre del producto
   (pendiente con el asistente de la fase 7).
+
+### Fase 4: proveedor con caja aparte (2026-09-30)
+
+- **Una propiedad en vez de un código.** `caja_aparte` en el proveedor reemplaza
+  a `codigo == 'SC'`. Sin renombrar columnas ni nombres internos (`esLata`,
+  `lata*Centavos`): es riesgo de migración sin beneficio; lo visible lo maneja
+  el vocabulario (fase 6).
+- **Sin reenvío por sync.** La migración no cambia `actualizado_en`: cada
+  dispositivo corre la misma migración y marca a `SC` por su cuenta.
+- **Con caja aparte, cobra en efectivo.** Al activarlo en Avanzado el medio de
+  pago se guarda como Efectivo y el selector se oculta.
+- **Las dos cajas siguen sembrándose**; volverla opcional es la fase 5.

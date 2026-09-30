@@ -129,6 +129,12 @@ class Proveedores extends Table {
 
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
 
+  /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
+  /// lleva su propia caja (la "lata"), así que queda afuera de la reposición genérica y tiene su propio panel.
+  /// Reemplaza al código fijo `'SC'` (Serra Cigarros) que estaba repetido en la app; la migración lo marca en
+  /// las bases que ya lo tenían. Nace en falso.
+  BoolColumn get cajaAparte => boolean().withDefault(const Constant(false))();
+
   /// Identidad de sincronización — ver el comentario de [Categorias.globalId].
   TextColumn get globalId => text().nullable()();
   TextColumn get origenDispositivo => text().nullable()();

@@ -73,7 +73,10 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
   late String _medioPago = widget.proveedor.medioPago;
   String? _error;
 
-  bool get _esLata => widget.proveedor.codigo == 'SC';
+  late bool _cajaAparte = widget.proveedor.cajaAparte;
+
+  /// Según lo que está guardado (no el interruptor): el panel de arriba cambia al guardar.
+  bool get _esLata => widget.proveedor.cajaAparte;
 
   Future<void> _guardar() async {
     final nombre = _nombreCtrl.text.trim();
@@ -98,7 +101,8 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
             ? null
             : _diaEntregaCtrl.text.trim(),
         activo: _activo,
-        medioPago: _medioPago,
+        medioPago: _cajaAparte ? 'Efectivo' : _medioPago,
+        cajaAparte: _cajaAparte,
       );
     } catch (e) {
       // Mismo criterio que `crearProducto`/`actualizarProducto`
@@ -182,7 +186,7 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
               controller: _diaEntregaCtrl,
               etiqueta: 'Día de entrega (opcional)',
             ),
-            if (!_esLata) ...[
+            if (!_cajaAparte) ...[
               const SizedBox(height: Espaciado.md),
               Text(
                 'Medio de pago',
@@ -214,6 +218,14 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
               ),
             ],
             const SizedBox(height: Espaciado.md),
+            SwitchListTile(
+              key: const Key('interruptor_caja_aparte'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Caja aparte (cobra solo en efectivo)'),
+              subtitle: const Text('Lleva su propia caja y no entra en los pedidos comunes.'),
+              value: _cajaAparte,
+              onChanged: (v) => setState(() => _cajaAparte = v),
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Activo'),

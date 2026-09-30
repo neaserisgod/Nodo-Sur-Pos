@@ -129,7 +129,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -937,6 +937,18 @@ class AppDatabase extends _$AppDatabase {
         if (!columnas.contains('modulos_desactivados')) {
           await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.modulosDesactivados);
         }
+      }
+      // v44 → v45 (fase 4): `proveedores.caja_aparte` reemplaza al código fijo 'SC'. Las bases que ya tenían a
+      // Serra Cigarros lo reciben marcado; `actualizado_en` no se toca (cada dispositivo corre esta misma
+      // migración, no hace falta que la suba por sync). Aditiva, con chequeo de columna como v43→v44.
+      if (from < 45) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('proveedores')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('caja_aparte')) {
+          await m.addColumn(proveedores, proveedores.cajaAparte);
+        }
+        await customStatement("UPDATE proveedores SET caja_aparte = 1 WHERE codigo = 'SC'");
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
