@@ -163,6 +163,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no
   ignora `test/capturas/` (`/capturas/`). Nuevo `.github/workflows/tests.yml` (análisis y tests en cada PR; sin probar en GitHub todavía
   y en rojo mientras falte `test/capturas/`). Suite: 1387 verdes + 4 que no compilan por `test/capturas/`.
+- **Beta desde GitHub**: `.github/workflows/publicar-beta.yml` (manual) compila en Windows, firma y publica en el canal beta; la beta se descarga en horsepos.com/descargar/ con cuenta de administrador (PR del sitio). Secretos y pasos en `docs/PRIMERA-VERSION.md`. Sin probar en GitHub todavía (hace falta cargar los secretos).
 - **Copias sin secretos**: la copia de la nube ya no lleva `mp_access_token` ni `companion_token` (vaciados con `secure_delete` + `VACUUM`; el respaldo local sigue completo). Tras restaurar se vuelven a cargar. Documentado en `DECISIONES.md`, `README.md` y `CLAUDE.md`. Suite: 1377 verdes + 4 que no compilan por `test/capturas/`.
 
 ---

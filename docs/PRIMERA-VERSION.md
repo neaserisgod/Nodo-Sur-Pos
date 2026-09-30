@@ -45,6 +45,27 @@ se subió nada.
 Sube el build number en `pubspec.yaml` (commiteá ese cambio), arma `dist\LaPlazoleta-Setup-<versión>.exe` y lo sube al
 servidor en el canal beta.
 
+### Alternativa: publicar la beta desde GitHub (sin tocar tu PC)
+
+El flujo `publicar-beta` (pestaña **Actions** del repo → *publicar-beta* → **Run workflow**) hace lo mismo en una máquina
+Windows de GitHub: compila, firma, sube al canal beta y deja subido el nuevo número de compilación en `pubspec.yaml`.
+Escribís qué cambió y listo. La beta aparece en **horsepos.com/descargar/** (solo para tu cuenta de administrador) y le
+llega por actualización automática a las PC que ya la tengan.
+
+Una sola vez, cargá estos secretos en el repo (Settings → Secrets and variables → Actions → *New repository secret*):
+
+| Secreto | Qué es |
+|---|---|
+| `RELEASE_TOKEN` | el mismo valor que el secreto del Worker |
+| `CLOUDFLARE_API_TOKEN` | token de Cloudflare con permiso de **editar R2** (My Profile → API Tokens → *Create Token*) |
+| `CLOUDFLARE_ACCOUNT_ID` | id de tu cuenta de Cloudflare (se ve en el panel, a la derecha de *Workers & Pages*) |
+| `DSA_PRIVATE_KEY` | el **contenido** del archivo `dsa_priv.pem` |
+| `SIGN_PFX_BASE64`, `SIGN_PFX_PASSWORD` | *(opcional)* certificado de firma de código en base64 y su contraseña |
+| `SITE_REPO_TOKEN` | *(solo si el repo `NodoSurPage` es privado)* token con permiso de lectura |
+
+Si falta alguno, el flujo lo dice en el primer paso y no compila nada. Las claves se escriben en una carpeta temporal fuera
+del repo y se borran al terminar.
+
 ## 4. Instalar en tu PC y revisar
 
 1. Ejecutá `dist\LaPlazoleta-Setup-<versión>.exe` (instala encima: abre tu base y la actualiza sola).
@@ -80,4 +101,4 @@ podés **Retirar** la versión (vuelve a ser la vigente la anterior) o **Bloquea
 - **APK del celular**: hoy se firma con la clave de debug; antes de repartirlo hace falta una keystore propia.
 - **Cobrar con Point desde el celular sin la PC**: todavía no.
 - **Pantalla "Mi cuenta" en el sitio** (lista de copias y dispositivos en la web).
-- **Automatizar la publicación con GitHub Actions**: por ahora se publica desde tu PC, que es donde están las claves.
+- **Publicar para clientes desde GitHub**: el flujo solo publica en beta; el canal estable sigue saliendo de `tool/publicar_release.ps1` (a propósito: es la decisión de mostrarle una versión a todos).
