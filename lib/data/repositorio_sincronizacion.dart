@@ -37,7 +37,7 @@ import 'database.dart';
 /// En el orden en que hay que aplicarlas: las que otras tablas referencian
 /// por clave foránea (`PRAGMA foreign_keys = ON`, `database.dart`) van
 /// primero, para que un `INSERT` no falle por apuntar a una fila que todavía
-/// no llegó. `usuarios` entró en la migración v31→v32 (Bruno, 2026-09-18) —
+/// no llegó. `usuarios` entró en la migración v31→v32 (El dueño, 2026-09-18) —
 /// va primero porque `ventas`/`sesiones_de_caja`/etc. la referencian por
 /// `usuario_id`.
 const Map<String, bool> tablasSincronizables = {
@@ -69,7 +69,7 @@ bool _tablaValida(String tabla) {
 /// Columnas que son clave foránea local a OTRA tabla sincronizada, por
 /// tabla. El `id` que guardan es autoincrement de SQLite — solo tiene
 /// sentido en la base que lo generó, nunca en la del otro dispositivo
-/// (Bruno, 2026-09-18: "revisa que hay 2 bruno" llevó a encontrar esto —
+/// (El dueño, 2026-09-18: "revisa que hay 2 bruno" llevó a encontrar esto —
 /// una venta con `sesion_caja_id=25` de la PC, que tiene 25 sesiones
 /// históricas, no encuentra nada en una companion recién instalada que
 /// solo recibió 6). [cambiosDesde] manda, además del `id` crudo (que se
@@ -293,7 +293,7 @@ Future<void> _aplicarDeltaDeMovimientoStock(
 ///
 /// En las tablas que comparan `actualizado_en`, una fila entrante más vieja
 /// que la que ya está se descarta (gana el cambio más reciente, decisión de
-/// Bruno) — salvo `stock`/`stock_gramos` de `productos`, que nunca se pisan
+/// El dueño) — salvo `stock`/`stock_gramos` de `productos`, que nunca se pisan
 /// así (ver [_columnasStockDeProductos]). En los logs de solo-inserción, una
 /// fila cuyo `global_id` ya existe simplemente se ignora — son inmutables,
 /// no hay "más nueva" que aplicar, y volver a insertarla duplicaría el
@@ -301,7 +301,7 @@ Future<void> _aplicarDeltaDeMovimientoStock(
 /// es un movimiento real que nadie vio todavía en esta base, y mueve el
 /// stock de verdad ([_aplicarDeltaDeMovimientoStock]).
 /// Devuelve las filas de [filas] que NO se pudieron aplicar todavía — nunca
-/// lanza por una fila puntual (Bruno, 2026-09-18: "no veo productos... ni
+/// lanza por una fila puntual (El dueño, 2026-09-18: "no veo productos... ni
 /// suelto, ni leche" — un producto cuya categoría/proveedor todavía no
 /// había llegado a esta base bloqueaba, con `PRAGMA foreign_keys = ON`, no
 /// solo esa fila sino TODAS las que venían después de ella en el mismo

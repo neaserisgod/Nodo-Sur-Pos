@@ -29,10 +29,10 @@ const _categoriasDeTest = [
 ];
 
 const _proveedoresDeTest = [
-  ('S', 'Serra'),
-  ('F', 'Mazzota'),
+  ('S', 'Distribuidora'),
+  ('F', 'Fiambrería'),
   ('C', 'Coca Cola'),
-  ('W', 'Wesley'),
+  ('W', 'Golosinas Oeste'),
   ...proveedoresNuevosV10,
 ];
 
@@ -41,10 +41,10 @@ const _gastosFijosDeTest = ['Alquiler', 'Ayuda fin de semana', 'Luz', 'Internet'
 /// Carga el catálogo de ejemplo sobre una base recién creada. Es el `alCrear`
 /// de [AppDatabase]: corre al final de `onCreate`.
 Future<void> sembrarCatalogoDeTest(AppDatabase db) async {
-  await db.customStatement("UPDATE usuarios SET nombre = 'Bruno'");
+  await db.customStatement("UPDATE usuarios SET nombre = 'Dueño'");
   // Un comercio ya cargado, como una instalación en uso: así los tests de pantalla no se topan con el aviso
   // de primer arranque ("Datos de tu comercio"), que aparece solo en una base nueva de verdad.
-  await db.customStatement("UPDATE configuracion_negocio_tabla SET nombre_comercio = 'Comercio de prueba'");
+  await db.customStatement("UPDATE configuracion_negocio_tabla SET nombre_comercio = 'Comercio de prueba', modulos_desactivados = ''");
   for (final (nombre, markupBp) in _categoriasDeTest) {
     await db.into(db.categorias).insert(CategoriasCompanion.insert(nombre: nombre, markupDefaultBp: Value(markupBp)));
   }

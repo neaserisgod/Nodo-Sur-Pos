@@ -19,7 +19,7 @@ class ResumenProveedorNivel1 {
   final Proveedor proveedor;
 
   /// Stock valorizado a PRECIO de venta — "cuánto vale en la góndola"
-  /// (corrección post-revisión: Bruno pidió cuatro cifras — stock, costo,
+  /// (corrección post-revisión: El dueño pidió cuatro cifras — stock, costo,
   /// vendido, ganancia — no tres. Antes esta columna mostraba el valor a
   /// costo bajo el nombre "Stock", confundiendo las dos preguntas).
   final int stockValorizadoCentavos;
@@ -90,7 +90,7 @@ Future<({int vendido, int ganancia})> _ventasEnRango(
 }) async {
   final query = db.select(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
-  // Sin ventas anuladas (Bruno, 2026-09-26): una venta revertida no generó
+  // Sin ventas anuladas (El dueño, 2026-09-26): una venta revertida no generó
   // nada que reponer, ni vendido, ni ganancia.
   ])..where(
       filtroLineas &
@@ -205,9 +205,9 @@ Future<ResumenAgregadoProductos> resumenProductosSinProveedor(
 }
 
 /// Resumen de cada proveedor activo para el nivel 1. A diferencia de
-/// `reposicionActual`, incluye a Serra Cigarros: acá no es una fila en cero
+/// `reposicionActual`, incluye a Distribuidora de Cigarrillos: acá no es una fila en cero
 /// permanente (Regla 6 solo excluye cigarrillos de la reposición, no de la
-/// venta ni de la ganancia que representan) — Serra Cigarros vende de
+/// venta ni de la ganancia que representan) — Distribuidora de Cigarrillos vende de
 /// verdad y esa venta tiene que verse en su fila.
 Future<List<ResumenProveedorNivel1>> resumenProveedoresNivel1(
   AppDatabase db, {

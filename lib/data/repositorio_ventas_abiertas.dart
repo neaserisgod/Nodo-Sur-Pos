@@ -121,7 +121,7 @@ Future<void> borrarVentaAbierta(AppDatabase db, int id) =>
     (db.delete(db.ventasAbiertas)..where((v) => v.id.equals(id))).go();
 
 /// Cuántas ventas abiertas con algo cargado tiene [sesionId] — lo que
-/// bloquea el cierre de caja (Bruno, 2026-09-29).
+/// bloquea el cierre de caja (El dueño, 2026-09-29).
 Future<int> cantidadVentasAbiertasConLineas(AppDatabase db, int sesionId) async {
   final filas = await cargarVentasAbiertas(db, sesionId);
   return filas.where((b) => b.lineas.isNotEmpty).length;

@@ -1,4 +1,4 @@
-// Botón central de la navbar (Bruno, 2026-09-17: "en lugar de que sea un
+// Botón central de la navbar (El dueño, 2026-09-17: "en lugar de que sea un
 // carrito el botón del medio, que sea un escáner") — reemplaza al carrito
 // que tenía antes esa posición (`boton_carrito_companion.dart`, sacado:
 // "vender" pasó a ser un acceso más en Inicio, junto a Gasto/Ingreso
@@ -90,7 +90,7 @@ class _BotonEscanerCompanionState extends State<BotonEscanerCompanion> {
               ),
         color: deshabilitado ? colores.borde : null,
         // Resplandor de color en vez de sombra gris — el botón "flota" con
-        // luz propia, mismo espíritu que el degradé (Bruno, 2026-09-18: "una
+        // luz propia, mismo espíritu que el degradé (El dueño, 2026-09-18: "una
         // app moderna, útil y monetizable"; 2026-09-19: "cyberpunk me vuela
         // la gorra" — el helper compartido, `resplandorNeon`, es este mismo
         // halo que antes vivía solo acá, ahora reusado en toda la app).

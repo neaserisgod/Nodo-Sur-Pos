@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 /// Precios de referencia bajados de fuentes externas (comparador de
-/// precios, Bruno 2026-09-14: "una noción de los precios de mi local y
+/// precios, el dueño 2026-09-14: "una noción de los precios de mi local y
 /// ajustarlos según si están muy caros o muy baratos") — el dato que se ve
 /// al lado de cada producto propio en `PantallaCompararPrecios`. Dos
 /// fuentes hoy: SEPA/Precios Claros (`comparador_precios.dart`, La Anónima

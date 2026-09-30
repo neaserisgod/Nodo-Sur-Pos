@@ -1,7 +1,7 @@
 // Ícono en un círculo de color tenue + una línea de texto: el estado vacío
 // único de la app (lista sin resultados, panel de detalle sin selección).
 // `icono` es el único dato que cambia entre usos. Remake de la estética
-// (Bruno, 2026-09-19): antes un ícono suelto en gris (fase 11) — ahora
+// (El dueño, 2026-09-19): antes un ícono suelto en gris (fase 11) — ahora
 // dentro de un círculo, mismo criterio que
 // `lib/companion/tema/estado_vacio_companion.dart` ("íconos siempre dentro
 // de un contenedor, nunca sueltos").

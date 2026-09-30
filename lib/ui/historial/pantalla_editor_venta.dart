@@ -136,7 +136,7 @@ class _PantallaEditorVentaState extends State<PantallaEditorVenta> {
     }
   }
 
-  // "Lenguaje de diseño" (Bruno, 2026-09-28, mock `EditorVenta`): a la
+  // "Lenguaje de diseño" (El dueño, 2026-09-28, mock `EditorVenta`): a la
   // izquierda, buscar y las líneas (las que cambiaron o son nuevas, en azul
   // con su marca); a la derecha, el total nuevo contra el de antes, el
   // medio de pago y "Qué se va a ajustar" (stock, separaciones, ganancia)

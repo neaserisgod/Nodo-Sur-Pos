@@ -6,7 +6,7 @@
 // La lista sale de la PC en vivo si hay una emparejada y responde, y si no
 // (nunca se emparejó, o no contesta) de la base local sincronizada por
 // Supabase (`usuarios` entró a la sincronización en la migración v31→v32,
-// Bruno 2026-09-18: "no debería tener que escanear ya, es innecesario") —
+// El dueño 2026-09-18: "no debería tener que escanear ya, es innecesario") —
 // mismo patrón de `resolverServicioCompanion` que ya usa el resto de la
 // companion, nunca se queda esperando una PC que no existe.
 
@@ -40,7 +40,7 @@ class _PantallaElegirUsuarioState extends State<PantallaElegirUsuario> {
   List<UsuarioCompanion>? _usuarios;
   String? _error;
 
-  /// Bruno, 2026-09-19: "la pantalla de seleccionar perfil no se refresca
+  /// El dueño, 2026-09-19: "la pantalla de seleccionar perfil no se refresca
   /// una vez trae los datos" — en una companion recién instalada, `usuarios`
   /// puede tardar el mismo puñado de segundos que cualquier otra tabla en
   /// llegar por sync; sin esto, la lista se quedaba vacía para siempre en

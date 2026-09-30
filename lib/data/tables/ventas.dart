@@ -23,7 +23,7 @@ class Ventas extends Table {
 
   IntColumn get subtotalCentavos => integer()();
 
-  /// Jam Rock (Regla 17): 15% sobre el importe total. 0 para el resto.
+  /// Cliente Frecuente (Regla 17): 15% sobre el importe total. 0 para el resto.
   IntColumn get descuentoCentavos =>
       integer().withDefault(const Constant(0))();
   IntColumn get recargoCigarrillosCentavos =>
@@ -44,7 +44,7 @@ class Ventas extends Table {
   TextColumn get motivoEdicion => text().nullable()();
 
   /// Una venta cobrada se puede anular, pero solo mientras la sesión de
-  /// caja de esa venta siga abierta (Bruno, 2026-09-13: eliminar una venta
+  /// caja de esa venta siga abierta (El dueño, 2026-09-13: eliminar una venta
   /// de un cierre ya arqueado descuadraría ese arqueo). A diferencia de
   /// editar, anular NUNCA borra `lineas_de_venta`/`pagos` ni reemplaza
   /// nada — revierte stock y caja (mismo mecanismo, `repositorio_edicion_venta.dart`)

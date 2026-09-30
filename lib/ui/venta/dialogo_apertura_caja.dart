@@ -1,10 +1,10 @@
 // Apertura de una sesión de caja — un día si es la primera del día, un
-// turno si ya hubo una hoja cerrada antes hoy (Bruno, sesión del
+// turno si ya hubo una hoja cerrada antes hoy (El dueño, sesión del
 // 31/08/2026: un turno ES una sesión, no una tabla aparte). El arqueo y la
 // separación de cigarrillos son de la fase 4 — esto solo abre la sesión
 // para que la pantalla de venta tenga dónde grabar.
 //
-// Pasado al kit (2026-09-12, Bruno: "el modal de apertura es gigante") —
+// Pasado al kit (2026-09-12, el dueño: "el modal de apertura es gigante") —
 // nunca había pasado por acá: el `Dialog` crudo + `ConstrainedBox(maxHeight:
 // 85% de la pantalla)` + `SingleChildScrollView` que tenía antes se
 // estiraba a ese 85% SIEMPRE, aunque el contenido entrara de sobra (un
@@ -74,7 +74,7 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
     _cargarAvisoReposicion();
   }
 
-  /// Aviso corto de cuánto separar de cada proveedor — Bruno separa acá,
+  /// Aviso corto de cuánto separar de cada proveedor — El dueño separa acá,
   /// con la persiana baja, no al cerrar (Regla 5 extendida).
   Future<void> _cargarAvisoReposicion() async {
     final aviso = await avisoASepararAlAbrir(widget.db);
@@ -94,7 +94,7 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
     });
   }
 
-  /// Caja cigarrillos como campo editable (2026-09-12, Bruno: "para abrir
+  /// Caja cigarrillos como campo editable (2026-09-12, el dueño: "para abrir
   /// caja se necesita: caja normal, caja cigarros, monto Mercado Pago") — el
   /// arrastre automático (Regla 10) sigue existiendo como default de
   /// `abrirSesion`, esto solo permite corregirlo desde el escritorio cuando
@@ -110,7 +110,7 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
     });
   }
 
-  /// Monto Mercado Pago (2026-09-12, Bruno: reboot de la base) — a
+  /// Monto Mercado Pago (2026-09-12, el dueño: reboot de la base) — a
   /// diferencia del fondo inicial, se sugiere sin importar el día (la cuenta
   /// de Mercado Pago no se "cierra" a la noche como el cajón): lo último
   /// contado de verdad en el cierre anterior, editable igual que el fondo.
@@ -198,7 +198,7 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
       return;
     }
 
-    // Regla 13 (revisar ganancia/reposición) ya no interrumpe acá — Bruno,
+    // Regla 13 (revisar ganancia/reposición) ya no interrumpe acá — El dueño,
     // 2026-09-06: "en lugar de revisar ganancias, un apartado de reportes
     // para poder ver detalladamente todo" — esa revisión pasó a ser la
     // sección "Reportes" de la barra lateral, visitable cuando se quiera
@@ -212,7 +212,7 @@ class _DialogoAperturaCajaState extends State<DialogoAperturaCaja> {
         mpInicialCentavos: mpInicial,
       );
     } on SesionYaAbiertaException catch (e) {
-      // Bloqueo directo (Bruno, 2026-09-19: "aislar los usuarios para que
+      // Bloqueo directo (El dueño, 2026-09-19: "aislar los usuarios para que
       // no se pisen") — probablemente se abrió desde el celular hace un
       // instante; se avisa quién y a qué hora en vez de reabrir con estos
       // montos. Al cerrar el diálogo, `pantalla_venta.dart` vuelve a leer

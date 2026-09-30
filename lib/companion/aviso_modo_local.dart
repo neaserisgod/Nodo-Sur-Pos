@@ -1,10 +1,10 @@
-// Franja "modo local" — en su origen (Bruno, 2026-09-17: "no detecta la
+// Franja "modo local" — en su origen (El dueño, 2026-09-17: "no detecta la
 // caja abierta... por dios, hacelo de una vez bien"), avisaba que
 // `resolverServicioCompanion` había caído al fallback offline
 // (`servicio_companion_offline.dart`) sin decir nada, indistinguible de
 // "está cargando/lento".
 //
-// Con el emparejamiento con la PC vuelto opcional (Bruno, 2026-09-18: "no
+// Con el emparejamiento con la PC vuelto opcional (El dueño, 2026-09-18: "no
 // debería tener que escanear ya, es innecesario"), ese fallback offline
 // pasó a ser el modo NORMAL de un celular que nunca emparejó nada — no es
 // una falla que avisar, es cómo se usa la companion como POS aparte. El
@@ -12,7 +12,7 @@
 // configurada y no contestó justo ahora (eso sigue siendo información útil
 // — algo cambió), nunca cuando la companion simplemente nunca tuvo PC.
 //
-// Rediseñada (Bruno, 2026-09-17: "remake desde 0") con el lenguaje nuevo de
+// Rediseñada (El dueño, 2026-09-17: "remake desde 0") con el lenguaje nuevo de
 // la companion — tarjeta redondeada con tinte del acento, no una franja
 // pegada al borde de la pantalla.
 

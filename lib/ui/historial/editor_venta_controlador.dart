@@ -55,7 +55,7 @@ class EditorVentaControlador extends ChangeNotifier {
   List<LineaVenta> lineasOriginales = const [];
   Map<String, String> nombresProveedor = {};
 
-  /// Anular una venta solo mientras su caja siga abierta (Bruno,
+  /// Anular una venta solo mientras su caja siga abierta (El dueño,
   /// 2026-09-13): anularla con la caja ya arqueada descuadraría ese arqueo.
   bool sesionAbierta = false;
 

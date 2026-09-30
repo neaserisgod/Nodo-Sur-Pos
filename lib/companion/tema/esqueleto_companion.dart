@@ -1,4 +1,4 @@
-// Skeleton de carga para la companion (Bruno, 2026-09-19: "si algo tarda en
+// Skeleton de carga para la companion (El dueño, 2026-09-19: "si algo tarda en
 // cargar no quiero pantallas en blanco o spinners, sino skeletons") — un
 // spinner centrado no dice nada de la forma de lo que está por aparecer y
 // deja la pantalla sintiéndose vacía un instante; un esqueleto con la

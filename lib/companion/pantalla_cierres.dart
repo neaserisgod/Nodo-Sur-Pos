@@ -1,14 +1,14 @@
-// Cierres reales (Bruno, 2026-09-13: "en la app debo poder ver los cierres
+// Cierres reales (El dueño, 2026-09-13: "en la app debo poder ver los cierres
 // por mas que este fuera del local y con la app desktop cerrada"). Distinta
 // de "Historial de ventas": acá se ve un cierre por sesión de caja (arqueo
 // completo: efectivo/MP/lata contado vs. esperado), no venta por venta —
-// pero comparten pantalla como dos pestañas de "Historial" (Bruno,
+// pero comparten pantalla como dos pestañas de "Historial" (El dueño,
 // 2026-09-18: "reacomodación de absolutamente todos los elementos" — las
 // dos son formas de mirar para atrás, no dos ideas separadas). Este widget
 // ya NO trae su propio `Scaffold`/`AppBar`: `PantallaHistorialVentas` lo
 // aloja como el body de su segunda pestaña.
 //
-// Sin PC emparejada (Bruno, 2026-09-18: "no debería tener que escanear ya,
+// Sin PC emparejada (El dueño, 2026-09-18: "no debería tener que escanear ya,
 // es innecesario") se calcula en vivo contra la base local sincronizada por
 // Supabase (`PuertoLocal`), no distinto de tenerla contra la PC — los
 // cierres son parte de las 14 tablas que ya sincroniza Supabase. La caché
@@ -60,14 +60,14 @@ class _PantallaCierresState extends State<PantallaCierres> {
   String? _error;
 
   /// Guardado para que las filas puedan pedir el detalle completo al
-  /// tocarlas (Bruno, 2026-09-19: rework de "Cierres" con el desglose por
+  /// tocarlas (El dueño, 2026-09-19: rework de "Cierres" con el desglose por
   /// proveedor) — antes cada `_cargar()` resolvía su propio `servicio`
   /// local, sin guardarlo, porque nada más lo necesitaba.
   ServicioCompanion? _servicio;
 
-  /// Bruno, 2026-09-18: "no hay nada que actualice la app cuando se
+  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó" — repite la carga sola apenas la sync trae algo nuevo.
-  /// Bruno, 2026-09-19: "las pantallas se refrescan en cada sync, cosa que
+  /// El dueño, 2026-09-19: "las pantallas se refrescan en cada sync, cosa que
   /// me gustaría que se disimule más" — con el nudge de baja latencia de
   /// `sincronizacion_supabase.dart` esto pasa mucho más seguido, así que el
   /// refresco automático es [silencioso]: no tapa la lista ya visible con
@@ -210,7 +210,7 @@ class _FilaCierre extends StatefulWidget {
 }
 
 class _FilaCierreState extends State<_FilaCierre> {
-  /// Ya no expande inline (Bruno, 2026-09-19: rework de "Cierres" con el
+  /// Ya no expande inline (El dueño, 2026-09-19: rework de "Cierres" con el
   /// desglose por proveedor) — tocar la fila abre una hoja con el detalle
   /// completo (`_abrirDetalle`), que además trae lo que esta fila nunca
   /// tuvo: cigarrillos, redondeo, vendido sin costo, reserva de fijos, nota
@@ -297,7 +297,7 @@ class _FilaCierreState extends State<_FilaCierre> {
   }
 }
 
-/// Detalle completo de un cierre, en una hoja de vidrio (Bruno, 2026-09-19:
+/// Detalle completo de un cierre, en una hoja de vidrio (El dueño, 2026-09-19:
 /// rework de "Cierres" con el desglose por proveedor) — las tres cajas
 /// aparecen de una (ya vienen en [cierre], sin esperar red); el resto
 /// (cigarrillos/redondeo/vendido sin costo/reserva/nota/por proveedor) se

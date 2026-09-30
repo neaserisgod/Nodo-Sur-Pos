@@ -15,6 +15,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'identidad_sync.dart';
+import '../domain/modulos.dart';
 import 'tables/accesos_directos.dart';
 import 'tables/arqueos_intermedios.dart';
 import 'tables/caja.dart';
@@ -38,8 +39,8 @@ import 'tables/ventas_abiertas.dart';
 part 'database.g.dart';
 
 /// Los 15 proveedores reales (Regla 16), agregados en la migración v9→v10
-/// a las bases que ya tenían el seed viejo de 7. Serra, Mazzota, Coca Cola
-/// y Wesley no están acá porque ya existen (se renombran/conservan en la
+/// a las bases que ya tenían el seed viejo de 7. Distribuidora, Fiambrería, Coca Cola
+/// y Golosinas Oeste no están acá porque ya existen (se renombran/conservan en la
 /// migración en vez de insertarse de nuevo); B/G/O tampoco, porque quedan
 /// desactivados, no reemplazados.
 /// `global_id` fijo (no aleatorio) para las 2 filas de `medios_de_pago`,
@@ -51,7 +52,7 @@ const _globalIdMedioPagoEfectivo = 'medio-pago-efectivo';
 const _globalIdMedioPagoVirtual = 'medio-pago-virtual';
 
 const proveedoresNuevosV10 = [
-  ('SC', 'Serra Cigarros'),
+  ('SC', 'Distribuidora de Cigarrillos'),
   ('A', 'Arcor'),
   ('P', 'Puelche'),
   ('L', 'Bebidas del Lago'),
@@ -70,7 +71,7 @@ const proveedoresNuevosV10 = [
 // "Productos" y "Stock por proveedor" no están acá (fase 13, corrección
 // post-aprobación del kit): las absorbió Proveedores — ver la migración
 // v18 → v19 para instalaciones que ya las tenían sembradas.
-// 2026-09-26 (Bruno: "que apartados podemos resumir, agrupar o directamente
+// 2026-09-26 (El dueño: "que apartados podemos resumir, agrupar o directamente
 // eliminar"): Reportes se repartió entre Separaciones e Historial,
 // Equilibrio pasó a Inicio, Respaldo e Impresión a Configuración, Comparar
 // precios a Proveedores — ver la migración v38 → v39.
@@ -213,7 +214,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(sesionesDeCaja, sesionesDeCaja.mpDiferenciaCentavos);
       }
       // v7 → v8: opción para que el retiro semanal (Regla 13) descuente
-      // los fijos pendientes del mes. Apagada por default — Bruno
+      // los fijos pendientes del mes. Apagada por default — El dueño
       // confirmó que su planilla real nunca los restó.
       if (from < 8) {
         await m.addColumn(
@@ -236,18 +237,18 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       // v9 → v10: el catálogo real tiene 15 proveedores, no 7 (Regla
-      // 16). Serra y Mazzota ya existían con otro nombre, así que se
+      // 16). Distribuidora y Fiambrería ya existían con otro nombre, así que se
       // renombran conservando su id (productos ya cargados no pierden
-      // la referencia); Coca Cola y Wesley ya tenían el nombre correcto.
+      // la referencia); Coca Cola y Golosinas Oeste ya tenían el nombre correcto.
       // B/G/O eran placeholders del seed original — quedan en la base
       // pero desactivados: no se ofrecen más, pero un producto viejo
       // que ya apuntaba a uno no se rompe.
       if (from < 10) {
         await (update(proveedores)..where((p) => p.codigo.equals('S'))).write(
-          const ProveedoresCompanion(nombre: Value('Serra')),
+          const ProveedoresCompanion(nombre: Value('Distribuidora')),
         );
         await (update(proveedores)..where((p) => p.codigo.equals('F'))).write(
-          const ProveedoresCompanion(nombre: Value('Mazzota')),
+          const ProveedoresCompanion(nombre: Value('Fiambrería')),
         );
         await (update(proveedores)
               ..where((p) => p.codigo.isIn(['B', 'G', 'O'])))
@@ -259,7 +260,7 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       // v10 → v11: separación de fondos por proveedor (prioridad de
-      // Bruno). El corte de reposición pasa de
+      // El dueño). El corte de reposición pasa de
       // `historial_pedidos.fechaRecibido` a estas columnas nuevas —
       // `historial_pedidos` y sus botones "Pedido hecho"/"Mercadería
       // recibida" quedan sin usar (ver DECISIONES.md), la tabla no se
@@ -302,7 +303,7 @@ class AppDatabase extends _$AppDatabase {
       // v14 → v15 (fase 13, pantalla Proveedores): Reposición pasa a ser
       // la pantalla de Proveedores — mismo `clave` de sección, nombre
       // nuevo, para que una base existente no pierda el orden ni la
-      // visibilidad que Bruno ya haya elegido. `ultimoPagoFecha` hace
+      // visibilidad que el dueño ya haya elegido. `ultimoPagoFecha` hace
       // falta para el período "Desde el último pago" (no se puede
       // reconstruir desde `movimientos_de_caja`: Transferencia y Cuenta
       // corriente no dejan rastro ahí). `periodoResumen` es el selector
@@ -370,7 +371,7 @@ class AppDatabase extends _$AppDatabase {
           seccionesMenu,
         )..where((s) => s.clave.isIn(['productos', 'stock_proveedor']))).go();
       }
-      // v19 → v20: "Reportes" (Bruno, 2026-09-06: "en lugar de revisar
+      // v19 → v20: "Reportes" (El dueño, 2026-09-06: "en lugar de revisar
       // ganancias, un apartado de reportes para poder ver detalladamente
       // todo") reemplaza a la pantalla de apertura forzada de Regla 13 —
       // deja de interrumpir al abrir caja y pasa a ser una sección más,
@@ -387,7 +388,7 @@ class AppDatabase extends _$AppDatabase {
       }
       // v20 → v21 (Fase 12, cobro por terminal Point): la terminal que
       // cobra por QR/Débito es un campo de configuración separado de
-      // `mpTerminalId` (el que ya existe, para imprimir) — Bruno tiene dos
+      // `mpTerminalId` (el que ya existe, para imprimir) — El dueño tiene dos
       // posnets, uno de cobro manual que la app nunca toca y "el del
       // sistema", que imprime Y cobra. `pagos.canal` guarda 'qr'/
       // 'debit_card'/null sin crear un medio de pago nuevo (QR y Débito
@@ -424,7 +425,7 @@ class AppDatabase extends _$AppDatabase {
       if (from < 23) {
         await _crearIndicesDeConsultasCalientes(this);
       }
-      // v23 → v24 (Regla 6, Bruno 2026-09-10): "los puchos sueltos también
+      // v23 → v24 (Regla 6, el dueño 2026-09-10): "los puchos sueltos también
       // deben tener recargo por MP, sin eso los cálculos dan mal" — $50 por
       // cigarro suelto, antes sin recargo. Cambiar el default de Dart
       // (`tables/configuracion.dart`) no alcanza para la fila que ya existe
@@ -441,7 +442,7 @@ class AppDatabase extends _$AppDatabase {
       if (from < 25) {
         await m.createTable(arqueosIntermedios);
       }
-      // v25 → v26 (2026-09-12, Bruno: "no quiero 50 botones en cualquier
+      // v25 → v26 (2026-09-12, el dueño: "no quiero 50 botones en cualquier
       // lado"): la barra lateral vuelve a arrancar plegada — mismo motivo
       // que la migración v15→v16, cambiar el default de Dart no corrige la
       // fila que ya existe en una base real.
@@ -450,7 +451,7 @@ class AppDatabase extends _$AppDatabase {
           const ConfiguracionTablaCompanion(barraLateralPlegada: Value(true)),
         );
       }
-      // v26 → v27 (2026-09-13, Bruno: eliminar una venta desde el celular):
+      // v26 → v27 (2026-09-13, el dueño: eliminar una venta desde el celular):
       // "anular" es una acción nueva, distinta de "editar" — revierte stock
       // y caja igual que editar, pero deja la venta marcada en vez de
       // reemplazar sus líneas/pagos (Regla 6, nunca se pierde el rastro).
@@ -460,7 +461,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(ventas, ventas.anuladaEn);
         await m.addColumn(ventas, ventas.motivoAnulacion);
       }
-      // v27 → v28 (2026-09-14, Bruno: "una noción de los precios de mi
+      // v27 → v28 (2026-09-14, el dueño: "una noción de los precios de mi
       // local... para ajustarlos según si están muy caros o muy baratos"):
       // comparador de precios contra SEPA/Precios Claros — tabla nueva
       // (`comparador_precios.dart` la llena, nunca domain/) + sección de
@@ -475,7 +476,7 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       }
-      // v28 → v29 (2026-09-14, Bruno: "todo lo que esté en mi sistema" —
+      // v28 → v29 (2026-09-14, el dueño: "todo lo que esté en mi sistema" —
       // el comparador de precios pasa a listar TODO el catálogo, no solo
       // lo que tiene código de barras. Pesables no tienen EAN, así que
       // necesitan cruzarse por nombre, y comparar contra el precio del
@@ -492,7 +493,7 @@ class AppDatabase extends _$AppDatabase {
         );
         await m.addColumn(preciosReferenciaExterna, preciosReferenciaExterna.unidadReferencia);
       }
-      // v29 → v30 (2026-09-15, Bruno: "que la companion funcione sin
+      // v29 → v30 (2026-09-15, el dueño: "que la companion funcione sin
       // depender de la PC" — fase 1 del rediseño, invisible todavía: solo
       // agrega las columnas que va a necesitar la sincronización entre la
       // base del escritorio y la base propia que va a tener el celular más
@@ -619,7 +620,7 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       }
-      // v30 → v31: migración histórica hacia Firebase (Bruno, 2026-09-18:
+      // v30 → v31: migración histórica hacia Firebase (El dueño, 2026-09-18:
       // "cómo migramos TODOS los datos actuales"). La migración v29→v30 dejó
       // a propósito con `global_id` NULL cualquier fila de antes de esa
       // fecha — "nunca se inventa un id para algo que nunca necesitó
@@ -646,7 +647,7 @@ class AppDatabase extends _$AppDatabase {
 
         // Con fecha propia: se copia tal cual — misma unidad en las dos
         // columnas (epoch en segundos, confirmado contra la base real de
-        // Bruno antes de escribir esto).
+        // El dueño antes de escribir esto).
         const tablasConFechaPropia = {
           'productos': 'creado_en',
           'sesiones_de_caja': 'fecha_apertura',
@@ -689,7 +690,7 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       // v31 → v32: `usuarios` se suma a la sincronización por Firestore
-      // (Bruno, 2026-09-18: "no debería tener que escanear ya, es
+      // (El dueño, 2026-09-18: "no debería tener que escanear ya, es
       // innecesario" — sacar el emparejamiento LAN obligatorio de
       // `companion_app.dart` dejó "¿quién sos?" sin de dónde sacar la lista
       // cuando no hay PC. La exclusión de `usuarios` en la migración
@@ -700,7 +701,7 @@ class AppDatabase extends _$AppDatabase {
       // real futura gana el conflicto).
       if (from < 32) {
         // `IF NOT EXISTS` a mano (drift no lo ofrece para `addColumn`) —
-        // bug real, 2026-09-18: la base de producción de Bruno quedó con
+        // bug real, 2026-09-18: la base de producción de el dueño quedó con
         // estas columnas ya agregadas pero `PRAGMA user_version` atascado
         // en 30 (una migración anterior, en medio de todo el trabajo de
         // sync de esa fecha, alcanzó a tocar las columnas sin llegar a
@@ -725,7 +726,7 @@ class AppDatabase extends _$AppDatabase {
         );
         await _crearIndicesUnicosDeSincronizacion(this, tablas: const ['usuarios']);
       }
-      // v32 → v33 (Bruno, 2026-09-19: "que se puedan modificar las reglas
+      // v32 → v33 (El dueño, 2026-09-19: "que se puedan modificar las reglas
       // del negocio... desde el celular"): separa recargo de cigarrillos,
       // paso de redondeo y producto de vuelto de `configuracion_tabla` (que
       // mezcla esas reglas con secretos y datos de UI del escritorio) a una
@@ -735,7 +736,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(configuracionNegocioTabla);
 
         // Copia los valores REALES de la fila vieja, no los defaults del
-        // esquema — Bruno puede tener el recargo de suelto en otro monto en
+        // esquema — El dueño puede tener el recargo de suelto en otro monto en
         // producción. Solo el escritorio siembra esta fila (mismo criterio
         // que usuarios/categorías/proveedores: una companion que sembrara
         // la suya propia con otro `global_id` terminaría con dos filas
@@ -788,7 +789,7 @@ class AppDatabase extends _$AppDatabase {
         );
         await _crearIndicesUnicosDeSincronizacion(this, tablas: const ['medios_de_pago']);
       }
-      // v33 → v34 (Bruno, 2026-09-25): excedente de Mercado Pago por
+      // v33 → v34 (El dueño, 2026-09-25): excedente de Mercado Pago por
       // cigarrillos — lo generado por sesión y la marca de "este pago a
       // proveedor lo usó". Aditiva (nullable / default false), sin tocar
       // datos existentes. Chequeo de columna a mano por el mismo motivo que
@@ -810,7 +811,7 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(movimientosDeCaja, movimientosDeCaja.usoExcedenteCigarrillos);
         }
       }
-      // v34 → v35 (Bruno, 2026-09-26): lo separado para cada proveedor se
+      // v34 → v35 (El dueño, 2026-09-26): lo separado para cada proveedor se
       // divide entre cajón y Mercado Pago — la parte MP se congela al
       // separar. Reemplaza al "excedente de MP" de v34: sus dos columnas
       // quedan sin uso (no se borra lo que ya salió a producción). Mismo
@@ -823,7 +824,7 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(proveedores, proveedores.separadoMpCentavos);
         }
       }
-      // v35 → v36 (Bruno, 2026-09-26: "¿hay un apartado CLARO donde ver las
+      // v35 → v36 (El dueño, 2026-09-26: "¿hay un apartado CLARO donde ver las
       // separaciones?"): sección nueva del menú, al final (mismo criterio
       // que "Reportes" en v19→v20 — el orden se cambia desde
       // Configuración). Chequeo a mano porque `seccionesMenuIniciales` ya la
@@ -842,7 +843,7 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       }
-      // v36 → v37 (Bruno, 2026-09-26: "ya cargué el costo y no aparece
+      // v36 → v37 (El dueño, 2026-09-26: "ya cargué el costo y no aparece
       // nada"): desde ahora, cargar el costo de un producto completa las
       // ventas suyas que quedaron sin costo (`completarCostoDeVentasSinCosto`,
       // `repositorio_productos.dart`). Esto aplica la misma regla, una sola
@@ -854,7 +855,7 @@ class AppDatabase extends _$AppDatabase {
       // celular recibe las líneas completadas por sincronización (mismo
       // criterio que v32→v33 — si los dos las tocaran, cada uno subiría su
       // propia versión de la misma fila).
-      // v37 → v38 (Bruno, 2026-09-26, mock de Separaciones con tildes): lo
+      // v37 → v38 (El dueño, 2026-09-26, mock de Separaciones con tildes): lo
       // separado hoy por proveedor y cómo estaba antes, para poder
       // destildar. Aditiva, mismo chequeo de columna a mano que v33→v34.
       if (from < 38) {
@@ -869,7 +870,7 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(proveedores, proveedores.pendienteBaseAntesDelDiaCentavos);
         }
       }
-      // v38 → v39 (Bruno, 2026-09-26: "que apartados podemos resumir,
+      // v38 → v39 (El dueño, 2026-09-26: "que apartados podemos resumir,
       // agrupar o directamente eliminar para que no sea redundante"): cinco
       // secciones dejan de ser apartados del menú — sus pantallas se
       // repartieron en otras (ver `seccionesMenuIniciales`). Borrado real de
@@ -882,17 +883,17 @@ class AppDatabase extends _$AppDatabase {
               ))
             .go();
       }
-      // v39 → v40 (Bruno, 2026-09-29): borradores de venta persistentes y
+      // v39 → v40 (El dueño, 2026-09-29): borradores de venta persistentes y
       // más de una venta a la vez. Tabla nueva, sin seed.
       if (from < 40) {
         await m.createTable(ventasAbiertas);
       }
-      // v40 → v41 (Bruno, 2026-09-29): cuenta corriente con proveedores (lo
+      // v40 → v41 (El dueño, 2026-09-29): cuenta corriente con proveedores (lo
       // que se les debe). Tabla nueva, sin seed.
       if (from < 41) {
         await m.createTable(movimientosDeuda);
       }
-      // v41 → v42 (Bruno, 2026-09-29: "simplificar el sistema de precios"):
+      // v41 → v42 (El dueño, 2026-09-29: "simplificar el sistema de precios"):
       // porcentaje de ganancia por proveedor y marca de precio fijo por
       // producto. Aditiva; mismo chequeo de columna a mano que v33→v34.
       if (from < 42) {
@@ -907,7 +908,7 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(productos, productos.precioFijo);
         }
       }
-      // v42 → v43 (Bruno, 2026-09-29): creador de promos. `productos.es_promo`
+      // v42 → v43 (El dueño, 2026-09-29): creador de promos. `productos.es_promo`
       // y la tabla de sus componentes.
       if (from < 43) {
         final columnas = (await customSelect("SELECT name FROM pragma_table_info('productos')").get())
@@ -939,7 +940,7 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       // v44 → v45 (fase 4): `proveedores.caja_aparte` reemplaza al código fijo 'SC'. Las bases que ya tenían a
-      // Serra Cigarros lo reciben marcado; `actualizado_en` no se toca (cada dispositivo corre esta misma
+      // Distribuidora de Cigarrillos lo reciben marcado; `actualizado_en` no se toca (cada dispositivo corre esta misma
       // migración, no hace falta que la suba por sync). Aditiva, con chequeo de columna como v43→v44.
       if (from < 45) {
         final columnas = (await customSelect("SELECT name FROM pragma_table_info('proveedores')").get())
@@ -1065,13 +1066,13 @@ Future<void> _crearIndicesUnicosDeSincronizacion(
 /// lo necesita desde el primer arranque (Regla 5/9), no es algo que se dé de
 /// alta a mano.
 ///
-/// El usuario "Bruno" se siembra para que la apertura de caja tenga a quién
+/// El usuario "El dueño" se siembra para que la apertura de caja tenga a quién
 /// elegir desde el primer arranque (Regla 18 pide un selector, no un campo
 /// vacío). La ayuda de fin de semana se agrega desde el propio diálogo de
 /// apertura — no hace falta esperar a una pantalla de configuración.
 ///
 /// `usuarios`/`categorias`/`proveedores`/el producto "Varios" NO se siembran
-/// en Android (Bruno, 2026-09-18: "quiero que esto ande como la seda...
+/// en Android (El dueño, 2026-09-18: "quiero que esto ande como la seda...
 /// necesitaría que arregles todo... para que todo funcione... y yo ni
 /// siquiera sienta que existe la sync") — encontrado en vivo: una companion
 /// recién instalada sembraba estos mismos datos de fábrica ANTES de que
@@ -1079,7 +1080,7 @@ Future<void> _crearIndicesUnicosDeSincronizacion(
 /// nacen sin `global_id`, `aplicarCambios` nunca las reconoce como "la misma
 /// fila que ya tengo" — intenta INSERTAR la real de nuevo y choca contra la
 /// restricción `UNIQUE` de `proveedores.codigo` (15 de los 19 proveedores
-/// reales de Bruno quedaban permanentemente sin sincronizar, silenciosamente,
+/// reales de el dueño quedaban permanentemente sin sincronizar, silenciosamente,
 /// en cualquier instalación nueva del celular). En el escritorio esto se
 /// queda igual que siempre: ahí SÍ hace falta el seed, es la fuente de
 /// verdad que después empuja todo a Firestore.
@@ -1097,7 +1098,11 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
     // Sin `global_id`/`actualizadoEn` a propósito (mismo criterio que
     // categorías/proveedores acá abajo): recién sincroniza cuando se edite
     // de verdad por primera vez.
-    await db.into(db.configuracionNegocioTabla).insert(const ConfiguracionNegocioTablaCompanion());
+    // El comparador de precios está armado para el comercio de origen (supermercados de una ciudad y una tienda
+    // online puntual): un comercio nuevo lo arranca apagado y lo prende desde Configuración → Módulos.
+    await db.into(db.configuracionNegocioTabla).insert(
+      ConfiguracionNegocioTablaCompanion(modulosDesactivados: Value(Modulo.compararPrecios.clave)),
+    );
   }
 
   await db

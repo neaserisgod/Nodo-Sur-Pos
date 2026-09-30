@@ -1,5 +1,5 @@
 // Arqueo sugerido cada 2hs (turnos por usuario, 2026-09-12; ya no bloqueante,
-// Bruno 2026-09-15): un aviso dentro de la misma sesión, sin cortarla ni
+// El dueño 2026-09-15): un aviso dentro de la misma sesión, sin cortarla ni
 // impedir seguir vendiendo — distinto de "Cerrar caja"/"Cambiar de turno".
 
 import 'package:drift/drift.dart';
@@ -38,7 +38,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -74,7 +74,7 @@ void main() {
 
       await _pump(tester, db);
 
-      // El aviso ya no es un banner siempre visible (Bruno, tercera pasada
+      // El aviso ya no es un banner siempre visible (El dueño, tercera pasada
       // de venta: "UN APARTADO NOTIFICACIONES") — vive detrás de la
       // campanita de la franja superior, hay que abrirla primero.
       await tester.tap(find.byTooltip('Notificaciones'));

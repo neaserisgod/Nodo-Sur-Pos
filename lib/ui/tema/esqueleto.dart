@@ -2,7 +2,7 @@
 // `lib/companion/tema/esqueleto_companion.dart`. El escritorio hoy solo
 // tiene spinners de pantalla completa en su carga inicial; esto reemplaza
 // ese `Center(child: CircularProgressIndicator())` por la silueta de lo que
-// está por aparecer, mismo criterio ya aplicado en la companion (Bruno,
+// está por aparecer, mismo criterio ya aplicado en la companion (El dueño,
 // 2026-09-19: "si algo tarda en cargar no quiero pantallas en blanco o
 // spinners, sino skeletons").
 //

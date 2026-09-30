@@ -4,7 +4,7 @@
 // pago, etc.) — todos comparten esta misma estructura, solo cambia el
 // contenido y los botones.
 //
-// Remake de la estética (Bruno, 2026-09-19): vidrio esmerilado (blur +
+// Remake de la estética (El dueño, 2026-09-19): vidrio esmerilado (blur +
 // relleno translúcido + borde + sombra), mismo tratamiento que
 // `mostrarHojaVidrio` de la companion, adaptado a diálogo centrado en vez
 // de hoja inferior — el escritorio no tiene affordance de "abajo" ni gesto
@@ -20,7 +20,7 @@
 // usa `Colors.black54` siempre — mismo número en los dos temas, pero el
 // mismo negro pesa distinto según lo que tiene atrás: sobre el canvas claro
 // apenas se nota; sobre el oscuro lo funde casi entero (corrección
-// post-aprobación del kit, Bruno). Un gris neutro en vez de negro puro
+// post-aprobación del kit, el dueño). Un gris neutro en vez de negro puro
 // achica esa diferencia en los dos sentidos a la vez.
 
 
@@ -97,7 +97,7 @@ class Modal extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioSuperficieEscritorio + 4)),
           child: ConstrainedBox(
             constraints: restricciones,
-            // "Lenguaje de diseño" (Bruno, 2026-09-26): diálogo opaco con
+            // "Lenguaje de diseño" (El dueño, 2026-09-26): diálogo opaco con
             // una sombra suave para despegarlo del velo, en vez del vidrio
             // esmerilado (blur + relleno translúcido) de antes — el lenguaje
             // nuevo es plano, y el blur dejaba el diálogo grisáceo.

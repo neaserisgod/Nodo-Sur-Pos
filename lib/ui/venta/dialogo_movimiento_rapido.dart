@@ -1,4 +1,4 @@
-// Gasto rápido (Alt+guion) e ingreso rápido (Alt+I, Bruno 2026-09-13: "un
+// Gasto rápido (Alt+guion) e ingreso rápido (Alt+I, el dueño 2026-09-13: "un
 // botón de ingreso de dinero, evidentemente siguiendo con las cajas que
 // hay"): la forma más rápida de anotar plata que sale o entra sin salir de
 // la pantalla de venta. Ninguno de los dos es una venta (Regla 11): escriben
@@ -132,7 +132,7 @@ class _DialogoMovimientoRapidoState extends State<_DialogoMovimientoRapido> {
         );
       }
     } on SesionCerradaException {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — la
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — la
       // caja se cerró (probablemente desde otro dispositivo) entre que se
       // abrió este diálogo y se confirmó.
       setState(() => _error = 'La caja ya se cerró, este ${_esGasto ? 'gasto' : 'ingreso'} no se guardó');

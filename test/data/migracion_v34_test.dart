@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v33 → v34, excedente de Mercado Pago por
-// cigarrillos — Bruno, 2026-09-25) contra un archivo de verdad, no
+// cigarrillos — El dueño, 2026-09-25) contra un archivo de verdad, no
 // `NativeDatabase.memory()` — mismo motivo que `migracion_v33_test.dart`:
 // en memoria siempre se pasa por `onCreate`, nunca se ejercita `onUpgrade`.
 import 'dart:io';
@@ -16,7 +16,7 @@ void main() {
     final archivo = File('${carpeta.path}/base.sqlite');
 
     final db = AppDatabase(NativeDatabase(archivo));
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
     final sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 100000),

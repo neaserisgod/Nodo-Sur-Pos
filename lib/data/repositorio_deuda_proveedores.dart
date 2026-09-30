@@ -1,4 +1,4 @@
-// Cuenta corriente con los proveedores (lo que Bruno les debe). Ver el
+// Cuenta corriente con los proveedores (lo que el dueño les debe). Ver el
 // comentario de la tabla `movimientos_deuda`.
 
 import 'package:drift/drift.dart';
@@ -57,7 +57,7 @@ Future<List<MovimientoDeuda>> listarMovimientosDeuda(AppDatabase db, int proveed
       .get();
 }
 
-/// Anota que Bruno le debe [montoCentavos] más a [proveedorId].
+/// Anota que el dueño le debe [montoCentavos] más a [proveedorId].
 Future<int> cargarDeuda(
   AppDatabase db, {
   required int proveedorId,

@@ -1,4 +1,4 @@
-// Bruno, 2026-09-13, duda real: "¿la separación de cigarrillos está al
+// El dueño, 2026-09-13, duda real: "¿la separación de cigarrillos está al
 // instante en la caja, o contempla que se hace a la noche antes del
 // cierre?" — confirmado: "solo al cerrar". Antes de esta corrección,
 // `registrarArqueoIntermedio` reusaba `calcularResumenCierre` tal cual para
@@ -24,7 +24,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;
     cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
@@ -62,7 +62,7 @@ void main() {
     );
   }
 
-  Future<void> pagarASerraDesdeLaLata(int sesionId, {required int montoCentavos}) async {
+  Future<void> pagarAProveedorDesdeLaLata(int sesionId, {required int montoCentavos}) async {
     await db.into(db.movimientosDeCaja).insert(
       MovimientosDeCajaCompanion.insert(
         sesionCajaId: sesionId,
@@ -89,14 +89,14 @@ void main() {
       expect(esperada, 500000); // sigue siendo el inicial, ni un centavo de lo vendido hoy
     });
 
-    test('sí resta un pago a Serra hecho hoy desde la lata', () async {
+    test('sí resta un pago a Distribuidora hecho hoy desde la lata', () async {
       final sesionId = await abrirSesion(
         db,
         usuarioId: usuarioId,
         fondoInicialCentavos: 0,
         lataInicialCentavos: 500000,
       );
-      await pagarASerraDesdeLaLata(sesionId, montoCentavos: 200000);
+      await pagarAProveedorDesdeLaLata(sesionId, montoCentavos: 200000);
 
       final esperada = await lataEsperadaIntermedia(db, sesionId);
 
@@ -120,7 +120,7 @@ void main() {
         usuarioId: usuarioId,
         efectivoContadoCentavos: 900000, // 100000 inicial + 800000 de la venta, todavía sin separar
         mpContadoCentavos: 0,
-        lataContadoCentavos: 500000, // Bruno no tocó la lata todavía hoy
+        lataContadoCentavos: 500000, // El dueño no tocó la lata todavía hoy
       );
 
       final fila = (await db.select(db.arqueosIntermedios).get()).single;
@@ -164,7 +164,7 @@ void main() {
 
       final arqueos = await arqueosDelTurno(db, sesionId);
 
-      expect(arqueos.map((a) => a.usuario), ['Bruno', 'Ayuda']);
+      expect(arqueos.map((a) => a.usuario), ['Dueño', 'Ayuda']);
       expect(arqueos.last.efectivoContadoCentavos, 250000);
       expect(arqueos.last.mpContadoCentavos, 40000);
     });

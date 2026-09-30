@@ -1,4 +1,4 @@
-// Revisa los cierres de caja de una base real (Bruno, 2026-09-28: "¿el
+// Revisa los cierres de caja de una base real (El dueño, 2026-09-28: "¿el
 // cierre de caja toma y pone los datos correctamente?"). No escribe nada:
 // abre una COPIA de la base y, por cada sesión cerrada, compara:
 //

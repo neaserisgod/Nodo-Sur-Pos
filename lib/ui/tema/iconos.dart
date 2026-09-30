@@ -1,4 +1,4 @@
-// Mapa de equivalencias — estética "Google" (Bruno, 2026-09-25: "una
+// Mapa de equivalencias — estética "Google" (El dueño, 2026-09-25: "una
 // estética al estilo de Google... ninguna de las otras me cerró"):
 // `Icons.x_rounded`, la familia de íconos redondeados que Flutter YA trae
 // empaquetada (Material Icons, variante "Rounded" — es literalmente la
@@ -6,7 +6,7 @@
 // paquete externo. Reemplaza el intento anterior con `phosphor_flutter`
 // (abandonado: la versión publicada no compila con este SDK — `IconData`
 // pasó a ser `final class` — y de paso tampoco era la línea visual que
-// Bruno terminó pidiendo).
+// El dueño terminó pidiendo).
 //
 // Un solo lugar compartido por escritorio y companion (mismo patrón que
 // `tokens.dart`), nombrado por el identificador Material original en

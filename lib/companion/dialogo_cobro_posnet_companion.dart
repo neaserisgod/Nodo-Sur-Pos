@@ -243,7 +243,7 @@ class _DialogoCobroPosnetCompanionState
     await _iniciar();
   }
 
-  /// "Cobrar a mano" (Bruno, 2026-09-07: "para cargar las ventas de hoy y
+  /// "Cobrar a mano" (El dueño, 2026-09-07: "para cargar las ventas de hoy y
   /// seguir cargando mientras tanto") — mismo criterio que
   /// `VentaControlador.cobrarActual()` del escritorio: graba la venta
   /// directo, sin esperar más al posnet, conservando el canal elegido.

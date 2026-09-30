@@ -1,4 +1,4 @@
-// Comparador de precios — Todo a tu Casa (Bruno, 2026-09-14: "si hay
+// Comparador de precios — Todo a tu Casa (El dueño, 2026-09-14: "si hay
 // publico, revisa, la ultima vez que scrapee habia una api expuesta").
 //
 // Confirmado: `todoatucasa.xrp.net` corre sobre una plataforma llamada
@@ -20,8 +20,8 @@
 // nunca bloquea el arranque, y comparte `precios_referencia_externa` sin
 // pisar las filas de la otra fuente (`fuente: 'todoatucasa'`).
 //
-// Autorización (Bruno, 2026-09-14): antes de dejar esto corriendo
-// automático, Bruno habló con un conocido de Todo a tu Casa y confirmó que
+// Autorización (El dueño, 2026-09-14): antes de dejar esto corriendo
+// automático, el dueño habló con un conocido de Todo a tu Casa y confirmó que
 // no hay problema en leer su catálogo de esta forma — no es un uso no
 // autorizado de credenciales encontradas, es una automatización que el
 // negocio dueño de los datos conoce y permite.
@@ -37,7 +37,7 @@ import '../data/repositorio_comparacion_precios.dart';
 const _apiUrl = 'https://api.xrp.net/v2/Products/';
 
 // Credenciales públicas del propio sitio (ver comentario de arriba) — no
-// son un secreto de Bruno, son las que ya usa cualquier visitante.
+// son un secreto de el dueño, son las que ya usa cualquier visitante.
 const _accessToken = '96f9d37c8920b5f83806f09e51cd48e9';
 const _apiKey = '96f9d37c8920b5f83806f09e51cd48e9';
 const _partyIdFrom = 'fb2de06e-5378-452a-9eee-058bfcb21f34';
@@ -97,7 +97,7 @@ Future<List<PrecioReferenciaFila>> _bajarCatalogoCompleto() async {
 /// Descarta productos sin nombre o sin precio (nada con qué compararlos ni
 /// mostrarlos); sin código de barras válido, [PrecioReferenciaFila.codigoBarras]
 /// queda vacío y `comparacionDePrecios` los cruza por nombre — mismo
-/// camino que un pesable de SEPA sin EAN (Bruno, 2026-09-14: "todo lo que
+/// camino que un pesable de SEPA sin EAN (El dueño, 2026-09-14: "todo lo que
 /// esté en mi sistema").
 List<PrecioReferenciaFila> filasDesdePagina(List<Map<String, dynamic>> pagina) {
   final resultado = <PrecioReferenciaFila>[];

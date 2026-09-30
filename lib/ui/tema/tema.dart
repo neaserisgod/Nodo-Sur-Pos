@@ -3,7 +3,7 @@
 // construir un ThemeData ni un TextStyle "suelto": todo sale de acá o de
 // `Theme.of(context)`.
 //
-// Remake completo de la estética (Bruno, 2026-09-19: "quiero que en
+// Remake completo de la estética (El dueño, 2026-09-19: "quiero que en
 // desktop remakeemos toda la estética basándonos en la estética actual del
 // celular... basémonos al completo en el apk") — mismo armado que antes,
 // pero con la paleta/acentos/radios/escala tipográfica que ya usa la

@@ -5,7 +5,7 @@
 // pantalla_venta.dart).
 //
 // Fase 12 (cobro por Point): confirmar ya no es una sola tecla — es también
-// la elección del canal para el resto (Bruno, ESTADO.md: "la confirmación
+// la elección del canal para el resto (El dueño, ESTADO.md: "la confirmación
 // del monto en efectivo pasa a ser también la elección del canal, sin
 // tecla extra"). Alt+Q confirma con el resto por QR, Alt+D por Débito,
 // Enter (o el botón) confirma por QR — mismo default que el reflejo de

@@ -43,7 +43,7 @@ Future<AppDatabase> _crearBaseConSesion() async {
   final db = baseDeTest();
   final usuarioId = await db
       .into(db.usuarios)
-      .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   await db
       .into(db.productos)
@@ -110,7 +110,7 @@ Future<void> _presionarAltGr(
 }
 
 /// La navbar pasó a ser un solo botón que abre un dropdown de secciones
-/// (Bruno, rediseño 2026-09-25) — hay que abrirlo antes de poder tocar el
+/// (El dueño, rediseño 2026-09-25) — hay que abrirlo antes de poder tocar el
 /// nombre de la sección destino, en vez de tocar directo un ícono con
 /// tooltip propio (`find.descendant(of: find.byType(NavbarSuperior),
 /// matching: find.byTooltip(...))`, el patrón viejo que reemplaza).
@@ -284,7 +284,7 @@ void main() {
           'Alfajor Nuevo',
         );
         await tester.enterText(find.byKey(const Key('campo_precio')), '500');
-        // Sin stock, no aparece en la búsqueda de Venta (Bruno,
+        // Sin stock, no aparece en la búsqueda de Venta (El dueño,
         // 2026-09-06) — este test es sobre el refresco del catálogo, no
         // sobre stock, así que necesita algo de stock para poder
         // encontrarlo después.
@@ -294,7 +294,7 @@ void main() {
 
         // Volver por la barra lateral DE PROVEEDORES (`EnvolturaConBarraLateral`
         // → `navegarASeccionDeGestion`), no por "atrás" — Proveedores no tiene
-        // flecha de volver, así vuelve la app real (Bruno).
+        // flecha de volver, así vuelve la app real (El dueño).
         await _navegarA(tester, 'Venta');
 
         expect(find.byType(PantallaVenta), findsOneWidget);
@@ -306,7 +306,7 @@ void main() {
     );
 
     testWidgets(
-      'Bug real (Bruno, 2026-09-05): entrar a Proveedores DESDE OTRA sección de gestión '
+      'Bug real (Dueño, 2026-09-05): entrar a Proveedores DESDE OTRA sección de gestión '
       '(no directo desde la venta) también tiene que refrescar el catálogo al volver',
       (tester) async {
         final db = await _crearBaseConSesion();
@@ -351,7 +351,7 @@ void main() {
           'Alfajor Nuevo',
         );
         await tester.enterText(find.byKey(const Key('campo_precio')), '500');
-        // Sin stock, no aparece en la búsqueda de Venta (Bruno,
+        // Sin stock, no aparece en la búsqueda de Venta (El dueño,
         // 2026-09-06) — este test es sobre el refresco del catálogo, no
         // sobre stock, así que necesita algo de stock para poder
         // encontrarlo después.

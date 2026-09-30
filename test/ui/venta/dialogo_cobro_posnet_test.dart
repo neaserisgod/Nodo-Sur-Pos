@@ -30,7 +30,7 @@ Future<VentaControlador> _controladorConCocaCola(
 }) async {
   final usuarioId = await db
       .into(db.usuarios)
-      .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   final idCoca = await db
       .into(db.productos)
@@ -161,7 +161,7 @@ void main() {
   testWidgets(
     'cancelar avisa a Mercado Pago (POST .../cancel) antes de cerrar',
     (tester) async {
-      // Bug real (Bruno: "cuando cancelo el QR no cancela el
+      // Bug real (El dueño: "cuando cancelo el QR no cancela el
       // dispositivo") — "Cancelar" tiene que mandar el POST de
       // cancelación, no solo actualizar la fila local.
       final pedidosDeCancelacion = <Uri>[];
@@ -205,7 +205,7 @@ void main() {
   testWidgets(
     'si la orden ya llegó a la terminal (at_terminal), MP rechaza el cancel y avisa con mensaje claro',
     (tester) async {
-      // Caso real, no hipotético (Bruno probó contra el posnet): la orden
+      // Caso real, no hipotético (El dueño probó contra el posnet): la orden
       // pasa a `at_terminal` casi al instante de crearse, y desde ahí MP
       // devuelve 409 `cannot_cancel_order` — este es el desenlace más común
       // al tocar "Cancelar", no una excepción rara.

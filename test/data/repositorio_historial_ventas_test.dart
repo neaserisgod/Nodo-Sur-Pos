@@ -13,7 +13,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;
     medioMpId =
@@ -33,7 +33,7 @@ void main() {
   }) async {
     // Una sola sesión para todas las ventas fabricadas de este archivo (no
     // les importa a qué sesión queden atadas) — desde que `abrirSesion`
-    // bloquea en vez de unirse en silencio (Bruno, 2026-09-19), un segundo
+    // bloquea en vez de unirse en silencio (El dueño, 2026-09-19), un segundo
     // llamado con una ya abierta tira, así que se reusa la existente.
     final sesionId = (await sesionAbierta(db))?.id ??
         await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);

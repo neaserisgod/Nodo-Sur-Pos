@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'caja.dart';
 
-/// Ventas armadas y todavía sin cobrar (Bruno, 2026-09-29: "quiero que la
+/// Ventas armadas y todavía sin cobrar (El dueño, 2026-09-29: "quiero que la
 /// venta permanezca y que pueda hacer más de 1 venta a la vez"). Cada fila
 /// es una pestaña de la pantalla de venta: sobrevive a cambiar de pantalla,
 /// cerrar la app o un corte de luz, hasta que se cobra o se descarta.

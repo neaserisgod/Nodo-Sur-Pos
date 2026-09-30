@@ -46,7 +46,7 @@ class VentaControlador extends ChangeNotifier {
     // solo, sin que nadie tenga que tocar nada para que se note que ya
     // pasaron las 2hs — mismo patrón que `_tickHorario` en `main.dart` para
     // el tema automático. Un minuto alcanza: no hace falta más precisión
-    // que esa para una ventana de 2 horas. Sugerencia, no bloqueo (Bruno,
+    // que esa para una ventana de 2 horas. Sugerencia, no bloqueo (El dueño,
     // 2026-09-15): se puede seguir vendiendo con el aviso visible.
     _tickArqueoIntermedio = Timer.periodic(
       const Duration(minutes: 1),
@@ -65,7 +65,7 @@ class VentaControlador extends ChangeNotifier {
   /// producto (por tap, Alt+tecla o Enter) y cobrar devuelven el foco acá —
   /// es la continuación natural de seguir vendiendo. Un diálogo secundario
   /// (Mixto, Varios, gasto/ingreso rápido, arqueo intermedio, editar un
-  /// acceso directo, imprimir) YA NO lo hace (Bruno, 2026-09-16: "dejar de
+  /// acceso directo, imprimir) YA NO lo hace (El dueño, 2026-09-16: "dejar de
   /// robar el foco al hacer otra cosa") — ver `acciones_venta.dart` y
   /// `pantalla_venta.dart` para el criterio completo de cuál es cuál.
   final FocusNode focoCampoPrincipal = FocusNode();
@@ -91,7 +91,7 @@ class VentaControlador extends ChangeNotifier {
   List<Categoria> categorias = [];
 
   /// Ids de producto más vendidos de toda la historia, en orden — la
-  /// grilla arranca mostrando esto en vez del catálogo entero (Bruno,
+  /// grilla arranca mostrando esto en vez del catálogo entero (El dueño,
   /// tercera pasada: "me abrumo al ver tantos productos... los 10 mas
   /// vendidos por default").
   List<int> idsMasVendidos = [];
@@ -114,7 +114,7 @@ class VentaControlador extends ChangeNotifier {
   /// Solo para lo que sigue viviendo en `configuracion_tabla`: credenciales
   /// de la terminal Point (`mpAccessToken`/`mpTerminalCobroId`). Recargo de
   /// cigarrillos/redondeo/producto de vuelto viven en [configuracionNegocio]
-  /// desde la migración v32→v33 (Bruno, 2026-09-19: "que se puedan
+  /// desde la migración v32→v33 (El dueño, 2026-09-19: "que se puedan
   /// modificar las reglas del negocio... desde el celular").
   Configuracion? configuracion;
   ConfiguracionNegocio? configuracionNegocio;
@@ -207,7 +207,7 @@ class VentaControlador extends ChangeNotifier {
 
   /// La sesión abierta quedó de un día anterior (se terminó tarde y no se
   /// contó, Regla 5) — no se puede vender bajo ella hasta cerrarla, aunque
-  /// el resto de la app (Bruno, 2026-09-06: "bloquea al abrir", mismo
+  /// el resto de la app (El dueño, 2026-09-06: "bloquea al abrir", mismo
   /// reclamo que la apertura) siga navegable igual que sin sesión.
   bool get sesionVencida =>
       sesion != null && esDeOtroDia(sesion!.fechaApertura);
@@ -216,7 +216,7 @@ class VentaControlador extends ChangeNotifier {
   /// muestra el aviso de contar de nuevo (`_AvisoArqueoIntermedio` en
   /// `pantalla_venta.dart`), sin bloquear la venta, cortar la sesión ni
   /// pedir cerrar caja — ver `necesitaArqueoIntermedio` en
-  /// `domain/caja.dart`. Bruno, 2026-09-15: dejó de bloquear, es solo una
+  /// `domain/caja.dart`. El dueño, 2026-09-15: dejó de bloquear, es solo una
   /// sugerencia. `sesionVencida` sí sigue bloqueando por su cuenta.
   bool get arqueoIntermedioVencido {
     if (sesion == null || sesionVencida) return false;
@@ -230,7 +230,7 @@ class VentaControlador extends ChangeNotifier {
   /// texto y ninguna coincidencia — salvo que esa "ninguna coincidencia"
   /// sea en realidad un producto conocido sin stock
   /// (`productoSinStockEncontrado`), que tiene su propio aviso distinto.
-  /// Ya no ofrece alta rápida (Bruno, 2026-09-16: se sacó de esta pantalla
+  /// Ya no ofrece alta rápida (El dueño, 2026-09-16: se sacó de esta pantalla
   /// — dar de alta un producto nuevo es siempre desde Proveedores), solo el
   /// mensaje "Sin coincidencias".
   bool get sinCoincidencias =>
@@ -240,7 +240,7 @@ class VentaControlador extends ChangeNotifier {
   /// pero sin stock (por eso no aparece en `coincidencias`, ver
   /// `busqueda_productos.dart`), lo devuelve acá para que la pantalla
   /// avise "ya existe, no tiene stock" en vez de ofrecer alta rápida sobre
-  /// algo que no es nuevo (Bruno, 2026-09-06: "que no lo deje escanear
+  /// algo que no es nuevo (El dueño, 2026-09-06: "que no lo deje escanear
   /// como si fuera nuevo").
   Producto? get productoSinStockEncontrado {
     if (coincidencias.isNotEmpty) return null;
@@ -435,7 +435,7 @@ class VentaControlador extends ChangeNotifier {
     campoTexto.clear();
   }
 
-  /// Ícono de tacho de una fila del carrito (Bruno, 2026-09-06: "que sea
+  /// Ícono de tacho de una fila del carrito (El dueño, 2026-09-06: "que sea
   /// con mouse para seleccionar el producto a eliminar" — reemplaza al
   /// `Backspace` de antes, que solo borraba la última línea). Cualquier
   /// línea, no solo la última.
@@ -458,7 +458,7 @@ class VentaControlador extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Botones "−"/"+" del carrito (Bruno, 2026-09-06) — solo para líneas por
+  /// Botones "−"/"+" del carrito (El dueño, 2026-09-06) — solo para líneas por
   /// unidad, ajusta de a un producto por vez. En 1, restar saca la línea
   /// entera (mismo criterio que el tacho): restar por debajo de 1 no tiene
   /// sentido.
@@ -486,7 +486,7 @@ class VentaControlador extends ChangeNotifier {
     );
   }
 
-  /// Doble clic en la cantidad (Bruno, 2026-09-06): tipear el valor exacto
+  /// Doble clic en la cantidad (El dueño, 2026-09-06): tipear el valor exacto
   /// en vez de tocar "+" muchas veces. 0 o menos saca la línea, mismo
   /// criterio que `ajustarCantidad`.
   void editarCantidadExacta(int index, int nuevaCantidad) {
@@ -512,9 +512,9 @@ class VentaControlador extends ChangeNotifier {
     );
   }
 
-  /// Doble clic en los gramos de un pesable (Bruno, 2026-09-06): mismo
+  /// Doble clic en los gramos de un pesable (El dueño, 2026-09-06): mismo
   /// criterio que `editarCantidadExacta`, sin botones "−"/"+" (sumar de a
-  /// un gramo por clic no tiene sentido práctico — decidido con Bruno).
+  /// un gramo por clic no tiene sentido práctico — decidido con el dueño).
   void editarGramosExacto(int index, int nuevosGramos) {
     if (index < 0 || index >= carrito.length) return;
     final linea = carrito[index];
@@ -538,7 +538,7 @@ class VentaControlador extends ChangeNotifier {
 
   // ─── Ventas abiertas (pestañas) ──────────────────────────────────────
   //
-  // Bruno, 2026-09-29: "que la venta permanezca y que pueda hacer más de 1
+  // El dueño, 2026-09-29: "que la venta permanezca y que pueda hacer más de 1
   // venta a la vez". La pestaña ACTIVA vive en los campos de siempre
   // (`carrito`, `medioElegido`, el descuento...) — todo el resto de la
   // pantalla sigue leyendo de ahí sin enterarse de que hay más. Las demás
@@ -896,7 +896,7 @@ class VentaControlador extends ChangeNotifier {
   // ─── Cobro por terminal Point (Fase 12) ──────────────────────────────
 
   /// Cuánto mandarle a la terminal: el total entero para QR/Débito
-  /// directo, o `total − montoEfectivoMixtoCentavos` en un mixto (Bruno,
+  /// directo, o `total − montoEfectivoMixtoCentavos` en un mixto (El dueño,
   /// ESTADO.md: "sobre el total ya compuesto — recargo primero, redondeo
   /// después").
   int get montoParaPosnet {
@@ -986,9 +986,9 @@ class VentaControlador extends ChangeNotifier {
     return marcarOrdenResuelta(db, id: ordenPendienteId, estado: estado);
   }
 
-  /// Bruno canceló desde el diálogo — a diferencia de un rechazo, acá la
+  /// El dueño canceló desde el diálogo — a diferencia de un rechazo, acá la
   /// orden sigue viva del lado de Mercado Pago y la terminal sigue
-  /// esperando el pago hasta que se le avise explícitamente (Bruno:
+  /// esperando el pago hasta que se le avise explícitamente (El dueño:
   /// "cuando cancelo el QR no cancela el dispositivo"). Si ya existe un id
   /// de MP, se le manda el cancel; si la API de cancelación falla, la fila
   /// se deja `'pendiente'` a propósito (no `'cancelada'`) — mismo criterio

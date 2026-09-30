@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v30 → v31, backfill histórico para poder migrar
-// TODAS las filas viejas a Firebase — Bruno, 2026-09-18) contra un archivo
+// TODAS las filas viejas a Firebase — El dueño, 2026-09-18) contra un archivo
 // de verdad, no `NativeDatabase.memory()` — mismo motivo que
 // `migracion_v30_test.dart`: en memoria siempre se pasa por `onCreate`
 // (esquema más nuevo de una), nunca se ejercita `onUpgrade`.
@@ -36,7 +36,7 @@ void main() {
 
       // `_seedDatosFijos` (onCreate) ya deja usuario, cajas, medios de pago y
       // ~11 categorías con `global_id` NULL — igual que la base real de
-      // Bruno hoy. Se reusa ese usuario y esos medios en vez de sembrar de
+      // El dueño hoy. Se reusa ese usuario y esos medios en vez de sembrar de
       // nuevo.
       const usuarioId = 1;
       final medioEfectivo = await (db.select(

@@ -1,4 +1,4 @@
-// Arma una `LineaVenta` a partir de un resultado de `buscarVenta` (Bruno,
+// Arma una `LineaVenta` a partir de un resultado de `buscarVenta` (El dueño,
 // 2026-09-07: "que la parte de vender use la misma lógica que la app de
 // desktop") — mismo mapeo que `lineaDesdeProducto`
 // (`data/repositorio_ventas.dart`), pero desde `ProductoCompanion` en vez

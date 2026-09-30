@@ -1,4 +1,4 @@
-// Una línea de carrito con ajuste de cantidad — Bruno, 2026-09-07: "no
+// Una línea de carrito con ajuste de cantidad — El dueño, 2026-09-07: "no
 // puedo agregar más de 1 unidad a la vez de los productos, misma
 // funcionalidad que carrito [ya] dije" (tocar el mismo producto en el
 // buscador ya sumaba de a uno, pero eso obliga a buscar de nuevo cada
@@ -127,7 +127,7 @@ class FilaLineaCarrito extends StatelessWidget {
       LineaVentaPesable l => '${l.gramos} g',
       LineaVentaPorUnidad l => 'x${l.cantidad}',
     };
-    // `ListTile` crudo (Bruno, 2026-09-13: "hay algo más sin el
+    // `ListTile` crudo (El dueño, 2026-09-13: "hay algo más sin el
     // lenguaje?") — el carrito es de las pantallas más usadas de la
     // companion, no tenía sentido que se quedara con el look de fábrica.
     return Superficie(

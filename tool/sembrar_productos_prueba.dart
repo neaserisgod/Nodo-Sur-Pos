@@ -118,7 +118,7 @@ void main() {
     stock: 8,
   );
 
-  // Pesables (Mazzota / fiambres), sin código de barras — se buscan por
+  // Pesables (Fiambrería / fiambres), sin código de barras — se buscan por
   // nombre con el patrón "200 nombre".
   agregar(
     nombre: 'Jamón cocido',

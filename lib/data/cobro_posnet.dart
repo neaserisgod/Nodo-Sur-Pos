@@ -121,19 +121,19 @@ Future<String> consultarOrden({
 }
 
 /// Cancela la orden del lado de Mercado Pago — indispensable para que la
-/// terminal deje de esperar el pago (Bruno: "cuando cancelo el QR no
+/// terminal deje de esperar el pago (El dueño: "cuando cancelo el QR no
 /// cancela el dispositivo"). Sin esto, "Cancelar" en la app solo actualizaba
 /// nuestra propia fila; el posnet seguía mostrando "esperando pago" hasta
 /// que la orden expirara sola del lado de MP.
 ///
 /// Solo funciona con `status=created` — verificado contra el posnet real de
-/// Bruno, no un supuesto: una vez que la orden llega a la terminal
+/// El dueño, no un supuesto: una vez que la orden llega a la terminal
 /// (`status=at_terminal`, que pasa casi al instante de crearla) la API
 /// responde `409 cannot_cancel_order` y **no hay vuelta**, hay que cancelar
 /// desde el propio dispositivo. Por eso este error se traduce a un mensaje
 /// de negocio en vez de mostrar el JSON crudo — es el caso esperado, no uno
 /// excepcional, y el llamador (`dialogo_cobro_posnet.dart`) lo usa para
-/// decirle a Bruno que vaya a la terminal en vez de reintentar por acá.
+/// decirle a el dueño que vaya a la terminal en vez de reintentar por acá.
 Future<void> cancelarOrdenCobro({
   required String accessToken,
   required String ordenIdMp,

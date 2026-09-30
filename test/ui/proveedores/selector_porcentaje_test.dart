@@ -9,7 +9,7 @@ import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../capturas/capturador.dart';
 import '../../helpers/base_para_tests.dart';
 
-/// Porcentaje de ganancia por proveedor (Bruno, 2026-09-29).
+/// Porcentaje de ganancia por proveedor (El dueño, 2026-09-29).
 void main() {
   late AppDatabase db;
   late int usuarioId;
@@ -17,7 +17,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     proveedorId = await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle().then((p) => p.id);
     await db.into(db.productos).insert(
           ProductosCompanion.insert(
@@ -48,7 +48,7 @@ void main() {
       tema: TemaPlazoleta.claro,
     );
     final lista = find.byType(ListaProveedores);
-    await tester.tap(find.descendant(of: lista, matching: find.text('Serra')).first);
+    await tester.tap(find.descendant(of: lista, matching: find.text('Distribuidora')).first);
     await tester.pumpAndSettle();
 
     expect(find.text('Ganancia sobre el costo'), findsOneWidget);
@@ -75,13 +75,13 @@ void main() {
     expect(marlboro!.precioCentavos, 500000, reason: 'los cigarros no se tocan');
   });
 
-  testWidgets('Serra Cigarros (todo cigarros) no muestra el selector', (tester) async {
+  testWidgets('Distribuidora de Cigarrillos (todo cigarros) no muestra el selector', (tester) async {
     await montarPantallaParaCaptura(
       tester,
       pantalla: PantallaProveedores(db: db, usuarioId: usuarioId, sesionCajaId: null),
       tema: TemaPlazoleta.claro,
     );
-    await tester.tap(find.descendant(of: find.byType(ListaProveedores), matching: find.text('Serra Cigarros')));
+    await tester.tap(find.descendant(of: find.byType(ListaProveedores), matching: find.text('Distribuidora de Cigarrillos')));
     await tester.pumpAndSettle();
     expect(find.text('Ganancia sobre el costo'), findsNothing);
   });

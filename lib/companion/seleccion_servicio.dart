@@ -1,6 +1,6 @@
 // Decide UNA sola vez, con un ping corto, si esta apertura de pantalla le
 // habla a la PC por HTTP o resuelve contra la base local — fase 3 del
-// rediseño "companion sin depender del escritorio" (Bruno, 2026-09-17: "la
+// rediseño "companion sin depender del escritorio" (El dueño, 2026-09-17: "la
 // conexión solo detecta 1 vez si la PC está o no" — antes cada método
 // reintentaba la PC por su cuenta con un timeout propio, así que una PC
 // caída volvía lenta CADA acción, no solo la primera; ahora se decide una

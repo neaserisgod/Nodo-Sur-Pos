@@ -1,5 +1,5 @@
 // Ajusta lo que hay que separar a la plata que hay de verdad en cada caja
-// (Bruno, 2026-09-26: "que tenga en cuenta los montos actuales tanto de
+// (El dueño, 2026-09-26: "que tenga en cuenta los montos actuales tanto de
 // efectivo como de mp"). La división cajón/MP de `separacion_por_medio.dart`
 // dice de dónde DEBERÍA salir cada peso según cómo se cobró; esto la
 // corrige cuando el cajón (o MP) no tiene tanto: lo que falta de un lado se

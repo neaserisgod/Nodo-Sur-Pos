@@ -56,7 +56,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -179,7 +179,7 @@ void main() {
           mpContadoCentavos: 0,
           lataContadoCentavos: 200000,
         );
-        // Sin cigarrillos vendidos ni pagos a Serra: la lata queda igual.
+        // Sin cigarrillos vendidos ni pagos a Distribuidora: la lata queda igual.
 
         await _abrirDialogo(tester, db);
 
@@ -384,7 +384,7 @@ void main() {
       await _abrirDialogo(tester, db);
 
       expect(find.text('Para separar:'), findsOneWidget);
-      expect(find.textContaining('Serra: \$600'), findsOneWidget);
+      expect(find.textContaining('Distribuidora: \$600'), findsOneWidget);
     },
   );
 
@@ -393,7 +393,7 @@ void main() {
     addTearDown(db.close);
     addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
-    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _abrirDialogo(tester, db);
     expect(find.byKey(const Key('campo_lata_inicial')), findsNothing);

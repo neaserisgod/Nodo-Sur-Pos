@@ -13,7 +13,7 @@ class LineaParaReposicion {
 
   /// Los cigarrillos quedan fuera de acá a propósito: la lata ya recibe el
   /// precio de lista completo de lo vendido, que es exactamente lo que se le
-  /// paga a Serra Cigarros (Regla 6). Sumar además su costo acá reservaría
+  /// paga a Distribuidora de Cigarrillos (Regla 6). Sumar además su costo acá reservaría
   /// la misma reposición dos veces.
   final bool esCigarrillo;
 
@@ -39,7 +39,7 @@ class ResultadoReposicion {
   /// Costo real vendido por proveedor.
   final Map<String, int> costoRealPorProveedorCentavos;
 
-  /// Precio de venta por proveedor — lo que entró, no lo que costó (Bruno,
+  /// Precio de venta por proveedor — lo que entró, no lo que costó (El dueño,
   /// ítem 3: "VENDIDO" del papel es precio, no costo — son cosas
   /// distintas y la planilla no puede confundirlas). Cuenta toda línea con
   /// proveedor, tenga costo cargado o no: el costo puede faltar, el precio
@@ -48,7 +48,7 @@ class ResultadoReposicion {
 
   /// Ganancia por proveedor = vendido − costo real, solo de las líneas con
   /// costo conocido (Regla 13: "cuánto es la ganancia" es uno de los datos
-  /// que Bruno revisa por proveedor al abrir caja, para decidir cuánto
+  /// que el dueño revisa por proveedor al abrir caja, para decidir cuánto
   /// retirar y cuánto dejar como colchón). Mismo criterio de exclusión de
   /// cigarrillos que el resto de esta función — la ganancia de cigarrillos
   /// la administra la lata aparte (Regla 6).
@@ -135,7 +135,7 @@ int pendienteBaseTrasPago({
 
 /// Retiro de ganancia real (Regla 13): reparte [gananciaCentavos] entre
 /// efectivo y virtual en la misma proporción en que se cobró la venta que
-/// la generó (Bruno, 2026-09-06: "de qué medio debe calcularse desde cómo
+/// la generó (El dueño, 2026-09-06: "de qué medio debe calcularse desde cómo
 /// se vendió"). Una venta pagada 100% en un medio manda toda su ganancia a
 /// ese lado; un mixto se reparte a prorrata de lo cobrado en cada uno. El
 /// resto que no entra exacto en la división cae del lado virtual, para que

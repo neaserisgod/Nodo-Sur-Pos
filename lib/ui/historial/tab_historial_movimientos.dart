@@ -1,4 +1,4 @@
-// Historial → Movimientos (Bruno, 2026-09-28: "revisá si hay un apartado
+// Historial → Movimientos (El dueño, 2026-09-28: "revisá si hay un apartado
 // para ver los movimientos, los movimientos de caja y eso" — no había).
 // Gastos, ingresos, pagos a proveedores y retiros, uno por uno: cuándo, de
 // qué caja, por qué medio, quién. Las ventas no, ya tienen su pestaña.

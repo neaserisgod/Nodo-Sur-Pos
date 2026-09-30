@@ -1,4 +1,4 @@
-// Alta de un proveedor nuevo (Bruno, 2026-09-05: "se debe poder editar y
+// Alta de un proveedor nuevo (El dueño, 2026-09-05: "se debe poder editar y
 // agregar los proveedores") — la lista de proveedores reales de
 // `REGLAS-NEGOCIO.md` era la real al arrancar el negocio, no un tope del
 // sistema. Formulario liviano a propósito: solo nombre, código y medio de

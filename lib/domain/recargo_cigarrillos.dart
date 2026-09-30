@@ -1,6 +1,6 @@
 // Recargo por pago virtual en ventas con cigarrillos (Regla 6).
 //
-// Es un sistema paralelo dentro de la misma caja física: Serra Cigarros
+// Es un sistema paralelo dentro de la misma caja física: Distribuidora de Cigarrillos
 // cobra solo en efectivo, así que cuando el cliente paga con QR/Point la
 // diferencia de conseguir ese efectivo se cubre con este recargo. Se queda
 // en la caja normal — nunca pasa a la lata de cigarrillos (eso lo garantiza
@@ -11,7 +11,7 @@ import 'medio_pago.dart';
 /// Los montos del recargo son configurables (fase 8), no fijos en el
 /// código: solo la REGLA de cuándo y cómo se aplican es fija.
 ///
-/// [cigarroSueltoCentavos]: $50 por cigarro suelto (Regla 6) — Bruno,
+/// [cigarroSueltoCentavos]: $50 por cigarro suelto (Regla 6) — El dueño,
 /// 2026-09-10: "los puchos sueltos también deben tener recargo por MP, sin
 /// eso los cálculos dan mal". Antes de esa fecha los sueltos no llevaban
 /// recargo; el default 0 de acá abajo es solo el valor de arranque de la

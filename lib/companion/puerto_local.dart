@@ -169,7 +169,7 @@ class PuertoLocal implements ServicioCompanion {
     ];
   }
 
-  // ─── Configuración (Bruno, 2026-09-19) ──────────────────────────────────
+  // ─── Configuración (El dueño, 2026-09-19) ──────────────────────────────────
 
   @override
   Future<ConfiguracionNegocioCompanion> configuracionNegocio() async {
@@ -361,7 +361,7 @@ class PuertoLocal implements ServicioCompanion {
     );
   }
 
-  // Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  // Editor masivo (El dueño, 2026-09-19: "editor masivo, ya sea de precios
   // costo stock etc etc") — delegado directo a cada función en lote de
   // `repositorio_productos.dart` (Regla 3: mismo camino que `ClienteCompanion`
   // usa por HTTP, acá sin red de por medio).
@@ -543,7 +543,7 @@ class PuertoLocal implements ServicioCompanion {
   }
 
   /// Mismo criterio que `POST /sesion/cerrar/calcular` del servidor
-  /// (Bruno, 2026-09-19: "que deje cerrar caja desde el celular") —
+  /// (El dueño, 2026-09-19: "que deje cerrar caja desde el celular") —
   /// `calcularResumenCierre` para el arqueo, `resumenDiaHistorico` para el
   /// desglose por proveedor, reusando `_resumenDesdeDominio` (Regla 3, la
   /// misma traducción que ya usa `resumenDiaHistorico` de acá abajo).
@@ -568,7 +568,7 @@ class PuertoLocal implements ServicioCompanion {
     return _resumenCierreCompanionDesde(await futuroResumen, await futuroResumenDia);
   }
 
-  /// Detalle de un cierre YA cerrado (Bruno, 2026-09-19) — mismo cálculo
+  /// Detalle de un cierre YA cerrado (El dueño, 2026-09-19) — mismo cálculo
   /// que `GET /sesiones/cerradas/<id>/detalle` del servidor:
   /// `calcularResumenCierre` no exige sesión `ABIERTA`, así que recalcularlo
   /// con los conteos ya guardados en la fila da el mismo desglose que se
@@ -599,7 +599,7 @@ class PuertoLocal implements ServicioCompanion {
     );
   }
 
-  /// Bruno, 2026-09-19: "que funcione también sin la PC" — a diferencia de
+  /// El dueño, 2026-09-19: "que funcione también sin la PC" — a diferencia de
   /// `abrirSesion` (bloqueada en `ServicioCompanionOffline`, nunca llega
   /// hasta acá sin PC), cerrar sí escribe directo sobre la base local
   /// sincronizada por Supabase: no arriesga duplicar ninguna sesión, solo
@@ -918,7 +918,7 @@ class PuertoLocal implements ServicioCompanion {
   }
 
   /// Mismo criterio que `GET /ventas/buscar` del servidor: "Varios" no entra
-  /// en esta primera versión (decisión de Bruno) — `tieneStock` ya lo trata
+  /// en esta primera versión (decisión de el dueño) — `tieneStock` ya lo trata
   /// como que siempre tiene stock, así que sin este filtro aparecería igual.
   @override
   Future<({int? gramos, List<ProductoCompanion> resultados})> buscarVenta(

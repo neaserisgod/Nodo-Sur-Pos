@@ -1,4 +1,4 @@
-// Qué producto se vendió sin costo cargado (Bruno, 2026-09-26: "que si hago
+// Qué producto se vendió sin costo cargado (El dueño, 2026-09-26: "que si hago
 // click me diga el producto sin costo"). Se abre tocando el aviso "…sin
 // costo cargado" de Separaciones, o la línea "incluye $X sin costo" de una
 // tarjeta de "Lo vendido" (ahí, solo de ese proveedor).

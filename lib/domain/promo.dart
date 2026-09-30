@@ -1,4 +1,4 @@
-// Cuentas de las promos (Bruno, 2026-09-29). Funciones puras: cómo se reparte
+// Cuentas de las promos (El dueño, 2026-09-29). Funciones puras: cómo se reparte
 // lo que cuesta una promo entre sus artículos al cobrarla, y cuántas promos
 // alcanzan con el stock que hay.
 

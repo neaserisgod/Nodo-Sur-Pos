@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v36 → v37: completar el costo de ventas que
-// quedaron sin costo con el costo ya cargado del producto — Bruno,
+// quedaron sin costo con el costo ya cargado del producto — El dueño,
 // 2026-09-26) contra un archivo de verdad, mismo motivo que
 // `migracion_v34_test.dart`.
 import 'dart:io';
@@ -19,7 +19,7 @@ void main() {
       final archivo = File('${carpeta.path}/base.sqlite');
 
       var db = AppDatabase(NativeDatabase(archivo));
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );

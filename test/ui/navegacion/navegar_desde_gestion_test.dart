@@ -1,7 +1,7 @@
 // Antes probaba el salto a Reportes; Reportes se sacó del menú el
 // 2026-09-26 y el mismo salto se prueba hacia Separaciones.
 //
-// Bug real (2026-09-12, Bruno: "al navegar entre apartados... se erra
+// Bug real (2026-09-12, el dueño: "al navegar entre apartados... se erra
 // fuerte o se lockea y tengo que clickear varias veces"): el switch de
 // `navegarASeccionDeGestion` no tenía caso para 'reportes' — tocar
 // "Reportes" desde CUALQUIER pantalla que no fuera Venta volvía a Venta
@@ -35,7 +35,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 }
 
 /// La navbar pasó a ser un solo botón que abre un dropdown de secciones
-/// (Bruno, rediseño 2026-09-25) — hay que abrirlo antes de poder tocar el
+/// (El dueño, rediseño 2026-09-25) — hay que abrirlo antes de poder tocar el
 /// nombre de la sección destino, en vez de tocar directo un ícono con
 /// tooltip propio.
 Future<void> _navegarA(WidgetTester tester, String etiqueta) async {
@@ -55,7 +55,7 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
-          .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       await _pump(tester, db);

@@ -67,7 +67,7 @@ class _ContenidoImpresionState extends State<ContenidoImpresion> {
   }
 
   // Antes "Guardar PDF" quedaba deshabilitado sin ningún aviso si la
-  // carpeta no estaba configurada — bug real reportado por Bruno: "doy a
+  // carpeta no estaba configurada — bug real reportado por el dueño: "doy a
   // imprimir y no sale nada de seleccionar". La primera vez que hace falta,
   // se pregunta acá mismo, en vez de mandar a la sección de más arriba.
   Future<void> _guardarPdf(int ventaId) async {
@@ -173,7 +173,7 @@ class _ColumnaConfig extends StatelessWidget {
           Text('Terminal que cobra (fase 12)', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Espaciado.sm),
           Text(
-            // Bruno tiene dos posnets físicos separados: uno de cobro
+            // El dueño tiene dos posnets físicos separados: uno de cobro
             // manual (no lo toca la app) y otro "del sistema", que puede
             // ser el mismo que imprime o uno distinto — por eso es un
             // campo aparte. Formato distinto al de arriba, aunque sea LA

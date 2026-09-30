@@ -40,7 +40,7 @@ void main() {
   });
 
   test('con una sesión de caja abierta, hayCajaAbierta es true', () async {
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );

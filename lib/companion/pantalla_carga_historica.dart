@@ -1,9 +1,9 @@
-// Carga histórica desde el celular (Bruno, 2026-09-07: "quiero que agregues
+// Carga histórica desde el celular (El dueño, 2026-09-07: "quiero que agregues
 // la parte de los históricos pero... se le pone la fecha, después es como
 // si fuesen ventas que no descuentan stock, simplemente son para saber
 // ganancias y todo eso") — mismo concepto que `lib/ui/carga_historica/` del
 // escritorio: se elige la fecha una sola vez (solo el día, sin hora —
-// Bruno: "necesito que solo sea el día que se cargue"), se cargan las
+// El dueño: "necesito que solo sea el día que se cargue"), se cargan las
 // ventas de ese día con el mismo buscador de Venta (sin exigir stock — un
 // producto vendido en su momento puede estar en 0 hoy por cualquier otro
 // motivo), y nada se graba hasta "Guardar" completo (una sola transacción
@@ -13,7 +13,7 @@
 // son etiquetas nada más, igual que en el escritorio), sin ticket, sin
 // descuento.
 //
-// "Ver y editar" (Bruno, 2026-09-07: "dejame verlos y editarlos porque le
+// "Ver y editar" (El dueño, 2026-09-07: "dejame verlos y editarlos porque le
 // erré y lo cerré sin completarlo") — esta pantalla es ahora un hub: lista
 // los días ya cargados (`PantallaCargaHistorica`), entrando a uno se ve el
 // detalle con opción de borrar una venta puntual, agregar más, o borrar el
@@ -90,7 +90,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
     _iniciar();
   }
 
-  /// Sin PC emparejada (Bruno, 2026-09-18: "no debería tener que escanear
+  /// Sin PC emparejada (El dueño, 2026-09-18: "no debería tener que escanear
   /// ya, es innecesario") cae a la base local sincronizada por Supabase —
   /// cargar histórico no necesita la PC para nada.
   Future<void> _iniciar() async {
@@ -337,7 +337,7 @@ class _PantallaDetalleDiaHistoricoState
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      // Arranca en "Resumen" (Bruno, 2026-09-07: "hay que scrollear
+      // Arranca en "Resumen" (El dueño, 2026-09-07: "hay que scrollear
       // demasiado... sobre todo que ordenemos y resumamos todo") — antes
       // esta pantalla era directo la lista de ventas una por una, y para
       // saber "cuánto vendí" o "cuánto separo de tal proveedor" había que
@@ -543,7 +543,7 @@ class FilaDatoSimple extends StatelessWidget {
   }
 }
 
-/// "Vendido sin proveedor o costo", producto por producto (Bruno,
+/// "Vendido sin proveedor o costo", producto por producto (El dueño,
 /// 2026-09-07: "de lo vendido decime que no tiene costo o proveedor, así
 /// le asignamos uno") — compartida por el resumen de un día histórico y
 /// el arqueo en vivo (Regla 3, mismo dato: `ResumenDiaHistoricoCompanion.
@@ -620,7 +620,7 @@ class _PantallaNuevoDiaHistoricoState
     extends State<_PantallaNuevoDiaHistorico> {
   DateTime? _fecha;
 
-  /// Solo el día (Bruno, 2026-09-07: "necesito que solo sea el día que se
+  /// Solo el día (El dueño, 2026-09-07: "necesito que solo sea el día que se
   /// cargue") — sin hora: la carga histórica es para saber ganancias, no
   /// para reconstruir a qué hora se vendió cada cosa.
   Future<void> _elegirFecha() async {
@@ -733,7 +733,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
     _mostrarVentasCargadas(context);
   }
 
-  /// Bruno, 2026-09-07: "en las ventas históricas no me gusta que aparezca
+  /// El dueño, 2026-09-07: "en las ventas históricas no me gusta que aparezca
   /// abajo las ventas por agregar" — la tira de tarjetas siempre visible
   /// se reemplazó por esta barra compacta (mismo patrón que la del
   /// carrito del menú principal); el detalle con el tacho para borrar una
@@ -798,14 +798,14 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.titulo),
-        // Separado a propósito de "Agregar venta" (Bruno, 2026-09-07: "el
+        // Separado a propósito de "Agregar venta" (El dueño, 2026-09-07: "el
         // botón de guardar para cerrar el día se confunde muy fácil e
         // invita a apretarlo para guardar las ventas, y termino teniendo
         // que volver a abrirlo") — antes los dos botones quedaban pegados
         // y se parecían; acá arriba queda claro que termina todo el día,
         // no una venta más.
         actions: [
-          // Sin color a mano en ninguno de los dos (Bruno, 2026-09-13: "hay
+          // Sin color a mano en ninguno de los dos (El dueño, 2026-09-13: "hay
           // algo más sin el lenguaje?") — `Colors.white` acá era invisible
           // en tema claro: este AppBar no tiene fondo propio, hereda el
           // fondo normal de la app (claro en horario de local abierto), no
@@ -920,7 +920,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
   /// Total real (con recargo de cigarrillos y redondeo, Regla 6/5) para el
   /// medio elegido — sin esto el botón mostraba siempre el subtotal crudo,
   /// sin importar el medio, y parecía que el recargo nunca se aplicaba
-  /// (Bruno, 2026-09-07: "revisa que la apk no agrega los recargos
+  /// (El dueño, 2026-09-07: "revisa que la apk no agrega los recargos
   /// automáticos" — el cálculo real ya estaba bien, lo que faltaba era
   /// mostrarlo acá antes de confirmar).
   ResultadoTotalVenta? _resultado;
@@ -1014,7 +1014,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
   }
 
   /// Bug real, encontrado revisando que el recargo se aplique bien en las
-  /// dos apps (Bruno, 2026-09-08): esta pantalla mandaba `_medio.texto`
+  /// dos apps (El dueño, 2026-09-08): esta pantalla mandaba `_medio.texto`
   /// literal ("mixto" si se apretó Mixto) sin importar el monto que se
   /// terminaba tipeando — mismo error que ya se había encontrado y
   /// arreglado en el escritorio (`VentaControlador.confirmarMixto`,

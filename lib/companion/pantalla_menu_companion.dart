@@ -1,12 +1,12 @@
 // Menú de la companion app, una vez emparejada y con usuario elegido.
 //
-// Navbar estilo Mercado Pago (Bruno, 2026-09-13): cuatro pestañas fijas
+// Navbar estilo Mercado Pago (El dueño, 2026-09-13): cuatro pestañas fijas
 // más un botón circular elevado en el medio, igual que el botón de QR de esa
 // app. Ese botón era el carrito (vender); pasó a ser un escáner de código
-// (Bruno, 2026-09-17: "en lugar de que sea un carrito el botón del medio,
+// (El dueño, 2026-09-17: "en lugar de que sea un carrito el botón del medio,
 // que sea un escáner") que abre directo a editar el producto si ya existe, o
 // a darlo de alta completo si no — "vender" se mudó a un CTA propio en la
-// pestaña Inicio (Bruno, 2026-09-18: "reacomodación de absolutamente todos
+// pestaña Inicio (El dueño, 2026-09-18: "reacomodación de absolutamente todos
 // los elementos" — dejó de competir en igualdad de condiciones con
 // "Movimiento de caja", la fusión de lo que antes eran Gasto e Ingreso
 // rápido por separado). Esta clase sigue siendo la raíz que sostiene el
@@ -14,20 +14,20 @@
 // usuario, catálogo de proveedores/categorías para el escáner) y arma cada
 // pestaña como un widget aparte (`pantalla_inicio_companion.dart`,
 // `pantalla_precios.dart`, `pantalla_historial_ventas.dart`,
-// `pantalla_gestion_companion.dart`). Ya no hay una pestaña "Buscar": Bruno
+// `pantalla_gestion_companion.dart`). Ya no hay una pestaña "Buscar": El dueño
 // (2026-09-13) pidió juntarla con el carrito ("buscar está estrictamente
 // ligado al carrito... para que al entrar en el carrito directamente se
 // pueda agregar y cobrar desde ahí mismo") — el buscador vive dentro de
 // `PantallaCarritoVenta`.
 //
 // Las cuatro pestañas hoy: Inicio, Productos (`pantalla_precios.dart`,
-// Bruno 2026-09-19: "productos pasa a ser la segunda pantalla más
+// El dueño 2026-09-19: "productos pasa a ser la segunda pantalla más
 // importante después de vender" — promovida desde adentro de Gestión, con
 // su búsqueda y sus filtros de catálogo), Historial y Gestión (ocupa el
 // lugar que tenía "Más" — esa pestaña se eliminó, fusionada en Gestión:
 // "gestión poniéndolo donde va más").
 //
-// Las pestañas viven en un `PageView` (Bruno, 2026-09-13: "quiero la
+// Las pestañas viven en un `PageView` (El dueño, 2026-09-13: "quiero la
 // posibilidad de poder deslizar entre pantallas"), no un `IndexedStack` —
 // mismos widgets, pero ahora también se llega a ellos arrastrando el dedo,
 // no solo tocando la navbar. Cada uno se envuelve en `_PaginaSiempreViva`
@@ -93,14 +93,14 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   SesionCompanion? _sesion;
 
   /// Total y desglose efectivo/Mercado Pago de hoy, para el resumen de
-  /// "Inicio" (Bruno, 2026-09-14). Se pide junto con `_sesion` en
+  /// "Inicio" (El dueño, 2026-09-14). Se pide junto con `_sesion` en
   /// `_revisarSesion` — mismo endpoint que ya usaba "Arqueo"
   /// (`/caja/estado`), null con la caja cerrada porque el servidor no
   /// tiene sesión sobre la que resumir.
   EstadoCajaCompanion? _estadoCaja;
 
   /// Exclusivo de imprimir ticket (todo lo demás que antes necesitaba esto
-  /// — Arqueo, cierres, historial, Point — ya pasó a `_servicio`, Bruno
+  /// — Arqueo, cierres, historial, Point — ya pasó a `_servicio`, el dueño
   /// 2026-09-18). Null sin PC emparejada.
   ClienteCompanion? _cliente;
 
@@ -123,11 +123,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   List<CategoriaCompanion> _categorias = [];
 
   /// true si pasaron 2hs desde el último arqueo — muestra el aviso (no
-  /// bloqueante, Bruno 2026-09-15) en "Inicio", nunca abre nada solo.
+  /// bloqueante, el dueño 2026-09-15) en "Inicio", nunca abre nada solo.
   bool _arqueoIntermedioVencido = false;
   late final Timer _tickArqueoIntermedio;
 
-  /// Bruno, 2026-09-18: "no hay nada que actualice la app cuando se
+  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó, tengo que entrar y volver a salir" — se suscribe a
   /// `avisosCambiosCompanion` (la sync por wifi o la de Supabase) para
   /// refrescar Inicio y el catálogo del escáner solo, apenas la sync trae
@@ -154,7 +154,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       final servicio = _servicio;
       if (servicio != null) _cargarCatalogoParaEscaner(servicio);
     });
-    // Aviso de arqueo cada 2hs (Bruno, 2026-09-13: "sincronizado con la app
+    // Aviso de arqueo cada 2hs (El dueño, 2026-09-13: "sincronizado con la app
     // desktop"; 2026-09-15: "que se cambie a una sugerencia únicamente" —
     // ya no abre nada solo) — mismo patrón que `VentaControlador` en el
     // escritorio (`_tickArqueoIntermedio`, 1 minuto alcanza para una
@@ -166,7 +166,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     );
   }
 
-  /// Bruno, 2026-09-07: "la apk no detecta la actualización si no la
+  /// El dueño, 2026-09-07: "la apk no detecta la actualización si no la
   /// cierro y abro de vuelta" — antes solo chequeaba una vez, en
   /// `initState()`. Volver del segundo plano (sin cerrar del todo la app)
   /// vuelve a chequear, para agarrar una versión publicada mientras tanto
@@ -181,11 +181,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   }
 
   /// Resuelve `_cliente`/`_servicio` una sola vez por apertura del menú —
-  /// `resolverServicioCompanion` hace un único ping y decide (Bruno,
+  /// `resolverServicioCompanion` hace un único ping y decide (El dueño,
   /// 2026-09-17: "la conexión solo detecta 1 vez"), nada de reintentar la
   /// PC en cada acción después.
   ///
-  /// Sin PC emparejada (Bruno, 2026-09-18: "no debería tener que escanear
+  /// Sin PC emparejada (El dueño, 2026-09-18: "no debería tener que escanear
   /// ya, es innecesario"), `_servicio` NO se queda en null — se resuelve
   /// directo contra la base local sincronizada por Supabase
   /// (`ServicioCompanionOffline(PuertoLocal(...))`), el mismo camino que ya
@@ -244,7 +244,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// Resuelve su propio [ServicioCompanion], igual que `_iniciarConexion`
   /// — así no depende de que `_servicio` ya esté armado (initState dispara
   /// las dos cosas en paralelo), y sin PC emparejada cae igual a la base
-  /// local en vez de quedarse sin nada que mostrar (Bruno, 2026-09-18: "no
+  /// local en vez de quedarse sin nada que mostrar (El dueño, 2026-09-18: "no
   /// debería tener que escanear ya, es innecesario"). Silencioso si falla:
   /// sin caja abierta ni PC ni datos locales todavía no hay nada que
   /// mostrar, no es un error.
@@ -284,7 +284,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   }
 
   /// Abre el diálogo a pedido, desde el aviso de "Inicio" — antes se abría
-  /// solo al vencer las 2hs (Bruno, 2026-09-15: "que se cambie a una
+  /// solo al vencer las 2hs (El dueño, 2026-09-15: "que se cambie a una
   /// sugerencia únicamente"). Al confirmar, vuelve a pedir `/sesion` — ahí
   /// es donde la sincronización se nota de verdad: si el arqueo se hizo en
   /// el escritorio mientras tanto, esta misma lectura ya trae la fecha
@@ -304,7 +304,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     await _irA((_) => PantallaArqueo(servicio: _servicio!));
   }
 
-  /// Cerrar caja de verdad desde el celular (Bruno, 2026-09-19: "que deje
+  /// Cerrar caja de verdad desde el celular (El dueño, 2026-09-19: "que deje
   /// cerrar caja desde el celular") — mismo criterio que
   /// `_hacerArqueoIntermedio`: el diálogo hace todo, acá solo se vuelve a
   /// pedir `/sesion` al volver para que "Inicio"/"Gestión" dejen de mostrar
@@ -357,12 +357,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     );
   }
 
-  /// "Vender" en Inicio (Bruno, 2026-09-17: el carrito dejó de ser el botón
+  /// "Vender" en Inicio (El dueño, 2026-09-17: el carrito dejó de ser el botón
   /// central, ahora vive acá) — el carrito es la misma lista (referencia
   /// compartida) que le pasamos a `PantallaCarritoVenta`; al volver, revisa
   /// la sesión por si se abrió la caja de emergencia ahí adentro, mismo
   /// criterio que gasto/ingreso rápido.
-  /// `_cliente` (PC) NO es obligatorio acá (Bruno, 2026-09-18: "no debería
+  /// `_cliente` (PC) NO es obligatorio acá (El dueño, 2026-09-18: "no debería
   /// tener que escanear ya, es innecesario") — solo hace falta para
   /// imprimir, y `PantallaCarritoVenta` ya lo tolera en null (avisa en vez
   /// de tirar). Vender de verdad corre entero contra `_servicio`.
@@ -384,7 +384,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _revisarSesion(); // pudo haberse abierto la caja de emergencia ahí adentro
   }
 
-  /// Pull-to-refresh de "Inicio" (Bruno: "haciendo pull para abajo en la app
+  /// Pull-to-refresh de "Inicio" (El dueño: "haciendo pull para abajo en la app
   /// Android") — el único disparador de sync que queda (2026-09-17: se sacó
   /// el automático de `companion_app.dart`/`pantalla_emparejamiento.dart`,
   /// volvía lenta a toda la companion cada vez que se abría). También es el
@@ -406,12 +406,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     }
   }
 
-  // Bruno, 2026-09-07: "necesito que saques la versión de abajo" — el
+  // El dueño, 2026-09-07: "necesito que saques la versión de abajo" — el
   // diagnóstico visible (Celular X · PC Y, o el error) que antes vivía al
   // pie de esta pantalla se sacó. El chequeo en sí sigue: sin él, la
   // banda de "Hay una versión distinta" tampoco podría aparecer.
   //
-  // Bruno, 2026-09-18: "que directamente descargue en automático" — el
+  // El dueño, 2026-09-18: "que directamente descargue en automático" — el
   // banner con botón "Actualizar" se sacó (era el ejemplo #1 de "esto
   // parece pegote"). Ahora, detectar una versión distinta dispara la
   // descarga sola; Android igual pide confirmación para instalar (nunca
@@ -423,13 +423,13 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   // todavía no completó la instalación anterior.
   bool _actualizacionYaOfrecida = false;
 
-  /// Bruno, 2026-09-19: "no me salió la actualización" — causa real: la
+  /// El dueño, 2026-09-19: "no me salió la actualización" — causa real: la
   /// IP/token guardados en el celular habían quedado viejos (cambio de
   /// máquina de fase 13), y este chequeo específico es el único que NO
   /// cae al fallback offline del resto de la companion (fase 4) — habla
   /// SIEMPRE directo con `ClienteCompanion(conexion)`, así que fallaba en
   /// silencio sin ninguna pista de por qué. Este flag no reabre el
-  /// diagnóstico general que Bruno pidió sacar (2026-09-07/18) — es un
+  /// diagnóstico general que el dueño pidió sacar (2026-09-07/18) — es un
   /// aviso puntual, solo para ESTE chequeo, solo cuando SÍ hay una PC
   /// emparejada y no se la pudo alcanzar para buscar una actualización.
   bool _actualizacionSinConexion = false;
@@ -495,7 +495,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         _irAPagina(0);
       },
       child: Scaffold(
-        // El `PageView` pasa por debajo de la navbar de verdad (Bruno,
+        // El `PageView` pasa por debajo de la navbar de verdad (El dueño,
         // 2026-09-18) — sin esto, `Scaffold` reserva su propio espacio para
         // `bottomNavigationBar` con el fondo de pantalla detrás, y la barra
         // "flotante" en realidad flota sobre una franja vacía del mismo

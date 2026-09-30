@@ -55,7 +55,7 @@ Future<void> registrarCambioDePrecio(
 }
 
 /// Categorías fijas para explicar un ajuste manual de stock — dropdown en el
-/// detalle de producto, nunca texto libre (decisión de Bruno). El primer
+/// detalle de producto, nunca texto libre (decisión de el dueño). El primer
 /// valor no está acá: la ausencia de motivo se representa con `null`, no con
 /// un string de la lista.
 const List<String> motivosAjusteDeStock = [
@@ -140,7 +140,7 @@ Future<int> crearProducto(
 
   // `codigoBarras` es unique a nivel de esquema — sin este chequeo, un
   // código repetido tira una excepción cruda de sqlite en vez de un error
-  // de negocio claro. Bug real, encontrado en la companion (Bruno,
+  // de negocio claro. Bug real, encontrado en la companion (El dueño,
   // 2026-09-07: "no agrega bien o directamente no agrega" al dar de alta
   // desde el celular) — pero la validación va acá, no en cada pantalla que
   // llama a `crearProducto` (Proveedores en escritorio, alta de la
@@ -206,7 +206,7 @@ Future<int> crearProducto(
 /// pasar a pesable o viceversa sin romper las ventas ya hechas, que guardan
 /// su propia foto en `lineas_de_venta` (Regla 4).
 /// Completa el costo de las ventas ya hechas de [productoId] que quedaron
-/// SIN costo (Bruno, 2026-09-26: "ya cargué el costo y no aparece nada").
+/// SIN costo (El dueño, 2026-09-26: "ya cargué el costo y no aparece nada").
 /// Costo-foto (Regla 4) sigue intacto: una línea que ya tenía costo nunca se
 /// toca — el motivo de esa regla es que un aumento no reescriba los
 /// márgenes viejos, y acá no hay un costo viejo que pisar, solo uno que
@@ -310,7 +310,7 @@ Future<void> actualizarProducto(
     db.productos,
   )..where((p) => p.id.equals(id))).getSingle();
 
-  // Precio automático por proveedor (Bruno, 2026-09-29): si cambió el costo y
+  // Precio automático por proveedor (El dueño, 2026-09-29): si cambió el costo y
   // el producto sigue al porcentaje de su proveedor, el precio se recalcula
   // acá — un solo lugar, así lo cubren la edición a mano, el ajuste masivo de
   // costos y "Productos sin costo" (Regla 3).
@@ -411,7 +411,7 @@ Future<void> actualizarProducto(
   );
 }
 
-/// Edición masiva de precio o costo (Bruno, 2026-09-16: "si quiero subir el
+/// Edición masiva de precio o costo (El dueño, 2026-09-16: "si quiero subir el
 /// precio de 3 productos iguales de distinta variante, hacerlo a la vez" —
 /// "maximizar lo que se puede hacer con el ajuste masivo" sumó costo al
 /// mismo mecanismo). Producto por producto, reusando [actualizarProducto]
@@ -482,7 +482,7 @@ Future<void> ajustarMontoEnLote(
         activo: anterior.activo,
         usuarioId: usuarioId,
         // Un precio ajustado a mano en lote deja de seguir al porcentaje del
-        // proveedor (Bruno, 2026-09-29).
+        // proveedor (El dueño, 2026-09-29).
         precioFijo: ajustaPrecio ? true : null,
       );
     }
@@ -608,7 +608,7 @@ Future<List<HistorialDePrecio>> historialDelProducto(
 /// nunca aparece acá: no es un producto editable, es la pieza estructural
 /// de la Regla 5.
 ///
-/// Los cuatro `sin*` (Bruno, 2026-09-19: "filtrar por productos sin
+/// Los cuatro `sin*` (El dueño, 2026-09-19: "filtrar por productos sin
 /// proveedor, sin costo, etcétera" — pulido de catálogo desde la companion)
 /// son filtros de higiene de datos, no de negocio: cada uno mira una sola
 /// columna nullable de `Productos`. Se pueden combinar entre sí y con
@@ -780,7 +780,7 @@ Future<void> ajustarStockRapido(
   );
 }
 
-/// Ajuste masivo de stock (Bruno, 2026-09-19: "editor masivo, ya sea de
+/// Ajuste masivo de stock (El dueño, 2026-09-19: "editor masivo, ya sea de
 /// precios costo stock etc etc") — mismo criterio que [ajustarMontoEnLote]:
 /// producto por producto, reusando [ajustarStockRapido] entero (Regla 3 y
 /// Regla 6/8: cada producto deja su propio movimiento en
@@ -861,7 +861,7 @@ Future<List<Proveedor>> listarProveedores(AppDatabase db) =>
 
 // ─── Precio automático por proveedor ─────────────────────────────────────
 //
-// Bruno, 2026-09-29: "un selector de porcentaje por proveedor + redondeo
+// El dueño, 2026-09-29: "un selector de porcentaje por proveedor + redondeo
 // para arriba a la próxima centena, exceptuando los cigarros". El precio de
 // un producto con costo sale de `precioConMarkupACentena` (domain/markup.dart)
 // con el porcentaje de su proveedor — salvo cigarrillos, "Varios" y los

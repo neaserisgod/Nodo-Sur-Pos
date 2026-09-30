@@ -66,7 +66,7 @@ class ProveedoresControlador extends ChangeNotifier {
 
   SeleccionProveedor vista = SeleccionProveedor.todos;
 
-  /// "Lenguaje de diseño" (Bruno, 2026-09-26, mock `Proveedores.dc.html`):
+  /// "Lenguaje de diseño" (El dueño, 2026-09-26, mock `Proveedores.dc.html`):
   /// la lista de proveedores vuelve a estar siempre a la izquierda y el
   /// detalle a la derecha, así que ya no hay "picker" y "detalle" como dos
   /// sub-pantallas (séptima pasada del 2026-09-25) — se elige y se ve en
@@ -148,7 +148,7 @@ class ProveedoresControlador extends ChangeNotifier {
   /// nombre, costo, precio y margen, la tabla del panel derecho.
   List<ProductoDeProveedor> productos = [];
 
-  /// Edición masiva de precios (Bruno, 2026-09-16: "subir el precio de 3
+  /// Edición masiva de precios (El dueño, 2026-09-16: "subir el precio de 3
   /// productos... a la vez"). Un `Set` de ids en vez de un booleano por fila:
   /// "modo selección" está activo mientras haya al menos uno marcado, sin un
   /// flag aparte que se pueda desincronizar de la selección real. Se limpia
@@ -175,7 +175,7 @@ class ProveedoresControlador extends ChangeNotifier {
       resumenes.map((r) => r.proveedor).toList();
 
   /// Ajusta precio o costo de todos los productos marcados ("maximizar el
-  /// ajuste masivo", Bruno 2026-09-16) — mismo camino de escritura que
+  /// ajuste masivo", el dueño 2026-09-16) — mismo camino de escritura que
   /// editar uno por uno (`ajustarMontoEnLote` reusa `actualizarProducto`
   /// producto por producto, Regla 3), así que el historial de precios
   /// queda idéntico.
@@ -401,11 +401,11 @@ class ProveedoresControlador extends ChangeNotifier {
   bool get esProveedorReal =>
       vista == SeleccionProveedor.proveedor && seleccionado != null;
 
-  /// Serra Cigarros no se repone por el camino genérico (Regla 6: la lata ya
+  /// Distribuidora de Cigarrillos no se repone por el camino genérico (Regla 6: la lata ya
   /// reserva su costo aparte, `calcularReposicion` excluye sus líneas) —
   /// separar/pagar ahí quedaban siempre en $0. Por eso tiene su propio
   /// panel ("Ver lata") en vez de "Avanzado".
-  bool get esSerraCigarros => esProveedorReal && seleccionado!.cajaAparte;
+  bool get esCajaAparte => esProveedorReal && seleccionado!.cajaAparte;
 
   /// Los números del panel "Ver lata" — null sin sesión abierta (no hay
   /// "hoy" que mostrar).
@@ -489,7 +489,7 @@ class ProveedoresControlador extends ChangeNotifier {
     await cargarTodo();
   }
 
-  /// Alta de un proveedor nuevo (Bruno, 2026-09-05: "se debe poder editar y
+  /// Alta de un proveedor nuevo (El dueño, 2026-09-05: "se debe poder editar y
   /// agregar los proveedores"). Recarga y selecciona el nuevo directo —
   /// mismo criterio que "+ Nuevo producto" en la vista actual: verlo elegido
   /// confirma que entró, sin tener que buscarlo en la lista.

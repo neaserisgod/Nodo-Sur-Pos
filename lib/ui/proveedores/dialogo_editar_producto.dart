@@ -2,7 +2,7 @@
 // pantalla Productos entera (fase 13, corrección post-aprobación del kit:
 // "editar cualquier cosa = Modal").
 //
-// Distribución del "Lenguaje de diseño" (Bruno, 2026-09-26, modal de
+// Distribución del "Lenguaje de diseño" (El dueño, 2026-09-26, modal de
 // `Proveedores.dc.html`): nombre; proveedor y código de barras lado a lado;
 // un bloque de precio con costo y precio de venta, cuánto se gana por
 // unidad y "Precio rápido" (+30/+40/+50% sobre el costo — un botón que se
@@ -134,7 +134,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
   late bool _activo = widget.producto?.activo ?? true;
 
   /// true = el precio se cargó a mano y el porcentaje del proveedor no lo toca
-  /// (Bruno, 2026-09-29). Solo importa si el proveedor tiene porcentaje.
+  /// (El dueño, 2026-09-29). Solo importa si el proveedor tiene porcentaje.
   late bool _fijo = widget.producto?.precioFijo ?? false;
   String? _motivoAjusteStock;
   String? _error;

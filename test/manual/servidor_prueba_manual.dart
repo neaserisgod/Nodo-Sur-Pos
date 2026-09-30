@@ -1,5 +1,5 @@
 // Servidor manual para probar la companion app contra un emulador Android
-// de verdad, sin arriesgar la base real de Bruno. Se corre con
+// de verdad, sin arriesgar la base real de el dueño. Se corre con
 // `flutter test` (no `dart run`) a propósito: `AppDatabase` importa
 // `drift_flutter`, que arrastra `dart:ui` — plain `dart run` no puede
 // resolver eso, `flutter test` sí (mismo motivo que cualquier test de
@@ -18,7 +18,7 @@ void main() {
     () async {
       final db = baseDeTest();
 
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno (prueba)'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño (prueba)'));
       await db.into(db.productos).insert(
             ProductosCompanion.insert(
               nombre: 'Fernet Branca',

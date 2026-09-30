@@ -1,4 +1,4 @@
-// Cobertura del cruce (Bruno, 2026-09-14: "todo lo que esté en mi
+// Cobertura del cruce (El dueño, 2026-09-14: "todo lo que esté en mi
 // sistema") — ver el comentario de cabecera de
 // `repositorio_comparacion_precios.dart` para los dos caminos de cruce
 // (código de barras exacto vs. nombre aproximado, solo para pesables).
@@ -58,7 +58,7 @@ void main() {
   });
 
   test(
-    'todo lo que esté en el sistema aparece, incluso sin ninguna coincidencia (Bruno, 2026-09-14)',
+    'todo lo que esté en el sistema aparece, incluso sin ninguna coincidencia (Dueño, 2026-09-14)',
     () async {
       await db.into(db.productos).insert(
         ProductosCompanion.insert(

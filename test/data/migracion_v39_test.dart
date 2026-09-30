@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v38 → v39: cinco secciones dejan el menú —
-// Bruno, 2026-09-26: "que apartados podemos resumir, agrupar o directamente
+// El dueño, 2026-09-26: "que apartados podemos resumir, agrupar o directamente
 // eliminar") contra un archivo de verdad, mismo motivo que
 // `migracion_v34_test.dart`.
 import 'dart:io';

@@ -3,7 +3,7 @@
 // (`lib/companion/tema/fila_dato_companion.dart`). Pieza nueva, opt-in: el
 // patrón "tocar una fila abre su edición en un modal" no reemplaza a
 // `FilaDato` (lectura pura) en todos lados — Configuración es el primer
-// adoptante natural (remake de la estética, Bruno 2026-09-19).
+// adoptante natural (remake de la estética, el dueño 2026-09-19).
 
 import 'package:flutter/material.dart';
 

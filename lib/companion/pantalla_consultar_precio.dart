@@ -53,7 +53,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
   String? _error;
   String? _errorInicial;
 
-  /// Bruno, 2026-09-18: "no hay nada que actualice la app cuando se
+  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó" — repite la búsqueda actual sola apenas la sync trae algo
   /// nuevo.
   StreamSubscription<void>? _subCambiosSync;
@@ -67,7 +67,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
     });
   }
 
-  /// Sin PC emparejada (Bruno, 2026-09-18: "no debería tener que escanear
+  /// Sin PC emparejada (El dueño, 2026-09-18: "no debería tener que escanear
   /// ya, es innecesario") cae a la base local sincronizada por Supabase en
   /// vez de mostrar un error — buscar/consultar precio no necesita la PC
   /// para nada que ya haya sincronizado.

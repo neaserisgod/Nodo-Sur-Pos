@@ -17,7 +17,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -67,7 +67,7 @@ void main() {
     test(
       'abrir con una sesión ya ABIERTA bloquea: tira SesionYaAbiertaException',
       () async {
-        // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" —
+        // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" —
         // ya no se une en silencio a la sesión existente (eso descartaba
         // los montos nuevos sin avisar); el segundo intento se entera de
         // que ya hay una abierta y no la toca.
@@ -324,7 +324,7 @@ void main() {
           ),
           pasoRedondeoCentavos: 10000,
           tipoDescuento: TipoDescuento.porcentaje,
-          valorDescuento: 1500, // 15%, Jam Rock
+          valorDescuento: 1500, // 15%, Cliente Frecuente
         );
         expect(resultado.descuentoCentavos, 16800); // 15% de 112000
         expect(resultado.totalCentavos, 95200);

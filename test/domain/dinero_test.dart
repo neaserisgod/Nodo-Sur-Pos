@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/dinero.dart';
 
 void main() {
-  group('formatearARS — sin centavos (Bruno, 2026-09-16)', () {
+  group('formatearARS — sin centavos (Dueño, 2026-09-16)', () {
     test('monto redondo → "\$1.500"', () {
       expect(formatearARS(150000), r'$1.500');
     });

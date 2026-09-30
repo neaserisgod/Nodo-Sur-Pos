@@ -5,7 +5,7 @@
 // relleno sólido o degradé ("color-blocking") para las piezas que tienen
 // que saltar a la vista (el total de Venta, el resumen del día).
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-26): la tarjeta vuelve a ser plana —
+// "Lenguaje de diseño" (El dueño, 2026-09-26): la tarjeta vuelve a ser plana —
 // relleno opaco, sin borde, sin sombra, sin el brillo de "vidrio" del
 // rediseño del 2026-09-25. La jerarquía la da el salto de color contra el
 // canvas (#F0F4F9 → blanco), como en los mocks. `resplandor` queda en la

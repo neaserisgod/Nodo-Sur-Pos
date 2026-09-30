@@ -85,7 +85,7 @@ puede").
   app sigue siendo del mismo tamaño; no hay más complejidad de estado que
   gestionar por tener una máquina más rápida.
 - Contraste medido, nunca blanco puro sobre negro puro (`DISENO.md`) —
-  Bruno mira esta pantalla doce horas por día, seis días por semana; eso
+  El dueño mira esta pantalla doce horas por día, seis días por semana; eso
   no cambió con la máquina.
 - La densidad de la pantalla de venta — búsqueda, total y medios de pago
   siempre visibles sin scrollear sigue siendo la regla (el carrito en sí
@@ -245,7 +245,7 @@ real por pantalla en `ESTADO.md`.
 Rediseño de composición 2026-09-25 (tres pasadas, ver `DECISIONES.md`):
 primero se sacó la columna izquierda vieja (los resultados de escribir
 pasaron a colgar de la barra de búsqueda misma, como un dropdown flotante);
-después Bruno mandó una referencia de POS y pidió volver a un panel fijo
+después el dueño mandó una referencia de POS y pidió volver a un panel fijo
 de carrito/cobro a la derecha, "manteniendo la estructura de dropdown"
 (navbar + búsqueda); una tercera pasada corrigió cinco cosas puntuales de
 esa versión (notificaciones, la búsqueda en el resto de la app, nombres
@@ -260,7 +260,7 @@ composición actual:
   Alt+tecla o Enter) y cobrar devuelven el foco ahí solos — es la
   continuación natural de seguir vendiendo; un diálogo secundario (Mixto,
   Varios, gasto/ingreso rápido, arqueo intermedio, editar un acceso
-  directo, imprimir) YA NO lo hace (Bruno, 2026-09-16: "dejar de robar el
+  directo, imprimir) YA NO lo hace (El dueño, 2026-09-16: "dejar de robar el
   foco al hacer otra cosa") — se queda donde haya quedado al cerrarse.
   - Mientras se escribe, un dropdown ANCLADO al campo mismo (no una
     columna fija de la pantalla) cuelga justo debajo con nombre, precio y
@@ -268,18 +268,18 @@ composición actual:
     Enter para agregar. Una sola coincidencia viene preseleccionada.
   - Si no hay coincidencias, el mismo dropdown muestra "Sin coincidencias"
     y nada más — dar de alta un producto nuevo es siempre desde
-    Proveedores, nunca desde acá (Bruno, 2026-09-16: se sacó la alta
+    Proveedores, nunca desde acá (El dueño, 2026-09-16: se sacó la alta
     rápida de esta pantalla).
   - Este mismo campo (versión liviana, `BarraBusquedaGlobal`) vive también
     en la franja superior de TODAS las demás pantallas de gestión
-    (`EnvolturaConNavbarSuperior`) — Bruno, tercera pasada: "quiero que la
+    (`EnvolturaConNavbarSuperior`) — El dueño, tercera pasada: "quiero que la
     barra de busqueda este en todos lados". Ahí no agrega nada al
     carrito (esas pantallas no tienen uno): elegir un resultado navega a
     Venta con el texto ya cargado, y desde ahí sigue el camino de siempre.
 - Derecha: campanita de notificaciones (ver más abajo), después "Cambiar
   de turno" / "Cerrar caja".
 
-**Notificaciones** — tercera pasada (Bruno: *"NO QUIERO QUE APAREZCA EL
+**Notificaciones** — tercera pasada (El dueño: *"NO QUIERO QUE APAREZCA EL
 COSO DEL ARQUEO OCUPANDO TODO... UN APARTADO NOTIFICACIONES"*): el aviso
 de arqueo cada 2hs ya no es un banner de ancho completo en el cuerpo — es
 una campanita en la franja superior, con un punto de acento cuando hay
@@ -293,13 +293,13 @@ Izquierda (`Expanded`): pills de categoría + grilla de productos navegable
 (tocar para agregar, una forma MÁS de cargar el carrito además de
 escribir/escanear) — todo el catálogo con stock, organizado por categoría.
 Ya no hay una tira de accesos directos arriba de la grilla, ni un sistema
-para asignarle una tecla Alt+ a un cigarrillo puntual (Bruno, cuarta
+para asignarle una tecla Alt+ a un cigarrillo puntual (El dueño, cuarta
 pasada: "ahora no hacen falta los accesos rapidos... sacar la tira Y el
 sistema de accesos directos entero" — la grilla cubre el acceso rápido
 táctil; los cigarrillos se venden igual, por búsqueda o tocando la
 grilla). Alt+V (Varios) y Alt+C (Vuelto) siguen andando como siempre —
 son atajos fijos, nunca fueron parte del sistema de accesos directos que
-se sacó. **"Más vendidos" es la pill de entrada** (Bruno, tercera pasada:
+se sacó. **"Más vendidos" es la pill de entrada** (El dueño, tercera pasada:
 "me abrumo al ver tantos productos... los 10 mas vendidos por default"),
 calculado de verdad contra el historial de ventas (excluye anuladas);
 "Todos" y cada categoría siguen disponibles como pills aparte. Sin
@@ -309,7 +309,7 @@ catálogo entero en vez de una grilla vacía.
 Derecha (ancho fijo) — panel de carrito + cobro apilados:
 
 1. **Arriba (`Expanded`, scrollea si no entra)** — el carrito. Una línea
-   por producto: nombre (hasta 2 líneas — Bruno, tercera pasada: "los
+   por producto: nombre (hasta 2 líneas — El dueño, tercera pasada: "los
    nombres largos no se ven bien"), cantidad o gramos, precio unitario
    (solo por unidad, no pesables, y solo si el panel tiene ancho para
    mostrarlo), subtotal, y un ícono de tacho para eliminar esa línea
@@ -333,7 +333,7 @@ Derecha (ancho fijo) — panel de carrito + cobro apilados:
    - Desglose solo cuando corresponde: recargo QR, descuento, redondeo.
    - Descuento sobre el total de la venta entera (Regla 17, generalizada):
      el cajero elige $ o %, nunca por línea.
-   - Cuatro botones de medio de pago en **grilla 2×2** (Bruno, tercera
+   - Cuatro botones de medio de pago en **grilla 2×2** (El dueño, tercera
      pasada: "los botones de cobro... no se ven bien" — en una sola fila
      de 4, el panel angosto truncaba la etiqueta), cada uno con su color
      propio y grandes: Efectivo, QR, Débito, Mixto. Mixto abre campo para
@@ -372,7 +372,7 @@ botón, en tamaño chico.
 - `Alt+E` efectivo · `Alt+Q` QR · `Alt+D` débito · `Alt+X` mixto · `Alt+M`
   cobro manual
 - `Alt+Q`/`Alt+D` (y los botones QR/Débito con mouse) eligen el canal nada
-  más — de vuelta a dos pasos (Bruno, 2026-09-08: "necesito cobro
+  más — de vuelta a dos pasos (El dueño, 2026-09-08: "necesito cobro
   manual... no hay más modal para seleccionarlo", revierte el paso único
   de la fase 12). "Cobrar" (`Enter` con el campo vacío, o el botón) recién
   ahí abre el diálogo que manda la orden a la terminal Point.

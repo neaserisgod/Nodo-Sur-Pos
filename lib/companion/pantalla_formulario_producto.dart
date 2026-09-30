@@ -2,14 +2,14 @@
 // privada adentro de `pantalla_precios.dart` ("alta rápida", solo nombre/
 // código/precio/costo/proveedor); ahora es pública porque también la abre
 // el escáner central (`boton_escaner_companion.dart`), y ganó categoría y
-// stock (Bruno, 2026-09-17: "que sea uno como se debe, con todos los campos
+// stock (El dueño, 2026-09-17: "que sea uno como se debe, con todos los campos
 // necesarios para dejarlo andando" — sin categoría el producto queda
 // invisible en reportes por categoría, y sin stock ni siquiera aparece en
 // la búsqueda de venta, Regla 8).
 //
-// Modal, no pantalla completa (Bruno, 2026-09-19: "los modales de edición y
+// Modal, no pantalla completa (El dueño, 2026-09-19: "los modales de edición y
 // agregado" — mismo lenguaje que el resto de la companion, `mostrarHojaVidrio`)
-// y edición SÍ puede tocar stock directo (Bruno: "y el stock? o que
+// y edición SÍ puede tocar stock directo (El dueño: "y el stock? o que
 // carajos?" — antes era exclusivo de "Conteo de stock" para no duplicar ese
 // camino; ahora se reusa la MISMA fórmula, `ajustarStock` — Regla 3 —, así
 // que no hay dos caminos, solo dos lugares desde donde se puede llegar al
@@ -115,7 +115,7 @@ class _PantallaFormularioProductoState
   );
 
   /// En alta arranca vacío (0 si no se toca). En edición arranca con el
-  /// stock real — Bruno, 2026-09-19: "y el stock?", tocarlo desde acá ya no
+  /// stock real — El dueño, 2026-09-19: "y el stock?", tocarlo desde acá ya no
   /// es un camino aparte, es el mismo `ajustarStock` que usa Conteo de
   /// stock (Regla 3), disparado solo si el valor cambió (ver `_guardar`).
   late final _stockCtrl = TextEditingController(
@@ -147,7 +147,7 @@ class _PantallaFormularioProductoState
     setState(() {});
   }
 
-  /// Margen en vivo (Bruno, 2026-09-19: "que sea compacta a la vez que
+  /// Margen en vivo (El dueño, 2026-09-19: "que sea compacta a la vez que
   /// potente") — mismo cálculo que "Margen en vivo" de Productos en el
   /// escritorio (Regla 3, `markupBpDesdeCostoYPrecio`,
   /// `lib/domain/markup.dart`), que la companion no tenía todavía. Null si

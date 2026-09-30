@@ -2,7 +2,7 @@
 // companion (botón hero de una sola acción principal por pantalla, ej.
 // "Ir a vender" del Dashboard sin caja abierta). Pieza nueva, opt-in: no
 // reemplaza a `BotonPrimario` en todos lados, es para el único llamado a
-// la acción de una pantalla que lo necesite (remake de la estética, Bruno
+// la acción de una pantalla que lo necesite (remake de la estética, el dueño
 // 2026-09-19).
 
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
 // Respaldo — desde 2026-09-26 es una sección de Configuración, no un
-// apartado propio del menú (Bruno: "que apartados podemos resumir, agrupar
+// apartado propio del menú (El dueño: "que apartados podemos resumir, agrupar
 // o directamente eliminar"). Se toca una vez cada tanto: no ocupa un lugar
 // del menú de todos los días. Este widget es solo el contenido, sin barra
 // de navegación — lo monta `pantalla_configuracion.dart`.

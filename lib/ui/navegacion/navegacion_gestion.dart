@@ -8,7 +8,7 @@
 // "Dashboard" siempre vuelve a la raíz de la navegación (`popUntil
 // isFirst`), nunca empuja una instancia nueva: esa pantalla ES la raíz de
 // la pila en toda la app (es el `home` directo de `MaterialApp`, en
-// `main.dart` — reemplazó a `PantallaVenta` ahí, Bruno 2026-09-14). "Venta"
+// `main.dart` — reemplazó a `PantallaVenta` ahí, el dueño 2026-09-14). "Venta"
 // dejó de ser la raíz y pasó a empujarse como cualquier otra sección. Ir a
 // cualquier sección desde una pantalla de gestión primero vuelve a la raíz
 // y recién ahí empuja el destino — la pila nunca crece más allá de
@@ -45,7 +45,7 @@ Future<List<ItemNavbarSuperior>> itemsNavGestion(AppDatabase db) async {
 /// sin sesión de caja (ej. Historial, Configuración) — cada destino decide si
 /// los necesita de verdad.
 ///
-/// Bug real (2026-09-12, Bruno: "al navegar entre apartados... se erra
+/// Bug real (2026-09-12, el dueño: "al navegar entre apartados... se erra
 /// fuerte o se lockea"): [sesionCajaId] no llega igual de todas las
 /// pantallas de origen — `PantallaHistorial`, por ejemplo, nunca lo tenía
 /// para pasar (no lo necesita para sí misma), así que saltar de Historial a

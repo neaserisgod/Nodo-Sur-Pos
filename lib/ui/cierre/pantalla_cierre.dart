@@ -8,7 +8,7 @@
 // caja usa los dos patrones, en secuencia"): Patrón A mientras se cuenta
 // (Regla 10, nada más en pantalla), Patrón B una vez revelado el resumen.
 //
-// Fase de turnos por usuario (2026-09-12, Bruno: "una pantalla entera pierde
+// Fase de turnos por usuario (2026-09-12, el dueño: "una pantalla entera pierde
 // mucha info"): pasó de `Scaffold` + `Navigator.push` a `Modal`, el mismo
 // diálogo que usa el resto de la app — se abre encima de la pantalla de
 // venta en vez de navegar a otro lado. El contenido de cada fase no cambió,
@@ -211,7 +211,7 @@ class _ContenidoConteo extends StatelessWidget {
 /// marrón sobra). Lo que el mock no trae y el negocio sí exige queda: se
 /// llega acá recién después de contar a ciegas (fase 1, Regla 10), Mercado
 /// Pago SÍ se arquea (Regla 10) y la lata de cigarrillos tiene su propio
-/// bloque (Regla 6). Arriba, los tres totales para mover billetes (Bruno:
+/// bloque (Regla 6). Arriba, los tres totales para mover billetes (El dueño:
 /// "que sume efectivo, que sume solo MP y que sume cigarros").
 class _ContenidoRevisado extends StatelessWidget {
   const _ContenidoRevisado({required this.c});
@@ -274,7 +274,7 @@ class _ContenidoRevisado extends StatelessWidget {
             const SizedBox(height: Espaciado.md),
             ArqueosDelTurno(arqueos: c.arqueos),
           ],
-          // Bug real (Bruno: "faltan datos importantes" en el cierre): a quién
+          // Bug real (El dueño: "faltan datos importantes" en el cierre): a quién
           // separarle y qué productos vendidos no tienen costo cargado.
           if (c.resumenDia case final dia?
               when dia.porProveedor.isNotEmpty ||
@@ -475,7 +475,7 @@ class _BloqueCigarrillos extends StatelessWidget {
       children: [
         Text('Cigarrillos · a la lata', style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte)),
         const SizedBox(height: Espaciado.sm),
-        // "A separar", no "Separado" (bug real, Bruno: "dice como si ya se
+        // "A separar", no "Separado" (bug real, el dueño: "dice como si ya se
         // hubiese hecho") — es la acción pendiente, no un hecho consumado.
         FilaDato(
           etiqueta: 'A separar a la lata',
@@ -588,9 +588,9 @@ class _AvisoCobrosSinResolver extends StatelessWidget {
 /// El desglose por proveedor y qué productos no tienen costo cargado — la
 /// misma información que ya mostraba la companion en su cierre
 /// (`SeccionExtraCierreCompanion`, `resumenDiaHistorico`), agregada acá
-/// porque el escritorio nunca la pedía (Bruno: "faltan datos importantes"
+/// porque el escritorio nunca la pedía (El dueño: "faltan datos importantes"
 /// en el cierre). A diferencia de la companion, sin check por proveedor —
-/// acá no hace falta: Bruno separa la plata mirando esta misma pantalla,
+/// acá no hace falta: El dueño separa la plata mirando esta misma pantalla,
 /// contra el papel, no de a poco caminando por el local.
 class _BloqueProveedores extends StatelessWidget {
   const _BloqueProveedores({required this.dia});
@@ -745,7 +745,7 @@ class _ContenidoCerrado extends StatelessWidget {
   }
 }
 
-/// Los tres números que Bruno mira para mover billetes, textual: "que sume
+/// Los tres números que el dueño mira para mover billetes, textual: "que sume
 /// efectivo, que sume solo MP y que sume cigarros sin el recargo, así yo
 /// solo tengo que contar y pasar plata". Van arriba de todo, grandes y
 /// separados, antes de la diferencia y del resto del resumen — no es la

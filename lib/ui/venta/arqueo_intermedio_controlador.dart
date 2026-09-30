@@ -1,5 +1,5 @@
 // Estado del arqueo sugerido cada 2hs (turnos por usuario, 2026-09-12; ya no
-// bloqueante, Bruno 2026-09-15).
+// bloqueante, el dueño 2026-09-15).
 // Dos fases nada más — conteo y revisado, mismo orden "primero se cuenta,
 // después se compara" que el cierre real (Regla 10) — sin fase "cerrado":
 // al confirmar, esto ya terminó, no hay nada más que mostrar.
@@ -38,7 +38,7 @@ class ArqueoIntermedioControlador extends ChangeNotifier {
 
   /// A diferencia de `resumen.lataFinalCentavos` (que asume separado todo
   /// lo vendido hoy, correcto para un cierre real): acá se compara la lata
-  /// contra lo que debería seguir habiendo SIN separar nada todavía (Bruno,
+  /// contra lo que debería seguir habiendo SIN separar nada todavía (El dueño,
   /// 2026-09-13: "solo al cerrar") — `lataEsperadaIntermedia`, misma
   /// fórmula que guarda `registrarArqueoIntermedio`.
   int? lataEsperadaCentavos;

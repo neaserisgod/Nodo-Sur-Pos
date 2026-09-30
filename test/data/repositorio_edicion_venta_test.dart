@@ -24,7 +24,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     usuarioEditorId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Ayuda finde'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     medioEfectivoId =

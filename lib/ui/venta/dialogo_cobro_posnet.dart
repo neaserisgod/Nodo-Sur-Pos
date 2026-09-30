@@ -7,10 +7,10 @@
 // rechazada ni cancelada: se deja tal cual, en 'pendiente', para que
 // aparezca en el Cierre como "no sé si se cobró" — Regla de esta fase,
 // nunca se asume un resultado que no se confirmó. Un cancel explícito de
-// Bruno (el botón "Cancelar") le avisa a Mercado Pago (`POST
+// El dueño (el botón "Cancelar") le avisa a Mercado Pago (`POST
 // /v1/orders/{id}/cancel`) además de anotarlo acá — sin eso la terminal se
 // queda mostrando "esperando pago" aunque la app ya haya cerrado el
-// diálogo (bug real, Bruno: "cuando cancelo el QR no cancela el
+// diálogo (bug real, el dueño: "cuando cancelo el QR no cancela el
 // dispositivo"). Esto solo funciona mientras la orden sigue en
 // `status=created`: apenas llega a la terminal física (`at_terminal`, casi
 // instantáneo) Mercado Pago ya no permite cancelarla por API — verificado
@@ -91,7 +91,7 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
     try {
       final orden = await widget.controlador.iniciarCobroPosnet();
       if (_cancelado) {
-        // Bruno canceló mientras la orden se estaba creando: ya existe del
+        // El dueño canceló mientras la orden se estaba creando: ya existe del
         // lado de Mercado Pago (el POST recién terminó), así que no basta
         // con haber dejado de esperar acá — hay que cancelarla ahí
         // también, o la terminal se queda esperando el pago igual.

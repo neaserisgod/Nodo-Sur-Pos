@@ -1,4 +1,4 @@
-// Movimiento de caja — fusiona "Gasto rápido" e "Ingreso rápido" (Bruno,
+// Movimiento de caja — fusiona "Gasto rápido" e "Ingreso rápido" (El dueño,
 // 2026-09-18: "reacomodación de absolutamente todos los elementos... no
 // cambios de skin"). Eran dos pantallas casi idénticas (mismo formulario,
 // misma `SesionAbiertaGate`, mismas tres cajas) que solo diferían en qué

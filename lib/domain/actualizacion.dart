@@ -98,7 +98,7 @@ String urlFeedActualizaciones({
 
 enum AvisoActualizacion { ninguno, mostrar }
 
-/// Cuándo se muestra el aviso "Hay una actualización". Regla de Bruno
+/// Cuándo se muestra el aviso "Hay una actualización". Regla de el dueño
 /// (2026-09-30): nada mientras haya una venta abierta — la pantalla de
 /// mostrador con gente esperando no se interrumpe por una actualización —,
 /// y nunca se instala sola: solo se avisa, y el que cobra elige.

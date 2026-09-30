@@ -96,7 +96,7 @@ class AcentosPlazoleta extends ThemeExtension<AcentosPlazoleta> {
   }
 }
 
-// "Lenguaje de diseño" (Bruno, 2026-09-26): efectivo naranja y Mercado Pago
+// "Lenguaje de diseño" (El dueño, 2026-09-26): efectivo naranja y Mercado Pago
 // azul, como en los mocks — QR es el azul de MP puro y Débito un azul más
 // profundo de la misma familia, porque en la caja los dos son el mismo
 // medio "Mercado Pago" (CLAUDE.md, pantalla de venta) y tienen que leerse

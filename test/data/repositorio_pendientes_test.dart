@@ -12,7 +12,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );

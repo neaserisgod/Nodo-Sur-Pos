@@ -1,10 +1,30 @@
-# Reglas de negocio — La Plazoleta
+# Reglas de negocio — Nodo Sur POS
 
-Almacén de barrio con fiambrería, en Km 8 del corredor Bustillo, San Carlos de Bariloche.
-Atiende una persona sola de lunes a viernes, 10 a 22. Fin de semana con ayuda por hora.
+Este documento es la **fuente de verdad del dominio**: cómo se calcula y se decide cada cosa. Si el código y este
+documento se contradicen, el que está mal es el código. La numeración de las reglas (Regla 6, Regla 13…) se cita desde
+el código y los tests, por eso no se renumera.
 
-Este documento es la **fuente de verdad del dominio**. Si el código y este documento
-se contradicen, el que está mal es el código.
+Nació de un almacén de barrio con fiambrería (el comercio de origen, ver
+[`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md)), y por eso los ejemplos vienen de ahí. El producto es
+configurable: lo que es de un rubro puntual es un **módulo** que cada comercio prende o apaga en Configuración →
+Módulos (apagado solo se esconde: no se borra ningún dato). El núcleo —vender, cobrar, stock básico y cierre de caja—
+no se apaga nunca.
+
+| Módulo | Reglas que lo describen |
+|---|---|
+| Caja aparte para un proveedor (la "lata") | 6 (cigarrillos, recargo virtual, arqueo de la lata) y 16 (proveedor que cobra solo en efectivo) |
+| Productos por peso | 7 |
+| Promos y combos | 14b |
+| Fiado y cuenta corriente | 15 |
+| Retiro de ganancias | 13 |
+| Gastos fijos y equilibrio | 12 |
+| Varios usuarios y turnos | 18 |
+| Carga histórica | 19 |
+| Comparador de precios | 14 (precios de referencia) |
+| Cobro con Mercado Pago Point | 2 y 9 (canales QR/Débito) |
+
+Las reglas 16 (lista de proveedores) y 17 (cliente recurrente) describen **datos del comercio de origen**, no del
+producto: un comercio nuevo carga sus proveedores y clientes desde la app.
 
 ---
 
@@ -52,7 +72,7 @@ venta**, no una referencia al producto.
 Si la rentabilidad histórica se calcula mirando el costo actual del producto, un
 aumento de proveedor reescribe el pasado y todos los márgenes viejos mienten.
 
-**Completar no es reescribir** (Bruno, 2026-09-26): cuando se carga el costo de
+**Completar no es reescribir** (El dueño, 2026-09-26): cuando se carga el costo de
 un producto que no lo tenía, las ventas suyas que quedaron **sin costo** lo
 toman (y entran solas en la reposición y la ganancia). Una venta que ya tenía un
 costo guardado nunca se toca, y un costo $0 cargado no cuenta como costo — no
@@ -64,7 +84,7 @@ se inventa una ganancia del 100%.
 
 - Se calcula sumando el costo-foto de cada línea vendida, agrupado por proveedor.
 - Cada proveedor tiene un **colchón**, pero ya no es un monto configurable a
-  mano: es ganancia real retenida, que crece solo cuando Bruno decide no
+  mano: es ganancia real retenida, que crece solo cuando el dueño decide no
   llevarse la ganancia de ese proveedor al revisar el cierre (Regla 13).
 - Un porcentaje estimado se descapitaliza solo: si un proveedor sube el costo y
   el precio todavía no se tocó, el porcentaje separa de menos sin que se note.
@@ -99,7 +119,7 @@ al pagarle, porque los dos mueven una caja real de la Plazoleta (MP se
 arquea como una caja más, Regla de Mercado Pago). Transferencia y cuenta
 corriente no: esa plata nunca pasa por una caja de la app.
 
-### De qué medio sale lo que se separa (Bruno, 2026-09-26)
+### De qué medio sale lo que se separa (El dueño, 2026-09-26)
 
 Lo que hay que separar para cada proveedor se divide en **del cajón** y **de
 Mercado Pago**, según dónde está la plata de verdad:
@@ -125,7 +145,7 @@ Mercado Pago**, según dónde está la plata de verdad:
   que se lleva la lata sale primero del costo en efectivo del día y, si lo
   cubre entero, lo que sobra sale de la ganancia en efectivo.
 
-### Separaciones del día (Bruno, 2026-09-26)
+### Separaciones del día (El dueño, 2026-09-26)
 
 La pantalla **Separaciones** es solo de **hoy** (todos los turnos del día):
 por proveedor, vendido (costo + markup), reposición (costo) y ganancia, cada
@@ -153,8 +173,8 @@ no en el momento de la venta.
 - A la lata de cigarrillos va el **precio de lista completo** de lo vendido.
 - La ganancia es un **monto fijo por atado** (~1.000), no un porcentaje. Por eso
   la lata junta de más: ese excedente es ganancia, no plata del proveedor.
-- **Serra Cigarros cobra solo en efectivo.** Ese es el motivo de todo el mecanismo.
-- Serra es una sola persona con dos cuentas: se puede pedir almacén sin cigarrillos,
+- **Distribuidora de Cigarrillos cobra solo en efectivo.** Ese es el motivo de todo el mecanismo.
+- Distribuidora es una sola persona con dos cuentas: se puede pedir almacén sin cigarrillos,
   pero no cigarrillos sin almacén.
 
 ### Recargo por pago virtual
@@ -164,7 +184,7 @@ Se aplica **automáticamente**, sin intervención, cuando la venta tiene cigarri
 
 - Primer atado: 300
 - Cada atado adicional: 100
-- Cigarros sueltos: 50 por cigarro (Bruno, 2026-09-10: antes no llevaban recargo —
+- Cigarros sueltos: 50 por cigarro (El dueño, 2026-09-10: antes no llevaban recargo —
   sin él, los cálculos daban mal)
 - **En pagos mixtos se aplica completo**, aunque solo una parte vaya por QR: el
   costo de conseguir el efectivo se paga igual.
@@ -177,14 +197,14 @@ aparecer o desaparecer del total en ese momento. No queda pegado.
 ### Arqueo propio de la lata (ítem 3)
 
 La lata se arquea igual que el efectivo y Mercado Pago: separado desde la caja
-normal, menos los pagos a Serra Cigarros, da lo **esperado**; contra eso se compara
-lo que Bruno cuenta de verdad en la lata, y la diferencia es la misma señal de
+normal, menos los pagos a Distribuidora de Cigarrillos, da lo **esperado**; contra eso se compara
+lo que el dueño cuenta de verdad en la lata, y la diferencia es la misma señal de
 auditoría que en las otras dos cajas. Si hubo cigarrillos cobrados por QR ese día,
 esa plata quedó en Mercado Pago, no en la lata — se le debe a la caja normal hasta
 que se salde, y la planilla lo aclara aparte para que no se confunda con un
 descuadre real.
 
-## 7. Pesables (fiambres — Mazzota)
+## 7. Pesables (fiambres — Fiambrería)
 
 - Se cargan **en gramos**, escribiendo `200 queso barra`.
 - El subtotal se calcula en **un solo lugar** del código:
@@ -193,11 +213,11 @@ descuadre real.
   un total en plata.
 - Un pesable sin precio por kilo cargado es un error, no un cero silencioso.
 - El stock de pesables se lleva en gramos, no en unidades.
-- Mazzota es el mejor margen del negocio (~47%) y trabaja en cuenta corriente.
+- Fiambrería es el mejor margen del negocio (~47%) y trabaja en cuenta corriente.
 
 ## 8. Stock
 
-- **Sin stock, el producto no aparece en ventas** (Bruno, 2026-09-06 —
+- **Sin stock, el producto no aparece en ventas** (El dueño, 2026-09-06 —
   reemplaza la regla anterior de esta sección, "el stock informa, nunca
   bloquea": un 0/negativo se vendía igual, solo se avisaba con el nombre en
   rojo). Pedido explícitamente como versión inicial, a refinar — ver
@@ -228,7 +248,7 @@ descuadre real.
 
 ## 10. Caja y cierre
 
-- **Ventas abiertas (2026-09-29, Bruno: "que la venta permanezca y que pueda
+- **Ventas abiertas (2026-09-29, el dueño: "que la venta permanezca y que pueda
   hacer más de 1 venta a la vez").** Una venta armada y sin cobrar queda
   guardada (sobrevive a cambiar de pantalla, cerrar la app o un corte de luz)
   y se pueden tener varias a la vez, como pestañas sobre el carrito (Alt+N
@@ -239,7 +259,7 @@ descuadre real.
   (el cierre ofrece "Descartar").
 
 - **El día abre con los tres montos: caja normal, caja cigarrillos y monto
-  Mercado Pago** (ampliado 2026-09-12, Bruno: reboot de la base — "para
+  Mercado Pago** (ampliado 2026-09-12, el dueño: reboot de la base — "para
   abrir caja se necesita: caja normal, caja cigarros, monto mercado pago").
   Los tres se precargan con lo último contado y quedan editables — la lata
   ya no es un arrastre invisible, sin campo (como decía la versión anterior
@@ -284,7 +304,7 @@ descuadre real.
   cajón físico: se excluye del efectivo esperado y se resta del MP esperado.
 - Los pagos a proveedores no son gasto nuevo: son la reposición que ya se venía
   separando.
-- **Cuenta corriente con proveedores (2026-09-29, Bruno: "un apartado de deuda
+- **Cuenta corriente con proveedores (2026-09-29, el dueño: "un apartado de deuda
   para ir cargando los saldos que yo adeudo, y pagar desde ahí dejando
   registro, en lugar de gastos registrados pero sin dueño").** Cada proveedor
   puede tener deuda: se carga con monto, fecha y nota (remito/factura) y el
@@ -320,23 +340,23 @@ Fijos mensuales actuales (agosto 2026): **$2.093.000**
 
 Reemplaza por completo al viejo "retiro semanal" (eliminado: la cuenta
 `efectivo + saldo MP − fondo fijo` no salía de ningún ritual real). Flujo
-real de Bruno, textual: *"se abre caja, se vende, se cierra caja. Yo al día
+real de el dueño, textual: *"se abre caja, se vende, se cierra caja. Yo al día
 siguiente reviso ese cierre"*.
 
 - **Revisar y decidir ya no interrumpe nada — es la sección "Reportes"
-  de la barra lateral** (Bruno, 2026-09-06: *"en lugar de revisar
+  de la barra lateral** (El dueño, 2026-09-06: *"en lugar de revisar
   ganancias, un apartado de reportes para poder ver detalladamente
   todo"*). Hasta esa fecha era una pantalla que se abría sola al abrir
   caja si había algo pendiente; ahora es una pantalla más, visitable
   cuando se quiera, con maestro-detalle (lista de todos los proveedores a
-  la izquierda — Bruno: *"no me gusta, recordá que tiene que ser sin
+  la izquierda — El dueño: *"no me gusta, recordá que tiene que ser sin
   scroll"*, entran los 15 sin scrollear — y el detalle completo del
   elegido a la derecha, arrancando con el primero ya seleccionado). A
   diferencia de la pantalla vieja, que solo listaba a quien tuviera algo
   pendiente (para no interrumpir con ruido en medio de la apertura), acá
   se ven TODOS los proveedores, incluidos los que están en cero — "ver
   detalladamente todo" es justamente eso.
-- **Simplificado el 2026-09-05** (Bruno: *"necesito que solo diga cuánto
+- **Simplificado el 2026-09-05** (El dueño: *"necesito que solo diga cuánto
   separar... para ahorrarme trabajo y sobre todo tiempo"*): por cada
   proveedor, el detalle muestra dos números de un solo vistazo — cuánto
   separar de reposición (costo real, Regla 5) y cuánto es la ganancia sin
@@ -346,7 +366,7 @@ siguiente reviso ese cierre"*.
   respectivamente) — la decisión de cuánto retirar no se frena ni se
   informa contra los fijos pendientes.
 - **Sobre la ganancia sin revisar, dos acciones** (reintroducido el
-  2026-09-06 — Bruno: *"necesito poder retirar ganancia real... pero todo
+  2026-09-06 — El dueño: *"necesito poder retirar ganancia real... pero todo
   simple"*):
   - **"Retener como colchón"**: un toque, retiene el 100% como colchón de
     ese proveedor, sin retirar nada y sin pedir de dónde. Es la que existía
@@ -355,10 +375,10 @@ siguiente reviso ese cierre"*.
     Mercado Pago) **prellenados automáticamente** según la proporción real
     en que se cobraron las ventas que generaron esa ganancia (una venta
     100% efectivo manda toda su parte a efectivo, un mixto se reparte a
-    prorrata) — no es una adivinanza para Bruno, ya viene calculado. Los
+    prorrata) — no es una adivinanza para el dueño, ya viene calculado. Los
     dos montos quedan editables por si la sugerencia no es exacta (un
     mixto de varios productos no tiene atribución exacta por línea, ver
-    "Otros pendientes sueltos" en `ESTADO.md`) o porque Bruno decide otra
+    "Otros pendientes sueltos" en `ESTADO.md`) o porque el dueño decide otra
     cosa. Lo que no se retira de los dos campos queda como colchón
     automáticamente — no hace falta confirmarlo aparte.
 - **Lo que se retira sale del negocio ese mismo día**: el efectivo va a su
@@ -368,7 +388,7 @@ siguiente reviso ese cierre"*.
   según de dónde salió), o el arqueo del día siguiente no cierra.
 - **Lo que no se retira queda separado como colchón de ese proveedor** —
   plata real, no una sugerencia. La única forma de que el colchón de un
-  proveedor crezca es que Bruno decida no llevarse esa ganancia (retenerla
+  proveedor crezca es que el dueño decida no llevarse esa ganancia (retenerla
   entera, o retirar menos de lo disponible).
 - **Se muestra lo pendiente, no solo el día anterior.** Si un día no se
   revisa, al siguiente hay dos (o más) días acumulados — el detalle día
@@ -378,11 +398,11 @@ siguiente reviso ese cierre"*.
   de participar de cualquier cálculo — queda como dato operativo: cuánta
   plata dejar en el cajón para dar vuelto.
 - **La caja de cigarrillos no entra en esta cuenta** (se mantiene del
-  retiro viejo: es plata que ya tiene dueño, Serra Cigarros).
+  retiro viejo: es plata que ya tiene dueño, Distribuidora de Cigarrillos).
 
 ## 14. Precios
 
-- **Precio por proveedor (2026-09-29, Bruno: "simplificar el sistema de
+- **Precio por proveedor (2026-09-29, el dueño: "simplificar el sistema de
   precios: un selector de porcentaje por proveedor + redondeo para arriba a la
   próxima centena, exceptuando los cigarros").** Cada proveedor puede tener un
   porcentaje de ganancia sobre el costo. El precio de un producto con costo es
@@ -402,7 +422,7 @@ siguiente reviso ese cierre"*.
 - (Reemplazado por el porcentaje por proveedor, arriba.) Markup de referencia por categoría (configurable, solo informativo). Categorías
   reales del catálogo: Almacén, Bebidas, Cervezas, Gaseosas, Vinos, Cigarrillos,
   Golosinas, Galletitas y panificados, Yerbas y té, Higiene y limpieza, Fiambres.
-  (La versión anterior de esta regla mezclaba proveedores — Serra, Wesley,
+  (La versión anterior de esta regla mezclaba proveedores — Distribuidora, Golosinas Oeste,
   Coca-Cola — con categorías; son cosas distintas, ver sección 16.)
   Referencias conocidas: Almacén / Cervezas / Gaseosas ~50%, Bebidas / Golosinas
   ~70%, Fiambres 80–100%, Cigarrillos monto fijo por atado (no aplica un
@@ -411,7 +431,7 @@ siguiente reviso ese cierre"*.
 
 ## 14b. Promos
 
-- **Promos (2026-09-29, Bruno: "un creador de promos: se carga precio y costo
+- **Promos (2026-09-29, el dueño: "un creador de promos: se carga precio y costo
   de 2 o más artículos, se le suma el porcentaje, y no se tiene que pasar del
   precio de lista normal").** Una promo lleva dos o más artículos distintos
   (con cantidad cada uno). Su precio es la **suma de los costos + un
@@ -442,11 +462,11 @@ Los 15 proveedores reales, cada uno con su propio código:
 
 | Código | Proveedor | Notas |
 |---|---|---|
-| S | Serra | Mismo vendedor que Serra Cigarros, cuenta aparte |
-| SC | Serra Cigarros | **Solo efectivo** |
-| F | Mazzota | Cuenta corriente, pesables, mejor margen |
+| S | Distribuidora | Mismo vendedor que Distribuidora de Cigarrillos, cuenta aparte |
+| SC | Distribuidora de Cigarrillos | **Solo efectivo** |
+| F | Fiambrería | Cuenta corriente, pesables, mejor margen |
 | C | Coca Cola | |
-| W | Wesley | Cervezas |
+| W | Golosinas Oeste | Cervezas |
 | A | Arcor | |
 | P | Puelche | |
 | L | Bebidas del Lago | |
@@ -459,7 +479,7 @@ Los 15 proveedores reales, cada uno con su propio código:
 | M | La Magdalena | |
 
 Cada proveedor tiene día de pedido, día de entrega y medio de pago (efectivo,
-transferencia, cuenta corriente, Mercado Pago) configurables. Mazzota entrega
+transferencia, cuenta corriente, Mercado Pago) configurables. Fiambrería entrega
 lunes→martes y jueves→viernes.
 
 `B`/`G`/`O` (Bebidas varias / Golosinas / Otros) fueron placeholders genéricos de
@@ -468,18 +488,18 @@ inactivos, para no romper productos ya cargados que los referencian, aunque
 todavía aparecen en los selectores como cualquier otro — no elegirlos para
 productos nuevos.
 
-## 17. Cliente recurrente: Jam Rock
+## 17. Cliente recurrente: Cliente Frecuente
 
-Café con dos carros. Contacto: Maca. Pide paleta y queso ~2 veces por semana.
+Café con dos carros. Contacto: (nombre). Pide paleta y queso ~2 veces por semana.
 **15% de descuento sobre el importe total** de la venta.
 
-Problema abierto: pide en días aleatorios y Mazzota entrega en días fijos, lo que
+Problema abierto: pide en días aleatorios y Fiambrería entrega en días fijos, lo que
 genera quiebres. Solución acordada: que los pedidos lleguen domingos y miércoles.
 
 **Generalizado en código (2026-09-06)**: en vez de hardcodear el 15% de
-Jam Rock, la pantalla de venta tiene un campo de descuento (columna de
+Cliente Frecuente, la pantalla de venta tiene un campo de descuento (columna de
 cobro) donde el cajero tipea un monto o un porcentaje sobre el total de
-la venta entera — Jam Rock es "tipear 15%", no un caso especial de código.
+la venta entera — Cliente Frecuente es "tipear 15%", no un caso especial de código.
 Se aplica sobre el total ya con el recargo de cigarrillos sumado, y antes
 del redondeo en efectivo (mismo orden que ya regía recargo→redondeo,
 Regla 6). Sin motivo obligatorio, sin tope configurable — el único límite
@@ -509,14 +529,14 @@ con un selector de nombre al abrir la app. Sin contraseñas.
   se ven idénticas en la lista.
 - **Arqueo durante el turno: opcional** (agregado 2026-09-12 como
   obligatorio cada 2hs; dejó de bloquear la venta el 2026-09-15; **opcional
-  desde el 2026-09-28**, Bruno: "que los arqueos durante el turno dejen de
+  desde el 2026-09-28**, el dueño: "que los arqueos durante el turno dejen de
   ser obligatorios"). Se hace cuando uno quiere, desde la campanita (PC y
   celular). Pasadas 2hs desde la apertura o el último arqueo, la campanita
   solo muestra un punto — aviso suave, sin panel ni banner. Mismo conteo que
   un cierre (efectivo, Mercado Pago, lata), pero **no corta la sesión ni
   separa cigarrillos**: queda registrado (`arqueos_intermedios`), no es un
   sub-turno.
-  - **Lo contado se usa en el cierre** (Bruno, 2026-09-28: "que guarde los
+  - **Lo contado se usa en el cierre** (El dueño, 2026-09-28: "que guarde los
     datos para el cierre de caja"): el cierre arranca con el efectivo y el
     Mercado Pago del último arqueo ya escritos, para corregir en vez de
     tipear de cero. Precargar no revela nada: el esperado y la diferencia

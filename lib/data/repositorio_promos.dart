@@ -1,4 +1,4 @@
-// Promos (Bruno, 2026-09-29): "se carga precio y costo de 2 o más artículos,
+// Promos (El dueño, 2026-09-29): "se carga precio y costo de 2 o más artículos,
 // se le suma el porcentaje, y no se tiene que pasar del precio de lista
 // normal". La promo es una fila de `productos` (`esPromo`) para que aparezca en
 // la búsqueda y la grilla como un producto más; sus artículos viven en

@@ -1,4 +1,4 @@
-// El armazón único de toda pantalla de gestión (paso 1 del kit, Bruno):
+// El armazón único de toda pantalla de gestión (paso 1 del kit, el dueño):
 // navbar superior + encabezado + contenido, con el padding de pantalla ya
 // resuelto. Toda pantalla de gestión empieza por acá — la pantalla de venta
 // no, sigue con su propio manejo (`NavbarSuperior` armada a mano, mismo

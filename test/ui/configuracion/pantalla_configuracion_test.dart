@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Dos QR desde 2026-09-07: el de emparejamiento (JSON) y el de
-    // instalación para un celular nuevo (URL a /companion/apk, Bruno:
+    // instalación para un celular nuevo (URL a /companion/apk, el dueño:
     // "que en la app escaneando el QR lo ponga para descargar").
     expect(find.byType(QrImageView), findsNWidgets(2));
 

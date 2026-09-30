@@ -1,6 +1,6 @@
 // Etiqueta a la izquierda, valor a la derecha, tocable — el patrón "lista de
 // configuraciones con su valor, tocás y editás" que pedía la pantalla de
-// Configuración de la companion (Bruno, 2026-09-19: "que se puedan
+// Configuración de la companion (El dueño, 2026-09-19: "que se puedan
 // modificar las reglas del negocio... desde el celular"). No existía en el
 // kit de la companion (sí en el de escritorio, `lib/ui/comun/fila_dato.dart`,
 // pero ese es de solo lectura, sin `onTap`) — pieza chica agregada al kit,

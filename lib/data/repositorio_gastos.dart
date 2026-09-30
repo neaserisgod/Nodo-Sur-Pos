@@ -35,7 +35,7 @@ Future<int> registrarGastoRapido(
   String? motivo,
 }) {
   // Envuelto junto con `verificarSesionAbierta` en la misma transacción
-  // (Bruno, 2026-09-19: "aislar los usuarios para que no se pisen") — sin
+  // (El dueño, 2026-09-19: "aislar los usuarios para que no se pisen") — sin
   // esto, un gasto rápido mandado justo cuando la caja se cierra en otro
   // dispositivo se grababa igual, contra una sesión ya `CERRADA`, sin que
   // nadie se entere.

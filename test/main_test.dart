@@ -1,4 +1,4 @@
-// Comportamiento de arranque (main.dart). Bruno, 2026-09-06: "que no salga
+// Comportamiento de arranque (main.dart). El dueño, 2026-09-06: "que no salga
 // obligatoriamente al abrir la app" y, acto seguido, "pasa lo mismo con el
 // cierre de caja, bloquea al abrir" — antes, tanto sin sesión de caja
 // abierta como con una sesión abierta de un día anterior sin cerrar (Regla
@@ -7,7 +7,7 @@
 // como pantalla completa en el segundo) antes de dejar ver nada más.
 //
 // Desde que Dashboard reemplazó a `PantallaVenta` como `home` de la app
-// (Bruno, 2026-09-14: "dashboard es la pantalla principal, totalmente
+// (El dueño, 2026-09-14: "dashboard es la pantalla principal, totalmente
 // aparte"), lo único que este archivo prueba es la garantía a nivel de
 // arranque: nunca un diálogo sin salida tapando todo, la barra lateral
 // siempre navegable sin importar el estado de la sesión. El bloqueo real de
@@ -67,7 +67,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -85,7 +85,7 @@ void main() {
       expect(find.text('Ir a Venta'), findsOneWidget);
       // El resto de la navegación (el dropdown de secciones de la navbar)
       // sigue disponible: se puede ir a Configuración sin haber abierto
-      // caja. La navbar pasó a ser un solo botón que abre un menú (Bruno,
+      // caja. La navbar pasó a ser un solo botón que abre un menú (El dueño,
       // rediseño 2026-09-25) — ya no hay un ícono con tooltip propio por
       // sección, alcanza con que el botón que abre ese menú exista.
       expect(find.byTooltip('Cambiar de sección'), findsOneWidget);

@@ -22,7 +22,7 @@ enum FaseCierre { conteo, revisado, cerrado }
 class CierreControlador extends ChangeNotifier {
   CierreControlador(this.db, {required this.sesionId}) {
     // Mientras ya se reveló el resultado, corregir el conteo recalcula en
-    // vivo (Bruno: "cuento hasta que dé" no debería volver a tapar nada —
+    // vivo (El dueño: "cuento hasta que dé" no debería volver a tapar nada —
     // ocultar es para no sesgar el primer conteo, no para trabar la
     // corrección). Antes de revelar, este listener no hace nada.
     efectivoContadoCtrl.addListener(_alCambiarConteo);
@@ -47,7 +47,7 @@ class CierreControlador extends ChangeNotifier {
   /// 3), agregada acá porque la pantalla de escritorio nunca la pedía: el
   /// modal de cierre solo mostraba el agregado de `resumen.reposicion`
   /// (`vendidoSinCostoCentavos`), sin decir a qué proveedor separarle ni
-  /// qué producto específico falta completar (Bruno: "faltan datos
+  /// qué producto específico falta completar (El dueño: "faltan datos
   /// importantes" en el cierre).
   ResumenDiaHistorico? resumenDia;
 
@@ -55,15 +55,15 @@ class CierreControlador extends ChangeNotifier {
   String? error;
 
   /// Ventas armadas y sin cobrar de esta sesión: bloquean el cierre hasta
-  /// cobrarlas o descartarlas (Bruno, 2026-09-29).
+  /// cobrarlas o descartarlas (El dueño, 2026-09-29).
   int ventasAbiertas = 0;
 
-  /// Los arqueos hechos durante el turno (opcionales, Bruno 2026-09-28),
+  /// Los arqueos hechos durante el turno (opcionales, el dueño 2026-09-28),
   /// del más viejo al más nuevo — se muestran en el resumen como registro.
   List<ArqueoDelTurno> arqueos = [];
 
   /// El arqueo del que salió la precarga del conteo, o null si se arrancó
-  /// de cero. Bruno eligió precargar ("las dos cosas": precargar y además
+  /// de cero. El dueño eligió precargar ("las dos cosas": precargar y además
   /// mostrarlos): el cierre arranca con lo último que se contó, para
   /// corregir en vez de tipear todo de nuevo.
   ArqueoDelTurno? precargadoDe;
@@ -222,7 +222,7 @@ class CierreControlador extends ChangeNotifier {
       notifyListeners();
       return false;
     } on SesionYaNoAbiertaException {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — ya
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — ya
       // la cerraron mientras se llenaba este mismo diálogo (por ejemplo,
       // desde el celular). `cargar()` va a mostrar el cierre real, ya hecho
       // por la otra persona, en vez de un error genérico.
@@ -258,7 +258,7 @@ class CierreControlador extends ChangeNotifier {
   }
 
   /// La planilla "Control diario de caja" (fase 9/ítem 3) se generaba solo a
-  /// mano desde Historial — Bruno la quiere sola al cerrar, en la misma
+  /// mano desde Historial — El dueño la quiere sola al cerrar, en la misma
   /// carpeta de tickets (mismo criterio de "carpeta ya configurada" que el
   /// respaldo, no hace falta una segunda carpeta para esto).
   Future<void> _generarPlanillaSinBloquearElCierre() async {

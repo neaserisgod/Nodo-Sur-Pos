@@ -23,7 +23,7 @@ de cigarrillos a arrastrar (Regla 6) se busca así:
 
 **El orden es por `id` (autoincremental, orden de inserción en la base),
 no por `fechaCierre`.** Esto no es un descuido: un turno ES una sesión de
-caja completa (Bruno, sesión del 31/08/2026 — su planilla de papel tiene
+caja completa (El dueño, sesión del 31/08/2026 — su planilla de papel tiene
 una hoja por persona, no una por día), así que puede haber varias sesiones
 el mismo día, cada una cerrando su propio arqueo y su propia separación de
 cigarrillos. Encadenar por `id` de inserción es exactamente lo que hace
@@ -48,7 +48,7 @@ crean en tiempo real, en el orden en que realmente ocurren.
 
 Hasta la fase 5 del proyecto, tanto filas de seed nuevas como columnas o
 tablas nuevas se sincronizaban a mano en el archivo real de la base
-(`C:\Users\Bruno\Documents\la_plazoleta.sqlite`) con scripts sueltos de
+(`C:\Users\el dueño\Documents\la_plazoleta.sqlite`) con scripts sueltos de
 `package:sqlite3` puro. Eso dejó un bug real sin detectar durante dos
 fases: una columna agregada en el código nunca llegó a existir en el
 archivo real porque nadie corrió el `ALTER TABLE` correspondiente — si se
@@ -68,7 +68,7 @@ sembrarse con datos iniciales DENTRO del mismo paso de `onUpgrade`**
 la tabla vacía y parchar el archivo real aparte.
 
 **Regla que nunca se rompe**: una migración que ya salió a producción (ya
-corrió contra el archivo real de Bruno) no se edita jamás. Si el esquema
+corrió contra el archivo real de el dueño) no se edita jamás. Si el esquema
 necesita cambiar más, se sube `schemaVersion` y se agrega un paso nuevo.
 Editar un paso viejo deja a cualquier base que ya pasó por él en un estado
 que ninguna migración sabe describir.
@@ -243,7 +243,7 @@ bloque de medios de pago y el botón "Cobrar", para empujarlo al fondo de la
 columna. La columna ocupa la altura completa de la pantalla (`Row` con
 `crossAxisAlignment.stretch` en `pantalla_venta.dart`) — a 1080px de alto,
 ese `Spacer()` dejaba ~700px de nada entre los medios de pago y "Cobrar"
-(revisión de Bruno: "la columna derecha tiene ~700px muertos"). Un
+(revisión de el dueño: "la columna derecha tiene ~700px muertos"). Un
 `Spacer()`/`Expanded` que "empuja al fondo" es fácil de escribir sin notar
 cuánto espacio real absorbe cuando el contenedor es tan alto como la
 pantalla entera — reemplazado por un hueco fijo (`Bento.hueco`), el botón
@@ -260,7 +260,7 @@ dejó de usar `SemiBold` en la práctica — ver `DISENO.md`.
 
 ## `terminal_id` de Mercado Pago: el mismo posnet necesita DOS formatos distintos según la API
 
-Fase 12, descubierto contra el posnet real de Bruno (no en tests, esos usan
+Fase 12, descubierto contra el posnet real de el dueño (no en tests, esos usan
 `http.Client` de prueba y no validan formato): la Terminals API
 (`POST /terminals/v1/actions`, `imprimirEnPosnet`) acepta el **serial
 pelado** de la terminal (`N950NCC503383252`) como `config.point.terminal_id`
@@ -268,7 +268,7 @@ pelado** de la terminal (`N950NCC503383252`) como `config.point.terminal_id`
 (`POST /v1/orders`, cobro por QR/Débito de esta fase) devuelve
 `400 — '$.config.point.terminal_id' does not match pattern` con ese mismo
 valor: exige el formato `MODELO__SERIAL` (documentación de MP, ejemplo real:
-`"NEWLAND_N950__N950NCB801293324"`). Para la Newland N950 de Bruno, el
+`"NEWLAND_N950__N950NCB801293324"`). Para la Newland N950 de el dueño, el
 valor correcto de `mpTerminalCobroId` es `NEWLAND_N950__N950NCC503383252`
 — el prefijo de modelo, doble guion bajo, y el mismo serial de siempre.
 
@@ -281,7 +281,7 @@ un string distinto aunque sea LA MISMA terminal física.
 
 ## Una orden de Mercado Pago solo se puede cancelar por API mientras sigue en `status=created`
 
-Fase 12, descubierto contra el posnet real de Bruno ("cuando cancelo el QR
+Fase 12, descubierto contra el posnet real de el dueño ("cuando cancelo el QR
 no cancela el dispositivo"): `POST /v1/orders/{id}/cancel` solo funciona
 mientras la orden todavía no llegó a la terminal física. Apenas llega
 (`status=at_terminal`, que pasa **casi al instante** de crearla — en la
@@ -317,7 +317,7 @@ caso por caso.
 
 ## Sin stock, no aparece en ventas (reemplaza a Regla 8) — versión inicial, con casos borde pendientes
 
-Bruno, 2026-09-06: "si algo no hay stock, el producto no aparece en
+El dueño, 2026-09-06: "si algo no hay stock, el producto no aparece en
 ventas. Luego refinamos ese apartado" — pedido explícito de revertir la
 regla vieja ("el stock informa, nunca bloquea", `REGLAS-NEGOCIO.md` §8) y
 también una "corrección post-revisión" anterior de esta misma sesión de
@@ -335,7 +335,7 @@ cualquiera de los dos, cuenta como "sin stock".
 `buscarProductos` deja `coincidencias` vacío también cuando alguien
 escanea el código de barras EXACTO de un producto que ya existe pero está
 en 0 — y `mostrarAltaRapida` (`hayTexto && coincidencias.isEmpty`) pasaría
-a ofrecer "dar de alta" sobre algo que no es nuevo. Bruno, al preguntarle,
+a ofrecer "dar de alta" sobre algo que no es nuevo. El dueño, al preguntarle,
 pidió explícitamente que no pase eso. Solución:
 `VentaControlador.productoSinStockEncontrado` hace su propio lookup exacto
 por código contra `_catalogo` (sin pasar por `buscarProductos`) para
@@ -345,7 +345,7 @@ stock" — `mostrarAltaRapida` se apaga cuando este getter encuentra algo, y
 vender") en su lugar, sin acción de Enter ni de tap.
 
 **Casos borde que quedan sin tocar, a propósito, para "el refinamiento"
-que mencionó Bruno:**
+que mencionó el dueño:**
 
 - Los accesos directos (grilla de cigarrillos + "Varios", `slot.productoId`)
   siguen resolviendo por id directo, no por `buscarProductos` — un directo
@@ -437,7 +437,7 @@ siga comportando igual de simple para siempre.
 
 ## Agregar un campo nuevo a una respuesta del servidor companion y parsearlo con `as int` (no `as int?`) del lado del celular
 
-Bruno, 2026-09-10: "type 'null' is not a subtype of type 'int' in type
+El dueño, 2026-09-10: "type 'null' is not a subtype of type 'int' in type
 cast" — crash real en Arqueo, primera vez que se probó contra la PC real
 después de publicar la companion con `redondeoAcumuladoCentavos`/
 `lataInicialCentavos` nuevos en `EstadoCajaCompanion.desdeJson`
@@ -457,7 +457,7 @@ servidor viejo, corriendo en la PC, todavía no lo manda — la clave ni
 existe en el JSON, `j['campoNuevo']` da `null`, y el cast revienta.
 
 **No es un bug de lógica — es una ventana real entre dos deploys
-independientes** que puede durar de minutos a días según cuándo Bruno
+independientes** que puede durar de minutos a días según cuándo el dueño
 reconstruya y copie el escritorio. Mientras esa ventana esté abierta,
 cualquier campo nuevo en la respuesta del servidor tiene que parsearse
 del lado del celular como **opcional con default**, nunca con cast
@@ -475,7 +475,7 @@ campo "siempre debería estar" en teoría.
 
 ## Desenfocar DESPUÉS de un `Navigator.pop` no alcanza para el teclado fantasma — hay que desenfocar ANTES del `push`
 
-Bruno, 2026-09-10: "sigue pasando el mismo bug... cuando volvés al menú
+El dueño, 2026-09-10: "sigue pasando el mismo bug... cuando volvés al menú
 principal desde alguna otra pantalla sale el teclado" — el primer intento
 de arreglo (`pushSinTeclado`, `lib/companion/navegacion.dart`) desenfocaba
 recién DESPUÉS de que el `Future` del `push` se resolvía (es decir,
@@ -508,7 +508,7 @@ escribe en el momento en que se PIERDE el foco (el push), no en el
 momento en que se RECUPERA (el pop). Actuar después es actuar tarde.
 
 **Este arreglo (desenfocar antes del push) tampoco fue el final de la
-historia** — Bruno, mismo día: "sigue pasando el mismo bug de mierda...
+historia** — El dueño, mismo día: "sigue pasando el mismo bug de mierda...
 por qué no ponemos un ícono de búsqueda en la navbar mejor". El mecanismo
 de arriba es correcto y quedó, pero no alcanzó para dejar conforme el
 comportamiento real en el menú principal — el campo de búsqueda seguía

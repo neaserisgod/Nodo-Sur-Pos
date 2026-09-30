@@ -6,7 +6,7 @@
 // que el cierre real (Regla 3) — esos dos números no dependen de si ya se
 // separó algo a la lata o no.
 //
-// La lata NO reusa esa misma función para su "esperado" (Bruno, 2026-09-13,
+// La lata NO reusa esa misma función para su "esperado" (El dueño, 2026-09-13,
 // confirmando una duda real: "¿la separación se hace al instante o a la
 // noche antes del cierre?" — "solo al cerrar"). `calcularResumenCierre`
 // calcula la lata COMO SI se estuviera cerrando ahora mismo — separando de
@@ -15,11 +15,11 @@
 // sesión, todavía no se separó nada (Regla 6/`REGLAS-NEGOCIO.md` §6, "la
 // separación ocurre al cierre, no en el momento de la venta"). Usarla tal
 // cual mostraba una "diferencia" en rojo cada 2hs que no era ningún error,
-// solo reflejaba que Bruno todavía no había separado nada ese día. Acá se
+// solo reflejaba que el dueño todavía no había separado nada ese día. Acá se
 // calcula aparte, con el mismo `lataNuevaCentavos` de dominio pero
 // `separadoHoyCentavos: 0` — lo que de verdad debería seguir habiendo en la
 // lata a esta altura del día es lo que ya tenía menos lo que ya se le pagó a
-// Serra, ni un centavo más.
+// Distribuidora, ni un centavo más.
 
 import 'package:drift/drift.dart';
 
@@ -45,8 +45,8 @@ Future<DateTime?> fechaUltimoArqueoIntermedio(
 }
 
 /// Lo que debería seguir habiendo en la lata a esta altura del día, SIN
-/// separar nada de lo vendido todavía (Bruno, 2026-09-13: "solo al
-/// cerrar") — lo que ya tenía menos lo que ya se le pagó a Serra desde ahí,
+/// separar nada de lo vendido todavía (El dueño, 2026-09-13: "solo al
+/// cerrar") — lo que ya tenía menos lo que ya se le pagó a Distribuidora desde ahí,
 /// ni un centavo de lo vendido hoy. Expuesta aparte (no solo adentro de
 /// `registrarArqueoIntermedio`) porque el controlador de la pantalla
 /// (`ArqueoIntermedioControlador`) necesita la misma cuenta para la
@@ -60,7 +60,7 @@ Future<int> lataEsperadaIntermedia(AppDatabase db, int sesionId) async {
   return lataNuevaCentavos(
     lataInicialCentavos: sesion.lataInicialCentavos,
     separadoHoyCentavos: 0,
-    pagosASerraDesdeLataCentavos: await futuroPagos,
+    pagosAProveedorDesdeLataCentavos: await futuroPagos,
     ingresosALaLataCentavos: await futuroIngresos,
   );
 }
@@ -121,7 +121,7 @@ Future<void> registrarArqueoIntermedio(
 
 /// Un arqueo hecho durante el turno, con quién lo hizo — para el resumen del
 /// cierre y el detalle del día en Historial, y para precargar el conteo del
-/// cierre (Bruno, 2026-09-28: "que guarde los datos para el cierre de caja").
+/// cierre (El dueño, 2026-09-28: "que guarde los datos para el cierre de caja").
 class ArqueoDelTurno {
   const ArqueoDelTurno({
     required this.fecha,

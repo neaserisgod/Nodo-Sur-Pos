@@ -24,7 +24,7 @@ void main() {
       },
     );
 
-    test('caso real: Jam Rock, 15% sobre el importe total (Regla 17)', () {
+    test('caso real: Cliente Frecuente, 15% sobre el importe total (Regla 17)', () {
       final descuento = calcularDescuento(
         baseCentavos: 850000, // $8.500 de paleta y queso
         tipo: TipoDescuento.porcentaje,

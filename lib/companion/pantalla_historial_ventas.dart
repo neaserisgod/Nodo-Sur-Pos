@@ -1,11 +1,11 @@
-// Historial de ventas, filtrable — "tipo Mercado Pago" (Bruno,
+// Historial de ventas, filtrable — "tipo Mercado Pago" (El dueño,
 // 2026-09-07: "hagamos la sección de reportes para móvil con el
 // historial de ventas... que sea filtrable... digamos que quiero que
 // también sirva para un control manual en caso de desconfiar de los
 // números"). Separar/retener/retirar sigue siendo pantalla exclusiva del
 // escritorio ("Reportes").
 //
-// Eliminar una venta (Bruno, 2026-09-13) se agregó acá: solo mientras la
+// Eliminar una venta (El dueño, 2026-09-13) se agregó acá: solo mientras la
 // sesión de caja de esa venta siga abierta (`v.sesionAbierta`, calculado
 // del lado del servidor — anular una venta de un cierre ya arqueado
 // descuadraría ese arqueo). Revierte stock y caja (misma lógica que editar
@@ -101,9 +101,9 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
   bool _cargando = true;
   String? _error;
 
-  /// Bruno, 2026-09-18: "no hay nada que actualice la app cuando se
+  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó" — repite la carga sola apenas la sync trae algo nuevo.
-  /// Bruno, 2026-09-19: "las pantallas se refrescan en cada sync, cosa que
+  /// El dueño, 2026-09-19: "las pantallas se refrescan en cada sync, cosa que
   /// me gustaría que se disimule más" — con el nudge de baja latencia de
   /// `sincronizacion_supabase.dart` esto pasa mucho más seguido, así que el
   /// refresco automático es [silencioso]: no tapa la lista ya visible con
@@ -241,7 +241,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
     }
   }
 
-  /// Desglose de una venta (Bruno, 2026-09-13: "poder ver un desglose de
+  /// Desglose de una venta (El dueño, 2026-09-13: "poder ver un desglose de
   /// la venta") — mismo `Ticket` que arma la impresión, del lado del
   /// servidor (Regla 3). Una venta anulada abre igual: sigue siendo útil
   /// ver qué tenía, aunque ya esté revertida.
@@ -256,7 +256,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
   }
 
   /// Antes eran dos filas rotuladas ("Período"/"Medio de pago") de chips
-  /// horizontales — Bruno, 2026-09-13: "comen demasiado espacio y es muy
+  /// horizontales — El dueño, 2026-09-13: "comen demasiado espacio y es muy
   /// confuso" (no quedaba claro que esas filas se podían deslizar). Un
   /// menú desplegable compacto por filtro dice el valor elegido Y da
   /// acceso a cambiarlo en el mismo lugar, sin ocupar una fila propia ni
@@ -291,7 +291,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
 
   @override
   Widget build(BuildContext context) {
-    // Cierres se mudó acá adentro como segunda pestaña (Bruno, 2026-09-18:
+    // Cierres se mudó acá adentro como segunda pestaña (El dueño, 2026-09-18:
     // "reacomodación de absolutamente todos los elementos" — ventas y
     // cierres son las dos formas de mirar para atrás, no dos ideas
     // separadas que merezcan cada una su propio lugar en Gestión/Historial).
@@ -406,7 +406,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
   }
 
   Widget _lista(BuildContext context) {
-    // Agrupadas por día (Bruno: "tipo mercado pago") — sin `intl`, mismo
+    // Agrupadas por día (El dueño: "tipo mercado pago") — sin `intl`, mismo
     // formateo manual que ya usa el resto de la companion.
     final grupos = <String, List<VentaDelHistorialCompanion>>{};
     for (final v in _ventas) {
@@ -536,7 +536,7 @@ class _Pildora extends StatelessWidget {
   }
 }
 
-/// Hoja del desglose de una venta (Bruno, 2026-09-13: "poder ver un
+/// Hoja del desglose de una venta (El dueño, 2026-09-13: "poder ver un
 /// desglose de la venta") — carga el detalle al abrirse (mismo `Ticket`
 /// que la impresión, Regla 3) en vez de pedirlo por adelantado para cada
 /// fila de la lista, que ya viene sin este detalle (`historialDeVentas`

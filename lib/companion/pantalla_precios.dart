@@ -1,4 +1,4 @@
-// "Productos" — pestaña propia de la navbar (Bruno, 2026-09-19: "productos
+// "Productos" — pestaña propia de la navbar (El dueño, 2026-09-19: "productos
 // pasa a ser la segunda pantalla más importante después de vender"),
 // promovida desde adentro de Gestión, donde competía por espacio con
 // Conteo de stock y Carga histórica sin merecerlo. Buscar por nombre, más
@@ -6,7 +6,7 @@
 // alta/edición completa vive en `pantalla_formulario_producto.dart` (hoja
 // de vidrio, compartida con el escáner central,
 // `boton_escaner_companion.dart`) — el botón de escanear que tenía esta
-// pantalla se sacó de acá porque quedó redundante con ese (Bruno: "que
+// pantalla se sacó de acá porque quedó redundante con ese (El dueño: "que
 // quede como búsqueda por nombre"). Sin `AppBar`, mismo criterio que el
 // resto de las pestañas raíz (Inicio/Historial/Gestión): título grande en
 // el cuerpo, no una franja fija arriba.
@@ -65,13 +65,13 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   bool _cargandoInicial = true;
   String? _error;
 
-  /// Pulido del catálogo (Bruno, 2026-09-19: "filtrar por productos sin
+  /// Pulido del catálogo (El dueño, 2026-09-19: "filtrar por productos sin
   /// proveedor, sin costo, etcétera") — cada uno se combina con lo que haya
   /// tipeado en el buscador, no lo reemplaza: se puede acotar "sin costo" a
   /// un nombre en particular. "Todos" es `ninguno`, sin filtro activo.
   _FiltroCatalogo _filtro = _FiltroCatalogo.ninguno;
 
-  /// "Por proveedor" (Bruno, 2026-09-19, segunda vuelta del editor masivo:
+  /// "Por proveedor" (El dueño, 2026-09-19, segunda vuelta del editor masivo:
   /// "llegó un pedido de un proveedor" / "un proveedor subió precios") es un
   /// filtro más, pero necesita ELEGIR cuál — no es un flag booleano como los
   /// de `_FiltroCatalogo`, así que vive en su propio estado en vez de sumar
@@ -82,7 +82,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
 
   /// Editor masivo — mantener presionada una fila entra al modo selección
   /// (mismo gesto que Gmail/Archivos). Funciona en CUALQUIER contexto
-  /// (Bruno, 2026-09-19: "no funciona la parte de mantener apretado para
+  /// (El dueño, 2026-09-19: "no funciona la parte de mantener apretado para
   /// seleccionar" — antes solo respondía en los tres contextos con una
   /// acción real, así que en la vista normal de búsqueda mantener
   /// presionado no hacía nada, sin ningún aviso; parecía roto). Ahora
@@ -98,7 +98,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     });
   }
 
-  /// Cuál hoja abrir depende de POR QUÉ se está seleccionando (Bruno,
+  /// Cuál hoja abrir depende de POR QUÉ se está seleccionando (El dueño,
   /// 2026-09-19: "las opciones que da no se correlacionan con el editor
   /// como tal" — la versión anterior ofrecía las mismas siete opciones sin
   /// importar el contexto). Acá no hay "elegí una acción cualquiera": cada
@@ -146,7 +146,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     }
   }
 
-  /// Bruno, 2026-09-18: "no hay nada que actualice la app cuando se
+  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó" — repite la búsqueda actual sola apenas la sync trae algo
   /// nuevo, en vez de necesitar salir y volver a entrar para verlo.
   StreamSubscription<void>? _subCambiosSync;
@@ -167,7 +167,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   }
 
   /// Sin usuario elegido, error explícito con reintentar (no debería pasar
-  /// normalmente). Sin PC emparejada (Bruno, 2026-09-18: "no debería tener
+  /// normalmente). Sin PC emparejada (El dueño, 2026-09-18: "no debería tener
   /// que escanear ya, es innecesario") cae a la base local sincronizada por
   /// Supabase, no es un error.
   Future<void> _iniciar() async {
@@ -333,7 +333,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   };
 
   /// Nombra el botón por lo que realmente va a hacer, no un genérico
-  /// "Editar" — la queja de Bruno era justo que las opciones no se
+  /// "Editar" — la queja de el dueño era justo que las opciones no se
   /// correlacionaban con el contexto; el nombre del botón es la primera
   /// señal de que ahora sí.
   String get _etiquetaEdicionMasiva {
@@ -572,7 +572,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   }
 }
 
-/// Filtros de higiene de catálogo (Bruno, 2026-09-19: "filtrar por
+/// Filtros de higiene de catálogo (El dueño, 2026-09-19: "filtrar por
 /// productos sin proveedor, sin costo, etcétera") — uno solo activo por
 /// vez, `ninguno` es "Todos". Ver `listarProductos` en
 /// `data/repositorio_productos.dart` para qué mira cada uno.

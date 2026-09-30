@@ -11,7 +11,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );
@@ -41,7 +41,7 @@ void main() {
 
     final ticket = await ticketDeVenta(db, ventaId);
 
-    expect(ticket.vendedor, 'Bruno');
+    expect(ticket.vendedor, 'Dueño');
     expect(ticket.fecha, DateTime(2026, 8, 30, 15, 0));
     expect(ticket.lineas.single.nombreProducto, 'Coca-Cola 500ml');
     expect(ticket.lineas.single.subtotalCentavos, 224000);

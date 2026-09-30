@@ -15,7 +15,7 @@ void main() {
   // porque todos abren con `NativeDatabase.memory()`, que siempre pasa por
   // `onCreate` (`createAll()`, crea todo de una sin importar el número de
   // versión) — nunca por `onUpgrade`, que es donde vive el bug real: una
-  // base YA EXISTENTE (como la real de Bruno) se queda pegada en la
+  // base YA EXISTENTE (como la real de el dueño) se queda pegada en la
   // versión vieja para siempre, sin la tabla ni la sección nuevas, sin
   // ningún error visible. Sigue sin haber infraestructura de test que abra
   // una base vieja de verdad y la actualice (`drift_dev schema dump` +
@@ -73,9 +73,9 @@ void main() {
         'S', 'SC', 'F', 'C', 'W', 'A', 'P', 'L', 'E', 'D', 'K', 'I', 'Z', 'X', 'M',
       });
       final serra = proveedores.singleWhere((p) => p.codigo == 'S');
-      expect(serra.nombre, 'Serra');
+      expect(serra.nombre, 'Distribuidora');
       final mazzota = proveedores.singleWhere((p) => p.codigo == 'F');
-      expect(mazzota.nombre, 'Mazzota');
+      expect(mazzota.nombre, 'Fiambrería');
     });
 
     test('siembra el producto "Varios" sin precio fijo (Regla 5)', () async {
@@ -89,7 +89,7 @@ void main() {
     test('siembra un usuario para que la apertura de caja no arranque vacía (Regla 18)', () async {
       final usuarios = await db.select(db.usuarios).get();
       expect(usuarios, isNotEmpty);
-      expect(usuarios.first.nombre, 'Bruno');
+      expect(usuarios.first.nombre, 'Dueño');
     });
 
     test('siembra las 11 categorías reales del catálogo (Regla 14), no proveedores', () async {
@@ -101,9 +101,9 @@ void main() {
         'Golosinas', 'Galletitas y panificados', 'Yerbas y té',
         'Higiene y limpieza', 'Fiambres',
       });
-      // Serra, Wesley y Coca-Cola son proveedores (Regla 16), no categorías.
-      expect(nombres.contains('Serra'), false);
-      expect(nombres.contains('Wesley'), false);
+      // Distribuidora, Golosinas Oeste y Coca-Cola son proveedores (Regla 16), no categorías.
+      expect(nombres.contains('Distribuidora'), false);
+      expect(nombres.contains('Golosinas Oeste'), false);
       expect(nombres.contains('Coca-Cola'), false);
     });
 
@@ -146,7 +146,7 @@ void main() {
 
     test('abrir sesión, cargar una venta con línea y pago, y leerla de vuelta', () async {
       final usuarioId = await db.into(db.usuarios).insert(
-            UsuariosCompanion.insert(nombre: 'Bruno'),
+            UsuariosCompanion.insert(nombre: 'Dueño'),
           );
 
       final cajaNormal =
@@ -232,7 +232,7 @@ void main() {
 
     test('una línea sin costo cargado guarda null, no 0 (Regla 5/9)', () async {
       final usuarioId =
-          await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(
               usuarioAbrioId: usuarioId,

@@ -1,5 +1,5 @@
 // Hoja modal de vidrio — reemplazo de `AlertDialog` para lo que necesita más
-// que un par de líneas de confirmación (Bruno, 2026-09-18: "los modales no
+// que un par de líneas de confirmación (El dueño, 2026-09-18: "los modales no
 // me gustan, hay que desplazarse demasiado"). Una hoja que sube desde abajo
 // da más aire real sin depender de scroll interno, y es el mismo lugar
 // donde Apple aplica vidrio esmerilado en sus propias hojas — coherente con
@@ -77,7 +77,7 @@ Future<T?> mostrarHojaVidrio<T>(
       final colores = context.colores;
       return Padding(
         // Sube la hoja por encima del teclado cuando hay un campo de texto
-        // adentro (Bruno, 2026-09-07, mismo criterio ya usado en otros
+        // adentro (El dueño, 2026-09-07, mismo criterio ya usado en otros
         // formularios de la companion).
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -88,7 +88,7 @@ Future<T?> mostrarHojaVidrio<T>(
               top: Radius.circular(radioSuperficieCompanion),
             ),
             child: BackdropFilter(
-              // Sigma 24 → 16 (Bruno, 2026-09-19: "revisa bien el tema
+              // Sigma 24 → 16 (El dueño, 2026-09-19: "revisa bien el tema
               // rendimiento") — mismo ajuste que la navbar: menos trabajo por
               // frame para `BackdropFilter`, vidrio esmerilado igual de
               // creíble. Acá el costo por sí solo es menor (lo de atrás queda

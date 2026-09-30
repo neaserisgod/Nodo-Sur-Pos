@@ -9,7 +9,7 @@ void main() {
     });
   });
 
-  group('nombresAEliminar — rotar, no pisar (pedido explícito de Bruno)', () {
+  group('nombresAEliminar — rotar, no pisar (pedido explícito de Dueño)', () {
     test('con menos copias que el máximo, no elimina nada', () {
       final r = nombresAEliminar(
         nombresOrdenadosDeViejoANuevo: ['a', 'b', 'c'],

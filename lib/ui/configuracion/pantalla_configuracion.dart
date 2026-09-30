@@ -193,7 +193,7 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.comercio => 'nombre negocio comercio ticket encabezado direccion datos',
   SeccionConfiguracion.modulos => 'modulos funciones activar desactivar apagar promos fiado pesables turnos',
-  SeccionConfiguracion.cigarrillos => 'atado suelto lata serra recargo qr',
+  SeccionConfiguracion.cigarrillos => 'atado suelto lata cigarrillos recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
   SeccionConfiguracion.vuelto => 'caramelo vuelto producto alt c',
   SeccionConfiguracion.categorias => 'rubro markup margen categoria',
@@ -855,11 +855,11 @@ class _SeccionMenu extends StatelessWidget {
 
 /// Emparejamiento de la companion app Android (spike 2026-09-07): un QR con
 /// `{ip, puerto, token}` para que el celular sepa a qué IP conectarse y con
-/// qué token — no es login de usuario (Bruno/su empleado eligen quién son
+/// qué token — no es login de usuario (El dueño/su empleado eligen quién son
 /// desde el celular, como al abrir caja), es solo la llave que evita que
 /// cualquier otro dispositivo de la misma WiFi use la API.
 ///
-/// Segundo QR, agregado 2026-09-07 (Bruno: "que en la app escaneando el QR
+/// Segundo QR, agregado 2026-09-07 (El dueño: "que en la app escaneando el QR
 /// lo ponga para descargar") — una URL lisa a `/companion/apk`, para la
 /// cámara común de un celular que todavía no tiene la app instalada (el QR
 /// de arriba es JSON, útil solo para el escáner de la propia companion).

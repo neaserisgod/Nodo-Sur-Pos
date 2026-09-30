@@ -1,4 +1,4 @@
-// Separaciones en el celular ("Lenguaje de diseño", Bruno 2026-09-26, mock
+// Separaciones en el celular ("Lenguaje de diseño", el dueño 2026-09-26, mock
 // `MovilSeparaciones.dc.html`): el mismo cálculo que la pantalla de la PC —
 // reusa `SeparacionesControlador` tal cual (Regla 3) contra la base local,
 // que se sincroniza sola con la PC por Supabase. Tildar un proveedor acá es

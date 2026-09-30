@@ -1,4 +1,4 @@
-// Comparador de precios vs. supermercados (Bruno, 2026-09-14: "una noción
+// Comparador de precios vs. supermercados (El dueño, 2026-09-14: "una noción
 // de los precios de mi local... para ajustarlos según si están muy caros o
 // muy baratos"). Baja el ZIP diario de SEPA/Precios Claros
 // (datos.produccion.gob.ar, Resolución 678/2020 — los supermercados
@@ -6,14 +6,14 @@
 // filtra a los comercios y sucursales de Bariloche que importan, y guarda
 // el resultado en `precios_referencia_externa`.
 //
-// Se investigaron las tres páginas que Bruno pasó primero
+// Se investigaron las tres páginas que el dueño pasó primero
 // (carrefour.com.ar, laanonima.com.ar, todoatucasa.xrp.net) para
 // scrapearlas directo: Carrefour prohíbe explícitamente en su
 // `robots.txt` rastrear sus páginas de búsqueda, La Anónima bloquea bots
 // con Cloudfront. SEPA es la fuente correcta para esas dos: legal,
 // estructurada, identificada por código de barras (mismo dato que ya usa
 // `Productos.codigoBarras`), sin nada que romper cuando un sitio cambia de
-// diseño. Todo a tu Casa terminó teniendo su propia API pública (Bruno:
+// diseño. Todo a tu Casa terminó teniendo su propia API pública (El dueño:
 // "la última vez que scrapeé había una api expuesta") — ver
 // `comparador_precios_todoatucasa.dart`, es una fuente aparte que
 // comparte esta misma tabla (`precios_referencia_externa`, columna
@@ -268,7 +268,7 @@ int? _centavosDesdeTexto(String texto) {
 }
 
 /// Promedia entre sucursales de Bariloche del mismo comercio para el mismo
-/// producto (Bruno tiene 5 de La Anónima solas) en vez de quedarse con la
+/// producto (El dueño tiene 5 de La Anónima solas) en vez de quedarse con la
 /// primera que aparezca, y delega el guardado real a
 /// `reemplazarPreciosReferencia` (`repositorio_comparacion_precios.dart`,
 /// compartida con `comparador_precios_todoatucasa.dart`) — esta fuente

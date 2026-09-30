@@ -10,7 +10,7 @@ class Usuarios extends Table {
   TextColumn get nombre => text().withLength(min: 1, max: 60)();
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
 
-  /// Identidad de sincronización (migración v31→v32, Bruno, 2026-09-18: "no
+  /// Identidad de sincronización (migración v31→v32, el dueño, 2026-09-18: "no
   /// debería tener que escanear ya, es innecesario") — hasta acá, `usuarios`
   /// había quedado deliberadamente afuera de la migración v29→v30
   /// ("autoridad exclusiva del escritorio"), pero sacar el emparejamiento

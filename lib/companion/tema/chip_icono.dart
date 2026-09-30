@@ -23,7 +23,7 @@ class ChipIcono extends StatelessWidget {
   final double tamanio;
   final double tamanioIcono;
 
-  /// Halo neón (Bruno, 2026-09-19: "cyberpunk me vuela la gorra") — apagado
+  /// Halo neón (El dueño, 2026-09-19: "cyberpunk me vuela la gorra") — apagado
   /// por default: un ícono de lista corriente no necesita brillar, esto es
   /// para los accesos "importantes" de una grilla (`TarjetaAccion`), donde
   /// sí vale la pena que el color se note un poco más allá del cuadrado.

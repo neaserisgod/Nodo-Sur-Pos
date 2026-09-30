@@ -17,7 +17,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     proveedorFId = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('F'))).getSingle()).id;
   });
   tearDown(() => db.close());
@@ -51,7 +51,7 @@ void main() {
 
   test(
       'pago mixto: un renglón en cada grilla, con el monto real de cada Pago '
-      '(bug real, corrección de Bruno: no cada línea repartida proporcionalmente)', () async {
+      '(bug real, corrección de Dueño: no cada línea repartida proporcionalmente)', () async {
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final medioEfectivo =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;
@@ -215,7 +215,7 @@ void main() {
     expect(datos.renglonesEfectivo.single.montoCentavos, 30000); // $300,00 exactos
     expect(datos.renglonesMp.single.montoCentavos, 450000); // $4.500,00 exactos
     // El renglón de $300 sin esta aclaración se lee como si se hubiera
-    // vendido un Marlboro a $300 (Bruno, revisión del demo del ítem 3).
+    // vendido un Marlboro a $300 (El dueño, revisión del demo del ítem 3).
     expect(datos.renglonesEfectivo.single.detalle, 'Marlboro Box + recargo QR');
     expect(datos.renglonesMp.single.detalle, 'Marlboro Box + recargo QR');
   });

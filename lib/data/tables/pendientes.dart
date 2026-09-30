@@ -13,7 +13,7 @@ class Pendientes extends Table {
   /// 'FIADO' | 'ENCARGUE'.
   TextColumn get tipo => text()();
 
-  /// Jam Rock es cliente formal porque tiene descuento configurado (Regla
+  /// Cliente Frecuente es cliente formal porque tiene descuento configurado (Regla
   /// 17) y hace falta linkearlo. Un fiado ocasional es solo un nombre
   /// escrito: Regla 15 dice explícitamente "sin cuenta corriente formal",
   /// así que no todo fiado obliga a crear una fila en `clientes`.

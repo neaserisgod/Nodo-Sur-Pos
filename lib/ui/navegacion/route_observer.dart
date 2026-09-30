@@ -1,7 +1,7 @@
 // Un solo observador de rutas, compartido por toda la app (registrado en
 // `MaterialApp.navigatorObservers`, `main.dart`).
 //
-// Bug real (Bruno, 2026-09-05: "no aparecen productos, no proveedores...
+// Bug real (El dueño, 2026-09-05: "no aparecen productos, no proveedores...
 // la pantalla de venta no detecta hasta restart"): cada `_irAX()` de
 // `pantalla_venta.dart` refrescaba `VentaControlador` a mano después de SU
 // propio `Navigator.push` — pero saltar de una sección de gestión a OTRA

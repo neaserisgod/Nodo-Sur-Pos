@@ -1,4 +1,4 @@
-// Cierres de caja — pestaña de Historial ("Lenguaje de diseño", Bruno
+// Cierres de caja — pestaña de Historial ("Lenguaje de diseño", el dueño
 // 2026-09-26, mock `HistorialCierres.dc.html`): la lista de cierres a la
 // izquierda (día, lo vendido, a qué hora cerró y si cuadró) y el cierre
 // elegido a la derecha, con la cuenta del efectivo a la vista (fondo +
@@ -151,7 +151,7 @@ class _FilaCierre extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(formatearARS(dia.totalVendidoCentavos), style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte).tabular),
-                  // Hora y empleado, no solo la fecha (Bruno, 31/08/2026): un
+                  // Hora y empleado, no solo la fecha (El dueño, 31/08/2026): un
                   // turno es una sesión completa, puede haber más de una el
                   // mismo día.
                   Text(

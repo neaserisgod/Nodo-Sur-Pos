@@ -59,7 +59,7 @@ void main() {
   testWidgets('buscar por número de venta lista solo esa venta', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );
@@ -82,7 +82,7 @@ void main() {
   });
 
   testWidgets('"Guardar PDF" queda habilitado aunque la carpeta de tickets no esté configurada', (tester) async {
-    // Bug real reportado por Bruno: "doy a imprimir y no sale nada de
+    // Bug real reportado por el dueño: "doy a imprimir y no sale nada de
     // seleccionar" — el botón quedaba deshabilitado en silencio si no había
     // carpeta configurada, sin ningún aviso ni forma de arreglarlo desde
     // acá. Ahora, al tocarlo, pregunta la carpeta ahí mismo (no se puede
@@ -91,7 +91,7 @@ void main() {
     // el botón ya no está deshabilitado de entrada).
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );

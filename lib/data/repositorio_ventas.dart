@@ -68,7 +68,7 @@ Future<SesionCaja?> ultimaSesionCerrada(AppDatabase db) {
 /// Lo que va a quedar como `lataInicialCentavos` si se abre una sesión
 /// ahora — por default se arrastra sola, sin pantalla (Regla 10: el
 /// recuento es al cerrar, no al abrir), pero mostrarlo de antemano evita la
-/// sensación de "¿y la caja de cigarrillos?" al abrir (Bruno, 2026-09-10,
+/// sensación de "¿y la caja de cigarrillos?" al abrir (El dueño, 2026-09-10,
 /// apertura desde el celular). Sigue existiendo con este mismo contrato
 /// (`int`, nunca null) porque la companion la usa solo para mostrar, no
 /// para un campo editable — ver `lataInicialSugeridoCentavos` para eso.
@@ -89,7 +89,7 @@ Future<int> lataQueSeArrastraCentavos(AppDatabase db) async {
 int lataQueQuedo(SesionCaja sesion) => sesion.lataContadoCentavos ?? sesion.lataFinalCentavos ?? 0;
 
 /// Sugerencia para el campo editable "Caja cigarrillos" del escritorio
-/// (2026-09-12, Bruno: reboot de la base — la caja normal, la lata y MP se
+/// (2026-09-12, el dueño: reboot de la base — la caja normal, la lata y MP se
 /// piden las tres al abrir). Null solo si nunca hubo un cierre anterior
 /// (nada que sugerir todavía) — un cierre anterior que de verdad dejó la
 /// lata en 0 SÍ se sugiere, mismo criterio que `fondoInicialSugeridoCentavos`
@@ -101,9 +101,9 @@ Future<int?> lataInicialSugeridoCentavos(AppDatabase db) async {
 }
 
 /// Sugerencia para "Monto Mercado Pago" al abrir — a diferencia de la lata
-/// por default, esta sí se pregunta y se puede corregir (2026-09-12, Bruno:
+/// por default, esta sí se pregunta y se puede corregir (2026-09-12, el dueño:
 /// reboot de la base), mismo criterio que `fondoInicialSugeridoCentavos`
-/// para el efectivo: se sugiere lo que Bruno contó de verdad en el cierre
+/// para el efectivo: se sugiere lo que el dueño contó de verdad en el cierre
 /// anterior (`mpContadoCentavos`, no el esperado), sin importar el día — la
 /// cuenta de Mercado Pago no se "cierra" a la noche como el cajón físico.
 /// Null solo si nunca hubo un cierre anterior — un MP contado en 0 de
@@ -126,7 +126,7 @@ Future<int?> mpQueSeArrastraCentavos(AppDatabase db) async {
 /// hace falta poder tipearla a mano) — mismo criterio que
 /// [mpInicialCentavos], que también viene con default (0) para no romper
 /// llamadores que no lo necesitan.
-/// Se tira cuando ya hay una sesión `ABIERTA` — bloqueo directo (Bruno,
+/// Se tira cuando ya hay una sesión `ABIERTA` — bloqueo directo (El dueño,
 /// 2026-09-19: "aislar los usuarios para que no se pisen"), ya no la unión
 /// silenciosa que había antes. Quien la atrapa resuelve "quién y desde
 /// cuándo" con [sesion] (`usuarioAbrioId`/`fechaApertura`) para avisar en
@@ -362,7 +362,7 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   });
 }
 
-/// Registra una línea del carrito. Si es una PROMO (Bruno, 2026-09-29: "la
+/// Registra una línea del carrito. Si es una PROMO (El dueño, 2026-09-29: "la
 /// promo aparece como un producto más pero debe descontar el stock"), la abre
 /// en sus artículos ([registrarPromoEnVenta]); si no, es una línea normal
 /// ([registrarLineaDeVenta]). Un solo punto de entrada para `registrarVenta` y
@@ -584,7 +584,7 @@ Future<ActualizacionStock?> registrarLineaDeVenta(
 
 // ─── Más vendidos ─────────────────────────────────────────────────────────
 
-/// Ids de producto más vendidos de toda la historia (Bruno, rediseño
+/// Ids de producto más vendidos de toda la historia (El dueño, rediseño
 /// 2026-09-25: "en base al historial... los 10 productos mas vendidos por
 /// default" — la grilla de venta arranca con esto en vez de todo el
 /// catálogo). Se cuenta por CANTIDAD DE LÍNEAS DE VENTA, no por unidades:

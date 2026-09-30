@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v34 → v35, parte de lo separado que está en
-// Mercado Pago — Bruno, 2026-09-26) contra un archivo de verdad, mismo
+// Mercado Pago — El dueño, 2026-09-26) contra un archivo de verdad, mismo
 // motivo que `migracion_v34_test.dart`.
 import 'dart:io';
 

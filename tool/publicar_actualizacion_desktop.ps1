@@ -1,5 +1,5 @@
 ﻿# Compila la app de escritorio en release y la copia a una ubicación
-# estable fuera del repo (Bruno, 2026-09-14: "si yo no abro el acceso
+# estable fuera del repo (El dueño, 2026-09-14: "si yo no abro el acceso
 # directo la companion no funciona" — la companion solo tiene con quién
 # hablar mientras la app de escritorio está abierta, así que la app tiene
 # que arrancar sola con Windows en vez de depender de que alguien se
@@ -63,7 +63,7 @@ if (-not $SinAccesoDirecto) {
     $accesoInicio.Description = "La Plazoleta"
     $accesoInicio.Save()
 
-    # El acceso directo del escritorio que Bruno ya usaba a mano
+    # El acceso directo del escritorio que el dueño ya usaba a mano
     # ("la_plazoleta - Acceso directo.lnk") apuntaba directo a
     # build\windows\x64\runner\Release\ del repo — se actualiza acá para
     # que apunte a la copia estable en vez de quedar huérfano o roto la

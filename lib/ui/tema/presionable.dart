@@ -45,7 +45,7 @@ class _PresionableState extends State<Presionable> {
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      // "Dark glass premium" (Bruno, rediseño 2026-09-25): overshoot leve al
+      // "Dark glass premium" (El dueño, rediseño 2026-09-25): overshoot leve al
       // soltar (`curvaSpring`) da la sensación de rebote físico — con un
       // delta tan chico (3%) el overshoot en la ida a 0.97 no se percibe
       // gomoso, así que alcanza una sola curva para las dos direcciones.

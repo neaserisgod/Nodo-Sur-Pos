@@ -1,11 +1,11 @@
-// Editor masivo de productos (Bruno, 2026-09-19: "editor masivo, ya sea de
+// Editor masivo de productos (El dueño, 2026-09-19: "editor masivo, ya sea de
 // precios costo stock etc etc" — y después, sobre la primera versión: "las
 // opciones que da no se correlacionan con el editor como tal"). La primera
 // versión ofrecía un selector genérico de siete campos (precio, costo,
 // stock, categoría, proveedor, activar, desactivar) sin importar desde
 // dónde se abriera — nada ataba esas opciones a una razón real para usarlas.
 //
-// Rehecho alrededor de los tres casos reales que confirmó Bruno:
+// Rehecho alrededor de los tres casos reales que confirmó el dueño:
 // - "Llegó un pedido de un proveedor" / "Un proveedor subió precios" →
 //   `HojaEdicionMasiva.porProveedor`, con solo stock/precio/costo, abierta
 //   desde el filtro "Por proveedor" de `pantalla_precios.dart` (ya viendo
@@ -97,7 +97,7 @@ class _HojaEdicionMasivaState extends State<HojaEdicionMasiva> {
   bool _aplicando = false;
 
   /// `true` entre "Revisar" y "Sí, aplicar" — mismo paso intermedio que
-  /// `dialogo_edicion_masiva.dart` del escritorio (Bruno, revisión de
+  /// `dialogo_edicion_masiva.dart` del escritorio (El dueño, revisión de
   /// "errores humanos evitables"): antes "Aplicar" escribía DIRECTO sobre
   /// todos los productos marcados, sin ningún resumen ni techo de sanidad
   /// en el porcentaje — un dedo de más ("500" en vez de "50") multiplicaba

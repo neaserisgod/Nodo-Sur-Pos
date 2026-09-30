@@ -1,7 +1,7 @@
-// Inicio — pantalla de arranque de la app. Nació como "Dashboard" (Bruno,
+// Inicio — pantalla de arranque de la app. Nació como "Dashboard" (El dueño,
 // 2026-09-14) y el 2026-09-26 absorbió Equilibrio (menú de 6 secciones).
 //
-// Distribución del "Lenguaje de diseño" (Bruno, 2026-09-26, mock
+// Distribución del "Lenguaje de diseño" (El dueño, 2026-09-26, mock
 // `Dashboard.dc.html`, "medio inspiración" pero "la distribución es la
 // idea"), en dos vistas que se eligen arriba a la derecha:
 //
@@ -9,7 +9,7 @@
 //   separar" en la tarjeta oscura que lleva a Separaciones); ventas por
 //   hora al lado de cómo te pagaron; y abajo más vendidos, stock que avisa
 //   y fiados/encargues pendientes — este último en el lugar donde el mock
-//   tenía "Reparaciones", que no es de este negocio (Bruno lo sacó).
+//   tenía "Reparaciones", que no es de este negocio (El dueño lo sacó).
 // - ESTE MES: el contenido de lo que era Equilibrio (`ContenidoEquilibrio`).
 //
 // Es la raíz de la app (`main.dart`): nadie le pasa `usuarioId`/

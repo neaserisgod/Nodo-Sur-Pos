@@ -32,7 +32,7 @@ Google) y se contradecía en tipografía, paleta, radios y navegación. Acá hay
 
 ### 1.1 Evitar fatiga visual
 
-Bruno mira esta pantalla doce horas por día, seis días por semana. Cuando dos
+El dueño mira esta pantalla doce horas por día, seis días por semana. Cuando dos
 criterios chocan, gana el que cansa menos la vista.
 
 1. **Ninguna línea de texto cruza la pantalla entera.** Toda fila, formulario o
@@ -41,7 +41,7 @@ criterios chocan, gana el que cansa menos la vista.
 2. **La escala tipográfica sube entera y proporcional.** Nunca un tamaño suelto
    para arreglar una pantalla puntual.
 3. **Aire, no densidad.** A 1080 de alto sobra espacio; apretar sin necesidad cansa.
-4. **Nada se mueve sin que Bruno lo haya pedido.** Ningún parpadeo, nada que
+4. **Nada se mueve sin que el dueño lo haya pedido.** Ningún parpadeo, nada que
    cambie solo mientras cobra.
 5. **La misma cosa en el mismo lugar en todas las pantallas** (título, lista,
    valor, botón de acción).

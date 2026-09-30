@@ -61,7 +61,7 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
     final conexion = DatosConexion(ip: ip, puerto: puerto, token: token);
     await guardarConexion(conexion);
     // El primer pull de la base local (fase 2) NO se dispara solo acá —
-    // mismo motivo que `companion_app.dart` (Bruno, 2026-09-17: "que sea
+    // mismo motivo que `companion_app.dart` (El dueño, 2026-09-17: "que sea
     // instantáneo"): sincronizar es siempre a pedido, con el pull-to-refresh
     // de "Inicio", nunca automático.
     if (!mounted) return;
@@ -152,7 +152,7 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
         children: [
           // Antes eran tres `TextField` crudos sueltos, sin ninguna
           // superficie propia — la única pantalla de la companion sin el
-          // lenguaje visual del resto (Bruno, 2026-09-17: "parecen pegote").
+          // lenguaje visual del resto (El dueño, 2026-09-17: "parecen pegote").
           Superficie(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

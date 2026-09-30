@@ -1,5 +1,5 @@
 // Equilibrio — desde 2026-09-26 es la mitad "del mes" de Inicio, no un
-// apartado propio del menú (Bruno: "que apartados podemos resumir,
+// apartado propio del menú (El dueño: "que apartados podemos resumir,
 // agrupar" — el Dashboard ya repetía una versión chica de esto). Este
 // widget es solo el contenido; lo monta `pantalla_dashboard.dart`. El punto
 // de equilibrio va primero: es lo que se mira; la carga de fijos, después.

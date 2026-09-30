@@ -1,4 +1,4 @@
-// Columna izquierda de Proveedores ("Lenguaje de diseño", Bruno 2026-09-26,
+// Columna izquierda de Proveedores ("Lenguaje de diseño", el dueño 2026-09-26,
 // mock `Proveedores.dc.html`): una tarjeta por proveedor — iniciales, nombre,
 // cuántos productos tiene y una insignia si alguno avisa por stock — con
 // "Todos" arriba y "Sin proveedor" abajo. Tocar una elige esa vista a la

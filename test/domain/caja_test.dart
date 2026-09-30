@@ -108,7 +108,7 @@ void main() {
             gastosPorMpCentavos: 0,
             ingresosPorMpCentavos: 0,
           );
-          // Bruno cuenta menos de lo esperado porque MP ya descontó su comisión.
+          // El dueño cuenta menos de lo esperado porque MP ya descontó su comisión.
           final diferencia = diferenciaArqueo(
             contadoCentavos: 485000,
             esperadoCentavos: esperado,
@@ -279,19 +279,19 @@ void main() {
         lataNuevaCentavos(
           lataInicialCentavos: 0,
           separadoHoyCentavos: 45000,
-          pagosASerraDesdeLataCentavos: 0,
+          pagosAProveedorDesdeLataCentavos: 0,
           ingresosALaLataCentavos: 0,
         ),
         45000,
       );
     });
 
-    test('se paga a Serra desde la lata: el saldo baja', () {
+    test('se paga a Distribuidora desde la lata: el saldo baja', () {
       expect(
         lataNuevaCentavos(
           lataInicialCentavos: 45000,
           separadoHoyCentavos: 20000,
-          pagosASerraDesdeLataCentavos: 60000,
+          pagosAProveedorDesdeLataCentavos: 60000,
           ingresosALaLataCentavos: 0,
         ),
         5000,
@@ -303,7 +303,7 @@ void main() {
         lataNuevaCentavos(
           lataInicialCentavos: 45000,
           separadoHoyCentavos: 20000,
-          pagosASerraDesdeLataCentavos: 60000,
+          pagosAProveedorDesdeLataCentavos: 60000,
           ingresosALaLataCentavos: 8000,
         ),
         13000, // 5000 + 8000

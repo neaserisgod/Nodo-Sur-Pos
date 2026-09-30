@@ -1,7 +1,7 @@
 // Stock valorizado por proveedor (fase 13, pantalla Proveedores): cuánto
 // vale el stock que queda de cada proveedor, a costo Y a precio de venta —
 // dos preguntas distintas ("qué me costó lo que tengo" vs. "cuánto vale en
-// la góndola"). Corrección post-revisión: Bruno pidió las dos cifras por
+// la góndola"). Corrección post-revisión: El dueño pidió las dos cifras por
 // separado ("stock, costo, vendido, ganancia" — cuatro, no tres), no una
 // sola cifra a costo mal llamada "stock".
 

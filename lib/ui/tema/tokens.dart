@@ -4,7 +4,7 @@
 // Color(0x...), un EdgeInsets.all(número suelto) o un fontWeight
 // hardcodeado.
 //
-// Regla de armonía (Bruno, fase 11): UNA sola escala de espaciado, UNA sola
+// Regla de armonía (El dueño, fase 11): UNA sola escala de espaciado, UNA sola
 // escala tipográfica, UN solo acento de color. Si un valor no sale de acá,
 // está mal — no importa cuánto "quede bien" en una pantalla suelta. Esto se
 // mira doce horas por día, seis días por semana: la consistencia entre
@@ -88,7 +88,7 @@ class ColoresPlazoleta extends ThemeExtension<ColoresPlazoleta> {
       Color.alphaBlend(acento.withValues(alpha: 0.16), fondoBloque);
 
   static const claro = ColoresPlazoleta(
-    // Bajado de F4F4F2 a E4E4DF (revisión visual fase 13, Bruno: "la
+    // Bajado de F4F4F2 a E4E4DF (revisión visual fase 13, el dueño: "la
     // pantalla de venta parece una hoja en blanco con texto flotando"). La
     // premisa de este archivo es que el color es la ÚNICA herramienta de
     // jerarquía sin sombras — a 11 puntos de diferencia contra `fondoBloque`
@@ -173,7 +173,7 @@ abstract final class Espaciado {
   static const double xl = 24;
   static const double xxl = 32;
 
-  /// Sumado en el remake de la estética (Bruno, 2026-09-19) para piezas
+  /// Sumado en el remake de la estética (El dueño, 2026-09-19) para piezas
   /// "hero" grandes — mismo valor que `EspacioCompanion.xxxl`.
   static const double xxxl = 48;
 }
@@ -182,7 +182,7 @@ abstract final class Espaciado {
 /// bloques (igual en horizontal y en vertical), un solo padding — tanto el
 /// externo de pantalla como el interno de cada bloque son el mismo valor.
 /// Si un bloque necesita otro padding, es la jerarquía la que está mal, no
-/// el padding (Bruno).
+/// el padding (El dueño).
 abstract final class Bento {
   static const double radio = 14;
   static const double hueco = Espaciado.md;
@@ -256,7 +256,7 @@ abstract final class Medidas {
   static const double anchoModalCierre = 960;
 
   /// Ancho fijo de la barra de búsqueda de venta (rediseño 2026-09-25,
-  /// Bruno: "la barra de busqueda debe ocpar un espacio fijo al centro, no
+  /// El dueño: "la barra de busqueda debe ocpar un espacio fijo al centro, no
   /// extenderse en todos lados") — reemplaza al viejo `Expanded` que la
   /// estiraba a todo el ancho disponible de la franja superior. Mismo
   /// orden de magnitud que la caja de búsqueda de Gmail/Drive en un
@@ -266,7 +266,7 @@ abstract final class Medidas {
   static const double anchoBarraBusquedaVenta = 640;
 
   /// Ancho fijo del panel de carrito + cobro a la derecha de la pantalla de
-  /// venta (rediseño 2026-09-25, segunda pasada: Bruno mandó una referencia
+  /// venta (rediseño 2026-09-25, segunda pasada: El dueño mandó una referencia
   /// de POS con el carrito en un panel fijo y contestó "1 pero manteniendo
   /// la estructura de dropdown" — vuelve el panel fijo, la izquierda pasa a
   /// ser la tira de directos + la grilla de productos navegable).
@@ -290,7 +290,7 @@ abstract final class Medidas {
   /// 320 → 460 al llegar a Proveedores (fase 13, tres niveles de
   /// información) → 580 en la primera corrección post-revisión, al separar
   /// "stock" (a precio) de "costo" en filas de cuatro cifras → **360** en
-  /// la segunda corrección post-revisión (dibujo de Bruno): las cifras
+  /// la segunda corrección post-revisión (dibujo de el dueño): las cifras
   /// dejaron de vivir en la lista — son del proveedor elegido, no de todos
   /// a la vez — así que la columna vuelve a ser angosta ("nombre y poco
   /// más"). Sigue siendo un valor compartido con Productos, que va a seguir
@@ -311,7 +311,7 @@ abstract final class Bordes {
   static const double fino = 1;
 }
 
-/// Figtree (Bruno, "Lenguaje de diseño" 2026-09-26) reemplazó a Glacial
+/// Figtree (El dueño, "Lenguaje de diseño" 2026-09-26) reemplazó a Glacial
 /// Indifference — toda la app pasa por esta única familia y única escala
 /// (Regla de armonía, fase 11). Trae los cuatro pesos que usa el lenguaje
 /// nuevo como archivos reales (ver `pubspec.yaml`), así que ningún peso de
@@ -332,7 +332,7 @@ abstract final class Pesos {
 
 /// La única escala tipográfica de la app, con un rol fijo por tamaño —
 /// nunca el mismo tamaño con un rol distinto en otra pantalla. Realineada
-/// en el remake de la estética (Bruno, 2026-09-19: "basémonos al completo
+/// en el remake de la estética (El dueño, 2026-09-19: "basémonos al completo
 /// en el apk") a los mismos valores que ya usa la companion
 /// (`TemaCompanion._construirTextTheme`) — `etiqueta`/`secundario`/`cuerpo`
 /// ya coincidían de antes, solo `subtitulo`/`titulo`/`total` bajan un
@@ -384,7 +384,7 @@ abstract final class Animaciones {
   static const Duration media = Duration(milliseconds: 220);
   static const Curve curva = Curves.easeOutCubic;
 
-  /// "Dark glass premium" (Bruno, rediseño 2026-09-25): overshoot leve,
+  /// "Dark glass premium" (El dueño, rediseño 2026-09-25): overshoot leve,
   /// aproxima un spring de baja fricción sin agregar ninguna dependencia
   /// nueva de física — para elementos que APARECEN o se SELECCIONAN (la
   /// pastilla de sección activa de la navbar, `Presionable`). No reemplaza

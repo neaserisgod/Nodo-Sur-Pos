@@ -1,4 +1,4 @@
-// Panel derecho de Proveedores. "Lenguaje de diseño" (Bruno, 2026-09-26,
+// Panel derecho de Proveedores. "Lenguaje de diseño" (El dueño, 2026-09-26,
 // mock `Proveedores.dc.html`): encabezado del proveedor (iniciales, nombre,
 // cómo se le paga y qué días viene, "Avanzado"/"Ver lata" y "Nuevo
 // producto"), una fila de cifras del período, y los productos en tarjetas
@@ -144,10 +144,10 @@ class DetalleProveedor extends StatelessWidget {
                   ),
                 const SizedBox(width: Espaciado.sm),
                 BotonSecundario(
-                  // Serra Cigarros: sus Separar/Pagar genéricos siempre
+                  // Distribuidora de Cigarrillos: sus Separar/Pagar genéricos siempre
                   // daban $0 (Regla 6) — ahí el mismo diálogo muestra la
                   // lata (ver `dialogo_avanzado_proveedor.dart`).
-                  texto: c.esSerraCigarros ? 'Ver lata' : 'Avanzado',
+                  texto: c.esCajaAparte ? 'Ver lata' : 'Avanzado',
                   onPressed: () => mostrarDialogoAvanzadoProveedor(
                     context,
                     proveedor: c.seleccionado!,
@@ -169,7 +169,7 @@ class DetalleProveedor extends StatelessWidget {
               ),
             ],
           ),
-          if (c.esProveedorReal && !c.esSerraCigarros) ...[
+          if (c.esProveedorReal && !c.esCajaAparte) ...[
             const SizedBox(height: Espaciado.lg),
             SelectorPorcentajeProveedor(controlador: c),
           ],
@@ -332,7 +332,7 @@ class _TarjetaProductoProveedor extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Casillero de edición masiva (Bruno, 2026-09-16: "subir el
+                // Casillero de edición masiva (El dueño, 2026-09-16: "subir el
                 // precio de 3 productos... a la vez").
                 Checkbox(
                   value: seleccionado,

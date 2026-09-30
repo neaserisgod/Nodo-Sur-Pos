@@ -28,7 +28,7 @@ void main() {
     test('una línea sin desglose: el total es el subtotal de la línea', () {
       final t = construirTicket(
         fecha: DateTime(2026, 8, 29),
-        vendedor: 'Bruno',
+        vendedor: 'Dueño',
         lineas: const [
           LineaTicket(
             nombreProducto: 'Coca-Cola 500ml',
@@ -46,7 +46,7 @@ void main() {
       () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [
             LineaTicket(
               nombreProducto: 'Marlboro',
@@ -75,7 +75,7 @@ void main() {
       () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [
             LineaTicket(
               nombreProducto: 'Paleta',
@@ -92,7 +92,7 @@ void main() {
     test('sin líneas ni desglose: total 0', () {
       final t = construirTicket(
         fecha: DateTime(2026, 8, 29),
-        vendedor: 'Bruno',
+        vendedor: 'Dueño',
         lineas: const [],
         desglose: const DesgloseTicket(),
       );
@@ -102,7 +102,7 @@ void main() {
     test('una línea pesable conserva sus gramos y cantidad en 1', () {
       final t = construirTicket(
         fecha: DateTime(2026, 8, 29),
-        vendedor: 'Bruno',
+        vendedor: 'Dueño',
         lineas: const [
           LineaTicket(
             nombreProducto: 'Jamón crudo',
@@ -124,7 +124,7 @@ void main() {
       test('el encabezado va centrado y en letra grande, línea por línea', () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29, 14, 30),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [],
           desglose: const DesgloseTicket(),
         );
@@ -145,7 +145,7 @@ void main() {
           '(verificado a mano, no documentado por MercadoPago)', () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [
             LineaTicket(
               nombreProducto: 'Coca-Cola 500ml',
@@ -168,7 +168,7 @@ void main() {
       test('un pesable muestra los gramos en vez de la cantidad', () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [
             LineaTicket(
               nombreProducto: 'Jamón crudo',
@@ -191,13 +191,13 @@ void main() {
         () {
           final sinNinguno = construirTicket(
             fecha: DateTime(2026, 8, 29),
-            vendedor: 'Bruno',
+            vendedor: 'Dueño',
             lineas: const [],
             desglose: const DesgloseTicket(),
           );
           final conAmbos = construirTicket(
             fecha: DateTime(2026, 8, 29),
-            vendedor: 'Bruno',
+            vendedor: 'Dueño',
             lineas: const [],
             desglose: const DesgloseTicket(
               recargoCigarrillosCentavos: 30000,
@@ -229,13 +229,13 @@ void main() {
       test('descuento aparece con signo negativo, solo si es mayor a cero', () {
         final sinDescuento = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [],
           desglose: const DesgloseTicket(),
         );
         final conDescuento = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [
             LineaTicket(
               nombreProducto: 'Paleta',
@@ -266,7 +266,7 @@ void main() {
         () {
           final t = construirTicket(
             fecha: DateTime(2026, 8, 29),
-            vendedor: 'Bruno',
+            vendedor: 'Dueño',
             lineas: const [
               LineaTicket(
                 nombreProducto: 'Marlboro',
@@ -287,7 +287,7 @@ void main() {
       test('termina con el agradecimiento centrado', () {
         final t = construirTicket(
           fecha: DateTime(2026, 8, 29),
-          vendedor: 'Bruno',
+          vendedor: 'Dueño',
           lineas: const [],
           desglose: const DesgloseTicket(),
         );

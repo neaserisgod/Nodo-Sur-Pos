@@ -68,7 +68,7 @@ class EquilibrioControlador extends ChangeNotifier {
 
   /// No hace nada si no hay sesión abierta — ver [sesionCajaId].
   ///
-  /// [fecha] default a ahora — Bruno a veces paga un fijo un día y lo carga
+  /// [fecha] default a ahora — El dueño a veces paga un fijo un día y lo carga
   /// otro, así que el diálogo deja elegir la fecha real del pago (ver
   /// `registrarPagoFijo`).
   Future<void> registrarPago({

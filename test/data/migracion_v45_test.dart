@@ -28,7 +28,7 @@ Future<File> _baseV44({required bool sinColumna}) async {
 }
 
 void main() {
-  test('una base v44 real sube a v45: Serra Cigarros queda con caja aparte y nadie más', () async {
+  test('una base v44 real sube a v45: Distribuidora de Cigarrillos queda con caja aparte y nadie más', () async {
     final archivo = await _baseV44(sinColumna: true);
     final db = AppDatabase(NativeDatabase(archivo));
     addTearDown(() => db.close());
@@ -40,7 +40,7 @@ void main() {
     expect(todos.every((p) => p.actualizadoEn!.millisecondsSinceEpoch == 1234 * 1000), isTrue);
   });
 
-  test('una base v44 sin Serra Cigarros sube igual y nadie queda con caja aparte', () async {
+  test('una base v44 sin Distribuidora de Cigarrillos sube igual y nadie queda con caja aparte', () async {
     final archivo = await _baseV44(sinColumna: true);
     final crudo = sqlite3.sqlite3.open(archivo.path);
     try {

@@ -1,7 +1,7 @@
 // Lo que un cierre real tiene además de las tres cajas (efectivo/MP/lata
 // contado-esperado-diferencia, que cada pantalla ya mostraba a su manera):
 // separación de cigarrillos, redondeo acumulado, vendido sin costo cargado,
-// reserva diaria de fijos, nota, y el desglose por proveedor (Bruno,
+// reserva diaria de fijos, nota, y el desglose por proveedor (El dueño,
 // 2026-09-19: rework de "Cierres" — "lo que se debe separar por cada
 // proveedor"). Un solo widget (Regla 3) para los dos lugares donde aparece:
 // la fase "revisado" del diálogo de cerrar caja (`dialogo_cierre_companion.dart`)
@@ -44,7 +44,7 @@ class _SeccionExtraCierreCompanionState extends State<SeccionExtraCierreCompanio
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bug real (Bruno: "la companion directamente no lo dice"): este
+        // Bug real (El dueño: "la companion directamente no lo dice"): este
         // monto — cuánto hay que separar a la lata AHORA, en este cierre —
         // no se mostraba en ningún lado acá, solo la parte pendiente
         // cuando no alcanzaba el efectivo. Sin la línea de abajo no había

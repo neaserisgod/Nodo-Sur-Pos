@@ -5,7 +5,7 @@
 // de Proveedores 2026-09-25 (quinta pasada) — Proveedores también los
 // necesita ahora, y esto no era un lugar compartido.
 //
-// Reconciliado en el remake de estética (Bruno, 2026-09-19: "la pantalla de
+// Reconciliado en el remake de estética (El dueño, 2026-09-19: "la pantalla de
 // ventas se adapte también") — los cuatro colores son los mismos que ya usa
 // `AcentosPlazoleta` (`lib/ui/tema/acentos.dart`, portados con fidelidad
 // completa de la companion) para QR/Débito/Mixto, y el acento único de la

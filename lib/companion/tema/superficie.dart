@@ -5,7 +5,7 @@
 // El escritorio sigue usando `Bloque` tal cual; este widget no lo reemplaza
 // ahí, solo le da a la companion su propia unidad visual.
 //
-// "Dark glass premium" (Bruno, rediseño 2026-09-25): mismo tratamiento
+// "Dark glass premium" (El dueño, rediseño 2026-09-25): mismo tratamiento
 // shell+core que `lib/ui/tema/superficie.dart` (ver ahí el detalle
 // completo) — look de vidrio sin `BackdropFilter` real, reservado a
 // `hoja_vidrio.dart`/`navbar_companion.dart`.
@@ -35,7 +35,7 @@ class Superficie extends StatelessWidget {
   final Color? relleno;
 
   /// Alternativa a [relleno]: dos o más colores en diagonal — para las
-  /// piezas "hero" de la app (Bruno, 2026-09-18: "pensalo como una app
+  /// piezas "hero" de la app (El dueño, 2026-09-18: "pensalo como una app
   /// moderna, útil y monetizable"). Gana sobre [relleno] si los dos están
   /// puestos.
   final List<Color>? degrade;
@@ -44,7 +44,7 @@ class Superficie extends StatelessWidget {
   /// llamador decide si lo usa — este widget no fuerza el color de sus hijos).
   final Color? colorTexto;
 
-  /// Halo neón (Bruno, 2026-09-19: "la estética japonesa cyberpunk me vuela
+  /// Halo neón (El dueño, 2026-09-19: "la estética japonesa cyberpunk me vuela
   /// la gorra") — solo tiene efecto con `relleno`/`degrade` puesto (una
   /// superficie gris no tiene de qué color brillar). A propósito reservado
   /// para las piezas "hero" de cada pantalla (el CTA de vender, el resumen
@@ -54,7 +54,7 @@ class Superficie extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Plana, igual que la del escritorio ("Lenguaje de diseño", Bruno
+    // Plana, igual que la del escritorio ("Lenguaje de diseño", el dueño
     // 2026-09-26): relleno opaco, sin borde ni sombra ni brillo de vidrio.
     final gradiente = degrade;
     return Container(

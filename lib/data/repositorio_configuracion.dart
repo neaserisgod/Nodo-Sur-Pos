@@ -1,7 +1,7 @@
 // Configuración centralizada (fase 8): recargo de cigarrillos, fondo fijo,
 // paso de redondeo, y el producto del botón de vuelto. Todo sobre la fila
 // única de `configuracion_tabla` — salvo recargo/redondeo/vuelto, que desde
-// la migración v32→v33 viven en `configuracion_negocio_tabla` (Bruno,
+// la migración v32→v33 viven en `configuracion_negocio_tabla` (El dueño,
 // 2026-09-19: "que se puedan modificar las reglas del negocio... desde el
 // celular") — ver el comentario de cabecera de
 // `tables/configuracion_negocio.dart` para el porqué de la separación.
@@ -119,7 +119,7 @@ Future<void> configurarTemaOscuro(AppDatabase db, bool oscuro) {
 /// Elegir un modo a mano mientras el automático está prendido no tiene
 /// efecto (`oscuroPorHorarioDelLocal` sigue mandando) — por eso tocar el
 /// switch de "Modo oscuro" lo apaga acá mismo, en la misma escritura: es
-/// más intuitivo que Bruno vea su elección aplicada al toque que forzarlo a
+/// más intuitivo que el dueño vea su elección aplicada al toque que forzarlo a
 /// primero ir a apagar el automático.
 Future<void> configurarTemaOscuroManual(AppDatabase db, bool oscuro) {
   return db.update(db.configuracionTabla).write(

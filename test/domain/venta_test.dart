@@ -391,7 +391,7 @@ void main() {
     );
 
     test(
-      'Jam Rock: 15% sobre el total real de una compra, virtual (sin redondeo)',
+      'Cliente Frecuente: 15% sobre el total real de una compra, virtual (sin redondeo)',
       () {
         const venta = Venta(
           lineas: [

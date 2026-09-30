@@ -49,7 +49,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // (fase 3) tiene que estar listo desde el primer frame.
     establecerIdDispositivo(await idDispositivoEstable());
     // Emparejar con una PC por LAN ya NO es un paso obligatorio de arranque
-    // (Bruno, 2026-09-18: "no debería tener que escanear ya, es
+    // (El dueño, 2026-09-18: "no debería tener que escanear ya, es
     // innecesario" — justo el objetivo de esta fase era que la companion
     // funcione como un POS aparte, sin depender de la PC). No hay login: se
     // entra directo a elegir usuario / al menú, y

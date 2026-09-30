@@ -25,7 +25,7 @@ void main() {
   testWidgets('cambiar la cantidad de una línea actualiza el total en pantalla', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;
@@ -67,7 +67,7 @@ void main() {
   testWidgets('guardar sin motivo no cierra la pantalla', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;

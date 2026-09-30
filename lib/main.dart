@@ -26,7 +26,7 @@ import 'servicios/modulos_activos.dart';
 import 'servicios/marca_actual.dart';
 
 Future<void> main() async {
-  // Bruno, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
+  // El dueño, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
   // fue una migración de base de datos que tiraba una excepción sin
   // capturar (ver el comentario de la migración v32 en `database.dart`),
   // pero cualquier excepción sin capturar en el arranque tiene el mismo
@@ -117,7 +117,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     )..iniciar();
   }
 
-  // Comparador de precios — dos fuentes independientes (Bruno,
+  // Comparador de precios — dos fuentes independientes (El dueño,
   // 2026-09-14), cada una dispara sola, nunca bloquea el arranque ni un
   // frame de la venta, silenciosa si falla (sin internet, el sitio caído,
   // lo que sea). Cada servicio decide solo si hace falta bajar algo nuevo
@@ -194,13 +194,13 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
             if (!widget.conVentanaPropia) return app;
             return MarcoVentana(db: widget.db, navigatorKey: _navigatorKey, child: app);
           },
-          // Dashboard es la raíz de la app (Bruno, 2026-09-14: "es la
+          // Dashboard es la raíz de la app (El dueño, 2026-09-14: "es la
           // pantalla principal, totalmente aparte") — Venta pasa a ser una
           // sección fija más, alcanzable con un clic desde acá (o desde
           // cualquier otra pantalla, `navegacion_gestion.dart`). Antes
           // Venta era la raíz porque resolvía sola los tres estados
           // posibles al arrancar (sin sesión, sesión de un día anterior sin
-          // cerrar, sesión normal) sin bloquear el resto de la app (Bruno,
+          // cerrar, sesión normal) sin bloquear el resto de la app (El dueño,
           // 2026-09-06: "que no salga obligatoriamente al abrir" — sigue
           // igual, `VentaControlador.sesionVencida` sigue bloqueando solo
           // la venta cuando corresponde, no la app entera).

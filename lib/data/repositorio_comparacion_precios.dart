@@ -1,8 +1,8 @@
 // Cruce entre el catálogo propio y `precios_referencia_externa`
-// (comparador de precios, Bruno 2026-09-14). No es domain/: comparar dos
+// (comparador de precios, el dueño 2026-09-14). No es domain/: comparar dos
 // precios no es una fórmula de negocio, es una lectura.
 //
-// Dos caminos de cruce, nunca mezclados en el mismo producto (Bruno,
+// Dos caminos de cruce, nunca mezclados en el mismo producto (El dueño,
 // 2026-09-14: "todo lo que esté en mi sistema" — antes un producto sin
 // coincidencia simplemente no aparecía, ahora entra igual con "—"):
 // - **Por código de barras** (`tipoCoincidencia == 'codigo'`): productos
@@ -31,7 +31,7 @@ import 'normalizacion_texto.dart';
 /// Un producto propio del catálogo (activo, con algún precio propio) más
 /// lo que se haya podido cruzar de `precios_referencia_externa`. Con
 /// [preciosPorComercio] vacío si no se encontró en ningún comercio — el
-/// producto igual genera fila (Bruno: "todo lo que esté en mi sistema").
+/// producto igual genera fila (El dueño: "todo lo que esté en mi sistema").
 class ComparacionPrecio {
   final int productoId;
   final String nombre;
@@ -157,7 +157,7 @@ bool _nombresCoinciden(String localNormalizado, String externoNormalizado) {
 
 bool _esUnidadDePeso(String? unidad) => (unidad ?? '').toLowerCase().contains('kg');
 
-/// Ordenado por mayor diferencia primero (Bruno: para ver de un vistazo lo
+/// Ordenado por mayor diferencia primero (El dueño: para ver de un vistazo lo
 /// que más vale la pena revisar), lo sin coincidencia al final, alfabético
 /// entre sí.
 Future<List<ComparacionPrecio>> comparacionDePrecios(AppDatabase db) async {

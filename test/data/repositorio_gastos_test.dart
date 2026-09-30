@@ -14,7 +14,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   });
   tearDown(() => db.close());
@@ -39,7 +39,7 @@ void main() {
     test(
       'con la sesión ya CERRADA: tira SesionCerradaException, no graba nada',
       () async {
-        // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — un
+        // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — un
         // gasto que llega justo después de un cierre (ej. desde otro
         // dispositivo) no debe grabarse contra una sesión ya cerrada.
         await (db.update(

@@ -19,13 +19,13 @@ import 'venta_controlador.dart';
 const Map<String, String> teclasReservadas = {
   'e': 'efectivo',
   // Fase 12: QR y Débito, canal de cobro por terminal Point — elige el
-  // canal nada más (Bruno, 2026-09-08: volvió a ser de dos pasos, ver 'm'
+  // canal nada más (El dueño, 2026-09-08: volvió a ser de dos pasos, ver 'm'
   // abajo). "Cobrar" (Enter con el campo vacío, o el botón) recién ahí
   // abre el diálogo que manda la orden.
   'q': 'QR',
   'd': 'débito',
   'x': 'pago mixto',
-  // Bruno, 2026-09-08: "necesito cobro manual en el desktop, ya que al
+  // El dueño, 2026-09-08: "necesito cobro manual en el desktop, ya que al
   // poner los atajos rápidos no hay más modal para seleccionarlo" — con
   // QR/Débito ya elegido, cobra directo sin pasar por la terminal Point
   // (mismo criterio que "Cobrar a mano" del diálogo de Point cuando
@@ -34,11 +34,11 @@ const Map<String, String> teclasReservadas = {
   'v': 'Varios',
   'c': 'vuelto',
   '-': 'gasto rápido',
-  // Bruno, 2026-09-13: "un botón de ingreso de dinero" — letra, no símbolo
+  // El dueño, 2026-09-13: "un botón de ingreso de dinero" — letra, no símbolo
   // ('+' con Alt depende del layout de teclado y si hace falta Shift para
   // llegar a esa tecla; una letra no tiene esa ambigüedad).
   'i': 'ingreso rápido',
-  // Bruno, 2026-09-29: más de una venta a la vez. Alt+N abre una venta
+  // El dueño, 2026-09-29: más de una venta a la vez. Alt+N abre una venta
   // nueva sin perder la actual; Alt+S pasa a la siguiente abierta.
   'n': 'nueva venta',
   's': 'siguiente venta abierta',
@@ -47,7 +47,7 @@ const Map<String, String> teclasReservadas = {
 /// Alt+X: abre el campo aparte para la parte en efectivo de un pago mixto.
 /// No reutiliza el campo único — un escaneo accidental mientras se carga el
 /// monto no debe leerse como plata. El foco YA NO vuelve solo al campo
-/// único al cerrarse el diálogo (Bruno, 2026-09-16: "dejar de robar el
+/// único al cerrarse el diálogo (El dueño, 2026-09-16: "dejar de robar el
 /// foco al hacer otra cosa") — se queda donde haya quedado.
 Future<void> abrirMixto(BuildContext context, VentaControlador c) async {
   if (c.carrito.isEmpty) return;
@@ -96,7 +96,7 @@ Future<void> cobrarOAbrirPosnet(
 /// tocar la terminal Point — mismo criterio que "Cobrar a mano" adentro
 /// del diálogo de Point (`cobrarActual()` con el canal ya elegido), pero
 /// elegible desde el arranque en vez de solo aparecer cuando la terminal
-/// ya falló. Bruno, 2026-09-08: "necesito cobro manual... no hay más
+/// ya falló. El dueño, 2026-09-08: "necesito cobro manual... no hay más
 /// modal para seleccionarlo" — con QR/Débito directo o el resto virtual
 /// de un mixto, `canalElegido` ya está puesto apenas se elige el medio
 /// (`elegirCanalDirecto`/`confirmarMixto`), así que no hace falta ningún

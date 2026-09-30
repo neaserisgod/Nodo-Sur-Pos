@@ -1,4 +1,4 @@
-// Edición masiva de precios (Bruno, 2026-09-16: "si quiero subir el precio
+// Edición masiva de precios (El dueño, 2026-09-16: "si quiero subir el precio
 // de 3 productos iguales de distinta variante, hacerlo a la vez"). Una sola
 // fórmula (Regla 3) que la UI de Proveedores aplica producto por producto —
 // esto no toca la base ni el catálogo, solo calcula el precio nuevo a partir

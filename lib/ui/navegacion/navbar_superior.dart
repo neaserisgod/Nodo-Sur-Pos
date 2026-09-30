@@ -1,10 +1,10 @@
-// Navbar superior — dropdown de secciones (Bruno, rediseño 2026-09-25: "la
+// Navbar superior — dropdown de secciones (El dueño, rediseño 2026-09-25: "la
 // navbar quiero que sea un dropdown"): un solo botón que muestra la sección
 // activa y abre un menú con el resto. Dejar de mostrar los diez+ íconos a la
 // vez le da a la barra de búsqueda (que comparte esta franja) casi todo el
 // ancho.
 //
-// 2026-09-26, sobre un mock de Bruno: el menú dejó de ser el
+// 2026-09-26, sobre un mock de el dueño: el menú dejó de ser el
 // `PopupMenuButton` de Material ("parece un conjunto de pegotes con
 // animaciones") — ver `_BotonSecciones`.
 //
@@ -68,7 +68,7 @@ class NavbarSuperior extends StatelessWidget {
 }
 
 /// Descripción corta de cada sección, debajo del nombre en el menú (mock de
-/// Bruno, 2026-09-26).
+/// El dueño, 2026-09-26).
 const Map<String, String> _descripcionPorClave = {
   'dashboard': 'El día y el mes de un vistazo',
   'venta': 'Cobrar y ver tickets',
@@ -83,7 +83,7 @@ const _duracionCerrar = Duration(milliseconds: 150);
 const double _altoBoton = 52;
 const double _anchoMenu = 320;
 
-/// El botón + el menú de secciones (rediseño 2026-09-26, mock de Bruno:
+/// El botón + el menú de secciones (rediseño 2026-09-26, mock de el dueño:
 /// "algo así pero no me gusta que esté separado arriba, y quiero una
 /// animación bonita, fluida a la vez que rápida"). Reemplaza al
 /// `PopupMenuButton` de Material, que se abría "creciendo" desde el botón y

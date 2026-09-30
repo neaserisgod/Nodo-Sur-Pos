@@ -13,7 +13,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   });
   tearDown(() => db.close());
@@ -39,7 +39,7 @@ void main() {
     final flete = lista.firstWhere((m) => m.nota == 'Flete');
     expect(flete.esSalida, isTrue);
     expect(flete.esLata, isFalse);
-    expect(flete.usuario, 'Bruno');
+    expect(flete.usuario, 'Dueño');
     final ingreso = lista.firstWhere((m) => m.tipo == 'INGRESO');
     expect(ingreso.esSalida, isFalse);
     expect(ingreso.esMercadoPago, isTrue);

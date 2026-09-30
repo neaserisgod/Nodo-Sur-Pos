@@ -5,7 +5,7 @@ import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/domain/edicion_masiva_precios.dart';
 import '../helpers/base_para_tests.dart';
 
-/// Precio automático por proveedor (Bruno, 2026-09-29): porcentaje sobre el
+/// Precio automático por proveedor (El dueño, 2026-09-29): porcentaje sobre el
 /// costo + redondeo a la próxima centena; los cigarrillos quedan como están.
 void main() {
   late AppDatabase db;
@@ -14,7 +14,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZP', nombre: 'Prov test'));
   });
   tearDown(() => db.close());

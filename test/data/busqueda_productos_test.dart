@@ -176,7 +176,7 @@ void main() {
       },
     );
 
-    group('sin stock, no aparece en ventas (Bruno, 2026-09-06)', () {
+    group('sin stock, no aparece en ventas (Dueño, 2026-09-06)', () {
       test(
         'por nombre: un producto con stock 0 no aparece en la búsqueda',
         () async {

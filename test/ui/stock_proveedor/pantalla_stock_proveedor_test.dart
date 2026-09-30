@@ -24,7 +24,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -69,7 +69,7 @@ void main() {
     final proveedores = await listarProveedores(db);
     final serra = proveedores.firstWhere((p) => p.codigo == 'S');
 
-    await crearProducto(db, nombre: 'De Serra', proveedorId: serra.id, precioCentavos: 1000, usuarioId: usuarioId);
+    await crearProducto(db, nombre: 'De Distribuidora', proveedorId: serra.id, precioCentavos: 1000, usuarioId: usuarioId);
     await crearProducto(db, nombre: 'Suelto', precioCentavos: 1000, usuarioId: usuarioId);
 
     await _pump(tester, db, usuarioId);
@@ -80,7 +80,7 @@ void main() {
     await tester.tap(find.text(serra.nombre).last);
     await tester.pumpAndSettle();
 
-    expect(find.text('De Serra'), findsOneWidget);
+    expect(find.text('De Distribuidora'), findsOneWidget);
     expect(find.text('Suelto'), findsNothing);
   });
 }

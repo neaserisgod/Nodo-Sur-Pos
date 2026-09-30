@@ -1,7 +1,7 @@
 // La barra de búsqueda y todo lo que cuelga de ella o vive cerca — hasta el
 // rediseño de composición 2026-09-25 esto era una columna angosta a la
 // izquierda de la pantalla, con el campo arriba y una `Superficie` debajo
-// que alternaba entre resultados y accesos directos. Bruno la rechazó dos
+// que alternaba entre resultados y accesos directos. El dueño la rechazó dos
 // veces seguidas: primero la distribución en general, después puntual
 // ("los productos deben salir de la barra de busqueda, no de la izquierda")
 // — la columna entera se borró.
@@ -12,7 +12,7 @@
 // `CompositedTransformTarget`/`CompositedTransformFollower` — no una
 // columna fija en la pantalla. La tira de accesos directos por Alt+tecla
 // que vivía acá al lado (cigarrillos, "Varios", "Vuelto") se sacó entera
-// (Bruno, cuarta pasada: "ahora no hacen falta los accesos rapidos...
+// (El dueño, cuarta pasada: "ahora no hacen falta los accesos rapidos...
 // sacar la tira Y el sistema de accesos directos entero" — la grilla
 // táctil de `RejillaProductos`, más abajo en este mismo archivo, cubre el
 // acceso rápido). "Varios" sigue andando por Alt+V o escribiéndolo en la
@@ -21,14 +21,14 @@
 //
 // El campo único sigue siendo la entrada principal para escribir/escanear
 // (autofocus al arrancar), pero el foco YA NO se fuerza de vuelta después
-// de cualquier acción (Bruno, 2026-09-16: "dejar de robar el foco al hacer
+// de cualquier acción (El dueño, 2026-09-16: "dejar de robar el foco al hacer
 // otra cosa") — agregar por tap/Alt+tecla y cobrar siguen devolviendo el
 // foco (son el flujo normal de seguir vendiendo), pero abrir un diálogo
 // secundario (Mixto, Varios) ya no lo hace: el foco se queda donde haya
 // quedado al cerrarse, en vez de saltar solo.
 //
 // Alta rápida (dar de alta un producto nuevo sin salir de esta pantalla) se
-// sacó de acá (Bruno, 2026-09-16): un código/nombre sin coincidencias
+// sacó de acá (El dueño, 2026-09-16): un código/nombre sin coincidencias
 // muestra el aviso y nada más — cargar un producto nuevo pasa a ser
 // siempre desde Proveedores. `dialogo_alta_rapida.dart` se borró (ya no
 // tiene ningún llamador).
@@ -69,7 +69,7 @@ Future<void> _onEnterBusqueda(BuildContext context) async {
       // "Varios" no se excluye de la búsqueda (si alguien escribió
       // "varios" lo quiere a propósito), pero necesita el mismo diálogo
       // de monto que Alt+V — agregarlo directo no tiene precio que poner.
-      // El foco NO vuelve solo al cerrarse este diálogo (Bruno,
+      // El foco NO vuelve solo al cerrarse este diálogo (El dueño,
       // 2026-09-16): es un paso secundario, no el flujo de escanear.
       await agregarVarios(context, c);
       return;
@@ -91,7 +91,7 @@ Future<void> _onEnterBusqueda(BuildContext context) async {
   c.focoCampoPrincipal.requestFocus();
 }
 
-/// El campo único, de ancho fijo ("estilo Google", Bruno, rediseño
+/// El campo único, de ancho fijo ("estilo Google", el dueño, rediseño
 /// 2026-09-25), con sus propios resultados colgando de él como un dropdown
 /// flotante — no de una columna fija en la pantalla ("los productos deben
 /// salir de la barra de busqueda, no de la izquierda"). `Stateful` para
@@ -199,7 +199,7 @@ class _BarraBusquedaVentaState extends State<BarraBusquedaVenta> {
             hintText: 'Código, nombre o "200 nombre"',
             prefixIcon: Icon(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
             contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
-            // Octava pasada (Bruno: "necesito que la barra de busqueda se
+            // Octava pasada (El dueño: "necesito que la barra de busqueda se
             // note que es una barra de busqueda") — mismo relleno que
             // `BarraBusquedaGlobal` (barra_busqueda_global.dart), para que
             // las dos versiones del campo se vean igual de reconocibles.
@@ -238,7 +238,7 @@ class _ResultadosBusqueda extends StatelessWidget {
     final c = context.watch<VentaControlador>();
 
     if (c.sinCoincidencias) {
-      // Sin alta rápida (Bruno, 2026-09-16): un aviso plano, sin acción —
+      // Sin alta rápida (El dueño, 2026-09-16): un aviso plano, sin acción —
       // dar de alta un producto nuevo pasa a ser siempre desde Proveedores.
       return Align(
         alignment: Alignment.topLeft,
@@ -246,7 +246,7 @@ class _ResultadosBusqueda extends StatelessWidget {
       );
     }
 
-    // Existe pero sin stock (Bruno, 2026-09-06: "si no hay stock, no
+    // Existe pero sin stock (El dueño, 2026-09-06: "si no hay stock, no
     // aparece en ventas") — sin InkWell ni acción: no es ni un resultado
     // para agregar ni un candidato para dar de alta, ofrecer cualquiera de
     // las dos cosas sería un error (ya existe, no es nuevo).
@@ -307,7 +307,7 @@ class _ResultadosBusqueda extends StatelessWidget {
   }
 }
 
-/// Un resultado de búsqueda como fila de una línea (Bruno, corrección
+/// Un resultado de búsqueda como fila de una línea (El dueño, corrección
 /// post-revisión: las cards de dos líneas se leían en diagonal y ocupaban
 /// 96px para solo dos datos). Tres datos, siempre en el mismo orden:
 /// nombre · stock · precio — mismo criterio de alineación que cualquier
@@ -406,7 +406,7 @@ class _FilaResultado extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final mostrarStock = constraints.maxWidth >= 320;
-            // "Bento con carácter" (Bruno, 2026-09-16): mismo punto de
+            // "Bento con carácter" (El dueño, 2026-09-16): mismo punto de
             // color por rubro que ya usa el carrito — null en "Varios" o en
             // un producto sin categoría cargada.
             final colorCat = colorCategoria(context, producto.categoriaId);
@@ -422,7 +422,7 @@ class _FilaResultado extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     // titleMedium (19), no bodyMedium (16): mismo escalón
                     // que ya usa el precio de acá abajo — "todo se ve chico"
-                    // (Bruno, 2026-09-06) era justo esta inconsistencia, el
+                    // (El dueño, 2026-09-06) era justo esta inconsistencia, el
                     // precio ya estaba en el tamaño grande y el resto de la
                     // fila se quedó atrás.
                     style: textTheme.titleMedium,
@@ -477,7 +477,7 @@ final Object _sinCategoriaEnGrilla = Object();
 final Object _todosEnGrilla = Object();
 
 /// Grilla de productos navegable por categoría (rediseño 2026-09-25,
-/// segunda pasada: Bruno mandó una referencia de POS con esto y contestó
+/// segunda pasada: El dueño mandó una referencia de POS con esto y contestó
 /// "1 pero manteniendo la estructura de dropdown" — se suma como una forma
 /// MÁS de agregar, tocando en vez de escribir/escanear; no reemplaza nada
 /// de eso). Qué categoría está elegida es estado de UI puro (no afecta el
@@ -638,7 +638,7 @@ class _PildoraCategoria extends StatelessWidget {
 }
 
 /// Tile de la grilla — mismo lenguaje "vidrio" que `_TileDirecto` (la
-/// referencia de Bruno solo prestó la ESTRUCTURA, la paleta "dark glass
+/// referencia de el dueño solo prestó la ESTRUCTURA, la paleta "dark glass
 /// premium" ya aprobada se queda). Nombre + precio, mismo formato que
 /// `_FilaResultado` para la tarifa "/kg" de un pesable — acá nunca hay
 /// gramos escritos (es la grilla, no el campo), así que un pesable siempre

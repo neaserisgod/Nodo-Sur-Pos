@@ -1,4 +1,4 @@
-// Identidad visual propia de la companion — Bruno, 2026-09-17: "mandá al
+// Identidad visual propia de la companion — El dueño, 2026-09-17: "mandá al
 // demonio toda cosa establecida en [los] md, quiero que sea un
 // rework/remake desde 0". Deja de compartir la paleta ámbar/gris del
 // escritorio (`lib/ui/tema/tokens.dart`, sin tocar — la app de escritorio
@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import '../../ui/tema/acentos.dart' show acentosEscritorioClaro, acentosEscritorioOscuro;
 import '../../ui/tema/colores_escritorio.dart';
 
-// "Dark glass premium" (Bruno, rediseño 2026-09-25) — espejo exacto de
+// "Dark glass premium" (El dueño, rediseño 2026-09-25) — espejo exacto de
 // `coloresEscritorioOscuro` (`lib/ui/tema/colores_escritorio.dart`), mismo
 // motivo: negro más profundo, texto secundario/tenue con más margen de
 // contraste, acento sin cambios (ver ese archivo para el detalle de
@@ -55,7 +55,7 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
   final Color textoSobreColor;
 
   /// Degradé de dos tonos para las piezas "hero" (el total del carrito, la
-  /// tarjeta de ventas de hoy) — Bruno, 2026-09-18: "pensalo como una app
+  /// tarjeta de ventas de hoy) — El dueño, 2026-09-18: "pensalo como una app
   /// moderna, útil y monetizable". Un relleno sólido plano se lee más
   /// genérico que un degradé sutil sobre la misma paleta: mismo acento,
   /// nunca un color nuevo, solo dos paradas en vez de una.

@@ -23,7 +23,7 @@ void main() {
     });
 
     test('a diferencia de la reposición, SÍ incluye cigarrillos: su costo-foto '
-        'es lo que se le paga a Serra, y esa ganancia es real aunque la lata '
+        'es lo que se le paga a Distribuidora, y esa ganancia es real aunque la lata '
         'la maneje aparte', () {
       final r = calcularGananciaBruta(lineas: [
         const LineaParaReposicion(

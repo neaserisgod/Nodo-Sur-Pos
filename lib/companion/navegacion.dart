@@ -1,4 +1,4 @@
-// Bug real (Bruno, 2026-09-10): "si en un apartado ingreso al teclado, al
+// Bug real (El dueño, 2026-09-10): "si en un apartado ingreso al teclado, al
 // volver al menú principal con el botón de atrás vuelve a salir el
 // teclado". Flutter guarda qué widget tenía el foco en una pantalla justo
 // antes de pushear otra encima (cada ruta tiene su propio FocusScopeNode);
@@ -21,7 +21,7 @@ Future<T?> pushSinTeclado<T>(
   WidgetBuilder builder,
 ) async {
   // El desenfoque DESPUÉS de volver (lo único que hacía esto antes) no
-  // alcanza — el bug reaparecía igual (Bruno, 2026-09-10: "sigue pasando").
+  // alcanza — el bug reaparecía igual (El dueño, 2026-09-10: "sigue pasando").
   // El `FocusScopeNode` de esta ruta recuerda cuál era su "focusedChild" en
   // el momento en que la ruta nueva le sacó el foco ENCIMA — esa memoria
   // queda grabada ANTES de pushear, no después de volver. Si no se limpia

@@ -1,4 +1,4 @@
-// Tablero del día en el Inicio del celular ("Lenguaje de diseño", Bruno
+// Tablero del día en el Inicio del celular ("Lenguaje de diseño", el dueño
 // 2026-09-26, mock `MovilDashboard.dc.html`): los mismos datos que el Inicio
 // de la PC (`tableroDelDia`, Regla 3), leídos de la base local — que se
 // sincroniza sola con la PC — en una columna: cuatro indicadores en 2×2, la

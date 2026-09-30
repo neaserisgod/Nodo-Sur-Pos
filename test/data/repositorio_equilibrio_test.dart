@@ -12,7 +12,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );
@@ -186,7 +186,7 @@ void main() {
       expect(DateTime.now().difference(movimiento.fecha).inSeconds.abs(), lessThan(10));
     });
 
-    test('con fecha explícita, el pago queda registrado en esa fecha (Bruno paga un día y carga otro)', () async {
+    test('con fecha explícita, el pago queda registrado en esa fecha (Dueño paga un día y carga otro)', () async {
       await registrarPagoFijo(
         db,
         gastoFijoId: alquilerId,
@@ -266,7 +266,7 @@ void main() {
     });
   });
 
-  group('gananciaBrutaDelMes sin ventas anuladas (Bruno, 2026-09-26)', () {
+  group('gananciaBrutaDelMes sin ventas anuladas (Dueño, 2026-09-26)', () {
     test('una venta anulada no suma ganancia del mes', () async {
       await crearVenta(fecha: DateTime(2026, 8, 10), precioCentavos: 1000, costoCentavos: 650);
       await crearVenta(fecha: DateTime(2026, 8, 11), precioCentavos: 5000, costoCentavos: 1000);

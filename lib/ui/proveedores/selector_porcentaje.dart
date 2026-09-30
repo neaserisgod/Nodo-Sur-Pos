@@ -1,4 +1,4 @@
-// Porcentaje de ganancia por proveedor (Bruno, 2026-09-29: "simplificar el
+// Porcentaje de ganancia por proveedor (El dueño, 2026-09-29: "simplificar el
 // sistema de precios: un selector de porcentaje por proveedor + redondeo
 // para arriba a la próxima centena, exceptuando los cigarros").
 //

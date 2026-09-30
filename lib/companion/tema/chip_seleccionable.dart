@@ -5,7 +5,7 @@
 // `hoja_edicion_masiva.dart` (`_chip`) — la misma pieza en dos archivos ya
 // cuenta como el caso de Regla 3, así que se junta acá.
 //
-// Con resplandor neón al estar seleccionado (Bruno, 2026-09-19: "la
+// Con resplandor neón al estar seleccionado (El dueño, 2026-09-19: "la
 // estética japonesa cyberpunk me vuela la gorra") — apagado, no compite con
 // las superficies "hero" que ya lo llevan.
 

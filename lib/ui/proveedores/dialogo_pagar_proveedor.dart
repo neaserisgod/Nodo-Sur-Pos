@@ -7,7 +7,7 @@
 // `AlertDialog`. "Separado: $X" es contexto, no el dato principal — va en
 // `textoSecundario` para que el campo sea lo primero que salta.
 //
-// Lo separado viene dividido entre cajón y Mercado Pago (Bruno,
+// Lo separado viene dividido entre cajón y Mercado Pago (El dueño,
 // 2026-09-26, `lib/domain/separacion_por_medio.dart`): dos campos, cada uno
 // prellenado con su parte y editable (mismo criterio que "Retirar
 // ganancia" en Reportes). Cada parte se registra por el medio del que sale

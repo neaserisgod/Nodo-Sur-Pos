@@ -1,4 +1,4 @@
-// Buscador contextual (2026-09-28, Bruno: "que busque según la pantalla que
+// Buscador contextual (2026-09-28, el dueño: "que busque según la pantalla que
 // estemos"): el campo de arriba filtra lo de cada pantalla en vez de buscar
 // productos para mandar a Venta.
 
@@ -30,7 +30,7 @@ void main() {
   testWidgets('en Proveedores busca productos y deja en la lista solo los proveedores que los tienen', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final serra = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle()).id;
     final arcor = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('A'))).getSingle()).id;
     await db.into(db.productos).insert(ProductosCompanion.insert(nombre: 'Coca-Cola 500ml', proveedorId: Value(serra)));
@@ -49,7 +49,7 @@ void main() {
     expect(find.descendant(of: detalle, matching: find.text('Coca-Cola 500ml')), findsNothing);
     final lista = find.byType(ListaProveedores);
     expect(find.descendant(of: lista, matching: find.text('Arcor')), findsOneWidget);
-    expect(find.descendant(of: lista, matching: find.text('Serra')), findsNothing);
+    expect(find.descendant(of: lista, matching: find.text('Distribuidora')), findsNothing);
 
     // Esc borra el filtro.
     await tester.tap(_buscador);
@@ -61,7 +61,7 @@ void main() {
   testWidgets('en Configuración busca ajustes por palabra clave y abre la única sección que coincide', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _pump(tester, PantallaConfiguracion(db: db, usuarioId: usuarioId));
     await tester.enterText(_buscador, 'fondo');
