@@ -3,13 +3,13 @@
 // hoja nueva sin reiniciar la app — el callejón sin salida que reemplaza
 // esto ("Cerrá la aplicación...") nunca tuvo cobertura.
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   // El viewport de test por defecto (800×600) es más chico que el piso real
@@ -30,7 +30,7 @@ void main() {
   late AppDatabase db;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
   });
   tearDown(() => db.close());
 

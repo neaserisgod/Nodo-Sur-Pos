@@ -10,7 +10,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +21,7 @@ import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/dialogo_cobro_posnet.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<VentaControlador> _controladorConCocaCola(
   AppDatabase db, {
@@ -95,7 +95,7 @@ MockClient _clienteConEstado(String estado) {
 void main() {
   late AppDatabase db;
 
-  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  setUp(() => db = baseDeTest());
   tearDown(() => db.close());
 
   testWidgets('aprobado: graba la venta y muestra "Listo"', (tester) async {

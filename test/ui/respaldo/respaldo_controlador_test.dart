@@ -7,18 +7,18 @@
 
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_respaldo.dart';
 import 'package:la_plazoleta/ui/respaldo/respaldo_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
   late Directory carpeta;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     carpeta = await Directory.systemTemp.createTemp('respaldo_controlador_test_');
   });
   tearDown(() async {

@@ -9,12 +9,12 @@
 // arranque cualquier sincronización.
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/identidad_sync.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/data/repositorio_sincronizacion.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   // Simular dos dispositivos a propósito abre dos `AppDatabase` a la vez —
@@ -27,8 +27,8 @@ void main() {
   late int usuarioId;
 
   setUp(() async {
-    pc = AppDatabase(NativeDatabase.memory());
-    celular = AppDatabase(NativeDatabase.memory());
+    pc = baseDeTest();
+    celular = baseDeTest();
     establecerIdDispositivo('desktop');
     usuarioId = (await pc.select(pc.usuarios).get()).first.id;
   });

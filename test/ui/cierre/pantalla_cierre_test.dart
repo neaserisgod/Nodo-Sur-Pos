@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -7,6 +6,7 @@ import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
 import 'package:la_plazoleta/ui/tema/superficie.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<int> _crearSesionConCigarrillos(AppDatabase db, int usuarioId) async {
   final sesionId = await abrirSesion(
@@ -52,7 +52,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int sesionId, int usuari
 void main() {
   group('pantalla de cierre — oculto hasta confirmar (Regla 1 y 2)', () {
     testWidgets('al entrar, no hay ningún número de diferencia ni separación en pantalla', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
@@ -65,7 +65,7 @@ void main() {
     });
 
     testWidgets('confirmar el conteo revela diferencia y separación juntas', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
@@ -85,7 +85,7 @@ void main() {
     testWidgets(
         'los tres totales grandes (efectivo, MP, lata) aparecen antes que nada, así solo hay que '
         'contar y pasar plata', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
@@ -101,7 +101,7 @@ void main() {
     });
 
     testWidgets('escribir la lata contada muestra la lata esperada y la diferencia', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
@@ -138,7 +138,7 @@ void main() {
 
   group('separación parcial (Regla 4)', () {
     testWidgets('si no alcanza el efectivo, avisa y muestra el pendiente', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId); // $4.500 en cigarrillos
@@ -155,7 +155,7 @@ void main() {
 
   group('flujo completo: cerrar y reabrir', () {
     testWidgets('cerrar caja muestra la pantalla final, y reabrir vuelve al conteo', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId =

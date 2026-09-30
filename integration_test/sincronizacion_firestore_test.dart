@@ -22,6 +22,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/identidad_sync.dart';
 import 'package:la_plazoleta/data/sincronizacion_firestore.dart';
 import 'package:la_plazoleta/firebase_options.dart';
+import '../test/helpers/base_para_tests.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -54,8 +55,8 @@ void main() {
   });
 
   testWidgets('una fila creada en una base aparece en la otra, vía Firestore', (tester) async {
-    final dbEscritorio = AppDatabase(NativeDatabase.memory());
-    final dbCelular = AppDatabase(NativeDatabase.memory());
+    final dbEscritorio = baseDeTest();
+    final dbCelular = baseDeTest();
     addTearDown(dbEscritorio.close);
     addTearDown(dbCelular.close);
 

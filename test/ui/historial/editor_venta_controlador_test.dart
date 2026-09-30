@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_historial.dart';
@@ -10,6 +9,7 @@ import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/ui/historial/editor_venta_controlador.dart';
 
 import '../../helpers/planilla_fixture.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
@@ -19,7 +19,7 @@ void main() {
   late Producto cocaCola;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     usuarioEditorId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Ayuda finde'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);

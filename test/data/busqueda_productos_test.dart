@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/busqueda_productos.dart';
 import 'package:la_plazoleta/data/database.dart';
+import '../helpers/base_para_tests.dart';
 
 Future<Producto> _crearProducto(
   AppDatabase db, {
@@ -60,7 +60,7 @@ void main() {
 
   group('buscarProductos', () {
     late AppDatabase db;
-    setUp(() => db = AppDatabase(NativeDatabase.memory()));
+    setUp(() => db = baseDeTest());
     tearDown(() => db.close());
 
     test('ignora mayúsculas y acentos', () async {

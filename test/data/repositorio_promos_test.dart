@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
@@ -9,6 +8,7 @@ import 'package:la_plazoleta/data/repositorio_promos.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/venta.dart';
+import '../helpers/base_para_tests.dart';
 
 /// Creador de promos (Bruno, 2026-09-29): costo de 2 o más artículos + un
 /// porcentaje, sin pasarse del precio de lista; se vende como un producto más
@@ -23,7 +23,7 @@ void main() {
   late int galletitas;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     provA = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PA', nombre: 'Prov A'));

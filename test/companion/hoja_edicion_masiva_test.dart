@@ -7,7 +7,6 @@
 // 100% o más muestra una advertencia explícita antes de ese click final.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/hoja_edicion_masiva.dart';
@@ -15,6 +14,7 @@ import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/tema/hoja_vidrio.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
+import '../helpers/base_para_tests.dart';
 
 Future<void> _abrir(
   WidgetTester tester,
@@ -61,7 +61,7 @@ void main() {
   late int productoId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     productoId = await db
         .into(db.productos)

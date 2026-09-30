@@ -7,12 +7,12 @@
 // corresponde.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/venta.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
@@ -20,7 +20,7 @@ void main() {
   late int usuarioId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     puerto = PuertoLocal(db);
     usuarioId = (await db.select(db.usuarios).get()).first.id; // "Bruno", sembrado
   });

@@ -322,7 +322,7 @@ class _AsiSale extends StatelessWidget {
 
   static final _ejemplo = construirTicket(
     fecha: DateTime(2026, 9, 26, 16, 52),
-    vendedor: 'Bruno',
+    vendedor: 'Vendedor',
     lineas: const [
       LineaTicket(nombreProducto: 'Cerveza lata', cantidad: 2, subtotalCentavos: 420000),
       LineaTicket(nombreProducto: 'Gaseosa cola', cantidad: 1, subtotalCentavos: 290000),

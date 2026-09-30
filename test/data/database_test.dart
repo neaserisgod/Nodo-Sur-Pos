@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
+import '../helpers/base_para_tests.dart';
 
-AppDatabase abrirBaseDePrueba() => AppDatabase(NativeDatabase.memory());
+AppDatabase abrirBaseDePrueba() => baseDeTest();
 
 void main() {
   // Bug real (2026-09-14): se agregó un paso `if (from < 28) { ... }` a
@@ -31,7 +31,7 @@ void main() {
           .map((m) => int.parse(m.group(1)!));
       final pasoMasAlto = pasos.reduce((a, b) => a > b ? a : b);
 
-      final schemaVersion = AppDatabase(NativeDatabase.memory()).schemaVersion;
+      final schemaVersion = baseDeTest().schemaVersion;
       expect(
         schemaVersion,
         greaterThanOrEqualTo(pasoMasAlto),

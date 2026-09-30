@@ -18,12 +18,12 @@
 // Dashboard).
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/main.dart';
+import 'helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -64,7 +64,7 @@ void main() {
   late int usuarioId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
         .insert(UsuariosCompanion.insert(nombre: 'Bruno'));

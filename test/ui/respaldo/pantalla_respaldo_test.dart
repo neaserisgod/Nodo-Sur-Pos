@@ -4,19 +4,18 @@
 // respaldo_controlador_test.dart para la cobertura con carpeta configurada,
 // hecha con test() plano).
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_respaldo.dart';
 import 'package:la_plazoleta/ui/respaldo/dialogo_confirmar_restaurar.dart';
 import 'package:la_plazoleta/ui/respaldo/pantalla_respaldo.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   group('sin carpeta configurada', () {
     testWidgets('avisa que falta configurar y el botón de respaldar está deshabilitado', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
 
       await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: ContenidoRespaldo(db: db, usuarioId: 1))));
@@ -37,7 +36,7 @@ void main() {
     );
 
     testWidgets('muestra la confirmación fuerte, y cancelar no llama a nada', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       var resolverLlamado = false;
       var reinicioLlamado = false;
@@ -78,7 +77,7 @@ void main() {
 
     testWidgets('confirmar cierra la base, resuelve el destino, copia (inyectado) y reinicia, en orden',
         (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       final pasos = <String>[];
 
       await tester.pumpWidget(MaterialApp(

@@ -7,7 +7,6 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/servicio_sincronizacion.dart';
@@ -16,6 +15,7 @@ import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/servidor/servidor_companion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +28,8 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    pc = AppDatabase(NativeDatabase.memory());
-    celular = AppDatabase(NativeDatabase.memory());
+    pc = baseDeTest();
+    celular = baseDeTest();
     final token = await regenerarTokenCompanion(pc);
     final server = await iniciarServidorCompanion(pc, puerto: 0);
     addTearDown(server.close);

@@ -9,7 +9,6 @@
 // misma "Reportes" sí funcionaba (pasa por `_irAReportes`, no por acá), así
 // que el síntoma era justo ese: falla seguido, pero no siempre.
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -18,6 +17,7 @@ import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -51,7 +51,7 @@ void main() {
   testWidgets(
     'desde una pantalla de gestión (no Venta), tocar "Separaciones" en la navbar llega a Separaciones',
     (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)

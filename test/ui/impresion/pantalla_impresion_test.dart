@@ -3,12 +3,12 @@
 // testWidgets en este entorno). La cobertura de red/disco está en
 // impresion_controlador_test.dart con test() plano.
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/impresion/pantalla_impresion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
 /// (fija, no la flotante de Material) — cada campo que un test necesita
@@ -30,7 +30,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 
 void main() {
   testWidgets('sin nada configurado: ticket de prueba deshabilitado, avisa que falta carpeta', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
@@ -41,7 +41,7 @@ void main() {
   });
 
   testWidgets('cargar access token y terminal id habilita el ticket de prueba', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
@@ -57,7 +57,7 @@ void main() {
   });
 
   testWidgets('buscar por número de venta lista solo esa venta', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await db.into(db.sesionesDeCaja).insert(
@@ -89,7 +89,7 @@ void main() {
     // probar el toque en sí en un test — `getDirectoryPath()` real se
     // cuelga en `testWidgets`, ver encabezado de este archivo — solo que
     // el botón ya no está deshabilitado de entrada).
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await db.into(db.sesionesDeCaja).insert(

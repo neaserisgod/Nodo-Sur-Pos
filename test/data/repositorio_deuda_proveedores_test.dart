@@ -1,10 +1,9 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
 import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import '../helpers/base_para_tests.dart';
 
 /// Cuenta corriente con proveedores (Bruno, 2026-09-29): el saldo es cargos
 /// menos pagos, y un pago que sale de una caja baja el arqueo y queda con
@@ -16,7 +15,7 @@ void main() {
   late int proveedorId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 1000000, mpInicialCentavos: 500000);
     proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZM', nombre: 'Mazzota test'));

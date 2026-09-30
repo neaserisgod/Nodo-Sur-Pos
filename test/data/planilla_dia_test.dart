@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/planilla_dia.dart';
@@ -9,6 +8,7 @@ import 'package:la_plazoleta/domain/recargo_cigarrillos.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 import '../helpers/planilla_fixture.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
@@ -16,7 +16,7 @@ void main() {
   late int proveedorFId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     proveedorFId = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('F'))).getSingle()).id;
   });

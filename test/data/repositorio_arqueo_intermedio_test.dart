@@ -9,11 +9,11 @@
 // contempla.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_arqueo_intermedio.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
@@ -23,7 +23,7 @@ void main() {
   late Caja cajaLata;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id;

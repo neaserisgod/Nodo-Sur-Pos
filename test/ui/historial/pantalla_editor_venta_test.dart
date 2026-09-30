@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -9,6 +8,7 @@ import 'package:la_plazoleta/domain/recargo_cigarrillos.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_editor_venta.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db, {required int ventaId, required int usuarioId}) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -23,7 +23,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, {required int ventaId, r
 
 void main() {
   testWidgets('cambiar la cantidad de una línea actualiza el total en pantalla', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
@@ -65,7 +65,7 @@ void main() {
   });
 
   testWidgets('guardar sin motivo no cierra la pantalla', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);

@@ -9,10 +9,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/servicios/comparador_precios.dart';
+import '../helpers/base_para_tests.dart';
 
 /// Arma un CSV pipe-delimited con BOM, igual que los archivos reales de
 /// SEPA — [filas] no incluye el encabezado, que sale de [columnas].
@@ -128,7 +128,7 @@ Uint8List _zipNacionalDeMuestra() {
 void main() {
   late AppDatabase db;
 
-  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  setUp(() => db = baseDeTest());
   tearDown(() => db.close());
 
   test(

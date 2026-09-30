@@ -4,15 +4,14 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/seleccion_servicio.dart';
 import 'package:la_plazoleta/companion/servicio_companion_offline.dart';
-import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/servidor/servidor_companion.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +19,7 @@ void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
   test('PC alcanzable: resuelve a ClienteCompanion', () async {
-    final pc = AppDatabase(NativeDatabase.memory());
+    final pc = baseDeTest();
     final token = await regenerarTokenCompanion(pc);
     final server = await iniciarServidorCompanion(pc, puerto: 0);
     addTearDown(server.close);
@@ -34,7 +33,7 @@ void main() {
 
   test('PC no alcanzable: resuelve a ServicioCompanionOffline, rápido (no espera el ping largo)', () async {
     const conexion = DatosConexion(ip: '127.0.0.1', puerto: 1, token: 'x');
-    final local = AppDatabase(NativeDatabase.memory());
+    final local = baseDeTest();
     addTearDown(local.close);
 
     final arranque = DateTime.now();
@@ -50,7 +49,7 @@ void main() {
   });
 
   test('ServicioCompanionOffline: todo delega a PuertoLocal salvo abrirSesion', () async {
-    final local = AppDatabase(NativeDatabase.memory());
+    final local = baseDeTest();
     addTearDown(local.close);
     final servicio = ServicioCompanionOffline(PuertoLocal(local));
 

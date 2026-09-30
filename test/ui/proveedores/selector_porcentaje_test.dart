@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -8,6 +7,7 @@ import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 
 import '../../capturas/capturador.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// Porcentaje de ganancia por proveedor (Bruno, 2026-09-29).
 void main() {
@@ -16,7 +16,7 @@ void main() {
   late int proveedorId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     proveedorId = await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle().then((p) => p.id);
     await db.into(db.productos).insert(
