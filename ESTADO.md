@@ -101,7 +101,13 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   El celular todavía no sigue los módulos (su pantalla de carga histórica sigue
   visible). Suite: 1329 verdes + 4 que no compilan por `test/capturas/`.
   Faltan: fiado, retiro de ganancias, equilibrio, turnos, Point, pesables y caja aparte.
-- **Fases que siguen**: 5b/5c módulos restantes activables; 6 vocabulario; 7 asistente de primer arranque;
+- **Fase 5b (fiado, retiro de ganancias, equilibrio) — hecha**: sin **Fiado** el
+  Inicio no muestra la tarjeta de fiados y encargues; sin **Retiro de ganancias**
+  la tarjeta de un proveedor en Separaciones ya no abre el diálogo de ganancia
+  (retener/retirar); sin **Equilibrio** el Inicio queda solo con "Hoy" (sin
+  "Este mes"). El Inicio reacciona al instante al interruptor. Faltan: turnos,
+  Point, pesables y caja aparte.
+- **Fases que siguen**: 5c módulos restantes activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---

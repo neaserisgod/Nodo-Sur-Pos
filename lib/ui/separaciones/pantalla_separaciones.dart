@@ -23,6 +23,8 @@ import 'package:provider/provider.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_reposicion.dart' show SeparacionDelDia;
 import '../../domain/dinero.dart';
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../domain/periodo.dart';
 import '../comun/armazon_gestion.dart';
 import '../navegacion/busqueda_contextual.dart';
@@ -1070,7 +1072,7 @@ class _TarjetaVendido extends StatelessWidget {
       ),
       child: Presionable(
         radio: radioSuperficieEscritorio,
-        onTap: proveedor == null
+        onTap: proveedor == null || !moduloActivo(Modulo.retiroGanancias)
             ? null
             : () => mostrarDialogoGananciaProveedor(
                 context,
