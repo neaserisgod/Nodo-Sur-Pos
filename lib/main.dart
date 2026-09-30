@@ -23,6 +23,9 @@ import 'ui/tema/tema.dart';
 import 'ui/venta/venta_en_curso.dart';
 import 'ui/ventana/ventana_escritorio.dart';
 import 'domain/marca.dart';
+import 'data/repositorio_configuracion.dart';
+import 'domain/modulos.dart';
+import 'servicios/modulos_activos.dart';
 import 'servicios/marca_actual.dart';
 
 Future<void> main() async {
@@ -92,6 +95,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   StreamSubscription<AuthState>? _sesionSub;
   SincronizacionSupabase? _syncSupabase;
   StreamSubscription<MarcaNegocio>? _marcaSub;
+  StreamSubscription<ModulosNegocio>? _modulosSub;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -108,6 +112,8 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     );
     // El nombre del comercio que se ve en la ventana, el menú y el ticket sigue a la configuración.
     _marcaSub = seguirMarca(widget.db);
+    // Los módulos que el comercio tiene apagados se esconden de la app (pantallas, botones, atajos).
+    _modulosSub = seguirModulos(widget.db);
     _iniciarServidorCompanion();
     _actualizarComparacionPrecios();
     _actualizarComparacionPreciosTodoATuCasa();
@@ -164,6 +170,8 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   // sin pisar lo de la otra fuente (`precios_referencia_externa.fuente`).
   Future<void> _actualizarComparacionPrecios() async {
     try {
+      // Sin el módulo no se descarga nada (ni se gasta datos) para algo que no se ve.
+      if (!(await modulosNegocioActuales(widget.db)).estaActivo(Modulo.compararPrecios)) return;
       await actualizarComparacionPrecios(widget.db);
     } catch (error) {
       debugPrint('Comparador de precios (SEPA): no se pudo actualizar ($error)');
@@ -172,6 +180,8 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
 
   Future<void> _actualizarComparacionPreciosTodoATuCasa() async {
     try {
+      // Sin el módulo no se descarga nada (ni se gasta datos) para algo que no se ve.
+      if (!(await modulosNegocioActuales(widget.db)).estaActivo(Modulo.compararPrecios)) return;
       await actualizarComparacionPreciosTodoATuCasa(widget.db);
     } catch (error) {
       debugPrint('Comparador de precios (Todo a tu Casa): no se pudo actualizar ($error)');
@@ -200,6 +210,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   void dispose() {
     _tickHorario?.cancel();
     _marcaSub?.cancel();
+    _modulosSub?.cancel();
     _servidorCompanion?.close(force: true);
     _sesionSub?.cancel();
     _syncSupabase?.detener();

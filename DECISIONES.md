@@ -1282,3 +1282,14 @@ Decididas con el dueño antes de empezar (fase 1):
 - **Con caja aparte, cobra en efectivo.** Al activarlo en Avanzado el medio de
   pago se guarda como Efectivo y el selector se oculta.
 - **Las dos cajas siguen sembrándose**; volverla opcional es la fase 5.
+
+### Fase 5a: módulos activables, los más aislados (2026-09-30)
+
+- **Esconder, no borrar.** Un módulo apagado solo deja de mostrarse y de
+  correr; los datos quedan y al prenderlo vuelve todo. Las claves de la base no
+  cambian.
+- **Mismo patrón que la marca**: un `ValueNotifier` global (`modulosActuales`)
+  que sigue la configuración, así funciona también con lo que llega por sync.
+  Hasta leer la base todo está activo.
+- **Orden**: de lo más aislado a lo más enredado; cada módulo con su test con el
+  interruptor prendido y apagado. Esta parte: promos, comparador, carga histórica.

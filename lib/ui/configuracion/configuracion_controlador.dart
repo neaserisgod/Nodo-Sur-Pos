@@ -9,10 +9,12 @@ import '../../data/repositorio_medios_pago.dart';
 import '../../data/repositorio_productos.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../data/repositorio_usuarios.dart';
+import '../../domain/modulos.dart';
 import '../../servidor/servidor_companion.dart';
 
 enum SeccionConfiguracion {
   comercio,
+  modulos,
   cigarrillos,
   cajaYRedondeo,
   vuelto,
@@ -149,6 +151,11 @@ class ConfiguracionControlador extends ChangeNotifier {
 
   Future<void> guardarFondoFijo(int monto) async {
     await configurarFondoFijo(db, monto);
+    await cargarTodo();
+  }
+
+  Future<void> cambiarModulo(Modulo modulo, {required bool activo}) async {
+    await configurarModulo(db, modulo, activo: activo);
     await cargarTodo();
   }
 
