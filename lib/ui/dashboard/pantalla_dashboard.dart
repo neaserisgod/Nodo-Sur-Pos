@@ -35,7 +35,9 @@ import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
+import '../../domain/modulos.dart';
 import '../../servicios/marca_actual.dart';
+import '../../servicios/modulos_activos.dart';
 import '../comun/dialogo_datos_comercio.dart';
 
 enum _Vista { hoy, mes }
@@ -124,10 +126,17 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder<ModulosNegocio>(
+    valueListenable: modulosActuales,
+    builder: (context, modulos, _) => _construir(context, modulos),
+  );
+
+  Widget _construir(BuildContext context, ModulosNegocio modulos) {
     if (_cargando) return const SizedBox.shrink();
     final sesion = _sesion;
     final hoy = widget.ahora ?? DateTime.now();
+    // Sin el módulo de equilibrio no hay vista mensual: queda solo "Hoy".
+    final verMes = modulos.estaActivo(Modulo.equilibrio) && _vista == _Vista.mes;
 
     return PantallaGestion(
       db: widget.db,
@@ -135,24 +144,26 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
       usuarioId: sesion?.usuarioAbrioId ?? 0,
       sesionCajaId: sesion?.id,
       titulo: 'Inicio',
-      subtitulo: _vista == _Vista.hoy
+      subtitulo: !verMes
           ? 'Hoy · ${fechaLarga(hoy)}${sesion == null ? ' · caja cerrada' : ''}'
           : 'Este mes · ${mesLargo(hoy)}',
       accion: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          GrupoPildoras<_Vista>(
-            opciones: const [(_Vista.hoy, 'Hoy'), (_Vista.mes, 'Este mes')],
-            elegida: _vista,
-            oscura: true,
-            onElegir: (v) => setState(() => _vista = v),
-          ),
-          const SizedBox(width: Espaciado.md),
+          if (modulos.estaActivo(Modulo.equilibrio)) ...[
+            GrupoPildoras<_Vista>(
+              opciones: const [(_Vista.hoy, 'Hoy'), (_Vista.mes, 'Este mes')],
+              elegida: _vista,
+              oscura: true,
+              onElegir: (v) => setState(() => _vista = v),
+            ),
+            const SizedBox(width: Espaciado.md),
+          ],
           BotonDestacado(texto: 'Ir a Venta', icono: IconosPlazoleta.pointOfSaleOutlined, onTap: () => _ir('venta')),
         ],
       ),
-      child: _vista == _Vista.hoy
-          ? _VistaHoy(tablero: _tablero!, alTocarSeparar: () => _ir('separaciones'), hoy: hoy)
+      child: !verMes
+          ? _VistaHoy(tablero: _tablero!, alTocarSeparar: () => _ir('separaciones'), hoy: hoy, conPendientes: modulos.estaActivo(Modulo.fiado))
           : SingleChildScrollView(
               child: ContenidoEquilibrio(
                 key: ValueKey(_version),
@@ -170,7 +181,10 @@ String _plata(int centavos) => formatearARS(centavos);
 String _porcentaje(double fraccion) => '${(fraccion * 100).round()}%';
 
 class _VistaHoy extends StatelessWidget {
-  const _VistaHoy({required this.tablero, required this.alTocarSeparar, required this.hoy});
+  const _VistaHoy({required this.tablero, required this.alTocarSeparar, required this.hoy, required this.conPendientes});
+
+  /// Falso sin el módulo de fiado: no hay tarjeta de fiados y encargues.
+  final bool conPendientes;
 
   final TableroDelDia tablero;
   final VoidCallback alTocarSeparar;
@@ -184,7 +198,7 @@ class _VistaHoy extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, restricciones) {
         final entra = restricciones.maxHeight >= 700;
-        final abajo = _FilaDeAbajo(tablero: tablero);
+        final abajo = _FilaDeAbajo(tablero: tablero, conPendientes: conPendientes);
         final contenido = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -317,9 +331,10 @@ class _ComoTePagaron extends StatelessWidget {
 }
 
 class _FilaDeAbajo extends StatelessWidget {
-  const _FilaDeAbajo({required this.tablero});
+  const _FilaDeAbajo({required this.tablero, required this.conPendientes});
 
   final TableroDelDia tablero;
+  final bool conPendientes;
 
   @override
   Widget build(BuildContext context) {
@@ -329,8 +344,10 @@ class _FilaDeAbajo extends StatelessWidget {
         Expanded(child: _MasVendidos(tablero: tablero)),
         const SizedBox(width: Espaciado.lg),
         Expanded(child: _StockBajo(tablero: tablero)),
-        const SizedBox(width: Espaciado.lg),
-        Expanded(child: _Pendientes(tablero: tablero)),
+        if (conPendientes) ...[
+          const SizedBox(width: Espaciado.lg),
+          Expanded(child: _Pendientes(tablero: tablero)),
+        ],
       ],
     );
   }

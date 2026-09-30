@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
@@ -252,6 +254,16 @@ void main() {
       expect(p.colchonReposicionCentavos, 40000);
       expect(p.gananciaRevisadaFecha, isNotNull);
       expect(await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('RETIRO'))).get(), isEmpty);
+      await desmontar(tester);
+    });
+
+    testWidgets('sin el módulo Retiro de ganancias, tocar la tarjeta no abre nada', (tester) async {
+      await ventaSerra();
+      addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+      modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.retiroGanancias, activo: false);
+      await abrirGananciaDeSerra(tester);
+
+      expect(find.text('Ganancia — Serra'), findsNothing);
       await desmontar(tester);
     });
 
