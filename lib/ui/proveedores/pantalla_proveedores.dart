@@ -18,6 +18,8 @@ import 'package:provider/provider.dart';
 
 import '../navegacion/refresco_por_celular.dart';
 import '../comparar_precios/pantalla_comparar_precios.dart';
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../comun/armazon_gestion.dart';
 import '../navegacion/busqueda_contextual.dart';
@@ -165,11 +167,12 @@ class _AccionesProveedores extends StatelessWidget {
           tooltip: 'Más acciones',
           onSelected: (accion) => accion(),
           itemBuilder: (context) => [
-            PopupMenuItem(
-              value: () =>
-                  mostrarDialogoPromos(context, db: db, usuarioId: usuarioId),
-              child: const Text('Promos'),
-            ),
+            if (moduloActivo(Modulo.promos))
+              PopupMenuItem(
+                value: () =>
+                    mostrarDialogoPromos(context, db: db, usuarioId: usuarioId),
+                child: const Text('Promos'),
+              ),
             PopupMenuItem(
               value: () => mostrarDialogoImportarCsv(
                 context,
@@ -190,18 +193,19 @@ class _AccionesProveedores extends StatelessWidget {
             // Antes era un apartado propio del menú (2026-09-26, Bruno:
             // "que apartados podemos resumir, agrupar"): compara los precios
             // de los productos, que viven acá.
-            PopupMenuItem(
-              value: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PantallaCompararPrecios(
-                    db: db,
-                    usuarioId: usuarioId,
-                    sesionCajaId: c.sesionCajaId,
+            if (moduloActivo(Modulo.compararPrecios))
+              PopupMenuItem(
+                value: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PantallaCompararPrecios(
+                      db: db,
+                      usuarioId: usuarioId,
+                      sesionCajaId: c.sesionCajaId,
+                    ),
                   ),
                 ),
+                child: const Text('Comparar precios'),
               ),
-              child: const Text('Comparar precios'),
-            ),
           ],
         ),
         const SizedBox(width: Espaciado.sm),

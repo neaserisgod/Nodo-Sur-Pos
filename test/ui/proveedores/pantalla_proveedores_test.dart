@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/comun/boton_destacado.dart';
 import 'package:la_plazoleta/ui/proveedores/detalle_proveedor.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
@@ -793,6 +795,30 @@ void main() {
       expect(f.cajaAparte, isTrue);
       expect(f.medioPago, 'Efectivo');
       expect(find.text('Ver lata'), findsOneWidget);
+    });
+
+    testWidgets('con los módulos Promos y Comparador apagados, el menú "Más acciones" no los ofrece', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final p = await preparar(db);
+      await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
+
+      await tester.tap(find.byTooltip('Más acciones'));
+      await tester.pumpAndSettle();
+      expect(find.text('Promos'), findsOneWidget);
+      expect(find.text('Comparar precios'), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+
+      modulosActuales.value = ModulosNegocio.todosActivos
+          .conModulo(Modulo.promos, activo: false)
+          .conModulo(Modulo.compararPrecios, activo: false);
+      addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+      await tester.tap(find.byTooltip('Más acciones'));
+      await tester.pumpAndSettle();
+      expect(find.text('Promos'), findsNothing);
+      expect(find.text('Comparar precios'), findsNothing);
+      expect(find.text('Importar CSV'), findsOneWidget);
     });
   });
 }

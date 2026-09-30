@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
@@ -20,6 +22,21 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
 }
 
 void main() {
+  testWidgets('"Cargar día histórico" solo se ofrece con el módulo Carga histórica prendido', (tester) async {
+    final db = baseDeTest();
+    addTearDown(db.close);
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+
+    await _pump(tester, db, usuarioId);
+    expect(find.text('Cargar día histórico'), findsOneWidget);
+
+    modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cargaHistorica, activo: false);
+    await tester.pump();
+    expect(find.text('Cargar día histórico'), findsNothing);
+    expect(find.text('Cierres de caja'), findsOneWidget);
+  });
+
   testWidgets('sin días cerrados, avisa que no hay nada todavía', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);

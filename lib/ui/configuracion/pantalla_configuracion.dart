@@ -23,6 +23,7 @@ import '../navegacion/busqueda_contextual.dart';
 import 'configuracion_controlador.dart';
 import '../tema/iconos.dart';
 import '../../domain/marca.dart';
+import '../../domain/modulos.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
   const PantallaConfiguracion({
@@ -145,6 +146,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
     switch (c.seccionActual) {
       case SeccionConfiguracion.comercio:
         return _SeccionComercio(c: c);
+      case SeccionConfiguracion.modulos:
+        return _SeccionModulos(c: c);
       case SeccionConfiguracion.cigarrillos:
         return _SeccionRecargoCigarrillos(c: c);
       case SeccionConfiguracion.cajaYRedondeo:
@@ -178,6 +181,7 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
 /// Lo que alguien escribiría buscando esa sección sin saber cómo se llama.
 String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.comercio => 'nombre negocio comercio ticket encabezado direccion datos',
+  SeccionConfiguracion.modulos => 'modulos funciones activar desactivar apagar promos fiado pesables turnos',
   SeccionConfiguracion.cigarrillos => 'atado suelto lata serra recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
   SeccionConfiguracion.vuelto => 'caramelo vuelto producto alt c',
@@ -195,6 +199,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
 
 String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.comercio => 'Mi comercio',
+  SeccionConfiguracion.modulos => 'Módulos',
   SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
   SeccionConfiguracion.vuelto => 'Botón de vuelto',
@@ -209,6 +214,41 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cuentaGoogle => 'Cuenta de Google',
   SeccionConfiguracion.actualizaciones => 'Versión y actualizaciones',
 };
+
+class _SeccionModulos extends StatelessWidget {
+  const _SeccionModulos({required this.c});
+  final ConfiguracionControlador c;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final modulos = ModulosNegocio.desdeTexto(c.configuracionNegocio?.modulosDesactivados ?? '');
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Módulos', style: textTheme.titleMedium),
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            'Apagá lo que tu comercio no usa: deja de aparecer en la app. No se borra nada, y al prenderlo vuelve todo como estaba. Vender, cobrar, el stock y el cierre de caja siempre están.',
+            style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          for (final m in Modulo.values)
+            SwitchListTile(
+              key: Key('modulo_${m.clave}'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(m.etiqueta),
+              subtitle: Text(m.descripcion),
+              value: modulos.estaActivo(m),
+              onChanged: (v) => c.cambiarModulo(m, activo: v),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SeccionComercio extends StatefulWidget {
   const _SeccionComercio({required this.c});

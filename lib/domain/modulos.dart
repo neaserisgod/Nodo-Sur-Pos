@@ -49,6 +49,33 @@ enum Modulo {
 
   const Modulo(this.clave);
 
+  /// Nombre y explicación para la pantalla de Configuración.
+  String get etiqueta => switch (this) {
+    cajaAparte => 'Caja aparte para un proveedor',
+    pesables => 'Productos por peso',
+    promos => 'Promos y combos',
+    fiado => 'Fiado y cuenta corriente',
+    retiroGanancias => 'Retiro de ganancias',
+    equilibrio => 'Gastos fijos y equilibrio',
+    turnos => 'Varios usuarios y turnos',
+    cargaHistorica => 'Carga histórica',
+    compararPrecios => 'Comparador de precios',
+    cobroPoint => 'Cobro con Mercado Pago Point',
+  };
+
+  String get descripcion => switch (this) {
+    cajaAparte => 'Un proveedor que cobra solo en efectivo y lleva su propia caja (la lata).',
+    pesables => 'Productos que se venden por gramos o kilos, como los fiambres.',
+    promos => 'Armar promos y combos con varios productos.',
+    fiado => 'Anotar lo que los clientes deben y sus pagos.',
+    retiroGanancias => 'Retirar la ganancia del día al revisar el cierre.',
+    equilibrio => 'Gastos fijos y cuánto hay que vender para cubrirlos.',
+    turnos => 'Más de un usuario y cambio de turno.',
+    cargaHistorica => 'Cargar planillas de días anteriores.',
+    compararPrecios => 'Comparar tus precios con los de un sitio externo.',
+    cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
+  };
+
   /// Identificador estable que se guarda en la base.
   final String clave;
 

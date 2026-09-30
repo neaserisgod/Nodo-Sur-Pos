@@ -12,6 +12,8 @@ import 'package:provider/provider.dart';
 
 import '../navegacion/busqueda_contextual.dart';
 import '../navegacion/refresco_por_celular.dart';
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../carga_historica/pantalla_carga_historica.dart';
 import '../comun/armazon_gestion.dart';
@@ -109,7 +111,7 @@ class _PantallaHistorialState extends State<PantallaHistorial> with RefrescoPorC
                   onElegir: (v) => setState(() => _vista = v),
                 ),
                 const SizedBox(width: Espaciado.md),
-                BotonSecundario(texto: 'Cargar día histórico', onPressed: _irACargaHistorica),
+                SiModulo(Modulo.cargaHistorica, hijo: BotonSecundario(texto: 'Cargar día histórico', onPressed: _irACargaHistorica)),
               ],
             ),
             child: switch (_vista) {

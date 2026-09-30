@@ -92,7 +92,16 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   aparte (cobra solo en efectivo)"; con él el proveedor cobra en efectivo y
   tiene su panel de lata. Las columnas `esLata`/`lata*` no se renombran.
   Suite: 1322 verdes + 4 que no compilan por `test/capturas/`; `schemaVersion` 45.
-- **Fases que siguen**: 5 módulos activables; 6 vocabulario; 7 asistente de primer arranque;
+- **Fase 5a (módulos activables, primera parte) — hecha**: `servicios/modulos_activos.dart`
+  (`modulosActuales`, `seguirModulos`, `moduloActivo`, widget `SiModulo`), alimentado
+  desde `main.dart`. Configuración → "Módulos" con un interruptor por módulo. Ya
+  se esconden: **Promos**, **Comparador de precios** (menú "Más acciones" de
+  Proveedores y la descarga en segundo plano al arrancar) y **Carga histórica**
+  (botón de Historial). Todo activo = igual que antes; no se borra ningún dato.
+  El celular todavía no sigue los módulos (su pantalla de carga histórica sigue
+  visible). Suite: 1329 verdes + 4 que no compilan por `test/capturas/`.
+  Faltan: fiado, retiro de ganancias, equilibrio, turnos, Point, pesables y caja aparte.
+- **Fases que siguen**: 5b/5c módulos restantes activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---
