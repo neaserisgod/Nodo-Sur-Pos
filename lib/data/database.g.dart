@@ -16446,6 +16446,42 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
       'REFERENCES productos (id)',
     ),
   );
+  static const VerificationMeta _nombreComercioMeta = const VerificationMeta(
+    'nombreComercio',
+  );
+  @override
+  late final GeneratedColumn<String> nombreComercio = GeneratedColumn<String>(
+    'nombre_comercio',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _encabezadoTicketMeta = const VerificationMeta(
+    'encabezadoTicket',
+  );
+  @override
+  late final GeneratedColumn<String> encabezadoTicket = GeneratedColumn<String>(
+    'encabezado_ticket',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _modulosDesactivadosMeta =
+      const VerificationMeta('modulosDesactivados');
+  @override
+  late final GeneratedColumn<String> modulosDesactivados =
+      GeneratedColumn<String>(
+        'modulos_desactivados',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -16489,6 +16525,9 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     recargoSueltoCentavos,
     pasoRedondeoCentavos,
     productoVueltoId,
+    nombreComercio,
+    encabezadoTicket,
+    modulosDesactivados,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -16553,6 +16592,33 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         ),
       );
     }
+    if (data.containsKey('nombre_comercio')) {
+      context.handle(
+        _nombreComercioMeta,
+        nombreComercio.isAcceptableOrUnknown(
+          data['nombre_comercio']!,
+          _nombreComercioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('encabezado_ticket')) {
+      context.handle(
+        _encabezadoTicketMeta,
+        encabezadoTicket.isAcceptableOrUnknown(
+          data['encabezado_ticket']!,
+          _encabezadoTicketMeta,
+        ),
+      );
+    }
+    if (data.containsKey('modulos_desactivados')) {
+      context.handle(
+        _modulosDesactivadosMeta,
+        modulosDesactivados.isAcceptableOrUnknown(
+          data['modulos_desactivados']!,
+          _modulosDesactivadosMeta,
+        ),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -16610,6 +16676,18 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         DriftSqlType.int,
         data['${effectivePrefix}producto_vuelto_id'],
       ),
+      nombreComercio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre_comercio'],
+      )!,
+      encabezadoTicket: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encabezado_ticket'],
+      )!,
+      modulosDesactivados: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modulos_desactivados'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -16652,6 +16730,22 @@ class ConfiguracionNegocio extends DataClass
   /// (`_referenciasCruzadas`, `repositorio_sincronizacion.dart`).
   final int? productoVueltoId;
 
+  /// Generalización del producto (fase 1): datos propios de cada comercio.
+  /// Las tres columnas nacen vacías — nada las lee todavía con efecto; las
+  /// fases siguientes las usan (marca visible, ticket, módulos). Vacío
+  /// significa "sin configurar", no "sin nombre a propósito".
+  ///
+  /// Nombre del comercio: lo que se ve en la ventana, el ticket y el celular.
+  final String nombreComercio;
+
+  /// Encabezado del ticket, una línea por renglón (nombre, dirección…).
+  final String encabezadoTicket;
+
+  /// Módulos apagados, claves separadas por coma (`domain/modulos.dart`).
+  /// Vacío = todos activos, que es como funciona la app hoy. Se guardan los
+  /// apagados para que un módulo nuevo nazca activo sin migración.
+  final String modulosDesactivados;
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   final String? globalId;
@@ -16664,6 +16758,9 @@ class ConfiguracionNegocio extends DataClass
     required this.recargoSueltoCentavos,
     required this.pasoRedondeoCentavos,
     this.productoVueltoId,
+    required this.nombreComercio,
+    required this.encabezadoTicket,
+    required this.modulosDesactivados,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -16683,6 +16780,9 @@ class ConfiguracionNegocio extends DataClass
     if (!nullToAbsent || productoVueltoId != null) {
       map['producto_vuelto_id'] = Variable<int>(productoVueltoId);
     }
+    map['nombre_comercio'] = Variable<String>(nombreComercio);
+    map['encabezado_ticket'] = Variable<String>(encabezadoTicket);
+    map['modulos_desactivados'] = Variable<String>(modulosDesactivados);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -16705,6 +16805,9 @@ class ConfiguracionNegocio extends DataClass
       productoVueltoId: productoVueltoId == null && nullToAbsent
           ? const Value.absent()
           : Value(productoVueltoId),
+      nombreComercio: Value(nombreComercio),
+      encabezadoTicket: Value(encabezadoTicket),
+      modulosDesactivados: Value(modulosDesactivados),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -16737,6 +16840,11 @@ class ConfiguracionNegocio extends DataClass
         json['pasoRedondeoCentavos'],
       ),
       productoVueltoId: serializer.fromJson<int?>(json['productoVueltoId']),
+      nombreComercio: serializer.fromJson<String>(json['nombreComercio']),
+      encabezadoTicket: serializer.fromJson<String>(json['encabezadoTicket']),
+      modulosDesactivados: serializer.fromJson<String>(
+        json['modulosDesactivados'],
+      ),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -16758,6 +16866,9 @@ class ConfiguracionNegocio extends DataClass
       'recargoSueltoCentavos': serializer.toJson<int>(recargoSueltoCentavos),
       'pasoRedondeoCentavos': serializer.toJson<int>(pasoRedondeoCentavos),
       'productoVueltoId': serializer.toJson<int?>(productoVueltoId),
+      'nombreComercio': serializer.toJson<String>(nombreComercio),
+      'encabezadoTicket': serializer.toJson<String>(encabezadoTicket),
+      'modulosDesactivados': serializer.toJson<String>(modulosDesactivados),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -16771,6 +16882,9 @@ class ConfiguracionNegocio extends DataClass
     int? recargoSueltoCentavos,
     int? pasoRedondeoCentavos,
     Value<int?> productoVueltoId = const Value.absent(),
+    String? nombreComercio,
+    String? encabezadoTicket,
+    String? modulosDesactivados,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -16785,6 +16899,9 @@ class ConfiguracionNegocio extends DataClass
     productoVueltoId: productoVueltoId.present
         ? productoVueltoId.value
         : this.productoVueltoId,
+    nombreComercio: nombreComercio ?? this.nombreComercio,
+    encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
+    modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -16813,6 +16930,15 @@ class ConfiguracionNegocio extends DataClass
       productoVueltoId: data.productoVueltoId.present
           ? data.productoVueltoId.value
           : this.productoVueltoId,
+      nombreComercio: data.nombreComercio.present
+          ? data.nombreComercio.value
+          : this.nombreComercio,
+      encabezadoTicket: data.encabezadoTicket.present
+          ? data.encabezadoTicket.value
+          : this.encabezadoTicket,
+      modulosDesactivados: data.modulosDesactivados.present
+          ? data.modulosDesactivados.value
+          : this.modulosDesactivados,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -16834,6 +16960,9 @@ class ConfiguracionNegocio extends DataClass
           ..write('recargoSueltoCentavos: $recargoSueltoCentavos, ')
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('productoVueltoId: $productoVueltoId, ')
+          ..write('nombreComercio: $nombreComercio, ')
+          ..write('encabezadoTicket: $encabezadoTicket, ')
+          ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -16849,6 +16978,9 @@ class ConfiguracionNegocio extends DataClass
     recargoSueltoCentavos,
     pasoRedondeoCentavos,
     productoVueltoId,
+    nombreComercio,
+    encabezadoTicket,
+    modulosDesactivados,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -16864,6 +16996,9 @@ class ConfiguracionNegocio extends DataClass
           other.recargoSueltoCentavos == this.recargoSueltoCentavos &&
           other.pasoRedondeoCentavos == this.pasoRedondeoCentavos &&
           other.productoVueltoId == this.productoVueltoId &&
+          other.nombreComercio == this.nombreComercio &&
+          other.encabezadoTicket == this.encabezadoTicket &&
+          other.modulosDesactivados == this.modulosDesactivados &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -16877,6 +17012,9 @@ class ConfiguracionNegocioTablaCompanion
   final Value<int> recargoSueltoCentavos;
   final Value<int> pasoRedondeoCentavos;
   final Value<int?> productoVueltoId;
+  final Value<String> nombreComercio;
+  final Value<String> encabezadoTicket;
+  final Value<String> modulosDesactivados;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -16887,6 +17025,9 @@ class ConfiguracionNegocioTablaCompanion
     this.recargoSueltoCentavos = const Value.absent(),
     this.pasoRedondeoCentavos = const Value.absent(),
     this.productoVueltoId = const Value.absent(),
+    this.nombreComercio = const Value.absent(),
+    this.encabezadoTicket = const Value.absent(),
+    this.modulosDesactivados = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -16898,6 +17039,9 @@ class ConfiguracionNegocioTablaCompanion
     this.recargoSueltoCentavos = const Value.absent(),
     this.pasoRedondeoCentavos = const Value.absent(),
     this.productoVueltoId = const Value.absent(),
+    this.nombreComercio = const Value.absent(),
+    this.encabezadoTicket = const Value.absent(),
+    this.modulosDesactivados = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -16909,6 +17053,9 @@ class ConfiguracionNegocioTablaCompanion
     Expression<int>? recargoSueltoCentavos,
     Expression<int>? pasoRedondeoCentavos,
     Expression<int>? productoVueltoId,
+    Expression<String>? nombreComercio,
+    Expression<String>? encabezadoTicket,
+    Expression<String>? modulosDesactivados,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -16924,6 +17071,10 @@ class ConfiguracionNegocioTablaCompanion
       if (pasoRedondeoCentavos != null)
         'paso_redondeo_centavos': pasoRedondeoCentavos,
       if (productoVueltoId != null) 'producto_vuelto_id': productoVueltoId,
+      if (nombreComercio != null) 'nombre_comercio': nombreComercio,
+      if (encabezadoTicket != null) 'encabezado_ticket': encabezadoTicket,
+      if (modulosDesactivados != null)
+        'modulos_desactivados': modulosDesactivados,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -16937,6 +17088,9 @@ class ConfiguracionNegocioTablaCompanion
     Value<int>? recargoSueltoCentavos,
     Value<int>? pasoRedondeoCentavos,
     Value<int?>? productoVueltoId,
+    Value<String>? nombreComercio,
+    Value<String>? encabezadoTicket,
+    Value<String>? modulosDesactivados,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -16951,6 +17105,9 @@ class ConfiguracionNegocioTablaCompanion
           recargoSueltoCentavos ?? this.recargoSueltoCentavos,
       pasoRedondeoCentavos: pasoRedondeoCentavos ?? this.pasoRedondeoCentavos,
       productoVueltoId: productoVueltoId ?? this.productoVueltoId,
+      nombreComercio: nombreComercio ?? this.nombreComercio,
+      encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
+      modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -16984,6 +17141,15 @@ class ConfiguracionNegocioTablaCompanion
     if (productoVueltoId.present) {
       map['producto_vuelto_id'] = Variable<int>(productoVueltoId.value);
     }
+    if (nombreComercio.present) {
+      map['nombre_comercio'] = Variable<String>(nombreComercio.value);
+    }
+    if (encabezadoTicket.present) {
+      map['encabezado_ticket'] = Variable<String>(encabezadoTicket.value);
+    }
+    if (modulosDesactivados.present) {
+      map['modulos_desactivados'] = Variable<String>(modulosDesactivados.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -17007,6 +17173,9 @@ class ConfiguracionNegocioTablaCompanion
           ..write('recargoSueltoCentavos: $recargoSueltoCentavos, ')
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('productoVueltoId: $productoVueltoId, ')
+          ..write('nombreComercio: $nombreComercio, ')
+          ..write('encabezadoTicket: $encabezadoTicket, ')
+          ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -35922,6 +36091,9 @@ typedef $$ConfiguracionNegocioTablaTableCreateCompanionBuilder =
       Value<int> recargoSueltoCentavos,
       Value<int> pasoRedondeoCentavos,
       Value<int?> productoVueltoId,
+      Value<String> nombreComercio,
+      Value<String> encabezadoTicket,
+      Value<String> modulosDesactivados,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -35934,6 +36106,9 @@ typedef $$ConfiguracionNegocioTablaTableUpdateCompanionBuilder =
       Value<int> recargoSueltoCentavos,
       Value<int> pasoRedondeoCentavos,
       Value<int?> productoVueltoId,
+      Value<String> nombreComercio,
+      Value<String> encabezadoTicket,
+      Value<String> modulosDesactivados,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -36003,6 +36178,21 @@ class $$ConfiguracionNegocioTablaTableFilterComposer
 
   ColumnFilters<int> get pasoRedondeoCentavos => $composableBuilder(
     column: $table.pasoRedondeoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombreComercio => $composableBuilder(
+    column: $table.nombreComercio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encabezadoTicket => $composableBuilder(
+    column: $table.encabezadoTicket,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modulosDesactivados => $composableBuilder(
+    column: $table.modulosDesactivados,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -36079,6 +36269,21 @@ class $$ConfiguracionNegocioTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nombreComercio => $composableBuilder(
+    column: $table.nombreComercio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encabezadoTicket => $composableBuilder(
+    column: $table.encabezadoTicket,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modulosDesactivados => $composableBuilder(
+    column: $table.modulosDesactivados,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -36147,6 +36352,21 @@ class $$ConfiguracionNegocioTablaTableAnnotationComposer
 
   GeneratedColumn<int> get pasoRedondeoCentavos => $composableBuilder(
     column: $table.pasoRedondeoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nombreComercio => $composableBuilder(
+    column: $table.nombreComercio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get encabezadoTicket => $composableBuilder(
+    column: $table.encabezadoTicket,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modulosDesactivados => $composableBuilder(
+    column: $table.modulosDesactivados,
     builder: (column) => column,
   );
 
@@ -36232,6 +36452,9 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<int> recargoSueltoCentavos = const Value.absent(),
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int?> productoVueltoId = const Value.absent(),
+                Value<String> nombreComercio = const Value.absent(),
+                Value<String> encabezadoTicket = const Value.absent(),
+                Value<String> modulosDesactivados = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -36242,6 +36465,9 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 recargoSueltoCentavos: recargoSueltoCentavos,
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 productoVueltoId: productoVueltoId,
+                nombreComercio: nombreComercio,
+                encabezadoTicket: encabezadoTicket,
+                modulosDesactivados: modulosDesactivados,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -36254,6 +36480,9 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<int> recargoSueltoCentavos = const Value.absent(),
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int?> productoVueltoId = const Value.absent(),
+                Value<String> nombreComercio = const Value.absent(),
+                Value<String> encabezadoTicket = const Value.absent(),
+                Value<String> modulosDesactivados = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -36264,6 +36493,9 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 recargoSueltoCentavos: recargoSueltoCentavos,
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 productoVueltoId: productoVueltoId,
+                nombreComercio: nombreComercio,
+                encabezadoTicket: encabezadoTicket,
+                modulosDesactivados: modulosDesactivados,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,

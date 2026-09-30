@@ -47,6 +47,28 @@ actualización automática"); las trampas que aparecieron, en `TRAMPAS.md`.
 
 ---
 
+## Generalización del producto (desde 2026-09-30)
+
+La app deja de ser específica de un solo local y pasa a ser **Nodo Sur POS**,
+configurable por cada comercio. Decisiones y motivos: `DECISIONES.md`,
+"Generalización del producto". Se hace por fases chicas, cada una en su PR,
+con la suite en verde y sin cambiar cómo funciona el local de origen.
+
+- **Fase 1 (capa de configuración) — hecha**: `configuracion_negocio_tabla`
+  suma `nombre_comercio`, `encabezado_ticket` y `modulos_desactivados`
+  (migración v43 → v44, aditiva, sin tocar filas). `domain/modulos.dart` define
+  los 10 módulos opcionales y cómo se guardan. `repositorio_configuracion.dart`
+  suma `modulosNegocioActuales`, `configurarModulo`, `configurarNombreComercio`
+  y `configurarEncabezadoTicket`. **Nada en la app usa estos datos todavía**:
+  el comportamiento es idéntico. Suite: 1271 tests verdes + 4 que no compilan
+  por `test/capturas/` (ver `TRAMPAS.md`); `schemaVersion` 44.
+- **Fases que siguen**: 2 semillas → plantillas por rubro; 3 marca visible;
+  4 desacoplar el proveedor `'SC'`; 5 módulos activables; 6 vocabulario;
+  7 asistente de primer arranque; 8 retirar Firebase/Supabase; 9 documentación
+  y limpieza de datos personales.
+
+---
+
 ## Para retomar (cierre de sesión 2026-09-28)
 
 - **Instalado en la PC del local** (2026-09-28 17:32): todo lo de abajo

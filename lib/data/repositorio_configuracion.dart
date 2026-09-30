@@ -10,6 +10,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 
+import '../domain/modulos.dart';
 import 'database.dart';
 
 /// La fila única de `configuracion_negocio_tabla`, o los defaults de
@@ -28,6 +29,48 @@ Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
         recargoAtadoAdicionalCentavos: 10000,
         recargoSueltoCentavos: 5000,
         pasoRedondeoCentavos: 10000,
+        nombreComercio: '',
+        encabezadoTicket: '',
+        modulosDesactivados: '',
+      );
+}
+
+/// Qué módulos usa este comercio. Sin configuración legible (la companion
+/// antes de la primera sincronización) se asume todo activo: vender nunca
+/// puede frenarse por esto (Regla 8).
+Future<ModulosNegocio> modulosNegocioActuales(AppDatabase db) async {
+  final config = await configuracionNegocioActual(db);
+  return ModulosNegocio.desdeTexto(config.modulosDesactivados);
+}
+
+/// Prende o apaga un módulo sin tocar los demás. Solo cambia lo que se ve y
+/// lo que entra en cada cálculo: la lógica y los datos del módulo quedan
+/// como están.
+Future<void> configurarModulo(AppDatabase db, Modulo modulo, {required bool activo}) async {
+  final actuales = await modulosNegocioActuales(db);
+  await db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          modulosDesactivados: Value(actuales.conModulo(modulo, activo: activo).aTexto()),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
+Future<void> configurarNombreComercio(AppDatabase db, String nombre) {
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          nombreComercio: Value(nombre.trim()),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
+Future<void> configurarEncabezadoTicket(AppDatabase db, String encabezado) {
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          encabezadoTicket: Value(encabezado.trim()),
+          actualizadoEn: Value(DateTime.now()),
+        ),
       );
 }
 

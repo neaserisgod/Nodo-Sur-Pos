@@ -45,6 +45,22 @@ class ConfiguracionNegocioTabla extends Table {
   IntColumn get productoVueltoId =>
       integer().nullable().references(Productos, #id)();
 
+  /// Generalización del producto (fase 1): datos propios de cada comercio.
+  /// Las tres columnas nacen vacías — nada las lee todavía con efecto; las
+  /// fases siguientes las usan (marca visible, ticket, módulos). Vacío
+  /// significa "sin configurar", no "sin nombre a propósito".
+  ///
+  /// Nombre del comercio: lo que se ve en la ventana, el ticket y el celular.
+  TextColumn get nombreComercio => text().withDefault(const Constant(''))();
+
+  /// Encabezado del ticket, una línea por renglón (nombre, dirección…).
+  TextColumn get encabezadoTicket => text().withDefault(const Constant(''))();
+
+  /// Módulos apagados, claves separadas por coma (`domain/modulos.dart`).
+  /// Vacío = todos activos, que es como funciona la app hoy. Se guardan los
+  /// apagados para que un módulo nuevo nazca activo sin migración.
+  TextColumn get modulosDesactivados => text().withDefault(const Constant(''))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

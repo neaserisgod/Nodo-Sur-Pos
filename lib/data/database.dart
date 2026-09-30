@@ -120,7 +120,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -907,6 +907,26 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(productos, productos.esPromo);
         }
         await m.createTable(promoComponentes);
+      }
+      // v43 → v44 (generalización del producto, fase 1): nombre del
+      // comercio, encabezado del ticket y módulos desactivados en
+      // `configuracion_negocio_tabla`. Aditiva y sin tocar filas: no se
+      // escribe `actualizado_en`, así la sincronización no reenvía la fila.
+      // Las columnas nacen vacías (= sin configurar, todos los módulos
+      // activos): nada cambia hasta que una fase siguiente las use.
+      if (from < 44) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_negocio_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('nombre_comercio')) {
+          await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.nombreComercio);
+        }
+        if (!columnas.contains('encabezado_ticket')) {
+          await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.encabezadoTicket);
+        }
+        if (!columnas.contains('modulos_desactivados')) {
+          await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.modulosDesactivados);
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

@@ -654,3 +654,19 @@ hashtable (`$a = @{ Switch = $true }; & script @a`).
 Los scripts de `tool/` están en UTF-8 con BOM, igual que
 `publicar_actualizacion_desktop.ps1` desde antes. Sin BOM, 5.1 los lee como
 ANSI y rompe los mensajes con acentos.
+
+---
+
+## `.gitignore` con `capturas/` se traga `test/capturas/` (2026-09-30)
+
+`capturas/` (sin barra adelante) ignora CUALQUIER carpeta con ese nombre, y
+`test/capturas/` no es salida: es código de ayuda de los tests (por ejemplo
+`escenario_tablero.dart`, `capturador.dart`). Una copia del repo hecha desde git
+queda sin esa carpeta y 4 archivos de test no compilan
+(`repositorio_tablero_test`, `dialogo_cuenta_corriente_test`,
+`dialogo_promos_test`, `selector_porcentaje_test`).
+
+Arreglo: ignorar solo la carpeta de la raíz (`/capturas/`, `/capturas_antes/`)
+y versionar `test/capturas/`. Mientras no se haga, la suite da 4 fallas de
+carga que no son del código.
+
