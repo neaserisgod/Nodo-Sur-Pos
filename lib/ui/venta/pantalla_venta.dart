@@ -28,6 +28,7 @@ import 'package:provider/provider.dart';
 
 import '../navegacion/refresco_por_celular.dart';
 import '../../data/database.dart';
+import 'venta_en_curso.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
@@ -84,6 +85,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
   void initState() {
     super.initState();
     _controlador = VentaControlador(widget.db);
+    _controlador.addListener(_publicarVentaEnCurso);
     HardwareKeyboard.instance.addHandler(_manejarTeclaGlobal);
     _controlador.cargarTodo().then((_) {
       if (mounted) {
@@ -115,10 +117,13 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
     );
   }
 
+  void _publicarVentaEnCurso() => hayVentaEnCurso.value = _controlador.hayVentaAbierta;
+
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
     HardwareKeyboard.instance.removeHandler(_manejarTeclaGlobal);
+    _controlador.removeListener(_publicarVentaEnCurso);
     _controlador.dispose();
     super.dispose();
   }

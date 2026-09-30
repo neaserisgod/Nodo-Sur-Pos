@@ -33,7 +33,6 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shelf/shelf.dart';
@@ -68,6 +67,7 @@ import '../data/repositorio_medios_pago.dart';
 import '../data/repositorio_productos.dart';
 import '../data/repositorio_sincronizacion.dart';
 import '../data/repositorio_ticket.dart';
+import '../servicios/actualizaciones.dart' show leerVersionApp;
 import '../data/repositorio_usuarios.dart';
 import '../data/repositorio_ventas.dart';
 import '../domain/caja.dart' show diferenciaArqueo;
@@ -321,8 +321,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     // Sin ningún .apk publicado todavía por el script (o el archivo vino
     // corrupto) — se cae a la versión de la propia app de escritorio, como
     // al principio de este sistema.
-    final info = await PackageInfo.fromPlatform();
-    return _json({'version': info.version, 'buildNumber': info.buildNumber});
+    // `separarVersion`: en Windows `ProductVersion` es "1.0.0.2098" (lo que
+    // necesita el actualizador) y `PackageInfo` lo devuelve sin separar.
+    final v = await leerVersionApp();
+    return _json({'version': v.nombre, 'buildNumber': v.build});
   });
 
   router.get('/companion/apk', (Request request) async {

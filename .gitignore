@@ -54,3 +54,22 @@ android/local.properties
 .agents/
 capturas/
 capturas_antes/
+
+# Firma de actualizaciones y de código — NUNCA al repo. La clave privada DSA
+# (dsa_priv.pem) vive en Documents\la_plazoleta_claves\ y hay que respaldarla
+# (si se pierde, las PC instaladas no pueden recibir más actualizaciones).
+# La pública (dsa_pub.pem) SÍ se versiona: va embebida en el .exe.
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+!/dsa_pub.pem
+.env
+.env.*
+secrets/
+signing/
+
+# Salida de los scripts de instalador
+/dist/
+/installer/Output/

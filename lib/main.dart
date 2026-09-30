@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'companion/companion_app.dart';
 import 'data/database.dart';
 import 'data/notificador_cambios.dart';
 import 'data/sincronizacion_supabase.dart';
+import 'domain/actualizacion.dart';
 import 'servicios/comparador_precios.dart';
+import 'servicios/actualizaciones.dart';
+import 'servicios/actualizador_nativo.dart';
 import 'servicios/comparador_precios_todoatucasa.dart';
 import 'servidor/servidor_companion.dart';
 import 'supabase_init.dart';
@@ -16,6 +20,7 @@ import 'ui/dashboard/pantalla_dashboard.dart';
 import 'ui/navegacion/route_observer.dart';
 import 'ui/tema/simulador_resolucion.dart';
 import 'ui/tema/tema.dart';
+import 'ui/venta/venta_en_curso.dart';
 import 'ui/ventana/ventana_escritorio.dart';
 
 Future<void> main() async {
@@ -102,6 +107,24 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     _actualizarComparacionPrecios();
     _actualizarComparacionPreciosTodoATuCasa();
     _inicializarSesion();
+    _iniciarActualizaciones();
+  }
+
+  // Actualizaciones (2026-09-30): solo en la app real (la de los tests de
+  // widget no tiene plugin ni red). Revisa en segundo plano y nunca
+  // interrumpe: sin internet no muestra nada, y con una venta abierta tampoco
+  // avisa (`domain/actualizacion.dart`).
+  void _iniciarActualizaciones() {
+    if (!widget.conVentanaPropia) return;
+    servicioActualizaciones ??= ServicioActualizaciones(
+      cliente: http.Client(),
+      versionActual: () async {
+        final v = await leerVersionApp();
+        return versionParaFeed(v.nombre, v.build);
+      },
+      ventaAbierta: hayVentaEnCurso,
+      abrirInstalador: abrirActualizadorNativo,
+    )..iniciar();
   }
 
   // Login del escritorio con la misma cuenta que la companion (Bruno,

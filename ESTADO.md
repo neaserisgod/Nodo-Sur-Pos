@@ -11,6 +11,42 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
+## Instalador y actualización automática (2026-09-30) — hecho, falta publicar la primera versión
+
+La app ya se puede distribuir con instalador (Inno Setup) y actualizarse sola
+desde `horsepos.com`. Decisiones y motivos en `DECISIONES.md` ("Instalador y
+actualización automática"); las trampas que aparecieron, en `TRAMPAS.md`.
+
+- **Qué hay**: `installer/la_plazoleta.iss`, `tool/crear_instalador.ps1`
+  (build + firma + instalador en `dist/`, imprime SHA-256),
+  `tool/publicar_release.ps1` (sube build, instala, firma para el
+  actualizador y llama a `publicar-release.mjs`; `-DryRun`, `-Notas`,
+  `-Rollout`), `tool/generar_claves_actualizacion.ps1`, y
+  `tool/_version.ps1` (helpers compartidos). `publicar_actualizacion_desktop.ps1`
+  sigue igual y ahora también sube el build (`-SinSubirBuild` lo evita).
+- **En la app**: `lib/domain/actualizacion.dart` (reglas puras),
+  `lib/servicios/actualizaciones.dart` (cid, detección silenciosa, aviso),
+  `lib/servicios/actualizador_nativo.dart` (WinSparkle), aviso en la barra de
+  ventana, y Configuración → "Versión y actualizaciones".
+- **Probado**: 43 tests nuevos (25 de dominio, 18 de servicio); el instalador en carpeta
+  temporal con base falsa (instalar, actualizar con la app abierta, la
+  carrera de WinSparkle, sin base, desinstalar, y que la base y
+  `C:\LaPlazoleta` real no se tocan); y que la firma DSA de `sign_update`
+  verifica contra `dsa_pub.pem` y falla con un byte cambiado.
+- **NO probado de punta a punta**: una actualización real de una PC
+  instalada contra el feed real (hace falta publicar una versión; ver abajo),
+  y que WinSparkle rechace una firma inválida (se probó la firma con
+  `openssl`, no el rechazo dentro de WinSparkle). Firma de código real: sin
+  certificado todavía, el instalador sale sin firmar y SmartScreen advierte.
+- **Clave privada**: `Documents\la_plazoleta_claves\dsa_priv.pem`, FUERA del
+  repo. **Hay que respaldarla** (USB + copia en otro lugar): si se pierde,
+  ninguna PC instalada puede recibir más actualizaciones, y la única salida
+  sería reinstalar a mano con una clave pública nueva.
+- **Pendiente a mano (Bruno)**: ver la lista al final de `DECISIONES.md`
+  ("Instalador y actualización automática").
+
+---
+
 ## Para retomar (cierre de sesión 2026-09-28)
 
 - **Instalado en la PC del local** (2026-09-28 17:32): todo lo de abajo

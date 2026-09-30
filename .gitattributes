@@ -1,0 +1,2 @@
+# La clave pública va embebida en el .exe (windows/runner/Runner.rc): mismos bytes en cualquier clon.
+dsa_pub.pem text eol=lf

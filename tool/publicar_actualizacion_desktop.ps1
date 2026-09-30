@@ -17,15 +17,27 @@
 # Con -SinAccesoDirecto se salta la creación/actualización del acceso
 # directo de inicio (por si alguna vez hace falta solo recompilar y
 # copiar, sin tocar el arranque de Windows).
+#
+# Sube el build number de pubspec.yaml antes de compilar, igual que
+# tool/publicar_actualizacion_companion.sh (2026-09-30): el actualizador solo
+# ofrece una versión con build MAYOR. Con -SinSubirBuild se recompila la
+# versión actual sin tocar pubspec.yaml.
 param(
-    [switch]$SinAccesoDirecto
+    [switch]$SinAccesoDirecto,
+    [switch]$SinSubirBuild
 )
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\_version.ps1"
 
 $carpetaInstalada = "C:\LaPlazoleta\app"
 $origen = "build\windows\x64\runner\Release"
 $exeInstalado = Join-Path $carpetaInstalada "la_plazoleta.exe"
+
+if (-not $SinSubirBuild) {
+    $version = Step-BuildPubspec
+    Write-Output "Build subido: $($version.Completa)"
+}
 
 Write-Output "Compilando..."
 flutter build windows --release

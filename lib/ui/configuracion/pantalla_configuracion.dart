@@ -8,6 +8,7 @@ import '../impresion/pantalla_impresion.dart';
 import '../respaldo/pantalla_respaldo.dart';
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
+import '../../servicios/actualizaciones.dart';
 import '../../servidor/servidor_companion.dart';
 import '../comun/armazon_gestion.dart';
 import '../comun/botones.dart';
@@ -165,6 +166,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
         return _SeccionCompanion(c: c);
       case SeccionConfiguracion.cuentaGoogle:
         return _SeccionCuentaGoogle(c: c);
+      case SeccionConfiguracion.actualizaciones:
+        return const _SeccionActualizaciones();
     }
   }
 }
@@ -183,6 +186,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.impresion => 'ticket pdf impresora posnet point terminal token',
   SeccionConfiguracion.companion => 'celular android qr emparejar apk',
   SeccionConfiguracion.cuentaGoogle => 'google login cuenta sesion supabase',
+  SeccionConfiguracion.actualizaciones => 'version actualizar actualizacion update buscar novedades',
 };
 
 String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
@@ -198,6 +202,7 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.impresion => 'Impresión y posnet',
   SeccionConfiguracion.companion => 'App companion (Android)',
   SeccionConfiguracion.cuentaGoogle => 'Cuenta de Google',
+  SeccionConfiguracion.actualizaciones => 'Versión y actualizaciones',
 };
 
 class _SeccionRecargoCigarrillos extends StatefulWidget {
@@ -938,6 +943,58 @@ class _Selector<T> extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Versión instalada y búsqueda manual de actualizaciones (2026-09-30).
+/// "Buscar actualizaciones" abre la ventana de WinSparkle: lo pidió alguien,
+/// así que ahí sí es válido que muestre un resultado o un error de red.
+class _SeccionActualizaciones extends StatefulWidget {
+  const _SeccionActualizaciones();
+
+  @override
+  State<_SeccionActualizaciones> createState() => _SeccionActualizacionesState();
+}
+
+class _SeccionActualizacionesState extends State<_SeccionActualizaciones> {
+  late final Future<String> _version = textoVersionApp();
+
+  @override
+  Widget build(BuildContext context) {
+    final servicio = servicioActualizaciones;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Versión y actualizaciones',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: Espaciado.sm),
+          FutureBuilder<String>(
+            future: _version,
+            builder: (context, snapshot) => Text(
+              'Versión ${snapshot.data ?? '…'}',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            'Las actualizaciones no tocan la base de datos. Antes de instalar '
+            'una, se guarda una copia al lado de la base.',
+            style: TextStyle(color: context.colores.textoSecundario),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          BotonSecundario(
+            texto: 'Buscar actualizaciones',
+            // Sin servicio (tests, o una compilación sin actualizador) no
+            // hay nada que abrir.
+            onPressed: servicio?.instalarAhora,
+          ),
+        ],
+      ),
     );
   }
 }

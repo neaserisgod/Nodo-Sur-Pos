@@ -17,6 +17,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_respaldo.dart';
+import '../../servicios/actualizaciones.dart';
 import '../cierre/pantalla_cierre.dart';
 import '../comun/modal.dart';
 import '../tema/acentos.dart';
@@ -335,6 +336,7 @@ class _BarraVentana extends StatelessWidget {
                 ),
               ),
             ),
+            const _AvisoActualizacion(),
             _BotonVentana(
               tooltip: 'Minimizar',
               color: colorIconos,
@@ -368,6 +370,56 @@ class _BarraVentana extends StatelessWidget {
 
   static String _hora(DateTime f) =>
       '${f.hour.toString().padLeft(2, '0')}:${f.minute.toString().padLeft(2, '0')}';
+}
+
+/// Aviso discreto de actualización (2026-09-30). Aparece solo cuando hay una
+/// versión nueva Y no hay una venta abierta (`decidirAviso`); nunca instala
+/// sola: "Instalar ahora" o "Más tarde".
+class _AvisoActualizacion extends StatelessWidget {
+  const _AvisoActualizacion();
+
+  @override
+  Widget build(BuildContext context) {
+    final servicio = servicioActualizaciones;
+    if (servicio == null) return const SizedBox.shrink();
+    return ListenableBuilder(
+      listenable: servicio,
+      builder: (context, _) {
+        if (!servicio.mostrarAviso) return const SizedBox.shrink();
+        final colores = context.colores;
+        final estilo = TextButton.styleFrom(
+          minimumSize: const Size(0, 28),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        );
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Hay una actualización',
+              style: TextStyle(fontSize: 12, color: colores.textoSecundario),
+            ),
+            const SizedBox(width: 4),
+            TextButton(
+              style: estilo.copyWith(
+                foregroundColor: WidgetStatePropertyAll(colores.acento),
+              ),
+              onPressed: servicio.instalarAhora,
+              child: const Text('Instalar ahora'),
+            ),
+            TextButton(
+              style: estilo.copyWith(
+                foregroundColor: WidgetStatePropertyAll(colores.textoTenue),
+              ),
+              onPressed: servicio.postergar,
+              child: const Text('Más tarde'),
+            ),
+            const SizedBox(width: 8),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _Chip extends StatelessWidget {

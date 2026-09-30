@@ -24,6 +24,7 @@ enum SeccionConfiguracion {
   impresion,
   companion,
   cuentaGoogle,
+  actualizaciones,
 }
 
 class ConfiguracionControlador extends ChangeNotifier {

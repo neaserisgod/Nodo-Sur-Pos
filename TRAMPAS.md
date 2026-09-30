@@ -611,3 +611,46 @@ no contó la lata. Test en `repositorio_cierre_test.dart`.
 toma lo contado, nunca lo esperado — lo esperado es la cuenta de la app, lo
 contado es la plata que está de verdad.
 
+## El instalador en silencio se cancela solo si la app sigue abierta (`AppMutex`)
+
+`installer/la_plazoleta.iss` — con la directiva `AppMutex=...`, Inno
+comprueba el mutex **antes** de `CloseApplications`. Con `/SILENT
+/SUPPRESSMSGBOXES` la pregunta "La Plazoleta está ejecutándose, ciérrela"
+se responde sola con Cancelar y Setup sale sin instalar, sin error visible.
+Es justo el caso de la actualización: WinSparkle lanza el instalador apenas
+le pide a la app que se cierre, y la app puede seguir terminando.
+
+**Cómo no repetirlo**: no usar `AppMutex`. La app crea el mutex
+(`windows/runner/main.cpp`), `InitializeSetup` lo espera hasta 30 s y
+`CloseApplications` cierra lo que quede. Se probó con una app falsa que se
+cierra sola 3 s después de lanzar el instalador.
+
+## `package_info_plus` en Windows parte `ProductVersion` por `+`
+
+`ProductVersion` del .exe tiene que ser `1.0.0.2098` (con puntos, si no
+WinSparkle ofrece actualizar en bucle), y `package_info_plus` lo devuelve
+entero en `version` con `buildNumber` vacío. Cualquier código que arme
+"1.0.0+2098" con `PackageInfo` directo queda con el build vacío en
+escritorio. **Cómo no repetirlo**: pasar siempre por `leerVersionApp()` /
+`separarVersion` (`servicios/actualizaciones.dart`, `domain/actualizacion.dart`).
+
+## `check_update_without_ui` de WinSparkle 0.8.1 sí muestra una ventana
+
+No es "sin interfaz": si hay una versión nueva abre la ventana de novedades.
+Las revisiones programadas también. Por eso la detección en segundo plano es
+propia (`http` + `hayActualizacion`) y WinSparkle solo se abre a pedido.
+
+## En PowerShell, `Start-Process -Wait` espera también a los procesos hijos
+
+Un instalador que reabre la app (`nowait`) nunca "termina" para
+`Start-Process -Wait`: el script de prueba se colgó cuatro minutos con la
+actualización ya hecha y la app reabierta. Usar `System.Diagnostics.Process`
+con `WaitForExit`. Y un array por splatting (`@args`) pasa un switch como
+argumento posicional: para reenviar `-Switch` a otro script hace falta un
+hashtable (`$a = @{ Switch = $true }; & script @a`).
+
+## Un `.ps1` con acentos necesita BOM para Windows PowerShell 5.1
+
+Los scripts de `tool/` están en UTF-8 con BOM, igual que
+`publicar_actualizacion_desktop.ps1` desde antes. Sin BOM, 5.1 los lee como
+ANSI y rompe los mensajes con acentos.

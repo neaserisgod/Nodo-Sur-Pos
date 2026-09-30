@@ -557,6 +557,10 @@ class VentaControlador extends ChangeNotifier {
 
   int get cantidadPestanas => _pestanas.length;
 
+  /// Hay algo cargado en alguna pestaña (la activa se lee en vivo).
+  bool get hayVentaAbierta =>
+      carrito.isNotEmpty || _pestanas.any((p) => p.estado.lineas.isNotEmpty);
+
   /// Lo que muestra cada pestaña: cuántas líneas tiene y su subtotal. La
   /// activa se lee en vivo de los campos, las demás de su borrador.
   List<({int lineas, int subtotalCentavos})> get resumenPestanas => [

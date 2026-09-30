@@ -78,6 +78,32 @@ acordarse de abrirla a mano sí lo era). Correr:
 `-SinAccesoDirecto` salta la parte de accesos directos/inicio de Windows,
 por si alguna vez hace falta solo recompilar y copiar.
 
+### Instalador y actualización automática (2026-09-30)
+
+Para distribuir la app hay un instalador de Inno Setup
+(`installer/la_plazoleta.iss`) y la app se actualiza sola desde
+`horsepos.com`. **No reemplaza** a `publicar_actualizacion_desktop.ps1`, que
+sigue sirviendo para la PC de desarrollo (y ahora también sube el build).
+
+```powershell
+# Claves de firma de las actualizaciones (UNA vez; la privada queda fuera del repo)
+.\tool\generar_claves_actualizacion.ps1
+
+# Instalador en dist\LaPlazoleta-Setup-<version>.exe (imprime el SHA-256)
+.\tool\crear_instalador.ps1
+.\tool\crear_instalador.ps1 -CertificadoDePrueba   # firma autofirmada, solo para probar
+
+# Subir una versión (sube el build, instala, firma y llama a publicar-release.mjs)
+.\tool\publicar_release.ps1 -Notas "..." -Rollout 10
+.\tool\publicar_release.ps1 -DryRun                # ensayo: no sube nada
+```
+
+Variables de entorno (ninguna va al repo): `SIGN_PFX_PATH`,
+`SIGN_PFX_PASSWORD` (o las de Azure Trusted Signing, ver el encabezado de
+`crear_instalador.ps1`), `NODOSUR_SCRIPTS`, `RELEASE_TOKEN`. Requiere Inno
+Setup 6. Motivos y trampas en `DECISIONES.md` y `TRAMPAS.md`; qué falta hacer
+a mano, en `ESTADO.md`.
+
 **Ojo con accesos directos viejos**: en el escritorio y el menú inicio de
 esta máquina quedan accesos al sistema anterior (Tauri/Next.js,
 `AppData\Local\La Plazoleta Soft\`) — no son esta app, no los toca el

@@ -1074,3 +1074,120 @@ pantalla muestra. Esc borra el filtro. Sin mayúsculas ni acentos
   propio de esa pestaña); en Cierres, día o empleado.
 - **Configuración**: secciones, por nombre y por palabras clave ("fondo" →
   Caja y redondeo). Si queda una sola, se abre sola.
+
+## Instalador y actualización automática (2026-09-30)
+
+Bruno quería distribuir la app con instalador firmado y actualización
+automática, publicando desde su PC a Cloudflare (`horsepos.com`). Hasta
+entonces la app se "instalaba" copiando la carpeta de build con
+`tool/publicar_actualizacion_desktop.ps1`.
+
+- **Firma de las actualizaciones: DSA, no EdDSA.** El README del paquete
+  `auto_updater` (1.0.0) documenta DSA (`generate_keys`, `DSAPub` en
+  `Runner.rc`, `sparkle:dsaSignature`). Bruno verificó que el paquete trae
+  WinSparkle 0.8.1 y que EdDSA llegó en 0.9.0, así que el servidor firma con
+  `--signature-type dsa`. Las claves salen de `dart run
+  auto_updater:generate_keys` (acá, `tool/generar_claves_actualizacion.ps1`,
+  que corre el mismo `.bat` del paquete pero deja la privada en
+  `Documents\la_plazoleta_claves\`). La pública (`dsa_pub.pem`, raíz del
+  repo) SÍ se versiona: va embebida en el .exe. La privada, nunca
+  (`.gitignore`: `*.pem` con excepción de `dsa_pub.pem`, `*.pfx`, `*.key`).
+  `sign_update` firma el SHA-1 del archivo (doble digest): para verificar a
+  mano con `openssl` hay que hacer lo mismo.
+
+- **La versión: `ProductVersion` del .exe tiene que ser `1.0.0.2098`, con
+  puntos.** Spike contra WinSparkle 0.8.1 con un feed local:
+  WinSparkle lee `ProductVersion` (no `FileVersion`) y compara por segmentos
+  numéricos. Con `1.0.0+2098` (lo que daba `FLUTTER_VERSION`) o con `1.0.0`
+  sola, el feed siempre parecía más nuevo — incluso uno con build MENOR — y
+  la app habría ofrecido actualizar en bucle. Con `1.0.0.2098`: mismo build =
+  al día, mayor = ofrece, menor = no ofrece. Un feed con `1.0.0+2099` NO
+  ofrecía un build mayor: el formato del feed tiene que ser con puntos, que
+  es lo que ya emite el servidor. `Runner.rc` arma la cadena desde
+  `FLUTTER_VERSION_MAJOR/MINOR/PATCH/BUILD`, sin depender de `FLUTTER_VERSION`.
+  Consecuencia: `package_info_plus` en Windows parte `ProductVersion` por
+  `+`, así que ahora devuelve `version: "1.0.0.2098"` y `buildNumber: ""`.
+  `separarVersion` (`domain/actualizacion.dart`) lo vuelve a separar en un
+  solo lugar, y lo usan Configuración, el actualizador y el
+  `/companion/version` de `servidor_companion.dart` (que antes leía
+  `PackageInfo` directo y habría devuelto el build vacío).
+
+- **Detección propia, instalación con WinSparkle.** En WinSparkle 0.8.1
+  `check_update_without_ui` NO es silencioso: si hay versión nueva abre su
+  ventana. Y las revisiones programadas (`setScheduledCheckInterval`) hacen
+  lo mismo sin mirar si hay una venta en curso. Como Bruno pidió "nunca
+  interrumpir una venta", la app baja el appcast sola con `http` (al
+  iniciar y cada 6 h), compara con `hayActualizacion`, y guarda la versión
+  nueva. WinSparkle no se inicializa hasta que alguien toca "Instalar ahora"
+  o "Buscar actualizaciones" (`setFeedURL` hace el `win_sparkle_init`); ahí sí
+  descarga, verifica la firma DSA contra la clave embebida y corre el
+  instalador. Sin internet no hay ningún mensaje.
+
+- **Aviso: nada con una venta abierta; después, "Instalar ahora / Más
+  tarde"; nunca se instala solo** (Bruno, 2026-09-30). "Venta abierta" =
+  algo cargado en alguna pestaña de Venta (`hayVentaEnCurso`). Al salir de
+  Venta con el carrito cargado no se apaga (el borrador sigue guardado).
+  "Más tarde" silencia 4 h, solo en memoria. El aviso es un texto con dos
+  botones en la barra de ventana (no un diálogo). Instalar cierra la app sin
+  volver a preguntar por la caja abierta: lo decidió quien tocó el botón.
+
+- **Instalador (Inno Setup): misma ruta `C:\LaPlazoleta\app`, sin
+  administrador.** Una actualización pisa la instalación de hoy. Crea los
+  mismos accesos directos que el script de publicación
+  (`La Plazoleta.lnk` en el inicio y `la_plazoleta - Acceso directo.lnk` en
+  el escritorio) para reemplazarlos en vez de duplicarlos. Antes de copiar,
+  si existe `Documents\la_plazoleta.sqlite`, la copia como
+  `...sqlite.backup-pre-update-<version>-<fecha>` (con `<version>` = la que
+  se está instalando) y, si hay un `-wal`, también. Sin base no falla. Las
+  copias no se podan solas: cada actualización deja una. Desinstalar borra
+  solo lo instalado en `{app}` y los accesos directos; nunca toca Documents
+  (no hay `[UninstallDelete]`). `[InstallDelete]` limpia `data\` y los
+  `.dll`/`.exe` de `{app}` para que quede idéntico al build (el `/MIR` del
+  script de robocopy). `/SILENT /SUPPRESSMSGBOXES /NORESTART` andan; en
+  silencioso, si era una actualización, reabre la app.
+
+- **Sin la directiva `AppMutex`, a propósito.** Inno la revisa ANTES de
+  cerrar aplicaciones y, en silencioso, responde Cancelar y sale sin
+  instalar (probado: es justo el caso de WinSparkle, que lanza el instalador
+  apenas pide cerrar la app). En su lugar la app crea el mutex
+  `LaPlazoletaAppMutex` (`windows/runner/main.cpp`), `InitializeSetup` espera
+  hasta 30 s a que se libere, y si sigue abierta `CloseApplications` la cierra
+  por Restart Manager.
+
+- **Firma de código por variables de entorno**, sin secretos en el repo:
+  `SIGN_PFX_PATH`/`SIGN_PFX_PASSWORD` (+ timestamp) o Azure Trusted Signing
+  (`AZURE_SIGN_DLIB`/`AZURE_SIGN_METADATA`). Sin nada, el instalador sale sin
+  firmar y el script avisa en rojo que SmartScreen va a advertir.
+  `-CertificadoDePrueba` crea un autofirmado en el almacén del usuario
+  (`Cert:\CurrentUser\My`, asunto "La Plazoleta (PRUEBA…)") solo para probar;
+  Windows no lo considera confiable. Se firma el .exe de la app y el
+  instalador, y la firma DSA de `sign_update` va al final, sobre el
+  instalador ya firmado.
+
+- **El build number sube también en el script de escritorio.** Es el mismo
+  `pubspec.yaml` que sube el script del APK, así que cada publicación de
+  cualquiera de los dos cambia el número que ven los dos.
+
+### Lo que tiene que hacer Bruno (en este orden)
+
+1. **Respaldar la clave privada** `Documents\la_plazoleta_claves\dsa_priv.pem`
+   (copiarla a un pendrive y a otro lugar, nunca al repo ni a la nube
+   pública). Sin ella no hay más actualizaciones.
+2. **Conseguir el certificado de firma de código** (sin él, SmartScreen
+   advierte). Opciones: Azure Trusted Signing, o un certificado .pfx de una
+   autoridad (OV/EV). Después definir `SIGN_PFX_PATH` y `SIGN_PFX_PASSWORD`
+   (o las de Azure) como variables de entorno del usuario.
+3. **Definir `NODOSUR_SCRIPTS`** (carpeta `scripts` de `NodoSurPage`, donde
+   está `publicar-release.mjs`) y `RELEASE_TOKEN`, como variables de entorno
+   del usuario.
+4. **Ensayo**: `.\tool\publicar_release.ps1 -DryRun -Notas "prueba"` y mirar
+   el comando que imprime.
+5. **Primera publicación con rollout bajo**: `.\tool\publicar_release.ps1
+   -Notas "..." -Rollout 10`, y verificar en una PC ya instalada con el
+   instalador (no la copiada a mano) que aparece el aviso, instala y reabre.
+   Comprobar también en `horsepos.com` que el enclosure del feed lleve
+   `sparkle:installerArguments="/SILENT /SUPPRESSMSGBOXES /NORESTART"` y
+   `sparkle:os="windows"`; si no lleva los argumentos, WinSparkle correrá el
+   instalador con ventanas.
+6. **Instalar Inno Setup 6** en cualquier otra máquina que vaya a publicar
+   (en esta ya quedó instalado, por usuario).
