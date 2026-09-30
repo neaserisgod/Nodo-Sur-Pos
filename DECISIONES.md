@@ -1293,3 +1293,16 @@ Decididas con el dueño antes de empezar (fase 1):
   Hasta leer la base todo está activo.
 - **Orden**: de lo más aislado a lo más enredado; cada módulo con su test con el
   interruptor prendido y apagado. Esta parte: promos, comparador, carga histórica.
+
+### Fase 8: sin Firebase ni Supabase (2026-09-30)
+
+- **Por qué salen.** Dejaban un `negocioId` compartido entre comercios, llevaban
+  claves del proyecto original y Supabase estaba cortado por cuota. Firebase ya no
+  compilaba (sin dependencias). Un segundo comercio no puede compartir nada de eso.
+- **Qué se queda.** El motor de sincronización (`repositorio_sincronizacion.dart`:
+  `cambiosDesde`/`aplicarCambios`) y la sync por wifi PC↔celular, que no depende de
+  ninguna cuenta.
+- **Sin login en el celular.** La identidad del producto va a vivir en Nodo Sur
+  (cuenta con Google del sitio), no en el POS; por ahora el celular entra directo.
+- **Point desde el celular sin PC**: se pierde (las credenciales de Mercado Pago
+  iban por Supabase). No se sincronizan al celular: es un token de pago.

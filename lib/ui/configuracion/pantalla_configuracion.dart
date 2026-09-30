@@ -183,8 +183,6 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
         return const SizedBox.shrink();
       case SeccionConfiguracion.companion:
         return _SeccionCompanion(c: c);
-      case SeccionConfiguracion.cuentaGoogle:
-        return _SeccionCuentaGoogle(c: c);
       case SeccionConfiguracion.actualizaciones:
         return const _SeccionActualizaciones();
     }
@@ -206,7 +204,6 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.respaldo => 'backup copia drive onedrive carpeta',
   SeccionConfiguracion.impresion => 'ticket pdf impresora posnet point terminal token',
   SeccionConfiguracion.companion => 'celular android qr emparejar apk',
-  SeccionConfiguracion.cuentaGoogle => 'google login cuenta sesion supabase',
   SeccionConfiguracion.actualizaciones => 'version actualizar actualizacion update buscar novedades',
 };
 
@@ -224,7 +221,6 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.respaldo => 'Respaldo',
   SeccionConfiguracion.impresion => 'Impresión y posnet',
   SeccionConfiguracion.companion => 'App companion (Android)',
-  SeccionConfiguracion.cuentaGoogle => 'Cuenta de Google',
   SeccionConfiguracion.actualizaciones => 'Versión y actualizaciones',
 };
 
@@ -958,83 +954,6 @@ class _SeccionCompanion extends StatelessWidget {
                   size: 220,
                 ),
               ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Login del escritorio con la misma cuenta que la companion Android (Bruno,
-/// 2026-09-18: "mismo login... que abra una ventana en Chrome... y luego
-/// volver a la app"). No bloquea nada del resto de la app — Venta sigue
-/// disponible al instante con o sin esta sesión conectada (`CLAUDE.md`,
-/// "arranque vs. operación"); es la cuenta que habilita el motor de sync por
-/// Supabase (`sincronizacion_supabase.dart`) entre esta PC y la companion.
-class _SeccionCuentaGoogle extends StatelessWidget {
-  const _SeccionCuentaGoogle({required this.c});
-  final ConfiguracionControlador c;
-
-  @override
-  Widget build(BuildContext context) {
-    final email = c.cuentaGoogleEmail;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Cuenta de Google',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            'La misma cuenta con la que te logueás en la companion del '
-            'celular — hace falta para sincronizar los datos entre esta PC '
-            'y el celular.',
-            style: TextStyle(color: context.colores.textoSecundario),
-          ),
-          const SizedBox(height: Espaciado.lg),
-          if (email != null) ...[
-            Row(
-              children: [
-                Icon(
-                  IconosPlazoleta.checkCircle,
-                  color: context.colores.acento,
-                  size: 20,
-                ),
-                const SizedBox(width: Espaciado.sm),
-                Expanded(child: Text('Conectado como $email')),
-              ],
-            ),
-            const SizedBox(height: Espaciado.lg),
-            BotonSecundario(
-              texto: 'Desconectar',
-              onPressed: c.desconectarCuentaGoogle,
-            ),
-          ] else ...[
-            BotonPrimario(
-              texto: c.conectandoCuentaGoogle
-                  ? 'Abriendo el navegador…'
-                  : 'Conectar cuenta de Google',
-              onPressed: c.conectandoCuentaGoogle
-                  ? null
-                  : c.conectarCuentaGoogle,
-            ),
-            if (c.conectandoCuentaGoogle) ...[
-              const SizedBox(height: Espaciado.md),
-              Text(
-                'Se abrió (o está por abrirse) tu navegador — elegí la cuenta '
-                'ahí y volvé acá.',
-                style: TextStyle(color: context.colores.textoSecundario),
-              ),
-            ],
-          ],
-          if (c.errorCuentaGoogle != null) ...[
-            const SizedBox(height: Espaciado.md),
-            Text(
-              c.errorCuentaGoogle!,
-              style: TextStyle(color: context.colores.error),
             ),
           ],
         ],

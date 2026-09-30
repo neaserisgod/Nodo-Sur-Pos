@@ -56,22 +56,3 @@ Future<void> olvidarUsuario() async {
   await prefs.remove(_claveUsuarioId);
   await prefs.remove(_claveUsuarioNombre);
 }
-
-/// "Entrar sin cuenta" (2026-09-28): cuando Supabase no deja iniciar sesión
-/// (el servicio cortado por cuota), el celular igual puede trabajar contra
-/// la PC por el wifi del local. Queda recordado hasta el próximo login.
-const _claveSinCuenta = 'companion_modo_sin_cuenta';
-
-Future<bool> leerModoSinCuenta() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool(_claveSinCuenta) ?? false;
-}
-
-Future<void> guardarModoSinCuenta(bool activo) async {
-  final prefs = await SharedPreferences.getInstance();
-  if (activo) {
-    await prefs.setBool(_claveSinCuenta, true);
-  } else {
-    await prefs.remove(_claveSinCuenta);
-  }
-}

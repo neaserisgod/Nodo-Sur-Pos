@@ -122,9 +122,20 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   la lata esperada (diferencia 0): no se exige contar lo que no se usa. Los
   datos (caja lata, columnas) siguen; al prender el módulo vuelve todo.
   **Con esto están los 10 módulos.** Suite: ver PR.
-- **Fases que siguen**: 8 retirar Firebase/Supabase; 9 documentación y limpieza
-  de datos personales (las fases 6 y 7 se descartaron) activables; 6 vocabulario; 7 asistente de primer arranque;
-  8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
+- **Fase 8 (sin Firebase ni Supabase) — hecha**: se sacó todo el código de nube de
+  terceros (Supabase: sync por internet, login de Google de PC y celular;
+  Firebase/Firestore: restos que ya no compilaban), las dependencias
+  `supabase_flutter`/`google_sign_in`/`mocktail`, el plugin de Google Services de
+  Android y `supabase/schema.sql`. Se mantiene el motor de sincronización
+  (`repositorio_sincronizacion.dart`) y la sync por wifi PC↔celular. El celular
+  ya no pide login: entra directo a elegir usuario. Se eliminó Configuración →
+  "Cuenta de Google" (la cuenta del producto será la de Nodo Sur, aparte).
+  **Cambio de comportamiento**: sin la PC al alcance, el celular ya no puede
+  cobrar con la terminal Point (las credenciales viajaban por Supabase); avisa
+  que se hace conectado a la PC. `flutter analyze lib` queda sin errores. Suite:
+  1329 verdes + 4 que no compilan por `test/capturas/`.
+- **Fase que sigue**: 9, documentación y limpieza de datos personales (las fases
+  6 y 7 se descartaron).
 
 ---
 

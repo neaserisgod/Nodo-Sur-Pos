@@ -48,7 +48,6 @@ import 'actualizacion.dart';
 import 'base_local.dart';
 import 'boton_escaner_companion.dart';
 import 'cliente_companion.dart';
-import 'companion_app.dart' show syncSupabaseCompanion;
 import 'dialogo_arqueo_intermedio_companion.dart';
 import 'dialogo_cierre_companion.dart';
 import 'emparejamiento.dart';
@@ -396,9 +395,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// acá es donde se entera y vuelve a usarla en vivo. Silencioso si falla,
   /// mismo criterio que `_revisarActualizacion`/`_revisarSesion`.
   Future<void> _sincronizar() async {
-    // Con el pull por internet ya no cada 20 s (tráfico, 2026-09-28),
-    // tirar para actualizar también fuerza uno.
-    await syncSupabaseCompanion?.sincronizarAhora();
     if (_cliente == null) return;
     await sincronizarConPc(_cliente!);
     final conexion = await leerConexion();

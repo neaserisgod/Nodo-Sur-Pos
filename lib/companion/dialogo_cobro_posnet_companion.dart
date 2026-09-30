@@ -4,14 +4,10 @@
 // `timeoutPollingCobroPosnet`, `domain/cobro_posnet.dart` — Regla 3), y
 // recién graba la venta si se aprueba.
 //
-// Contra [ServicioCompanion], no [ClienteCompanion] a secas (Bruno,
-// 2026-09-18: "revisá cómo hacer para que el celular mande la orden
-// directamente al posnet") — la orden va derecho a la API de Mercado Pago
-// desde el celular (`PuertoLocal.iniciarCobroPosnet`), sin pasar por la PC,
-// usando las credenciales que el escritorio sincroniza a Supabase
-// (`transporte_supabase.dart::leerConfigCobro`). Con PC emparejada y
-// alcanzable sigue yendo por HTTP como siempre (`ClienteCompanion`,
-// `resolverServicioCompanion` decide una sola vez cuál).
+// Contra [ServicioCompanion], no [ClienteCompanion] a secas: con la PC
+// emparejada y alcanzable la orden va por HTTP a la PC, que tiene las
+// credenciales de Mercado Pago (`resolverServicioCompanion` decide una sola
+// vez cuál). Sin la PC (`PuertoLocal`) no hay credenciales y se avisa.
 
 import 'dart:async';
 

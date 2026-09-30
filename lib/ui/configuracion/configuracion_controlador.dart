@@ -1,9 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../servicios/modulos_activos.dart';
-import '../../data/autenticacion_escritorio.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart';
 import '../../data/repositorio_medios_pago.dart';
@@ -27,7 +25,6 @@ enum SeccionConfiguracion {
   respaldo,
   impresion,
   companion,
-  cuentaGoogle,
   actualizaciones,
 }
 
@@ -51,50 +48,6 @@ class ConfiguracionControlador extends ChangeNotifier {
   /// máquina no tiene ninguna red conectada en este momento (ej. WiFi
   /// apagada), que es distinto de "no hay token generado todavía".
   String? companionIp;
-
-  /// Login del escritorio (Bruno, 2026-09-18: "mismo login" que la
-  /// companion) — vive acá y no en una pantalla propia a propósito: no
-  /// bloquea el arranque de la app (`CLAUDE.md`, "arranque vs. operación"),
-  /// es un paso que se hace una sola vez, desde Configuración.
-  bool conectandoCuentaGoogle = false;
-  String? errorCuentaGoogle;
-
-  /// `null` también si Supabase no llegó a inicializarse al arrancar (sin
-  /// red, timeout — ver el comentario de `main.dart`) — la sección de
-  /// cuenta muestra "sin conectar" en vez de crashear.
-  String? get cuentaGoogleEmail {
-    try {
-      return Supabase.instance.client.auth.currentUser?.email;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> conectarCuentaGoogle() async {
-    conectandoCuentaGoogle = true;
-    errorCuentaGoogle = null;
-    notifyListeners();
-    try {
-      await iniciarSesionConGoogleDesdeEscritorio();
-    } on AutenticacionEscritorioException catch (e) {
-      errorCuentaGoogle = e.mensaje;
-    } catch (e) {
-      errorCuentaGoogle = 'Algo salió mal ($e).';
-    } finally {
-      conectandoCuentaGoogle = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> desconectarCuentaGoogle() async {
-    try {
-      await Supabase.instance.client.auth.signOut();
-    } catch (_) {
-      // Best-effort — si Supabase nunca llegó a inicializarse, no hay
-      // sesión real de la que desconectarse.
-    }
-    notifyListeners();
-  }
 
   Future<void> cargarTodo() async {
     configuracion = await db.select(db.configuracionTabla).getSingle();
