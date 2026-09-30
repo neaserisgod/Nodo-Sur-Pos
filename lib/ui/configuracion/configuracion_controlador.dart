@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../servicios/modulos_activos.dart';
 import '../../data/autenticacion_escritorio.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart';
@@ -35,7 +36,7 @@ class ConfiguracionControlador extends ChangeNotifier {
 
   final AppDatabase db;
 
-  SeccionConfiguracion seccionActual = SeccionConfiguracion.cigarrillos;
+  SeccionConfiguracion seccionActual = moduloActivo(Modulo.cajaAparte) ? SeccionConfiguracion.cigarrillos : SeccionConfiguracion.comercio;
 
   Configuracion? configuracion;
   ConfiguracionNegocio? configuracionNegocio;

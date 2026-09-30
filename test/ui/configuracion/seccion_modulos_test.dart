@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
@@ -43,5 +44,18 @@ void main() {
     await tester.tap(find.byKey(const Key('modulo_promos')));
     await tester.pumpAndSettle();
     expect((await modulosNegocioActuales(db)).estaActivo(Modulo.promos), isTrue);
+  });
+
+  testWidgets('apagar Caja aparte esconde "Recargo de cigarrillos" del menú al instante', (tester) async {
+    final db = baseDeTest();
+    addTearDown(db.close);
+    addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+    await _pump(tester, db);
+    expect(find.text('Recargo de cigarrillos'), findsOneWidget);
+
+    modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Recargo de cigarrillos'), findsNothing);
+    expect(find.text('Mi comercio'), findsOneWidget);
   });
 }

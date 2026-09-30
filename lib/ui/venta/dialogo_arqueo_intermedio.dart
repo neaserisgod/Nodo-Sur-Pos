@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../comun/botones.dart';
@@ -195,6 +197,7 @@ class _ContenidoRevisado extends StatelessWidget {
             color: colorDiferenciaMp,
           ),
         ],
+        if (moduloActivo(Modulo.cajaAparte)) ...[
         const SizedBox(height: Espaciado.lg),
         CampoPlata(
           key: const Key('campo_lata_contada_intermedio'),
@@ -213,6 +216,7 @@ class _ContenidoRevisado extends StatelessWidget {
             enfasis: true,
             color: colorDiferenciaLata,
           ),
+        ],
         ],
         if (c.error != null) ...[
           const SizedBox(height: Espaciado.md),
