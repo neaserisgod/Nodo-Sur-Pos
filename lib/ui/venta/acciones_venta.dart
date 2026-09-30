@@ -5,6 +5,8 @@
 import 'package:flutter/widgets.dart';
 
 import '../../domain/medio_pago.dart';
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import 'dialogo_cobro_posnet.dart';
 import 'dialogo_mixto.dart';
 import 'dialogo_monto_varios.dart';
@@ -82,7 +84,8 @@ Future<void> cobrarOAbrirPosnet(
   // camino que ya sabe que "Enter con nada para cobrar" no es un error
   // (ver avisoCobro) — abrir el diálogo de posnet para una venta vacía no
   // tendría sentido.
-  if (c.carrito.isNotEmpty && c.canalElegido != null) {
+  // Sin el módulo Point no hay terminal: QR y Débito se cobran a mano, directo (el mismo camino que "Cobrar a mano").
+  if (c.carrito.isNotEmpty && c.canalElegido != null && moduloActivo(Modulo.cobroPoint)) {
     await mostrarDialogoCobroPosnet(context, controlador: c);
   } else {
     await c.cobrarActual();

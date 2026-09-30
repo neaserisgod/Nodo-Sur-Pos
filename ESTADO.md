@@ -107,7 +107,12 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   (retener/retirar); sin **Equilibrio** el Inicio queda solo con "Hoy" (sin
   "Este mes"). El Inicio reacciona al instante al interruptor. Faltan: turnos,
   Point, pesables y caja aparte.
-- **Fases que siguen**: 5c módulos restantes activables; 6 vocabulario; 7 asistente de primer arranque;
+- **Fase 5c (turnos y Point) — hecha**: sin **Turnos** desaparecen "Cambiar de
+  turno" y el aviso de arqueo cada 2 horas de la pantalla de venta (cerrar caja y
+  el arqueo del cierre siguen). Sin **Cobro con Point**, QR y Débito se cobran
+  directo, sin terminal (el mismo camino que "Cobrar a mano"); la configuración de
+  la terminal queda visible en Configuración → Impresión. Faltan: pesables y caja aparte.
+- **Fases que siguen**: 5d pesables y caja aparte (los dos que tocan cálculos) activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---

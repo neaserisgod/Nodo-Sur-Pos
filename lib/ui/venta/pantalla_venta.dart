@@ -27,6 +27,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../navegacion/refresco_por_celular.dart';
+import '../../domain/modulos.dart';
+import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import 'venta_en_curso.dart';
 import '../../data/repositorio_secciones_menu.dart';
@@ -479,9 +481,13 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
               final accionesPie = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _BotonNotificaciones(
-                    hayArqueoVencido: c.arqueoIntermedioVencido,
-                    onHacerArqueo: _hacerArqueoIntermedio,
+                  // El arqueo sugerido cada 2 horas es parte de los turnos.
+                  SiModulo(
+                    Modulo.turnos,
+                    hijo: _BotonNotificaciones(
+                      hayArqueoVencido: c.arqueoIntermedioVencido,
+                      onHacerArqueo: _hacerArqueoIntermedio,
+                    ),
                   ),
                   _AccionesPie(
                     puedeCerrarCaja: c.sesion != null,
@@ -836,10 +842,13 @@ class _AccionesPie extends StatelessWidget {
         // arqueo obligatorio, pero para cuando viene ayuda a mitad de
         // sesión — al terminar, encadena directo a abrir la hoja de quien
         // entra en vez de dejar la venta bloqueada esperando un segundo clic.
-        _BotonAccion(
-          icono: IconosPlazoleta.swapHoriz,
-          etiqueta: 'Cambiar de turno',
-          onPressed: puedeCerrarCaja ? onCambiarTurno : null,
+        SiModulo(
+          Modulo.turnos,
+          hijo: _BotonAccion(
+            icono: IconosPlazoleta.swapHoriz,
+            etiqueta: 'Cambiar de turno',
+            onPressed: puedeCerrarCaja ? onCambiarTurno : null,
+          ),
         ),
         _BotonAccion(
           icono: IconosPlazoleta.lockOutline,
