@@ -3,6 +3,7 @@
 #
 #   .\tool\publicar_release.ps1 -Notas "Arqueos opcionales"
 #   .\tool\publicar_release.ps1 -Notas "..." -Rollout 50
+#   .\tool\publicar_release.ps1 -Notas "..." -Canal beta -Rollout 100   # solo la ven las cuentas de administrador (tu PC)
 #   .\tool\publicar_release.ps1 -DryRun            # todo menos subir y subir el build
 #
 # Variables de entorno (NINGUNA se imprime ni se guarda):
@@ -24,6 +25,8 @@ param(
     [string]$Notas = "",
     [ValidateRange(1, 100)]
     [int]$Rollout = 10,
+    [ValidateSet("stable", "beta")]
+    [string]$Canal = "stable",
     [switch]$DryRun,
     [switch]$CertificadoDePrueba
 )
@@ -96,6 +99,7 @@ $argumentos = @(
     $scriptPublicar,
     "--file", $archivo,
     "--platform", "windows",
+    "--channel", $Canal,
     "--version", $version.Feed,
     "--signature", $firma,
     "--signature-type", "dsa",
@@ -109,8 +113,8 @@ if ($DryRun) {
     return
 }
 
-Write-Output "Subiendo $($version.Feed) al servidor (rollout $Rollout%)..."
+Write-Output "Subiendo $($version.Feed) al servidor (canal $Canal, rollout $Rollout%)..."
 & node @argumentos
 if ($LASTEXITCODE -ne 0) { throw "publicar-release.mjs falló (código $LASTEXITCODE)" }
 Write-Output ""
-Write-Output "Publicado: $($version.Completa) al $Rollout% de las PC."
+Write-Output "Publicado: $($version.Completa) (canal $Canal) al $Rollout% de las PC."

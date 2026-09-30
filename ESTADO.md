@@ -158,6 +158,11 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `nodosur_cuenta.json` (carpeta de datos de la app), fuera de la base: restaurar no
   lo pisa. Suite: 1375 verdes + 4 que no compilan por `test/capturas/`.
   Falta: probar contra el servidor real con una cuenta (ver PR).
+- **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
+  `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
+  "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no
+  ignora `test/capturas/` (`/capturas/`). Nuevo `.github/workflows/tests.yml` (análisis y tests en cada PR; sin probar en GitHub todavía
+  y en rojo mientras falte `test/capturas/`). Suite: 1387 verdes + 4 que no compilan por `test/capturas/`.
 - **Copias sin secretos**: la copia de la nube ya no lleva `mp_access_token` ni `companion_token` (vaciados con `secure_delete` + `VACUUM`; el respaldo local sigue completo). Tras restaurar se vuelven a cargar. Documentado en `DECISIONES.md`, `README.md` y `CLAUDE.md`. Suite: 1377 verdes + 4 que no compilan por `test/capturas/`.
 
 ---
