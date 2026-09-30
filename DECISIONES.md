@@ -1318,3 +1318,21 @@ Decididas con el dueño antes de empezar (fase 1):
 - **El comparador de precios nace apagado** en una base nueva: sus fuentes son del
   origen (una ciudad y una tienda puntual). Hacerlo configurable por ciudad queda
   fuera de esta generalización.
+
+### Nube: cuenta de Nodo Sur y copias (2026-09-30)
+
+- **Qué es y qué no.** La cuenta (Google, en el sitio horsepos.com) sirve para dos cosas: guardar copias de la base y
+  dar las versiones de prueba al administrador. **No** es un POS multi-comercio en un servidor: cada comercio sigue
+  con su propia base SQLite local y la sincronización PC↔celular sigue siendo por wifi. El servidor (Cloudflare:
+  Worker, D1 y R2) vive en el repo del sitio (`NodoSurPage`), no acá.
+- **Vinculación** como "iniciar sesión en el navegador": la app abre el sitio, el sitio devuelve un código de un solo
+  uso a un servidor local `127.0.0.1` y la app lo canjea con PKCE. El token de dispositivo (1 año, se renueva con cada
+  aviso) se guarda en `nodosur_cuenta.json`, fuera de la base para que restaurar no lo pise.
+- **Copias**: `VACUUM INTO` → gzip → hash; el servidor las cifra (AES-256-GCM) y conserva las últimas 5. Quien opera
+  el servidor puede técnicamente descifrarlas, por eso **no llevan el token de Mercado Pago ni el del celular**
+  (se vacían en la copia de la nube, con `secure_delete` + `VACUUM`; los respaldos locales no se tocan). Tras
+  restaurar hay que volver a cargar el de Mercado Pago y emparejar el celular.
+- **Varias PCs en una cuenta**: cada PC sube sus copias y todas aparecen en la lista con el nombre de la PC. No se
+  mezclan datos: restaurar reemplaza la base entera por la de esa copia.
+- **Cobro con Point desde el celular sin la PC**: no está resuelto (las credenciales ya no viajan por ningún lado).
+  Una opción futura es que un Worker guarde el token cifrado por comercio y mande la orden.

@@ -13,6 +13,11 @@ repartida en documentos con un dueño claro cada uno — **no hay dos
 documentos diciendo cosas distintas sobre lo mismo**; cuando un tema se
 toca en más de un lado, uno es la fuente de verdad y el resto apunta ahí.
 
+**Cuenta de Nodo Sur (opcional).** Desde Configuración → Cuenta de Nodo Sur la PC se vincula a una cuenta de Google del
+sitio (horsepos.com, en Cloudflare) para guardar copias cifradas de la base y restaurarlas, por ejemplo al reinstalar.
+Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor está en otro repositorio; ver
+`DECISIONES.md` ("Nube: cuenta de Nodo Sur y copias").
+
 ## Mapa de documentación
 
 | Documento | Es la fuente de verdad de... |

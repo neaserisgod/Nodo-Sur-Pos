@@ -85,7 +85,9 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
           const SizedBox(height: Espaciado.sm),
           Text(
             'Vinculá esta PC a tu cuenta de Google para guardar copias de tu base en la nube. Si borrás el sistema y la base, '
-            'lo reinstalás, entrás con la misma cuenta y recuperás todo. Se guardan las últimas 5 copias, cifradas.',
+            'lo reinstalás, entrás con la misma cuenta y recuperás todo. Se guardan las últimas 5 copias, cifradas en el servidor. '
+            'No incluyen el token de Mercado Pago ni el del celular: después de restaurar se vuelven a cargar (Configuración → '
+            'Impresión, y emparejar el celular de nuevo).',
             style: secundario,
           ),
           const SizedBox(height: Espaciado.lg),

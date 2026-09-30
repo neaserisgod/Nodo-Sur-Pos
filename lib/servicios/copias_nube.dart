@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import '../data/database.dart';
 import 'cuenta_nube.dart';
@@ -43,12 +44,32 @@ class CopiaArmada {
 
 String sha256Hex(List<int> bytes) => sha256.convert(bytes).toString();
 
+/// Los datos que dan acceso a un servicio o a la caja y que NO viajan en la copia de la nube: el servidor la cifra,
+/// pero quien opera el servidor puede descifrarla, y un token de pago no tiene por qué estar ahí. Se vuelven a
+/// cargar a mano tras restaurar (el de Mercado Pago en Configuración → Impresión; el del celular, emparejando de nuevo).
+const _sentenciaSinSecretos = 'UPDATE configuracion_tabla SET mp_access_token = NULL, companion_token = NULL';
+
+/// Vacía los secretos de una copia ya hecha. `secure_delete` y `VACUUM` después: sin eso el texto viejo queda en las
+/// páginas libres del archivo y se podría leer igual.
+void _quitarSecretos(String ruta) {
+  final base = sqlite.sqlite3.open(ruta);
+  try {
+    base.execute('PRAGMA secure_delete = ON');
+    base.execute(_sentenciaSinSecretos);
+    base.execute('VACUUM');
+  } finally {
+    base.dispose();
+  }
+}
+
 /// Copia consistente de la base en uso, comprimida. `VACUUM INTO` es atómico aunque la base esté abierta.
-Future<CopiaArmada> armarCopia(AppDatabase db, {required Directory carpetaTemporal}) async {
+/// Con [sinSecretos] (lo que va a la nube) se vacían los tokens antes de comprimir.
+Future<CopiaArmada> armarCopia(AppDatabase db, {required Directory carpetaTemporal, bool sinSecretos = true}) async {
   await carpetaTemporal.create(recursive: true);
   final crudo = File(p.join(carpetaTemporal.path, 'copia_${DateTime.now().microsecondsSinceEpoch}.sqlite'));
   try {
     await db.customStatement('VACUUM INTO ?', [crudo.path]);
+    if (sinSecretos) _quitarSecretos(crudo.path);
     final comprimido = gzip.encode(await crudo.readAsBytes());
     return CopiaArmada(comprimido, sha256Hex(comprimido));
   } finally {
