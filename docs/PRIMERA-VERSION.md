@@ -96,6 +96,18 @@ Cuando la beta ande bien varios días:
 Subí el porcentaje desde horsepos.com/admin/ → *Versiones* mientras no aparezcan problemas. Si algo sale mal, ahí mismo
 podés **Retirar** la versión (vuelve a ser la vigente la anterior) o **Bloquearla**. La descarga para clientes nuevos sale de horsepos.com/descargar/ (canal estable).
 
+## Si falla la firma de actualizaciones ("Failed to sign update")
+
+Casi siempre es la clave privada. `sign_update` no dice el motivo real, por eso `publicar_release.ps1` y el flujo de GitHub
+ahora la comprueban **antes de compilar** (`tool/_firma.ps1`) y muestran lo que dijo OpenSSL. Las causas típicas:
+
+- El secreto `DSA_PRIVATE_KEY` no es el contenido **completo** de `dsa_priv.pem` (faltan las líneas `BEGIN`/`END`), o es la
+  clave **pública**.
+- La privada es válida pero **de otro par**: no corresponde a `dsa_pub.pem` del repo (que va adentro del instalador). Firmar así
+  no da error, pero las PC instaladas rechazarían la actualización; por eso el chequeo también compara los dos.
+
+Si de verdad se perdió la privada del par actual, se genera un par nuevo y se commitea el `dsa_pub.pem` nuevo **antes** de publicar.
+
 ## Pendiente fuera de esta versión
 
 - **APK del celular**: hoy se firma con la clave de debug; antes de repartirlo hace falta una keystore propia.

@@ -95,6 +95,15 @@ jobs:
             Write-Host "Sin certificado de firma de código: el instalador sale sin firmar (SmartScreen va a avisar)."
           }
 
+      # Falla ahora (en segundos) y no después de 10 minutos de compilación si la clave no sirve o no es la de dsa_pub.pem.
+      - name: Comprobar la clave de firma contra dsa_pub.pem
+        shell: pwsh
+        run: |
+          if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) { $env:PATH = "$env:ProgramFiles\Git\usr\bin;$env:PATH" }
+          . .\tool\_firma.ps1
+          Test-ClaveDsa -ClavePrivada $env:DSA_PRIVATE_KEY_PATH -ClavePublica (Resolve-Path .\dsa_pub.pem).Path
+          Write-Host "La clave de firma es válida y corresponde a dsa_pub.pem."
+
       - run: flutter pub get
 
       # Sube el número de compilación en pubspec.yaml, compila, arma y firma el instalador, lo firma para el

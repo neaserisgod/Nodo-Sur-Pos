@@ -33,6 +33,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\_version.ps1"
+. "$PSScriptRoot\_firma.ps1"
 
 $raiz = Split-Path -Parent $PSScriptRoot
 Set-Location $raiz
@@ -63,6 +64,10 @@ if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) {
     if (Test-Path "$openssl\openssl.exe") { $env:PATH = "$openssl;$env:PATH" }
     else { throw "No encuentro openssl (lo necesita sign_update). Instalá Git for Windows o agregalo al PATH." }
 }
+
+# La clave tiene que servir Y ser la del dsa_pub.pem del repo: si no, se corta ACÁ, antes de subir el build y de compilar.
+Write-Output "Comprobando la clave de firma..."
+Test-ClaveDsa -ClavePrivada $clavePrivada -ClavePublica (Join-Path $raiz "dsa_pub.pem")
 
 # --- 1. Build number ---
 if ($DryRun) {
