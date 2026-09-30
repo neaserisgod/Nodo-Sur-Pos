@@ -1192,6 +1192,21 @@ class $ProveedoresTable extends Proveedores
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _cajaAparteMeta = const VerificationMeta(
+    'cajaAparte',
+  );
+  @override
+  late final GeneratedColumn<bool> cajaAparte = GeneratedColumn<bool>(
+    'caja_aparte',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("caja_aparte" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -1250,6 +1265,7 @@ class $ProveedoresTable extends Proveedores
     gananciaRevisadaFecha,
     markupBp,
     activo,
+    cajaAparte,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -1432,6 +1448,12 @@ class $ProveedoresTable extends Proveedores
         activo.isAcceptableOrUnknown(data['activo']!, _activoMeta),
       );
     }
+    if (data.containsKey('caja_aparte')) {
+      context.handle(
+        _cajaAparteMeta,
+        cajaAparte.isAcceptableOrUnknown(data['caja_aparte']!, _cajaAparteMeta),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -1549,6 +1571,10 @@ class $ProveedoresTable extends Proveedores
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
       )!,
+      cajaAparte: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}caja_aparte'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -1659,6 +1685,12 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   final int? markupBp;
   final bool activo;
 
+  /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
+  /// lleva su propia caja (la "lata"), así que queda afuera de la reposición genérica y tiene su propio panel.
+  /// Reemplaza al código fijo `'SC'` (Serra Cigarros) que estaba repetido en la app; la migración lo marca en
+  /// las bases que ya lo tenían. Nace en falso.
+  final bool cajaAparte;
+
   /// Identidad de sincronización — ver el comentario de [Categorias.globalId].
   final String? globalId;
   final String? origenDispositivo;
@@ -1685,6 +1717,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     this.gananciaRevisadaFecha,
     this.markupBp,
     required this.activo,
+    required this.cajaAparte,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -1739,6 +1772,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
       map['markup_bp'] = Variable<int>(markupBp);
     }
     map['activo'] = Variable<bool>(activo);
+    map['caja_aparte'] = Variable<bool>(cajaAparte);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -1792,6 +1826,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ? const Value.absent()
           : Value(markupBp),
       activo: Value(activo),
+      cajaAparte: Value(cajaAparte),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -1849,6 +1884,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
       ),
       markupBp: serializer.fromJson<int?>(json['markupBp']),
       activo: serializer.fromJson<bool>(json['activo']),
+      cajaAparte: serializer.fromJson<bool>(json['cajaAparte']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -1891,6 +1927,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
       ),
       'markupBp': serializer.toJson<int?>(markupBp),
       'activo': serializer.toJson<bool>(activo),
+      'cajaAparte': serializer.toJson<bool>(cajaAparte),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -1919,6 +1956,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
     Value<int?> markupBp = const Value.absent(),
     bool? activo,
+    bool? cajaAparte,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -1961,6 +1999,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         : this.gananciaRevisadaFecha,
     markupBp: markupBp.present ? markupBp.value : this.markupBp,
     activo: activo ?? this.activo,
+    cajaAparte: cajaAparte ?? this.cajaAparte,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -2021,6 +2060,9 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           : this.gananciaRevisadaFecha,
       markupBp: data.markupBp.present ? data.markupBp.value : this.markupBp,
       activo: data.activo.present ? data.activo.value : this.activo,
+      cajaAparte: data.cajaAparte.present
+          ? data.cajaAparte.value
+          : this.cajaAparte,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -2057,6 +2099,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
           ..write('activo: $activo, ')
+          ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -2087,6 +2130,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     gananciaRevisadaFecha,
     markupBp,
     activo,
+    cajaAparte,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -2117,6 +2161,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           other.gananciaRevisadaFecha == this.gananciaRevisadaFecha &&
           other.markupBp == this.markupBp &&
           other.activo == this.activo &&
+          other.cajaAparte == this.cajaAparte &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -2144,6 +2189,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
   final Value<DateTime?> gananciaRevisadaFecha;
   final Value<int?> markupBp;
   final Value<bool> activo;
+  final Value<bool> cajaAparte;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -2169,6 +2215,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
     this.activo = const Value.absent(),
+    this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -2195,6 +2242,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
     this.activo = const Value.absent(),
+    this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -2222,6 +2270,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Expression<DateTime>? gananciaRevisadaFecha,
     Expression<int>? markupBp,
     Expression<bool>? activo,
+    Expression<bool>? cajaAparte,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -2258,6 +2307,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
         'ganancia_revisada_fecha': gananciaRevisadaFecha,
       if (markupBp != null) 'markup_bp': markupBp,
       if (activo != null) 'activo': activo,
+      if (cajaAparte != null) 'caja_aparte': cajaAparte,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -2286,6 +2336,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Value<DateTime?>? gananciaRevisadaFecha,
     Value<int?>? markupBp,
     Value<bool>? activo,
+    Value<bool>? cajaAparte,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -2319,6 +2370,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
           gananciaRevisadaFecha ?? this.gananciaRevisadaFecha,
       markupBp: markupBp ?? this.markupBp,
       activo: activo ?? this.activo,
+      cajaAparte: cajaAparte ?? this.cajaAparte,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -2407,6 +2459,9 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
+    if (cajaAparte.present) {
+      map['caja_aparte'] = Variable<bool>(cajaAparte.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -2445,6 +2500,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
           ..write('activo: $activo, ')
+          ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -22993,6 +23049,7 @@ typedef $$ProveedoresTableCreateCompanionBuilder =
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
       Value<bool> activo,
+      Value<bool> cajaAparte,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -23020,6 +23077,7 @@ typedef $$ProveedoresTableUpdateCompanionBuilder =
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
       Value<bool> activo,
+      Value<bool> cajaAparte,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -23238,6 +23296,11 @@ class $$ProveedoresTableFilterComposer
 
   ColumnFilters<bool> get activo => $composableBuilder(
     column: $table.activo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get cajaAparte => $composableBuilder(
+    column: $table.cajaAparte,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23497,6 +23560,11 @@ class $$ProveedoresTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get cajaAparte => $composableBuilder(
+    column: $table.cajaAparte,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -23613,6 +23681,11 @@ class $$ProveedoresTableAnnotationComposer
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
+
+  GeneratedColumn<bool> get cajaAparte => $composableBuilder(
+    column: $table.cajaAparte,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
@@ -23810,6 +23883,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
+                Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -23836,6 +23910,7 @@ class $$ProveedoresTableTableManager
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
                 activo: activo,
+                cajaAparte: cajaAparte,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -23864,6 +23939,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
+                Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -23890,6 +23966,7 @@ class $$ProveedoresTableTableManager
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
                 activo: activo,
+                cajaAparte: cajaAparte,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,

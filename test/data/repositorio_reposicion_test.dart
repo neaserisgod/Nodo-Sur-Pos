@@ -78,6 +78,18 @@ void main() {
   ) => lista.firstWhere((r) => r.proveedor.id == proveedorId);
 
   group('reposicionActual', () {
+    test('los proveedores con caja aparte quedan afuera, sea cual sea su código', () async {
+      final codigos = (await reposicionActual(db)).map((r) => r.proveedor.codigo);
+      expect(codigos, isNot(contains('SC')));
+      expect(codigos, contains('S'));
+
+      await db.customStatement("UPDATE proveedores SET caja_aparte = 0 WHERE codigo = 'SC'");
+      await db.customStatement("UPDATE proveedores SET caja_aparte = 1 WHERE codigo = 'S'");
+      final despues = (await reposicionActual(db)).map((r) => r.proveedor.codigo);
+      expect(despues, contains('SC'));
+      expect(despues, isNot(contains('S')));
+    });
+
     test(
       'proveedor sin ventas: costo real 0, sugerido a separar es solo el colchón',
       () async {

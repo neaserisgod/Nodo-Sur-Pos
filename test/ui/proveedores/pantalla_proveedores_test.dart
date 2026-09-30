@@ -751,5 +751,48 @@ void main() {
       expect(find.text('Medio de pago'), findsNothing);
       expect(find.byKey(const Key('campo_nombre')), findsOneWidget);
     });
+
+    testWidgets('la caja aparte es una propiedad del proveedor, no su código: cualquiera puede tenerla', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final p = await preparar(db);
+      // Serra Cigarros deja de ser especial; otro proveedor pasa a serlo.
+      await db.customStatement("UPDATE proveedores SET caja_aparte = 0 WHERE codigo = 'SC'");
+      await db.customStatement("UPDATE proveedores SET caja_aparte = 1 WHERE codigo = 'A'");
+
+      await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
+      await _entrarAProveedor(tester, 'Serra Cigarros');
+      expect(find.text('Avanzado'), findsOneWidget);
+      expect(find.text('Ver lata'), findsNothing);
+
+      await _entrarAProveedor(tester, 'Arcor');
+      expect(find.text('Ver lata'), findsOneWidget);
+      expect(find.text('Avanzado'), findsNothing);
+    });
+
+    testWidgets('en Avanzado se marca y desmarca la caja aparte, y se guarda', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final p = await preparar(db);
+
+      await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
+      await _entrarAProveedor(tester, 'Mazzota');
+      await tester.tap(find.text('Avanzado'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('interruptor_caja_aparte')), findsOneWidget);
+      expect(find.text('Medio de pago'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('interruptor_caja_aparte')));
+      await tester.pumpAndSettle();
+      // Con caja aparte cobra solo en efectivo: ya no se elige medio de pago.
+      expect(find.text('Medio de pago'), findsNothing);
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      final f = await (db.select(db.proveedores)..where((x) => x.codigo.equals('F'))).getSingle();
+      expect(f.cajaAparte, isTrue);
+      expect(f.medioPago, 'Efectivo');
+      expect(find.text('Ver lata'), findsOneWidget);
+    });
   });
 }

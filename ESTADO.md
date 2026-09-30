@@ -84,8 +84,15 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   cargar nombre y dirección una vez. El celular muestra "Nodo Sur POS" hasta que
   el companion reciba la marca por sync. Suite: 1315 verdes + 4 que no compilan por
   `test/capturas/`. Sin migración.
-- **Fases que siguen**: 4 desacoplar el proveedor `'SC'`;
-  5 módulos activables; 6 vocabulario; 7 asistente de primer arranque;
+- **Fase 4 (proveedor con caja aparte) — hecha**: el código fijo `'SC'` (Serra
+  Cigarros) ya no decide nada. `proveedores.caja_aparte` (v45, nace en falso)
+  lo reemplaza en los 5 lugares donde se miraba el código (reposición ×3,
+  panel "Ver lata", diálogo Avanzado). La migración marca `SC` en las bases que
+  lo tenían, sin tocar `actualizado_en`. En Avanzado hay un interruptor "Caja
+  aparte (cobra solo en efectivo)"; con él el proveedor cobra en efectivo y
+  tiene su panel de lata. Las columnas `esLata`/`lata*` no se renombran.
+  Suite: 1322 verdes + 4 que no compilan por `test/capturas/`; `schemaVersion` 45.
+- **Fases que siguen**: 5 módulos activables; 6 vocabulario; 7 asistente de primer arranque;
   8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---

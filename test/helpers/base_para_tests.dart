@@ -49,7 +49,9 @@ Future<void> sembrarCatalogoDeTest(AppDatabase db) async {
     await db.into(db.categorias).insert(CategoriasCompanion.insert(nombre: nombre, markupDefaultBp: Value(markupBp)));
   }
   for (final (codigo, nombre) in _proveedoresDeTest) {
-    await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: codigo, nombre: nombre));
+    await db.into(db.proveedores).insert(
+      ProveedoresCompanion.insert(codigo: codigo, nombre: nombre, cajaAparte: Value(codigo == 'SC')),
+    );
   }
   for (final nombre in _gastosFijosDeTest) {
     await db.into(db.gastosFijos).insert(GastosFijosCompanion.insert(nombre: nombre));

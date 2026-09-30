@@ -405,7 +405,7 @@ class ProveedoresControlador extends ChangeNotifier {
   /// reserva su costo aparte, `calcularReposicion` excluye sus líneas) —
   /// separar/pagar ahí quedaban siempre en $0. Por eso tiene su propio
   /// panel ("Ver lata") en vez de "Avanzado".
-  bool get esSerraCigarros => esProveedorReal && seleccionado!.codigo == 'SC';
+  bool get esSerraCigarros => esProveedorReal && seleccionado!.cajaAparte;
 
   /// Los números del panel "Ver lata" — null sin sesión abierta (no hay
   /// "hoy" que mostrar).
@@ -469,6 +469,7 @@ class ProveedoresControlador extends ChangeNotifier {
     String? diaEntrega,
     required bool activo,
     required String medioPago,
+    bool? cajaAparte,
     int? colchonCentavos,
   }) async {
     final proveedor = seleccionado;
@@ -482,6 +483,7 @@ class ProveedoresControlador extends ChangeNotifier {
       diaEntrega: diaEntrega,
       activo: activo,
       medioPago: medioPago,
+      cajaAparte: cajaAparte,
       colchonReposicionCentavos: colchonCentavos,
     );
     await cargarTodo();
