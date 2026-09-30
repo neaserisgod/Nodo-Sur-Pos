@@ -1191,3 +1191,41 @@ entonces la app se "instalaba" copiando la carpeta de build con
    instalador con ventanas.
 6. **Instalar Inno Setup 6** en cualquier otra máquina que vaya a publicar
    (en esta ya quedó instalado, por usuario).
+
+---
+
+## Generalización del producto (2026-09-30)
+
+Decididas con el dueño antes de empezar (fase 1):
+
+- **Nombre**: Nodo Sur POS. Un solo producto y un solo instalador para todos
+  los comercios; cada uno se configura al primer arranque y puede cambiarlo
+  después desde Configuración.
+- **La lógica del negocio no se toca**: cigarrillos/lata, pesables, reposición,
+  fiado, cierres, etc. siguen completos. Lo único que sale del código son las
+  cosas personales del local de origen (nombres de personas y proveedores,
+  dirección del ticket, catálogo de ejemplo). Todo lo demás pasa a ser
+  configurable.
+- **Módulos con interruptor**: cada parte opcional se puede apagar; un módulo
+  apagado no muestra sus pantallas ni botones y no entra en los cálculos que
+  dependen de él, pero su lógica y sus datos quedan intactos. Se guardan los
+  APAGADOS (no los prendidos): vacío = todo activo, un módulo nuevo nace activo
+  sin migración, y una clave desconocida (PC y celular en versiones distintas)
+  se ignora. Las claves se sincronizan y no se renombran nunca.
+- **Comercio nuevo**: el asistente de primer arranque ofrece categorías de
+  ejemplo según el rubro (kiosco, almacén, fiambrería); proveedores vacíos.
+- **Medios de pago**: por ahora dos tipos (efectivo y virtual) con nombres
+  editables; el redondeo y el recargo dependen de esa diferencia. Más medios
+  quedan para después.
+- **Local de origen**: conserva sus nombres y archivos actuales (base, APK del
+  celular, rutas), así la actualización no cambia nada de lo que ya usa.
+  Los comercios nuevos nacen con los nombres del producto.
+- **Nube**: se eliminan Firebase y Supabase; queda la sincronización por wifi
+  entre la PC y el celular. (Fase 8.)
+- **Aspecto**: fijo de Nodo Sur POS; lo único que cambia por comercio es su
+  nombre (ventana, ticket, celular).
+- **Datos personales**: se sacan también los comentarios y los documentos,
+  reemplazando nombres por algo neutro, con un script al final. Los nombres
+  internos del código (`IconosPlazoleta`, etc.) no se renombran: el usuario
+  nunca los ve.
+
