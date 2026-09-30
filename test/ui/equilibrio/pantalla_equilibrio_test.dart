@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -7,6 +6,7 @@ import 'package:la_plazoleta/data/repositorio_equilibrio.dart';
 import 'package:la_plazoleta/ui/equilibrio/pantalla_equilibrio.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/tema/iconos.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
 /// (fija, no la flotante de Material) — cada campo que un test necesita
@@ -39,7 +39,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, {required int usuarioId,
 void main() {
   group('avisar antes que inventar (pedido explícito de Bruno)', () {
     testWidgets('sin ningún fijo cargado, avisa en vez de mostrar números', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
 
@@ -50,7 +50,7 @@ void main() {
     });
 
     testWidgets('cargar el monto de un concepto lo saca del aviso', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
 
@@ -68,7 +68,7 @@ void main() {
 
   group('margen ponderado real (no un porcentaje fijo)', () {
     testWidgets('el margen se calcula de lo realmente vendido', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
@@ -100,7 +100,7 @@ void main() {
 
   group('fijos pendientes y reserva diaria — completos con todos los fijos cargados', () {
     testWidgets('con todos los fijos cargados, muestra el equilibrio, pendientes y reserva reales', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final mesAnio = mesAnioDe(DateTime.now());
@@ -120,7 +120,7 @@ void main() {
     });
 
     testWidgets('registrar un pago de un fijo reduce lo pendiente', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
@@ -143,7 +143,7 @@ void main() {
     });
 
     testWidgets('el diálogo de pago permite elegir una fecha distinta de hoy', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(

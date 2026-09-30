@@ -6,17 +6,17 @@
 // `test/servidor/`). No es un test real (no hace ningún `expect`), es un
 // harness que se queda vivo un rato para poder interactuar con él a mano.
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/servidor/servidor_companion.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   test(
     'servidor manual con datos de prueba, queda vivo para probar a mano',
     () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
 
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno (prueba)'));
       await db.into(db.productos).insert(

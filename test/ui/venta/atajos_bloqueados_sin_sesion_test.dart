@@ -10,7 +10,6 @@
 // cortaba si había una ruta encima (`ModalRoute.of(context)?.isCurrent`).
 
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +20,7 @@ import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
 import 'package:provider/provider.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -60,7 +60,7 @@ void main() {
   testWidgets(
     'sin sesión abierta, un atajo Alt+tecla NO cambia nada a espaldas de la pantalla',
     (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       // Sesión abierta y ya cerrada, tal como en una caja real que ya operó.
       final usuarioId = await db
@@ -91,7 +91,7 @@ void main() {
   testWidgets(
     'sesión de un día anterior sin cerrar, un atajo Alt+tecla NO cambia nada a espaldas de la pantalla',
     (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)

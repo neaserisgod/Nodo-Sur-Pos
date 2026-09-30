@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -21,7 +21,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
 
 void main() {
   testWidgets('sin días cerrados, avisa que no hay nada todavía', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
 
@@ -31,7 +31,7 @@ void main() {
   });
 
   testWidgets('un día con diferencia distinta de cero se ve de un vistazo (color de error)', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     await db.into(db.sesionesDeCaja).insert(
@@ -51,7 +51,7 @@ void main() {
   });
 
   testWidgets('dos turnos del mismo día se distinguen por hora y empleado (Bruno, turnos)', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final brunoId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final anaId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Ana'));

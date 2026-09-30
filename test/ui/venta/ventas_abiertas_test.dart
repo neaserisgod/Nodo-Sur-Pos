@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
@@ -8,6 +7,7 @@ import 'package:la_plazoleta/data/repositorio_ventas_abiertas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// Ventas abiertas (Bruno, 2026-09-29): la venta permanece y se puede armar
 /// más de una a la vez.
@@ -31,7 +31,7 @@ void main() {
   Future<void> esperarGuardado() => Future<void>.delayed(const Duration(milliseconds: 50));
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final idCoca = await db.into(db.productos).insert(

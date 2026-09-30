@@ -1229,3 +1229,29 @@ Decididas con el dueño antes de empezar (fase 1):
   internos del código (`IconosPlazoleta`, etc.) no se renombran: el usuario
   nunca los ve.
 
+### Fase 2: datos iniciales por rubro (2026-09-30)
+
+- **Qué se siembra y qué no.** Una base nueva conserva solo lo que la app
+  necesita para andar (estructura): las dos cajas, los dos medios de pago, el
+  producto "Varios", los seis accesos directos, las secciones del menú y las filas
+  de configuración. Todo lo que es catálogo del comercio (categorías,
+  proveedores, gastos fijos) y el nombre del usuario pasa a ser dato del
+  comercio, no del código.
+- **Usuario inicial "Administrador".** Hace falta al menos un usuario: la sesión
+  de caja y cada venta se atan a uno. Es un nombre neutro que el comercio
+  cambia desde Configuración.
+- **Las cajas siguen sembrándose las dos**, incluida la de cigarrillos: hay ~26
+  usos que la dan por existente. Se vuelve opcional recién con el módulo
+  "caja aparte" (fase 5), no antes.
+- **Plantillas = ayuda, no regla.** Traen categorías y conceptos de gastos fijos
+  típicos del rubro. No traen proveedores, productos ni márgenes: los márgenes
+  de referencia de un local son de ese local y arrancan en 0 ("sin
+  referencia", Regla 14). Aplicar una plantilla es idempotente, no duplica por
+  nombre (sin importar mayúsculas) y no pisa lo que el comercio ya tiene; se
+  pueden aplicar varias.
+- **Tests.** En vez de reescribir ~130 tests escritos contra un catálogo ya
+  cargado, ese catálogo quedó como fixture de test (`baseDeTest()`, vía un
+  gancho `alCrear` de `AppDatabase` que la app real no usa). Sus datos
+  personales salen con la limpieza final (fase 9).
+- **Bases existentes**: no cambian. La fase no agrega migración.
+

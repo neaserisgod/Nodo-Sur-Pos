@@ -21,6 +21,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import '../helpers/base_para_tests.dart';
 
 void main() {
   test(
@@ -31,7 +32,7 @@ void main() {
       final archivo = File('${carpeta.path}/base.sqlite');
       addTearDown(() => carpeta.delete(recursive: true));
 
-      var db = AppDatabase(NativeDatabase(archivo));
+      var db = AppDatabase(NativeDatabase(archivo), sembrarCatalogoDeTest);
 
       // `_seedDatosFijos` (onCreate) ya deja usuario, cajas, medios de pago y
       // ~11 categorías con `global_id` NULL — igual que la base real de

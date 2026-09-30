@@ -62,10 +62,21 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   y `configurarEncabezadoTicket`. **Nada en la app usa estos datos todavía**:
   el comportamiento es idéntico. Suite: 1271 tests verdes + 4 que no compilan
   por `test/capturas/` (ver `TRAMPAS.md`); `schemaVersion` 44.
-- **Fases que siguen**: 2 semillas → plantillas por rubro; 3 marca visible;
-  4 desacoplar el proveedor `'SC'`; 5 módulos activables; 6 vocabulario;
-  7 asistente de primer arranque; 8 retirar Firebase/Supabase; 9 documentación
-  y limpieza de datos personales.
+- **Fase 2 (datos iniciales por rubro) — hecha**: una base NUEVA ya no trae las
+  categorías, los 15 proveedores ni los gastos fijos del local de origen, y el
+  usuario inicial se llama "Administrador" (antes, el nombre del dueño). Lo
+  estructural sigue sembrándose (cajas, medios de pago, producto "Varios",
+  accesos directos, secciones del menú, configuración). `domain/plantillas_rubro.dart`
+  define las plantillas (Kiosco, Almacén, Fiambrería, Otro) y
+  `repositorio_plantillas.dart` las aplica sin duplicar ni pisar nada; el
+  asistente de primer arranque (fase 7) las va a ofrecer. Las bases existentes
+  no cambian. Los tests que partían del catálogo viejo lo reciben de
+  `test/helpers/base_para_tests.dart` (`baseDeTest()`); los que prueban una base
+  nueva usan `AppDatabase(NativeDatabase.memory())` directo. Suite: 1289 tests
+  verdes + 4 que no compilan por `test/capturas/`; `schemaVersion` sigue en 44.
+- **Fases que siguen**: 3 marca visible; 4 desacoplar el proveedor `'SC'`;
+  5 módulos activables; 6 vocabulario; 7 asistente de primer arranque;
+  8 retirar Firebase/Supabase; 9 documentación y limpieza de datos personales.
 
 ---
 

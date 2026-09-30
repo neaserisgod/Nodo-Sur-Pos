@@ -3,7 +3,6 @@
 // productos para mandar a Venta.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +13,7 @@ import 'package:la_plazoleta/ui/proveedores/detalle_proveedor.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, Widget pantalla) async {
   tester.view.physicalSize = const Size(1920, 1080);
@@ -28,7 +28,7 @@ Finder get _buscador => find.byKey(const Key('busqueda_contextual'));
 
 void main() {
   testWidgets('en Proveedores busca productos y deja en la lista solo los proveedores que los tienen', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final serra = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle()).id;
@@ -59,7 +59,7 @@ void main() {
   });
 
   testWidgets('en Configuración busca ajustes por palabra clave y abre la única sección que coincide', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
 

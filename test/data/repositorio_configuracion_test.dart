@@ -1,14 +1,14 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
   });
   tearDown(() => db.close());
 

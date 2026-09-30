@@ -19,6 +19,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import '../helpers/base_para_tests.dart';
 
 void main() {
   test(
@@ -32,7 +33,7 @@ void main() {
       // 1) Base "nueva" de verdad (onCreate ya deja el esquema v30 completo,
       // con las columnas de esta migración de fábrica) — se usa solo para
       // tener un archivo con datos reales y realistas para el paso 2.
-      var db = AppDatabase(NativeDatabase(archivo));
+      var db = AppDatabase(NativeDatabase(archivo), sembrarCatalogoDeTest);
       final productoId = await db.into(db.productos).insert(
             ProductosCompanion.insert(
               nombre: 'Coca-Cola 500ml',

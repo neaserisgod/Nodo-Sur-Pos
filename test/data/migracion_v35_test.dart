@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import '../helpers/base_para_tests.dart';
 
 void main() {
   test('una base v34 real sube a v35: lo ya separado queda entero del cajón (parte MP en 0)', () async {
@@ -14,7 +15,7 @@ void main() {
     addTearDown(() => carpeta.delete(recursive: true));
     final archivo = File('${carpeta.path}/base.sqlite');
 
-    var db = AppDatabase(NativeDatabase(archivo));
+    var db = AppDatabase(NativeDatabase(archivo), sembrarCatalogoDeTest);
     await db.customStatement("UPDATE proveedores SET separado_centavos = 90000 WHERE codigo = 'S'");
     await db.close();
 

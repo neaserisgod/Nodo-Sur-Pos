@@ -9,13 +9,13 @@
 // muestra una advertencia explícita antes de ese click final.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/proveedores/dialogo_edicion_masiva.dart';
 import 'package:la_plazoleta/ui/proveedores/proveedores_controlador.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _abrir(WidgetTester tester, ProveedoresControlador controlador) async {
   await tester.pumpWidget(
@@ -39,7 +39,7 @@ void main() {
   late ProveedoresControlador controlador;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     productoId = await db
         .into(db.productos)

@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
   tester.view.physicalSize = const Size(1400, 1100);
@@ -27,7 +27,7 @@ void main() {
   testWidgets(
       'buscar un producto, agregarlo, elegir efectivo, sumarlo a la tanda y guardar el día',
       (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     await db.into(db.productos).insert(
@@ -69,7 +69,7 @@ void main() {
   });
 
   testWidgets('guardar sin ninguna venta en la tanda deja un error visible', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
 

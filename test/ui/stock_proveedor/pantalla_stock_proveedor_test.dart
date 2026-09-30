@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:drift/native.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/ui/stock_proveedor/pantalla_stock_proveedor.dart';
 import 'package:la_plazoleta/ui/tema/colores_escritorio.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
   tester.view.physicalSize = const Size(1366, 768);
@@ -23,7 +23,7 @@ void main() {
   late int usuarioId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
   });
   tearDown(() => db.close());

@@ -113,7 +113,16 @@ const seccionesMenuIniciales = [
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _abrirConexion());
+  /// [alCrear] corre al final de `onCreate`, después de las semillas de
+  /// estructura. Existe para que los tests armen un catálogo de ejemplo
+  /// (`test/helpers/base_para_tests.dart`): la app real no lo usa — un comercio
+  /// nuevo arranca sin categorías ni proveedores y elige una plantilla por
+  /// rubro (`repositorio_plantillas.dart`).
+  AppDatabase([QueryExecutor? executor, Future<void> Function(AppDatabase db)? alCrear])
+    : _alCrear = alCrear,
+      super(executor ?? _abrirConexion());
+
+  final Future<void> Function(AppDatabase db)? _alCrear;
 
   static QueryExecutor _abrirConexion() {
     return driftDatabase(name: 'la_plazoleta');
@@ -129,6 +138,7 @@ class AppDatabase extends _$AppDatabase {
       await _crearIndicesDeConsultasCalientes(this);
       await _crearIndicesUnicosDeSincronizacion(this);
       await _seedDatosFijos(this);
+      await _alCrear?.call(this);
     },
     onUpgrade: (Migrator m, int from, int to) async {
       // v1 → v2 (fase 6): tabla nueva para el ciclo de pedido/recepción
@@ -1064,7 +1074,10 @@ Future<void> _crearIndicesUnicosDeSincronizacion(
 Future<void> _seedDatosFijos(AppDatabase db) async {
   final esCompanion = Platform.isAndroid;
   if (!esCompanion) {
-    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    // Un único usuario inicial con nombre neutro: hace falta al menos uno (la
+    // sesión de caja y las ventas se atan a un usuario). El comercio lo
+    // renombra, o agrega los suyos, desde Configuración.
+    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Administrador'));
 
     // Solo el escritorio siembra esto — mismo motivo que usuarios/categorías/
     // proveedores arriba: una companion que sembrara su propia fila con otro
@@ -1122,50 +1135,9 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
         ),
       );
 
-  if (!esCompanion) {
-    // Categorías reales del catálogo (Regla 14) — no confundir con
-    // proveedores (Regla 16): Serra, Wesley y Coca-Cola son proveedores, no
-    // categorías, aunque una versión anterior de la Regla 14 los mezclaba.
-    // markupDefaultBp queda en 0 (sin referencia) donde el documento no da
-    // un número — 0 es "no hay dato", no "markup cero", ya que este campo
-    // es puramente informativo (Regla 14: nunca se usa para calcular nada).
-    const categorias = [
-      ('Almacén', 5000),
-      ('Bebidas', 7000),
-      ('Cervezas', 5000),
-      ('Gaseosas', 5000),
-      ('Vinos', 0),
-      ('Cigarrillos', 0), // monto fijo por atado, no un porcentaje
-      ('Golosinas', 7000),
-      ('Galletitas y panificados', 0),
-      ('Yerbas y té', 0),
-      ('Higiene y limpieza', 0),
-      ('Fiambres', 9000), // referencia 80-100%, se toma el punto medio
-    ];
-    for (final (nombre, markupBp) in categorias) {
-      await db
-          .into(db.categorias)
-          .insert(
-            CategoriasCompanion.insert(
-              nombre: nombre,
-              markupDefaultBp: Value(markupBp),
-            ),
-          );
-    }
-
-    const proveedores = [
-      ('S', 'Serra'),
-      ('F', 'Mazzota'),
-      ('C', 'Coca Cola'),
-      ('W', 'Wesley'),
-      ...proveedoresNuevosV10,
-    ];
-    for (final (codigo, nombre) in proveedores) {
-      await db
-          .into(db.proveedores)
-          .insert(ProveedoresCompanion.insert(codigo: codigo, nombre: nombre));
-    }
-  }
+  // Sin categorías, proveedores ni gastos fijos de ejemplo: cada comercio
+  // carga los suyos o parte de una plantilla por rubro
+  // (`domain/plantillas_rubro.dart`, `repositorio_plantillas.dart`).
 
   if (!esCompanion) {
     // Sin precio fijo: el monto se carga en el momento de la venta (Regla 5).
@@ -1191,16 +1163,6 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
   await db
       .into(db.configuracionTabla)
       .insert(const ConfiguracionTablaCompanion());
-
-  // Los 4 conceptos de fijos reales de Regla 12 — sin monto: el monto se
-  // carga por mes desde la pantalla de equilibrio (fase 7), nunca a mano acá,
-  // porque cambia (el alquiler sube) y no hay que reescribir el pasado.
-  const conceptosFijos = ['Alquiler', 'Ayuda fin de semana', 'Luz', 'Internet'];
-  for (final nombre in conceptosFijos) {
-    await db
-        .into(db.gastosFijos)
-        .insert(GastosFijosCompanion.insert(nombre: nombre));
-  }
 
   for (var i = 0; i < seccionesMenuIniciales.length; i++) {
     final (clave, etiqueta) = seccionesMenuIniciales[i];

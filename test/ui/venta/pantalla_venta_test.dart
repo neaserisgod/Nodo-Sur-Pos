@@ -2,7 +2,6 @@
 // teclado y mouse de verdad (no solo llamando métodos del controlador).
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,9 +16,10 @@ import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
 import 'package:provider/provider.dart';
 import 'package:la_plazoleta/ui/tema/iconos.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<AppDatabase> _crearBaseConSesion() async {
-  final db = AppDatabase(NativeDatabase.memory());
+  final db = baseDeTest();
   final usuarioId = await db
       .into(db.usuarios)
       .insert(UsuariosCompanion.insert(nombre: 'Bruno'));

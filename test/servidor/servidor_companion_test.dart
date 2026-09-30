@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -31,6 +30,7 @@ import 'package:la_plazoleta/servidor/servidor_companion.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import '../helpers/base_para_tests.dart';
 
 /// `getApplicationDocumentsDirectory()` (usada por `_archivoApkCompanion` en
 /// el servidor, igual que `driftDatabase` para la base real) necesita un
@@ -86,7 +86,7 @@ void main() {
     carpetaDocumentosDePrueba = await Directory.systemTemp.createTemp('companion_test_');
     addTearDown(() => carpetaDocumentosDePrueba.delete(recursive: true));
     PathProviderPlatform.instance = _RutaDeDocumentosDePrueba(carpetaDocumentosDePrueba.path);
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     token = await regenerarTokenCompanion(db);
     final server = await iniciarServidorCompanion(db, puerto: 0);

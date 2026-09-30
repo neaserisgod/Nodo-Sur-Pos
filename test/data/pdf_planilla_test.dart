@@ -1,20 +1,20 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/pdf_planilla.dart';
 import 'package:la_plazoleta/data/repositorio_equilibrio.dart';
 
 import '../helpers/planilla_fixture.dart';
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
   late int usuarioId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
   });
   tearDown(() => db.close());

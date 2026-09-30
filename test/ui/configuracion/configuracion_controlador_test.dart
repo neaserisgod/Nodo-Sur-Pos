@@ -1,15 +1,15 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/configuracion/configuracion_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
   late ConfiguracionControlador c;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     c = ConfiguracionControlador(db);
     await c.cargarTodo();
   });

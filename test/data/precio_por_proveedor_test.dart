@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/domain/edicion_masiva_precios.dart';
+import '../helpers/base_para_tests.dart';
 
 /// Precio automático por proveedor (Bruno, 2026-09-29): porcentaje sobre el
 /// costo + redondeo a la próxima centena; los cigarrillos quedan como están.
@@ -13,7 +13,7 @@ void main() {
   late int proveedorId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZP', nombre: 'Prov test'));
   });

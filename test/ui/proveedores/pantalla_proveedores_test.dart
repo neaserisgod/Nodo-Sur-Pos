@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -8,6 +7,7 @@ import 'package:la_plazoleta/ui/proveedores/detalle_proveedor.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _pump(
   WidgetTester tester,
@@ -69,7 +69,7 @@ void main() {
     testWidgets('"Todos" es la vista inicial, con las cinco métricas', (
       tester,
     ) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
@@ -103,7 +103,7 @@ void main() {
     testWidgets(
       'tocar un proveedor trae sus cinco cifras y habilita "Avanzado"',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -138,7 +138,7 @@ void main() {
     testWidgets('"Sin proveedor" solo muestra productos huérfanos', (
       tester,
     ) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
@@ -177,7 +177,7 @@ void main() {
     testWidgets(
       'tocar otro proveedor en la lista cambia el detalle sin salir de la pantalla',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -267,7 +267,7 @@ void main() {
       testWidgets(
         'separar congela el monto; pagar de menos deja la diferencia en pendiente sin separar',
         (tester) async {
-          final db = AppDatabase(NativeDatabase.memory());
+          final db = baseDeTest();
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
@@ -326,7 +326,7 @@ void main() {
       testWidgets('el diálogo de pago rechaza un monto mayor a lo separado', (
         tester,
       ) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -367,7 +367,7 @@ void main() {
     testWidgets(
       'guarda código, días y activo, y el proveedor desactivado desaparece de la lista',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -400,7 +400,7 @@ void main() {
     testWidgets(
       'un código ya usado por otro proveedor muestra el error, no lo guarda',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -438,7 +438,7 @@ void main() {
     testWidgets(
       'tocar una fila de la tabla abre el modal y guarda el precio nuevo',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -485,7 +485,7 @@ void main() {
     testWidgets(
       '"+ Nuevo producto" da de alta uno con el proveedor de la vista actual preseleccionado',
       (tester) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -529,7 +529,7 @@ void main() {
       testWidgets('"Avanzado" también permite cambiar el nombre', (
         tester,
       ) async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = baseDeTest();
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
@@ -565,7 +565,7 @@ void main() {
       testWidgets(
         '"+ Nuevo proveedor" da de alta uno, lo selecciona y aparece en la lista',
         (tester) async {
-          final db = AppDatabase(NativeDatabase.memory());
+          final db = baseDeTest();
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
@@ -601,7 +601,7 @@ void main() {
       testWidgets(
         'crear un proveedor con un código repetido muestra el error, no lo crea',
         (tester) async {
-          final db = AppDatabase(NativeDatabase.memory());
+          final db = baseDeTest();
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
@@ -671,7 +671,7 @@ void main() {
     }
 
     testWidgets('"Avanzado" muestra de dónde sale lo que hay que separar', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
 
@@ -688,7 +688,7 @@ void main() {
     });
 
     testWidgets('pagar trae los dos montos prellenados y graba un movimiento por cada medio', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
 
@@ -712,7 +712,7 @@ void main() {
     });
 
     testWidgets('pagar más de lo separado entre los dos campos se avisa y no se paga', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
 
@@ -734,7 +734,7 @@ void main() {
     });
 
     testWidgets('Serra Cigarros muestra "Ver lata" sin separar/pagar ni medio de pago', (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
 

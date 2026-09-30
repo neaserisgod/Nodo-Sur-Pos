@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_promos.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// La promo aparece en la venta como un producto más, con el stock que dan sus
 /// artículos, y al cobrarla los descuenta (Bruno, 2026-09-29).
@@ -18,7 +18,7 @@ void main() {
   late int galletitas;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     yerba = await db.into(db.productos).insert(

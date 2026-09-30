@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -6,10 +5,11 @@ import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 
 import '../../helpers/planilla_fixture.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   testWidgets('muestra las ventas del día y permite ir a editar una', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await cargarDiaHistoricoFixture(
@@ -44,7 +44,7 @@ void main() {
   });
 
   testWidgets('sin carpeta de tickets configurada, generar PDF pregunta la carpeta en vez de solo avisar', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     final sesionId = await cargarDiaHistoricoFixture(

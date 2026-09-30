@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -6,6 +5,7 @@ import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:la_plazoleta/ui/tema/iconos.dart';
+import '../../helpers/base_para_tests.dart';
 
 /// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
 /// (fija, no la flotante de Material) — cada campo que un test necesita
@@ -25,7 +25,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 
 void main() {
   testWidgets('editar el recargo de cigarrillos persiste el cambio', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
@@ -38,7 +38,7 @@ void main() {
   });
 
   testWidgets('navegar a Usuarios y agregar uno nuevo', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
@@ -52,7 +52,7 @@ void main() {
   });
 
   testWidgets('ocultar una sección del menú apaga su switch', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
@@ -68,7 +68,7 @@ void main() {
   });
 
   testWidgets('navegar a App companion y generar el código muestra el QR', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);

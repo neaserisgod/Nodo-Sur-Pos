@@ -12,6 +12,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import '../helpers/base_para_tests.dart';
 
 void main() {
   test(
@@ -99,7 +100,7 @@ void main() {
     'medios_de_pago sembrados en un onCreate nuevo ya nacen con el mismo '
     'global_id fijo (converge con una base que suba por migración)',
     () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = baseDeTest();
       addTearDown(() => db.close());
 
       final mediosPago = await (db.select(

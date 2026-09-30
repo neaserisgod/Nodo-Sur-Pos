@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -15,6 +14,7 @@ import 'package:la_plazoleta/domain/descuento.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
+import '../../helpers/base_para_tests.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ void main() {
   late Producto marlboroAtado;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
         .insert(UsuariosCompanion.insert(nombre: 'Bruno'));

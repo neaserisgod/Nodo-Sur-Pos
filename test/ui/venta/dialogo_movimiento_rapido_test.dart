@@ -1,10 +1,10 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/dialogo_movimiento_rapido.dart';
+import '../../helpers/base_para_tests.dart';
 
 Future<void> _abrir(WidgetTester tester, AppDatabase db, int sesionId, int usuarioId) async {
   await tester.pumpWidget(
@@ -28,7 +28,7 @@ void main() {
   late int sesionId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   });

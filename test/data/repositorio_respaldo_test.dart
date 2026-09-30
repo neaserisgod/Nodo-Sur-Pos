@@ -1,17 +1,17 @@
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_respaldo.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import '../helpers/base_para_tests.dart';
 
 void main() {
   late AppDatabase db;
   late Directory carpetaTemp;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     carpetaTemp = await Directory.systemTemp.createTemp('respaldo_test_');
   });
   tearDown(() async {

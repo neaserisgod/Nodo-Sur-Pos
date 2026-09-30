@@ -1,7 +1,7 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/importacion_csv.dart';
+import '../helpers/base_para_tests.dart';
 
 const _encabezado = 'codigo_barras,nombre,proveedor,categoria,es_pesable,'
     'precio,costo,precio_por_kilo,costo_por_kilo,stock,stock_gramos';
@@ -11,7 +11,7 @@ void main() {
   late int usuarioId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = baseDeTest();
     usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
   });
   tearDown(() => db.close());

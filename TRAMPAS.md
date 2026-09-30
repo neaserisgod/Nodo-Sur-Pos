@@ -670,3 +670,12 @@ Arreglo: ignorar solo la carpeta de la raíz (`/capturas/`, `/capturas_antes/`)
 y versionar `test/capturas/`. Mientras no se haga, la suite da 4 fallas de
 carga que no son del código.
 
+---
+
+## Un helper de test llamado `*_test.dart` se corre como si fuera un test (2026-09-30)
+
+`flutter test` toma todo archivo de `test/` que termine en `_test.dart`. Un
+helper llamado `base_de_test.dart` se cargó como test y falló ("No tests
+found"). Los helpers se llaman distinto (`base_para_tests.dart`,
+`planilla_fixture.dart`).
+
