@@ -1,3 +1,5 @@
+import 'dart:async';
+
 // Estado del cierre de caja. Tres fases, en el orden que exige la Regla 10:
 // contar, comparar, separar. La fase `conteo` es la única garantía real de
 // "oculto hasta confirmar" — mientras dure, la pantalla ni siquiera arma
@@ -7,6 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
+import '../../servicios/nube.dart';
 import '../../data/database.dart';
 import '../../data/pdf_planilla.dart';
 import '../../data/repositorio_carga_historica.dart' show ResumenDiaHistorico, resumenDiaHistorico;
@@ -244,6 +247,9 @@ class CierreControlador extends ChangeNotifier {
   /// El respaldo corre solo al cerrar caja (fase 10) — nunca puede ser la
   /// razón por la que un cierre ya hecho parezca fallar.
   Future<void> _respaldarSinBloquearElCierre() async {
+    // La copia en la cuenta de Nodo Sur (si la PC está vinculada) sale en segundo plano: el cierre no espera a
+    // internet y su resultado solo se ve en Configuración → Cuenta de Nodo Sur.
+    unawaited(nubeApp?.subirCopia());
     try {
       final carpeta = await carpetaRespaldo(db);
       if (carpeta == null) {

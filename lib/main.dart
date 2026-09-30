@@ -23,6 +23,7 @@ import 'domain/marca.dart';
 import 'data/repositorio_configuracion.dart';
 import 'domain/modulos.dart';
 import 'servicios/modulos_activos.dart';
+import 'servicios/nube.dart';
 import 'servicios/marca_actual.dart';
 
 Future<void> main() async {
@@ -98,6 +99,16 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     _actualizarComparacionPrecios();
     _actualizarComparacionPreciosTodoATuCasa();
     _iniciarActualizaciones();
+    _iniciarNube();
+  }
+
+  // Cuenta de Nodo Sur (copias en la nube, versiones de prueba): solo en la app real, en segundo plano, y una
+  // falla nunca frena el arranque.
+  void _iniciarNube() {
+    if (!widget.conVentanaPropia) return;
+    iniciarNube(widget.db).then<void>((_) {}, onError: (Object error) {
+      debugPrint('Nube: no se pudo iniciar ($error)');
+    });
   }
 
   // Actualizaciones (2026-09-30): solo en la app real (la de los tests de

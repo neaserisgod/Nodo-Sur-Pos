@@ -1,10 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_arqueo_intermedio.dart';
 import 'package:la_plazoleta/data/repositorio_respaldo.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/servicios/copias_nube.dart';
+import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/servicios/nube.dart';
 import 'package:la_plazoleta/ui/cierre/cierre_controlador.dart';
 import '../../helpers/base_para_tests.dart';
 
@@ -113,6 +118,70 @@ void main() {
       final ok = await c.cerrar(usuarioId: usuarioId);
       expect(ok, false);
       expect(c.fase, FaseCierre.revisado);
+    });
+
+    test('con la PC vinculada a la cuenta, cerrar sube una copia a la nube sin frenar el cierre', () async {
+      final tmp = await Directory.systemTemp.createTemp('nube_cierre_test_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final almacen = AlmacenCuentaEnMemoria();
+      await almacen.guardar(const CuentaVinculada(token: 't1', email: 'a@b.com', idDispositivo: 'dev-123', nombreDispositivo: 'Caja', vence: 1));
+      final subidas = <String>[];
+      final cliente = ClienteNube(http: MockClient((r) async {
+        subidas.add('${r.method} ${r.url.path}');
+        return http.Response('{"ok":true,"id":1,"createdAt":1,"guardadas":1}', 200);
+      }));
+      nubeApp = NubeApp(
+        almacen: almacen,
+        cliente: cliente,
+        copias: ServicioCopiasNube(db: db, almacen: almacen, cliente: cliente, carpetaTemporal: tmp, versionApp: () async => '1.0.0'),
+        idDispositivo: () async => 'dev-123',
+        nombreDispositivo: () => 'Caja',
+        abrirNavegador: (_) async {},
+        carpetaTemporal: tmp,
+      );
+      addTearDown(() => nubeApp = null);
+
+      final c = CierreControlador(db, sesionId: sesionId);
+      await c.cargar();
+      c.efectivoContadoCtrl.text = '1.000';
+      await c.confirmarConteo();
+      c.mpContadoCtrl.text = '250';
+      c.lataContadoCtrl.text = '0';
+      expect(await c.cerrar(usuarioId: usuarioId), true);
+      await Future<void>.delayed(const Duration(milliseconds: 500)); // la subida sale en segundo plano
+
+      expect(subidas, ['PUT /api/backup']);
+      expect(nubeApp!.ultimoResultado, isA<SubidaOk>());
+    });
+
+    test('si la subida a la nube falla, el cierre igual queda hecho', () async {
+      final tmp = await Directory.systemTemp.createTemp('nube_cierre_test_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final almacen = AlmacenCuentaEnMemoria();
+      await almacen.guardar(const CuentaVinculada(token: 't1', email: 'a@b.com', idDispositivo: 'dev-123', nombreDispositivo: 'Caja', vence: 1));
+      final cliente = ClienteNube(http: MockClient((r) async => throw const SocketException('sin red')));
+      nubeApp = NubeApp(
+        almacen: almacen,
+        cliente: cliente,
+        copias: ServicioCopiasNube(db: db, almacen: almacen, cliente: cliente, carpetaTemporal: tmp, versionApp: () async => '1.0.0'),
+        idDispositivo: () async => 'dev-123',
+        nombreDispositivo: () => 'Caja',
+        abrirNavegador: (_) async {},
+        carpetaTemporal: tmp,
+      );
+      addTearDown(() => nubeApp = null);
+
+      final c = CierreControlador(db, sesionId: sesionId);
+      await c.cargar();
+      c.efectivoContadoCtrl.text = '1.000';
+      await c.confirmarConteo();
+      c.mpContadoCtrl.text = '250';
+      c.lataContadoCtrl.text = '0';
+      expect(await c.cerrar(usuarioId: usuarioId), true);
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      expect(c.fase, FaseCierre.cerrado);
+      expect(nubeApp!.ultimoResultado, isA<SubidaFallida>());
     });
 
     test('sin carpeta de respaldo configurada, cierra igual y sin avisar nada (fase 10)', () async {
