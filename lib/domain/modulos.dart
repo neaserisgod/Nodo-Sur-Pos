@@ -72,7 +72,7 @@ enum Modulo {
     equilibrio => 'La vista "Este mes" del Inicio: gastos fijos y cuánto hay que vender para cubrirlos.',
     turnos => 'Más de un usuario y cambio de turno.',
     cargaHistorica => 'Cargar planillas de días anteriores.',
-    compararPrecios => 'Comparar tus precios con los de un sitio externo.',
+    compararPrecios => 'Comparar tus precios con supermercados de Bariloche (SEPA) y una tienda online de la zona.',
     cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
   };
 

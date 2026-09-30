@@ -75,7 +75,7 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
-          .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db
           .into(db.sesionesDeCaja)
           .insert(
@@ -91,7 +91,7 @@ void main() {
       // real; "Todos" arranca elegido y su detalle ya está a la derecha.
       final lista = find.byType(ListaProveedores);
       expect(find.descendant(of: lista, matching: find.text('Todos')), findsOneWidget);
-      expect(find.descendant(of: lista, matching: find.text('Serra')), findsOneWidget);
+      expect(find.descendant(of: lista, matching: find.text('Distribuidora')), findsOneWidget);
 
       final detalle = find.byType(DetalleProveedor);
       expect(find.descendant(of: detalle, matching: find.text('Todos')), findsOneWidget);
@@ -109,7 +109,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -120,7 +120,7 @@ void main() {
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
 
         expect(find.text('Avanzado'), findsOneWidget);
         final detalle = find.byType(DetalleProveedor);
@@ -144,7 +144,7 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
-          .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db
           .into(db.sesionesDeCaja)
           .insert(
@@ -153,7 +153,7 @@ void main() {
               fondoInicialCentavos: 0,
             ),
           );
-      final serraId = (await (db.select(
+      final proveedorSId = (await (db.select(
         db.proveedores,
       )..where((p) => p.codigo.equals('S'))).getSingle()).id;
       await db
@@ -161,7 +161,7 @@ void main() {
           .insert(
             ProductosCompanion.insert(
               nombre: 'Con proveedor',
-              proveedorId: Value(serraId),
+              proveedorId: Value(proveedorSId),
             ),
           );
       await db
@@ -183,7 +183,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -193,7 +193,7 @@ void main() {
               ),
             );
 
-        final serraId = (await (db.select(
+        final proveedorSId = (await (db.select(
           db.proveedores,
         )..where((p) => p.codigo.equals('S'))).getSingle()).id;
         final arcorId = (await (db.select(
@@ -204,7 +204,7 @@ void main() {
             .insert(
               ProductosCompanion.insert(
                 nombre: 'Coca-Cola 500ml',
-                proveedorId: Value(serraId),
+                proveedorId: Value(proveedorSId),
               ),
             );
         await db
@@ -217,15 +217,15 @@ void main() {
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         expect(find.text('Avanzado'), findsOneWidget); // adentro del detalle
 
         await _entrarAProveedor(tester, 'Arcor');
 
         expect(find.text('Avanzado'), findsOneWidget); // otro proveedor real
         expect(find.text('Alfajor Arcor'), findsOneWidget); // productos de Arcor
-        expect(find.text('Coca-Cola 500ml'), findsNothing); // ya no los de Serra
-        // La lista sigue ahí: se puede volver a Serra de un toque.
+        expect(find.text('Coca-Cola 500ml'), findsNothing); // ya no los de Distribuidora
+        // La lista sigue ahí: se puede volver a Distribuidora de un toque.
         expect(find.byType(ListaProveedores), findsOneWidget);
       },
     );
@@ -273,7 +273,7 @@ void main() {
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
-              .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+              .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
           final sesionId = await db
               .into(db.sesionesDeCaja)
               .insert(
@@ -289,7 +289,7 @@ void main() {
           );
 
           await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-          await _entrarAProveedor(tester, 'Serra');
+          await _entrarAProveedor(tester, 'Distribuidora');
           await tester.tap(find.text('Avanzado'));
           await tester.pumpAndSettle();
 
@@ -332,7 +332,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -348,7 +348,7 @@ void main() {
         );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.text('Avanzado'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Marcar separado'));
@@ -373,7 +373,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -384,7 +384,7 @@ void main() {
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.text('Avanzado'));
         await tester.pumpAndSettle();
 
@@ -406,7 +406,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -417,14 +417,14 @@ void main() {
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.text('Avanzado'));
         await tester.pumpAndSettle();
 
         await tester.enterText(
           _campo('campo_codigo'),
           'F',
-        ); // código de Mazzota
+        ); // código de Fiambrería
         await tester.tap(find.text('Guardar'));
         await tester.pumpAndSettle();
 
@@ -444,7 +444,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -453,7 +453,7 @@ void main() {
                 fondoInicialCentavos: 0,
               ),
             );
-        final serraId = (await (db.select(
+        final proveedorSId = (await (db.select(
           db.proveedores,
         )..where((p) => p.codigo.equals('S'))).getSingle()).id;
         final productoId = await db
@@ -461,14 +461,14 @@ void main() {
             .insert(
               ProductosCompanion.insert(
                 nombre: 'Coca-Cola',
-                proveedorId: Value(serraId),
+                proveedorId: Value(proveedorSId),
                 precioCentavos: const Value(150000),
                 costoCentavos: const Value(90000),
               ),
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.text('Coca-Cola'));
         await tester.pumpAndSettle();
 
@@ -491,7 +491,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -500,12 +500,12 @@ void main() {
                 fondoInicialCentavos: 0,
               ),
             );
-        final serraId = (await (db.select(
+        final proveedorSId = (await (db.select(
           db.proveedores,
         )..where((p) => p.codigo.equals('S'))).getSingle()).id;
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
         await tester.pumpAndSettle();
 
@@ -519,14 +519,14 @@ void main() {
         final producto = await (db.select(
           db.productos,
         )..where((p) => p.nombre.equals('Alfajor'))).getSingle();
-        expect(producto.proveedorId, serraId);
+        expect(producto.proveedorId, proveedorSId);
         expect(producto.precioCentavos, 50000);
       },
     );
   });
 
   group(
-    'Editar y agregar proveedores (Bruno: "se debe poder editar y agregar los proveedores")',
+    'Editar y agregar proveedores (Dueño: "se debe poder editar y agregar los proveedores")',
     () {
       testWidgets('"Avanzado" también permite cambiar el nombre', (
         tester,
@@ -535,7 +535,7 @@ void main() {
         addTearDown(db.close);
         final usuarioId = await db
             .into(db.usuarios)
-            .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+            .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
         final sesionId = await db
             .into(db.sesionesDeCaja)
             .insert(
@@ -546,20 +546,20 @@ void main() {
             );
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
-        await _entrarAProveedor(tester, 'Serra');
+        await _entrarAProveedor(tester, 'Distribuidora');
         await tester.tap(find.text('Avanzado'));
         await tester.pumpAndSettle();
 
-        await tester.enterText(_campo('campo_nombre'), 'Serra Almacén');
+        await tester.enterText(_campo('campo_nombre'), 'Distribuidora Almacén');
         await tester.tap(find.text('Guardar'));
         await tester.pumpAndSettle();
 
         final proveedor = await (db.select(
           db.proveedores,
         )..where((p) => p.codigo.equals('S'))).getSingle();
-        expect(proveedor.nombre, 'Serra Almacén');
+        expect(proveedor.nombre, 'Distribuidora Almacén');
         expect(
-          find.text('Serra Almacén'),
+          find.text('Distribuidora Almacén'),
           findsWidgets,
         ); // nombre nuevo reflejado en la lista/detalle
       });
@@ -571,7 +571,7 @@ void main() {
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
-              .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+              .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
           final sesionId = await db
               .into(db.sesionesDeCaja)
               .insert(
@@ -607,7 +607,7 @@ void main() {
           addTearDown(db.close);
           final usuarioId = await db
               .into(db.usuarios)
-              .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+              .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
           final sesionId = await db
               .into(db.sesionesDeCaja)
               .insert(
@@ -620,7 +620,7 @@ void main() {
           await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
           await _abrirNuevoProveedor(tester);
 
-          await tester.enterText(_campo('campo_nombre'), 'Otro Serra');
+          await tester.enterText(_campo('campo_nombre'), 'Otro Distribuidora');
           await tester.enterText(_campo('campo_codigo'), 'S'); // ya existe
           await tester.tap(find.text('Crear proveedor'));
           await tester.pumpAndSettle();
@@ -631,18 +631,18 @@ void main() {
           );
           final cantidad = await (db.select(
             db.proveedores,
-          )..where((p) => p.nombre.equals('Otro Serra'))).get();
+          )..where((p) => p.nombre.equals('Otro Distribuidora'))).get();
           expect(cantidad, isEmpty);
         },
       );
     },
   );
 
-  group('Separar dividido entre cajón y Mercado Pago (Bruno, 2026-09-26)', () {
-    /// Sesión abierta con dos ventas de Serra (proveedor común): una en
+  group('Separar dividido entre cajón y Mercado Pago (Dueño, 2026-09-26)', () {
+    /// Sesión abierta con dos ventas de Distribuidora (proveedor común): una en
     /// efectivo (costo $600) y otra por QR (costo $300).
     Future<({int usuarioId, int sesionId})> preparar(AppDatabase db) async {
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );
@@ -678,7 +678,7 @@ void main() {
       final p = await preparar(db);
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra');
+      await _entrarAProveedor(tester, 'Distribuidora');
       await tester.tap(find.text('Avanzado'));
       await tester.pumpAndSettle();
 
@@ -695,7 +695,7 @@ void main() {
       final p = await preparar(db);
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra');
+      await _entrarAProveedor(tester, 'Distribuidora');
       await tester.tap(find.text('Avanzado'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Marcar separado'));
@@ -719,7 +719,7 @@ void main() {
       final p = await preparar(db);
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra');
+      await _entrarAProveedor(tester, 'Distribuidora');
       await tester.tap(find.text('Avanzado'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Marcar separado'));
@@ -735,13 +735,13 @@ void main() {
       expect(await db.select(db.movimientosDeCaja).get(), isEmpty);
     });
 
-    testWidgets('Serra Cigarros muestra "Ver lata" sin separar/pagar ni medio de pago', (tester) async {
+    testWidgets('Distribuidora de Cigarrillos muestra "Ver lata" sin separar/pagar ni medio de pago', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra Cigarros');
+      await _entrarAProveedor(tester, 'Distribuidora de Cigarrillos');
 
       expect(find.text('Avanzado'), findsNothing);
       await tester.tap(find.text('Ver lata'));
@@ -758,12 +758,12 @@ void main() {
       final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
-      // Serra Cigarros deja de ser especial; otro proveedor pasa a serlo.
+      // Distribuidora de Cigarrillos deja de ser especial; otro proveedor pasa a serlo.
       await db.customStatement("UPDATE proveedores SET caja_aparte = 0 WHERE codigo = 'SC'");
       await db.customStatement("UPDATE proveedores SET caja_aparte = 1 WHERE codigo = 'A'");
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra Cigarros');
+      await _entrarAProveedor(tester, 'Distribuidora de Cigarrillos');
       expect(find.text('Avanzado'), findsOneWidget);
       expect(find.text('Ver lata'), findsNothing);
 
@@ -778,7 +778,7 @@ void main() {
       final p = await preparar(db);
 
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Mazzota');
+      await _entrarAProveedor(tester, 'Fiambrería');
       await tester.tap(find.text('Avanzado'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('interruptor_caja_aparte')), findsOneWidget);
@@ -827,7 +827,7 @@ void main() {
       addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
       final p = await preparar(db);
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
-      await _entrarAProveedor(tester, 'Serra');
+      await _entrarAProveedor(tester, 'Distribuidora');
 
       await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
       await tester.pumpAndSettle();

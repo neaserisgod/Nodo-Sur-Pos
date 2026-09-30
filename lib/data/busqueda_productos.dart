@@ -4,7 +4,7 @@
 // `Producto` generada por drift — no es una regla de negocio en el sentido
 // de fase 1, es la lógica de soporte de una pantalla concreta.
 //
-// Bruno, 2026-09-06: "si algo no hay stock, el producto no aparece en
+// El dueño, 2026-09-06: "si algo no hay stock, el producto no aparece en
 // ventas" (versión inicial, a refinar después) — reemplaza lo que decía
 // Regla 8 hasta acá ("el stock informa, nunca bloquea": un 0/negativo se
 // vendía igual, solo se marcaba en rojo en el carrito). `tieneStock` es el

@@ -1,5 +1,5 @@
 // Doble clic en la cantidad (o los gramos) de una línea del carrito
-// (Bruno, 2026-09-06: "que se pueda ajustar la cantidad... haciendo doble
+// (El dueño, 2026-09-06: "que se pueda ajustar la cantidad... haciendo doble
 // click") — para saltar de un tirón (ej. de x1 a x12) sin tocar "+" once
 // veces. 0 o menos se interpreta como "sacar la línea" (mismo criterio que
 // restar hasta el fondo con el botón "−"), lo decide quien llama, no este

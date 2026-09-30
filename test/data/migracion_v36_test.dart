@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v35 → v36, sección "Separaciones" en el menú —
-// Bruno, 2026-09-26) contra un archivo de verdad, mismo motivo que
+// El dueño, 2026-09-26) contra un archivo de verdad, mismo motivo que
 // `migracion_v34_test.dart`.
 import 'dart:io';
 

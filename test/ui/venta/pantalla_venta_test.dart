@@ -22,7 +22,7 @@ Future<AppDatabase> _crearBaseConSesion() async {
   final db = baseDeTest();
   final usuarioId = await db
       .into(db.usuarios)
-      .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   await db
       .into(db.productos)
@@ -167,7 +167,7 @@ void main() {
 
   group(
     'Alt+Q/Alt+D eligen el canal nada más — dos pasos de nuevo '
-    '(Bruno, 2026-09-08: "necesito cobro manual... no hay más modal para '
+    '(Dueño, 2026-09-08: "necesito cobro manual... no hay más modal para '
     'seleccionarlo", revierte el paso único de la fase 12)',
     () {
       testWidgets(
@@ -256,7 +256,7 @@ void main() {
 
   group(
     'Alt+M cobra a mano, sin pasar por la terminal Point '
-    '(Bruno, 2026-09-08: "necesito cobro manual en el desktop")',
+    '(Dueño, 2026-09-08: "necesito cobro manual en el desktop")',
     () {
       testWidgets(
         'con QR ya elegido, Alt+M graba la venta directo sin abrir el diálogo de Point',
@@ -388,7 +388,7 @@ void main() {
     'Eliminar del carrito con el ícono de tacho (reemplaza a Backspace) y Escape',
     () {
       testWidgets(
-        'tocar el tacho de una línea la saca del carrito (Bruno, 2026-09-06: "con mouse para seleccionar el producto a eliminar")',
+        'tocar el tacho de una línea la saca del carrito (Dueño, 2026-09-06: "con mouse para seleccionar el producto a eliminar")',
         (tester) async {
           final db = await _crearBaseConSesion();
           addTearDown(db.close);
@@ -641,7 +641,7 @@ void main() {
       );
 
       testWidgets(
-        'stock en 0: ya no aparece en la búsqueda por nombre (Bruno, 2026-09-06: "si no hay stock, no aparece en ventas")',
+        'stock en 0: ya no aparece en la búsqueda por nombre (Dueño, 2026-09-06: "si no hay stock, no aparece en ventas")',
         (tester) async {
           // Revierte a propósito la "corrección post-revisión" anterior
           // (Regla 8, "se vende igual, se marca en rojo en el carrito") — ver

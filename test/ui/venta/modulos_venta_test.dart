@@ -29,7 +29,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     await tester.pumpWidget(
       MaterialApp(theme: TemaPlazoleta.oscuro, navigatorObservers: [routeObserver], home: PantallaVenta(db: db)),
@@ -47,7 +47,7 @@ void main() {
 
   testWidgets('sin el módulo Point, cobrar con QR graba la venta a mano y no toca la terminal', (tester) async {
     final pedidos = <http.Request>[];
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final idCoca = await db.into(db.productos).insert(
       ProductosCompanion.insert(nombre: 'Coca-Cola 500ml', precioCentavos: const Value(112000), stock: const Value(20)),

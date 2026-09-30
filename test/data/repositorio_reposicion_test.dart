@@ -14,7 +14,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db
         .into(db.sesionesDeCaja)
         .insert(
@@ -134,7 +134,7 @@ void main() {
     );
 
     test(
-      'Serra Cigarros (SC) no aparece: sus ventas siempre dan cero acá (Regla 6)',
+      'Distribuidora de Cigarrillos (SC) no aparece: sus ventas siempre dan cero acá (Regla 6)',
       () async {
         final lista = await reposicionActual(db);
         expect(lista.any((r) => r.proveedor.codigo == 'SC'), false);
@@ -384,7 +384,7 @@ void main() {
         expect(movimiento.montoCentavos, 600);
         // Sin nota, "SALIDAS/PAGOS" de la planilla imprimiría el monto sin
         // decir de qué es (bug encontrado generando la demo del ítem 3).
-        expect(movimiento.nota, 'Pago a Serra');
+        expect(movimiento.nota, 'Pago a Distribuidora');
       },
     );
 
@@ -474,7 +474,7 @@ void main() {
 
       final aviso = await avisoASepararAlAbrir(db);
       expect(
-        aviso.any((a) => a.nombre == 'Serra' && a.montoCentavos == 1000),
+        aviso.any((a) => a.nombre == 'Distribuidora' && a.montoCentavos == 1000),
         true,
       );
       expect(aviso.any((a) => a.nombre == 'Coca Cola'), false);
@@ -767,7 +767,7 @@ void main() {
         expect(movimiento.montoCentavos, 30000);
         expect(movimiento.proveedorId, proveedorId);
         expect(movimiento.medioPagoId, isNull);
-        expect(movimiento.nota, contains('Serra'));
+        expect(movimiento.nota, contains('Distribuidora'));
 
         final cajaNormal = (await (db.select(
           db.cajas,
@@ -818,7 +818,7 @@ void main() {
       expect(pendientes.any((p) => p.proveedor.id == proveedorId), false);
     });
 
-    test('Serra Cigarros (SC) nunca aparece (Regla 6)', () async {
+    test('Distribuidora de Cigarrillos (SC) nunca aparece (Regla 6)', () async {
       final pendientes = await gananciaPendienteDeProveedores(db);
       expect(pendientes.any((p) => p.proveedor.codigo == 'SC'), false);
     });
@@ -1130,10 +1130,10 @@ void main() {
   });
 
   group(
-    'reporteProveedores — "Reportes" (Bruno, 2026-09-06: reemplaza a "revisar ganancias")',
+    'reporteProveedores — "Reportes" (Dueño, 2026-09-06: reemplaza a "revisar ganancias")',
     () {
       test(
-        'lista TODOS los proveedores activos (salvo Serra Cigarros), no solo los pendientes',
+        'lista TODOS los proveedores activos (salvo Distribuidora de Cigarrillos), no solo los pendientes',
         () async {
           final reportes = await reporteProveedores(db);
 
@@ -1209,7 +1209,7 @@ void main() {
     },
   );
 
-  group('separar dividido entre cajón y Mercado Pago (Bruno, 2026-09-26)', () {
+  group('separar dividido entre cajón y Mercado Pago (Dueño, 2026-09-26)', () {
     late int medioEfectivoId;
     late int medioMpId;
     late int otroProveedorId;
@@ -1379,7 +1379,7 @@ void main() {
     });
   });
 
-  group('ventas anuladas no cuentan (Bruno, 2026-09-26: "sin ventas anuladas")', () {
+  group('ventas anuladas no cuentan (Dueño, 2026-09-26: "sin ventas anuladas")', () {
     test('ni en lo que hay que separar ni en la ganancia pendiente', () async {
       await crearVenta(fecha: DateTime(2026, 9, 1), proveedorId: proveedorId, precioCentavos: 100000, costoCentavos: 60000);
       await crearVenta(fecha: DateTime(2026, 9, 1), proveedorId: proveedorId, precioCentavos: 50000, costoCentavos: 30000);
@@ -1394,7 +1394,7 @@ void main() {
     });
   });
 
-  group('Separaciones del día (Bruno, 2026-09-26: "que sea del día" + montos actuales)', () {
+  group('Separaciones del día (Dueño, 2026-09-26: "que sea del día" + montos actuales)', () {
     late int medioEfectivoId;
     late int medioMpId;
     late int cajaNormalId;
@@ -1594,7 +1594,7 @@ void main() {
     });
   });
 
-  group('Tildar y destildar en Separaciones (mock de Bruno, 2026-09-26)', () {
+  group('Tildar y destildar en Separaciones (mock de Dueño, 2026-09-26)', () {
     late int medioEfectivoId;
     late int medioMpId;
 
@@ -1706,7 +1706,7 @@ void main() {
     });
   });
 
-  group('vendidoSinCostoDesde — qué producto no tiene costo (Bruno, 2026-09-26)', () {
+  group('vendidoSinCostoDesde — qué producto no tiene costo (Dueño, 2026-09-26)', () {
     Future<int> linea({required String nombre, int? proveedor, int? costo, int cantidad = 1, DateTime? fecha, String tipo = 'ninguno'}) async {
       final ventaId = await db.into(db.ventas).insert(
             VentasCompanion.insert(
@@ -1747,7 +1747,7 @@ void main() {
       expect(r.map((v) => v.producto), ['Coca Lata', 'Caramelo']);
       expect(r.first.cantidad, 3);
       expect(r.first.vendidoCentavos, 78000);
-      expect(r.first.proveedor, 'Serra');
+      expect(r.first.proveedor, 'Distribuidora');
       expect(r.last.proveedor, isNull);
     });
   });

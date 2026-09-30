@@ -2,7 +2,7 @@
 // sábado 26 de septiembre") y las acciones/selectores a la derecha. Pieza 2
 // del kit — la usa `PantallaGestion` siempre.
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-26): el título grande se sacó de
+// "Lenguaje de diseño" (El dueño, 2026-09-26): el título grande se sacó de
 // acá. En los mocks el nombre de la pantalla ES el botón del menú de
 // secciones (navbar), así que repetirlo abajo en letra grande era decir lo
 // mismo dos veces; `titulo` queda para la semántica (lectores de pantalla)

@@ -1,5 +1,5 @@
 // Script de un solo uso para regenerar demo_planilla.pdf con las tres
-// correcciones que Bruno pidió tras revisar la versión anterior contra la
+// correcciones que el dueño pidió tras revisar la versión anterior contra la
 // planilla de papel: RETIRO con número (sin fijos cargados este mes), pago
 // mixto con el monto exacto de cada Pago (sin decimales de reparto
 // proporcional), y la tabla de reposición con VENDIDO/A SEPARAR/SEPARADO
@@ -24,7 +24,7 @@ import 'package:la_plazoleta/domain/venta.dart';
 Future<void> main() async {
   final db = AppDatabase(NativeDatabase.memory());
 
-  final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+  final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   final proveedorF = await (db.select(db.proveedores)..where((p) => p.codigo.equals('F'))).getSingle();
   final proveedorW = await (db.select(db.proveedores)..where((p) => p.codigo.equals('W'))).getSingle();
 

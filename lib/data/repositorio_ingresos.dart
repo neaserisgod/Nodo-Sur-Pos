@@ -1,4 +1,4 @@
-// Ingreso rápido (Alt++ en Venta, Bruno 2026-09-13: "un botón de ingreso de
+// Ingreso rápido (Alt++ en Venta, el dueño 2026-09-13: "un botón de ingreso de
 // dinero, evidentemente siguiendo con las cajas que hay") — espejo de
 // "Gasto rápido" (`repositorio_gastos.dart`): mismas tres cajas
 // (`MedioGasto`, reusado tal cual — las cajas para meter plata son las
@@ -26,7 +26,7 @@ Future<int> registrarIngresoRapido(
   required MedioGasto medio,
   String? motivo,
 }) {
-  // Mismo motivo que `registrarGastoRapido` (Bruno, 2026-09-19: "aislar los
+  // Mismo motivo que `registrarGastoRapido` (El dueño, 2026-09-19: "aislar los
   // usuarios para que no se pisen") — verificar y escribir en la misma
   // transacción.
   return db.transaction(() async {

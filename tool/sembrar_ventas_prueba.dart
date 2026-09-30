@@ -79,10 +79,10 @@ void main() {
   db.execute('BEGIN');
   try {
     // nombre, proveedor, costo, precio, cantidad — tres proveedores reales
-    // distintos, ninguno cigarrillos (Serra Cigarros queda afuera de
+    // distintos, ninguno cigarrillos (Distribuidora de Cigarrillos queda afuera de
     // "Revisar ganancias" a propósito, Regla 6).
     const items = [
-      ('PRUEBA — Fiambre Mazzota', 'F', 300000, 550000, 5),
+      ('PRUEBA — Fiambre Fiambrería', 'F', 300000, 550000, 5),
       ('PRUEBA — Coca-Cola 2.25L', 'C', 120000, 180000, 8),
       ('PRUEBA — Cerveza Imperial 1L', 'W', 90000, 150000, 6),
     ];
@@ -146,7 +146,7 @@ void main() {
 
     db.execute('COMMIT');
     print('Sembrado OK: venta #$ventaId en sesión $sesionId, subtotal/total = $subtotal centavos.');
-    print('Proveedores con ganancia pendiente ahora: Mazzota, Coca Cola, Wesley.');
+    print('Proveedores con ganancia pendiente ahora: Fiambrería, Coca Cola, Golosinas Oeste.');
   } catch (e) {
     db.execute('ROLLBACK');
     stderr.writeln('Error, no se sembró nada: $e');

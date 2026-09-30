@@ -37,7 +37,7 @@ class OrdenesCobroPendientes extends Table {
   TextColumn get ordenIdMp => text().nullable()();
 
   /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' |
-  /// 'rechazada' | 'cancelada' (Bruno la canceló desde el diálogo).
+  /// 'rechazada' | 'cancelada' (El dueño la canceló desde el diálogo).
   TextColumn get estado => text().withDefault(const Constant('pendiente'))();
 
   DateTimeColumn get creadaEn => dateTime().withDefault(currentDateAndTime)();

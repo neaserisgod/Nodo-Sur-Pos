@@ -55,7 +55,7 @@ Future<void> marcarOrdenConId(
 }
 
 /// Cierra el ciclo de esta orden: aprobada (con la venta que generó),
-/// rechazada, o cancelada por Bruno desde el diálogo. Un timeout o un corte
+/// rechazada, o cancelada por el dueño desde el diálogo. Un timeout o un corte
 /// de conexión a mitad del polling NO llama a esto — la fila queda en
 /// 'pendiente' a propósito, para que [ordenesSinResolverDeSesion] la
 /// encuentre después (Regla de Fase 12: un resultado "no sé si se cobró"

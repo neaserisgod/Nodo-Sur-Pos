@@ -62,8 +62,8 @@ void main() {
 
   test('renombrarUsuarioExistente cambia el nombre', () async {
     final bruno = c.usuarios.first;
-    await c.renombrarUsuarioExistente(bruno.id, 'Bruno G.');
-    expect(c.usuarios.firstWhere((u) => u.id == bruno.id).nombre, 'Bruno G.');
+    await c.renombrarUsuarioExistente(bruno.id, 'Dueño G.');
+    expect(c.usuarios.firstWhere((u) => u.id == bruno.id).nombre, 'Dueño G.');
   });
 
   test('renombrarMedio y alternarActivoMedio', () async {

@@ -56,7 +56,7 @@ void main() {
     testWidgets('al entrar, no hay ningún número de diferencia ni separación en pantalla', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
@@ -69,7 +69,7 @@ void main() {
     testWidgets('confirmar el conteo revela diferencia y separación juntas', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
@@ -79,7 +79,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Diferencia'), findsOneWidget);
-      // "A separar", no "Separado" (bug real, Bruno: el label viejo leía
+      // "A separar", no "Separado" (bug real, el dueño: el label viejo leía
       // como si ya se hubiese hecho en vez de decir que hay que hacerlo).
       expect(find.textContaining('A separar a la lata'), findsOneWidget);
     });
@@ -89,7 +89,7 @@ void main() {
         'contar y pasar plata', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
@@ -105,7 +105,7 @@ void main() {
     testWidgets('escribir la lata contada muestra la lata esperada y la diferencia', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
@@ -142,7 +142,7 @@ void main() {
     testWidgets('si no alcanza el efectivo, avisa y muestra el pendiente', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId); // $4.500 en cigarrillos
 
       await _pump(tester, db, sesionId, usuarioId);
@@ -159,7 +159,7 @@ void main() {
     testWidgets('cerrar caja muestra la pantalla final, y reabrir vuelve al conteo', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId =
           await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
@@ -201,7 +201,7 @@ void main() {
       addTearDown(db.close);
       addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
       modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       await _pump(tester, db, sesionId, usuarioId);

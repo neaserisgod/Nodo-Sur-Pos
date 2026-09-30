@@ -34,7 +34,7 @@ class Proveedores extends Table {
   IntColumn get id => integer().autoIncrement()();
 
   /// Los 15 proveedores reales de Regla 16, cada uno con su código propio.
-  /// Serra Cigarros (SC) es un proveedor aparte de Serra almacén (S) —mismo
+  /// Distribuidora de Cigarrillos (SC) es un proveedor aparte de Distribuidora almacén (S) —mismo
   /// vendedor, dos cuentas— pero eso no cambia cómo se calcula la
   /// reposición: el dinero de los cigarrillos queda afuera de
   /// `calcularReposicion` por `LineaParaReposicion.esCigarrillo` (una
@@ -81,13 +81,13 @@ class Proveedores extends Table {
   IntColumn get separadoCentavos => integer().withDefault(const Constant(0))();
 
   /// Parte de [separadoCentavos] que está en Mercado Pago, no en el cajón
-  /// (schemaVersion 35, Bruno 2026-09-26) — congelada al separar junto con
+  /// (schemaVersion 35, el dueño 2026-09-26) — congelada al separar junto con
   /// el total, ver `lib/domain/separacion_por_medio.dart`. La parte del
   /// cajón es la diferencia. Vuelve a 0 al pagar, igual que el total.
   IntColumn get separadoMpCentavos => integer().withDefault(const Constant(0))();
   DateTimeColumn get separadoFecha => dateTime().nullable()();
 
-  // --- Separación del día (schemaVersion 38, Bruno 2026-09-26): lo que se
+  // --- Separación del día (schemaVersion 38, el dueño 2026-09-26): lo que se
   // marcó como separado HOY desde "Separaciones", y cómo estaba el
   // proveedor antes — para que destildar la tarjeta lo deshaga exacto
   // (`desmarcarDelDia`, `repositorio_reposicion.dart`). Si la fecha no es de
@@ -113,9 +113,9 @@ class Proveedores extends Table {
   /// [corteReposicionFecha]. Tienen que ser dos fechas separadas: revisar
   /// la ganancia de ayer (retirarla o guardarla como colchón) es una
   /// decisión diaria, mientras que separar el costo real para pagarle al
-  /// proveedor sigue siendo una decisión de Bruno, cuando a él le
+  /// proveedor sigue siendo una decisión de el dueño, cuando a él le
   /// corresponda — mezclar los dos cortes haría que revisar la ganancia
-  /// también reseteara "cuánto separar" sin que Bruno lo pidiera, o que
+  /// también reseteara "cuánto separar" sin que el dueño lo pidiera, o que
   /// separar diera por revisada una ganancia que todavía no se miró. Null
   /// significa "desde siempre".
   DateTimeColumn get gananciaRevisadaFecha => dateTime().nullable()();
@@ -123,7 +123,7 @@ class Proveedores extends Table {
   /// Porcentaje de ganancia sobre el costo (basis points, 3000 = 30%) con el
   /// que se calculan los precios de sus productos: costo + esto, redondeado
   /// hacia arriba a la próxima centena (`precioConMarkupACentena`). Null =
-  /// sin porcentaje, los precios se cargan a mano. Bruno, 2026-09-29. Los
+  /// sin porcentaje, los precios se cargan a mano. El dueño, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   IntColumn get markupBp => integer().nullable()();
 
@@ -131,7 +131,7 @@ class Proveedores extends Table {
 
   /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
   /// lleva su propia caja (la "lata"), así que queda afuera de la reposición genérica y tiene su propio panel.
-  /// Reemplaza al código fijo `'SC'` (Serra Cigarros) que estaba repetido en la app; la migración lo marca en
+  /// Reemplaza al código fijo `'SC'` (Distribuidora de Cigarrillos) que estaba repetido en la app; la migración lo marca en
   /// las bases que ya lo tenían. Nace en falso.
   BoolColumn get cajaAparte => boolean().withDefault(const Constant(false))();
 
@@ -146,7 +146,7 @@ class Clientes extends Table {
   TextColumn get nombre => text().withLength(min: 1, max: 120)();
   TextColumn get telefono => text().nullable()();
 
-  /// Basis points, ej. 1500 = 15% (Jam Rock, Regla 17). Null para todos los
+  /// Basis points, ej. 1500 = 15% (Cliente Frecuente, Regla 17). Null para todos los
   /// clientes que no tienen descuento fijo.
   IntColumn get descuentoBp => integer().nullable()();
 
@@ -172,7 +172,7 @@ class MediosDePago extends Table {
   IntColumn get orden => integer().withDefault(const Constant(0))();
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
 
-  /// Identidad de sincronización, migración v32→v33 (Bruno, 2026-09-19:
+  /// Identidad de sincronización, migración v32→v33 (El dueño, 2026-09-19:
   /// "que se puedan modificar las reglas del negocio... desde el celular"
   /// — medios de pago entra junto con la Configuración completa de la
   /// companion). A diferencia de [Categorias.globalId], estas 2 filas se
@@ -250,13 +250,13 @@ class Productos extends Table {
   IntColumn get stockMinimoGramos => integer().nullable()();
 
   /// true = el precio se cargó a mano y el porcentaje del proveedor NO lo
-  /// toca (Bruno, 2026-09-29). Por defecto false: el precio sigue al
+  /// toca (El dueño, 2026-09-29). Por defecto false: el precio sigue al
   /// porcentaje de su proveedor cuando ese proveedor tiene uno. Local: no se
   /// sincroniza.
   BoolColumn get precioFijo => boolean().withDefault(const Constant(false))();
 
   /// Promo armada con varios artículos (`promo_componentes`). Su stock no es
-  /// una columna: es el de sus artículos (`stockDePromo`). Bruno, 2026-09-29.
+  /// una columna: es el de sus artículos (`stockDePromo`). El dueño, 2026-09-29.
   BoolColumn get esPromo => boolean().withDefault(const Constant(false))();
 
   BoolColumn get activo => boolean().withDefault(const Constant(true))();

@@ -1,4 +1,4 @@
-// Edición masiva de productos (Bruno, 2026-09-16: "si quiero subir el
+// Edición masiva de productos (El dueño, 2026-09-16: "si quiero subir el
 // precio de 3 productos... a la vez", y después "maximizá lo que se puede
 // hacer con el ajuste masivo" — precio, costo, categoría, proveedor,
 // activar/desactivar). Una sola acción a la vez, elegida arriba; el resto
@@ -144,7 +144,7 @@ class _DialogoEdicionMasivaState extends State<_DialogoEdicionMasiva> {
   }
 
   /// Frase de una línea con el cambio exacto que se va a aplicar — mismo
-  /// número que se ve en el botón de confirmar, a propósito (Bruno: "a
+  /// número que se ve en el botón de confirmar, a propósito (El dueño: "a
   /// prueba de boludos" — el último click tiene que mostrar el número
   /// real, no obligar a acordarse de lo que se tipeó tres pantallas atrás).
   String get _resumenAccion {

@@ -8,7 +8,7 @@ import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
 import '../../helpers/base_para_tests.dart';
 
 /// La promo aparece en la venta como un producto más, con el stock que dan sus
-/// artículos, y al cobrarla los descuenta (Bruno, 2026-09-29).
+/// artículos, y al cobrarla los descuenta (El dueño, 2026-09-29).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -19,7 +19,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     yerba = await db.into(db.productos).insert(
           ProductosCompanion.insert(nombre: 'Yerba', costoCentavos: const Value(100000), precioCentavos: const Value(140000), stock: const Value(3)),

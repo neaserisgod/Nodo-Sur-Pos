@@ -29,7 +29,7 @@ class Bloque extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   /// Filete superior de 3px, opcional — nulo en toda la app salvo donde se
-  /// pida explícitamente ("Bento con carácter", venta, Bruno 2026-09-16:
+  /// pida explícitamente ("Bento con carácter", venta, el dueño 2026-09-16:
   /// "dejemos el monocromo, démosle vida"). No cambia el radio ni el
   /// padding del bloque, así que no rompe la alineación con bloques
   /// vecinos que no lo usan.

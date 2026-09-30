@@ -39,7 +39,7 @@ class ResumenReposicionProveedor {
   final Proveedor proveedor;
 
   /// Precio de venta desde el corte — lo que entró, no lo que costó
-  /// (Bruno, ítem 3: la columna "VENDIDO" del papel es precio, confundirla
+  /// (El dueño, ítem 3: la columna "VENDIDO" del papel es precio, confundirla
   /// con el costo real es un error de la planilla, no un dato que falte).
   final int vendidoCentavos;
 
@@ -47,12 +47,12 @@ class ResumenReposicionProveedor {
   final int costoRealCentavos;
 
   /// Ganancia real vendida desde el corte (venta − costo, mismo corte que
-  /// [costoRealCentavos]) — Regla 13: es uno de los datos que Bruno revisa
+  /// [costoRealCentavos]) — Regla 13: es uno de los datos que el dueño revisa
   /// por proveedor al abrir caja, para decidir cuánto retirar.
   final int gananciaCentavos;
 
   /// Ganancia retenida acumulada de este proveedor (Regla 13): ya no es un
-  /// monto configurable a mano — crece solo cuando Bruno decide no
+  /// monto configurable a mano — crece solo cuando el dueño decide no
   /// llevarse la ganancia de este proveedor (`retenerGanancia`), y se
   /// consume al separar (ver `separarProveedor`).
   final int colchonCentavos;
@@ -73,7 +73,7 @@ class ResumenReposicionProveedor {
   final DateTime? separadoFecha;
 
   /// Parte de [costoRealCentavos] que está en Mercado Pago, no en el cajón
-  /// (Bruno, 2026-09-26, `lib/domain/separacion_por_medio.dart`): lo cobrado
+  /// (El dueño, 2026-09-26, `lib/domain/separacion_por_medio.dart`): lo cobrado
   /// directo por MP más lo que los cigarrillos cobrados por MP le sacaron al
   /// efectivo. Es también la parte MP de [sugeridoASepararCentavos] — el
   /// colchón y el pendiente arrastrado van enteros del cajón (no hay forma
@@ -116,7 +116,7 @@ _lineasPorProveedorDesde(AppDatabase db, List<int> proveedorIds) async {
   if (proveedorIds.isEmpty) return {};
   final query = db.select(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
-  // Sin ventas anuladas (Bruno, 2026-09-26): una venta revertida no generó
+  // Sin ventas anuladas (El dueño, 2026-09-26): una venta revertida no generó
   // nada que reponer, ni vendido, ni ganancia.
   ])..where(db.lineasDeVenta.proveedorIdFoto.isIn(proveedorIds) & db.ventas.anuladaEn.isNull());
   final filas = await query.get();
@@ -228,7 +228,7 @@ DateTime? _corteMasViejo(Iterable<Proveedor> proveedores) {
   return masViejo;
 }
 
-// ─── Separaciones del día (Bruno, 2026-09-26: "la idea es que sea del día!!
+// ─── Separaciones del día (El dueño, 2026-09-26: "la idea es que sea del día!!
 // y tenga en cuenta los montos actuales tanto de efectivo como de mp") ─────
 
 DateTime _inicioDelDia(DateTime ahora) => DateTime(ahora.year, ahora.month, ahora.day);
@@ -236,9 +236,9 @@ DateTime _inicioDelDia(DateTime ahora) => DateTime(ahora.year, ahora.month, ahor
 /// Una fila de la pantalla "Separaciones": lo de HOY de un proveedor (todos
 /// los turnos del día), dividido entre cajón y Mercado Pago. Lo que haya
 /// quedado sin separar de días anteriores no aparece acá (decisión de
-/// Bruno) — sigue vivo en Proveedores → Avanzado.
+/// El dueño) — sigue vivo en Proveedores → Avanzado.
 class SeparacionDelDia {
-  /// Null en la fila "Sin proveedor": se muestra (Bruno, 2026-09-26: "lo
+  /// Null en la fila "Sin proveedor": se muestra (El dueño, 2026-09-26: "lo
   /// mismo sin proveedor"), pero no hay a quién separarle ni pagarle.
   final Proveedor? proveedor;
 
@@ -327,7 +327,7 @@ class SeparacionDelDia {
   return (vendido: vendido, sinCosto: sinCosto, costo: costo, gananciaMp: gananciaMp, falta: falta, faltaMp: faltaMp);
 }
 
-/// Todos los proveedores activos (salvo Serra Cigarros: su reposición la
+/// Todos los proveedores activos (salvo Distribuidora de Cigarrillos: su reposición la
 /// hace la lata) con algo vendido hoy o algo separado esperando pago, más
 /// una fila "Sin proveedor" al final si hoy se vendió algo sin proveedor.
 Future<List<SeparacionDelDia>> separacionesDelDia(AppDatabase db, {DateTime? ahora, DateTime? desde}) async {
@@ -391,7 +391,7 @@ Future<List<SeparacionDelDia>> separacionesDelDia(AppDatabase db, {DateTime? aho
 }
 
 /// Un producto vendido sin costo cargado, sumado en el período — lo que
-/// muestra el aviso "…sin costo cargado" al tocarlo (Bruno, 2026-09-26:
+/// muestra el aviso "…sin costo cargado" al tocarlo (El dueño, 2026-09-26:
 /// "que si hago click me diga el producto sin costo").
 class VendidoSinCosto {
   /// Para cargarle el costo desde el mismo aviso (mock `DialogosSeparaciones`
@@ -549,7 +549,7 @@ ResultadoAjuste<int> ajustarSeparacionesADisponible(
 /// parte de Mercado Pago (la ya ajustada a lo que hay en cada caja). A
 /// diferencia de [separarProveedor]:
 /// - lo que quedó sin separar de días anteriores NO se separa (decisión de
-///   Bruno: Separaciones es solo del día) — pasa a `pendienteBaseCentavos`
+///   El dueño: Separaciones es solo del día) — pasa a `pendienteBaseCentavos`
 ///   para que siga apareciendo en Proveedores → Avanzado;
 /// - el colchón no se toca.
 Future<void> separarDelDia(
@@ -673,8 +673,8 @@ Future<({int efectivoCentavos, int mpCentavos, int cigarrillosCentavos})> cobrad
 }
 
 /// Público (fase 13, pantalla Proveedores, nivel 2): a diferencia de
-/// [reposicionActual], no excluye a Serra Cigarros — acá se pide un
-/// proveedor puntual porque Bruno ya entró a verlo, así que sus cifras en
+/// [reposicionActual], no excluye a Distribuidora de Cigarrillos — acá se pide un
+/// proveedor puntual porque el dueño ya entró a verlo, así que sus cifras en
 /// cero (correctas: los cigarrillos quedan fuera de `calcularReposicion`,
 /// Regla 6) son información real de ESE proveedor, no ruido en una lista de
 /// quince filas.
@@ -718,7 +718,7 @@ ResumenReposicionProveedor _resumenDe(
   );
 }
 
-/// Reposición actual de cada proveedor activo — salvo Serra Cigarros (código
+/// Reposición actual de cada proveedor activo — salvo Distribuidora de Cigarrillos (código
 /// SC): sus ventas quedan afuera de `calcularReposicion` a propósito (Regla
 /// 6, `esCigarrillo`), así que siempre daría separado/pendiente en cero. Una
 /// fila permanentemente en cero es ruido, no información — se paga desde la
@@ -753,7 +753,7 @@ class GananciaPendienteProveedor {
 }
 
 /// Un proveedor con algo para hacer en la pantalla simplificada de "separar"
-/// (Bruno, 2026-09-05: "necesito que solo diga cuánto separar... para
+/// (El dueño, 2026-09-05: "necesito que solo diga cuánto separar... para
 /// ahorrarme trabajo y sobre todo tiempo"). Junta los dos cortes que ya
 /// existían por separado (reposición — `corteReposicionFecha` — y ganancia —
 /// `gananciaRevisadaFecha`) en una sola fila por proveedor, sin fusionar los
@@ -779,7 +779,7 @@ class ProveedorParaSeparar {
 }
 
 /// Solo proveedores con algo pendiente en cualquiera de los dos cortes — uno
-/// al día en los dos no tiene nada que Bruno tenga que decidir acá.
+/// al día en los dos no tiene nada que el dueño tenga que decidir acá.
 Future<List<ProveedorParaSeparar>> proveedoresParaSeparar(
   AppDatabase db,
 ) async {
@@ -806,14 +806,14 @@ Future<List<ProveedorParaSeparar>> proveedoresParaSeparar(
 
 /// Regla 13: ganancia por proveedor desde la última revisión
 /// (`gananciaRevisadaFecha` — corte propio, independiente del de
-/// reposición, ver el comentario de la columna). Es lo que Bruno mira al
+/// reposición, ver el comentario de la columna). Es lo que el dueño mira al
 /// abrir caja para decidir cuánto retirar y cuánto dejar como colchón.
-/// Excluye a Serra Cigarros (SC), mismo motivo que [reposicionActual]: sus
+/// Excluye a Distribuidora de Cigarrillos (SC), mismo motivo que [reposicionActual]: sus
 /// ventas quedan afuera del cálculo de ganancia por proveedor (Regla 6, la
 /// administra la lata aparte), así que siempre daría cero.
 ///
 /// Solo devuelve proveedores con algo que revisar (vendido != 0 desde el
-/// corte) — uno sin movimiento no tiene nada que Bruno tenga que decidir.
+/// corte) — uno sin movimiento no tiene nada que el dueño tenga que decidir.
 Future<List<GananciaPendienteProveedor>> gananciaPendienteDeProveedores(
   AppDatabase db,
 ) async {
@@ -844,7 +844,7 @@ Future<List<GananciaPendienteProveedor>> gananciaPendienteDeProveedores(
   return resultados;
 }
 
-/// Una fila de "Reportes" (Bruno, 2026-09-06: "en lugar de revisar
+/// Una fila de "Reportes" (El dueño, 2026-09-06: "en lugar de revisar
 /// ganancias, un apartado de reportes para poder ver detalladamente
 /// todo") — junta en un solo lugar los dos cortes independientes de Regla
 /// 13 (reposición y ganancia) para UN proveedor, sin fusionarlos: cada
@@ -882,7 +882,7 @@ class ReporteProveedor {
 /// sección más de la barra lateral que se visita cuando se quiere — así
 /// que, a diferencia de [proveedoresParaSeparar] (que solo lista lo
 /// pendiente, pensado para no interrumpir con ruido en medio de la
-/// apertura), acá se listan TODOS los proveedores activos (salvo Serra
+/// apertura), acá se listan TODOS los proveedores activos (salvo Distribuidora
 /// Cigarros, Regla 6, mismo motivo que [reposicionActual]) — "ver
 /// detalladamente todo" incluye los que están en cero.
 Future<List<ReporteProveedor>> reporteProveedores(AppDatabase db) async {
@@ -909,7 +909,7 @@ Future<List<ReporteProveedor>> reporteProveedores(AppDatabase db) async {
 }
 
 /// De qué medio sale un retiro de ganancia real (Regla 13) — calculado
-/// automáticamente según cómo se cobró cada venta que la generó (Bruno,
+/// automáticamente según cómo se cobró cada venta que la generó (El dueño,
 /// 2026-09-06: "de qué medio debe calcularse desde cómo se vendió"), no
 /// tipeado a mano. Agrupa las líneas de [proveedor] desde
 /// `gananciaRevisadaFecha` por venta (a diferencia de
@@ -1011,11 +1011,11 @@ Future<({int efectivoCentavos, int virtualCentavos})> gananciaPorMedioDesde(
   return (efectivoCentavos: efectivoTotal, virtualCentavos: virtualTotal);
 }
 
-/// Regla 13: registra la decisión de Bruno sobre la ganancia de
+/// Regla 13: registra la decisión de el dueño sobre la ganancia de
 /// [proveedorId] — cuánto retira ([retiroEfectivoCentavos] +
 /// [retiroMercadoPagoCentavos], cada uno opcional por si solo usa un
 /// medio) y el resto se retiene como colchón
-/// ([gananciaCentavos] − lo retirado, nunca negativo: si Bruno decide
+/// ([gananciaCentavos] − lo retirado, nunca negativo: si el dueño decide
 /// retirar más de lo que había, no hay colchón negativo). Mueve
 /// `gananciaRevisadaFecha` a ahora para no volver a contar esta misma
 /// ganancia mañana — no toca `corteReposicionFecha` ni `separadoCentavos`
@@ -1070,7 +1070,7 @@ Future<void> revisarGananciaProveedor(
   );
 }
 
-/// Aviso corto para la apertura de caja (Bruno separa con la persiana
+/// Aviso corto para la apertura de caja (El dueño separa con la persiana
 /// baja): proveedores con algo sugerido para separar, con su monto.
 Future<List<({String nombre, int montoCentavos})>> avisoASepararAlAbrir(
   AppDatabase db,
@@ -1088,18 +1088,18 @@ Future<List<({String nombre, int montoCentavos})>> avisoASepararAlAbrir(
 /// el arrastre. Lo que se venda después no toca este monto — se acumula
 /// aparte, en `pendienteSinSepararCentavos`, hasta la próxima separación.
 ///
-/// Se **suma** a lo que ya estuviera separado (si Bruno separa dos veces
+/// Se **suma** a lo que ya estuviera separado (si el dueño separa dos veces
 /// antes de pagar) en vez de reemplazarlo — separar de nuevo no debería
 /// poder hacer desaparecer plata ya apartada.
 ///
 /// **El colchón se congela acá también, y se consume** (Regla 13): desde
 /// que el colchón es ganancia real retenida (no una sugerencia teórica),
-/// separar es el momento en que Bruno decide usarlo — "la única manera de
+/// separar es el momento en que el dueño decide usarlo — "la única manera de
 /// agregar más billete a ese colchón es que yo decida guardar las
 /// ganancias también" implica que en algún momento se gasta, y ese momento
 /// es pedirle de más al proveedor, que es exactamente lo que "separar"
 /// representa. Vuelve a 0 acá; sigue creciendo desde cero hasta la próxima
-/// vez que Bruno retenga ganancia de este proveedor.
+/// vez que el dueño retenga ganancia de este proveedor.
 ///
 /// [fecha] default a ahora — mismo patrón que `cerrarSesion`/`fechaCierre`
 /// y `registrarPagoFijo`/`fecha`: hace falta poder pasarla explícita para
@@ -1156,7 +1156,7 @@ Future<void> separarProveedor(
 /// [fecha] default a ahora — mismo patrón que `separarProveedor`/`fecha`,
 /// para que los tests no dependan del reloj real.
 ///
-/// [montoMpCentavos] (Bruno, 2026-09-26): la parte de [montoCentavos] que
+/// [montoMpCentavos] (El dueño, 2026-09-26): la parte de [montoCentavos] que
 /// sale de Mercado Pago — lo separado viene dividido entre cajón y MP
 /// (`lib/domain/separacion_por_medio.dart`), y cada parte se registra por
 /// el medio del que salió, con su propio movimiento, para que el arqueo de
@@ -1233,7 +1233,7 @@ Future<void> pagarProveedor(
 }
 
 /// Regla 13: retiene [montoCentavos] de la ganancia de este proveedor como
-/// colchón — plata real que Bruno decide no llevarse del negocio, para
+/// colchón — plata real que el dueño decide no llevarse del negocio, para
 /// poder pedirle de más la próxima vez que separe (`separarProveedor`, que
 /// es también el momento en que el colchón se gasta). Se **suma** al
 /// colchón que ya hubiera, nunca lo reemplaza — mismo criterio que
@@ -1258,7 +1258,7 @@ Future<void> retenerGanancia(
 }
 
 /// Regla 13: retira [montoCentavos] de ganancia de este proveedor fuera del
-/// negocio — efectivo al bolsillo de Bruno, o de Mercado Pago a su cuenta
+/// negocio — efectivo al bolsillo de el dueño, o de Mercado Pago a su cuenta
 /// personal. No es una caja de la app, pero se registra igual como
 /// `MovimientoCaja` tipo `RETIRO` (ver `tiposEgresoDeCaja`,
 /// `repositorio_cierre.dart`): sin este rastro, el arqueo del día siguiente
@@ -1266,7 +1266,7 @@ Future<void> retenerGanancia(
 ///
 /// [porMercadoPago] decide de qué saldo descuenta — no necesariamente el
 /// medio de pago del proveedor (`Proveedor.medioPago` es cómo se le paga A
-/// ÉL, no de dónde sale la ganancia que Bruno se lleva para sí mismo). Un
+/// ÉL, no de dónde sale la ganancia que el dueño se lleva para sí mismo). Un
 /// retiro parcial en cada medio son dos llamadas, una por medio.
 Future<void> registrarRetiroProveedor(
   AppDatabase db, {
@@ -1309,7 +1309,7 @@ Future<void> registrarRetiroProveedor(
 /// Colchón y medio de pago — vivía en el nivel 2 ("se tocan seguido, junto
 /// con separar/pagar"), pero la segunda corrección post-revisión movió las
 /// dos cosas (y separar/pagar) detrás de "Avanzado": el nivel 2 pasó a ser
-/// puramente informativo ("es para mirar", Bruno), sin campos ni botones.
+/// puramente informativo ("es para mirar", el dueño), sin campos ni botones.
 /// El colchón ahora se guarda desde `actualizarProveedorAvanzado` (mismo
 /// motivo que el medio de pago); esta función queda igual para no romper lo
 /// que ya la usa — es la misma regla que `historial_pedidos`, no tiene
@@ -1334,7 +1334,7 @@ Future<void> actualizarProveedorNivel2(
 /// Nivel 3 "Avanzado": nombre, código, días de pedido/entrega,
 /// activar/desactivar, medio de pago y colchón de reposición — todo lo que
 /// no es "mirar los números" del proveedor pasó acá en la segunda
-/// corrección post-revisión (Bruno: "es donde correspondían según los tres
+/// corrección post-revisión (El dueño: "es donde correspondían según los tres
 /// niveles"). [codigo] es único (`Proveedores.codigo`, validado también en
 /// el diálogo para un error legible antes de que la base lo rechace).
 /// [nombre], [medioPago] y [colchonReposicionCentavos] se mantienen
@@ -1371,7 +1371,7 @@ Future<void> actualizarProveedorAvanzado(
 }
 
 /// Alta de un proveedor nuevo — la lista de 15 de `REGLAS-NEGOCIO.md` (16)
-/// era la real al arrancar el negocio, no un límite del sistema: Bruno suma
+/// era la real al arrancar el negocio, no un límite del sistema: El dueño suma
 /// proveedores con el tiempo igual que suma productos. [codigo] único, mismo
 /// criterio de validación que [actualizarProveedorAvanzado] (el diálogo
 /// confirma el conflicto buscando antes de mostrar el error de sqlite). El
@@ -1405,7 +1405,7 @@ Future<int> crearProveedor(
 /// Productos de un proveedor, para la tabla del panel derecho de
 /// Proveedores (segunda corrección post-revisión: "ver qué le comprás, a
 /// cuánto, a cuánto lo vendés y cuánto sacás" — el corazón de la pantalla,
-/// según Bruno). Solo productos activos: uno dado de baja no es algo que
+/// según el dueño). Solo productos activos: uno dado de baja no es algo que
 /// hoy se le compre a este proveedor.
 class ProductoDeProveedor {
   final int id;

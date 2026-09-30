@@ -18,7 +18,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );
@@ -108,9 +108,9 @@ void main() {
     await vender(await proveedor('S'), precio: 100000, costo: 60000);
     await pump(tester);
 
-    final serra = tester.getTopLeft(find.text('Serra'));
-    final mazzota = tester.getTopLeft(find.text('Mazzota'));
-    expect(serra.dx, lessThan(mazzota.dx)); // Serra ($600) va antes que Mazzota ($300)
+    final serra = tester.getTopLeft(find.text('Distribuidora'));
+    final mazzota = tester.getTopLeft(find.text('Fiambrería'));
+    expect(serra.dx, lessThan(mazzota.dx)); // Distribuidora ($600) va antes que Fiambrería ($300)
     expect(find.text('A separar'), findsNWidgets(2));
     expect(find.byKey(const Key('progreso_separados')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('progreso_separados'))).data, '0 de 2 separados');
@@ -122,13 +122,13 @@ void main() {
     await vender(serra, precio: 100000, costo: 60000);
     await pump(tester);
 
-    await tester.tap(find.text('Serra'));
+    await tester.tap(find.text('Distribuidora'));
     await tester.pumpAndSettle();
     expect((await (db.select(db.proveedores)..where((p) => p.id.equals(serra))).getSingle()).separadoCentavos, 60000);
     expect(find.text('Separado'), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('progreso_separados'))).data, '1 de 1 separados');
 
-    await tester.tap(find.text('Serra'));
+    await tester.tap(find.text('Distribuidora'));
     await tester.pumpAndSettle();
     expect((await (db.select(db.proveedores)..where((p) => p.id.equals(serra))).getSingle()).separadoCentavos, 0);
     expect(find.text('A separar'), findsOneWidget);
@@ -207,9 +207,9 @@ void main() {
   });
 
   group('ganancia desde "Lo vendido" (antes en Reportes, 2026-09-26)', () {
-    /// Una venta de Serra de $1.000 (costo $600): ganancia sin revisar $400,
+    /// Una venta de Distribuidora de $1.000 (costo $600): ganancia sin revisar $400,
     /// cobrada [efectivo] en efectivo y el resto por MP.
-    Future<int> ventaSerra({int efectivo = 100000}) async {
+    Future<int> ventaDeProveedor({int efectivo = 100000}) async {
       final serra = await proveedor('S');
       final ventaId = await db.into(db.ventas).insert(
             VentasCompanion.insert(sesionCajaId: sesionId, usuarioId: usuarioId, subtotalCentavos: 100000, totalCentavos: 100000),
@@ -230,19 +230,19 @@ void main() {
       return serra;
     }
 
-    Future<void> abrirGananciaDeSerra(WidgetTester tester) async {
+    Future<void> abrirGananciaDelProveedor(WidgetTester tester) async {
       await pump(tester);
       await tester.tap(find.text('Lo vendido'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Serra'));
+      await tester.tap(find.text('Distribuidora'));
       await tester.pumpAndSettle();
     }
 
     testWidgets('tocar la tarjeta muestra la ganancia sin revisar; "Retener como colchón" la retiene toda', (tester) async {
-      final serra = await ventaSerra();
-      await abrirGananciaDeSerra(tester);
+      final serra = await ventaDeProveedor();
+      await abrirGananciaDelProveedor(tester);
 
-      expect(find.text('Ganancia — Serra'), findsOneWidget);
+      expect(find.text('Ganancia — Distribuidora'), findsOneWidget);
       expect(
         find.descendant(of: find.byKey(const Key('ganancia_sin_revisar')), matching: find.text(r'$400')),
         findsOneWidget,
@@ -258,22 +258,22 @@ void main() {
     });
 
     testWidgets('sin el módulo Retiro de ganancias, tocar la tarjeta no abre nada', (tester) async {
-      await ventaSerra();
+      await ventaDeProveedor();
       addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
       modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.retiroGanancias, activo: false);
-      await abrirGananciaDeSerra(tester);
+      await abrirGananciaDelProveedor(tester);
 
-      expect(find.text('Ganancia — Serra'), findsNothing);
+      expect(find.text('Ganancia — Distribuidora'), findsNothing);
       await desmontar(tester);
     });
 
     testWidgets('"Retirar ganancia" prellena según cómo se cobró y registra un retiro por medio', (tester) async {
-      final serra = await ventaSerra(efectivo: 70000);
-      await abrirGananciaDeSerra(tester);
+      final serra = await ventaDeProveedor(efectivo: 70000);
+      await abrirGananciaDelProveedor(tester);
 
       await tester.tap(find.text('Retirar ganancia'));
       await tester.pumpAndSettle();
-      expect(find.text('Retirar ganancia — Serra'), findsOneWidget);
+      expect(find.text('Retirar ganancia — Distribuidora'), findsOneWidget);
       final campoEfectivo = tester.widget<TextField>(
         find.descendant(of: find.byKey(const Key('campo_retiro_efectivo')), matching: find.byType(TextField)),
       );

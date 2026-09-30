@@ -5,7 +5,7 @@ import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import '../helpers/base_para_tests.dart';
 
-/// Cuenta corriente con proveedores (Bruno, 2026-09-29): el saldo es cargos
+/// Cuenta corriente con proveedores (El dueño, 2026-09-29): el saldo es cargos
 /// menos pagos, y un pago que sale de una caja baja el arqueo y queda con
 /// dueño.
 void main() {
@@ -16,9 +16,9 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 1000000, mpInicialCentavos: 500000);
-    proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZM', nombre: 'Mazzota test'));
+    proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZM', nombre: 'Fiambrería test'));
   });
   tearDown(() => db.close());
 
@@ -60,7 +60,7 @@ void main() {
     final mov = await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('PAGO_PROVEEDOR'))).getSingle();
     expect(mov.proveedorId, proveedorId);
     expect(mov.montoCentavos, 120000);
-    expect(mov.nota, contains('Mazzota test'));
+    expect(mov.nota, contains('Fiambrería test'));
   });
 
   test('pagar por Mercado Pago baja el MP esperado y no el cajón', () async {

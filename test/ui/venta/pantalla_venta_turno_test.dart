@@ -1,4 +1,4 @@
-// Cambio de turno (Bruno, sesión del 31/08/2026): un turno es una sesión
+// Cambio de turno (El dueño, sesión del 31/08/2026): un turno es una sesión
 // completa, así que después de cerrar mid-día tiene que poder abrirse una
 // hoja nueva sin reiniciar la app — el callejón sin salida que reemplaza
 // esto ("Cerrá la aplicación...") nunca tuvo cobertura.

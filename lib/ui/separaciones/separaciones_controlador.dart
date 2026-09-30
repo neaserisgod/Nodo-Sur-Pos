@@ -1,4 +1,4 @@
-// Estado de "Separaciones" — rediseño sobre el mock de Bruno (2026-09-26):
+// Estado de "Separaciones" — rediseño sobre el mock de el dueño (2026-09-26):
 // tarjetas de caja arriba (Efectivo / Mercado Pago / Total: cobrado, a
 // separar, te queda), una tarjeta por proveedor con un tilde para marcarla
 // separada, y una tarjeta de progreso. Dos vistas: "Qué separar" (siempre

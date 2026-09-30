@@ -37,11 +37,11 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, {required int usuarioId,
 }
 
 void main() {
-  group('avisar antes que inventar (pedido explícito de Bruno)', () {
+  group('avisar antes que inventar (pedido explícito de Dueño)', () {
     testWidgets('sin ningún fijo cargado, avisa en vez de mostrar números', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
       await _pump(tester, db, usuarioId: usuarioId);
 
@@ -52,7 +52,7 @@ void main() {
     testWidgets('cargar el monto de un concepto lo saca del aviso', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
       await _pump(tester, db, usuarioId: usuarioId);
 
@@ -70,7 +70,7 @@ void main() {
     testWidgets('el margen se calcula de lo realmente vendido', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );
@@ -102,7 +102,7 @@ void main() {
     testWidgets('con todos los fijos cargados, muestra el equilibrio, pendientes y reserva reales', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final mesAnio = mesAnioDe(DateTime.now());
       final conceptos = await db.select(db.gastosFijos).get();
       for (final c in conceptos) {
@@ -112,7 +112,7 @@ void main() {
       await _pump(tester, db, usuarioId: usuarioId);
 
       expect(find.text('Falta para cubrir los fijos'), findsOneWidget); // sin ganancia todavía, no cubierto
-      // Por default la opción de Configuración está apagada (Bruno: su
+      // Por default la opción de Configuración está apagada (El dueño: su
       // planilla real nunca restó los fijos pendientes del retiro).
       expect(find.textContaining('Pendiente:'), findsOneWidget);
       expect(find.textContaining('Pendiente (lo que descuenta el retiro)'), findsNothing);
@@ -122,7 +122,7 @@ void main() {
     testWidgets('registrar un pago de un fijo reduce lo pendiente', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );
@@ -145,7 +145,7 @@ void main() {
     testWidgets('el diálogo de pago permite elegir una fecha distinta de hoy', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );
@@ -160,7 +160,7 @@ void main() {
 
       await tester.tap(find.text('Registrar pago').first);
       await tester.pumpAndSettle();
-      // Bruno pagó el 31/07 pero lo carga recién ahora: la fecha del pago,
+      // El dueño pagó el 31/07 pero lo carga recién ahora: la fecha del pago,
       // no la de carga, es la que tiene que quedar en el movimiento.
       await tester.enterText(_campo('campo_fecha_pago_fijo'), '31/07/2026');
       await tester.tap(find.text('Registrar'));

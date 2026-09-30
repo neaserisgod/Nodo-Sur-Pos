@@ -6,7 +6,7 @@ void main() {
   const config = ConfigRecargoCigarrillos(
     primerAtadoCentavos: 30000, // $300
     atadoAdicionalCentavos: 10000, // $100
-    cigarroSueltoCentavos: 5000, // $50 (Bruno, 2026-09-10: antes no llevaban recargo)
+    cigarroSueltoCentavos: 5000, // $50 (El dueño, 2026-09-10: antes no llevaban recargo)
   );
 
   group('recargoCigarrillos — Regla 6', () {
@@ -52,7 +52,7 @@ void main() {
       expect(r, 40000);
     });
 
-    test('cigarros sueltos generan recargo en pago virtual (Bruno, 2026-09-10: \$50 c/u)', () {
+    test('cigarros sueltos generan recargo en pago virtual (Dueño, 2026-09-10: \$50 c/u)', () {
       final r = recargoCigarrillos(
         cantidadAtados: 0,
         cantidadSueltos: 5,

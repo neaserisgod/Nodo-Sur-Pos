@@ -10,7 +10,7 @@ import 'reposicion.dart';
 class ResultadoGananciaBruta {
   /// Suma de (precio − costo) de cada línea con costo conocido. A diferencia
   /// de `calcularReposicion`, acá los cigarrillos SÍ entran: su costo-foto es
-  /// lo que se le paga a Serra, y la diferencia contra el precio de venta es
+  /// lo que se le paga a Distribuidora, y la diferencia contra el precio de venta es
   /// ganancia real, aunque la lata la administre por su cuenta (Regla 6). Lo
   /// que `reposicion.dart` excluye es la reposición de esa plata, no la
   /// ganancia que representa.

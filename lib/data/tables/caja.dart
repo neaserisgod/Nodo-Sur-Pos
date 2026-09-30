@@ -14,7 +14,7 @@ import 'ventas.dart';
 /// agregar una tercera caja obligaría a tocar `registrarVenta` (hoy un pago
 /// virtual no genera movimiento de caja) y dejaría sin arqueo los días ya
 /// cargados. En cambio, MP se arquea derivando esperado/contado/diferencia
-/// directo desde `Pagos` y `movimientos_de_caja` (decisión de Bruno,
+/// directo desde `Pagos` y `movimientos_de_caja` (decisión de el dueño,
 /// `DECISIONES.md`) — ver `mpEsperadoCentavos` en `lib/domain/caja.dart` y
 /// las columnas `mp*Centavos` de [SesionesDeCaja].
 class Cajas extends Table {
@@ -48,7 +48,7 @@ class SesionesDeCaja extends Table {
   IntColumn get lataInicialCentavos =>
       integer().withDefault(const Constant(0))();
 
-  /// Revivida el 2026-09-12 (Bruno, reboot de la base) — había quedado
+  /// Revivida el 2026-09-12 (El dueño, reboot de la base) — había quedado
   /// muerta desde que MP pasó a arquearse como una caja más (siempre
   /// arrancaba en 0, no se preguntaba), pero un reseteo de datos no vacía la
   /// cuenta real de Mercado Pago. Se pregunta al abrir, igual que
@@ -75,7 +75,7 @@ class SesionesDeCaja extends Table {
 
   /// Arqueo propio de la lata (ítem 3, "la vieja arquea la lata como una
   /// caja de verdad"): [lataFinalCentavos] es lo esperado (inicial +
-  /// separado hoy − pagos a Serra Cigarros), este es lo que Bruno contó de
+  /// separado hoy − pagos a Distribuidora de Cigarrillos), este es lo que el dueño contó de
   /// verdad en la lata al cerrar — mismo trío contado/esperado/diferencia
   /// que el efectivo y Mercado Pago.
   IntColumn get lataContadoCentavos => integer().nullable()();
@@ -95,7 +95,7 @@ class SesionesDeCaja extends Table {
 
   // --- Arqueo de Mercado Pago (schemaVersion 7, con inicial desde
   // 2026-09-12): mismo trío que el efectivo, con `saldoMpInicialCentavos` de
-  // arriba como término inicial. `mpContado` es lo que Bruno lee en la app
+  // arriba como término inicial. `mpContado` es lo que el dueño lee en la app
   // de Mercado Pago, no una cuenta física.
   IntColumn get mpContadoCentavos => integer().nullable()();
   IntColumn get mpEsperadoCentavos => integer().nullable()();

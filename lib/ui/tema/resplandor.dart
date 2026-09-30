@@ -1,4 +1,4 @@
-// Resplandor neón — apagado en el "Lenguaje de diseño" (Bruno, 2026-09-26):
+// Resplandor neón — apagado en el "Lenguaje de diseño" (El dueño, 2026-09-26):
 // el lenguaje nuevo es plano, sin halos de color. La función se queda (y
 // devuelve una lista vacía) para que los llamadores no cambien: si algún
 // día vuelve un halo, se prende de nuevo acá y en un solo lugar (Regla 3).

@@ -147,7 +147,7 @@ void main() {
         'reposición (Regla 6) y sumarla acá la contaría dos veces', () {
       final r = calcularReposicion(
         lineas: const [
-          // Serra vende almacén y cigarrillos con el mismo código de proveedor.
+          // Distribuidora vende almacén y cigarrillos con el mismo código de proveedor.
           LineaParaReposicion(
             proveedorId: 'S',
             esCigarrillo: true,

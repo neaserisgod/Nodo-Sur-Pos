@@ -1,14 +1,14 @@
 // Detalle de un día cerrado — se entra desde Historial → Cierres ("Ver las
 // ventas de ese día").
 //
-// Distribución del "Lenguaje de diseño" (Bruno, 2026-09-28, mock
+// Distribución del "Lenguaje de diseño" (El dueño, 2026-09-28, mock
 // `DetalleDia`): volver a Cierres, el día en grande con si cuadró; cuatro
 // cifras (vendido en la tarjeta oscura, efectivo, Mercado Pago, ganancia);
 // la tabla de ventas con reimprimir / editar / anular por fila; y al
 // costado lo vendido por proveedor y las anuladas. "Generar PDF" (la
 // planilla del día) arriba a la derecha.
 //
-// Anular (Bruno, 2026-09-13): solo mientras esta sesión siga abierta —
+// Anular (El dueño, 2026-09-13): solo mientras esta sesión siga abierta —
 // revierte stock y caja, nunca borra la venta (Regla 6).
 
 import 'package:file_selector/file_selector.dart';
@@ -115,7 +115,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
     final config = await widget.db.select(widget.db.configuracionTabla).getSingle();
     var carpeta = config.rutaTicketsCarpeta;
     if (carpeta == null) {
-      // Bug real (Bruno: "doy a imprimir y no sale nada de seleccionar"): la
+      // Bug real (El dueño: "doy a imprimir y no sale nada de seleccionar"): la
       // primera vez que hace falta, se pregunta la carpeta acá mismo.
       carpeta = await getDirectoryPath();
       if (carpeta == null) return;
@@ -327,7 +327,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
                         ),
                       ),
                     ],
-                    // Los arqueos opcionales del turno, como registro (Bruno,
+                    // Los arqueos opcionales del turno, como registro (El dueño,
                     // 2026-09-28: "que se guarden esos datos en algún lado").
                     if (_arqueos.isNotEmpty) ...[
                       const SizedBox(height: Espaciado.md),

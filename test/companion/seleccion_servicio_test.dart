@@ -1,5 +1,5 @@
 // Selección de servicio con un único ping (fase 3, tercera vuelta —
-// reemplaza el circuit breaker por llamada que tenía antes: Bruno,
+// reemplaza el circuit breaker por llamada que tenía antes: El dueño,
 // 2026-09-17, "la conexión solo detecta 1 vez si la PC está o no").
 import 'dart:io';
 

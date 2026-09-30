@@ -1,4 +1,4 @@
-// Piezas del "Lenguaje de diseño" (Bruno, 2026-09-26, carpeta de mocks) que
+// Piezas del "Lenguaje de diseño" (El dueño, 2026-09-26, carpeta de mocks) que
 // se repiten en Inicio, Separaciones, Proveedores e Historial: la tarjeta de
 // un indicador, la tarjeta de sección con título e insignia, el grupo de
 // pastillas para elegir vista o período, el punto de color, la fila
@@ -513,7 +513,7 @@ class BloqueSuave extends StatelessWidget {
   }
 }
 
-/// "Bebidas del Lago" → "BL"; "Serra" → "SE".
+/// "Bebidas del Lago" → "BL"; "Distribuidora" → "SE".
 String inicialesDe(String nombre) {
   final palabras = nombre.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty && p.toLowerCase() != 'de' && p.toLowerCase() != 'del').toList();
   if (palabras.isEmpty) return '?';

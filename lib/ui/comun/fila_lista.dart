@@ -9,7 +9,7 @@
 // que son apenas 360px). En una `ListaMaestra` angosta el uso correcto es
 // CERO valores — las cifras del elegido van al panel de detalle
 // (`FilaMetricas`), no a cada fila de la lista (corrección post-aprobación
-// del kit, Bruno, dibujo de Proveedores: "Serra Distribui..." truncado con
+// del kit, el dueño, dibujo de Proveedores: "Distribuidora Distribui..." truncado con
 // dos cifras al lado no entraba en 360px).
 
 import 'package:flutter/material.dart';
@@ -50,7 +50,7 @@ class FilaLista extends StatelessWidget {
   /// (`textoTenue`), para que no compita por atención con las que sí importan.
   final bool apagada;
 
-  /// Punto de acento antes del nombre (2026-09-12, Bruno: "el gris sin
+  /// Punto de acento antes del nombre (2026-09-12, el dueño: "el gris sin
   /// explicar es confuso") — señal explícita de "esto tiene algo que
   /// requiere tocarlo" (ej. Reportes: reposición o ganancia sin revisar),
   /// en vez de que la única pista sea que el resto de la lista está

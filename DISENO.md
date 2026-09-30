@@ -17,7 +17,7 @@ Para saber qué pantallas ya tienen esto aplicado y cuáles no, ver
 `ESTADO.md` — ese dato cambia seguido y no se duplica acá.
 
 **"Lenguaje de diseño" (2026-09-26/28) — vigente, manda sobre lo de abajo.**
-Bruno dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
+El dueño dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
 escritorio y celular más un LEEME con tokens: son **medio inspiración, pero
 la distribución de cada pantalla es la idea**. Lo que cambió respecto de las
 secciones de más abajo (que describen el remake del 2026-09-19 y todavía no
@@ -48,7 +48,7 @@ se reescribieron una por una):
   Separaciones = tarjetas por caja arriba y grilla de proveedores.
 
 **Remake completo de la estética (2026-09-19, en curso por fases — ver el
-plan en curso y `ESTADO.md` para el avance real):** Bruno pidió rehacer
+plan en curso y `ESTADO.md` para el avance real):** El dueño pidió rehacer
 toda la estética del escritorio basándose en la de la companion
 (`lib/companion/`), con fidelidad completa, y reemplazar la barra lateral
 por una navbar horizontal arriba. Este documento se está reescribiendo
@@ -65,7 +65,7 @@ colores/tipografía/radios sí se actualizan como cualquier pantalla.
 
 ## Principio rector: evitar fatiga visual
 
-Bruno mira esta pantalla doce horas por día, seis días por semana. Esa es
+El dueño mira esta pantalla doce horas por día, seis días por semana. Esa es
 la vara de **toda** decisión de diseño de esta app, no solo de la pantalla
 de venta — el principio del que se desprenden las demás reglas de este
 documento, no una más entre ellas. **Cuando dos criterios choquen, gana el
@@ -80,13 +80,13 @@ En concreto, en cada pantalla:
    ancho fijo" sigue valiendo, cambia contra qué borde está esa derecha:
    el del contenido acotado, no el de la pantalla.
 2. **La escala tipográfica sube, entera y proporcional.** Texto chico
-   obliga a forzar la vista — Bruno ya se quejó de no leer de lejos. Nunca
+   obliga a forzar la vista — El dueño ya se quejó de no leer de lejos. Nunca
    un tamaño suelto para "arreglar" una pantalla puntual: si hace falta
    subir, sube la escala entera (ver "Escala tipográfica" abajo).
 3. **Aire, no densidad.** La densidad extrema (del carrito, o de cualquier
    lista) fue una regla escrita para 720px de alto. Con 1080 sobra
    espacio: apretar cuando no hace falta es exactamente lo que cansa.
-4. **Nada se mueve sin que Bruno lo haya pedido.** Cada transición
+4. **Nada se mueve sin que el dueño lo haya pedido.** Cada transición
    responde a una acción suya. Ningún parpadeo, nada que aparezca o
    cambie solo mientras está cobrando.
 5. **La misma cosa en el mismo lugar en todas las pantallas.** Buscar
@@ -114,7 +114,7 @@ seis reglas de arriba, una por una, antes de darlas por terminadas — ver
 ## Principio rector: tres niveles de información
 
 Mismo principio de arriba, mirado desde la información en vez de desde el
-espacio en pantalla. Bruno, textual: *"al entrar al menú me muestre toda la
+espacio en pantalla. El dueño, textual: *"al entrar al menú me muestre toda la
 información resumida, no el detalle, eso agobia... recién ahí un menú
 avanzado, pero la simplicidad debe ser máxima"*. La vara: **si al abrir una
 pantalla hay que leer para encontrar lo que importa, está mal.**
@@ -154,7 +154,7 @@ real (lo que hay que construir igual en Productos):
 - **Nivel 2 — panel derecho, dos bloques apilados, cero campos.** Arriba,
   un resumen de **cinco cifras** del proveedor elegido, "compacto, sin
   campos, sin desplegables, sin botones de guardar — es para mirar"
-  (Bruno, dibujado a mano): dos filas de tres celdas, Stock/Costo/Venta
+  (El dueño, dibujado a mano): dos filas de tres celdas, Stock/Costo/Venta
   arriba, Ganancia/(vacío)/Separado abajo. Stock y costo son la misma
   cuenta —el stock que queda de ese proveedor— a dos precios distintos:
   **Stock** valoriza a precio de venta ("cuánto vale en la góndola"),
@@ -169,7 +169,7 @@ real (lo que hay que construir igual en Productos):
 
   Abajo, **la tabla de productos del proveedor** (segunda corrección,
   nueva): nombre, costo, venta, margen % — "el corazón de la pantalla...
-  ver qué le comprás, a cuánto, a cuánto lo vendés y cuánto sacás" (Bruno).
+  ver qué le comprás, a cuánto, a cuánto lo vendés y cuánto sacás" (El dueño).
   A diferencia del resumen, este bloque SÍ es `Expanded` a todo el ancho —
   tiene contenido real que lo aprovecha (`lib/data/repositorio_reposicion.dart`,
   `productosDeProveedor`; margen vía `markupBpDesdeCostoYPrecio`,
@@ -181,7 +181,7 @@ real (lo que hay que construir igual en Productos):
   colchón, medio de pago, código, días de pedido/entrega,
   activar/desactivar, **y las acciones de separar y pagar** (con el
   contexto que hace falta para decidirlas: costo real pendiente, cuánto
-  separar). "Es donde correspondían según los tres niveles" (Bruno,
+  separar). "Es donde correspondían según los tres niveles" (El dueño,
   segunda corrección) — el panel principal pasó a ser puramente
   informativo, así que todo lo demás se mudó atrás de un solo botón. El
   diálogo es reactivo al controlador (`ListenableBuilder`, no una foto fija
@@ -195,7 +195,7 @@ fatiga visual, arriba) antes de darlas por terminadas.
 
 **Fiados y encargues** (antes, una columna dentro de Reposición) quedaron
 afuera de Proveedores — no son proveedores, y mezclarlos de nuevo hubiera
-repetido el problema que este principio resuelve. Decisión de Bruno:
+repetido el problema que este principio resuelve. Decisión de el dueño:
 sacarlos por ahora, pendientes de una sección propia ("Pendientes") más
 adelante — la lógica de datos (`repositorio_pendientes.dart`) sigue
 completa e intacta, solo se borró la UI vieja que dependía del controlador
@@ -289,7 +289,7 @@ se reancló explícitamente entre los radios nuevos
 (`radioControlEscritorio`=18, `radioSuperficieEscritorio`=22) — detalle en
 `lib/ui/venta/tacto_venta.dart`.
 
-**Excepción puntual, solo en venta (2026-09-06)**: Bruno pidió aprovechar
+**Excepción puntual, solo en venta (2026-09-06)**: El dueño pidió aprovechar
 mejor la pantalla ("todo se ve chico en general") — el precio real de un
 producto en el dropdown de búsqueda ya usaba `subtitulo` (19) mientras el
 nombre y el stock de esa misma fila usaban `cuerpo`/`secundario` (16/14),
@@ -305,7 +305,7 @@ rol — se limita a venta a propósito, sin tocar `bodyMedium`/`bodySmall`
 del tema global (eso movería a Proveedores, Cierre, Configuración, etc.,
 pantallas que no pidieron este cambio).
 
-**Segunda excepción, "estilo táctil" (2026-09-16)**: Bruno pidió que venta
+**Segunda excepción, "estilo táctil" (2026-09-16)**: El dueño pidió que venta
 "parezca táctil" aunque se siga operando con mouse/teclado (el campo único
 con foco permanente no cambia). `lib/ui/venta/tacto_venta.dart`:
 
@@ -340,7 +340,7 @@ de esos tres, el sistema de diseño **usa dos**:
 - **Medium** para lo que tiene que destacar (subtítulo, título, la cifra
   grande del total).
 - **`SemiBold` queda sin usar** en ningún rol — no reintroducirlo sin que
-  Bruno lo pida explícitamente.
+  El dueño lo pida explícitamente.
 - **Nunca `FontWeight.bold`/w700.** Sin el archivo de ese peso empaquetado,
   Flutter sintetiza un bold falso a partir del Regular (más lento de
   renderizar y se ve distinto a un bold real).
@@ -430,12 +430,12 @@ Con esto Venta deja de ser la única pantalla con color más allá del acento
 único — es una pantalla más bajo el sistema multi-acento que ahora
 gobierna toda la app.
 
-Bruno, textual: *"quiero que la interfaz de la app desktop sea llamativa al
+El dueño, textual: *"quiero que la interfaz de la app desktop sea llamativa al
 estilo de que parezca táctil, al menos la parte de ventas"*, y después,
 viendo que "solo forma" no alcanzaba: *"quiero que esté pensada visualmente
 para estar 24/7, dejemos el monocromo y démosle vida, lo mismo para el
 layout"*. Se armó un mockup con tres direcciones de color/layout (fuera del
-repo, un artifact) y Bruno eligió **"Bento con carácter"**: el esqueleto
+repo, un artifact) y el dueño eligió **"Bento con carácter"**: el esqueleto
 bento de siempre, sin agregar sombra ni cambiar el radio de bloque, pero
 **venta deja de ser escala de grises + un acento** — mismo criterio de
 excepción puntual que ya usa la tipografía de venta y `TactoVenta`
@@ -460,7 +460,7 @@ Vive en `lib/ui/venta/color_categoria.dart`:
   de negocio configurable (Configuración → Categorías), así que el color
   **no se elige a mano por nombre**: sale de una paleta fija de 8 tonos
   recorrida por posición (`categoriaId % 8`, `colorCategoria`) — mismo color
-  siempre para la misma categoría, sin mantenimiento cuando Bruno crea una
+  siempre para la misma categoría, sin mantenimiento cuando el dueño crea una
   nueva. `null` (sin categoría cargada, o "Varios") no dibuja nada.
 - **El bloque del total suma un filete superior ámbar** (`Bloque.colorFilete`,
   `lib/ui/tema/bloque.dart` — parámetro opcional, `null` en el resto de la
@@ -468,7 +468,7 @@ Vive en `lib/ui/venta/color_categoria.dart`:
   significado.
 
 **Alcance: solo venta, por ahora** — mismo ritual que el resto de la fase
-13 (`ESTADO.md`: "Bruno pidió ver tokens + la pantalla de venta... antes de
+13 (`ESTADO.md`: "El dueño pidió ver tokens + la pantalla de venta... antes de
 aplicar bento a las 9 restantes de una sola pasada"). Extender "Bento con
 carácter" a Proveedores/Cierre/Reportes/etc. es un paso aparte, no
 implícito en esta excepción.
@@ -529,11 +529,11 @@ o directo en el widget (`NavbarSuperior`, `Modal`), no resucitando `Card`.
 |---|---|---|
 | `Medidas.anchoValorLista` | 110 (antes 90) | Ancho fijo del monto (a la derecha) en CUALQUIER fila de lista con etiqueta a la izquierda y plata a la derecha — carrito, dropdown de búsqueda, y cualquier lista nueva con el mismo patrón. Garantiza que "una fila de lista se vea igual en toda la app". Subido junto con la escala tipográfica (fase 13): el mismo monto tabular ocupa más ancho con `cuerpo` en 16 que en 13.5. |
 | `Medidas.alturaControl` | 48 (antes 40) | Altura fija de un botón que pertenece a un grupo de opciones del mismo tamaño (ej. los medios de pago de la pantalla de venta: "rectángulos idénticos" — hoy tres, cuatro cuando se sume el botón de débito de la fase 12). Subida en la pasada de fatiga visual de la fase 13, mismo criterio que el resto de la escala. |
-| `Medidas.anchoListaMaestra` | 360 (antes 580, antes 460, antes 320) | Ancho fijo de la columna angosta en cualquier pantalla con patrón lista + detalle (Proveedores, y a continuación Productos y Configuración). Subió a 460 y después a 580 mientras el nivel 1 mostraba cifras (fase 13, primera corrección). Bajó a 360 en la SEGUNDA corrección post-revisión (dibujo de Bruno): las cifras dejaron de vivir en la lista — son del proveedor elegido, no de todos a la vez — así que vuelve a ser una columna de solo nombre. Sigue siendo un valor compartido con Productos, que va a seguir el mismo esquema de tres paneles. |
+| `Medidas.anchoListaMaestra` | 360 (antes 580, antes 460, antes 320) | Ancho fijo de la columna angosta en cualquier pantalla con patrón lista + detalle (Proveedores, y a continuación Productos y Configuración). Subió a 460 y después a 580 mientras el nivel 1 mostraba cifras (fase 13, primera corrección). Bajó a 360 en la SEGUNDA corrección post-revisión (dibujo de el dueño): las cifras dejaron de vivir en la lista — son del proveedor elegido, no de todos a la vez — así que vuelve a ser una columna de solo nombre. Sigue siendo un valor compartido con Productos, que va a seguir el mismo esquema de tres paneles. |
 | `Medidas.anchoColumnaCobroVenta` | 340 (antes 260) | Ancho de la columna de cobro de la pantalla de venta (fase 13). Con `TamanioTexto.total` en 48, 260 se quedaba chico — un total de varias cifras envolvía a una segunda línea. |
 | `Medidas.anchoColumnaBusquedaVenta` | 440 | Ancho de la columna de búsqueda de la pantalla de venta (fase 13, primera aplicación del principio de fatiga visual). Antes 320, el mismo valor que `anchoListaMaestra` — pero ahí ese ancho salía de un motivo propio de venta, no del vocabulario compartido de columna angosta: el carrito de al lado le sobraba ancho (`anchoFilaCarrito` ya lo acota), así que ese sobrante pasó a esta columna en vez de quedar vacío. |
 | `Medidas.anchoMaximoContenido` | 760 (antes 640) | Ancho máximo de una columna de contenido tipo formulario (patrón A, ver "Patrones de composición") — también el ancho máximo de la `Superficie` de resumen en Proveedores (nivel 2, ver "Principio rector: tres niveles de información" arriba): ese bloque no se estira a todo lo que le sobra a la lista, a diferencia del bloque de la tabla de productos, que sí es `Expanded` porque tiene contenido real que lo aprovecha. Resuelta la revisión pendiente contra 1920×1080: 640 apuntaba al objetivo viejo. Ya NO es el ancho del carrito de venta (ver `anchoFilaCarrito`) — dejaron de compartir motivo en la corrección post-revisión. |
-| `Medidas.anchoFilaCarrito` | 640 (antes 520) | Ancho máximo de una fila del carrito de venta. Subió de 520 a 640 (Bruno, 2026-09-06: "aprovechemos la pantalla de venta al máximo" — a 1920×1080 quedaba una franja vacía a la derecha de cada fila). Sigue sin ser `anchoMaximoContenido` (760, pensado para un formulario de varios campos) — la fila ahora tiene cuatro datos (nombre, cantidad, precio unitario, subtotal) más un ícono de eliminar, no dos, así que ensancha de nuevo pero con tope propio. |
+| `Medidas.anchoFilaCarrito` | 640 (antes 520) | Ancho máximo de una fila del carrito de venta. Subió de 520 a 640 (El dueño, 2026-09-06: "aprovechemos la pantalla de venta al máximo" — a 1920×1080 quedaba una franja vacía a la derecha de cada fila). Sigue sin ser `anchoMaximoContenido` (760, pensado para un formulario de varios campos) — la fila ahora tiene cuatro datos (nombre, cantidad, precio unitario, subtotal) más un ícono de eliminar, no dos, así que ensancha de nuevo pero con tope propio. |
 | `Medidas.anchoBarraLateral` | 300 | Sin uso desde el remake (remake 2026-09-19) salvo por `BarraLateral`, que sigue viva solo dentro de Venta hasta la Fase 5 — la navbar superior no tiene un ancho fijo, cada ítem mide lo que necesita su contenido (ícono, o ícono+nombre). Se borra junto con `BarraLateral` en la fase de limpieza. |
 | `Medidas.anchoBarraLateralPlegada` | 64 | Ídem. |
 
@@ -636,7 +636,7 @@ definición para las tres, no una por pantalla:
 
 **Reemplaza la barra lateral** (`lib/ui/navegacion/barra_lateral.dart`,
 `BarraLateral` — sigue en el árbol solo dentro de Venta hasta la Fase 5,
-se borra en la limpieza final). Bruno pidió el cambio de lugar como parte
+se borra en la limpieza final). El dueño pidió el cambio de lugar como parte
 del remake completo de estética ("una navbar en la mitad superior en vez
 de una tabbar a la izquierda"); el resto de las reglas de fondo (siempre
 visible, nunca se abre/cierra, recuerda la preferencia de compactado) no
@@ -700,7 +700,7 @@ pasó a envolver con `EnvolturaConNavbarSuperior` en vez de
 **Estado real (ver `ESTADO.md`)**: aplicada a **todas** las pantallas de
 gestión (heredada automáticamente vía `PantallaGestion`/
 `EnvolturaConNavbarSuperior`) y a Venta (`NavbarSuperior` armada a mano,
-igual que antes con `BarraLateral`) — Bruno pidió no esperar a las fases
+igual que antes con `BarraLateral`) — El dueño pidió no esperar a las fases
 2-5 del plan original ("la pantalla de ventas se adapte también"), así que
 todo el remake de tokens/navbar/`Superficie` se completó en la misma
 sesión que la Fase 1. Solo queda la Fase 6 (limpieza: borrar `Bloque` y
@@ -711,7 +711,7 @@ sigue usando a propósito).
 ## Búsqueda de venta: filas de una línea, tres datos
 
 Fase 13, ítem 2, con una corrección post-revisión encima. Primer intento:
-Bruno, textual: *"el nombre se trunca"* — el dropdown viejo era una lista
+El dueño, textual: *"el nombre se trunca"* — el dropdown viejo era una lista
 de filas angostas de una sola línea, con el nombre recortado por
 `TextOverflow.ellipsis`. La respuesta a eso fue una card de dos líneas
 (nombre arriba, precio/unidad abajo) — pero la revisión encontró que esa
@@ -760,14 +760,14 @@ conservar del intento de las cards: el alto cómodo.
   si no hay ninguna — sin alta rápida, ver más abajo). Nunca las dos cosas
   a la vez.
 - **Sin alta rápida (2026-09-16)**: dar de alta un producto nuevo desde
-  esta pantalla (Bruno: "eliminar el alta rápida de esa pantalla") se
+  esta pantalla (El dueño: "eliminar el alta rápida de esa pantalla") se
   sacó — un código o nombre sin coincidencias muestra el aviso y nada más,
   sin acción. Cargar un producto nuevo pasa a ser siempre desde
   Proveedores. `dialogo_alta_rapida.dart` se borró (sin más llamadores).
 
 ## Foco: solo donde hace falta (2026-09-16)
 
-Bruno: *"quiero que en la pantalla venta se optimice el uso de teclado y
+El dueño: *"quiero que en la pantalla venta se optimice el uso de teclado y
 mouse... escribir sin poner obligatorio el foco en teclado"* — hasta acá,
 CUALQUIER acción de la pantalla de venta devolvía el foco al campo único al
 terminar ("punto crítico #1"), incluso cerrar un diálogo secundario que no
@@ -828,7 +828,7 @@ cuarto matiz de gris ni un tratamiento nuevo por pantalla.
 
 ## Plata sin centavos (2026-09-16)
 
-Bruno: *"dejemos de mostrar centavos"*. `formatearARS` (`lib/domain/dinero.dart`,
+El dueño: *"dejemos de mostrar centavos"*. `formatearARS` (`lib/domain/dinero.dart`,
 el único punto de conversión centavos → texto, Regla 3) dejó de imprimir la
 parte decimal en toda la app — `150050` centavos da `"$1.501"`, no
 `"$1.500,50"`: redondea al peso más cercano en vez de truncar, para no
@@ -925,12 +925,12 @@ seguir viéndose digno** si la app corre en una pantalla más chica
 (1366×768) — no un segundo objetivo con el mismo peso que el primero. El
 desarrollo se sigue haciendo en otra máquina; sin este selector, cualquier
 ajuste de layout se estaría diseñando a ciegas para una resolución que
-Bruno nunca va a ver. El tamaño de ventana por defecto del runner
+El dueño nunca va a ver. El tamaño de ventana por defecto del runner
 (`windows/runner/main.cpp`) es 1920×1080 desde la fase 13, así que esa
 resolución se ve "sin tocar nada" al abrir la app en debug — el botón de
 1366×768 es el que hace falta para simular el piso.
 
-**960×1080 agregado en la fase 13, "mitad de pantalla"** (Bruno,
+**960×1080 agregado en la fase 13, "mitad de pantalla"** (El dueño,
 2026-09-07: "prepara la app desktop para funcionar en la mitad de la
 pantalla de 1920×1080... nada se vaya por las ramas" — la mitad de un
 monitor de 1920 al snapear dos ventanas lado a lado en Windows). Es más

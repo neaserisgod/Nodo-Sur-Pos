@@ -1,4 +1,4 @@
-// Creador de promos (Bruno, 2026-09-29): "se carga precio y costo de 2 o más
+// Creador de promos (El dueño, 2026-09-29): "se carga precio y costo de 2 o más
 // artículos, se le suma el porcentaje, y no se tiene que pasar del precio de
 // lista normal". Elegís los artículos (con su cantidad) y el porcentaje; el
 // precio sale de la suma de los costos + el porcentaje, redondeado a la

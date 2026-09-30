@@ -105,7 +105,7 @@ class LineaVentaPorUnidad extends LineaVenta {
       costoUnitarioCentavos == null ? null : costoUnitarioCentavos! * cantidad;
 }
 
-/// Producto pesable (fiambres, Mazzota): se carga en gramos, nunca en
+/// Producto pesable (fiambres, Fiambrería): se carga en gramos, nunca en
 /// cantidad de unidades (Regla 7).
 class LineaVentaPesable extends LineaVenta {
   @override
@@ -155,7 +155,7 @@ class LineaVentaPesable extends LineaVenta {
         );
 }
 
-/// Suma dos líneas del mismo producto en una sola (Bruno: agregar el mismo
+/// Suma dos líneas del mismo producto en una sola (El dueño: agregar el mismo
 /// código dos veces sube la cantidad de la línea existente, no crea una
 /// segunda). Extraída de `VentaControlador._sumarLineas` (spike companion
 /// app, 2026-09-07) para que el carrito del celular haga exactamente lo

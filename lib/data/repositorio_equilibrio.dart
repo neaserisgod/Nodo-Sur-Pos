@@ -131,7 +131,7 @@ Future<int> crearConcepto(AppDatabase db, String nombre) {
 ///
 /// [fecha] default a ahora — mismo patrón que `cerrarSesion`/`fechaCierre`
 /// (`repositorio_cierre.dart`). Hace falta poder pasarla explícita porque
-/// Bruno paga el alquiler un día y lo carga en el sistema otro (a veces
+/// El dueño paga el alquiler un día y lo carga en el sistema otro (a veces
 /// cruzando de mes): sin esto, `fijosPagadosDelMes` filtra por la fecha real
 /// del movimiento y el pago cae en el mes equivocado, descuadrando fijos
 /// pendientes y el retiro de ese mes.

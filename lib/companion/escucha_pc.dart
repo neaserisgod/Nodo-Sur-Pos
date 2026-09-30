@@ -1,4 +1,4 @@
-// Sync instantánea por wifi, del lado del celular (Bruno, 2026-09-28:
+// Sync instantánea por wifi, del lado del celular (El dueño, 2026-09-28:
 // "hagamos 100% fluida y efectiva la sync mediante wifi" — hubo que cerrar
 // y abrir la app para que el celular se enterara de una caja abierta en la
 // PC).

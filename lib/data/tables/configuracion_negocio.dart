@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'catalogo.dart';
 
-/// Fila única (siempre `id = 1`) con las reglas de negocio que Bruno pidió
+/// Fila única (siempre `id = 1`) con las reglas de negocio que el dueño pidió
 /// poder editar también desde el celular (2026-09-19: "que se puedan
 /// modificar las reglas del negocio... desde ahí"). Separada de
 /// `ConfiguracionTabla` a propósito: esa tabla mezcla estas reglas con

@@ -11,7 +11,7 @@ import 'database.dart';
 /// [venta] (la fila de la venta de esa línea) hace que el precio salga NETO
 /// del descuento de la venta, prorrateado por peso de cada línea: sin eso la
 /// ganancia, el vendido y el equilibrio contaban a precio de lista una venta
-/// que se cobró con descuento (Jam Rock 15%) y sobreestimaban lo que Bruno
+/// que se cobró con descuento (Cliente Frecuente 15%) y sobreestimaban lo que el dueño
 /// puede retirar (revisión 2026-09-29). Sin [venta] devuelve el precio de
 /// lista — lo que necesita la lata de cigarrillos (Regla 6).
 LineaParaReposicion lineaParaReposicionDesde(FilaLineaVenta linea, {FilaVenta? venta}) {

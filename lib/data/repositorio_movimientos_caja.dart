@@ -1,4 +1,4 @@
-// Lista de los movimientos de caja para verlos uno por uno (Bruno,
+// Lista de los movimientos de caja para verlos uno por uno (El dueño,
 // 2026-09-28: "revisá si hay un apartado para ver los movimientos, los
 // movimientos de caja y eso" — no había: se registraban, pero solo se veían
 // sumados en el cierre). Historial → Movimientos.

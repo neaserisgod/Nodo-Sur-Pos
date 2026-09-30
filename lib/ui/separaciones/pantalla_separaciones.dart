@@ -1,4 +1,4 @@
-// "Separaciones" — rediseño sobre el mock de Bruno (2026-09-26, después de
+// "Separaciones" — rediseño sobre el mock de el dueño (2026-09-26, después de
 // una tabla de ocho columnas que "se ve nefasto, tenés que mover mucho la
 // cabeza para leerlo"). Todo se lee de arriba a abajo dentro de una
 // tarjeta, nunca a lo ancho de la pantalla:
@@ -12,7 +12,7 @@
 //   "Marcar todo" / "Desmarcar todo".
 //
 // "Lo vendido" muestra, con el mismo esquema, vendido / costo / ganancia de
-// hoy, la semana o el mes. Sin "Pagar" a propósito (Bruno: "innecesario")
+// hoy, la semana o el mes. Sin "Pagar" a propósito (El dueño: "innecesario")
 // — pagar sigue en Proveedores → Avanzado.
 
 import 'dart:async';
@@ -43,7 +43,7 @@ import 'separaciones_controlador.dart';
 
 /// Cada cuánto se recarga sola mientras está abierta — las ventas y cambios
 /// que llegan del celular por la sincronización no avisan a las pantallas
-/// del escritorio (Bruno, 2026-09-26: "como si tuviese que abrir y cerrar
+/// del escritorio (El dueño, 2026-09-26: "como si tuviese que abrir y cerrar
 /// para que aparezca"). La base es chica: recargar cuesta nada.
 const _intervaloRecarga = Duration(seconds: 15);
 

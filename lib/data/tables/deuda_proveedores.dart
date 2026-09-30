@@ -4,13 +4,13 @@ import 'caja.dart';
 import 'catalogo.dart';
 import 'usuarios.dart';
 
-/// Cuenta corriente con cada proveedor: lo que Bruno LE DEBE (Bruno,
+/// Cuenta corriente con cada proveedor: lo que el dueño LE DEBE (El dueño,
 /// 2026-09-29: "un apartado de deuda o cuenta corriente para ir cargando los
 /// saldos que yo adeudo, y pagar desde ahí dejando registro, en lugar de
 /// gastos registrados pero sin dueño").
 ///
 /// Es un libro aparte de la reposición/separación (`proveedores.separado*`):
-/// no se toca una con la otra (Bruno: "de momento no puedo separar"). El
+/// no se toca una con la otra (El dueño: "de momento no puedo separar"). El
 /// saldo es la suma de cargos menos la suma de pagos, sin anulados — nunca
 /// se guarda un número que pueda desalinearse del libro.
 ///

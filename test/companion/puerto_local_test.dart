@@ -22,14 +22,14 @@ void main() {
   setUp(() async {
     db = baseDeTest();
     puerto = PuertoLocal(db);
-    usuarioId = (await db.select(db.usuarios).get()).first.id; // "Bruno", sembrado
+    usuarioId = (await db.select(db.usuarios).get()).first.id; // "El dueño", sembrado
   });
   tearDown(() => db.close());
 
   test('usuarios trae el usuario sembrado', () async {
     final usuarios = await puerto.usuarios();
     expect(usuarios, hasLength(1));
-    expect(usuarios.single.nombre, 'Bruno');
+    expect(usuarios.single.nombre, 'Dueño');
   });
 
   test('proveedores trae los 15 proveedores sembrados', () async {
@@ -349,7 +349,7 @@ void main() {
     });
   });
 
-  group('Configuración (Bruno, 2026-09-19: "que se puedan modificar las reglas del negocio... desde el celular")', () {
+  group('Configuración (Dueño, 2026-09-19: "que se puedan modificar las reglas del negocio... desde el celular")', () {
     test('configuracionNegocio trae los defaults, actualizarRecargoCigarrillos los cambia', () async {
       final antes = await puerto.configuracionNegocio();
       expect(antes.recargoPrimerAtadoCentavos, 30000);

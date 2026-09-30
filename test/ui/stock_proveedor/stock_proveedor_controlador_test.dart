@@ -12,7 +12,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -74,8 +74,8 @@ void main() {
       final serra = proveedores.firstWhere((p) => p.codigo == 'S');
       final wesley = proveedores.firstWhere((p) => p.codigo == 'W');
 
-      await crearProducto(db, nombre: 'De Serra', proveedorId: serra.id, precioCentavos: 1000, usuarioId: usuarioId);
-      await crearProducto(db, nombre: 'De Wesley', proveedorId: wesley.id, precioCentavos: 1000, usuarioId: usuarioId);
+      await crearProducto(db, nombre: 'De Distribuidora', proveedorId: serra.id, precioCentavos: 1000, usuarioId: usuarioId);
+      await crearProducto(db, nombre: 'De Golosinas Oeste', proveedorId: wesley.id, precioCentavos: 1000, usuarioId: usuarioId);
 
       final c = StockProveedorControlador(db, usuarioId: usuarioId);
       await c.cargarTodo();
@@ -83,7 +83,7 @@ void main() {
       await c.filtrarPorProveedor(serra.id);
 
       expect(c.productos, hasLength(1));
-      expect(c.productos.single.nombre, 'De Serra');
+      expect(c.productos.single.nombre, 'De Distribuidora');
     });
 
     test('filtrarPorCategoria deja solo los de esa categoría', () async {

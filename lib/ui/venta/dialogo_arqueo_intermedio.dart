@@ -1,7 +1,7 @@
 // Modal del arqueo sugerido cada 2hs (turnos por usuario, 2026-09-12) — se
 // abre desde el aviso de la pantalla de venta (ver `pantalla_venta.dart`,
 // `VentaControlador.arqueoIntermedioVencido`; ya no bloquea la venta,
-// Bruno 2026-09-15). No cierra la sesión ni separa cigarrillos de verdad,
+// El dueño 2026-09-15). No cierra la sesión ni separa cigarrillos de verdad,
 // solo queda registrado (`registrarArqueoIntermedio`).
 
 import 'package:flutter/material.dart';

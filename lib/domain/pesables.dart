@@ -1,4 +1,4 @@
-// Productos pesables (fiambres, Mazzota). Se cargan en gramos, escribiendo
+// Productos pesables (fiambres, Fiambrería). Se cargan en gramos, escribiendo
 // "200 queso barra" (Regla 7). El stock se lleva en gramos, no en unidades.
 
 /// Subtotal en centavos de una línea pesable: montoPorKiloCentavos × gramos

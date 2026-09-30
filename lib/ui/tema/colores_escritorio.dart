@@ -1,12 +1,12 @@
 // Paleta de la app — escritorio y companion comparten estos mismos valores
 // (`colores_companion.dart` los reexporta: una sola paleta, Regla 3).
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-26, carpeta de mocks en la raíz del
+// "Lenguaje de diseño" (El dueño, 2026-09-26, carpeta de mocks en la raíz del
 // repo, "medio inspiración"): reemplaza el "dark glass premium" verde-
 // azulado por un claro plano estilo Google — canvas gris azulado, tarjetas
 // blancas sin sombra, un acento azul. El claro sale tal cual de los tokens
 // del LEEME de esa carpeta; el oscuro no existe en los mocks y se derivó a
-// mano con el mismo criterio (Bruno eligió mantenerlo): mismo hue de
+// mano con el mismo criterio (El dueño eligió mantenerlo): mismo hue de
 // acento, aclarado para que tenga contraste sobre fondo oscuro, y nunca
 // negro puro de fondo ni blanco puro de texto (CLAUDE.md, contraste medido).
 

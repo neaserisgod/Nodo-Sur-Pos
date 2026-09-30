@@ -1,5 +1,5 @@
 // "¿Cómo vamos?" en cualquier momento del día, sin contar nada a mano
-// (Bruno, 2026-09-07: "un botón de arqueo también para saber que tal
+// (El dueño, 2026-09-07: "un botón de arqueo también para saber que tal
 // vamos en cualquier momento sin tener que contar a mano las ventas del
 // día") — efectivo/Mercado Pago esperados son las mismas fórmulas del
 // cierre real (`cajaEsperadaCentavos`/`mpEsperadoCentavos`,
@@ -9,7 +9,7 @@
 // plata contada, justo lo que este botón evita — sigue siendo exclusiva
 // del cierre real, en el escritorio (Regla 10).
 //
-// Contra [ServicioCompanion], no [ClienteCompanion] a secas (Bruno,
+// Contra [ServicioCompanion], no [ClienteCompanion] a secas (El dueño,
 // 2026-09-18: "no debería tener que escanear ya, es innecesario") —
 // funciona igual con o sin PC emparejada, misma fórmula corrida contra la
 // base local sincronizada por Supabase cuando no hay PC (`PuertoLocal`).

@@ -1,5 +1,5 @@
 // Acción puntual sobre una venta ya cobrada (botón manual, nunca automático
-// — Regla de esta fase, confirmada por Bruno: nunca bloquea ni demora la
+// — Regla de esta fase, confirmada por el dueño: nunca bloquea ni demora la
 // venta si la impresora falla o no está conectada). Reusa exactamente las
 // mismas funciones que la pantalla de Impresión, sin abrirla entera.
 
@@ -84,7 +84,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
         var carpeta = _config!.rutaTicketsCarpeta;
         if (carpeta == null) {
           // Antes esto solo avisaba que faltaba configurar la carpeta en
-          // otra pantalla — bug real reportado por Bruno: "doy a imprimir y
+          // otra pantalla — bug real reportado por el dueño: "doy a imprimir y
           // no sale nada de seleccionar". La primera vez que hace falta, se
           // pregunta acá mismo, sin mandar a otro lado.
           carpeta = await getDirectoryPath();

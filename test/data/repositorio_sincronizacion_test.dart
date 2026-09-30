@@ -3,7 +3,7 @@
 // para probar `cambiosDesde`/`aplicarCambios` de punta a punta sin necesitar
 // red ni un servidor real. `NativeDatabase.memory()` siempre pasa por
 // `onCreate` (esquema en la versión más nueva, con el seed fijo de siempre:
-// usuario "Bruno", los 15 proveedores, las 11 categorías reales — Regla 14),
+// usuario "El dueño", los 15 proveedores, las 11 categorías reales — Regla 14),
 // así que las aserciones de acá filtran por `global_id` no nulo en vez de
 // contar filas a secas: el seed ya deja categorías puestas antes de que
 // arranque cualquier sincronización.
@@ -108,7 +108,7 @@ void main() {
   test(
     'aplicarCambios: una fila con una referencia que no existe todavía no bloquea al resto del lote',
     () async {
-      // Simula el bug real (Bruno, 2026-09-18: "no veo productos... ni
+      // Simula el bug real (El dueño, 2026-09-18: "no veo productos... ni
       // suelto, ni leche") — un producto cuya categoría todavía no llegó a
       // esta base (`PRAGMA foreign_keys = ON`) no se puede insertar, pero
       // antes de este fix eso tiraba TODA la tanda: cualquier producto que
@@ -351,7 +351,7 @@ void main() {
   test(
     'ventas traduce sesion_caja_id por global_id: no asume que el id local coincide entre dispositivos',
     () async {
-      // Bug real (Bruno, 2026-09-18, encontrado en vivo con la companion
+      // Bug real (El dueño, 2026-09-18, encontrado en vivo con la companion
       // recién instalada): la PC ya tenía 25 sesiones de caja acumuladas en
       // meses de uso; el celular, recién instalado, solo recibió unas
       // pocas por sync — le tocó un id local bien distinto para la MISMA

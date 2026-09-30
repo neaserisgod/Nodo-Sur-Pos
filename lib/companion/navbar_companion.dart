@@ -1,4 +1,4 @@
-// Navbar flotante, ahora de vidrio de verdad (Bruno, 2026-09-18: "un poco de
+// Navbar flotante, ahora de vidrio de verdad (El dueño, 2026-09-18: "un poco de
 // glassmorfismo estilo Apple, pero reversionado para Android"). Apple usa el
 // vidrio esmerilado en elementos FLOTANTES — la barra de pestañas, el centro
 // de control, una hoja modal — nunca en el contenido en sí; el mismo
@@ -50,7 +50,7 @@ class NavbarCompanion extends StatelessWidget {
   static const double _margenInferior = 16;
 
   /// Cuánto padding inferior necesita el contenido de cada pestaña para no
-  /// quedar tapado por la barra — Bruno, 2026-09-18: "la navbar no parece
+  /// quedar tapado por la barra — El dueño, 2026-09-18: "la navbar no parece
   /// flotar, tiene un recuadro abajo". La causa real: `Scaffold` reservaba
   /// su propio layout para `bottomNavigationBar` con el fondo de pantalla
   /// parejo detrás, así que el margen "flotante" de esta barra en realidad
@@ -74,7 +74,7 @@ class NavbarCompanion extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // `RepaintBoundary` alrededor de TODA la píldora (Bruno,
+          // `RepaintBoundary` alrededor de TODA la píldora (El dueño,
           // 2026-09-19: "revisa bien el tema rendimiento") — `BackdropFilter`
           // repinta esta capa en cada frame mientras el contenido de atrás
           // scrollea (tiene que volver a desenfocar lo que cambió); sin este
@@ -111,7 +111,7 @@ class NavbarCompanion extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(999),
                 child: BackdropFilter(
-                  // Sigma 24 → 16 (Bruno, 2026-09-19, mismo pedido de
+                  // Sigma 24 → 16 (El dueño, 2026-09-19, mismo pedido de
                   // rendimiento): el costo de `BackdropFilter` escala con el
                   // radio del desenfoque — 16 sigue leyéndose como vidrio
                   // esmerilado real, con bastante menos trabajo por frame
@@ -201,7 +201,7 @@ class _Item extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedContainer(
-              // "Dark glass premium" (Bruno, rediseño 2026-09-25): antes sin
+              // "Dark glass premium" (El dueño, rediseño 2026-09-25): antes sin
               // curva explícita (default `Curves.linear`) — se le suma el
               // snap de `curvaSpring`, mismo criterio que `NavbarSuperior`.
               duration: const Duration(milliseconds: 160),
@@ -215,7 +215,7 @@ class _Item extends StatelessWidget {
                     ? colores.acento.withValues(alpha: 0.16)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(radioControlCompanion),
-                // Halo neón en la pestaña activa (Bruno, 2026-09-19:
+                // Halo neón en la pestaña activa (El dueño, 2026-09-19:
                 // "cyberpunk me vuela la gorra") — sutil a propósito, es una
                 // pastilla chica que ya vive sobre vidrio esmerilado.
                 boxShadow: activo

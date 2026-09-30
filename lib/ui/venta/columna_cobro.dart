@@ -1,4 +1,4 @@
-// Panel de cobro — remake de disposición (2026-09-19, Bruno: "ahora
+// Panel de cobro — remake de disposición (2026-09-19, el dueño: "ahora
 // remakea venta" → "Cambiar también la disposición"). Antes era una
 // columna angosta (340px) apilando total/descuento/medios/cobrar en
 // vertical, compartiendo ancho con el carrito; ahora es un panel FIJO al
@@ -20,7 +20,7 @@
 // remake): los cuatro medios de pago siguen siendo CUATRO CONTROLES
 // SIEMPRE VISIBLES con su propio atajo Alt+, no una tarjeta que al
 // tocarla abre un menú para elegir el medio — CLAUDE.md documenta que
-// Bruno revirtió ese patrón de un solo toque en el paso a la terminal
+// El dueño revirtió ese patrón de un solo toque en el paso a la terminal
 // Point (fase 12: "necesito cobro manual... no hay más modal para
 // seleccionarlo"), así que no corresponde reintroducirlo acá.
 
@@ -67,7 +67,7 @@ class PanelCobro extends StatelessWidget {
         ],
         _TotalHero(controlador: c),
         const SizedBox(height: Espaciado.md),
-        // Grilla 2×2, no una sola fila de 4 (Bruno, panel angosto de
+        // Grilla 2×2, no una sola fila de 4 (El dueño, panel angosto de
         // 560px: "los botones de cobro... no se ven bien" — con el
         // `Flexible`+ellipsis que ya tenía `_BotonMedio` la etiqueta
         // truncaba igual, "Efectivo (Alt+E)" no entraba en ~126px). El
@@ -168,7 +168,7 @@ class PanelCobro extends StatelessWidget {
                 ),
               ),
             ),
-            // "Cobrar a mano (sin terminal)" (Bruno, 2026-09-08: "necesito
+            // "Cobrar a mano (sin terminal)" (El dueño, 2026-09-08: "necesito
             // cobro manual... no hay más modal para seleccionarlo") — solo
             // con QR/Débito ya elegido (`canalElegido` puesto por
             // `elegirCanalDirecto`/`confirmarMixto`), nunca con Efectivo
@@ -215,7 +215,7 @@ class PanelCobro extends StatelessWidget {
     c.focoCampoPrincipal.requestFocus();
   }
 
-  // QR y Débito eligen el canal nada más (Bruno, 2026-09-08: volvió a ser
+  // QR y Débito eligen el canal nada más (El dueño, 2026-09-08: volvió a ser
   // de dos pasos) — mismo criterio que el atajo de teclado
   // (`pantalla_venta.dart`): "Cobrar" (o Alt+M para cobro manual) es quien
   // dispara algo de verdad.
@@ -250,7 +250,7 @@ class PanelCobro extends StatelessWidget {
 }
 
 /// El total, ancho completo — pieza "hero" de la pantalla. Rediseño de
-/// composición (Bruno: "rediseño completo, no un remake que mantenga las
+/// composición (El dueño: "rediseño completo, no un remake que mantenga las
 /// bases"): antes era una `Superficie` con degradé de borde a borde; ahora
 /// es un bisel doble — un marco exterior de vidrio (borde + sombra
 /// ambiente) con un hueco chico, y adentro el núcleo de color de verdad

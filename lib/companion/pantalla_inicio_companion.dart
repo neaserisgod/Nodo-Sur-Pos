@@ -1,7 +1,7 @@
 // Pestaña "Inicio" de la navbar — banda de actualización, el CTA de "Vender"
 // (la acción del mostrador, con su propio peso visual, y que además
 // comunica el estado de la caja — ver `_CtaVender`) y dos accesos
-// secundarios (Consultar precio, Movimiento de caja). Reacomodada (Bruno,
+// secundarios (Consultar precio, Movimiento de caja). Reacomodada (El dueño,
 // 2026-09-18): "Conteo de stock" se mudó a Gestión (tarea de inventario, no
 // algo que se abra a mitad de una venta); "Gasto rápido" e "Ingreso rápido"
 // se fusionaron en "Movimiento de caja" (`pantalla_movimiento_caja.dart`).
@@ -55,7 +55,7 @@ class PantallaInicioCompanion extends StatelessWidget {
   final int? usuarioId;
   final SesionCompanion? sesion;
 
-  /// Para la franja de "modo local" (Bruno, 2026-09-17: hoy la app no
+  /// Para la franja de "modo local" (El dueño, 2026-09-17: hoy la app no
   /// avisaba en ningún lado que había caído al fallback offline — solo se
   /// notaba al intentar algo que ese modo no soporta, o con un error
   /// genérico). Se muestra en el lugar donde el usuario aterriza siempre al
@@ -67,13 +67,13 @@ class PantallaInicioCompanion extends StatelessWidget {
   /// normal desde que el emparejamiento se volvió opcional, 2026-09-18).
   final bool pcEmparejada;
 
-  /// Bruno, 2026-09-19: "no me salió la actualización" — el chequeo de
+  /// El dueño, 2026-09-19: "no me salió la actualización" — el chequeo de
   /// actualización habla SIEMPRE directo con la PC (nunca cae al fallback
   /// offline del resto de la companion), así que una IP/token guardados
   /// viejos lo hacía fallar en silencio sin ninguna pista. Este aviso es
   /// puntual: solo aparece cuando ESTE chequeo específico no pudo alcanzar
   /// una PC que sí está emparejada — no reabre el diagnóstico general que
-  /// Bruno pidió sacar (2026-09-07/18).
+  /// El dueño pidió sacar (2026-09-07/18).
   final bool actualizacionSinConexion;
 
   /// Null mientras carga o si la caja está cerrada (el endpoint no tiene
@@ -81,12 +81,12 @@ class PantallaInicioCompanion extends StatelessWidget {
   /// para [_resumenVentasHoy].
   final EstadoCajaCompanion? estadoCaja;
 
-  /// Aviso no bloqueante (Bruno, 2026-09-15) — true si pasaron 2hs desde el
+  /// Aviso no bloqueante (El dueño, 2026-09-15) — true si pasaron 2hs desde el
   /// último arqueo. A diferencia de la pantalla de solo lectura "¿cómo
   /// vamos?" (accesible desde "Más" — Inicio dejó de tener su propio acceso
   /// al sacarse la tarjeta de estado de caja, 2026-09-19), esto abre el
   /// conteo real de dos fases. Se
-  /// muestra como un ícono de notificación chico junto al saludo (Bruno,
+  /// muestra como un ícono de notificación chico junto al saludo (El dueño,
   /// 2026-09-18: el `MaterialBanner` de ancho completo "está como pegote")
   /// — no como una franja que empuja el resto de la pantalla hacia abajo.
   final bool arqueoIntermedioVencido;
@@ -94,25 +94,25 @@ class PantallaInicioCompanion extends StatelessWidget {
   final bool navegando;
   final Future<void> Function(WidgetBuilder builder) irA;
 
-  /// Abre "Movimiento de caja" — fusión de gasto/ingreso rápido (Bruno,
+  /// Abre "Movimiento de caja" — fusión de gasto/ingreso rápido (El dueño,
   /// 2026-09-18), con el tipo inicial ya elegido según de dónde se lo abra.
   final void Function(TipoMovimientoCaja tipo) onAbrirMovimientoCaja;
 
   /// El carrito (misma lista mutable que sostiene `PantallaMenuCompanion`)
-  /// — solo para mostrar el contador en el acceso "Vender" (Bruno,
+  /// — solo para mostrar el contador en el acceso "Vender" (El dueño,
   /// 2026-09-17: el carrito dejó de ser el botón central, ahora vive acá).
   final List<LineaVenta> carrito;
   final VoidCallback onVender;
 
   /// Sincroniza con la PC (fase 2, "companion sin depender del escritorio")
-  /// — el ÚNICO disparador que hay (Bruno, 2026-09-17: "que sea
+  /// — el ÚNICO disparador que hay (El dueño, 2026-09-17: "que sea
   /// instantáneo" tiró abajo el disparo automático que había antes en cada
   /// arranque de la app: competía por el mismo acceso serializado a SQLite
   /// que cualquier otra consulta y volvía lenta a toda la companion).
   /// `CustomScrollView` en vez del `Column` que había antes: `RefreshIndicator`
   /// necesita un scrollable de verdad para reconocer el arrastre, y
   /// `SliverFillRemaining` preserva el centrado vertical de los accesos
-  /// diarios que ya tenía este diseño (Bruno, 2026-09-13: "no me gusta cómo
+  /// diarios que ya tenía este diseño (El dueño, 2026-09-13: "no me gusta cómo
   /// se ve el inicio" — ver el comentario de más abajo).
   final Future<void> Function() onSincronizar;
 
@@ -120,10 +120,10 @@ class PantallaInicioCompanion extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sin AppBar: el saludo pasa a ser parte del cuerpo, grande — una barra
     // fija con un título chico ("Hola, X") es el patrón menos aprovechado
-    // de toda la pantalla (Bruno, 2026-09-18: "pensalo como una app
+    // de toda la pantalla (El dueño, 2026-09-18: "pensalo como una app
     // moderna"), la mayoría de las apps con una pantalla de inicio real
     // integran el saludo al contenido en vez de encerrarlo en una franja.
-    // "Lenguaje de diseño" (Bruno, 2026-09-26, mock `MovilDashboard`):
+    // "Lenguaje de diseño" (El dueño, 2026-09-26, mock `MovilDashboard`):
     // fondo plano (sin las manchas de color del vidrio de antes) y, debajo
     // de vender y los accesos, el tablero del día (`TableroCompanion`), que
     // se relee solo cuando llegan datos nuevos.
@@ -188,7 +188,7 @@ class PantallaInicioCompanion extends StatelessWidget {
     );
   }
 
-  /// El aviso de arqueo vencido (Bruno, 2026-09-15: "una sugerencia, no
+  /// El aviso de arqueo vencido (El dueño, 2026-09-15: "una sugerencia, no
   /// bloqueante"; 2026-09-18: el `MaterialBanner` de ancho completo "está
   /// como pegote") pasa a ser una campanita con punto junto al saludo — se
   /// nota sin empujar el resto de la pantalla hacia abajo.
@@ -203,7 +203,7 @@ class PantallaInicioCompanion extends StatelessWidget {
               builder: (context, marca, _) => Text(nombreUsuario == null ? marca.nombre : 'Hola, $nombreUsuario', style: Theme.of(context).textTheme.headlineMedium),
             ),
           ),
-          // Arqueo opcional (Bruno, 2026-09-28): la campanita está siempre
+          // Arqueo opcional (El dueño, 2026-09-28): la campanita está siempre
           // que haya caja abierta, para contar cuando se quiera; a las 2hs
           // solo se le prende el punto (el "aviso suave" que eligió).
           if (sesion?.abierta ?? false) _campanitaArqueo(context),
@@ -238,7 +238,7 @@ class PantallaInicioCompanion extends StatelessWidget {
     );
   }
 
-  /// Hoja de apertura rápida de caja (Bruno, 2026-09-19: "que al momento de
+  /// Hoja de apertura rápida de caja (El dueño, 2026-09-19: "que al momento de
   /// tocar, en lugar de entrar como está la caja cerrada, ponga para
   /// abrir") — mismo formulario que ya ofrecía `SesionAbiertaGate` al entrar
   /// al carrito con la caja cerrada, pero adelantado acá para no tener que
@@ -259,7 +259,7 @@ class PantallaInicioCompanion extends StatelessWidget {
     if (abierta == true) onVender();
   }
 
-  /// Reacomodado (Bruno, 2026-09-18: "reacomodación de absolutamente todos
+  /// Reacomodado (El dueño, 2026-09-18: "reacomodación de absolutamente todos
   /// los elementos... no cambios de skin"): "Vender" es LA acción del
   /// mostrador — antes competía en igualdad de condiciones con otros cuatro
   /// accesos en una grilla pareja, como si "vender" y "consultar un precio"
@@ -322,7 +322,7 @@ class PantallaInicioCompanion extends StatelessWidget {
 /// círculo translúcido a la izquierda, flecha a la derecha. Una fila, no una
 /// tarjeta cuadrada: es la única acción que pesa más que las demás.
 ///
-/// Con la caja cerrada (Bruno, 2026-09-19: "el botón de vender se vea
+/// Con la caja cerrada (El dueño, 2026-09-19: "el botón de vender se vea
 /// bloqueado si la caja está cerrada... cuando esté abierta que no aparezca
 /// nada") pasa a un estilo apagado (sin degradé, ícono de candado) en vez de
 /// mostrar una tarjeta de estado aparte arriba — el mismo elemento comunica
@@ -489,7 +489,7 @@ class _Tile extends StatelessWidget {
 
   final IconData icono;
 
-  /// Cada acceso tiene su propio color de marca (Bruno, 2026-09-17: "remake
+  /// Cada acceso tiene su propio color de marca (El dueño, 2026-09-17: "remake
   /// desde 0") — se reconoce por color además de por ícono/texto.
   final Color color;
   final String titulo;

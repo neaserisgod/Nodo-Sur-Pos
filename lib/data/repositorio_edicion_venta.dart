@@ -229,7 +229,7 @@ Future<void> editarVenta(
   });
 }
 
-/// Anula una venta cobrada (Bruno, 2026-09-13: eliminar una venta desde el
+/// Anula una venta cobrada (El dueño, 2026-09-13: eliminar una venta desde el
 /// celular) — a diferencia de [editarVenta], NUNCA borra ni reemplaza
 /// `lineas_de_venta`/`pagos`: revierte el stock y la caja de lo que la
 /// venta tenía (mismo mecanismo, [_revertirLinea] y el mismo criterio de
@@ -238,7 +238,7 @@ Future<void> editarVenta(
 /// en vez de que desaparezca (Regla 6, nunca se pierde el rastro).
 ///
 /// Solo se puede anular mientras la sesión de caja de esa venta siga
-/// abierta (Bruno: anular una venta de un cierre ya arqueado descuadraría
+/// abierta (El dueño: anular una venta de un cierre ya arqueado descuadraría
 /// ese arqueo) — a diferencia de editar, que no tiene esa restricción.
 Future<void> anularVenta(
   AppDatabase db, {

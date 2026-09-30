@@ -87,7 +87,7 @@ void main() {
     addTearDown(() => carpetaDocumentosDePrueba.delete(recursive: true));
     PathProviderPlatform.instance = _RutaDeDocumentosDePrueba(carpetaDocumentosDePrueba.path);
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     token = await regenerarTokenCompanion(db);
     final server = await iniciarServidorCompanion(db, puerto: 0);
     puerto = server.port;
@@ -112,7 +112,7 @@ void main() {
     final respuesta = await http.get(url('/usuarios'), headers: headers());
     final lista = jsonDecode(respuesta.body) as List;
     final bruno = lista.cast<Map<String, dynamic>>().firstWhere((u) => u['id'] == usuarioId);
-    expect(bruno['nombre'], 'Bruno');
+    expect(bruno['nombre'], 'Dueño');
   });
 
   test('/proveedores lista el catálogo real de proveedores', () async {
@@ -138,7 +138,7 @@ void main() {
     expect(creado['precioCentavos'], 500000);
   });
 
-  // Bruno, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
+  // El dueño, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
   // etcétera" desde la companion — el filtro en sí ya está probado a fondo
   // en `repositorio_productos_test.dart` (`listarProductos`); esto prueba
   // nada más que el endpoint reenvía el query param correcto, que es lo que
@@ -160,7 +160,7 @@ void main() {
     expect(productos.cast<Map<String, dynamic>>().map((p) => p['nombre']), ['Sin costo']);
   });
 
-  // Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  // Editor masivo (El dueño, 2026-09-19: "editor masivo, ya sea de precios
   // costo stock etc etc") — cada fórmula ya está probada a fondo en
   // `repositorio_productos_test.dart`; esto prueba nada más que cada
   // endpoint reenvía bien los parámetros al repositorio en lote.
@@ -271,7 +271,7 @@ void main() {
   });
 
   test(
-    'alta con un código de barras repetido da 400 con mensaje claro, no un 500 crudo (Bruno, 2026-09-07: "no agrega")',
+    'alta con un código de barras repetido da 400 con mensaje claro, no un 500 crudo (Dueño, 2026-09-07: "no agrega")',
     () async {
       await http.post(
         url('/productos'),
@@ -383,7 +383,7 @@ void main() {
   });
 
   test(
-    '/productos/sin-stock trae los agotados de todos los proveedores, no los que tienen stock (Bruno, 2026-09-07)',
+    '/productos/sin-stock trae los agotados de todos los proveedores, no los que tienen stock (Dueño, 2026-09-07)',
     () async {
       await db.into(db.productos).insert(
         ProductosCompanion.insert(nombre: 'Con stock', precioCentavos: const Value(1000), stock: const Value(5)),
@@ -426,7 +426,7 @@ void main() {
 
   test(
     '/sesion trae "fechaUltimoArqueoIntermedio" para que el celular sepa si el bloqueo de 2hs venció '
-    '(Bruno, 2026-09-13: "sincronizado con la app desktop")',
+    '(Dueño, 2026-09-13: "sincronizado con la app desktop")',
     () async {
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
@@ -484,7 +484,7 @@ void main() {
   test(
     'POST /sesion/abrir con una ya abierta: 409, avisa quién la abrió, no crea otra',
     () async {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — ya
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — ya
       // no es idempotente en silencio: el segundo dispositivo se entera de
       // que ya está abierta en vez de que se ignoren sus montos sin avisar.
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 10000);
@@ -496,7 +496,7 @@ void main() {
       );
       expect(respuesta.statusCode, 409);
       final mensaje = (jsonDecode(respuesta.body) as Map)['error'] as String;
-      expect(mensaje, contains('Bruno'));
+      expect(mensaje, contains('Dueño'));
 
       final sesion = await sesionAbierta(db);
       expect(sesion?.id, sesionId);
@@ -505,7 +505,7 @@ void main() {
   );
 
   group(
-    'arqueo obligatorio cada 2hs desde el celular (Bruno, 2026-09-13: "el bloqueo sincronizado con la app desktop")',
+    'arqueo obligatorio cada 2hs desde el celular (Dueño, 2026-09-13: "el bloqueo sincronizado con la app desktop")',
     () {
       test(
         '/calcular la lata NO asume separado lo vendido hoy — misma corrección que el escritorio '
@@ -581,7 +581,7 @@ void main() {
   );
 
   group(
-    'cerrar caja desde el celular (Bruno, 2026-09-19: "que deje cerrar caja desde el celular")',
+    'cerrar caja desde el celular (Dueño, 2026-09-19: "que deje cerrar caja desde el celular")',
     () {
       test('/sesion/cerrar/calcular trae el resumen completo, incluido el desglose por proveedor', () async {
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 100000);
@@ -785,7 +785,7 @@ void main() {
   });
 
   test('/gastos contra una sesión ya CERRADA da 409, no graba nada', () async {
-    // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — un
+    // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — un
     // gasto que llega justo después de un cierre (desde otro dispositivo)
     // no debe grabarse contra una sesión ya cerrada.
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
@@ -814,7 +814,7 @@ void main() {
 
   test(
     '"Ingreso rápido" por POST /ingresos mueve la caja correspondiente '
-    '(Bruno, 2026-09-13: "un botón de ingreso de dinero, siguiendo con las cajas que hay")',
+    '(Dueño, 2026-09-13: "un botón de ingreso de dinero, siguiendo con las cajas que hay")',
     () async {
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
@@ -993,7 +993,7 @@ void main() {
       });
 
       test(
-        'round trip completo con el cliente real de la companion (Bruno, 2026-09-07: '
+        'round trip completo con el cliente real de la companion (Dueño, 2026-09-07: '
         '"revisa que la apk no agrega los recargos automáticos") — buscar, armar la línea '
         'como la arma el celular, y calcular',
         () async {
@@ -1024,7 +1024,7 @@ void main() {
       });
 
       test(
-        'aplica descuento por monto sobre el total (Regla 17 generalizada, Bruno 2026-09-10: '
+        'aplica descuento por monto sobre el total (Regla 17 generalizada, Dueño 2026-09-10: '
         '"el carrito del celular no tiene para descuento")',
         () async {
           final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
@@ -1137,7 +1137,7 @@ void main() {
       });
 
       test(
-        '"cobrar a mano" (medio virtual con canal, sin pasar por Point) — Bruno: '
+        '"cobrar a mano" (medio virtual con canal, sin pasar por Point) — Dueño: '
         '"para cargar las ventas de hoy y seguir cargando mientras tanto"',
         () async {
           final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
@@ -1164,7 +1164,7 @@ void main() {
     });
 
     group(
-      'GET /caja/estado — "arqueo" en vivo (Bruno, 2026-09-07: "saber que tal vamos '
+      'GET /caja/estado — "arqueo" en vivo (Dueño, 2026-09-07: "saber que tal vamos '
       'en cualquier momento sin tener que contar a mano las ventas del día")',
       () {
         test('sin caja abierta, da 409', () async {
@@ -1376,7 +1376,7 @@ void main() {
       );
     });
 
-    group('GET /ventas/<id>/detalle (Bruno, 2026-09-13: "poder ver un desglose de la venta")', () {
+    group('GET /ventas/<id>/detalle (Dueño, 2026-09-13: "poder ver un desglose de la venta")', () {
       test('trae líneas, desglose y total — mismo Ticket que la impresión', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
@@ -1408,7 +1408,7 @@ void main() {
 
         expect(respuesta.statusCode, 200);
         final j = jsonDecode(respuesta.body) as Map<String, dynamic>;
-        expect(j['vendedor'], 'Bruno');
+        expect(j['vendedor'], 'Dueño');
         final lineas = (j['lineas'] as List).cast<Map<String, dynamic>>();
         expect(lineas.single['nombreProducto'], 'Coca-Cola 500ml');
         expect(lineas.single['cantidad'], 2);
@@ -1513,9 +1513,9 @@ void main() {
       });
     });
 
-    group('carga histórica (Bruno, 2026-09-07: "se le pone la fecha... no descuentan stock")', () {
+    group('carga histórica (Dueño, 2026-09-07: "se le pone la fecha... no descuentan stock")', () {
       test(
-        'round trip completo con el cliente real (Bruno: "revisa que la apk no agrega los recargos '
+        'round trip completo con el cliente real (Dueño: "revisa que la apk no agrega los recargos '
         'automáticos... revisa que esté bien en carrito y en el histórico") — el recargo de '
         'cigarrillos por Mercado Pago queda en el total grabado',
         () async {
@@ -1640,7 +1640,7 @@ void main() {
       });
     });
 
-    group('ver y editar días históricos (Bruno, 2026-09-07: "dejame verlos y editarlos")', () {
+    group('ver y editar días históricos (Dueño, 2026-09-07: "dejame verlos y editarlos")', () {
       Future<int> cargarDiaDeEjemplo({required int cocaId, int cantidad = 1}) async {
         final respuesta = await http.post(
           url('/historico/dia'),
@@ -1673,7 +1673,7 @@ void main() {
 
       test(
         '/historico/dias/<id>/resumen agrupa por medio de pago y por proveedor '
-        '(Bruno, 2026-09-07: "un resumen de lo vendido por medio de pago, por proveedor, y la separación teórica")',
+        '(Dueño, 2026-09-07: "un resumen de lo vendido por medio de pago, por proveedor, y la separación teórica")',
         () async {
           final proveedorId =
               (await (db.select(db.proveedores)..where((p) => p.codigo.equals('F'))).getSingle()).id;
@@ -1734,7 +1734,7 @@ void main() {
 
       test(
         '/historico/dias/<id>/resumen muestra los cigarrillos aparte y el detalle de lo '
-        'sin proveedor/costo (Bruno, 2026-09-07: "el arqueo muestra solamente una fracción... '
+        'sin proveedor/costo (Dueño, 2026-09-07: "el arqueo muestra solamente una fracción... '
         'decime que no tiene costo o proveedor")',
         () async {
           final marlboroId = await insertarProducto(
@@ -1880,7 +1880,7 @@ void main() {
 
   test(
     '/companion/version con el archivo publicado por el script, ignora la versión de la app de escritorio '
-    '(Bruno, 2026-09-07: "no hay manera de lanzar actualizaciones sin reiniciar la app desktop")',
+    '(Dueño, 2026-09-07: "no hay manera de lanzar actualizaciones sin reiniciar la app desktop")',
     () async {
       final archivo = File('${carpetaDocumentosDePrueba.path}/la_plazoleta_companion.version');
       await archivo.writeAsString('1.0.0+2020');
@@ -1909,7 +1909,7 @@ void main() {
   });
 
   test(
-    '/companion/apk anda SIN token (Bruno, 2026-09-07: "escaneando el QR lo ponga para descargar") '
+    '/companion/apk anda SIN token (Dueño, 2026-09-07: "escaneando el QR lo ponga para descargar") '
     '— un celular nuevo sin la companion instalada no tiene forma de mandar el header',
     () async {
       final archivo = File('${carpetaDocumentosDePrueba.path}/la_plazoleta_companion.apk');
@@ -1923,13 +1923,13 @@ void main() {
   );
 
   group(
-    'GET /historial/ventas (Bruno, 2026-09-07: "hagamos la sección de reportes... con el '
+    'GET /historial/ventas (Dueño, 2026-09-07: "hagamos la sección de reportes... con el '
     'historial de ventas... que sea filtrable")',
     () {
       Future<int> crearVenta({required DateTime fecha, required int totalCentavos, required int medioPagoId}) async {
         // Una sola sesión para las ventas fabricadas de este grupo (no le
         // importa a qué sesión queden atadas) — desde que `abrirSesion`
-        // bloquea en vez de unirse en silencio (Bruno, 2026-09-19), un
+        // bloquea en vez de unirse en silencio (El dueño, 2026-09-19), un
         // segundo llamado con una ya abierta tira, así que se reusa la
         // existente si la hay.
         final sesionId = (await sesionAbierta(db))?.id ??
@@ -2004,7 +2004,7 @@ void main() {
     },
   );
 
-  group('POST /ventas/<id>/anular (Bruno, 2026-09-13: eliminar una venta desde el celular)', () {
+  group('POST /ventas/<id>/anular (Dueño, 2026-09-13: eliminar una venta desde el celular)', () {
     Future<int> crearVentaConStock({required int stockInicial}) async {
       final productoId = await db.into(db.productos).insert(
         ProductosCompanion.insert(nombre: 'Coca-Cola', precioCentavos: const Value(112000), stock: Value(stockInicial)),
@@ -2080,7 +2080,7 @@ void main() {
   });
 
   group(
-    'GET /sesiones/cerradas (Bruno, 2026-09-13: "quiero la pantalla nueva de cierres con caché offline")',
+    'GET /sesiones/cerradas (Dueño, 2026-09-13: "quiero la pantalla nueva de cierres con caché offline")',
     () {
       test('trae una sesión real cerrada con su arqueo completo', () async {
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 100000);
@@ -2098,7 +2098,7 @@ void main() {
         final dias = (jsonDecode(respuesta.body) as List).cast<Map<String, dynamic>>();
         expect(dias, hasLength(1));
         expect(dias.single['sesionId'], sesionId);
-        expect(dias.single['nombreEmpleado'], 'Bruno');
+        expect(dias.single['nombreEmpleado'], 'Dueño');
         expect(dias.single['efectivoContadoCentavos'], 100000);
         expect(dias.single['efectivoEsperadoCentavos'], 100000);
         expect(dias.single['diferenciaCentavos'], 0);
@@ -2250,7 +2250,7 @@ void main() {
   });
 
   group(
-    'Configuración desde la companion (Bruno, 2026-09-19: "que se puedan modificar las reglas del negocio... desde el celular")',
+    'Configuración desde la companion (Dueño, 2026-09-19: "que se puedan modificar las reglas del negocio... desde el celular")',
     () {
       test('GET /configuracion trae los defaults de fábrica recién sembrados', () async {
         final respuesta = await http.get(url('/configuracion'), headers: headers());

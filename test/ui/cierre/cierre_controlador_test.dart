@@ -17,7 +17,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(
       db,
       usuarioId: usuarioId,
@@ -204,7 +204,7 @@ void main() {
     });
   });
 
-  group('arqueos del turno (opcionales, Bruno 2026-09-28)', () {
+  group('arqueos del turno (opcionales, Dueño 2026-09-28)', () {
     test('sin arqueos, el conteo arranca vacío', () async {
       final c = CierreControlador(db, sesionId: sesionId);
       await c.cargar();

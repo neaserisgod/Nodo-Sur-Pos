@@ -1,16 +1,16 @@
-// Nivel 3 "Avanzado". Segunda corrección post-revisión (dibujo de Bruno):
+// Nivel 3 "Avanzado". Segunda corrección post-revisión (dibujo de el dueño):
 // el panel principal de Proveedores pasó a ser puramente informativo ("es
 // para mirar"), así que todo lo editable o accionable se mudó acá —
 // colchón, medio de pago, código, días de pedido/entrega,
 // activar/desactivar, y las acciones de separar y pagar. "Es donde
-// correspondían según los tres niveles" (Bruno).
+// correspondían según los tres niveles" (El dueño).
 //
 // Pasado al kit (corrección post-aprobación): `Modal` en vez de
 // `AlertDialog`, `CampoTexto`/`BotonPrimario`/`BotonSecundario` en vez de
 // controles sueltos. El desplegable de medio de pago sigue con su
 // contenedor propio — el kit todavía no tiene una pieza de selección.
 //
-// Serra Cigarros (2026-09-25) usa este mismo diálogo como "Ver lata": la
+// Distribuidora de Cigarrillos (2026-09-25) usa este mismo diálogo como "Ver lata": la
 // sección de arriba pasa a ser la de la lata (`SeccionLataCigarrillos`) en
 // vez de separar/pagar, y no hay desplegable de medio de pago (Regla 6 lo
 // fija en Efectivo). El resto del formulario es el mismo, a propósito — un
@@ -287,7 +287,7 @@ class _SeccionReposicion extends StatelessWidget {
           formatearARS(d.sugeridoASepararCentavos),
         ),
         const SizedBox(height: Espaciado.xs),
-        // De dónde sale (Bruno, 2026-09-26): lo cobrado por MP, más lo que
+        // De dónde sale (El dueño, 2026-09-26): lo cobrado por MP, más lo que
         // los cigarrillos cobrados por MP le sacaron al efectivo, está en MP.
         _filaDato(
           context,

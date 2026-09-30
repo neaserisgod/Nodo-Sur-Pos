@@ -1,4 +1,4 @@
-// Buscador contextual de la navbar (Bruno, 2026-09-28: "quiero que el
+// Buscador contextual de la navbar (El dueño, 2026-09-28: "quiero que el
 // buscador sea contextual, que busque según la pantalla que estemos").
 // Una pantalla de gestión que pasa una [BusquedaContextual] a
 // `PantallaGestion` cambia lo que hace el campo de arriba: deja de buscar

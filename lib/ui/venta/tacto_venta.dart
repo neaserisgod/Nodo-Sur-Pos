@@ -1,4 +1,4 @@
-// Excepción puntual de venta (Bruno, 2026-09-16: "que la interfaz sea
+// Excepción puntual de venta (El dueño, 2026-09-16: "que la interfaz sea
 // llamativa, al estilo de que parezca táctil, al menos en la pantalla de
 // venta"). Mismo criterio que ya usa DISENO.md para la escala tipográfica de
 // venta ("Excepción puntual, solo en venta"): un préstamo LOCAL a los

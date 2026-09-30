@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v37 → v38: separación del día por proveedor, para
-// poder destildar en Separaciones — Bruno, 2026-09-26) contra un archivo de
+// poder destildar en Separaciones — El dueño, 2026-09-26) contra un archivo de
 // verdad, mismo motivo que `migracion_v34_test.dart`.
 import 'dart:io';
 

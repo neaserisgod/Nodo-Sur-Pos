@@ -14,7 +14,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   });
   tearDown(() => db.close());
 
@@ -402,7 +402,7 @@ void main() {
       expect(productos.single.nombre, 'A');
     });
 
-    // Bruno, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
+    // El dueño, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
     // etcétera" desde la companion — pulido de catálogo.
     test('sinProveedor trae solo los que no tienen proveedor asignado', () async {
       final proveedorId = await crearProveedor(db, codigo: 'PRV1', nombre: 'Proveedor de prueba');
@@ -1040,7 +1040,7 @@ void main() {
     });
   });
 
-  group('cargar un costo completa las ventas que quedaron sin costo (Bruno, 2026-09-26)', () {
+  group('cargar un costo completa las ventas que quedaron sin costo (Dueño, 2026-09-26)', () {
     late int sesionId;
 
     setUp(() async {

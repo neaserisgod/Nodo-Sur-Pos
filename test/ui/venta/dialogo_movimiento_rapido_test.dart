@@ -29,7 +29,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
   });
   tearDown(() => db.close());

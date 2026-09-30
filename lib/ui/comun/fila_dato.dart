@@ -3,7 +3,7 @@
 // es una línea de dato suelta dentro de un `Bloque`, la unidad que ya
 // repetían a mano Proveedores (nivel 2, antes del kit) y Cierre
 // (`_FilaDato`) para lo mismo. Pieza agregada al kit en el paso 2 (fase 13,
-// Bruno: "si algo no se puede armar con el kit, se agrega una pieza al
+// El dueño: "si algo no se puede armar con el kit, se agrega una pieza al
 // kit").
 
 import 'package:flutter/material.dart';

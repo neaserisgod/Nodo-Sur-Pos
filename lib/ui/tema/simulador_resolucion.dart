@@ -8,7 +8,7 @@
 // chica — no como objetivo. `kDebugMode` lo saca del árbol entero en
 // release — ni el chip queda armado, ni se llama a `window_manager`.
 //
-// 960×1080 agregado en la fase 13, "mitad de pantalla" (Bruno, 2026-09-07:
+// 960×1080 agregado en la fase 13, "mitad de pantalla" (El dueño, 2026-09-07:
 // "prepara la app desktop para funcionar en la mitad de la pantalla de
 // 1920×1080") — es más angosto que el piso de 1366; sigue sirviendo como
 // piso de prueba angosto aunque la venta ya no tenga una columna dedicada

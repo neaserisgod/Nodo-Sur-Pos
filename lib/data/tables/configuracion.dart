@@ -11,7 +11,7 @@ class ConfiguracionTabla extends Table {
   IntColumn get id => integer().autoIncrement()();
 
   /// Regla 6, los "tres montos" del recargo de cigarrillos. El de suelto
-  /// pasó de 0 a 5000 ($50) el 2026-09-10 (Bruno: "los puchos sueltos
+  /// pasó de 0 a 5000 ($50) el 2026-09-10 (El dueño: "los puchos sueltos
   /// también deben tener recargo por MP, sin eso los cálculos dan mal") —
   /// una base ya existente necesita la migración v23→v24 de `database.dart`
   /// además de este default nuevo, que solo alcanza a una base recién creada.
@@ -63,7 +63,7 @@ class ConfiguracionTabla extends Table {
   TextColumn get mpTerminalId => text().nullable()();
 
   /// Fase 12: la terminal que cobra por QR/Débito — campo separado de
-  /// [mpTerminalId] aunque hoy señalen la misma terminal física (Bruno
+  /// [mpTerminalId] aunque hoy señalen la misma terminal física (El dueño
   /// tiene dos posnets: uno para cobro manual que la app nunca toca, y
   /// este, "el del sistema", que imprime Y cobra).
   TextColumn get mpTerminalCobroId => text().nullable()();
@@ -87,7 +87,7 @@ class ConfiguracionTabla extends Table {
   /// Modo oscuro elegido a mano. Solo se lee cuando [temaAutomatico] está
   /// apagado — con el automático prendido, `oscuroPorHorarioDelLocal`
   /// decide, y esta columna sigue guardando el último valor manual para
-  /// volver a él si Bruno apaga el automático.
+  /// volver a él si el dueño apaga el automático.
   BoolColumn get temaOscuro => boolean().withDefault(const Constant(true))();
 
   /// Tema automático según el horario del local (revisión visual fase 13):
@@ -104,7 +104,7 @@ class ConfiguracionTabla extends Table {
   BoolColumn get retiroDescuentaFijosPendientes => boolean().withDefault(const Constant(false))();
 
   /// Si la barra lateral de navegación arranca plegada (solo íconos) o
-  /// desplegada (íconos + nombre). Plegada por default (2026-09-12, Bruno:
+  /// desplegada (íconos + nombre). Plegada por default (2026-09-12, el dueño:
   /// "no quiero 50 botones en cualquier lado") — revierte la corrección de
   /// fase 13 ("desplegada por default", ver DECISIONES.md), que había
   /// ganado por el motivo contrario ("no saber dónde hacer clic"). Los
@@ -116,7 +116,7 @@ class ConfiguracionTabla extends Table {
   /// Período del selector compartido entre Proveedores y Productos (fase
   /// 13) — guarda el nombre de `PeriodoResumen` ('hoy'/'semana'/'mes'/
   /// 'desdeUltimoPago'), un enum y no un booleano porque son cuatro
-  /// opciones, no dos. Default 'mes' (Bruno). Se recuerda entre visitas,
+  /// opciones, no dos. Default 'mes' (El dueño). Se recuerda entre visitas,
   /// mismo criterio que `barraLateralPlegada`.
   TextColumn get periodoResumen => text().withDefault(const Constant('mes'))();
 
@@ -125,7 +125,7 @@ class ConfiguracionTabla extends Table {
   /// Token compartido para que el celular se autentique contra el servidor
   /// HTTP local (`lib/servidor/servidor_companion.dart`) — null hasta que se
   /// genera desde Configuración. No es login de usuario (la app sigue "sin
-  /// autenticación" para las personas, Bruno/su empleado eligen quién son
+  /// autenticación" para las personas, el dueño/su empleado eligen quién son
   /// de una lista, igual que al abrir caja): es solo la llave que evita que
   /// cualquier otro dispositivo de la misma WiFi pueda pegarle al servidor.
   TextColumn get companionToken => text().nullable()();
@@ -134,7 +134,7 @@ class ConfiguracionTabla extends Table {
   /// dispositivos que pueden vender sin verse, un solo cajón físico necesita
   /// un solo dueño fijo para "abrir el día" — el otro dispositivo se suma a
   /// esa apertura al sincronizar en vez de abrir la suya propia (decisión de
-  /// Bruno: nunca fusión automática y silenciosa de dos aperturas). Null
+  /// El dueño: nunca fusión automática y silenciosa de dos aperturas). Null
   /// significa "todavía no se decidió" — cualquier dispositivo puede abrir
   /// la primera vez, mismo comportamiento que hoy. Valores: `'desktop'` o el
   /// `dispositivoId` estable del celular emparejado (`emparejamiento.dart`).

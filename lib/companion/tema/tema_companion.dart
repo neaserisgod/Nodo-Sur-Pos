@@ -44,7 +44,7 @@ abstract final class TemaCompanion {
       brightness: brillo,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colores.fondo,
-      // Transición propia (Bruno, 2026-09-18: "una app moderna") — el zoom
+      // Transición propia (El dueño, 2026-09-18: "una app moderna") — el zoom
       // de Android de fábrica es genérico, el mismo de cualquier app sin
       // tema. Entra deslizando desde abajo con fade, sale más rápido que
       // entra (Material Motion: "exit-faster-than-enter" se siente más

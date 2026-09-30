@@ -1,4 +1,4 @@
-// De qué medio sale lo que se separa para cada proveedor (Bruno,
+// De qué medio sale lo que se separa para cada proveedor (El dueño,
 // 2026-09-26): "que redistribuya los productos que no sean cigarros que se
 // hayan vendido en efectivo para separar en mercado pago teniendo en cuenta
 // lo que se vendió de cigarrillos por ese medio".
@@ -104,7 +104,7 @@ class ParteMpDeLinea {
 /// mostrarlas), pero solo con el paso 1: no entran en el reparto del
 /// excedente de cigarrillos.
 ///
-/// La ganancia sigue la misma lógica que el costo (Bruno, 2026-09-26: "que
+/// La ganancia sigue la misma lógica que el costo (El dueño, 2026-09-26: "que
 /// diferencie entre ganancia o reposición"): paso 1, del medio en que se
 /// cobró; paso 2, el efectivo que se lleva la lata sale PRIMERO del costo en
 /// efectivo del día (es lo que hay que reponer) y, si alcanza para todo el

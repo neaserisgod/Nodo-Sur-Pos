@@ -1,7 +1,7 @@
 // PDF de "Control diario de caja" (fase 9), réplica de la planilla de papel
 // vigente — dos grillas (efectivo / Mercado Pago), apertura y cierre, y
 // salidas/pagos — más tres bloques que vuelven de una versión anterior del
-// papel porque Bruno los pidió de nuevo explícitamente (ítem 3,
+// papel porque el dueño los pidió de nuevo explícitamente (ítem 3,
 // `DECISIONES.md`): reposición por proveedor (con costo real, no el
 // porcentaje viejo), arqueo propio de la caja de cigarrillos, y el
 // encabezado con el empleado del turno y sus horarios en vez de firmas.
@@ -101,11 +101,11 @@ pw.Widget _linea(String etiqueta, String valor) {
 
 /// Reposición por proveedor (ítem 3): costo real y separado del ciclo
 /// vigente de `calcularReposicion`/`separarProveedor` — nunca el porcentaje
-/// del papel viejo (`VENDI × 0,65`), Bruno fue textual sobre eso. Es una
+/// del papel viejo (`VENDI × 0,65`), el dueño fue textual sobre eso. Es una
 /// foto del estado actual, no de lo vendido específicamente este día — el
 /// ciclo de reposición no se reinicia a diario (ítem 2).
 ///
-/// VENDIDO es precio (lo que entró), A SEPARAR es costo real — Bruno fue
+/// VENDIDO es precio (lo que entró), A SEPARAR es costo real — El dueño fue
 /// explícito en que confundirlos es un error de la planilla, no un dato
 /// que falte, así que van en columnas separadas y con su nombre real.
 /// Solo se listan los proveedores con algo que mostrar (vendido o
@@ -234,7 +234,7 @@ Future<Uint8List> generarPdfPlanilla(AppDatabase db, int sesionId) async {
                     children: [
                       pw.Text('CAJA CIGARRILLOS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                       _linea('Separado desde la caja normal', formatearARS(sesion.lataSeparadoCentavos ?? 0)),
-                      _linea('(-) Pagos a Serra Cigarros', formatearARS(datos.pagosALataCentavos)),
+                      _linea('(-) Pagos a Distribuidora de Cigarrillos', formatearARS(datos.pagosALataCentavos)),
                       _linea('Esperada', formatearARS(sesion.lataFinalCentavos ?? 0)),
                       _linea('Real contado', formatearARS(sesion.lataContadoCentavos ?? 0)),
                       _linea('Diferencia (+/-)', formatearARS(sesion.lataDiferenciaCentavos ?? 0)),

@@ -1,4 +1,4 @@
-// "Comparar precios" (Bruno, 2026-09-14: "una noción de los precios de mi
+// "Comparar precios" (El dueño, 2026-09-14: "una noción de los precios de mi
 // local... para ajustarlos según si están muy caros o muy baratos") — dos
 // fuentes, ver `lib/servicios/comparador_precios.dart` (SEPA/Precios
 // Claros, La Anónima y Carrefour) y
@@ -6,15 +6,15 @@
 // Todo a tu Casa) para el porqué de cada una y el formato real de los
 // datos.
 //
-// Solo informativo (Bruno eligió esto, no un ajuste automático): cada fila
+// Solo informativo (El dueño eligió esto, no un ajuste automático): cada fila
 // muestra mi precio al lado del de cada comercio encontrado y la mayor
-// diferencia, ordenado de mayor a menor diferencia — Bruno decide qué
+// diferencia, ordenado de mayor a menor diferencia — El dueño decide qué
 // hacer con cada uno, la pantalla no sugiere nada ni resalta con colores
 // de alerta (el acento y el color de error del sistema de diseño están
 // reservados para otra cosa, `DISENO.md` — una diferencia de precio contra
 // el súper no es un estado "mal", es solo un dato).
 //
-// Lista TODO el catálogo activo con precio propio (Bruno, 2026-09-14:
+// Lista TODO el catálogo activo con precio propio (El dueño, 2026-09-14:
 // "todo lo que esté en mi sistema"), no solo lo que encontró coincidencia
 // — un producto sin nada en ningún comercio muestra "—" en vez de
 // desaparecer de la lista. Pesables se cruzan por nombre (aproximado, con

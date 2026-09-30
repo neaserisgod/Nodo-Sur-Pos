@@ -1,4 +1,4 @@
-// Cerrar caja de verdad desde el celular (Bruno, 2026-09-19: "que deje
+// Cerrar caja de verdad desde el celular (El dueño, 2026-09-19: "que deje
 // cerrar caja desde el celular") — mismo molde de fases que el escritorio
 // (`cierre_controlador.dart`, Regla 10: contar, comparar, separar) y el
 // mismo patrón de diálogo de dos pasos que ya tiene el arqueo intermedio de
@@ -61,7 +61,7 @@ class _DialogoCierreCompanion extends StatefulWidget {
   final ServicioCompanion servicio;
   final int usuarioId;
 
-  /// Lo contado en el último arqueo del turno (Bruno, 2026-09-28). La lata
+  /// Lo contado en el último arqueo del turno (El dueño, 2026-09-28). La lata
   /// no se precarga: el arqueo del turno la cuenta antes de separar los
   /// cigarrillos y el cierre después (mismo criterio que el escritorio,
   /// `CierreControlador._precargarDelUltimoArqueo`).

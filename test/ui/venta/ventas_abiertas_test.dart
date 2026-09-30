@@ -9,7 +9,7 @@ import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
 import '../../helpers/base_para_tests.dart';
 
-/// Ventas abiertas (Bruno, 2026-09-29): la venta permanece y se puede armar
+/// Ventas abiertas (El dueño, 2026-09-29): la venta permanece y se puede armar
 /// más de una a la vez.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +32,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     final idCoca = await db.into(db.productos).insert(
           ProductosCompanion.insert(

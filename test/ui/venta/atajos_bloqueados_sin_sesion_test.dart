@@ -1,4 +1,4 @@
-// Bug real, reportado por Bruno: "puedo vender si cierro caja, no vuelve a
+// Bug real, reportado por el dueño: "puedo vender si cierro caja, no vuelve a
 // pedir que se abra". `_manejarTeclaGlobal` (pantalla_venta.dart) es un
 // handler de teclado global (`HardwareKeyboard.instance.addHandler`) que no
 // sabe nada del árbol de widgets — seguía reaccionando a los atajos Alt+algo
@@ -65,7 +65,7 @@ void main() {
       // Sesión abierta y ya cerrada, tal como en una caja real que ya operó.
       final usuarioId = await db
           .into(db.usuarios)
-          .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       final sesionId = await abrirSesion(
         db,
         usuarioId: usuarioId,
@@ -95,7 +95,7 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db
           .into(db.usuarios)
-          .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+          .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       await db
           .into(db.sesionesDeCaja)
           .insert(

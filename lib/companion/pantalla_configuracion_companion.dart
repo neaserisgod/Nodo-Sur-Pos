@@ -1,4 +1,4 @@
-// "Configuración" en la companion (Bruno, 2026-09-19: "que se puedan
+// "Configuración" en la companion (El dueño, 2026-09-19: "que se puedan
 // modificar las reglas del negocio... desde el celular") — el contenido
 // real de la pantalla "Configuración" del escritorio, no toda la lista de
 // CLAUDE.md: recargo de cigarrillos, redondeo, producto de vuelto, markup
@@ -7,7 +7,7 @@
 // afuera a propósito — son pantallas grandes aparte, con su propia tarea
 // futura.
 //
-// Funciona con o sin PC emparejada (Bruno: "que funcione también sin la
+// Funciona con o sin PC emparejada (El dueño: "que funcione también sin la
 // PC") — `configuracion_negocio_tabla`/`medios_de_pago` ya sincronizan
 // (migración v32→v33), así que `ServicioCompanionOffline` no necesita
 // ninguna política especial acá, a diferencia de abrir/cerrar caja.

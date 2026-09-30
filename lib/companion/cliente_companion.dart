@@ -127,7 +127,7 @@ class CategoriaCompanion {
 
   /// Basis points, ej. 1500 = 15% — puramente informativo (Regla 14: nunca
   /// se usa para calcular ni completar un precio). Editable desde
-  /// Configuración en la companion (Bruno, 2026-09-19).
+  /// Configuración en la companion (El dueño, 2026-09-19).
   final int markupDefaultBp;
 
   const CategoriaCompanion({
@@ -178,7 +178,7 @@ class MedioDePagoCompanion {
 }
 
 /// Recargo de cigarrillos + paso de redondeo + producto de vuelto — las
-/// reglas de negocio editables desde Configuración en la companion (Bruno,
+/// reglas de negocio editables desde Configuración en la companion (El dueño,
 /// 2026-09-19: "que se puedan modificar... desde el celular"). Espejo de
 /// `ConfiguracionNegocio` (`lib/data/tables/configuracion_negocio.dart`),
 /// sin `globalId`/`origenDispositivo`/`actualizadoEn`: son maquinaria de
@@ -214,7 +214,7 @@ class SesionCompanion {
   final int? id;
 
   /// Solo si `abierta` — de acá sale, junto con [fechaUltimoArqueoIntermedio],
-  /// si el arqueo obligatorio de 2hs ya venció (Bruno, 2026-09-13: "el
+  /// si el arqueo obligatorio de 2hs ya venció (El dueño, 2026-09-13: "el
   /// bloqueo sincronizado con la app desktop"), con el mismo
   /// `necesitaArqueoIntermedio` de dominio que ya usa el escritorio.
   final DateTime? fechaApertura;
@@ -224,7 +224,7 @@ class SesionCompanion {
   /// desde [fechaApertura] en ese caso.
   final DateTime? fechaUltimoArqueoIntermedio;
 
-  /// Lo contado en el último arqueo del turno (Bruno, 2026-09-28: el cierre
+  /// Lo contado en el último arqueo del turno (El dueño, 2026-09-28: el cierre
   /// arranca precargado con eso). Null si todavía no hubo ninguno — y
   /// también si el que responde es una PC con una versión anterior que no
   /// manda estos campos: por eso `as int?` al parsear (TRAMPAS.md).
@@ -238,14 +238,14 @@ class SesionCompanion {
   /// Solo si NO `abierta` — lo que va a quedar como lata inicial si se abre
   /// ahora (se arrastra sola, nunca se pregunta — Regla 10). Se muestra de
   /// antemano para que abrir caja no dé la sensación de "¿y la lata de
-  /// cigarrillos?" (Bruno, 2026-09-10).
+  /// cigarrillos?" (El dueño, 2026-09-10).
   final int? lataQueSeArrastraCentavos;
 
   /// Solo si `abierta` — quién la abrió (el servidor ya resuelve el join
   /// contra `usuarios`, mismo criterio que `nombreEmpleado` en
   /// `repositorio_historial.dart`) y desde qué dispositivo (`'android-…'` o
   /// el id de la PC), para poder avisar "Ya la abrió Fulano a las 9:15"
-  /// cuando alguien más intenta abrir caja (Bruno, 2026-09-19: "aislar los
+  /// cuando alguien más intenta abrir caja (El dueño, 2026-09-19: "aislar los
   /// usuarios para que no se pisen").
   final String? usuarioAbrioNombre;
   final String? origenDispositivo;
@@ -401,7 +401,7 @@ class ClienteCompanion implements ServicioCompanion {
         .toList();
   }
 
-  // ─── Configuración (Bruno, 2026-09-19: "que se puedan modificar las
+  // ─── Configuración (El dueño, 2026-09-19: "que se puedan modificar las
   // reglas del negocio... desde el celular") ──────────────────────────────
 
   @override
@@ -547,7 +547,7 @@ class ClienteCompanion implements ServicioCompanion {
         .toList();
   }
 
-  /// Agotados o en negativo, de todos los proveedores juntos (Bruno,
+  /// Agotados o en negativo, de todos los proveedores juntos (El dueño,
   /// 2026-09-07: "revisar los productos sin stock... para ajustarlos") —
   /// mismo criterio que "Stock por proveedor" del escritorio
   /// (`productoAgotado`, Regla 8), calculado del lado del servidor.
@@ -677,7 +677,7 @@ class ClienteCompanion implements ServicioCompanion {
     _revisar(r);
   }
 
-  // Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  // Editor masivo (El dueño, 2026-09-19: "editor masivo, ya sea de precios
   // costo stock etc etc") — ver `ServicioCompanion` para el porqué de cada
   // firma; acá solo empaqueta el pedido para el servidor
   // (`servidor_companion.dart`, sección "/productos/lote/*").
@@ -771,7 +771,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Vista previa del arqueo obligatorio de 2hs, sin guardar nada todavía
-  /// (Bruno, 2026-09-13: "el bloqueo cada 2hs sincronizado con la app
+  /// (El dueño, 2026-09-13: "el bloqueo cada 2hs sincronizado con la app
   /// desktop") — mismo criterio que `calcularVenta`/`cobrarEfectivo`: se
   /// recalcula en vivo mientras se tipea, y recién `confirmarArqueoIntermedio`
   /// lo guarda de verdad.
@@ -821,7 +821,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Apertura de emergencia desde el celular — devuelve el id de la sesión
-  /// nueva. Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" —
+  /// nueva. El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" —
   /// si ya la abrieron desde la PC (o desde otro celular) entretanto, el
   /// servidor ya NO se une en silencio: da 409 con quién y a qué hora la
   /// abrió (`ErrorCompanion`, `_revisar` más abajo lo propaga tal cual).
@@ -843,7 +843,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Mismo molde que `calcularArqueoIntermedio`/`confirmarArqueoIntermedio`
-  /// de arriba, pero para el cierre real (Bruno, 2026-09-19: "que deje
+  /// de arriba, pero para el cierre real (El dueño, 2026-09-19: "que deje
   /// cerrar caja desde el celular"). El desglose por proveedor viene
   /// resuelto (nombre, costo real, ganancia) — mismo `porProveedor` que ya
   /// trae `/caja/estado` (Regla 3, `_resumenDiaAJson` del servidor).
@@ -890,7 +890,7 @@ class ClienteCompanion implements ServicioCompanion {
     _revisar(r);
   }
 
-  /// Detalle completo de un cierre YA guardado (Bruno, 2026-09-19: rework
+  /// Detalle completo de un cierre YA guardado (El dueño, 2026-09-19: rework
   /// de "Cierres" con el desglose por proveedor) — mismo shape que
   /// [calcularCierre], recalculado del lado del servidor con los conteos
   /// que ya quedaron guardados en esa sesión, nunca cacheado.
@@ -905,7 +905,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// "¿Cómo vamos?" en cualquier momento del día, sin contar nada a mano
-  /// (Bruno, 2026-09-07: "un botón de arqueo también... sin tener que
+  /// (El dueño, 2026-09-07: "un botón de arqueo también... sin tener que
   /// contar a mano las ventas del día") — efectivo/MP esperados (mismas
   /// fórmulas del cierre real) más el resumen por medio/proveedor, para la
   /// sesión de hoy que sigue abierta. Nunca la diferencia de arqueo: esa
@@ -945,7 +945,7 @@ class ClienteCompanion implements ServicioCompanion {
     return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;
   }
 
-  /// "Ingreso rápido" (Bruno, 2026-09-13) — espejo exacto de `registrarGasto`,
+  /// "Ingreso rápido" (El dueño, 2026-09-13) — espejo exacto de `registrarGasto`,
   /// mismas tres cajas (`MedioGastoCompanion`, reusado).
   @override
   Future<int> registrarIngreso({
@@ -970,7 +970,7 @@ class ClienteCompanion implements ServicioCompanion {
     return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;
   }
 
-  // ─── Vender (Bruno, 2026-09-07) ──────────────────────────────────────
+  // ─── Vender (El dueño, 2026-09-07) ──────────────────────────────────────
   //
   // El carrito es una `List<LineaVenta>` — el mismo tipo del dominio, ver
   // `domain/venta_json.dart` — armada en el celular con lo que devuelve
@@ -983,7 +983,7 @@ class ClienteCompanion implements ServicioCompanion {
   /// de un pesable — el llamador lo usa para armar la línea al tocar un
   /// resultado, sin volver a parsear el texto acá (un solo lugar, el
   /// servidor).
-  /// [exigirStock] en `false` para la carga histórica (Bruno: "no
+  /// [exigirStock] en `false` para la carga histórica (El dueño: "no
   /// descuentan stock... para saber ganancias") — un producto vendido en su
   /// momento puede estar en 0 hoy por cualquier otro motivo.
   @override
@@ -1010,7 +1010,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// `medio` es `'efectivo'` o `'virtual'` — sin Mixto en esta primera
-  /// versión (decisión de Bruno, 2026-09-07). [tipoDescuento]/[valorDescuento]:
+  /// versión (decisión de el dueño, 2026-09-07). [tipoDescuento]/[valorDescuento]:
   /// Regla 17 generalizada, mismo criterio que el escritorio — `null` o
   /// `valorDescuento == 0` es "sin descuento".
   @override
@@ -1069,7 +1069,7 @@ class ClienteCompanion implements ServicioCompanion {
     );
   }
 
-  /// "Cobrar a mano" (Bruno, 2026-09-07: "para cargar las ventas de hoy y
+  /// "Cobrar a mano" (El dueño, 2026-09-07: "para cargar las ventas de hoy y
   /// seguir cargando mientras tanto" — no bloquearse si el posnet tarda o
   /// falla) — graba la venta directo, sin pasar por el ciclo de Point,
   /// pero conservando el canal elegido (mismo criterio que
@@ -1223,7 +1223,7 @@ class ClienteCompanion implements ServicioCompanion {
     _revisar(r);
   }
 
-  // ─── Carga histórica (Bruno, 2026-09-07) ─────────────────────────────
+  // ─── Carga histórica (El dueño, 2026-09-07) ─────────────────────────────
   //
   // Nada se graba hasta [guardarDiaHistorico] — el celular junta las
   // ventas del día en memoria (`VentaHistoricaPendienteCompanion`), igual
@@ -1252,7 +1252,7 @@ class ClienteCompanion implements ServicioCompanion {
     return (jsonDecode(r.body) as Map<String, dynamic>)['sesionId'] as int;
   }
 
-  // Ver y editar días ya cargados (Bruno, 2026-09-07: "dejame verlos y
+  // Ver y editar días ya cargados (El dueño, 2026-09-07: "dejame verlos y
   // editarlos porque le erré y lo cerré sin completarlo").
 
   @override
@@ -1284,7 +1284,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Vendido por medio de pago y por proveedor (con la separación teórica,
-  /// Regla 5) de un día ya cargado — Bruno, 2026-09-07: "necesitaría un
+  /// Regla 5) de un día ya cargado — El dueño, 2026-09-07: "necesitaría un
   /// resumen... así que al entrar a un día".
   @override
   Future<ResumenDiaHistoricoCompanion> resumenDiaHistorico(int sesionId) async {
@@ -1299,7 +1299,7 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Agrega más ventas a un día ya cargado, sin crear una sesión nueva —
-  /// Bruno: "le erré y lo cerré sin completarlo", seguir cargando en vez
+  /// El dueño: "le erré y lo cerré sin completarlo", seguir cargando en vez
   /// de tener que borrar todo.
   @override
   Future<void> agregarVentasADiaHistorico({
@@ -1345,7 +1345,7 @@ class ClienteCompanion implements ServicioCompanion {
     _revisar(r);
   }
 
-  /// Historial de ventas, filtrable (Bruno, 2026-09-07: "tipo mercado
+  /// Historial de ventas, filtrable (El dueño, 2026-09-07: "tipo mercado
   /// pago... para un control manual en caso de desconfiar de los
   /// números"). [filtroMedio] null trae todas.
   @override
@@ -1370,7 +1370,7 @@ class ClienteCompanion implements ServicioCompanion {
         .toList();
   }
 
-  /// Cierres reales (Bruno, 2026-09-13: "quiero la pantalla nueva de
+  /// Cierres reales (El dueño, 2026-09-13: "quiero la pantalla nueva de
   /// cierres con caché offline") — excluye días de carga histórica del
   /// lado del servidor, acá solo llega lo que es un arqueo de verdad.
   @override
@@ -1386,7 +1386,7 @@ class ClienteCompanion implements ServicioCompanion {
         .toList();
   }
 
-  /// Desglose de una venta (Bruno, 2026-09-13: "poder ver un desglose de
+  /// Desglose de una venta (El dueño, 2026-09-13: "poder ver un desglose de
   /// la venta") — mismo `Ticket` que arma la impresión, del lado del
   /// servidor (Regla 3).
   @override
@@ -1401,7 +1401,7 @@ class ClienteCompanion implements ServicioCompanion {
     );
   }
 
-  /// Anula una venta ya cobrada (Bruno, 2026-09-13: eliminar una venta
+  /// Anula una venta ya cobrada (El dueño, 2026-09-13: eliminar una venta
   /// desde el celular) — el servidor rechaza con [ErrorCompanion] si la
   /// sesión de esa venta ya está cerrada, o si ya estaba anulada.
   @override
@@ -1475,7 +1475,7 @@ class VentaDelHistorialCompanion {
   final bool anulada;
 
   /// Si se puede eliminar esta venta — condicionado a que la sesión de
-  /// caja de esa venta siga abierta (Bruno, 2026-09-13).
+  /// caja de esa venta siga abierta (El dueño, 2026-09-13).
   final bool sesionAbierta;
 
   const VentaDelHistorialCompanion({
@@ -1508,7 +1508,7 @@ class VentaDelHistorialCompanion {
       );
 }
 
-/// Un cierre real (sesión de caja cerrada, con su arqueo) — Bruno,
+/// Un cierre real (sesión de caja cerrada, con su arqueo) — El dueño,
 /// 2026-09-13: "quiero la pantalla nueva de cierres con caché offline".
 /// Los `*Centavos` de cada caja son nullable porque, en teoría, una
 /// sesión ya cerrada siempre los tiene completos — pero un cierre viejo de
@@ -1613,7 +1613,7 @@ class LineaTicketCompanion {
       );
 }
 
-/// Desglose completo de una venta (Bruno, 2026-09-13: "poder ver un
+/// Desglose completo de una venta (El dueño, 2026-09-13: "poder ver un
 /// desglose de la venta") — mismo `Ticket` que arma la impresión, del lado
 /// del servidor.
 class DetalleVentaCompanion {
@@ -1653,7 +1653,7 @@ class DetalleVentaCompanion {
       );
 }
 
-/// Vista previa del arqueo obligatorio de 2hs (Bruno, 2026-09-13) —
+/// Vista previa del arqueo obligatorio de 2hs (El dueño, 2026-09-13) —
 /// `mpDiferenciaCentavos`/`lataDiferenciaCentavos` son null hasta que se
 /// tipeó el contado correspondiente, mismo criterio que el escritorio
 /// (`ResumenCierre`).
@@ -1789,7 +1789,7 @@ class ResumenDiaHistoricoCompanion {
   final int mercadoPagoCentavos;
 
   /// Precio de lista de los cigarrillos — lo que hay que separar a la lata
-  /// para Serra Cigarros (Regla 6). Nunca entra en `porProveedor`.
+  /// para Distribuidora de Cigarrillos (Regla 6). Nunca entra en `porProveedor`.
   final int cigarrillosListaCentavos;
   final int vendidoSinCostoCentavos;
   final List<ProductoSinDatosCompanion> productosSinDatos;
@@ -1824,7 +1824,7 @@ class ResumenDiaHistoricoCompanion {
 }
 
 /// Resumen completo de un cierre real, calculado en vivo (todavía sin
-/// guardar) — `ClienteCompanion.calcularCierre`/`confirmarCierre`, Bruno
+/// guardar) — `ClienteCompanion.calcularCierre`/`confirmarCierre`, el dueño
 /// 2026-09-19: "que deje cerrar caja desde el celular". Combina lo que
 /// antes solo veía el escritorio (`ResumenCierre`, `repositorio_cierre.dart`)
 /// con el mismo desglose por proveedor de `ResumenDiaHistoricoCompanion`
@@ -1982,7 +1982,7 @@ class VentaHistoricaPendienteCompanion {
   /// El total ya calculado (con recargo de cigarrillos y redondeo, Regla
   /// 6/5) al momento de confirmar esta venta en `_ArmadorDeVenta` — solo
   /// para mostrarlo en el resumen mientras se siguen cargando más ventas
-  /// del día (Bruno, 2026-09-07: "revisa que la apk no agrega los
+  /// del día (El dueño, 2026-09-07: "revisa que la apk no agrega los
   /// recargos automáticos"). El servidor vuelve a calcularlo de cero al
   /// guardar (`POST /historico/dia`), este campo nunca viaja — es solo
   /// para la UI.

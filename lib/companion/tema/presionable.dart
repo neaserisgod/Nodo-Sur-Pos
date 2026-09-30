@@ -26,7 +26,7 @@ class Presionable extends StatefulWidget {
   final VoidCallback? onTap;
 
   /// Para entrar a un modo de selección múltiple manteniendo presionada una
-  /// fila (Bruno, 2026-09-19: "editor masivo") — opcional, `null` es el
+  /// fila (El dueño, 2026-09-19: "editor masivo") — opcional, `null` es el
   /// comportamiento de siempre (solo toque corto).
   final VoidCallback? onLongPress;
   final double radio;
@@ -50,7 +50,7 @@ class _PresionableState extends State<Presionable> {
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      // "Dark glass premium" (Bruno, rediseño 2026-09-25) — mismo criterio
+      // "Dark glass premium" (El dueño, rediseño 2026-09-25) — mismo criterio
       // que `lib/ui/tema/presionable.dart`: overshoot leve al soltar.
       scale: _presionado ? 0.97 : 1,
       duration: const Duration(milliseconds: 120),

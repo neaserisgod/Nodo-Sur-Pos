@@ -27,7 +27,7 @@ Future<MedioDePago> _medioMercadoPago(AppDatabase db) =>
 /// 'GASTO', 'PAGO_PROVEEDOR' y 'RETIRO' son, para el arqueo, el mismo tipo
 /// de evento: plata que sale de una caja. Un pago a proveedor o un retiro
 /// que solo contaran como 'GASTO' en el filtro dejarían el monto afuera de
-/// la caja esperada — exactamente el agujero que encontró Bruno
+/// la caja esperada — exactamente el agujero que encontró el dueño
 /// (`DECISIONES.md`, para 'PAGO_PROVEEDOR'; mismo motivo para 'RETIRO',
 /// Regla 13) — así que toda función que suma egresos por caja usa esta
 /// misma lista, en vez de filtrar 'GASTO' sola cada una por su cuenta
@@ -73,7 +73,7 @@ Future<int> efectivoDeVentasDelDia(
 
 /// Gastos en efectivo con origen "cajón normal" (gasto rápido de la fase 3).
 ///
-/// Excluye los gastos marcados con `medioPagoId` = Mercado Pago (Bruno,
+/// Excluye los gastos marcados con `medioPagoId` = Mercado Pago (El dueño,
 /// sesión del 31/08/2026): esos no salieron del cajón, aunque por ahora
 /// tengan que quedar con `cajaId = cajaNormal` (MP no es una fila de
 /// `Cajas`) — hay que filtrar por medio de pago, no solo por caja, o un
@@ -120,18 +120,18 @@ Future<int> gastosPorMpDelDia(
   );
 }
 
-/// Gastos con origen "lata de cigarrillos": en la práctica, pagos a Serra
+/// Gastos con origen "lata de cigarrillos": en la práctica, pagos a Distribuidora
 /// Cigarros. Se restan del saldo final de la lata — si no se restaran, la
 /// lata mostraría un número inflado desde el primer pago que se le hiciera.
 /// Incluye `PAGO_PROVEEDOR` (`tiposEgresoDeCaja`) por las dudas, aunque hoy
-/// `pagarProveedor` nunca graba con `cajaId = cajaLata` — Serra Cigarros se
+/// `pagarProveedor` nunca graba con `cajaId = cajaLata` — Distribuidora de Cigarrillos se
 /// paga desde el gasto rápido con origen lata, no desde este flujo nuevo.
 Future<int> pagosALataDelDia(AppDatabase db, int sesionId) async {
   final cajaLata = await _cajaLata(db);
   return _sumaMovimientos(db, sesionId: sesionId, cajaId: cajaLata.id, tipos: tiposEgresoDeCaja);
 }
 
-// ─── Ingreso rápido (Bruno, 2026-09-13) ──────────────────────────────────
+// ─── Ingreso rápido (El dueño, 2026-09-13) ──────────────────────────────────
 // Espejo de los tres de arriba, pero para plata que ENTRA sin ser venta —
 // mismo criterio de "una caja física, un filtro por medioPagoId cuando
 // corresponde", tipo 'INGRESO' en vez de la lista `tiposEgresoDeCaja` (acá
@@ -193,7 +193,7 @@ Future<int> ingresosALaLataDelDia(AppDatabase db, int sesionId) async {
 /// (Regla de la fase 3), así que esta es la única fuente que ya existe para
 /// este dato sin tocar el camino crítico de cobro.
 ///
-/// Excluye ventas anuladas (Bruno, 2026-09-13, bug real: "no toma en cuenta
+/// Excluye ventas anuladas (El dueño, 2026-09-13, bug real: "no toma en cuenta
 /// la anulación"): `anularVenta` revierte el efectivo con un movimiento de
 /// caja negativo (Regla 6, el ledger nunca se toca ni se borra), pero un
 /// pago virtual nunca tuvo movimiento de caja que revertir — sin este
@@ -299,7 +299,7 @@ bool esDeOtroDia(DateTime fecha) {
 }
 
 /// La sesión cerrada más reciente, solo si se cerró **hoy** — de acá sale
-/// la precarga del turno entrante (Bruno, sesión del 31/08/2026): "QUEDA EN
+/// la precarga del turno entrante (El dueño, sesión del 31/08/2026): "QUEDA EN
 /// EL CAJON" de la hoja que se cierra es la "Caja inicial NORMAL" de la que
 /// se abre, para no hacer contar dos veces la misma plata en el mismo
 /// cambio de manos. Si la última cerrada fue de un día anterior, esto
@@ -370,7 +370,7 @@ class EstadoCajaEnVivo {
 }
 
 /// "¿Cómo vamos?" en cualquier momento del día, sin contar nada a mano
-/// (Bruno, 2026-09-07: "un botón de arqueo... para saber que tal vamos en
+/// (El dueño, 2026-09-07: "un botón de arqueo... para saber que tal vamos en
 /// cualquier momento sin tener que contar a mano las ventas del día") —
 /// primera mitad de `calcularResumenCierre`, las mismas fórmulas
 /// (`cajaEsperadaCentavos`/`mpEsperadoCentavos`) pero sin el contado: por
@@ -438,7 +438,7 @@ class ResumenCierre {
   /// (`costoRealPorProveedorCentavos`/`vendidoPorProveedorCentavos`/
   /// `gananciaPorProveedorCentavos`) que ya calculaba `reposicionDelDia`
   /// pero antes se tiraba: la companion lo necesita para el detalle de un
-  /// cierre (Bruno, 2026-09-19: "lo que se debe separar por cada
+  /// cierre (El dueño, 2026-09-19: "lo que se debe separar por cada
   /// proveedor"). [vendidoSinCostoCentavos] queda como atajo de
   /// conveniencia para no tocar los llamadores que ya lo usaban.
   final ResultadoReposicion reposicion;
@@ -462,7 +462,7 @@ class ResumenCierre {
   /// Null hasta que se escribe la lata contada — mismo criterio que
   /// [mpDiferenciaCentavos], la lata se arquea como una caja de verdad
   /// (ítem 3): [lataFinalCentavos] es lo esperado, esta es la diferencia
-  /// contra lo que Bruno contó de verdad.
+  /// contra lo que el dueño contó de verdad.
   final int? lataDiferenciaCentavos;
 
   /// De qué sale [efectivoEsperadoCentavos] (`cajaEsperadaCentavos`): el
@@ -567,7 +567,7 @@ Future<ResumenCierre> calcularResumenCierre(
   final lataFinal = lataNuevaCentavos(
     lataInicialCentavos: sesion.lataInicialCentavos,
     separadoHoyCentavos: separacion.separadoCentavos,
-    pagosASerraDesdeLataCentavos: await futuroPagosLata,
+    pagosAProveedorDesdeLataCentavos: await futuroPagosLata,
     ingresosALaLataCentavos: await futuroIngresosALata,
   );
   final lataDiferencia = lataContadoCentavos == null
@@ -627,7 +627,7 @@ Future<ResumenCierre> calcularResumenCierre(
 /// día histórico en orden cronológico, del más viejo al más nuevo.
 /// Se tira si, entre que se calculó el resumen y se intentó persistir, la
 /// sesión dejó de estar `ABIERTA` (alguien más la cerró mientras tanto) —
-/// Bruno, 2026-09-19: "aislar los usuarios para que no se pisen". Nunca un
+/// El dueño, 2026-09-19: "aislar los usuarios para que no se pisen". Nunca un
 /// `UPDATE` silencioso a ciegas.
 class SesionYaNoAbiertaException implements Exception {
   const SesionYaNoAbiertaException(this.sesionId);
@@ -660,7 +660,7 @@ Future<void> cerrarSesion(
   // `efectivoEsperadoCentavos`/`diferenciaCentavos` ya persistidos).
   return db.transaction(() async {
     // Una venta armada y sin cobrar no puede quedar colgando de una caja que
-    // se cierra (Bruno, 2026-09-29): se cobra o se descarta antes de cerrar.
+    // se cierra (El dueño, 2026-09-29): se cobra o se descarta antes de cerrar.
     if (exigirAbierta) {
       final abiertas = await cantidadVentasAbiertasConLineas(db, sesionId);
       if (abiertas > 0) throw VentasAbiertasPendientesException(abiertas);

@@ -5,7 +5,7 @@
 // funciona mientras la app de escritorio está abierta y las dos máquinas
 // están en la misma red.
 //
-// Alcance de esta API, a propósito acotado (Bruno, 2026-09-07: "solo cargar
+// Alcance de esta API, a propósito acotado (El dueño, 2026-09-07: "solo cargar
 // cosas básicas aparte de los productos... gastos y esas cosas"): productos
 // (listar/alta/edición/ajuste de stock), proveedores y usuarios (para los
 // selectores del celular), la sesión de caja abierta (para abrirla o saber
@@ -17,7 +17,7 @@
 // después es como si fuesen ventas que no descuentan stock... para saber
 // ganancias"). Todo reusando las funciones que ya usa `VentaControlador`/
 // `cargarDiaHistoricoDesdeVentas` (Regla 3) — ningún cálculo nuevo vive
-// acá. Cierre real agregado 2026-09-19 (Bruno: "que deje cerrar caja desde
+// acá. Cierre real agregado 2026-09-19 (El dueño: "que deje cerrar caja desde
 // el celular"), mismo molde que el arqueo intermedio de acá abajo — Reportes
 // sigue fuera de alcance.
 //
@@ -95,7 +95,7 @@ Future<File> _archivoApkCompanion() async {
 }
 
 /// La versión del `.apk` publicado — al lado suyo, mismo criterio (un
-/// archivo suelto, no un asset). Bug real (Bruno, 2026-09-07: "no hay
+/// archivo suelto, no un asset). Bug real (El dueño, 2026-09-07: "no hay
 /// manera de lanzar actualizaciones sin reiniciar la app desktop"):
 /// `/companion/version` comparaba contra `PackageInfo.fromPlatform()` del
 /// propio proceso de escritorio, que solo cambia si ese `.exe` se
@@ -173,7 +173,7 @@ Map<String, dynamic> _productoAJson(Producto p) => {
 /// publicado (mismo `getApplicationDocumentsDirectory()`), para poder
 /// revisarlo sin tener que "agarrar en vivo" el error reabriendo la app en
 /// modo debug (2026-09-17: esto costó varias vueltas de ida y vuelta en
-/// producción real, con Bruno esperando — un archivo que ya quedó escrito
+/// producción real, con el dueño esperando — un archivo que ya quedó escrito
 /// la primera vez que pasa es mucho más rápido de revisar).
 Future<File> _archivoErroresCompanion() async {
   final documentos = await getApplicationDocumentsDirectory();
@@ -240,7 +240,7 @@ Middleware _avisoDeCambios() {
 Middleware _autenticacion(AppDatabase db) {
   return (Handler innerHandler) {
     return (Request request) async {
-      // `/companion/apk` también queda sin token (Bruno, 2026-09-07: "que
+      // `/companion/apk` también queda sin token (El dueño, 2026-09-07: "que
       // en la app escaneando el QR lo ponga para descargar") — un celular
       // nuevo, sin la companion instalada todavía, no tiene forma de
       // mandar el header (escanea la URL con la cámara común, que solo
@@ -305,7 +305,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     );
   });
 
-  // Sistema de actualización (Bruno, 2026-09-07: "para poder probar sin
+  // Sistema de actualización (El dueño, 2026-09-07: "para poder probar sin
   // tener que pasar la apk a cada rato"): el celular compara su propia
   // versión (`PackageInfo.fromPlatform()` del lado Android) contra esta —
   // son la misma `pubspec.yaml`, un solo número de versión para las dos
@@ -345,7 +345,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Alta/edición de usuarios desde Configuración en la companion (Bruno,
+  // Alta/edición de usuarios desde Configuración en la companion (El dueño,
   // 2026-09-19) — Regla 18, sin autenticación real.
   router.post('/usuarios', (Request request) async {
     final body =
@@ -387,7 +387,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Markup de referencia desde Configuración en la companion (Bruno,
+  // Markup de referencia desde Configuración en la companion (El dueño,
   // 2026-09-19) — Regla 14, puramente informativo. Nunca crea una
   // categoría nueva, solo edita el % de una que ya existe.
   router.put('/categorias/<id>/markup', (Request request, String id) async {
@@ -403,7 +403,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'ok': true});
   });
 
-  // Medios de pago desde Configuración en la companion (Bruno, 2026-09-19)
+  // Medios de pago desde Configuración en la companion (El dueño, 2026-09-19)
   // — solo renombrar/activar/desactivar los 2 que ya existen (Regla 2/6),
   // sin alta de medios nuevos a propósito.
   router.get('/medios-pago', (Request request) async {
@@ -429,7 +429,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   });
 
   // Recargo de cigarrillos + redondeo + producto de vuelto, desde
-  // Configuración en la companion (Bruno, 2026-09-19: "que se puedan
+  // Configuración en la companion (El dueño, 2026-09-19: "que se puedan
   // modificar las reglas del negocio... desde el celular") — mismas
   // funciones que ya usa la Configuración del escritorio (Regla 3).
   router.get('/configuracion', (Request request) async {
@@ -480,7 +480,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       proveedorId: proveedorIdTexto == null
           ? null
           : int.tryParse(proveedorIdTexto),
-      // Filtros de higiene de catálogo (Bruno, 2026-09-19: "filtrar por
+      // Filtros de higiene de catálogo (El dueño, 2026-09-19: "filtrar por
       // productos sin proveedor, sin costo, etcétera" desde la companion).
       sinProveedor: esVerdadero('sinProveedor'),
       sinCosto: esVerdadero('sinCosto'),
@@ -490,7 +490,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json([for (final p in productos) _productoAJson(p)]);
   });
 
-  // Bruno, 2026-09-07: "yo debería poder revisar los productos sin stock
+  // El dueño, 2026-09-07: "yo debería poder revisar los productos sin stock
   // desde la app Android para ajustarlos" — todos los proveedores juntos,
   // mismo criterio que ya usa "Stock por proveedor" en el escritorio
   // (`productoAgotado`/`ordenarAgotadosPrimero`, Regla 3: ninguna fórmula
@@ -504,7 +504,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json([for (final p in agotados) _productoAJson(p)]);
   });
 
-  // Historial de ventas, filtrable (Bruno, 2026-09-07: "hagamos la
+  // Historial de ventas, filtrable (El dueño, 2026-09-07: "hagamos la
   // sección de reportes... con el historial de ventas, lo mismo para
   // desktop, que sea filtrable... tipo mercado pago").
   router.get('/historial/ventas', (Request request) async {
@@ -545,7 +545,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Cierres reales (Bruno, 2026-09-13: "quiero la pantalla nueva de
+  // Cierres reales (El dueño, 2026-09-13: "quiero la pantalla nueva de
   // cierres con caché offline" — poder verlos aunque el celular esté
   // fuera del local, con la última copia guardada) — mismo `listarDias`
   // que ya usa el Historial de escritorio (Regla 3), excluyendo los días
@@ -579,7 +579,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Anular una venta ya cobrada (Bruno, 2026-09-13: eliminar una venta
+  // Anular una venta ya cobrada (El dueño, 2026-09-13: eliminar una venta
   // desde el celular) — solo mientras la sesión de caja de esa venta siga
   // abierta (`anularVenta` tira `ArgumentError` si no, que
   // `_conManejoDeErrores` ya convierte en 400 con el mensaje tal cual).
@@ -629,13 +629,13 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'id': id}, status: 201);
   });
 
-  // Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  // Editor masivo (El dueño, 2026-09-19: "editor masivo, ya sea de precios
   // costo stock etc etc" — mismo mecanismo que ya usaba "Proveedores" en el
   // escritorio, `dialogo_edicion_masiva.dart`, ahora también disponible
   // desde la companion). Cada ruta reusa el mismo repositorio en lote que
   // ya existía o se agregó junto con esto (`ajustarStockEnLote`) — ningún
   // cálculo nuevo vive acá (Regla 3). Sin `/productos/lote/activo`: la
-  // companion la sacó (Bruno, misma fecha: "las opciones que da no se
+  // companion la sacó (El dueño, misma fecha: "las opciones que da no se
   // correlacionan con el editor como tal" — activar/desactivar en lote no
   // correspondía a ningún caso real desde el celular), pero el escritorio
   // la sigue usando (`cambiarActivoEnLote`, `data/repositorio_productos.dart`)
@@ -751,7 +751,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     }
     // `fechaUltimoArqueoIntermedio` es lo que el celular necesita para
     // saber, sin abrir ninguna pantalla, si el arqueo obligatorio de 2hs ya
-    // venció (Bruno, 2026-09-13: "el bloqueo cada 2hs sincronizado con la
+    // venció (El dueño, 2026-09-13: "el bloqueo cada 2hs sincronizado con la
     // app desktop") — comparte la misma tabla `arqueos_intermedios` que ya
     // usa el escritorio, así que un arqueo hecho de un lado resetea la
     // cuenta del otro sin nada más que consultarlo de nuevo.
@@ -776,7 +776,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     });
   });
 
-  // Arqueo obligatorio cada 2hs desde el celular (Bruno, 2026-09-13) — dos
+  // Arqueo obligatorio cada 2hs desde el celular (El dueño, 2026-09-13) — dos
   // pasos como el cierre real y como el mismo diálogo de escritorio
   // (`dialogo_arqueo_intermedio.dart`): "calcular" recalcula en vivo
   // mientras se tipea (sin guardar nada todavía), "confirmar" recién ahí
@@ -831,7 +831,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'ok': true});
   });
 
-  // Cierre real desde el celular (Bruno, 2026-09-19: "que deje cerrar caja
+  // Cierre real desde el celular (El dueño, 2026-09-19: "que deje cerrar caja
   // desde el celular") — mismo molde de dos pasos que el arqueo intermedio
   // de arriba, pero con `calcularResumenCierre`/`cerrarSesion` (Regla 3: la
   // misma función que usa `CierreControlador` en el escritorio, ningún
@@ -881,13 +881,13 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     } on VentasAbiertasPendientesException {
       return _error(409, 'Hay ventas armadas sin cobrar en la PC: cobralas o descartalas antes de cerrar');
     } on SesionYaNoAbiertaException {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — se
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — se
       // cerró desde otro lado entre el último /calcular y este /confirmar.
       return _error(409, 'La caja ya se cerró desde otro lado mientras tanto');
     }
   });
 
-  // Detalle completo de un cierre YA cerrado (Bruno, 2026-09-19: rework de
+  // Detalle completo de un cierre YA cerrado (El dueño, 2026-09-19: rework de
   // "Cierres" en la companion, con el desglose por proveedor) — mismo
   // cálculo que `_ContenidoCerrado` del escritorio (`pantalla_cierre.dart`):
   // `calcularResumenCierre` no exige que la sesión esté ABIERTA, así que
@@ -926,7 +926,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     });
   });
 
-  // "¿Cómo vamos?" en cualquier momento del día (Bruno, 2026-09-07: "un
+  // "¿Cómo vamos?" en cualquier momento del día (El dueño, 2026-09-07: "un
   // botón de arqueo también para saber que tal vamos en cualquier momento
   // sin tener que contar a mano las ventas del día") — mismas fórmulas del
   // cierre real (`estadoCajaEnVivo`, `repositorio_cierre.dart`) y el mismo
@@ -957,7 +957,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     });
   });
 
-  // Apertura de emergencia desde el celular (Bruno, 2026-09-07: "como
+  // Apertura de emergencia desde el celular (El dueño, 2026-09-07: "como
   // comparten la misma bd no podemos abrirla desde la app"): mismo
   // `abrirSesion` que usa `dialogo_apertura_caja.dart` en el escritorio
   // (Regla 3) — nace solo dentro del flujo de Gasto rápido cuando la caja
@@ -975,7 +975,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       );
       return _json({'id': id}, status: 201);
     } on SesionYaAbiertaException catch (e) {
-      // Bloqueo directo (Bruno, 2026-09-19: "aislar los usuarios para que
+      // Bloqueo directo (El dueño, 2026-09-19: "aislar los usuarios para que
       // no se pisen") — el segundo dispositivo se entera de quién y desde
       // cuándo, en vez de abrir en silencio con otros montos.
       final usuario = await (db.select(
@@ -1012,14 +1012,14 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       );
       return _json({'id': movimientoId}, status: 201);
     } on SesionCerradaException {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — un
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — un
       // gasto que llega justo después de un cierre no se grabó contra una
       // sesión cerrada sin que nadie se entere.
       return _error(409, 'La caja ya se cerró, este gasto no se guardó');
     }
   });
 
-  // "Ingreso rápido" (Bruno, 2026-09-13: "un botón de ingreso de dinero,
+  // "Ingreso rápido" (El dueño, 2026-09-13: "un botón de ingreso de dinero,
   // evidentemente siguiendo con las cajas que hay") — espejo exacto de
   // `/gastos`, mismas tres cajas (`MedioGasto`, reusado), tipo 'INGRESO'.
   router.post('/ingresos', (Request request) async {
@@ -1049,7 +1049,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     }
   });
 
-  // ─── Vender (Bruno, 2026-09-07: "que la parte de vender use la misma
+  // ─── Vender (El dueño, 2026-09-07: "que la parte de vender use la misma
   // lógica que la app de desktop") ─────────────────────────────────────
   //
   // El carrito vive en el celular como una lista de `LineaVenta` (mismo
@@ -1059,19 +1059,19 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // en que se tocó el producto (Regla 2, costo-foto), no al calcular o
   // cobrar. Nada de lo de acá recalcula una fórmula nueva — todo pasa por
   // las mismas funciones que ya usa `VentaControlador` (Regla 3). Sin
-  // Mixto ni descuento en esta primera versión (decisión de Bruno,
+  // Mixto ni descuento en esta primera versión (decisión de el dueño,
   // 2026-09-07): Efectivo, QR y Débito alcanzan para arrancar.
 
   router.get('/ventas/buscar', (Request request) async {
     final texto = request.url.queryParameters['texto'] ?? '';
-    // `exigirStock=false` para la carga histórica (Bruno: "no descuentan
+    // `exigirStock=false` para la carga histórica (El dueño: "no descuentan
     // stock... para saber ganancias") — un producto vendido en su momento
     // puede estar en 0 hoy por cualquier otro motivo, mismo criterio que
     // `repositorio_carga_historica.dart` del escritorio.
     final exigirStock = request.url.queryParameters['exigirStock'] != 'false';
     final catalogo = await db.select(db.productos).get();
     final consulta = interpretarTexto(texto);
-    // "Varios" no entra en esta primera versión (decisión de Bruno) — sin
+    // "Varios" no entra en esta primera versión (decisión de el dueño) — sin
     // este filtro aparecería igual, porque `tieneStock` lo trata como que
     // siempre tiene stock.
     final resultados = buscarProductos(
@@ -1102,7 +1102,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // Efectivo (sin posnet) — QR/Débito pasan por el ciclo de tres pasos de
   // abajo, nunca por acá.
   // `canal` es opcional acá: solo tiene sentido con medio virtual "cobrado
-  // a mano" (Bruno, 2026-09-07: el pago no pasó por el ciclo de Point,
+  // a mano" (El dueño, 2026-09-07: el pago no pasó por el ciclo de Point,
   // pero sigue siendo QR/Débito para el dato informativo del medio) — con
   // efectivo nunca viaja.
   router.post('/ventas/cobrar', (Request request) async {
@@ -1268,7 +1268,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'ok': true});
   });
 
-  // Desglose de una venta para el historial del celular (Bruno,
+  // Desglose de una venta para el historial del celular (El dueño,
   // 2026-09-13: "en las ventas se pueda ver un desglose") — mismo `Ticket`
   // que ya arma `ticketDeVenta` para imprimir (Regla 3, una sola fuente):
   // líneas con cantidad/gramos y subtotal, más recargo/descuento/redondeo.
@@ -1323,7 +1323,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     }
   });
 
-  // Carga histórica desde el celular (Bruno, 2026-09-07: "se le pone la
+  // Carga histórica desde el celular (El dueño, 2026-09-07: "se le pone la
   // fecha, después es como si fuesen ventas que no descuentan stock...
   // para saber ganancias") — el celular junta las ventas del día en
   // memoria (nada se graba hasta este único POST, mismo criterio que
@@ -1351,7 +1351,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'sesionId': sesionId}, status: 201);
   });
 
-  // Ver y editar días ya cargados (Bruno, 2026-09-07: "dejame verlos y
+  // Ver y editar días ya cargados (El dueño, 2026-09-07: "dejame verlos y
   // editarlos porque le erré y lo cerré sin completarlo").
   router.get('/historico/dias', (Request request) async {
     final dias = await listarDiasHistoricos(db);
@@ -1384,7 +1384,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Resumen del día (Bruno, 2026-09-07: "necesitaría un resumen de lo
+  // Resumen del día (El dueño, 2026-09-07: "necesitaría un resumen de lo
   // vendido por medio de pago, por proveedor, y la separación teórica")
   // — reusa `reposicionDelDia`/`efectivoDeVentasDelDia`/
   // `pagosNoEfectivoDelDia`, las mismas que ya usa "Reportes" del

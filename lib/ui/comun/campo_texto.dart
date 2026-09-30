@@ -1,5 +1,5 @@
 // Un solo estilo de campo de texto para toda la app. Etiqueta FIJA arriba —
-// nunca la flotante de Material (corrección post-aprobación del kit, Bruno):
+// nunca la flotante de Material (corrección post-aprobación del kit, el dueño):
 // share el mismo mecanismo con el borde que la etiqueta flotante corre según
 // el `textAlign` del campo (ver historia vieja de este archivo), y una
 // etiqueta que se mueve según lo que se tipeó es, de por sí, más ruido del
@@ -139,7 +139,7 @@ class CampoPlata extends StatelessWidget {
         // `.number` a secas no ofrece el separador decimal en el teclado de
         // Android (no se nota en el escritorio, con teclado físico, pero
         // vuelve la carga de precios "a los pedales" desde el celular:
-        // Bruno, 2026-09-07, alta de productos por companion) — con
+        // El dueño, 2026-09-07, alta de productos por companion) — con
         // `decimal: true` el teclado numérico incluye la coma/punto.
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: TextAlign.right,

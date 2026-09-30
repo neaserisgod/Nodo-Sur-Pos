@@ -9,14 +9,14 @@ import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../capturas/capturador.dart';
 import '../../helpers/base_para_tests.dart';
 
-/// Creador de promos (Bruno, 2026-09-29).
+/// Creador de promos (El dueño, 2026-09-29).
 void main() {
   late AppDatabase db;
   late int usuarioId;
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     for (final (nombre, costo, precio) in [('Yerba Taragüí', 100000, 140000), ('Galletitas Terrabusi', 50000, 90000)]) {
       await db.into(db.productos).insert(
             ProductosCompanion.insert(

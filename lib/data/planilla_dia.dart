@@ -3,7 +3,7 @@
 // nombre (texto libre o producto real, según cómo se cargó) en
 // `nombreProductoFoto`, así que se recorre igual en los dos casos.
 //
-// Un renglón por venta, no por línea de producto (corrección de Bruno,
+// Un renglón por venta, no por línea de producto (corrección de el dueño,
 // ítem 3): "pago mixto: un renglón en cada grilla" quiere decir eso
 // literal, un renglón por grilla con la parte que le tocó a cada medio —
 // no cada línea de producto repartida proporcionalmente entre las dos.
@@ -52,7 +52,7 @@ class DatosPlanillaDia {
   final SesionCaja sesion;
   final String nombreEmpleado;
 
-  /// Solo si quien cerró no es quien abrió (Bruno: un turno normalmente lo
+  /// Solo si quien cerró no es quien abrió (El dueño: un turno normalmente lo
   /// entrega y recibe la misma persona, pero el modelo permite lo
   /// contrario) — reemplaza a las dos firmas del papel viejo.
   final String? nombreCerro;
@@ -64,8 +64,8 @@ class DatosPlanillaDia {
   final List<GastoDia> gastos;
   final int quedaEnCajonCentavos;
 
-  /// Pagos a Serra Cigarros con origen lata (Regla 6) — la línea "(-) Pagos
-  /// a Serra Cigarros" del arqueo propio de la lata (ítem 3).
+  /// Pagos a Distribuidora de Cigarrillos con origen lata (Regla 6) — la línea "(-) Pagos
+  /// a Distribuidora de Cigarrillos" del arqueo propio de la lata (ítem 3).
   final int pagosALataCentavos;
 
   /// "Varios" + alta rápida sin costo completado, vendido este día (Regla
@@ -122,7 +122,7 @@ Future<DatosPlanillaDia> armarDatosPlanilla(AppDatabase db, int sesionId) async 
     final lineas = await lineasDeVenta(db, venta.id);
     var detalle = lineas.map((l) => l.nombreProductoFoto).join(', ');
     // Sin esto, el renglón del recargo (ej. $300 de un cigarrillo de
-    // $4.500) se lee como si se hubiera vendido un Marlboro a $300 (Bruno,
+    // $4.500) se lee como si se hubiera vendido un Marlboro a $300 (El dueño,
     // revisión del demo del ítem 3) — el recargo es parte de la misma
     // venta, no otro producto, así que se aclara en el mismo DETALLE.
     if (venta.recargoCigarrillosCentavos > 0) detalle += ' + recargo QR';

@@ -3,7 +3,7 @@ import 'package:la_plazoleta/domain/medio_pago.dart';
 
 void main() {
   group('clasificarComposicion — la composición real sale de los montos, no del botón', () {
-    test('efectivo en 0: es virtual puro (Bruno: no redondea, ítem 4)', () {
+    test('efectivo en 0: es virtual puro (Dueño: no redondea, ítem 4)', () {
       expect(
         clasificarComposicion(montoEfectivoCentavos: 0, totalCentavos: 480000),
         ComposicionPago.virtual,

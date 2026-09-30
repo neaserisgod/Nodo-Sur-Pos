@@ -10,7 +10,7 @@ import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import '../helpers/base_para_tests.dart';
 
-/// Creador de promos (Bruno, 2026-09-29): costo de 2 o más artículos + un
+/// Creador de promos (El dueño, 2026-09-29): costo de 2 o más artículos + un
 /// porcentaje, sin pasarse del precio de lista; se vende como un producto más
 /// pero descuenta el stock de cada artículo.
 void main() {
@@ -24,7 +24,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     provA = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PA', nombre: 'Prov A'));
     provB = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PB', nombre: 'Prov B'));

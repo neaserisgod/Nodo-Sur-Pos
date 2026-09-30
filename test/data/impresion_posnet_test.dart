@@ -9,7 +9,7 @@ import 'package:la_plazoleta/domain/ticket.dart';
 void main() {
   final ticket = construirTicket(
     fecha: DateTime(2026, 8, 30, 15, 0),
-    vendedor: 'Bruno',
+    vendedor: 'Dueño',
     lineas: const [
       LineaTicket(nombreProducto: 'Coca-Cola 500ml', cantidad: 2, subtotalCentavos: 224000),
     ],

@@ -12,17 +12,17 @@
 # multiplicador al build number para Play Store (arm64 = 2000 + build real,
 # ej. build 3 queda "2003") — comparar esa versión contra la de la PC
 # (sin ese multiplicador) siempre daba "distinta" aunque fueran la misma
-# (bug real, encontrado por Bruno probando el sistema de actualización el
+# (bug real, encontrado por el dueño probando el sistema de actualización el
 # mismo día que se armó). Un solo .apk para arm64 (el S24/S26 Ultra de
-# Bruno) no tiene ese problema.
+# El dueño) no tiene ese problema.
 #
 # El build number de pubspec.yaml se sube solo, acá — antes había que
-# acordarse de hacerlo a mano antes de correr el script (Bruno, 2026-09-07:
+# acordarse de hacerlo a mano antes de correr el script (El dueño, 2026-09-07:
 # paso extra que se olvidaba). Y ya no hace falta reiniciar la app de
 # escritorio para que el celular note la diferencia: la versión que
 # compara `GET /companion/version` sale de un archivo chico al lado del
 # .apk (`la_plazoleta_companion.version`), no de la app de escritorio que
-# esté corriendo en ese momento (bug real, Bruno: "no hay manera de lanzar
+# esté corriendo en ese momento (bug real, el dueño: "no hay manera de lanzar
 # actualizaciones sin reiniciar la app desktop" — antes comparaba contra
 # `PackageInfo.fromPlatform()` del propio proceso de escritorio, que solo
 # cambia reconstruyendo y reiniciando ESE binario, sin relación con qué

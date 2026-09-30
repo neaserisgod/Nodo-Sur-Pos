@@ -2,7 +2,7 @@
 // y corregir el stock contado, dejando rastro en `movimientos_de_stock`
 // igual que el ajuste desde el detalle de producto.
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-28, mock `ConteoStock`): antes cada
+// "Lenguaje de diseño" (El dueño, 2026-09-28, mock `ConteoStock`): antes cada
 // fila se guardaba sola al salir del campo; ahora se cuenta todo en memoria
 // ("Contá lo que hay... Nada cambia hasta que apliques los ajustes") y se
 // aplica junto. Así un conteo a medias no deja el stock medio corregido, y

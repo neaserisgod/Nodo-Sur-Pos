@@ -3,7 +3,7 @@
 // (`formatearARS` sigue siendo el único punto de conversión centavos →
 // texto, Regla 1).
 //
-// Pasada de vida (2026-09-12, Bruno: "dale más vida a los layouts, cambialos
+// Pasada de vida (2026-09-12, el dueño: "dale más vida a los layouts, cambialos
 // al 100% si es necesario"): un ícono chico por métrica ayuda a reconocer
 // cada número de un vistazo en vez de leer la etiqueta entera cada vez —
 // mismo criterio que ya usan los medios de pago de la pantalla de venta.

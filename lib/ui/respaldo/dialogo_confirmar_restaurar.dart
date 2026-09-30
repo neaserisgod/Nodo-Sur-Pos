@@ -1,5 +1,5 @@
 // Confirmación fuerte antes de restaurar (acción destructiva e irreversible,
-// pedida explícitamente por Bruno). Al confirmar: cierra la base, copia el
+// pedida explícitamente por el dueño). Al confirmar: cierra la base, copia el
 // archivo elegido encima de la real, y reinicia la app sola.
 
 import 'package:flutter/material.dart';

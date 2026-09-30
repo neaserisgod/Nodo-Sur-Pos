@@ -1,4 +1,4 @@
-// Edición masiva de stock (Bruno, 2026-09-19: "editor masivo, ya sea de
+// Edición masiva de stock (El dueño, 2026-09-19: "editor masivo, ya sea de
 // precios costo stock etc etc" — el ajuste masivo de precio/costo
 // (`edicion_masiva_precios.dart`) ya existía; esto lo extiende a stock,
 // pensado sobre todo para la companion (ej. recibir un pedido y sumarle

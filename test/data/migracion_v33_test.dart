@@ -1,6 +1,6 @@
 // Prueba de upgrade REAL (v32 → v33, separa recargo de cigarrillos/paso de
 // redondeo/producto de vuelto a `configuracion_negocio_tabla`, y suma
-// `medios_de_pago` a la sincronización — Bruno, 2026-09-19: "que se puedan
+// `medios_de_pago` a la sincronización — El dueño, 2026-09-19: "que se puedan
 // modificar las reglas del negocio... desde el celular") contra un archivo
 // de verdad, no `NativeDatabase.memory()` — mismo motivo que
 // `migracion_v32_test.dart`: en memoria siempre se pasa por `onCreate`

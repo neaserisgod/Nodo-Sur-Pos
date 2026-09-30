@@ -11,7 +11,7 @@ void main() {
   testWidgets('muestra las ventas del día y permite ir a editar una', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await cargarDiaHistoricoFixture(
       db,
       fecha: DateTime(2026, 8, 20),
@@ -46,7 +46,7 @@ void main() {
   testWidgets('sin carpeta de tickets configurada, generar PDF pregunta la carpeta en vez de solo avisar', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final sesionId = await cargarDiaHistoricoFixture(
       db,
       fecha: DateTime(2026, 8, 20),
@@ -69,7 +69,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Bug real reportado por Bruno: "doy a imprimir y no sale nada de
+    // Bug real reportado por el dueño: "doy a imprimir y no sale nada de
     // seleccionar" — antes esto solo mostraba un SnackBar mandando a
     // configurar la carpeta en la pantalla de Impresión. Ahora pregunta la
     // carpeta ahí mismo (`getDirectoryPath()`, no probable en un

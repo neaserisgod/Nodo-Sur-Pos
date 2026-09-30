@@ -1,4 +1,4 @@
-// Bug real (Bruno, revisión de "errores humanos evitables"): antes, Enter
+// Bug real (El dueño, revisión de "errores humanos evitables"): antes, Enter
 // en el campo de porcentaje/monto de la edición masiva aplicaba el cambio
 // DIRECTO a todos los productos marcados, sin ningún paso de revisión ni
 // techo de sanidad — escribir "500" en vez de "50" (un dedo de más, o el
@@ -40,7 +40,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     productoId = await db
         .into(db.productos)
         .insert(

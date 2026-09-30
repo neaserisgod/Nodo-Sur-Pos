@@ -21,7 +21,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     medioEfectivoId =
         (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle())
             .id;
@@ -98,7 +98,7 @@ void main() {
         );
   }
 
-  /// "Ingreso rápido" (Bruno, 2026-09-13) — mismo `crearGasto` de arriba
+  /// "Ingreso rápido" (El dueño, 2026-09-13) — mismo `crearGasto` de arriba
   /// pero tipo 'INGRESO'.
   Future<void> crearIngreso(
     int sesionId, {
@@ -154,7 +154,7 @@ void main() {
       expect(await gastosEnEfectivoDelDia(db, sesionId), 20000);
     });
 
-    test('gastosEnEfectivoDelDia excluye los gastos pagados con Mercado Pago (Bruno, MP como caja)', () async {
+    test('gastosEnEfectivoDelDia excluye los gastos pagados con Mercado Pago (Dueño, MP como caja)', () async {
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
       await crearGasto(sesionId, montoCentavos: 20000, deLata: false);
       await crearGasto(sesionId, montoCentavos: 8000, deLata: false, medioPagoId: medioMpId);
@@ -197,7 +197,7 @@ void main() {
     });
 
     test(
-      'pagosNoEfectivoDelDia excluye una venta por MP ya anulada (Bruno, 2026-09-13: '
+      'pagosNoEfectivoDelDia excluye una venta por MP ya anulada (Dueño, 2026-09-13: '
       '"no toma en cuenta la anulación")',
       () async {
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
@@ -218,7 +218,7 @@ void main() {
       },
     );
 
-    test('pagosALataDelDia suma los gastos con origen lata (pago a Serra)', () async {
+    test('pagosALataDelDia suma los gastos con origen lata (pago a Distribuidora)', () async {
       final sesionId =
           await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
       await crearGasto(sesionId, montoCentavos: 45000, deLata: true);
@@ -260,7 +260,7 @@ void main() {
 
     test(
       'precioListaCigarrillosDelDia y redondeoAcumuladoDelDia excluyen una venta anulada '
-      '(Bruno, 2026-09-13: no se separa a la lata algo que ya se revirtió)',
+      '(Dueño, 2026-09-13: no se separa a la lata algo que ya se revirtió)',
       () async {
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
         final ventaId = await crearVenta(
@@ -366,7 +366,7 @@ void main() {
     });
 
     test(
-      'excluye una venta anulada (Bruno, 2026-09-13: el stock ya se repuso, no hay que volver a pedirlo)',
+      'excluye una venta anulada (Dueño, 2026-09-13: el stock ya se repuso, no hay que volver a pedirlo)',
       () async {
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
         final proveedorF = await db.into(db.proveedores).insert(
@@ -426,7 +426,7 @@ void main() {
     });
 
     test(
-      'trae el desglose por proveedor (Bruno, 2026-09-19: "lo que se debe '
+      'trae el desglose por proveedor (Dueño, 2026-09-19: "lo que se debe '
       'separar por cada proveedor" en el detalle de un cierre) — reusa '
       'reposicionDelDia, no lo recalcula de nuevo',
       () async {
@@ -475,7 +475,7 @@ void main() {
 
     test(
         'cigarrillos cobrados por QR con recargo en efectivo: a la lata va el precio de '
-        'lista, el recargo queda en el cajón (Regla 6, test obligatorio de Bruno)', () async {
+        'lista, el recargo queda en el cajón (Regla 6, test obligatorio de Dueño)', () async {
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       // Venta en efectivo cualquiera, para que haya cajón suficiente y la
@@ -483,7 +483,7 @@ void main() {
       await crearVenta(sesionId, totalCentavos: 350000);
 
       // Un atado de cigarrillos a $3.500 (precio de lista), cobrado por QR
-      // (virtual) — dispara el recargo de $300 (Regla 6). Bruno cobra ese
+      // (virtual) — dispara el recargo de $300 (Regla 6). El dueño cobra ese
       // recargo en efectivo aparte: pago mixto, la parte en efectivo es
       // EXACTAMENTE el recargo, el resto (precio de lista) va por QR.
       final productoId = await db.into(db.productos).insert(
@@ -584,14 +584,14 @@ void main() {
       expect(resumen.separacionCigarrillos.pendienteCentavos, 350000);
     });
 
-    test('resta los pagos a Serra desde la lata para el saldo final', () async {
+    test('resta los pagos a Distribuidora desde la lata para el saldo final', () async {
       final sesionId = await abrirSesion(
         db,
         usuarioId: usuarioId,
         fondoInicialCentavos: 0,
       );
       await crearVenta(sesionId, totalCentavos: 350000, tipoCigarrillo: 'atado');
-      await crearGasto(sesionId, montoCentavos: 200000, deLata: true); // le pagó a Serra
+      await crearGasto(sesionId, montoCentavos: 200000, deLata: true); // le pagó a Distribuidora
 
       final resumen = await calcularResumenCierre(
         db,
@@ -845,7 +845,7 @@ void main() {
 
   group('cerrarSesion — bloqueo contra un cierre concurrente', () {
     test('cerrar una sesión ya CERRADA tira SesionYaNoAbiertaException', () async {
-      // Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" — un
+      // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — un
       // segundo cierre (ej. desde otro dispositivo) no debe pisar el
       // primero con un UPDATE que "tiene éxito" sin haber tocado nada.
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);

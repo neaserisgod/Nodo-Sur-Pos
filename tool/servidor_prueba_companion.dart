@@ -1,5 +1,5 @@
 // Solo para probar la companion app de punta a punta sin arriesgar la base
-// real de Bruno (C:\Users\Bruno\Documents\la_plazoleta.sqlite): levanta el
+// real de el dueño (C:\Users\el dueño\Documents\la_plazoleta.sqlite): levanta el
 // mismo servidor que usa la app de escritorio, pero contra una base en
 // memoria con datos de prueba. Nunca tocar el .exe real / la base real para
 // esto.
@@ -12,7 +12,7 @@ import 'package:la_plazoleta/servidor/servidor_companion.dart';
 Future<void> main() async {
   final db = AppDatabase(NativeDatabase.memory());
 
-  final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno (prueba)'));
+  final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño (prueba)'));
   await db.into(db.productos).insert(
         ProductosCompanion.insert(
           nombre: 'Fernet Branca',
@@ -44,7 +44,7 @@ Future<void> main() async {
   // ignore: avoid_print
   print('Token: $token');
   // ignore: avoid_print
-  print('Usuario de prueba: Bruno (prueba), id=$usuarioId');
+  print('Usuario de prueba: Dueño (prueba), id=$usuarioId');
   // ignore: avoid_print
   print('Productos de prueba: "Fernet Branca" (stock 7 un.), "Queso barra" (3000 g)');
 }

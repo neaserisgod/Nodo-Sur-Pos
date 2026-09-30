@@ -2,7 +2,7 @@
 // filtrable vino de Reportes; los dos son "historial", no hacía falta un
 // apartado por cada uno).
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-26, mocks `HistorialVentas.dc.html`
+// "Lenguaje de diseño" (El dueño, 2026-09-26, mocks `HistorialVentas.dc.html`
 // y `HistorialCierres.dc.html`): las dos vistas se eligen con pastillas
 // arriba a la derecha, como Separaciones, y cada una es lista a la
 // izquierda + detalle a la derecha.

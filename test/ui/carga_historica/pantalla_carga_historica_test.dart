@@ -29,7 +29,7 @@ void main() {
       (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await db.into(db.productos).insert(
           ProductosCompanion.insert(nombre: 'Fernet', precioCentavos: const Value(500000), stock: const Value(10)),
         );
@@ -71,7 +71,7 @@ void main() {
   testWidgets('guardar sin ninguna venta en la tanda deja un error visible', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _pump(tester, db, usuarioId);
     await _elegirFecha(tester, '20/08/2026');

@@ -81,7 +81,7 @@ class ColumnaCarrito extends StatelessWidget {
                         linea,
                       );
                       final textTheme = Theme.of(context).textTheme;
-                      // "Bento con carácter" (Bruno, 2026-09-16): punto de color
+                      // "Bento con carácter" (El dueño, 2026-09-16): punto de color
                       // por rubro — null en "Varios" (sin categoría, Regla 5) o en
                       // cualquier producto sin categoría cargada, mismo criterio
                       // que `BarraCategoria` ya resuelve solo.
@@ -90,7 +90,7 @@ class ColumnaCarrito extends StatelessWidget {
                         c.productoPorId(linea.productoId)?.categoriaId,
                       );
 
-                      // Precio unitario: solo por unidad (Bruno, 2026-09-06,
+                      // Precio unitario: solo por unidad (El dueño, 2026-09-06,
                       // "algo de detalle" — la fila era pobre con solo nombre,
                       // cantidad y subtotal). Un pesable no tiene un "precio
                       // unitario" en ese sentido (es tarifa por kilo, ya visible
@@ -158,7 +158,7 @@ class ColumnaCarrito extends StatelessWidget {
                                       child: Text(
                                         linea.nombreProducto,
                                         overflow: TextOverflow.ellipsis,
-                                        // 2, no 1 (Bruno, panel angosto de 560px:
+                                        // 2, no 1 (El dueño, panel angosto de 560px:
                                         // "los nombres largos no se ven bien") —
                                         // el `Row` centra al resto de la fila
                                         // solo, no hace falta tocar nada más.
@@ -171,7 +171,7 @@ class ColumnaCarrito extends StatelessWidget {
                                       ),
                                     ),
                                     // Stepper en cápsula, solo por unidad y con
-                                    // lugar (Bruno, 2026-09-06 + rediseño de
+                                    // lugar (El dueño, 2026-09-06 + rediseño de
                                     // composición): restar gramos de a poco no
                                     // tiene sentido práctico, y a 1366×768 con la
                                     // barra desplegada no entra sin desbordar —
@@ -255,7 +255,7 @@ class ColumnaCarrito extends StatelessWidget {
                                         style: textTheme.titleMedium?.tabular,
                                       ),
                                     ),
-                                    // Ícono de tacho (Bruno, 2026-09-06: "con
+                                    // Ícono de tacho (El dueño, 2026-09-06: "con
                                     // mouse para seleccionar el producto a
                                     // eliminar") — sin confirmación, un tap saca
                                     // la línea. Reemplaza al `Backspace` de
@@ -368,7 +368,7 @@ class _IconoAccion extends StatelessWidget {
 
 /// Stepper de cantidad en cápsula — "−", el número (con su propio doble
 /// clic para tipear el valor exacto) y "+" agrupados en una sola pieza en
-/// vez de tres sueltas en la fila (rediseño de composición, Bruno:
+/// vez de tres sueltas en la fila (rediseño de composición, el dueño:
 /// "rediseño completo, no un remake que mantenga las bases" — el remake
 /// anterior solo había cambiado color/blur, dejando la misma disposición).
 class _EscalonCantidad extends StatelessWidget {
@@ -483,7 +483,7 @@ class _EstadoVacio extends StatelessWidget {
   }
 }
 
-/// Pestañas de ventas abiertas (Bruno, 2026-09-29: "que la venta permanezca
+/// Pestañas de ventas abiertas (El dueño, 2026-09-29: "que la venta permanezca
 /// y que pueda hacer más de 1 venta a la vez"). Mismo lenguaje que las
 /// píldoras de categoría de la grilla: 44px de alto, redondeadas, rellenas
 /// de acento la elegida y blancas planas las demás. "+" abre una venta

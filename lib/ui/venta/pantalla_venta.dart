@@ -1,7 +1,7 @@
 // La pantalla de venta. Franja superior (navbar + búsqueda de ancho fijo,
 // centrada) y debajo dos zonas (grilla de productos navegable, carrito +
 // cobro) — rediseño de composición 2026-09-25, ver el comentario de
-// `build()`. Ya no hay una tira de accesos directos por Alt+tecla (Bruno,
+// `build()`. Ya no hay una tira de accesos directos por Alt+tecla (El dueño,
 // cuarta pasada: "ahora no hacen falta los accesos rapidos... sacar la
 // tira Y el sistema de accesos directos entero" — la grilla, táctil, la
 // reemplaza). Pantalla completa, sin scroll de página salvo el propio del
@@ -63,7 +63,7 @@ class PantallaVenta extends StatefulWidget {
 
   /// Texto a precargar en el campo único al llegar — lo manda
   /// `BarraBusquedaGlobal` (`navegacion/barra_busqueda_global.dart`) cuando
-  /// se busca un producto desde OTRA pantalla de gestión (Bruno, tercera
+  /// se busca un producto desde OTRA pantalla de gestión (El dueño, tercera
   /// pasada: "quiero que la barra de busqueda este en todos lados"). Nunca
   /// agrega nada por su cuenta — solo deja el campo listo para que el
   /// usuario termine el mismo camino de siempre.
@@ -169,7 +169,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
 
     final c = _controlador;
 
-    // Bug real (reportado por Bruno): con la caja cerrada, `ColumnaBusqueda`/
+    // Bug real (reportado por el dueño): con la caja cerrada, `ColumnaBusqueda`/
     // `ColumnaCarrito`/`ColumnaCobro` desaparecen de la pantalla ("Caja
     // cerrada.", ver `build()`), pero este handler es global — no sabe nada
     // del árbol de widgets ni de qué hay pintado — y seguía reaccionando a
@@ -195,12 +195,12 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
 
       // Gobernado por `teclasReservadas` (acciones_venta.dart) — las únicas
       // combinaciones Alt+tecla que quedan desde que se sacó el sistema de
-      // accesos directos configurables (Bruno, cuarta pasada).
+      // accesos directos configurables (El dueño, cuarta pasada).
       if (teclasReservadas.containsKey(etiqueta)) {
         switch (etiqueta) {
           case 'e':
             c.elegirMedio(ComposicionPago.efectivo);
-          // QR y Débito eligen el canal nada más (Bruno, 2026-09-08: volvió
+          // QR y Débito eligen el canal nada más (El dueño, 2026-09-08: volvió
           // a ser de dos pasos — "necesito cobro manual... no hay más modal
           // para seleccionarlo"). "Cobrar" (Enter con el campo vacío, o el
           // botón) recién ahí abre el diálogo que manda la orden a la
@@ -252,7 +252,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
     return false;
   }
 
-  /// Turno entrante: un turno es una sesión completa (Bruno, sesión del
+  /// Turno entrante: un turno es una sesión completa (El dueño, sesión del
   /// 31/08/2026), así que después de un cierre voluntario mid-día tiene que
   /// poder abrirse una hoja nueva ahí mismo — reiniciar la app entera para
   /// seguir vendiendo era el callejón sin salida que esto reemplaza.
@@ -263,7 +263,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
   }
 
   // Diálogos secundarios (gasto/ingreso rápido) — el foco ya no vuelve solo
-  // al cerrarse (Bruno, 2026-09-16: "dejar de robar el foco al hacer otra
+  // al cerrarse (El dueño, 2026-09-16: "dejar de robar el foco al hacer otra
   // cosa"), a diferencia de agregar un producto o cobrar.
   Future<void> _abrirGastoRapido() async {
     final sesion = _controlador.sesion;
@@ -308,7 +308,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
     );
   }
 
-  /// "Cambiar de turno" (2026-09-12, Bruno: viene ayuda de fin de semana a
+  /// "Cambiar de turno" (2026-09-12, el dueño: viene ayuda de fin de semana a
   /// mitad de sesión) — mismo arqueo obligatorio que "Cerrar caja", nada
   /// queda sin contar antes de soltar la caja, pero encadena directo a
   /// abrir la hoja de quien entra en vez de dejar la pantalla en "Caja
@@ -337,7 +337,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
     if (cerrado) await _abrirCaja();
   }
 
-  /// Arqueo sugerido cada 2hs (turnos por usuario, 2026-09-12; Bruno,
+  /// Arqueo sugerido cada 2hs (turnos por usuario, 2026-09-12; el dueño,
   /// 2026-09-15: "que se cambie a una sugerencia únicamente" — ya no
   /// bloquea la venta, solo muestra `_AvisoArqueoIntermedio` en `build()`
   /// mientras no se haga). A diferencia de "Cerrar caja"/"Cambiar de
@@ -423,7 +423,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
   }
 
   /// Dashboard es la raíz de la app (`main.dart`) desde que dejó de serlo
-  /// Venta (Bruno, 2026-09-14) — Venta quedó pusheada encima, así que
+  /// Venta (El dueño, 2026-09-14) — Venta quedó pusheada encima, así que
   /// volver a Dashboard es simplemente volver a la raíz de la pila, igual
   /// que hacía "Venta" antes de serlo.
   void _irADashboard() {
@@ -501,9 +501,9 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // "Estética Google" (Bruno, rediseño 2026-09-25): navbar
+                  // "Estética Google" (El dueño, rediseño 2026-09-25): navbar
                   // a la izquierda, búsqueda al centro con ANCHO FIJO (no
-                  // `Expanded` — Bruno: "la barra de busqueda debe ocpar un
+                  // `Expanded` — El dueño: "la barra de busqueda debe ocpar un
                   // espacio fijo al centro, no extenderse en todos lados"),
                   // acciones de caja al extremo derecho — mismo patrón que
                   // la franja superior de Gmail/Drive. Sin sesión activa no
@@ -576,13 +576,13 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // El aviso de arqueo cada 2hs ya no vive acá
-                                // (Bruno, tercera pasada: "NO QUIERO QUE
+                                // (El dueño, tercera pasada: "NO QUIERO QUE
                                 // APAREZCA EL COSO DEL ARQUEO OCUPANDO
                                 // TODO... UN APARTADO NOTIFICACIONES") — se
                                 // mudó a `_BotonNotificaciones`, en la
                                 // franja superior.
                                 // Rediseño de composición (2026-09-25,
-                                // segunda pasada: Bruno mandó una
+                                // segunda pasada: El dueño mandó una
                                 // referencia de POS y contestó "1 pero
                                 // manteniendo la estructura de dropdown")
                                 // — dos zonas: izquierda la grilla navegable
@@ -644,7 +644,7 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
 
 /// Reemplaza el carrito cuando no se puede vender — sin sesión abierta, o
 /// con una sesión abierta pero de un día anterior (Regla 5). El resto de la
-/// pantalla (barra lateral, navegación) sigue disponible igual: Bruno,
+/// pantalla (barra lateral, navegación) sigue disponible igual: El dueño,
 /// 2026-09-06, "que no salga obligatoriamente al abrir la app" — el bloqueo
 /// es solo para vender, nunca para el resto de la app.
 class _EstadoBloqueado extends StatelessWidget {
@@ -673,12 +673,12 @@ class _EstadoBloqueado extends StatelessWidget {
   }
 }
 
-/// Campanita de notificaciones (Bruno, tercera pasada: *"NO QUIERO QUE
+/// Campanita de notificaciones (El dueño, tercera pasada: *"NO QUIERO QUE
 /// APAREZCA EL COSO DEL ARQUEO OCUPANDO TODO, DEBEMOS TENER UN APARTADO
 /// NOTIFICACIONES"*) — reemplaza al banner de ancho completo
 /// (`_AvisoArqueoIntermedio`, hasta acá) que empujaba todo lo de abajo
 /// cada vez que pasaban 2hs sin arqueo. El aviso sigue siendo sugerencia,
-/// no bloqueo (Bruno, 2026-09-15): se puede seguir vendiendo con el panel
+/// no bloqueo (El dueño, 2026-09-15): se puede seguir vendiendo con el panel
 /// cerrado; desaparece solo cuando se hace el arqueo
 /// (`_hacerArqueoIntermedio` recarga `arqueoIntermedioVencido`) o cambia de
 /// sesión.
@@ -733,7 +733,7 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
               width: 320,
               child: Superficie(
                 relleno: colores.fondoBloque,
-                // Arqueo opcional (Bruno, 2026-09-28: "que los arqueos
+                // Arqueo opcional (El dueño, 2026-09-28: "que los arqueos
                 // durante el turno dejen de ser obligatorios"): el botón está
                 // siempre, y a las 2hs solo se prende el punto — el aviso
                 // suave que eligió, sin panel ni banner que insista.
@@ -813,7 +813,7 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
 }
 
 /// Acciones del extremo derecho de la navbar — "Cerrar caja" es una acción,
-/// no una sección (Bruno): va apartada del listado de navegación por hueco,
+/// no una sección (El dueño): va apartada del listado de navegación por hueco,
 /// nunca mezclada con él. "Imprimir ticket" ya no vive acá (fase 13, ítem
 /// 3): dejó de ser una acción permanente, ahora aparece junto al acuse de
 /// cobro (`ColumnaCarrito`) solo mientras hay algo reciente para imprimir.
@@ -837,7 +837,7 @@ class _AccionesPie extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Separadas a propósito (Bruno, 2026-09-12): "Cerrar caja" es el fin
+        // Separadas a propósito (El dueño, 2026-09-12): "Cerrar caja" es el fin
         // del día, no encadena nada después. "Cambiar de turno" es el mismo
         // arqueo obligatorio, pero para cuando viene ayuda a mitad de
         // sesión — al terminar, encadena directo a abrir la hoja de quien

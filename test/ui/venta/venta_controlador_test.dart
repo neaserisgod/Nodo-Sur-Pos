@@ -29,7 +29,7 @@ void main() {
     db = baseDeTest();
     usuarioId = await db
         .into(db.usuarios)
-        .insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+        .insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
     final idCoca = await db
@@ -230,7 +230,7 @@ void main() {
   });
 
   group(
-    'eliminarLinea (Bruno, 2026-09-06: tacho por fila, reemplaza a Backspace) y Escape',
+    'eliminarLinea (Dueño, 2026-09-06: tacho por fila, reemplaza a Backspace) y Escape',
     () {
       test(
         'eliminarLinea saca la línea en esa posición, no necesariamente la última',
@@ -287,7 +287,7 @@ void main() {
   );
 
   group(
-    'ajustarCantidad y editarCantidadExacta/editarGramosExacto (Bruno, 2026-09-06)',
+    'ajustarCantidad y editarCantidadExacta/editarGramosExacto (Dueño, 2026-09-06)',
     () {
       test('ajustarCantidad(+1) suma una unidad más', () {
         c.agregarProducto(cocaCola);

@@ -3,11 +3,11 @@
 // (`envoltura_con_barra_lateral.dart`, sigue en el árbol mientras dura el
 // rollout, se borra en la Fase 6). Carga las secciones visibles y resuelve
 // la navegación — cada pantalla nueva solo pasa su propia clave activa y su
-// contenido. Ya no guarda preferencia de compactado (Bruno, rediseño
+// contenido. Ya no guarda preferencia de compactado (El dueño, rediseño
 // 2026-09-25: la navbar pasó a ser un dropdown de un solo tamaño, ver
 // `navbar_superior.dart` — no hay "compacta" que recordar).
 //
-// Suma `BarraBusquedaGlobal` junto a la navbar (Bruno, tercera pasada de
+// Suma `BarraBusquedaGlobal` junto a la navbar (El dueño, tercera pasada de
 // venta: "quiero que la barra de busqueda este en todos lados" — confirmado
 // que es para TODA la app, no solo Venta) — mismo patrón de fila que
 // `pantalla_venta.dart` ya usa para la suya: navbar a la izquierda, campo

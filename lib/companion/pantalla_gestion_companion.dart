@@ -1,20 +1,20 @@
 // Pestaña "Gestión" de la navbar — accesos de fondo, no de mostrador: Conteo
 // de stock, Carga histórica, Arqueo, cambiar de usuario y desconectar de
 // esta PC. "Precios y alta de producto" se mudó de acá a su propia pestaña
-// ("Productos", Bruno 2026-09-19: "productos pasa a ser la segunda pantalla
+// ("Productos", el dueño 2026-09-19: "productos pasa a ser la segunda pantalla
 // más importante después de vender" — no tenía sentido que compitiera por
 // espacio con conteo/carga histórica si es, en uso real, más importante que
 // Historial mismo).
 //
 // Ocupa el lugar que tenía "Más" en la navbar (`pantalla_mas_companion.dart`,
-// eliminada, fusionada acá — Bruno: "gestión poniéndolo donde va más"): con
+// eliminada, fusionada acá — El dueño: "gestión poniéndolo donde va más"): con
 // "Productos" promovida a pestaña propia, "Gestión" queda con poco contenido
 // de por sí, así que absorbe lo que antes era una pestaña aparte con solo
 // dos tarjetas y un botón de texto — mismo criterio de fusión que ya se usó
 // con Gasto/Ingreso rápido y Cierres/Historial en esta misma sesión.
 //
 // Rediseñada como grilla de tarjetas de color en vez de una lista de filas
-// con flechita (Bruno, 2026-09-18: "pensalo como una app moderna").
+// con flechita (El dueño, 2026-09-18: "pensalo como una app moderna").
 
 import 'package:flutter/material.dart';
 
@@ -46,7 +46,7 @@ class PantallaGestionCompanion extends StatelessWidget {
   final SesionCompanion? sesion;
   final VoidCallback onAbrirArqueo;
 
-  /// Cerrar caja de verdad (Bruno, 2026-09-19: "que deje cerrar caja desde
+  /// Cerrar caja de verdad (El dueño, 2026-09-19: "que deje cerrar caja desde
   /// el celular") — deshabilitada sin sesión abierta, no hay nada que
   /// cerrar.
   final VoidCallback onCerrarCaja;

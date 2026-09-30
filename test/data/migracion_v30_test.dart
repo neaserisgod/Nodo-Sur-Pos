@@ -46,7 +46,7 @@ void main() {
 
       // 2) Le "arrancamos" a mano las columnas de la migración v30 y
       // bajamos `user_version` a 29 — deja el archivo en el estado real que
-      // tendría la base de Bruno HOY, antes de este cambio. `global_id` es
+      // tendría la base de el dueño HOY, antes de este cambio. `global_id` es
       // `UNIQUE`, y SQLite no deja hacer `DROP COLUMN` sobre una columna con
       // esa restricción (el índice implícito no se puede soltar aparte) —
       // por eso cada tabla se recrea entera con `CREATE TABLE ... AS

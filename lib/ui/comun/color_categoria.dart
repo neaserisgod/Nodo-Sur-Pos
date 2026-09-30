@@ -1,7 +1,7 @@
-// "Bento con carácter" (Bruno, 2026-09-16: "dejemos el monocromo... démosle
+// "Bento con carácter" (El dueño, 2026-09-16: "dejemos el monocromo... démosle
 // vida" — pensado primero para Venta, cada rubro con su propio color) —
 // compartido desde el rediseño de Proveedores 2026-09-25 (quinta pasada,
-// Bruno: "seguro que rediseñaste? lo veo practicamente igual" — la tabla de
+// El dueño: "seguro que rediseñaste? lo veo practicamente igual" — la tabla de
 // productos no tenía NADA de este lenguaje todavía). Antes vivía en
 // `ui/venta/color_categoria.dart` junto a `ColorMedioPago` (que sigue ahí:
 // es un dato fijo de Venta, no una fórmula que otra pantalla necesite).
@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 /// posición (`categoriaId % paleta.length`), nunca por nombre: la categoría
 /// es un dato configurable (Configuración → Categorías), nadie eligió a
 /// mano "bebidas = azul". Mismo color siempre para la misma categoría,
-/// distinto entre categorías vecinas, sin mantenimiento cuando Bruno crea
+/// distinto entre categorías vecinas, sin mantenimiento cuando el dueño crea
 /// una nueva.
 const List<Color> _paletaCategoriaClaro = [
   Color(0xFF2E6FA3), // azul

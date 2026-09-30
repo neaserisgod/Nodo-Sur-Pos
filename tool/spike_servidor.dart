@@ -10,7 +10,7 @@ import 'package:la_plazoleta/servidor/servidor_companion.dart';
 
 Future<void> main() async {
   final db = AppDatabase(NativeDatabase.memory());
-  await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+  await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
   final token = await regenerarTokenCompanion(db);
 
   final server = await iniciarServidorCompanion(db);

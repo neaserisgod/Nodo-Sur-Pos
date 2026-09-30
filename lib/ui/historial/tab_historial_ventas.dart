@@ -1,16 +1,16 @@
 // Historial de ventas, filtrable — pestaña de Historial desde 2026-09-26
-// (antes vivía en Reportes). Nació en Reportes (Bruno, 2026-09-07: "que sea
+// (antes vivía en Reportes). Nació en Reportes (El dueño, 2026-09-07: "que sea
 // filtrable... tipo mercado pago... que también sirva para un control
 // manual en caso de desconfiar de los números"). Mismo repositorio que la
 // pantalla equivalente del celular (Regla 3).
 //
-// Distribución del "Lenguaje de diseño" (Bruno, 2026-09-26, mock
+// Distribución del "Lenguaje de diseño" (El dueño, 2026-09-26, mock
 // `HistorialVentas.dc.html`): filtros arriba (período, medio, búsqueda),
 // la lista de ventas agrupada por día a la izquierda con lo vendido, los
 // tickets y el promedio, y la venta elegida a la derecha con sus líneas, el
 // total, la ganancia y las acciones (reimprimir, editar, anular).
 //
-// Anular (Bruno, 2026-09-13): solo mientras la sesión de esa venta siga
+// Anular (El dueño, 2026-09-13): solo mientras la sesión de esa venta siga
 // abierta, revirtiendo stock y caja sin borrar la fila (`anularVenta`) —
 // Regla 6, nunca se pierde el rastro.
 

@@ -25,7 +25,7 @@ void main() {
   testWidgets('"Cargar día histórico" solo se ofrece con el módulo Carga histórica prendido', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
 
     await _pump(tester, db, usuarioId);
@@ -40,7 +40,7 @@ void main() {
   testWidgets('sin días cerrados, avisa que no hay nada todavía', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _pump(tester, db, usuarioId);
 
@@ -50,7 +50,7 @@ void main() {
   testWidgets('un día con diferencia distinta de cero se ve de un vistazo (color de error)', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(
             usuarioAbrioId: usuarioId,
@@ -67,10 +67,10 @@ void main() {
     expect(color, Theme.of(tester.element(find.byType(Scaffold))).colorScheme.error);
   });
 
-  testWidgets('dos turnos del mismo día se distinguen por hora y empleado (Bruno, turnos)', (tester) async {
+  testWidgets('dos turnos del mismo día se distinguen por hora y empleado (Dueño, turnos)', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
-    final brunoId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    final brunoId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     final anaId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Ana'));
     final hoy = DateTime.now();
 
@@ -97,7 +97,7 @@ void main() {
     // aparece en el detalle de la derecha, por eso `findsWidgets`).
     expect(find.textContaining('08:15'), findsWidgets);
     expect(find.textContaining('16:00'), findsWidgets);
-    expect(find.textContaining('Bruno'), findsWidgets);
+    expect(find.textContaining('Dueño'), findsWidgets);
     expect(find.textContaining('Ana'), findsWidgets);
   });
 }

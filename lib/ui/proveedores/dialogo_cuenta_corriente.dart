@@ -1,4 +1,4 @@
-// Cuenta corriente con un proveedor: lo que Bruno LE DEBE (2026-09-29:
+// Cuenta corriente con un proveedor: lo que el dueño LE DEBE (2026-09-29:
 // "un apartado de deuda o cuenta corriente para ir cargando los saldos que
 // yo adeudo, y pagar desde ahí dejando registro"). Arriba el saldo, abajo el
 // libro (cargos y pagos, más nuevos primero) y las dos acciones: cargar una

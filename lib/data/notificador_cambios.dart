@@ -1,5 +1,5 @@
 // Aviso de "algo cambió en la base" para la sync instantánea por wifi
-// (Bruno, 2026-09-28: "hagamos 100% fluida y efectiva la sync mediante
+// (El dueño, 2026-09-28: "hagamos 100% fluida y efectiva la sync mediante
 // wifi" — hubo que cerrar y abrir la app del celular para que se enterara de
 // una caja abierta en la PC).
 //

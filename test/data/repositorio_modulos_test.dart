@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
@@ -14,6 +15,13 @@ void main() {
   tearDown(() => db.close());
 
   group('nombre del comercio, encabezado del ticket y módulos', () {
+    test('una base nueva de verdad arranca con todo activo salvo el comparador de precios (es del comercio de origen)', () async {
+      final nueva = AppDatabase(NativeDatabase.memory());
+      addTearDown(nueva.close);
+      final modulos = await modulosNegocioActuales(nueva);
+      expect(modulos.desactivados, {Modulo.compararPrecios});
+    });
+
     test('una base nueva arranca con todos los módulos activos, como funciona la app hoy', () async {
       final modulos = await modulosNegocioActuales(db);
       expect(modulos.desactivados, isEmpty);

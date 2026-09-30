@@ -1,11 +1,11 @@
 // Proveedores (fase 13) — reemplaza a Reposición, y absorbe Productos y
 // Stock por proveedor (corrección post-aprobación del kit: esas dos
-// pantallas salieron del menú). Tres niveles de información (Bruno,
+// pantallas salieron del menú). Tres niveles de información (El dueño,
 // principio de fatiga visual, `DISENO.md`): la lista muestra solo el nombre
 // (nivel 1), entrar a un proveedor (o "Todos"/"Sin proveedor") trae el
 // detalle (nivel 2), y "Avanzado" (nivel 3) queda detrás de un botón.
 //
-// "Lenguaje de diseño" (Bruno, 2026-09-26, mock `Proveedores.dc.html`,
+// "Lenguaje de diseño" (El dueño, 2026-09-26, mock `Proveedores.dc.html`,
 // "la distribución es la idea"): vuelve la lista + detalle — proveedores
 // siempre a la izquierda (`ListaProveedores`), el elegido a la derecha
 // (`DetalleProveedor`). Reemplaza al dropdown de proveedor (cuarta pasada
@@ -96,7 +96,7 @@ class _PantallaProveedoresState extends State<PantallaProveedores>
               alCambiar: c.buscar,
             ),
             // Cuatro botones de igual peso al lado del título eran puro
-            // ruido (Bruno, 2026-09-12: "no quiero 50 botones en cualquier
+            // ruido (El dueño, 2026-09-12: "no quiero 50 botones en cualquier
             // lado") — queda una sola acción visible, la más frecuente
             // ("+ Nuevo producto"); las otras tres (setup/mantenimiento, no
             // algo que se toque seguido) se juntan detrás del menú "Más
@@ -190,7 +190,7 @@ class _AccionesProveedores extends StatelessWidget {
               ),
               child: const Text('Conteo de stock'),
             ),
-            // Antes era un apartado propio del menú (2026-09-26, Bruno:
+            // Antes era un apartado propio del menú (2026-09-26, el dueño:
             // "que apartados podemos resumir, agrupar"): compara los precios
             // de los productos, que viven acá.
             if (moduloActivo(Modulo.compararPrecios))

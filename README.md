@@ -1,7 +1,10 @@
-# La Plazoleta
+# Nodo Sur POS
 
-Sistema de caja y gestión para un almacén de barrio en Bariloche. App de
-escritorio en Flutter para Windows — sin red, sin backend, todo local.
+Sistema de caja y gestión para comercios chicos (kioscos, almacenes, fiambrerías). App de escritorio en Flutter
+para Windows, con una app companion para Android que se sincroniza por el wifi del local — todo local, sin backend
+propio. Cada comercio pone su nombre y prende solo los módulos que usa (Configuración → Módulos). Nació para un
+almacén de barrio, La Plazoleta (ver [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md)): de ahí
+vienen el nombre interno del paquete (`la_plazoleta`) y algunos nombres internos del código.
 
 Este repo está pensado para que alguien que nunca estuvo en las sesiones de
 desarrollo (otra persona, otra sesión de Claude Code, Cowork) pueda seguir
@@ -15,11 +18,15 @@ toca en más de un lado, uno es la fuente de verdad y el resto apunta ahí.
 | Documento | Es la fuente de verdad de... |
 |---|---|
 | [`CLAUDE.md`](./CLAUDE.md) | Cómo está armado el código: stack, arquitectura de carpetas, convenciones que no se rompen, qué es cada fase del roadmap, el flujo de trabajo (plan antes de código, ambigüedades marcadas, tests primero), la restricción de hardware, y la especificación completa de la pantalla de venta. |
-| [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.). Si el código contradice esto, el código está mal. |
+| [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.), y qué módulo activa cada una. Si el código contradice esto, el código está mal. |
+| [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md) | El comercio de origen: cómo está configurado y qué nombres de archivo no se pueden cambiar. |
 | [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL: qué fases están cerradas, qué falta, tests/`schemaVersion` de hoy, contexto del negocio en una línea, y los próximos pasos concretos. Es el documento que más cambia — se actualiza al cerrar cada fase. |
 | [`DECISIONES.md`](./DECISIONES.md) | El PORQUÉ de decisiones de dominio y de arquitectura que sin el motivo parecen arbitrarias (por qué los cigarrillos quedan fuera de la reposición, por qué el costo es nullable, por qué el redondeo va después del recargo, etc.). |
 | [`TRAMPAS.md`](./TRAMPAS.md) | Bugs y comportamientos inesperados ya encontrados y resueltos — para no volver a pisar el mismo palo (orden de `sesionCerradaAnterior`, el hang de `dart:io` en `testWidgets`, etc.). |
 | [`DISENO.md`](./DISENO.md) | El sistema de diseño completo: escalas de espaciado y tipografía, colores, el acento único y sus tres usos, reglas de alineación y simetría, y las restricciones visuales por hardware. |
+
+Antes de hacer público el repositorio, `python3 tool/limpiar_datos_personales.py --aplicar` reemplaza los datos
+personales del comercio de origen por nombres genéricos (sin `--aplicar` solo muestra qué cambiaría).
 
 Regla general: si vas a agregar algo que ya tiene dueño en esta lista,
 agregalo en ese documento — no lo dupliques en otro.
@@ -66,7 +73,7 @@ siguiente.
 
 El mismo script actualiza el acceso directo del escritorio (si ya existe,
 apuntándolo a la copia estable) y crea uno en el inicio de Windows —
-Bruno, 2026-09-14: "si yo no abro el acceso directo la companion no
+El dueño, 2026-09-14: "si yo no abro el acceso directo la companion no
 funciona" (el servidor embebido que usa el celular solo corre mientras
 esta app está abierta, Regla del proyecto, no un bug — pero depender de
 acordarse de abrirla a mano sí lo era). Correr:
@@ -116,5 +123,5 @@ una cuenta independiente por SQL, la cadena de la lata y los pagos de cada
 venta.
 
 La base de datos real vive fuera del repo, en
-`C:\Users\Bruno\Documents\la_plazoleta.sqlite` en la máquina de Bruno — no
+`C:\Users\el dueño\Documents\la_plazoleta.sqlite` en la máquina de el dueño — no
 se versiona ni se copia como parte de un build.

@@ -601,7 +601,7 @@ class _ColumnaBusqueda extends StatelessWidget {
           child: TextField(
             // Key propia: desde que `EnvolturaConNavbarSuperior` suma su
             // propia `BarraBusquedaGlobal` en la franja superior de TODA
-            // pantalla de gestión (Bruno, tercera pasada de venta: "quiero
+            // pantalla de gestión (El dueño, tercera pasada de venta: "quiero
             // que la barra de busqueda este en todos lados"), esta pantalla
             // ya no tiene el único `TextField` del árbol — `find.byType(
             // TextField).first` dejó de ser inequívoco.

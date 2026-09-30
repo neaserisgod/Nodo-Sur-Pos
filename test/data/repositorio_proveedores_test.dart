@@ -10,16 +10,16 @@ void main() {
   late AppDatabase db;
   late int usuarioId;
   late int sesionId;
-  late int serraId;
+  late int proveedorSId;
   late int serraCigarrosId;
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await db.into(db.sesionesDeCaja).insert(
           SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
         );
-    serraId = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle()).id;
+    proveedorSId = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('S'))).getSingle()).id;
     serraCigarrosId = (await (db.select(db.proveedores)..where((p) => p.codigo.equals('SC'))).getSingle()).id;
   });
   tearDown(() => db.close());
@@ -57,7 +57,7 @@ void main() {
       await db.into(db.productos).insert(
             ProductosCompanion.insert(
               nombre: 'Coca-Cola',
-              proveedorId: Value(serraId),
+              proveedorId: Value(proveedorSId),
               precioCentavos: const Value(150000),
               costoCentavos: const Value(80000),
               stock: const Value(10),
@@ -65,7 +65,7 @@ void main() {
           );
 
       final resultados = await resumenProveedoresNivel1(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15));
-      final serra = resultados.firstWhere((r) => r.proveedor.id == serraId);
+      final serra = resultados.firstWhere((r) => r.proveedor.id == proveedorSId);
 
       expect(serra.stockValorizadoCentavos, 1500000); // a precio: "cuánto vale en la góndola"
       expect(serra.costoValorizadoCentavos, 800000); // a costo: "cuánto me costó"
@@ -75,11 +75,11 @@ void main() {
 
     test('producto sin costo ni precio: no entra a ninguno de los dos valorizados, se cuenta aparte en cada uno', () async {
       await db.into(db.productos).insert(
-            ProductosCompanion.insert(nombre: 'Alta rápida', proveedorId: Value(serraId), stock: const Value(5)),
+            ProductosCompanion.insert(nombre: 'Alta rápida', proveedorId: Value(proveedorSId), stock: const Value(5)),
           );
 
       final resultados = await resumenProveedoresNivel1(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15));
-      final serra = resultados.firstWhere((r) => r.proveedor.id == serraId);
+      final serra = resultados.firstWhere((r) => r.proveedor.id == proveedorSId);
 
       expect(serra.stockValorizadoCentavos, 0);
       expect(serra.costoValorizadoCentavos, 0);
@@ -88,18 +88,18 @@ void main() {
     });
 
     test('vendido y ganancia se calculan con calcularGananciaBruta, dentro del período', () async {
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
       // Fuera del mes de "ahora" (2026-09-15): no debería contar.
-      await crearVenta(fecha: DateTime(2026, 8, 20), proveedorId: serraId, precioCentavos: 5000, costoCentavos: 3000);
+      await crearVenta(fecha: DateTime(2026, 8, 20), proveedorId: proveedorSId, precioCentavos: 5000, costoCentavos: 3000);
 
       final resultados = await resumenProveedoresNivel1(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15));
-      final serra = resultados.firstWhere((r) => r.proveedor.id == serraId);
+      final serra = resultados.firstWhere((r) => r.proveedor.id == proveedorSId);
 
       expect(serra.vendidoCentavos, 1000);
       expect(serra.gananciaBrutaCentavos, 400);
     });
 
-    test('Serra Cigarros (SC) aparece con su venta real — a diferencia de reposicionActual, acá no se excluye', () async {
+    test('Distribuidora de Cigarrillos (SC) aparece con su venta real — a diferencia de reposicionActual, acá no se excluye', () async {
       await crearVenta(
         fecha: DateTime(2026, 9, 10),
         proveedorId: serraCigarrosId,
@@ -122,39 +122,39 @@ void main() {
     });
 
     test('"desde el último pago" usa la fecha propia de cada proveedor', () async {
-      await (db.update(db.proveedores)..where((p) => p.id.equals(serraId)))
+      await (db.update(db.proveedores)..where((p) => p.id.equals(proveedorSId)))
           .write(ProveedoresCompanion(ultimoPagoFecha: Value(DateTime(2026, 9, 5))));
 
-      await crearVenta(fecha: DateTime(2026, 9, 1), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 2000, costoCentavos: 1200);
+      await crearVenta(fecha: DateTime(2026, 9, 1), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 2000, costoCentavos: 1200);
 
       final resultados =
           await resumenProveedoresNivel1(db, periodo: PeriodoResumen.desdeUltimoPago, ahora: DateTime(2026, 9, 15));
-      final serra = resultados.firstWhere((r) => r.proveedor.id == serraId);
+      final serra = resultados.firstWhere((r) => r.proveedor.id == proveedorSId);
 
       expect(serra.vendidoCentavos, 2000); // solo la venta del 10, después del pago del 5
     });
 
     test('"desde el último pago" sin ningún pago registrado: cuenta desde siempre', () async {
-      await crearVenta(fecha: DateTime(2020, 1, 1), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2020, 1, 1), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
 
       final resultados =
           await resumenProveedoresNivel1(db, periodo: PeriodoResumen.desdeUltimoPago, ahora: DateTime(2026, 9, 15));
-      final serra = resultados.firstWhere((r) => r.proveedor.id == serraId);
+      final serra = resultados.firstWhere((r) => r.proveedor.id == proveedorSId);
 
       expect(serra.vendidoCentavos, 1000);
     });
 
     test('proveedores sin venta en el período van al final (corrección post-revisión)', () async {
-      // Solo Serra vende en el período — el resto (Mazzota, Coca Cola,
-      // Wesley, Puelche, etc., del catálogo real de 15) queda en $0.
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
+      // Solo Distribuidora vende en el período — el resto (Fiambrería, Coca Cola,
+      // Golosinas Oeste, Puelche, etc., del catálogo real de 15) queda en $0.
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
 
       final resultados = await resumenProveedoresNivel1(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15));
-      final indiceSerra = resultados.indexWhere((r) => r.proveedor.id == serraId);
+      final indiceProveedorS = resultados.indexWhere((r) => r.proveedor.id == proveedorSId);
 
-      expect(resultados.first.proveedor.id, serraId);
-      expect(indiceSerra, 0);
+      expect(resultados.first.proveedor.id, proveedorSId);
+      expect(indiceProveedorS, 0);
       for (var i = 1; i < resultados.length; i++) {
         expect(resultados[i].sinMovimiento, isTrue);
       }
@@ -173,7 +173,7 @@ void main() {
       await db.into(db.productos).insert(
             ProductosCompanion.insert(
               nombre: 'Con proveedor',
-              proveedorId: Value(serraId),
+              proveedorId: Value(proveedorSId),
               precioCentavos: const Value(100000),
               costoCentavos: const Value(60000),
               stock: const Value(2),
@@ -195,8 +195,8 @@ void main() {
     });
 
     test('vendido/ganancia suman todas las líneas del período, sin filtrar proveedor', () async {
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
-      await crearVenta(fecha: DateTime(2026, 8, 20), proveedorId: serraId, precioCentavos: 5000, costoCentavos: 3000);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2026, 8, 20), proveedorId: proveedorSId, precioCentavos: 5000, costoCentavos: 3000);
 
       final resumen = await resumenTodosLosProductos(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15));
 
@@ -204,7 +204,7 @@ void main() {
     });
 
     test('"desde el último pago" sin proveedor puntual cuenta desde siempre', () async {
-      await crearVenta(fecha: DateTime(2020, 1, 1), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2020, 1, 1), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
 
       final resumen =
           await resumenTodosLosProductos(db, periodo: PeriodoResumen.desdeUltimoPago, ahora: DateTime(2026, 9, 15));
@@ -218,7 +218,7 @@ void main() {
       await db.into(db.productos).insert(
             ProductosCompanion.insert(
               nombre: 'Con proveedor',
-              proveedorId: Value(serraId),
+              proveedorId: Value(proveedorSId),
               precioCentavos: const Value(100000),
               costoCentavos: const Value(60000),
               stock: const Value(2),
@@ -241,7 +241,7 @@ void main() {
     });
 
     test('vendido/ganancia solo de líneas sin proveedor foto', () async {
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 1000, costoCentavos: 600);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 1000, costoCentavos: 600);
 
       final ventaId = await db.into(db.ventas).insert(
             VentasCompanion.insert(
@@ -269,14 +269,14 @@ void main() {
     });
   });
 
-  group('ventas anuladas no cuentan (Bruno, 2026-09-26)', () {
+  group('ventas anuladas no cuentan (Dueño, 2026-09-26)', () {
     test('ni en lo vendido ni en la ganancia del proveedor, ni en "Todos"', () async {
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 100000, costoCentavos: 60000);
-      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: serraId, precioCentavos: 50000, costoCentavos: 30000);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 100000, costoCentavos: 60000);
+      await crearVenta(fecha: DateTime(2026, 9, 10), proveedorId: proveedorSId, precioCentavos: 50000, costoCentavos: 30000);
       await db.customStatement('UPDATE ventas SET anulada_en = 1 WHERE id = (SELECT MAX(id) FROM ventas)');
 
       final serra = (await resumenProveedoresNivel1(db, periodo: PeriodoResumen.mes, ahora: DateTime(2026, 9, 15)))
-          .firstWhere((r) => r.proveedor.id == serraId);
+          .firstWhere((r) => r.proveedor.id == proveedorSId);
       expect(serra.vendidoCentavos, 100000);
       expect(serra.gananciaBrutaCentavos, 40000);
 

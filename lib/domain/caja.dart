@@ -1,6 +1,6 @@
 // Caja y arqueo (Regla 10). La lata de cigarrillos es efectivo físico de
-// verdad, no un saldo contable: al cierre, Bruno saca billetes del cajón y
-// los mete en una lata aparte para pagarle a Serra Cigarros. Por eso la
+// verdad, no un saldo contable: al cierre, el dueño saca billetes del cajón y
+// los mete en una lata aparte para pagarle a Distribuidora de Cigarrillos. Por eso la
 // separación ocurre una vez al día, al cerrar, y no en cada venta.
 //
 // El orden es obligatorio: primero se cuenta, después se compara, recién
@@ -11,7 +11,7 @@
 
 /// Caja esperada = inicial + efectivo de ventas − gastos en efectivo +
 /// ingresos en efectivo (fórmula de la Regla 10, extendida 2026-09-13 con
-/// "Ingreso rápido" — Bruno: un botón de ingreso de dinero, espejo de
+/// "Ingreso rápido" — El dueño: un botón de ingreso de dinero, espejo de
 /// "Gasto rápido", con las mismas tres cajas).
 ///
 /// NO suma el redondeo: "efectivo de ventas" sale de los movimientos de
@@ -50,7 +50,7 @@ int diferenciaArqueo({
 /// forma que `cajaEsperadaCentavos`, sin el redondeo (Regla 2: eso es propio
 /// del efectivo).
 ///
-/// [inicialCentavos] volvió a existir el 2026-09-12 (Bruno, reboot de la
+/// [inicialCentavos] volvió a existir el 2026-09-12 (El dueño, reboot de la
 /// base): hasta esa fecha MP arrancaba siempre en 0 (`DECISIONES.md`,
 /// "Mercado Pago se arquea como una caja más") porque lo que importaba era
 /// solo lo movido en el día, no el saldo de la cuenta — pero esa cuenta es
@@ -99,7 +99,7 @@ class ResultadoSeparacionCigarrillos {
 
 /// Separa a la lata el precio de lista de los cigarrillos vendidos, sin
 /// importar el medio de pago (Regla 6): los cobrados por QR quedaron en
-/// Mercado Pago, no en el cajón, pero a Serra se le paga en efectivo igual —
+/// Mercado Pago, no en el cajón, pero a Distribuidora se le paga en efectivo igual —
 /// esa plata sale del efectivo que entró por las demás ventas del día. El
 /// recargo por pago virtual existe justamente para cubrir ese costo.
 ///
@@ -130,7 +130,7 @@ ResultadoSeparacionCigarrillos separarCigarrillos({
 
 /// Lo que queda en el cajón normal después de separar cigarrillos a la
 /// lata — la línea "QUEDA EN EL CAJON" del papel. Es la "Caja inicial
-/// NORMAL" que se precarga al turno que entra (Bruno, sesión del
+/// NORMAL" que se precarga al turno que entra (El dueño, sesión del
 /// 31/08/2026): el que se va cuenta y separa, el que entra arranca de ahí
 /// en vez de volver a contar la misma plata.
 int quedaEnCajonCentavos({
@@ -141,17 +141,17 @@ int quedaEnCajonCentavos({
 }
 
 /// Saldo de la lata para el próximo cierre: lo que tenía + lo separado hoy −
-/// lo que ya se le pagó a Serra desde ahí + lo que se le haya ingresado a
+/// lo que ya se le pagó a Distribuidora desde ahí + lo que se le haya ingresado a
 /// mano (mismo agregado 2026-09-13 que las dos funciones de arriba).
 int lataNuevaCentavos({
   required int lataInicialCentavos,
   required int separadoHoyCentavos,
-  required int pagosASerraDesdeLataCentavos,
+  required int pagosAProveedorDesdeLataCentavos,
   required int ingresosALaLataCentavos,
 }) {
   return lataInicialCentavos +
       separadoHoyCentavos -
-      pagosASerraDesdeLataCentavos +
+      pagosAProveedorDesdeLataCentavos +
       ingresosALaLataCentavos;
 }
 

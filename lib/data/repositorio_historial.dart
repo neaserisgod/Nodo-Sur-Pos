@@ -27,7 +27,7 @@ class ResumenDia {
 }
 
 Future<ResumenDia> _resumenDe(AppDatabase db, SesionCaja sesion) async {
-  // Quién trabajó ese turno (Bruno, sesión del 31/08/2026: un turno es una
+  // Quién trabajó ese turno (El dueño, sesión del 31/08/2026: un turno es una
   // sesión completa) — sin esto, dos hojas del mismo día se ven idénticas
   // en la lista, que es justo lo que los turnos quieren distinguir.
   final usuario =

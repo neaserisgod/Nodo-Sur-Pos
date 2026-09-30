@@ -14,7 +14,7 @@ class RespaldoControlador extends ChangeNotifier {
   List<ArchivoRespaldo> respaldos = [];
 
   /// Restaurar queda bloqueado mientras haya una caja abierta (Regla de esta
-  /// fase, confirmada por Bruno): evita perder por accidente las ventas del
+  /// fase, confirmada por el dueño): evita perder por accidente las ventas del
   /// día en curso, que todavía no están en ningún respaldo.
   bool hayCajaAbierta = false;
 

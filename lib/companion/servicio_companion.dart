@@ -7,7 +7,7 @@
 // nunca de `ClienteCompanion` en concreto, así que no necesitan saber si
 // están hablando con la PC por red o con la base propia del celular.
 //
-// Arqueo se sumó acá el 2026-09-18 (Bruno: "no debería tener que escanear
+// Arqueo se sumó acá el 2026-09-18 (El dueño: "no debería tener que escanear
 // ya, es innecesario" — sacar el emparejamiento obligatorio de
 // `companion_app.dart` no servía de nada si el resto de las pantallas
 // seguían atadas a `ClienteCompanion` a secas). Carga histórica, historial,
@@ -38,7 +38,7 @@ abstract class ServicioCompanion {
   /// mismo criterio que [proveedores].
   Future<List<CategoriaCompanion>> categorias();
 
-  // ─── Configuración (Bruno, 2026-09-19: "que se puedan modificar las
+  // ─── Configuración (El dueño, 2026-09-19: "que se puedan modificar las
   // reglas del negocio... desde el celular") ──────────────────────────────
 
   /// Recargo de cigarrillos + paso de redondeo + producto de vuelto.
@@ -75,7 +75,7 @@ abstract class ServicioCompanion {
 
   Future<void> alternarActivoUsuarioExistente(int id, bool activo);
 
-  /// Los cuatro `sin*` son filtros de higiene de catálogo (Bruno,
+  /// Los cuatro `sin*` son filtros de higiene de catálogo (El dueño,
   /// 2026-09-19: "filtrar por productos sin proveedor, sin costo,
   /// etcétera") — cada uno mira una sola columna nullable del producto, ver
   /// `listarProductos` en `data/repositorio_productos.dart` (Regla 3: misma
@@ -133,13 +133,13 @@ abstract class ServicioCompanion {
     required int usuarioId,
   });
 
-  /// Editor masivo (Bruno, 2026-09-19: "editor masivo, ya sea de precios
+  /// Editor masivo (El dueño, 2026-09-19: "editor masivo, ya sea de precios
   /// costo stock etc etc") — cuatro acciones, cada una reusando su propio
   /// repositorio en lote (`data/repositorio_productos.dart`, Regla 3: mismo
   /// camino de escritura que editar uno por uno, así el historial de
   /// precios y el rastro de stock quedan idénticos). Sin activar/desactivar
   /// en lote: no correspondía a ningún caso real de uso desde el celular
-  /// (Bruno, misma fecha: "las opciones que da no se correlacionan con el
+  /// (El dueño, misma fecha: "las opciones que da no se correlacionan con el
   /// editor como tal" — se había copiado del editor masivo del escritorio
   /// sin que nadie lo pidiera para acá).
   Future<void> ajustarMontoEnLote({
@@ -198,7 +198,7 @@ abstract class ServicioCompanion {
     required int lataContadoCentavos,
   });
 
-  /// Vista previa en vivo del cierre real (Bruno, 2026-09-19: "que deje
+  /// Vista previa en vivo del cierre real (El dueño, 2026-09-19: "que deje
   /// cerrar caja desde el celular") — mismo criterio que
   /// [calcularArqueoIntermedio]: nunca guarda nada, se puede llamar de
   /// nuevo cada vez que se corrige un conteo. Tira [ErrorCompanion] 409 sin
@@ -221,7 +221,7 @@ abstract class ServicioCompanion {
     String? nota,
   });
 
-  /// Detalle completo de un cierre YA guardado (Bruno, 2026-09-19: rework
+  /// Detalle completo de un cierre YA guardado (El dueño, 2026-09-19: rework
   /// de "Cierres" con el desglose por proveedor) — mismo shape que
   /// [calcularCierre]. [sesionId] tiene que ser una sesión `CERRADA`.
   Future<ResumenCierreCompanion> detalleCierre(int sesionId);
@@ -250,7 +250,7 @@ abstract class ServicioCompanion {
   Future<List<SesionCerradaCompanion>> sesionesCerradas({int limite = 30});
 
   /// Crea el día [fecha] con [ventas] ya armadas y lo cierra solo con
-  /// arqueo automático (contado = esperado — Bruno: "es simplemente para
+  /// arqueo automático (contado = esperado — El dueño: "es simplemente para
   /// tener un histórico"). Devuelve el `sesionId` creado.
   Future<int> guardarDiaHistorico({
     required DateTime fecha,
@@ -268,7 +268,7 @@ abstract class ServicioCompanion {
   Future<ResumenDiaHistoricoCompanion> resumenDiaHistorico(int sesionId);
 
   /// Agrega más ventas a un día ya cargado, sin crear una sesión nueva
-  /// (Bruno: "le erré y lo cerré sin completarlo").
+  /// (El dueño: "le erré y lo cerré sin completarlo").
   Future<void> agregarVentasADiaHistorico({
     required int sesionId,
     required int usuarioId,

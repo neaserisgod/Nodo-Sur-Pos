@@ -18,9 +18,9 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 5000000);
-    final id = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZM', nombre: 'Mazzota'));
+    final id = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ZM', nombre: 'Fiambrería'));
     proveedor = await (db.select(db.proveedores)..where((p) => p.id.equals(id))).getSingle();
   });
   tearDown(() => db.close());

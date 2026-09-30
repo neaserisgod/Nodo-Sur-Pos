@@ -1,7 +1,7 @@
 // Confirma que hay una sesión de caja abierta antes de dejar seguir —
 // "Movimiento de caja" y vender desde el celular necesitan las dos
 // exactamente lo mismo (Regla 3): si está cerrada, ofrece abrirla ahí mismo
-// (apertura de emergencia, `POST /sesion/abrir`, Bruno 2026-09-07: "como
+// (apertura de emergencia, `POST /sesion/abrir`, el dueño 2026-09-07: "como
 // comparten la misma bd no podemos abrirla desde la app"). Extraído de lo
 // que era `pantalla_gasto_rapido.dart` (fusionada en
 // `pantalla_movimiento_caja.dart`, 2026-09-18) al construir la pantalla de

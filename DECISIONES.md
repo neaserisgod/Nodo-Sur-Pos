@@ -18,13 +18,13 @@ sobre el motivo, revisar cuál quedó desactualizado.
 
 La lata de cigarrillos ya recibe el **precio de lista completo** de lo
 vendido (Regla 6 de `REGLAS-NEGOCIO.md`), y ese monto es exactamente lo que
-se le paga a Serra Cigarros. Si además se sumara el costo de los
-cigarrillos al cálculo de reposición del proveedor Serra (mismo vendedor,
+se le paga a Distribuidora de Cigarrillos. Si además se sumara el costo de los
+cigarrillos al cálculo de reposición del proveedor Distribuidora (mismo vendedor,
 cuenta aparte — desde la migración v9→v10 son dos filas de `Proveedores`
 distintas, con códigos S y SC), se estaría reservando la misma plata dos
 veces: una vez completa en la lata, y otra vez como "costo a separar". La
 exclusión es por `esCigarrillo` (una propiedad del producto vendido), no
-por el código de proveedor — separar a Serra Cigarros en su propia fila no
+por el código de proveedor — separar a Distribuidora de Cigarrillos en su propia fila no
 cambia nada de este cálculo.
 
 ## "Fijos pendientes" es fijos menos pagados, sin acumulador de reserva diaria
@@ -44,7 +44,7 @@ lo pendiente.
 `lib/domain/caja.dart`.
 
 Regla 10: "primero se cuenta, después se compara, recién después se
-separa". La lata de cigarrillos es efectivo físico real (Bruno saca
+separa". La lata de cigarrillos es efectivo físico real (El dueño saca
 billetes del cajón y los mete en una lata aparte), no un saldo contable —
 por eso la separación ocurre una vez al día, al cerrar, nunca en cada
 venta. Si la separación participara del cálculo de la diferencia de
@@ -59,7 +59,7 @@ no participa es el acto de separarlos a la lata.
 `lib/data/repositorio_reposicion.dart` (`Proveedores.corteReposicionFecha`).
 
 **Reemplaza a la decisión anterior** ("el corte es al recibir mercadería, no
-al pedir", vía `historial_pedidos.fechaRecibido`): Bruno pidió explícitamente
+al pedir", vía `historial_pedidos.fechaRecibido`): El dueño pidió explícitamente
 sacar "Pedido hecho"/"Mercadería recibida" de la pantalla porque, con la
 separación de fondos (más abajo), el corte que importa es de plata, no de
 mercadería — separar es lo que cierra un período de venta y arranca el
@@ -77,7 +77,7 @@ días de ventas que tienen que seguir sumando al mismo período, no perderse.
 `lib/domain/reposicion.dart` (`pendienteBaseTrasPago`), `lib/data/repositorio_reposicion.dart`
 (`separarProveedor`, `pagarProveedor`).
 
-Bruno pidió, textual: *"necesito por sobre todas las prioridades saber qué
+El dueño pidió, textual: *"necesito por sobre todas las prioridades saber qué
 plata es de cada proveedor, y qué debo guardar"*, con dos reglas explícitas:
 separar congela un monto pero lo que se vende después sigue acumulando
 aparte (no se detiene la cuenta), y si se paga menos de lo separado la
@@ -85,7 +85,7 @@ diferencia vuelve a pendiente en vez de perderse. De ahí:
 
 - **El colchón sí entra en lo que se congela, desde Regla 13.** Dejó de ser
   una sugerencia de cuánto agarrar de más (`colchonPorProveedorCentavos`
-  configurable) para ser ganancia real retenida a pedido de Bruno — ver
+  configurable) para ser ganancia real retenida a pedido de el dueño — ver
   "Regla 13: el retiro de ganancia es diario, en la apertura, y el colchón
   es ganancia retenida" más abajo. `separarProveedor` ahora congela
   `separadoCentavos + costo real + colchón actual` y resetea el colchón a
@@ -94,7 +94,7 @@ diferencia vuelve a pendiente en vez de perderse. De ahí:
 - **Separar dos veces antes de pagar suma, no reemplaza.** `separadoCentavos`
   se incrementa (`proveedor.separadoCentavos + pendienteSinSepararActual`),
   nunca se sobreescribe — reemplazar haría desaparecer plata ya apartada si
-  Bruno separa más de una vez en el mismo ciclo.
+  El dueño separa más de una vez en el mismo ciclo.
 - **Solo el pago escribe `movimientos_de_caja`, y solo si el medio mueve una
   caja real de la app — efectivo o Mercado Pago.** MP se arquea como una
   caja más desde el cambio que reemplazó `saldoMpInicialCentavos`/
@@ -115,12 +115,12 @@ diferencia vuelve a pendiente en vez de perderse. De ahí:
   arqueo marcaba un faltante — corregido sumando también `PAGO_PROVEEDOR`
   (`tiposEgresoDeCaja`), incluida la misma lista en `planilla_dia.dart`
   (SALIDAS/PAGOS del ítem 3), que tenía el mismo agujero.
-- **Separar no necesita fecha desde la UI** (Bruno no pidió backdating para
+- **Separar no necesita fecha desde la UI** (El dueño no pidió backdating para
   esto, a diferencia de `registrarPagoFijo`), pero `separarProveedor` sí
   acepta un parámetro `fecha` opcional — mismo patrón, para que los tests no
   dependan del reloj real ni de que drift guarda `DateTime` con precisión de
   segundo.
-- **Serra Cigarros (código SC) no aparece en la pantalla de Reposición.**
+- **Distribuidora de Cigarrillos (código SC) no aparece en la pantalla de Reposición.**
   Sus ventas quedan afuera de `calcularReposicion` a propósito ("Los
   cigarrillos quedan fuera de la reposición", más arriba) porque la lata ya
   recibe el precio de lista completo — así que siempre daría separado/
@@ -192,7 +192,7 @@ fila de esta tabla... se registra como saldo de apertura/cierre").
 
 Antes, MP se trataba como un saldo de cuenta: se preguntaba el saldo actual
 al abrir la caja y otra vez al cerrar, y la diferencia entre esos dos
-números no significaba nada en particular. Bruno decidió que MP se arquee
+números no significaba nada en particular. El dueño decidió que MP se arquee
 igual que el efectivo — esperado, contado, diferencia — pero **siempre
 arranca en 0**: no hay saldo inicial que preguntar, porque lo que importa es
 lo que se movió en el día, no el saldo de la cuenta.
@@ -213,12 +213,12 @@ así — tratarlo como error entrenaría a ignorar la pantalla de cierre.
 
 Las columnas viejas `saldoMpInicialCentavos`/`saldoMpFinalCentavos` de
 `SesionesDeCaja` quedan sin usar a propósito (mismo criterio que las
-columnas muertas del descuento de Jam Rock, `ESTADO.md`): no se borran,
+columnas muertas del descuento de Cliente Frecuente, `ESTADO.md`): no se borran,
 simplemente nadie más las escribe. El arqueo nuevo vive en
 `mpContadoCentavos`/`mpEsperadoCentavos`/`mpDiferenciaCentavos`
 (schemaVersion 7).
 
-**2026-09-12: `saldoMpInicialCentavos` se revive** (Bruno pidió un reboot de
+**2026-09-12: `saldoMpInicialCentavos` se revive** (El dueño pidió un reboot de
 la base, "menos los productos, para empezar de 0"). El motivo de arriba
 ("lo que importa es lo movido en el día, no el saldo de la cuenta") seguía
 siendo válido con historial continuo — pero un reseteo de datos deja la
@@ -237,9 +237,9 @@ Pago no tiene un "cajón" que se vacíe cada noche.
 `lib/data/tables/caja.dart` (`SesionesDeCaja`), `lib/data/repositorio_cierre.dart`
 (`sesionCerradaHoyParaPrecarga`), `TRAMPAS.md` (primera entrada).
 
-Primer intento descartado por Bruno: una tabla `TurnosDeCaja` separada,
+Primer intento descartado por el dueño: una tabla `TurnosDeCaja` separada,
 anidada dentro de la sesión del día, con su propio arqueo liviano (sin
-separación de cigarrillos ni fijos). Bruno aclaró que así no es como
+separación de cigarrillos ni fijos). El dueño aclaró que así no es como
 funciona en el papel: su planilla tiene "Empleado" en el encabezado y **una
 hoja por persona**, no una por día. Cambiar de turno ya significa cerrar la
 hoja completa de quien se va (arqueo, separación de cigarrillos, lo que
@@ -282,7 +282,7 @@ correcto sea cual sea el turno que lo generó, porque siempre es una foto de
 `lib/domain/retiro.dart` (`retiroSugeridoCentavos`), `lib/data/pdf_planilla.dart`.
 
 Una fase anterior agregó `− fijos pendientes del mes` a la fórmula de
-Regla 13 sin que Bruno lo hubiera pedido — su planilla de papel real
+Regla 13 sin que el dueño lo hubiera pedido — su planilla de papel real
 siempre fue `efectivo en cajón + saldo MP − fondo fijo`, nada más. Se
 confirmó explícitamente (sesión del 31/08/2026) y se corrigió: el
 parámetro `descontarFijosPendientes` de `retiroSugeridoCentavos` ahora
@@ -320,7 +320,7 @@ con una sola responsabilidad.
 Se agregó `'stock_proveedor'` a `seccionesMenuIniciales` con
 `schemaVersion` 8 → 9. Para una base existente, la migración inserta la
 sección al final del orden (`orden: 100`) en vez de en su lugar "natural"
-(justo después de Productos): reordenar secciones que Bruno ya acomodó a su
+(justo después de Productos): reordenar secciones que el dueño ya acomodó a su
 gusto en una base real sería un efecto colateral de una migración que no
 tiene por qué tocar esa preferencia — se puede mover a mano desde
 Configuración si hace falta.
@@ -329,7 +329,7 @@ Configuración si hace falta.
 
 `lib/data/repositorio_equilibrio.dart`, `lib/ui/equilibrio/dialogo_registrar_pago_fijo.dart`.
 
-Bruno paga un fijo un día y lo carga en el sistema otro (a veces cruzando de
+El dueño paga un fijo un día y lo carga en el sistema otro (a veces cruzando de
 mes: paga el 31, lo carga el 1). `registrarPagoFijo` grababa el movimiento
 con `DateTime.now()` sin poder pasar otra fecha, así que ese pago caía en el
 mes en que se cargó, no en el que se pagó — descuadrando `fijosPendientesDelMes`
@@ -350,28 +350,28 @@ pasan una fecha y un `mesAnio` fijos, sin ninguna dependencia del reloj.
 `lib/data/database.dart` (migración v9→v10), Regla 16 de `REGLAS-NEGOCIO.md`.
 
 El seed original de proveedores (S/F/C/B/W/G/O) era un placeholder genérico
-de antes de tener el catálogo real de Bruno — 15 proveedores con nombre y
-código propio. Serra Cigarros pasa a tener su propio código (SC) en vez de
-compartir el de Serra almacén (S): no cambia el cálculo de reposición (ver
+de antes de tener el catálogo real de el dueño — 15 proveedores con nombre y
+código propio. Distribuidora de Cigarrillos pasa a tener su propio código (SC) en vez de
+compartir el de Distribuidora almacén (S): no cambia el cálculo de reposición (ver
 la entrada de más arriba sobre cigarrillos), solo permite mostrarlo y
 configurarlo como proveedor aparte (medio de pago, colchón, etc.).
 
 Para no perder productos ya cargados, la migración **no borra ni renombra
-libremente**: Serra y Mazzota conservan su `id` y se renombran (antes
-"Serra almacén" / "Fiambres / Mazzota"); Coca Cola y Wesley no cambian.
+libremente**: Distribuidora y Fiambrería conservan su `id` y se renombran (antes
+"Distribuidora almacén" / "Fiambres / Fiambrería"); Coca Cola y Golosinas Oeste no cambian.
 Bebidas varias, Golosinas y Otros (B/G/O) quedan en la base tal cual,
 marcados `activo = false` — un producto viejo que ya apuntaba a uno no
 queda con una referencia rota. Ningún selector filtra ese flag todavía
 (siguen apareciendo como cualquier proveedor activo); si eso molesta en la
 práctica, filtrarlos en `listarProveedores` es un cambio chico, pendiente
-de que Bruno lo pida.
+de que el dueño lo pida.
 
 ## La planilla al 100% (ítem 3): qué vuelve del papel viejo y por qué
 
 `lib/data/pdf_planilla.dart`, `lib/ui/cierre/pantalla_cierre.dart`.
 
 El formato base es el PDF vigente (dos grillas, apertura/cierre de 7 líneas,
-salidas, retiro). Tres bloques del papel más viejo vuelven porque Bruno los
+salidas, retiro). Tres bloques del papel más viejo vuelven porque el dueño los
 pidió explícitamente, no por volver atrás:
 
 - **Reposición por proveedor**, pero con el costo real de
@@ -394,7 +394,7 @@ pidió explícitamente, no por volver atrás:
   imprime si es distinto de quien abrió.
 
 **Los tres totales grandes van solo en la pantalla de cierre, no en el
-PDF.** Bruno fue explícito: en el papel esos tres números ya están en su
+PDF.** El dueño fue explícito: en el papel esos tres números ya están en su
 lugar natural (el TOTAL de cada grilla, la línea de separación a la lata) —
 agregarlos de nuevo como bloque aparte rompería la fidelidad con la hoja
 que viene llenando hace meses. En pantalla sí, porque ahí es el momento de
@@ -416,7 +416,7 @@ avisa pero nunca bloquea un cierre que ya terminó.
 
 **Impresión y Carga histórica salen de la app** (fuera de alcance hasta que
 la planilla y la pantalla de venta estén al 100%, según las prioridades de
-Bruno). Impresión ya tenía un flag `visible` en `secciones_menu` — se
+El dueño). Impresión ya tenía un flag `visible` en `secciones_menu` — se
 apagó por default (migración v12→v13 para bases existentes, seed para las
 nuevas) y Configuración puede volver a prenderla sin tocar código. Carga
 histórica no es una sección de menú, es un botón dentro de Historial — se
@@ -445,7 +445,7 @@ cobrar, sin arrastrar una etiqueta "mixto" que ya no describe el pago.
 
 **Escribir "varios" en el campo único ya no crashea.** "Varios" es un
 producto real del catálogo y no se excluye de la búsqueda a propósito —
-Bruno fue explícito: el que lo escribe lo quiere, esconderlo sería peor
+El dueño fue explícito: el que lo escribe lo quiere, esconderlo sería peor
 que hacerlo funcionar. Lo que faltaba era que seleccionarlo (Enter o
 tocarlo) abriera el mismo diálogo de monto que `Alt+V`, en vez de
 intentar agregarlo directo (`agregarProducto` sin `montoVariosCentavos`,
@@ -475,7 +475,7 @@ ofrece "Reactivar y vender" en el lugar de "Vender", que solo prende
 
 **Cobrar con Enter y sin medio de pago elegido avisa, ya no queda en
 silencio.** Mismo problema que ya se había resuelto del otro lado con el
-acuse de cobro (Bruno: "apretar Enter y que no pase nada es indistinguible
+acuse de cobro (El dueño: "apretar Enter y que no pase nada es indistinguible
 de que la app se colgó"). `avisoCobro` aparece junto al botón "Cobrar"
 solo cuando había algo en el carrito para cobrar — con el carrito vacío,
 apretar Enter sin elegir medio no es un error, así que no avisa nada — y
@@ -490,7 +490,7 @@ Los `Colors.red` de Material que se habían visto en una revisión anterior
 ya no existen en ningún diálogo — se corrigieron en la pasada transversal
 de la fase 11 (todos usan `context.colores.error`), antes de este ítem.
 
-## Tres correcciones de Bruno después de revisar el `demo_planilla.pdf`
+## Tres correcciones de el dueño después de revisar el `demo_planilla.pdf`
 
 `lib/data/repositorio_equilibrio.dart`, `lib/data/planilla_dia.dart`,
 `lib/data/pdf_planilla.dart`, `lib/domain/reposicion.dart`.
@@ -502,8 +502,8 @@ el descuento da 0 sin que importe si `fijosDelMesCentavos` es válido. El
 bug estaba en la capa de arriba — tanto `cascadaRetiro`
 (`repositorio_equilibrio.dart`, usado por Equilibrio) como
 `pdf_planilla.dart` exigían `fijos.total != null` **siempre**, aunque el
-switch (apagado por default, lo que Bruno usa) no necesitara ese dato
-para nada. Como Bruno nunca carga fijos, esto dejaba el retiro sin
+switch (apagado por default, lo que el dueño usa) no necesitara ese dato
+para nada. Como el dueño nunca carga fijos, esto dejaba el retiro sin
 calcular todos los domingos, en las dos pantallas. Se extrajo
 `retiroSugeridoDelMes` (nueva, en `repositorio_equilibrio.dart`) con la
 regla correcta — los fijos solo hacen falta si el switch está prendido —
@@ -518,7 +518,7 @@ proporcional por línea.** `armarDatosPlanilla` iteraba por línea de venta
 y usaba `repartirLineaEntreMedios` para partir cada una entre efectivo y
 virtual según la proporción del total — con recargo o redondeo de por
 medio, esto daba centavos partidos que la planilla de papel nunca tuvo
-(Regla 1: el negocio no maneja centavos). Bruno fue textual: el papel
+(Regla 1: el negocio no maneja centavos). El dueño fue textual: el papel
 dice "un renglón en cada grilla" porque **son los `Pagos` de la venta**,
 no las líneas — no hace falta saber qué línea se pagó con qué medio (esa
 información no existe y no hace falta inventarla). Ahora se itera por
@@ -548,7 +548,7 @@ faltaba desde que se construyó — quedó documentado el motivo en
 `DISENO.md` ("tres niveles de información") pero no acá.
 
 **Fiados y encargues se sacaron de la pantalla, a propósito.** Antes eran
-una segunda columna dentro de Reposición. Bruno: mezclar "plata que le debo
+una segunda columna dentro de Reposición. El dueño: mezclar "plata que le debo
 a un proveedor" con "plata que me debe un cliente" en la misma pantalla es
 exactamente el problema que el principio de tres niveles busca evitar — no
 son la misma clase de dato y verlos juntos agobia. Quedan pendientes de una
@@ -564,14 +564,14 @@ esconde justo lo que falta cargar. La lista muestra un ícono de aviso con
 la cantidad de productos sin costear de ese proveedor, en vez de fingir que
 el stock vale menos de lo que realmente vale.
 
-**El nivel 1 de Proveedores incluye a Serra Cigarros; la reposición
+**El nivel 1 de Proveedores incluye a Distribuidora de Cigarrillos; la reposición
 (nivel 2) sigue sin incluirlo.** Son dos preguntas distintas.
 `reposicionActual`/`resumenReposicionDeProveedor` calculan cuánto separar
-para pagar mercadería — ahí Serra Cigarros da siempre cero (Regla 6, ya
+para pagar mercadería — ahí Distribuidora de Cigarrillos da siempre cero (Regla 6, ya
 resuelto, ver "Los cigarrillos quedan fuera de la reposición" arriba) y una
 fila permanentemente en cero es ruido. `resumenProveedoresNivel1` calcula
 otra cosa — cuánto vendió y ganó cada proveedor en el período, una foto
-general del negocio — y ahí Serra Cigarros vendió de verdad; excluirlo
+general del negocio — y ahí Distribuidora de Cigarrillos vendió de verdad; excluirlo
 escondería una parte real de la plata que mueve. Mismo dato de fondo
 (Regla 6), dos preguntas distintas, dos resultados distintos a propósito.
 
@@ -586,7 +586,7 @@ cargado" que la Regla 5 ya pedía y la planilla nunca imprimió.
 
 ## Corrección post-revisión de fase 13 (Venta y Proveedores)
 
-Bruno y una segunda revisión vieron las primeras capturas de Venta y
+El dueño y una segunda revisión vieron las primeras capturas de Venta y
 Proveedores y no las aprobaron: "se agregó espacio y componentes, pero no
 jerarquía, y se perdieron cosas que ya funcionaban". Se revirtieron dos
 decisiones y se corrigieron varios bugs reales antes de seguir con
@@ -603,7 +603,7 @@ lado sin volver atrás. `EnvolturaConBarraLateral` generaliza el mecanismo
 para que cualquier pantalla de gestión la reciba sin copiar la lógica de
 `PantallaVenta` — eso se queda igual.
 
-**2026-09-12: vuelve a plegada por default** (Bruno: "no quiero 50 botones
+**2026-09-12: vuelve a plegada por default** (El dueño: "no quiero 50 botones
 en cualquier lado"). Gana el motivo contrario al de arriba — superficie
 despejada por sobre nombres siempre a la vista. Los nombres siguen a un
 clic de distancia (o un tooltip al pasar el mouse); plegar/desplegar sigue
@@ -652,7 +652,7 @@ sobrante ahora se ve como fondo de página, no como card vacía.
 
 ## Segunda corrección post-revisión de fase 13 (Proveedores)
 
-Bruno dibujó a mano cómo quiere Proveedores, después de ver la primera
+El dueño dibujó a mano cómo quiere Proveedores, después de ver la primera
 corrección — todavía no la aprobó, la reencauzó con más precisión: "tres
 paneles, la misma forma que la pantalla de venta". Detalle técnico completo
 en `DISENO.md` ("Principio rector: tres niveles de información"), acá el
@@ -660,7 +660,7 @@ porqué de cada decisión de negocio.
 
 **Las cuatro cifras del nivel 1 (stock/costo/vendido/ganancia) se sacan de
 la lista — son del proveedor elegido, no de todos a la vez.** La primera
-corrección ya había identificado que Bruno pide "simplicidad máxima" al
+corrección ya había identificado que el dueño pide "simplicidad máxima" al
 entrar a una pantalla (principio de tres niveles), pero seguía mostrando
 cuatro números por fila en la lista — la propia definición de "agobia" que
 el principio existe para evitar. La lista vuelve a ser solo el nombre;
@@ -669,7 +669,7 @@ se eligió a QUIÉN se le está mirando la plata.
 
 **El resumen de cinco cifras (Stock, Costo, Venta, Ganancia, Separado) es
 puramente informativo — ni un campo, ni un botón.** "Es para mirar"
-(Bruno, textual). Separar y pagar dejan de estar ahí — mudarlos no les
+(El dueño, textual). Separar y pagar dejan de estar ahí — mudarlos no les
 resta importancia, es reconocer que esas acciones son configuración/gestión
 del proveedor, no parte de "mirar sus números", que es lo que este panel
 hace ahora.
@@ -678,7 +678,7 @@ hace ahora.
 corrección.** No existía ninguna vista de "qué le compro a este proveedor,
 a cuánto, a cuánto lo vendo, cuánto gano" — la reposición y el resumen
 siempre hablaron en agregados (todo lo vendido, todo el costo), nunca
-producto por producto. Bruno la señaló como "el corazón de la pantalla":
+producto por producto. El dueño la señaló como "el corazón de la pantalla":
 es la razón real para entrar a un proveedor puntual, más que cualquiera de
 las cifras de arriba. Reusa `markupBpDesdeCostoYPrecio`
 (`lib/domain/markup.dart`) — la misma fórmula que "Margen en vivo" de
@@ -688,7 +688,7 @@ Productos (Regla 14) — para no inventar una segunda definición de margen.
 todos detrás de "Avanzado".** La primera corrección ya había movido medio
 de pago ahí; esta lo extiende a todo lo demás, incluido el colchón (que
 hasta acá se consideraba "se toca seguido, vive en el nivel 2") y las
-acciones mismas. El criterio de Bruno no es la frecuencia de uso sino el
+acciones mismas. El criterio de el dueño no es la frecuencia de uso sino el
 tipo de tarea: el panel principal es para MIRAR, "Avanzado" es para HACER
 algo — separar y pagar son cosas que se hacen, no cifras que se miran,
 así que van del lado de "Avanzado" sin importar que se usen seguido. El
@@ -703,12 +703,12 @@ abrirse) precisamente porque separar/pagar necesitan poder actualizar el
 `revisarGananciaProveedor`, `retenerGanancia`, `registrarRetiroProveedor`),
 `lib/ui/apertura/`.
 
-Cambio de reglas de negocio decidido por Bruno, no un ajuste de diseño:
+Cambio de reglas de negocio decidido por el dueño, no un ajuste de diseño:
 elimina el retiro semanal completo (`lib/domain/retiro.dart`, borrado; la
 cascada de retiro en `repositorio_equilibrio.dart`, borrada) porque en la
-práctica Bruno no esperaba a un día fijo — revisaba plata todos los días.
+práctica el dueño no esperaba a un día fijo — revisaba plata todos los días.
 La separación de ganancia pasa a ser diaria, parte del ritual de
-**apertura** (nunca de cierre): Bruno abre la caja, y antes de vender
+**apertura** (nunca de cierre): El dueño abre la caja, y antes de vender
 revisa el cierre del día anterior por proveedor y decide cuánto retira
 (efectivo y/o Mercado Pago) de la ganancia generada. Lo retirado sale del
 negocio ese mismo día — la plata física ya no está en el cajón/cuenta —
@@ -718,7 +718,7 @@ siguiente no marque un faltante fantasma por plata que en realidad salió
 de forma prevista.
 
 **El colchón deja de ser un monto configurable a mano y pasa a ser
-ganancia real retenida.** Bruno, textual: *"el colchón es el precio costo
+ganancia real retenida.** El dueño, textual: *"el colchón es el precio costo
 vendido, la única manera de agregar más billete a ese colchón es que yo
 decida guardar las ganancias también"* — se eliminó el campo de edición
 libre de colchón (`_colchonCtrl` en `dialogo_avanzado_proveedor.dart`) y
@@ -736,13 +736,13 @@ las mismas ventas. Se consideró reusar `corteReposicionFecha` para no
 agregar una columna, pero eso hubiera hecho que revisar ganancia
 disparara sin querer un `separarProveedor` — el colchón se habría
 mezclado con lo separado el mismo día que se retiene, en vez de poder
-acumularse durante varios días hasta que Bruno decida separar para un
+acumularse durante varios días hasta que el dueño decida separar para un
 pedido más grande. Mantenerlos separados es lo que permite que el
 colchón crezca sesión tras sesión sin que revisar ganancia "gaste" nada
 de reposición.
 
 **Tres decisiones de alcance, resueltas por el asistente ante la
-instrucción "sigue" de Bruno, sin volver a preguntar una por una** — quedan
+instrucción "sigue" de el dueño, sin volver a preguntar una por una** — quedan
 documentadas para poder revisarse si el comportamiento real no las
 confirma:
 
@@ -768,7 +768,7 @@ producción) pero ningún código nuevo las lee ni las escribe.
 puramente informativo.** Reemplaza al viejo mecanismo del retiro semanal
 que descontaba automáticamente los fijos pendientes antes de sugerir un
 retiro (`retiroDescuentaFijosPendientes`) — ese freno de seguridad
-desaparece con el retiro semanal. Ahora es Bruno quien mira el número y
+desaparece con el retiro semanal. Ahora es el dueño quien mira el número y
 decide, no un descuento automático que podía frenar un retiro sin que él
 lo pidiera.
 
@@ -776,7 +776,7 @@ lo pidiera.
 
 Regla en `REGLAS-NEGOCIO.md` §5 ("De qué medio sale lo que se separa").
 Reemplaza al "excedente de MP por cigarrillos" del 2026-09-25 (un número
-visible + un interruptor al pagar): Bruno, al verlo, *"lo que necesito no es
+visible + un interruptor al pagar): El dueño, al verlo, *"lo que necesito no es
 que me marque el excedente, sino que redistribuya"*. Decisiones:
 
 - **Monto por venta**: lo cobrado por MP con tope en el precio de lista de
@@ -800,7 +800,7 @@ que me marque el excedente, sino que redistribuya"*. Decisiones:
 
 ## Apartado "Separaciones" (2026-09-26)
 
-Bruno: *"¿hay un apartado CLARO donde ver las separaciones?"* — no lo había:
+El dueño: *"¿hay un apartado CLARO donde ver las separaciones?"* — no lo había:
 separar y pagar vivían en Proveedores → Avanzado (un diálogo, de a un
 proveedor) y en Reportes (de a uno, sin la división cajón/MP). Sección nueva
 del menú (`secciones_menu`, v36, al final — se reordena desde
@@ -817,12 +817,12 @@ Bug real, encontrado al armar la división cajón/MP: cuatro consultas no
 filtraban `ventas.anulada_en` — lo que hay que separar por proveedor
 (`_lineasPorProveedorDesde`), la ganancia sin revisar de Reportes, lo
 vendido/ganancia del resumen de Proveedores y la ganancia bruta del mes de
-Equilibrio. Una venta anulada seguía pidiendo reponer su costo. Bruno: "sin
+Equilibrio. Una venta anulada seguía pidiendo reponer su costo. El dueño: "sin
 ventas anuladas". Corregido en las cuatro, con un test cada una.
 
 ## Separaciones es del día y mira la plata de ahora (2026-09-26)
 
-Bruno, al ver la primera versión: *"la idea es que sea del día!! y tenga en
+El dueño, al ver la primera versión: *"la idea es que sea del día!! y tenga en
 cuenta los montos actuales tanto de efectivo como de mp"*, y *"que
 diferencie entre ganancia o reposición... y el total vendido osea costo +
 markup"*. Decidido con preguntas directas: todo el día calendario (no solo
@@ -844,7 +844,7 @@ caja. Detalles de implementación:
 
 ## Cargar un costo completa las ventas que quedaron sin costo (2026-09-26)
 
-Bruno vendió una Coca Lata sin costo cargado, cargó el costo después y "no
+El dueño vendió una Coca Lata sin costo cargado, cargó el costo después y "no
 aparece nada": la línea de venta guarda el costo del momento (Regla 4). Pregunta
 directa: completar las ventas **sin costo** con el costo nuevo, nunca pisar uno
 ya guardado. `completarCostoDeVentasSinCosto` (`repositorio_productos.dart`),
@@ -863,10 +863,10 @@ excedente de cigarrillos (no hay a quién separarle). Y la pantalla se
 recarga sola cada 15s y al volver a ella: las ventas que llegan del celular
 no avisan a las pantallas del escritorio.
 
-## Separaciones rehecha sobre un mock de Bruno (2026-09-26)
+## Separaciones rehecha sobre un mock de el dueño (2026-09-26)
 
 La tabla de ocho columnas "se ve nefasto, tenés que mover mucho la cabeza
-para leerlo y no está en orden". Bruno mandó un mock propio y pidió no
+para leerlo y no está en orden". El dueño mandó un mock propio y pidió no
 guiarse por `DISENO.md` para esto ("ignoremos diseño md"). Lo que se tomó
 del mock:
 
@@ -882,7 +882,7 @@ del mock:
 - Tarjeta de progreso al final ("k de n separados", falta por caja, marcar/
   desmarcar todo).
 - "Qué separar" / "Lo vendido"; Hoy/Semana/Mes solo en "Lo vendido"
-  (pregunta directa). Sin "Pagar" en esta pantalla (Bruno: "innecesario").
+  (pregunta directa). Sin "Pagar" en esta pantalla (El dueño: "innecesario").
 - Menú lateral del mock: no — se mantiene la barra de arriba (pregunta
   directa).
 - El Bold de Glacial Indifference dibuja mal la "é" de "Qué separar": las
@@ -891,7 +891,7 @@ del mock:
 ## Menú de secciones rehecho, y de 11 apartados a 6 (2026-09-26)
 
 **El menú de secciones** dejó de ser el `PopupMenuButton` de Material ("parece
-un conjunto de pegotes con animaciones"). Sobre un mock de Bruno, con un
+un conjunto de pegotes con animaciones"). Sobre un mock de el dueño, con un
 cambio pedido por él ("no me gusta que esté separado arriba"): el menú se
 dibuja encima del botón y se despliega desde ahí — el botón es la cabecera,
 una sola pieza. Cada sección con ícono, nombre y descripción; la activa con
@@ -900,7 +900,7 @@ crecen juntos con `easeOutCubic` (220 ms, 150 al cerrar) y las secciones
 entran apenas escalonadas. Se cierra tocando afuera, con Esc o al elegir.
 (`navbar_superior.dart`, `_BotonSecciones`.)
 
-**Reorganización** (Bruno: "que apartados podemos resumir, agrupar, o
+**Reorganización** (El dueño: "que apartados podemos resumir, agrupar, o
 directamente eliminar para que no sea redundante"), las cuatro con pregunta
 directa:
 
@@ -916,9 +916,9 @@ Configuración. La migración v39 borra las cinco filas de `secciones_menu`
 (mismo criterio que v18 → v19: no dejar ítems fantasma en Configuración).
 
 
-## "Lenguaje de diseño": mocks de Bruno aplicados a toda la app (2026-09-26/28)
+## "Lenguaje de diseño": mocks de el dueño aplicados a toda la app (2026-09-26/28)
 
-Bruno dejó la carpeta `Lenguaje de diseño/` con mocks de escritorio y
+El dueño dejó la carpeta `Lenguaje de diseño/` con mocks de escritorio y
 celular ("es una medio inspiración" / "y distribución, que es la foking
 idea"). Se aplicó en toda la app, PC y celular. Lo que se decidió con él:
 
@@ -955,7 +955,7 @@ Decisiones propias:
 
 ### Segunda tanda de mocks (2026-09-28): lo que se tomó y lo que no
 
-Bruno pidió la segunda tanda (`PEDIDO-MOCKS-2.md`) y "revisá las capturas
+El dueño pidió la segunda tanda (`PEDIDO-MOCKS-2.md`) y "revisá las capturas
 a excepción de la pantalla ventas". Se tomó la distribución de cada mock;
 cuando el mock traía un dato o una regla que la app no tiene, ganó
 `REGLAS-NEGOCIO.md` o el modelo de datos:
@@ -974,7 +974,7 @@ cuando el mock traía un dato o una regla que la app no tiene, ganó
 - **Carga histórica**: calendario con los días que ya tienen caja, pero la
   carga sigue siendo producto por producto. El mock proponía cargar solo
   los totales del día con un costo estimado (68 %); queda como pregunta
-  para Bruno, no se inventó.
+  para el dueño, no se inventó.
 - **Impresión**: el mock suponía una impresora USB (ancho de papel, cajón,
   mensaje al pie). Acá imprime la terminal Point y el encabezado es fijo:
   se tomó la vista previa "Así sale" con el formato real del ticket.
@@ -992,7 +992,7 @@ cuando el mock traía un dato o una regla que la app no tiene, ganó
 
 ## Arqueos del turno opcionales, y lo contado precarga el cierre (2026-09-28)
 
-Bruno: "quiero que los arqueos durante el turno dejen de ser obligatorios y
+El dueño: "quiero que los arqueos durante el turno dejen de ser obligatorios y
 quiero que guarde los datos para el cierre de caja". Ya no bloqueaban la
 venta desde el 15/09, pero seguían insistiendo cada 2hs. Cada arqueo ya se
 guardaba (`arqueos_intermedios`), pero no se veía en ningún lado. Eligió
@@ -1015,7 +1015,7 @@ guardaba (`arqueos_intermedios`), pero no se veía en ningún lado. Eligió
 
 ## Historial → Movimientos (2026-09-28)
 
-Bruno: "revisá si hay un apartado para ver los movimientos, los movimientos
+El dueño: "revisá si hay un apartado para ver los movimientos, los movimientos
 de caja y eso". No había: los movimientos se grababan pero solo se veían
 sumados en el cierre. Tercera pestaña de Historial
 (`tab_historial_movimientos.dart`, datos en `repositorio_movimientos_caja.dart`):
@@ -1030,7 +1030,7 @@ sincronizan por fecha, TRAMPAS.md).
 
 Con Supabase cortado por cuota, el celular recién se enteraba de una caja
 abierta en la PC al reiniciar la app (preguntaba cada 1 minuto), y la PC no
-se enteraba de lo que hacía el celular hasta cambiar de pantalla. Bruno:
+se enteraba de lo que hacía el celular hasta cambiar de pantalla. El dueño:
 "dejemos de lado supabase de momento, hagamos 100% fluida y efectiva la
 sync mediante wifi".
 
@@ -1058,7 +1058,7 @@ sync mediante wifi".
 
 ## Buscador de arriba contextual (2026-09-28)
 
-Bruno: "quiero que el buscador sea contextual, que busque según la pantalla
+El dueño: "quiero que el buscador sea contextual, que busque según la pantalla
 que estemos". Una pantalla que pasa `BusquedaContextual` a `PantallaGestion`
 (`lib/ui/navegacion/busqueda_contextual.dart`) cambia el campo de arriba: en
 vez de buscar productos para mandar a Venta, filtra en vivo lo que esa
@@ -1077,14 +1077,14 @@ pantalla muestra. Esc borra el filtro. Sin mayúsculas ni acentos
 
 ## Instalador y actualización automática (2026-09-30)
 
-Bruno quería distribuir la app con instalador firmado y actualización
+El dueño quería distribuir la app con instalador firmado y actualización
 automática, publicando desde su PC a Cloudflare (`horsepos.com`). Hasta
 entonces la app se "instalaba" copiando la carpeta de build con
 `tool/publicar_actualizacion_desktop.ps1`.
 
 - **Firma de las actualizaciones: DSA, no EdDSA.** El README del paquete
   `auto_updater` (1.0.0) documenta DSA (`generate_keys`, `DSAPub` en
-  `Runner.rc`, `sparkle:dsaSignature`). Bruno verificó que el paquete trae
+  `Runner.rc`, `sparkle:dsaSignature`). El dueño verificó que el paquete trae
   WinSparkle 0.8.1 y que EdDSA llegó en 0.9.0, así que el servidor firma con
   `--signature-type dsa`. Las claves salen de `dart run
   auto_updater:generate_keys` (acá, `tool/generar_claves_actualizacion.ps1`,
@@ -1115,7 +1115,7 @@ entonces la app se "instalaba" copiando la carpeta de build con
 - **Detección propia, instalación con WinSparkle.** En WinSparkle 0.8.1
   `check_update_without_ui` NO es silencioso: si hay versión nueva abre su
   ventana. Y las revisiones programadas (`setScheduledCheckInterval`) hacen
-  lo mismo sin mirar si hay una venta en curso. Como Bruno pidió "nunca
+  lo mismo sin mirar si hay una venta en curso. Como el dueño pidió "nunca
   interrumpir una venta", la app baja el appcast sola con `http` (al
   iniciar y cada 6 h), compara con `hayActualizacion`, y guarda la versión
   nueva. WinSparkle no se inicializa hasta que alguien toca "Instalar ahora"
@@ -1124,7 +1124,7 @@ entonces la app se "instalaba" copiando la carpeta de build con
   instalador. Sin internet no hay ningún mensaje.
 
 - **Aviso: nada con una venta abierta; después, "Instalar ahora / Más
-  tarde"; nunca se instala solo** (Bruno, 2026-09-30). "Venta abierta" =
+  tarde"; nunca se instala solo** (El dueño, 2026-09-30). "Venta abierta" =
   algo cargado en alguna pestaña de Venta (`hayVentaEnCurso`). Al salir de
   Venta con el carrito cargado no se apaga (el borrador sigue guardado).
   "Más tarde" silencia 4 h, solo en memoria. El aviso es un texto con dos
@@ -1168,7 +1168,7 @@ entonces la app se "instalaba" copiando la carpeta de build con
   `pubspec.yaml` que sube el script del APK, así que cada publicación de
   cualquiera de los dos cambia el número que ven los dos.
 
-### Lo que tiene que hacer Bruno (en este orden)
+### Lo que tiene que hacer el dueño (en este orden)
 
 1. **Respaldar la clave privada** `Documents\la_plazoleta_claves\dsa_priv.pem`
    (copiarla a un pendrive y a otro lugar, nunca al repo ni a la nube
@@ -1306,3 +1306,15 @@ Decididas con el dueño antes de empezar (fase 1):
   (cuenta con Google del sitio), no en el POS; por ahora el celular entra directo.
 - **Point desde el celular sin PC**: se pierde (las credenciales de Mercado Pago
   iban por Supabase). No se sincronizan al celular: es un token de pago.
+
+### Fase 9: limpieza y documentación (2026-09-30)
+
+- **Script, no edición a mano.** Los datos personales salen con un script
+  repetible (`tool/limpiar_datos_personales.py`), para poder volver a correrlo si
+  reaparece alguno. Comentarios y documentos dicen "el dueño"; los nombres de
+  usuario de los tests, "Dueño".
+- **La numeración de `REGLAS-NEGOCIO.md` no se toca**: el código y los tests citan
+  "Regla N". En vez de partir el documento se le agregó la tabla módulo → reglas.
+- **El comparador de precios nace apagado** en una base nueva: sus fuentes son del
+  origen (una ciudad y una tienda puntual). Hacerlo configurable por ciudad queda
+  fuera de esta generalización.

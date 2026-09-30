@@ -1,5 +1,5 @@
 // Prueba de upgrade REAL (v31 → v32, `usuarios` se suma a la sincronización
-// por Firestore — Bruno, 2026-09-18: "no debería tener que escanear ya, es
+// por Firestore — El dueño, 2026-09-18: "no debería tener que escanear ya, es
 // innecesario") contra un archivo de verdad, no `NativeDatabase.memory()` —
 // mismo motivo que `migracion_v30_test.dart`/`migracion_v31_test.dart`: en
 // memoria siempre se pasa por `onCreate` (esquema más nuevo de una), nunca
@@ -22,7 +22,7 @@ void main() {
 
       var db = AppDatabase(NativeDatabase(archivo));
 
-      // `_seedDatosFijos` (onCreate) ya deja un usuario ("Bruno" o similar)
+      // `_seedDatosFijos` (onCreate) ya deja un usuario ("El dueño" o similar)
       // con `global_id` NULL — igual que la base real hoy. Se agrega un
       // segundo usuario para tener más de una fila que backfillear.
       final segundoUsuarioId = await db.into(db.usuarios).insert(
@@ -87,7 +87,7 @@ void main() {
     'columnas de v32 pero user_version quedó atrasado — no explota con '
     '"duplicate column"',
     () async {
-      // Reproduce exactamente lo que encontramos en la base real de Bruno:
+      // Reproduce exactamente lo que encontramos en la base real de el dueño:
       // una migración anterior alcanzó a agregar las columnas pero no llegó
       // a confirmar `user_version` (proceso cerrado a mitad de camino, o
       // similar) — el próximo arranque, con `from < 32` todavía verdadero,

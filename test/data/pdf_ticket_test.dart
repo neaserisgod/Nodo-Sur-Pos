@@ -19,7 +19,7 @@ void main() {
     test('produce bytes de un PDF real', () async {
       final ticket = construirTicket(
         fecha: DateTime(2026, 8, 30, 15, 0),
-        vendedor: 'Bruno',
+        vendedor: 'Dueño',
         lineas: const [
           LineaTicket(nombreProducto: 'Coca-Cola 500ml', cantidad: 2, subtotalCentavos: 224000),
         ],
@@ -41,7 +41,7 @@ void main() {
 
     setUp(() async {
       db = baseDeTest();
-      usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+      usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
       sesionId = await db.into(db.sesionesDeCaja).insert(
             SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 0),
           );

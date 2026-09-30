@@ -42,7 +42,7 @@ actualización automática"); las trampas que aparecieron, en `TRAMPAS.md`.
   repo. **Hay que respaldarla** (USB + copia en otro lugar): si se pierde,
   ninguna PC instalada puede recibir más actualizaciones, y la única salida
   sería reinstalar a mano con una clave pública nueva.
-- **Pendiente a mano (Bruno)**: ver la lista al final de `DECISIONES.md`
+- **Pendiente a mano (El dueño)**: ver la lista al final de `DECISIONES.md`
   ("Instalador y actualización automática").
 
 ---
@@ -84,7 +84,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   cargar nombre y dirección una vez. El celular muestra "Nodo Sur POS" hasta que
   el companion reciba la marca por sync. Suite: 1315 verdes + 4 que no compilan por
   `test/capturas/`. Sin migración.
-- **Fase 4 (proveedor con caja aparte) — hecha**: el código fijo `'SC'` (Serra
+- **Fase 4 (proveedor con caja aparte) — hecha**: el código fijo `'SC'` (Distribuidora
   Cigarros) ya no decide nada. `proveedores.caja_aparte` (v45, nace en falso)
   lo reemplaza en los 5 lugares donde se miraba el código (reposición ×3,
   panel "Ver lata", diálogo Avanzado). La migración marca `SC` en las bases que
@@ -134,8 +134,18 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   cobrar con la terminal Point (las credenciales viajaban por Supabase); avisa
   que se hace conectado a la PC. `flutter analyze lib` queda sin errores. Suite:
   1329 verdes + 4 que no compilan por `test/capturas/`.
-- **Fase que sigue**: 9, documentación y limpieza de datos personales (las fases
-  6 y 7 se descartaron).
+- **Fase 9 (documentación y limpieza) — hecha**: `tool/limpiar_datos_personales.py`
+  (idempotente; dry-run por defecto) y aplicado: el nombre del dueño, los
+  proveedores reales y el cliente recurrente pasan a nombres genéricos en código,
+  tests y documentos (308 archivos; los tests y el código cambian juntos).
+  `REGLAS-NEGOCIO.md` ahora dice qué módulo activa cada regla, y
+  `docs/perfiles/la-plazoleta.md` describe el comercio de origen. Un comercio
+  nuevo arranca con el comparador de precios apagado (está armado para la
+  ciudad y la tienda online del origen; la base del origen no cambia). Se
+  renombraron identificadores con nombre de proveedor (`esCajaAparte`,
+  `pagosAProveedorDesdeLataCentavos`). Quedan nombres internos con "Plazoleta"
+  a propósito. Suite: 1330 verdes + 4 que no compilan por `test/capturas/`.
+- **La generalización del POS está completa** (fases 6 y 7 descartadas).
 
 ---
 
@@ -147,7 +157,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   El celular no necesitó actualización (última APK: 1.0.0+2097, con los arqueos opcionales).
 - **Suite**: 1214 tests verdes; `flutter analyze` limpio salvo los restos de
   Firestore de siempre. Esquema v39, sin migraciones nuevas.
-- **Decidido por Bruno hoy**: Carga histórica sigue producto por producto
+- **Decidido por el dueño hoy**: Carga histórica sigue producto por producto
   (no por totales del día con costo estimado, como proponía el mock).
 - **Arqueos del turno opcionales** (2026-09-28, después de la instalación de
   las 17:32): el último arqueo precarga el cierre (efectivo y MP, no la
@@ -166,13 +176,13 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `Documents/la_plazoleta.sqlite.backup-pre-movimientos-20260928-215140`);
   APK 1.0.0+2098 publicada.
 - **Qué sigue**:
-  1. Mocks del celular que Bruno todavía no mandó (carrito, historial,
+  1. Mocks del celular que el dueño todavía no mandó (carrito, historial,
      gestión/configuración, movimiento de caja/arqueo, conteo, login) —
      pedido en `Lenguaje de diseño/PEDIDO-MOCKS-2.md`. Cuando lleguen, van a
      `Lenguaje de diseño/`; aplicar con el mismo criterio (distribución sí,
      reglas/datos inventados no — ver `DECISIONES.md`, "Segunda tanda de
      mocks").
-  2. Ventas y los pasos de Cobro* tienen mocks en la carpeta pero Bruno los
+  2. Ventas y los pasos de Cobro* tienen mocks en la carpeta pero el dueño los
      dejó afuera a propósito ("a excepción de la pantalla ventas"): no
      tocarlos sin que lo pida.
   3. Supabase sigue cortado por cuota; la sync celular↔PC va por wifi
@@ -249,7 +259,7 @@ Aplicación a las pantallas:
 | Equilibrio (`lib/ui/equilibrio/`) | **Rehecha con el kit** (ya no la iteración vieja de fase 11) — mismo contenido y reglas de negocio, ahora con `PantallaGestion` (sí lleva barra lateral: es de referencia/lectura, no un flujo bloqueante) y los tres diálogos de fijos como `Modal`. |
 | Configuración (`lib/ui/configuracion/`) | **Reescrita con el kit**, las ocho secciones — lista de secciones pasó a `ListaMaestra`, los diálogos de renombrar a `Modal`, los campos de plata a `CampoPlata`. |
 | Historial + detalle de día + editor de venta (`lib/ui/historial/`) | **Reescritas con el kit** — la lista de días (`PantallaHistorial`) sí tiene barra lateral (es el destino real del menú); el detalle de un día y el editor de venta, dos niveles de drill-down desde ahí, se quedaron con su `AppBar` propio, mismo criterio que Cierre. |
-| Carga histórica, Impresión, Respaldo | **Reescritas con el kit.** Impresión y Respaldo, como antes. Carga histórica **rehecha por completo y reactivada en el menú** (2026-09-07, Bruno: "cargar ventas anteriores... una pantalla igual a la de la venta, pero con la opción de poner la hora y fecha distintas") — ver "Resuelto: carga histórica con carrito real" abajo. |
+| Carga histórica, Impresión, Respaldo | **Reescritas con el kit.** Impresión y Respaldo, como antes. Carga histórica **rehecha por completo y reactivada en el menú** (2026-09-07, el dueño: "cargar ventas anteriores... una pantalla igual a la de la venta, pero con la opción de poner la hora y fecha distintas") — ver "Resuelto: carga histórica con carrito real" abajo. |
 
 ### Fase 12 — cobro por terminal Point (cerrada)
 
@@ -300,12 +310,12 @@ completo en `TRAMPAS.md`):
 
 - La Orders API exige `config.point.terminal_id` en formato
   `MODELO__SERIAL` (`"NEWLAND_N950__N950NCC503383252"` para la Newland
-  N950 de Bruno), no el serial pelado que sí acepta la Terminals API usada
+  N950 de el dueño), no el serial pelado que sí acepta la Terminals API usada
   para imprimir — mismo posnet físico, dos formatos de string distintos
   según el endpoint de MP. `mpTerminalCobroId` ya quedó recargado con el
   valor correcto en la base real.
 - **Cancelar por API solo funciona mientras la orden sigue en
-  `status=created`** — Bruno: "cuando cancelo el QR no cancela el
+  `status=created`** — El dueño: "cuando cancelo el QR no cancela el
   dispositivo". Apenas llega a la terminal (`at_terminal`, casi al
   instante) MP devuelve `409 cannot_cancel_order` y no hay vuelta: cancelar
   pasa a ser una acción física en el posnet. El diálogo igual intenta el
@@ -390,7 +400,7 @@ del propio endpoint de creación de orden ofrecía `qr` como
 Newland N950 del local:**
 
 1. ~~Con la terminal en modo PDV, ¿sigue funcionando el QR cobrado a
-   mano?~~ — n/a: Bruno tiene dos posnets físicos separados, uno de cobro
+   mano?~~ — n/a: El dueño tiene dos posnets físicos separados, uno de cobro
    manual (ajeno a la app) y otro del sistema.
 2. Con la terminal en modo PDV, `imprimirEnPosnet` sigue funcionando. Bien.
 3. Acepta una orden con `default_type: "debit_card"`. Bien.
@@ -402,12 +412,12 @@ Newland N950 del local:**
 
 ### Fase 13 — pulido visual (post-cambio de hardware, en curso)
 
-**Por qué existe esta fase**: Bruno cambió la PC del local por una máquina
+**Por qué existe esta fase**: El dueño cambió la PC del local por una máquina
 nueva, potente, con monitor de 1920×1080 o más — la restricción de hardware
 de 2008 que gobernó toda la fase 11 (`CLAUDE.md`, "Restricción de
 hardware") **se levantó**. Esto no vuelve gratuita la app: sigue siendo el
 mismo negocio con la misma pantalla de venta de alta densidad, pero libera
-presupuesto de repintado para pulir tres cosas que Bruno señaló textuales
+presupuesto de repintado para pulir tres cosas que el dueño señaló textuales
 como el problema real de la interfaz actual:
 
 > "los formularios no se focalizan al centro"
@@ -460,7 +470,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
    costo/precio cargado como $0. Selector de período
    (`lib/domain/periodo.dart`, `lib/ui/comun/selector_periodo.dart`)
    construido para compartirse con Productos, que todavía no lo usa.
-   Fiados y encargues salieron de la pantalla (decisión de Bruno) —
+   Fiados y encargues salieron de la pantalla (decisión de el dueño) —
    pendientes de una sección "Pendientes" propia, sin fecha.
 6. **Pantalla Cierre recibe el sistema de diseño completo**
    (`lib/ui/cierre/pantalla_cierre.dart`) — Patrón A mientras se cuenta
@@ -468,7 +478,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
    (Arqueo a la izquierda, Cigarrillos y Resumen del día a la derecha).
    Primera pantalla en usar los dos patrones de composición en secuencia.
 7. **Primera corrección post-revisión** (Venta y Proveedores, después de
-   que Bruno y una segunda revisión vieran las primeras capturas y no las
+   que el dueño y una segunda revisión vieran las primeras capturas y no las
    aprobaran — "se agregó espacio y componentes, pero no jerarquía, y se
    perdieron cosas que ya funcionaban"). Detalle completo y el porqué de
    cada una en `DECISIONES.md`, sección "Corrección post-revisión de fase
@@ -495,9 +505,9 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
    - Proveedores: cuatro cifras en el nivel 1 (stock a precio, costo,
      vendido, ganancia), medio de pago mudado a "Avanzado", estado arriba
      de todo, panel de detalle con ancho máximo propio — **todo esto
-     quedó superado por el ítem 8** (Bruno no aprobó esta versión
+     quedó superado por el ítem 8** (El dueño no aprobó esta versión
      tampoco, la reencauzó con un dibujo a mano).
-8. **Segunda corrección post-revisión** (solo Proveedores — Bruno dibujó a
+8. **Segunda corrección post-revisión** (solo Proveedores — El dueño dibujó a
    mano el layout que quiere: "tres paneles, la misma forma que la
    pantalla de venta"). Detalle completo en `DECISIONES.md`, sección
    "Segunda corrección post-revisión de fase 13":
@@ -509,7 +519,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
      arriba, un resumen de CINCO cifras (Stock, Costo, Venta, Ganancia,
      Separado — "es para mirar"); abajo, una tabla de productos del
      proveedor **nueva** (nombre, costo, venta, margen %) — "el corazón
-     de la pantalla" (Bruno). Reusa `markupBpDesdeCostoYPrecio`
+     de la pantalla" (El dueño). Reusa `markupBpDesdeCostoYPrecio`
      (`lib/domain/markup.dart`, la misma fórmula de "Margen en vivo" de
      Productos) — `lib/data/repositorio_reposicion.dart`,
      `productosDeProveedor`.
@@ -520,7 +530,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
      (`ListenableBuilder`), no una foto fija — separar o pagar sin cerrar
      el diálogo actualiza los números ahí mismo.
 
-9. **Kit de componentes compartidos** (`lib/ui/comun/`, paso 1 — Bruno pausó
+9. **Kit de componentes compartidos** (`lib/ui/comun/`, paso 1 — El dueño pausó
    el rediseño pantalla por pantalla acá: "el problema no es la estética, es
    que no hay componentes"). Diez piezas, ninguna recibe color/tamaño/padding
    por parámetro, todas salen de `tokens.dart`: `PantallaGestion`
@@ -529,7 +539,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
    diálogo de la app, cierra con Esc vía `CallbackShortcuts`),
    `CampoTexto`/`CampoPlata` (etiqueta FIJA arriba, nunca la flotante de
    Material), `BotonPrimario`/`BotonSecundario`, `EstadoVacio`. Aprobado por
-   Bruno tras una captura de muestra y cinco correcciones (campos que no se
+   El dueño tras una captura de muestra y cinco correcciones (campos que no se
    distinguían de un texto de lectura, `CampoPlata` alineada a la derecha,
    `FilaLista` sin truncar en `ListaMaestra`, `BotonSecundario` sin borde
    visible en claro, velo del `Modal` parejo entre temas).
@@ -539,7 +549,7 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
     cuenta. Sin ancho fijo a propósito (cada fila es su propia `Row` de
     ancho completo) — un ancho fijo partía en dos líneas una cifra grande.
 11. **Paso 2 — reescribir cada pantalla con el kit, completo.** Orden fijado
-    por Bruno: Proveedores → Cierre → Equilibrio → Historial → Configuración/
+    por el dueño: Proveedores → Cierre → Equilibrio → Historial → Configuración/
     Carga histórica/Impresión/Respaldo. Detalle de qué absorbió qué y qué
     quedó sin `PantallaGestion` (Cierre, y el detalle de día/editor de venta
     de Historial — flujos de drill-down, no destinos de menú) en la tabla de
@@ -563,7 +573,7 @@ Medidas.anchoMaximoContenido)`, ya universal tras el paso 2).
 
 ### Fase 14 — remake de estética basado en la companion (en curso)
 
-Bruno, 2026-09-19: "quiero que en desktop remakeemos toda la estética
+El dueño, 2026-09-19: "quiero que en desktop remakeemos toda la estética
 basándonos en la estética actual del celular... basémonos al completo en
 el apk", más una navbar superior en vez de la barra lateral. Plan
 aprobado, ejecución por fases (ver el plan en curso para el detalle
@@ -625,7 +635,7 @@ completo de cada una) — **la pantalla de Venta no cambia de layout**
   MaterialType.transparency)` inmediato — se agregó dentro de `Modal`.
 
 **Fases 2-5 — resto de pantallas + Venta: completas el mismo día, no en
-fases separadas.** Bruno, tras ver el primer build de Fase 1: "DIJE QUE LA
+fases separadas.** El dueño, tras ver el primer build de Fase 1: "DIJE QUE LA
 PANTALLA DE VENTAS SE ADAPTE TAMBIEN" — pidió no esperar al orden
 original del plan. Con la navbar ya heredada automáticamente por
 `PantallaGestion`, lo que faltaba en el resto de las pantallas era
@@ -675,19 +685,19 @@ verde (1073 tests) después de cada tanda. Solo queda una vitrina de test
 (`test/capturas/pantalla_muestra_kit.dart`) que sigue usando `Bloque` a
 propósito, para mostrar el kit viejo en las capturas de comparación.
 
-**Pendiente real**: chequeo visual de Bruno con la app corriendo
+**Pendiente real**: chequeo visual de el dueño con la app corriendo
 (`flutter run -d windows`, relanzada varias veces durante la sesión con
 cada tanda de cambios) — confirmado hasta el momento: la navbar de
 Dashboard/Proveedores aprobada tras el primer ajuste (autoajustada,
 centrada, ícono-arriba/etiqueta-abajo); Venta con la navbar nueva y los
 colores reconciliados, pendiente de un vistazo final. Fase 6 (borrar
 `Bloque`/tokens viejos deprecados, y la vitrina del kit) sigue sin
-empezar — recién tiene sentido una vez que Bruno dé el visto bueno visual
+empezar — recién tiene sentido una vez que el dueño dé el visto bueno visual
 final, no antes.
 
 ## En curso: "Lenguaje de diseño" (2026-09-26/28)
 
-Mocks de Bruno en `Lenguaje de diseño/` aplicados a toda la app (qué se
+Mocks de el dueño en `Lenguaje de diseño/` aplicados a toda la app (qué se
 decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
 
 - **Hecho, escritorio**:
@@ -710,7 +720,7 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
   - Hoja de editar producto: ganancia en vivo y precio rápido.
 - **Sin cambiar a propósito**: la navbar de abajo del celular (el mock usa
   un menú desde el título).
-- **Falta**: los mocks del celular que Bruno todavía no mandó (carrito,
+- **Falta**: los mocks del celular que el dueño todavía no mandó (carrito,
   historial, gestión, conteo). Esquema sin cambios, sigue en v39.
 - **Pregunta abierta**: Carga histórica por totales del día con costo
   estimado (lo que proponía el mock) o, como ahora, producto por producto.
@@ -738,7 +748,7 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
   `movimientos_de_caja.uso_excedente_cigarrillos` (excedente de MP por
   cigarrillos, ver `DECISIONES.md`). Las v25–v33 están documentadas en sus
   secciones de más abajo y en los comentarios de `onUpgrade`. v24
-  corrige `recargoSueltoCentavos` de 0 a 5000 ($50), Regla 6 (Bruno,
+  corrige `recargoSueltoCentavos` de 0 a 5000 ($50), Regla 6 (El dueño,
   2026-09-10: "los puchos sueltos también deben tener recargo por MP, sin
   eso los cálculos dan mal" — ver "Resuelto: recargo de cigarrillos
   sueltos" abajo). v23
@@ -780,9 +790,9 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
   `configuracion` (+ sección Usuarios), `impresion`, `respaldo`,
   `carga-historica`, `reportes`.
   No comparan contra un archivo de referencia (no son golden tests) —
-  existen para que Bruno las mire antes de aprobar un cambio visual grande,
+  existen para que el dueño las mire antes de aprobar un cambio visual grande,
   sin tener que levantar la app contra una base real.
-- Base real de Bruno: `C:\Users\Bruno\Documents\la_plazoleta.sqlite`
+- Base real de el dueño: `C:\Users\el dueño\Documents\la_plazoleta.sqlite`
   (fuera del repo, no versionada).
 - Credenciales de la terminal Point de Mercado Pago ya cargadas en esa base
   real (`mp_access_token`, `mp_terminal_id`) — no están en el repo ni en
@@ -790,7 +800,7 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
 
 ## Resuelto: venta "táctil" y "con carácter" (2026-09-16)
 
-Bruno: *"quiero que la interfaz de la app desktop sea llamativa al estilo de
+El dueño: *"quiero que la interfaz de la app desktop sea llamativa al estilo de
 que parezca táctil, al menos la parte de ventas"*, y después *"quiero que
 esté pensada visualmente para estar 24/7, dejemos el monocromo y démosle
 vida, lo mismo para el layout"*. Dos pasadas sobre venta, mismo alcance
@@ -803,7 +813,7 @@ acotado que el resto de la fase 13 (una pantalla por vez, `CLAUDE.md`):
    sumado al ripple que ya existía). La altura de los controles NO subió —
    overflow real en la columna de cobro al probarlo (siete controles a esa
    altura en un piso mínimo de 1366×768 sin margen de sobra).
-2. **"Bento con carácter"**, elegido por Bruno sobre un mockup de tres
+2. **"Bento con carácter"**, elegido por el dueño sobre un mockup de tres
    direcciones (armado aparte, fuera del repo): `lib/ui/venta/color_categoria.dart`
    — los cuatro medios de pago pasan a tener color propio (verde/violeta/
    azul/coral) en vez de compartir el ámbar; cada categoría de producto
@@ -821,7 +831,7 @@ pantallas de gestión es un paso aparte, no implícito acá.
 
 ## Resuelto: venta "full responsive" + foco selectivo, y edición masiva de productos (2026-09-16)
 
-Misma sesión que "venta táctil/con carácter" arriba, tres pedidos más de Bruno:
+Misma sesión que "venta táctil/con carácter" arriba, tres pedidos más de el dueño:
 
 1. **Columnas de venta fluidas, no a saltos**: `_anchoColumnaFluido`
    (`pantalla_venta.dart`) interpola el ancho de búsqueda/cobro entre 960px
@@ -857,7 +867,7 @@ Misma sesión que "venta táctil/con carácter" arriba, tres pedidos más de Bru
 
 ## Resuelto: plata sin centavos en toda la app (2026-09-16)
 
-Bruno: *"dejemos de mostrar centavos"*. `formatearARS` (`lib/domain/dinero.dart`)
+El dueño: *"dejemos de mostrar centavos"*. `formatearARS` (`lib/domain/dinero.dart`)
 redondea al peso más cercano y ya no imprime la parte decimal — cambio en un
 solo lugar (Regla 3), automáticamente en toda la app porque es el único
 punto de conversión centavos → texto. Solo la capa de texto: `precioCentavos`
@@ -869,9 +879,9 @@ carga histórica, cierre, editor de venta, equilibrio, apertura de caja,
 reportes, venta) — ningún cambio de comportamiento, solo el texto que
 `formatearARS` ya producía distinto.
 
-## Descartado (decisión de Bruno, no pendiente)
+## Descartado (decisión de el dueño, no pendiente)
 
-- **El descuento de Jam Rock (Regla 17) no se va a hacer.** Bruno decidió que
+- **El descuento de Cliente Frecuente (Regla 17) no se va a hacer.** El dueño decidió que
   no hace falta. Quedan sin usar, a propósito, las dos columnas de esquema que
   ya existían para esto y que nadie llegó a leer ni escribir:
   `clientes.descuentoBp` (`lib/data/tables/catalogo.dart`) y
@@ -880,7 +890,7 @@ reportes, venta) — ningún cambio de comportamiento, solo el texto que
 
 ## Resuelto: retiro de ganancias diario (Regla 13) → pantalla "Reportes"
 
-Cambio de reglas de negocio decidido por Bruno: el retiro semanal
+Cambio de reglas de negocio decidido por el dueño: el retiro semanal
 desaparece por completo (`lib/domain/retiro.dart` y la cascada de
 `repositorio_equilibrio.dart`, borrados) y se reemplaza por una revisión
 por proveedor de vendido/costo real/ganancia, con el colchón dejando de
@@ -890,12 +900,12 @@ completo del razonamiento original, incluidas las tres decisiones de
 alcance resueltas sin volver a preguntar, en `DECISIONES.md` ("Regla 13:
 el retiro de ganancia es diario...").
 
-**Simplificado el 2026-09-05** (Bruno: "necesito que solo diga cuánto
+**Simplificado el 2026-09-05** (El dueño: "necesito que solo diga cuánto
 separar... para ahorrarme trabajo y sobre todo tiempo"): los dos campos de
 retiro manual y el dato de fijos pendientes salieron de la pantalla —
 queda un número y un botón de un solo toque por corte pendiente.
 
-**El retiro real vuelve el 2026-09-06** (Bruno: "necesito poder retirar
+**El retiro real vuelve el 2026-09-06** (El dueño: "necesito poder retirar
 ganancia real de nuevo... pero todo simple: que me calcule las ganancias
 de manera automática en base al costo... de qué medio debe calcularse
 desde cómo se vendió, o en su defecto editable") — sobre la ganancia sin
@@ -909,17 +919,17 @@ cobraron las ventas que generaron esa ganancia
 100% efectivo manda su parte entera a efectivo, un mixto se reparte a
 prorrata de lo cobrado en cada medio. Los dos montos quedan editables
 (para el caso sin atribución exacta — mixto de varios productos, ver
-"Otros pendientes sueltos" más abajo — o porque Bruno decide otra cosa);
+"Otros pendientes sueltos" más abajo — o porque el dueño decide otra cosa);
 lo que no se retira de los dos campos queda como colchón automáticamente,
 sin una acción aparte. Bug real encontrado escribiendo los tests: una
 venta sin ningún `Pago` registrado (no debería pasar, pero un día cargado
 a mano podría no tenerlos) dividía por cero al calcular la proporción —
 `gananciaPorMedioDesde` ahora la salta en vez de crashear.
 
-**Reemplazado por completo el mismo día, 2026-09-06** (Bruno: "en lugar de
+**Reemplazado por completo el mismo día, 2026-09-06** (El dueño: "en lugar de
 revisar ganancias, un apartado de reportes para poder ver detalladamente
 todo") — la pantalla dejó de abrirse sola al abrir caja (esa interrupción
-forzada era exactamente lo que Bruno pidió sacar: ver también "Apertura y
+forzada era exactamente lo que el dueño pidió sacar: ver también "Apertura y
 cierre ya no bloquean el arranque" más arriba) y pasó a ser **"Reportes"**,
 sección nueva y permanente de la barra lateral (`lib/ui/reportes/`,
 `secciones_menu` v19→v20). A diferencia de la pantalla vieja (que solo
@@ -928,7 +938,7 @@ plena apertura), Reportes muestra los 15 proveedores activos siempre —
 "ver detalladamente todo" incluye los que están en cero.
 
 Primer diseño (una tarjeta larga por proveedor, todas apiladas) rechazado
-por Bruno en el momento — "no me gusta, recordá que tiene que ser sin
+por el dueño en el momento — "no me gusta, recordá que tiene que ser sin
 scroll" (mismo principio que la pantalla de venta: nada de la información
 principal puede quedar fuera de la pantalla). Diseño final, maestro-detalle
 como Proveedores: lista de solo nombres a la izquierda (`ListaMaestra`,
@@ -945,7 +955,7 @@ Capturas: `reportes_oscuro.png`/`reportes_claro.png`.
 
 Lo que antes era "no hay selector de usuario independiente de la sesión"
 está resuelto, pero no con una tabla de turnos: **un turno ES una sesión de
-caja completa** (Bruno, sesión del 31/08/2026 — su planilla de papel tiene
+caja completa** (El dueño, sesión del 31/08/2026 — su planilla de papel tiene
 una hoja por persona, no una por día). El que se va cuenta y cierra su hoja
 entera (arqueo, separación de cigarrillos, lo que queda en el cajón); el
 que entra abre una hoja nueva, precargada con lo que dejó el anterior pero
@@ -955,7 +965,7 @@ correctamente. `pantalla_venta.dart` puede abrir una hoja nueva sin
 reiniciar la app, y el Historial distingue turnos del mismo día por hora y
 empleado. Ver `DECISIONES.md` para el detalle.
 
-**2026-09-12, botón "Cambiar de turno" + cierre pasado a modal** (Bruno:
+**2026-09-12, botón "Cambiar de turno" + cierre pasado a modal** (El dueño:
 "la pantalla de cierre de caja es un bodrio total... una pantalla entera
 pierde mucha info"): `PantallaCierre` dejó de ser un `Scaffold` con
 `Navigator.push` a pantalla completa — ahora se abre con `mostrarModal`
@@ -971,11 +981,11 @@ siempre.
 Además, la barra lateral de Venta ahora tiene dos botones separados:
 "Cerrar caja" (fin del día, termina en el bloqueo de siempre) y "Cambiar de
 turno" (mismo arqueo obligatorio, pero pensado para cuando viene ayuda a
-mitad de sesión — Bruno: "a veces sí me vienen a ayudar"). Este último
+mitad de sesión — El dueño: "a veces sí me vienen a ayudar"). Este último
 encadena directo del cierre a `DialogoAperturaCaja` para el que entra, en
 vez de dejar la pantalla en "Caja cerrada" esperando un segundo clic.
 
-**2026-09-12, arqueo obligatorio cada 2hs** (Bruno: "1 es como el cierre, 2
+**2026-09-12, arqueo obligatorio cada 2hs** (El dueño: "1 es como el cierre, 2
 no se puede, 3 no corta la sesión, solo queda registrado"): tabla nueva
 `arqueos_intermedios` (schemaVersion 25, `m.createTable`, no toca ninguna
 migración vieja). `domain/caja.dart` ganó `necesitaArqueoIntermedio`
@@ -995,7 +1005,7 @@ los tres contados siempre obligatorios. Corre en la MISMA sesión que ya
 estaba abierta — no crea una hoja nueva, no cambia el `usuarioAbrioId`, no
 interactúa con "Cambiar de turno" ni con "Cerrar caja".
 
-**2026-09-12, apertura de caja pide los tres montos** (Bruno: reboot de la
+**2026-09-12, apertura de caja pide los tres montos** (El dueño: reboot de la
 base — "para abrir caja se necesita: caja normal, caja cigarros, monto
 mercado pago"). `DialogoAperturaCaja` gana dos campos nuevos ("Caja
 cigarrillos" y "Monto Mercado Pago"), con el mismo tratamiento que ya tenía
@@ -1030,7 +1040,7 @@ entran sin scroll en el piso mínimo real (1366×768). Ganó también
 `mostrarDialogoArqueoIntermedio`) en vez de construir el widget a mano
 desde `pantalla_venta.dart`.
 
-Reboot de la base real de Bruno: **ejecutado** (2026-09-12). Se conservó
+Reboot de la base real de el dueño: **ejecutado** (2026-09-12). Se conservó
 productos (con stock actual), historial de precios, proveedores (con sus
 contadores de reposición/ganancia reseteados a "desde siempre" — quedarían
 huérfanos sin las ventas que los sustentaban; el colchón, que ya estaba en
@@ -1041,7 +1051,7 @@ sesiones de caja, movimientos de caja, arqueos intermedios, movimientos de
 stock, órdenes de cobro pendientes, historial de pedidos (ya en desuso),
 clientes, pendientes y los montos de gastos fijos ya cargados por mes.
 Backup previo: `la_plazoleta.backup-2026-09-12-antes-de-reboot.sqlite`
-(carpeta Documents, mismo patrón que los backups anteriores de Bruno).
+(carpeta Documents, mismo patrón que los backups anteriores de el dueño).
 `PRAGMA integrity_check`/`foreign_key_check` limpios después.
 
 ## Resuelto: stock por proveedor (Regla 8)
@@ -1069,16 +1079,16 @@ propósito, no es un cabo suelto.
 ## Resuelto: catálogo real de proveedores (Regla 16)
 
 El seed de 7 proveedores placeholder (S/F/C/B/W/G/O) se reemplaza por los 15
-reales de Bruno, vía migración v9→v10: Serra y Mazzota conservan `id` y se
-renombran, Coca Cola y Wesley no cambian, se agregan los 11 nuevos (incluida
-Serra Cigarros con código propio SC, antes compartía el de Serra), y
+reales de el dueño, vía migración v9→v10: Distribuidora y Fiambrería conservan `id` y se
+renombran, Coca Cola y Golosinas Oeste no cambian, se agregan los 11 nuevos (incluida
+Distribuidora de Cigarrillos con código propio SC, antes compartía el de Distribuidora), y
 Bebidas varias/Golosinas/Otros (B/G/O) quedan desactivados sin borrarse.
-Ver `DECISIONES.md`. Bruno ya puede cargar productos contra el catálogo
+Ver `DECISIONES.md`. El dueño ya puede cargar productos contra el catálogo
 real.
 
 ## Resuelto: separación de fondos por proveedor (Regla 5 extendida)
 
-Prioridad número uno de Bruno: saber qué plata es de cada proveedor y qué
+Prioridad número uno de el dueño: saber qué plata es de cada proveedor y qué
 guardar, por costo real, no por porcentaje. Cada proveedor tiene medio de
 pago (efectivo/transferencia/cuenta corriente/Mercado Pago) y un ciclo de
 tres estados — pendiente sin separar (como antes), separado (congela el
@@ -1089,11 +1099,11 @@ El corte pasa a ser la separación/el pago, no la recepción de mercadería:
 `historial_pedidos` queda sin usar. Un proveedor en efectivo o en Mercado
 Pago genera un `MovimientoCaja` (`PAGO_PROVEEDOR`) al pagarle — los dos
 mueven una caja real de la app, transferencia/cuenta corriente no. Aviso
-corto en la apertura de caja con cuánto separar de cada proveedor. Serra
+corto en la apertura de caja con cuánto separar de cada proveedor. Distribuidora
 Cigarros no aparece en la pantalla (siempre daría cero, Regla 6). Ver
 `DECISIONES.md` para el porqué de cada decisión de diseño.
 
-**Corrección post-revisión de Bruno**: `gastosEnEfectivoDelDia`,
+**Corrección post-revisión de el dueño**: `gastosEnEfectivoDelDia`,
 `gastosPorMpDelDia` y `pagosALataDelDia` (`repositorio_cierre.dart`)
 filtraban solo `tipo = 'GASTO'` — un pago a proveedor en efectivo no bajaba
 la caja esperada y el arqueo marcaba un faltante por ese monto. Las tres
@@ -1104,7 +1114,7 @@ que `registrarPagoFijo`.
 
 ## Resuelto: la planilla "Control diario de caja" al 100% (ítem 3)
 
-Cubre todo el checklist de Bruno contra el PDF vigente (`Planilla_Diaria_Caja
+Cubre todo el checklist de el dueño contra el PDF vigente (`Planilla_Diaria_Caja
 1.pdf`): las dos grillas con "pago mixto: un renglón en cada grilla" y
 "cigarrillos: sin letra" ya testeados; apertura/cierre con las 7 líneas en
 orden; salidas/pagos con origen cajón o lata. Nuevo:
@@ -1119,7 +1129,7 @@ orden; salidas/pagos con origen cajón o lata. Nuevo:
 - **La planilla se genera sola al cerrar caja**, en la carpeta de tickets
   ya configurada — antes solo salía a mano desde Historial.
 - **Reposición por proveedor, arqueo propio de la lata, y encabezado con
-  empleado + horarios** vuelven al PDF por pedido explícito de Bruno — con
+  empleado + horarios** vuelven al PDF por pedido explícito de el dueño — con
   costo real (nunca el porcentaje del papel viejo), un trío contado/
   esperado/diferencia igual al de efectivo y MP (`SesionesDeCaja` gana
   `lataContadoCentavos`/`lataDiferenciaCentavos`), y sin firmas.
@@ -1134,14 +1144,14 @@ Ver `DECISIONES.md` para el porqué de cada una de estas decisiones.
 
 ## Resuelto: carga histórica con carrito real
 
-Bruno, 2026-09-07: "quiero hacer un apartado para cargar ventas anteriores,
+El dueño, 2026-09-07: "quiero hacer un apartado para cargar ventas anteriores,
 que sería una pantalla igual a la de la venta, pero con la opción de poner
 la hora y fecha distintas, para cargar el histórico". Reemplaza por
 completo a la carga por planilla de la fase 9 (dos grillas de renglones de
 texto libre, apertura/cierre y arqueo real a mano) — decisión explícita de
-Bruno, no una convivencia de las dos.
+El dueño, no una convivencia de las dos.
 
-Tres decisiones de negocio resueltas con Bruno antes de escribir código:
+Tres decisiones de negocio resueltas con el dueño antes de escribir código:
 **no descuenta stock** (esa mercadería ya se descontó en su momento, aunque
 no estuviera en el sistema todavía), **no afecta la caja de hoy** (queda
 asociada a una sesión de esa fecha vieja, nunca a la sesión abierta ahora),
@@ -1150,7 +1160,7 @@ reconstruir el costo real de esa fecha pasada.
 
 - **Fecha elegida una sola vez** (fecha + hora), antes de poder tocar el
   carrito — todo lo que se carga después de elegirla es para ese mismo día.
-  No hay forma de cambiar la fecha línea por línea (decisión de Bruno: "elijo
+  No hay forma de cambiar la fecha línea por línea (decisión de el dueño: "elijo
   la fecha al principio, para cargar los productos vendidos por ese día").
 - **Nada se graba hasta "Guardar día"**: la tanda de ventas de ese día vive
   en memoria (`CargaHistoricaControlador._pendientes`) — si se cierra la
@@ -1159,15 +1169,15 @@ reconstruir el costo real de esa fecha pasada.
   graba cada venta (`registrarVenta(..., afectaStock: false, fecha: ...)`,
   nuevos parámetros opcionales, sin tocar el comportamiento de la venta en
   vivo) y la cierra sola con **arqueo automático** (contado = esperado,
-  diferencia 0 — Bruno: "el arqueo dejalo de lado... es simplemente para
+  diferencia 0 — El dueño: "el arqueo dejalo de lado... es simplemente para
   tener un histórico"), reusando `calcularResumenCierre`/`cerrarSesion`
   tal cual, nunca una fórmula nueva (Regla 3).
 - **Medios de pago (Efectivo/Mercado Pago/Mixto) son mocks**: solo etiquetan
   el pago para que el arqueo automático y el desglose salgan bien — a
   diferencia de la pantalla de venta, ningún botón manda una orden a la
-  terminal Point (Bruno: "no funcionan para cobrar de verdad en esa
+  terminal Point (El dueño: "no funcionan para cobrar de verdad en esa
   pantalla").
-- **Deliberadamente más simple que la pantalla de venta real** (Bruno: "que
+- **Deliberadamente más simple que la pantalla de venta real** (El dueño: "que
   sea lo más rápido para poder cargar históricos" — prioridad a tenerla
   andando, no a la paridad total): sin atajos de teclado Alt+algo, sin alta
   rápida de producto nuevo (se asume que el producto ya existe en el
@@ -1193,7 +1203,7 @@ reconstruir el costo real de esa fecha pasada.
 
 ## En curso: companion app Android
 
-Bruno, 2026-09-07: llevar la app a Android, empezando como companion
+El dueño, 2026-09-07: llevar la app a Android, empezando como companion
 (consulta, edición de precios, alta de productos, conteo de stock, gasto
 rápido) — el alcance inicial explícitamente NO incluía POS móvil. **Eso
 cambió a lo largo de esta misma sección** (ver más abajo, fecha por fecha):
@@ -1202,7 +1212,7 @@ vivo, historial de ventas y carga histórica — un POS y una caja reales, no
 solo consulta. Si vas a tocar algo de `lib/companion/`/`servidor_companion.dart`,
 leé toda esta sección antes de asumir el resumen de este párrafo: quedó
 desactualizado varias fases atrás y solo el relato completo de abajo tiene
-el alcance real (2026-09-10: Bruno tuvo que corregir esto en el momento
+el alcance real (2026-09-10: El dueño tuvo que corregir esto en el momento
 porque una sesión asumió "sin POS" a partir de este párrafo solo). Uso
 esperado: en el local, en la misma WiFi que la PC; "afuera sirve poco".
 Diseño de la UI Android pensado para pantallas grandes de gama alta (S24
@@ -1236,13 +1246,13 @@ hacia su propia IP no pasa necesariamente por el mismo camino de filtrado
 que un dispositivo de verdad). Agregar una regla manual (`netsh ...
 profile=any`) necesita permisos de administrador que la sesión de desarrollo
 no tiene — quedó armado `tool/permitir_firewall_companion.ps1` para que
-Bruno lo corra una vez, como administrador, después de instalar la app en
+El dueño lo corra una vez, como administrador, después de instalar la app en
 la PC del local. **Falta la prueba real con un segundo dispositivo** (el
-celular de Bruno) en la WiFi real del local — es la única que contesta la
+celular de el dueño) en la WiFi real del local — es la única que contesta la
 pregunta de verdad.
 
 **Fase B (API mínima + esquema, hecha)**: `lib/servidor/servidor_companion.dart`
-ahora expone la API real, alcance acotado a lo que Bruno pidió (nada de
+ahora expone la API real, alcance acotado a lo que el dueño pidió (nada de
 ventas/caja/cierre/reportes):
 
 - `GET /ping` (sin token, para que el celular confirme que encontró la PC
@@ -1252,7 +1262,7 @@ ventas/caja/cierre/reportes):
   reusa `ajustarStockRapido`) · `GET /sesion` (si hay caja abierta, para
   saber bajo qué sesión cae un gasto) · `POST /gastos`.
 - **Autenticación por token compartido**, no login de usuario — la app
-  sigue "sin autenticación" para las personas (Bruno/su empleado eligen
+  sigue "sin autenticación" para las personas (El dueño/su empleado eligen
   quién son al hacer una acción, mismo criterio que abrir caja hoy). El
   token vive en `configuracionTabla.companionToken` (v21→v22,
   `regenerarTokenCompanion`) y viaja en el header `X-Companion-Token` — sin
@@ -1285,7 +1295,7 @@ que no tienen nada que ver con la companion. Se sacó de la cadena de
 try/catch), para que una falla o demora ahí nunca pueda tirar abajo el
 resto de la pantalla.
 
-**Cambio de rumbo, 2026-09-07 (Bruno: "no quiero que sea un nuevo proyecto
+**Cambio de rumbo, 2026-09-07 (El dueño: "no quiero que sea un nuevo proyecto
 Flutter, simplemente adaptar esta para Android")**: Android se agregó como
 plataforma más *de este mismo proyecto* (`flutter create . --platforms=android`,
 no un repo aparte) — mismo `pubspec.yaml`, mismo `flutter analyze`/
@@ -1347,17 +1357,17 @@ stock)**:
    `build\app\outputs\flutter-apk\app-debug.apk` en el celular) — nunca se
    corrió en un dispositivo físico, solo se compiló.
 
-**Probado en un celular real, con datos reales — funciona.** Bruno instaló
+**Probado en un celular real, con datos reales — funciona.** El dueño instaló
 el `.apk` de release en su S24/S26 Ultra, emparejó con la PC real, y contó
 el stock de un producto real desde el celular. Primer susto: "no actualiza
 el stock de la PC" — no era un bug, era que el producto en su catálogo real
-tiene un typo ("Pilip Morris Red S.", sin la "h") y Bruno estaba buscando
+tiene un typo ("Pilip Morris Red S.", sin la "h") y el dueño estaba buscando
 "Philip". Confirmado leyendo la base real (solo lectura): el `stock` quedó
 en 0 y el `movimientos_de_stock` con `tipo=AJUSTE` quedó grabado
 correctamente — el camino completo (celular → servidor → base real) andaba
 bien desde el primer intento.
 
-**Precios, alta de producto y consultar precio, hechos** (Bruno,
+**Precios, alta de producto y consultar precio, hechos** (El dueño,
 2026-09-07: "con el escáner de códigos de barras. también un consultador de
 precios que funcione por escritura también"):
 
@@ -1382,7 +1392,7 @@ precios que funcione por escritura también"):
   precio nunca puede tocar un precio sin querer. Buscar por nombre o
   escanear, precio grande, stock como dato secundario.
 
-**Sistema de actualización de la companion app, hecho** (Bruno, 2026-09-07:
+**Sistema de actualización de la companion app, hecho** (El dueño, 2026-09-07:
 "ya que de todos modos tenemos un servidor local... para poder probar sin
 tener que pasar la apk a cada rato"):
 
@@ -1413,7 +1423,7 @@ tener que pasar la apk a cada rato"):
   cualquier HTTP real de un test con 400, para que los widget tests no
   dependan de la red sin querer) — acá los tests SÍ necesitan HTTP real,
   contra el propio servidor.
-- **Bug real, encontrado por Bruno probando el sistema el mismo día**: con
+- **Bug real, encontrado por el dueño probando el sistema el mismo día**: con
   `--split-per-abi`, Flutter le suma a cada arquitectura un multiplicador
   al build number para que Play Store pueda distinguir los `.apk` de cada
   una (arm64 = 2000 + build real — build 3 quedaba reportándose como
@@ -1422,37 +1432,37 @@ tener que pasar la apk a cada rato"):
   versión — el banner de actualización nunca se apagaba. Arreglado
   compilando un solo `.apk` para arm64 sin `--split-per-abi`
   (`tool/publicar_actualizacion_companion.sh`), que no tiene ese problema.
-- El chequeo de versión además dejó de fallar en silencio (Bruno: "no
+- El chequeo de versión además dejó de fallar en silencio (El dueño: "no
   salió nada" — no había forma de saber si era "misma versión" o "no se
   pudo conectar"): ahora siempre muestra un texto de diagnóstico al pie
   del menú (`Celular: X · PC: Y`, o el error si no pudo consultar).
 
-**Conteo de stock, rediseñado por completo** (Bruno, 2026-09-07, spec
+**Conteo de stock, rediseñado por completo** (El dueño, 2026-09-07, spec
 completa): reemplaza al "buscar → editar un producto" de la primera
-vuelta, que Bruno calificó de "muy nefasto". Ahora:
+vuelta, que el dueño calificó de "muy nefasto". Ahora:
 
 - Buscador al principio de todo (`lib/companion/pantalla_conteo_stock.dart`):
   tipear muestra un dropdown con el precio de cada resultado. Tocar un
   resultado **no hace nada todavía, a propósito** — el handler
   (`_alTocarResultadoBusqueda`) queda armado pero vacío, para cuando se
-  pueda vender desde acá (Bruno: "no elimines la pantalla, solo
+  pueda vender desde acá (El dueño: "no elimines la pantalla, solo
   inhabilitala para después modificarla").
 - Sin texto en el buscador, en su lugar aparece la lista de proveedores
   (mismo criterio que Proveedores en el escritorio) — tocar uno abre sus
   productos.
 - Productos de un proveedor: stock guardado de **solo lectura** al lado de
-  un campo para el conteo real. Vacío = no se toca ese producto (Bruno:
+  un campo para el conteo real. Vacío = no se toca ese producto (El dueño:
   "si no se pone nada se asume que el stock guardado es correcto") — un
   solo botón "Guardar conteo" aplica todos los campos completos de una
   vez, salta los vacíos.
 - `ClienteCompanion.productos()` gana `proveedorId` (ya existía del lado
   del servidor, `GET /productos?proveedorId=`, sin usar todavía del lado
   del celular).
-- Bruno va a mandar un layout de referencia para esto y la navegación en
+- El dueño va a mandar un layout de referencia para esto y la navegación en
   general — esta es una primera pasada fiel a la especificación en texto,
   puede cambiar cuando llegue esa referencia.
 
-**Gasto rápido desde el celular, hecho** (Bruno, 2026-09-07 — el último de
+**Gasto rápido desde el celular, hecho** (El dueño, 2026-09-07 — el último de
 los tres pedidos originales de la Fase C) — `lib/companion/pantalla_gasto_rapido.dart`,
 mismo formulario que `dialogo_gasto_rapido.dart` de escritorio (monto,
 motivo opcional, los tres medios: cajón normal/lata/Mercado Pago), llamando
@@ -1460,7 +1470,7 @@ a la misma `registrarGastoRapido` por `POST /gastos` (ya existía del lado
 del servidor desde la Fase B, sin usar hasta ahora).
 
 - **Apertura de caja de emergencia desde el celular, agregada de paso**
-  (Bruno: "como comparten la misma bd no podemos abrirla desde la app" —
+  (El dueño: "como comparten la misma bd no podemos abrirla desde la app" —
   sí se puede, es la misma base). Si al abrir Gasto rápido `GET /sesion`
   da `abierta: false`, la pantalla ofrece un formulario corto (solo fondo
   inicial, precargado con lo que quedó del turno anterior si se cerró hoy)
@@ -1469,7 +1479,7 @@ del servidor desde la Fase B, sin usar hasta ahora).
   escritorio (Regla 3), sin el aviso de reposición que sí tiene la
   apertura de escritorio (no aplica a un desbloqueo puntual) y sin
   quedar como acceso de menú aparte — nace solo dentro de este flujo.
-  Decisión de Bruno, explícita: carga directo, sin mostrar a qué
+  Decisión de el dueño, explícita: carga directo, sin mostrar a qué
   sesión/turno cae el gasto.
 - `fondoInicialSugeridoCentavos` (`repositorio_cierre.dart`) — la cuenta de
   "QUEDA EN EL CAJON" que antes vivía inline en
@@ -1477,11 +1487,11 @@ del servidor desde la Fase B, sin usar hasta ahora).
   caja (el diálogo de escritorio, la apertura de emergencia del celular)
   usen la misma fórmula (Regla 3).
 
-**Vender desde el celular, primera versión** (Bruno, 2026-09-07: "quiero
+**Vender desde el celular, primera versión** (El dueño, 2026-09-07: "quiero
 que la parte de vender use la misma lógica que la app de desktop... el
 buscador de precios, si tocamos un producto se agrega al carrito, que
 aparezca una barra con el subtotal para elegir el medio de pago") —
-Efectivo, QR y Débito; sin Mixto ni descuento (decisión explícita de Bruno,
+Efectivo, QR y Débito; sin Mixto ni descuento (decisión explícita de el dueño,
 "después lo mejoramos"), ticket solo "enviar a la terminal Point" (sin
 "guardar PDF", eso se sigue haciendo desde la PC):
 
@@ -1538,7 +1548,7 @@ Efectivo, QR y Débito; sin Mixto ni descuento (decisión explícita de Bruno,
   desde `ProductoCompanion` sin abrir ninguna base, y necesitaba el mismo
   mapeo que ya usa `lineaDesdeProducto` en el escritorio.
 
-**Bug real, encontrado por Bruno probando el alta desde el celular
+**Bug real, encontrado por el dueño probando el alta desde el celular
 ("funciona medio a pedales, no agrega bien o directamente no agrega")** —
 dos causas, las dos arregladas:
 
@@ -1560,7 +1570,7 @@ dos causas, las dos arregladas:
   (Regla 3), el diálogo de Proveedores ahora también lo captura y lo
   muestra en vez de crashear.
 
-**Productos sin stock, revisables desde el celular** (Bruno, 2026-09-07:
+**Productos sin stock, revisables desde el celular** (El dueño, 2026-09-07:
 "yo debería poder revisar los productos sin stock desde la app Android
 para ajustarlos") — nuevo ítem "Sin stock" arriba de la lista de
 proveedores en Conteo de stock: junta los agotados/negativos de TODOS los
@@ -1572,7 +1582,7 @@ buscando ceros. La pantalla de conteo en sí se generalizó
 que "por proveedor" y "sin stock" compartan la misma UI de conteo — la
 única diferencia es de dónde sale la lista de productos.
 
-**Carga histórica desde el celular** (Bruno, 2026-09-07: "quiero que
+**Carga histórica desde el celular** (El dueño, 2026-09-07: "quiero que
 agregues la parte de los históricos... se le pone la fecha, después es
 como si fuesen ventas que no descuentan stock, simplemente son para saber
 ganancias") — mismo concepto que `lib/ui/carga_historica/` del escritorio,
@@ -1600,7 +1610,7 @@ llevado a la companion:
   código.
 
 **Carga histórica: solo el día (sin hora), carrito con eliminar, y ver/editar
-días ya cargados** (Bruno, 2026-09-07: primero "necesito que solo sea el día
+días ya cargados** (El dueño, 2026-09-07: primero "necesito que solo sea el día
 que se cargue, y que sea como el carrito normal, que permita eliminar", y
 después "dejame verlos y editarlos porque le erré y lo cerré sin
 completarlo"):
@@ -1625,7 +1635,7 @@ completarlo"):
   "reabrir" nada para editar un día ya cerrado.
 
 **Actualización de la companion: dos bugs reales, los dos arreglados**
-(Bruno, 2026-09-07: "la apk no detecta la actualización si no la cierro y
+(El dueño, 2026-09-07: "la apk no detecta la actualización si no la cierro y
 abro de vuelta, y no hay manera de poder lanzar actualizaciones sin
 reiniciar la app desktop"):
 
@@ -1650,7 +1660,7 @@ reiniciar la app desktop"):
   el celular la note en cuanto vuelve a primer plano — ya no hace falta
   tocar la app de escritorio para nada.
 
-**Ajuste de cantidad en los carritos del celular** (Bruno, 2026-09-07: "no
+**Ajuste de cantidad en los carritos del celular** (El dueño, 2026-09-07: "no
 puedo agregar más de 1 unidad a la vez de los productos, misma
 funcionalidad que carrito [ya] dije") — tocar el mismo producto en el
 buscador ya sumaba de a uno (`sumarLineasVenta`), pero eso obligaba a
@@ -1663,7 +1673,7 @@ pesable, igual que el escritorio. Un solo widget para los dos carritos del
 celular (vender de verdad y carga histórica), Regla 3 — antes cada uno
 tenía su propia fila de solo lectura + tacho.
 
-**QR para instalar en un celular nuevo** (Bruno, 2026-09-07: "¿no podemos
+**QR para instalar en un celular nuevo** (El dueño, 2026-09-07: "¿no podemos
 hacer que en la app escaneando el QR lo ponga para descargar?") — el QR de
 Configuración → App companion es JSON (`{ip, puerto, token}`), pensado para
 el escáner de la propia companion; la cámara común de un celular sin la
@@ -1678,7 +1688,7 @@ sigue necesitando el QR de arriba (o cargar los datos a mano) para
 emparejarse de verdad.
 
 **Recargo de cigarrillos, verificado de punta a punta con el cliente real**
-(Bruno, 2026-09-07: "revisa que la apk no agrega los recargos automáticos")
+(El dueño, 2026-09-07: "revisa que la apk no agrega los recargos automáticos")
 — dos tests nuevos que ya no arman la `LineaVenta` a mano del lado del
 servidor (como hacían los existentes) sino que usan `ClienteCompanion` y
 `lineaDesdeResultadoBusqueda` tal cual corre en el celular, para vender y
@@ -1687,7 +1697,7 @@ confirman que el recargo aparece con QR/Mercado Pago y da $0 en efectivo
 (Regla 6) — no se encontró ningún bug, la lógica ya estaba bien en las dos
 puntas.
 
-**Dos bugs reales de la carga histórica, encontrados por Bruno mandando una
+**Dos bugs reales de la carga histórica, encontrados por el dueño mandando una
 captura** (Marlboro Crafted Red, medio Efectivo, botón mostrando siempre el
 mismo monto):
 
@@ -1704,14 +1714,14 @@ mismo monto):
   (`totalParaMostrar`) para seguir mostrándolo bien en el resumen de
   ventas ya cargadas de ese día.
 - **"Guardar día" (el botón que cierra todo el día) se confundía con
-  "Agregar venta"** (Bruno: "invita a apretarlo para guardar las ventas, y
+  "Agregar venta"** (El dueño: "invita a apretarlo para guardar las ventas, y
   termino teniendo que volver a abrirlo") — quedaban pegados, uno debajo
   del otro, con el mismo estilo. "Guardar"/"Agregar" (el de terminar) pasó
   a la barra de arriba (`AppBar.actions`), separado del flujo de armar
   cada venta — mismo criterio que "un botón por acción, en el lugar
   correcto" del resto de la app.
 
-**Resumen del día histórico** (Bruno, 2026-09-07: "hay que scrollear
+**Resumen del día histórico** (El dueño, 2026-09-07: "hay que scrollear
 demasiado... sobre todo que ordenemos y resumamos todo, así que al entrar
 a un día necesitaría un resumen de lo vendido por medio de pago, por
 proveedor, y la separación teórica"):
@@ -1729,14 +1739,14 @@ proveedor, y la separación teórica"):
   para editar/borrar una puntual, ya no lo primero que se ve). Antes había
   que sumar a ojo revisando venta por venta para saber "cuánto vendí" o
   "cuánto le separo a tal proveedor".
-- **Exportar a PDF queda pendiente** — Bruno lo mencionó como "estaría
+- **Exportar a PDF queda pendiente** — El dueño lo mencionó como "estaría
   interesante" pero no como lo prioritario de este pedido; se puede armar
   después reusando `pdf`/`printing` del escritorio (generar el PDF en el
   servidor, servirlo como archivo descargable al celular, mismo patrón que
   ya existe para el `.apk` de actualización).
 
 **App de escritorio preparada para la mitad de pantalla (960×1080)**
-(Bruno, 2026-09-07: "prepara la app desktop para funcionar en la mitad de
+(El dueño, 2026-09-07: "prepara la app desktop para funcionar en la mitad de
 la pantalla de 1920×1080, que sea todo bien accesible y nada se vaya por
 las ramas") — 960px es más angosto que el piso mínimo ya documentado
 (1366): con las columnas anchas de siempre, la pantalla de venta
@@ -1769,14 +1779,14 @@ resolución" — acá el resumen de lo construido:
   de Venta, Proveedores y Reportes — las tres sin overflow y legibles.
   `flutter_test` falla el test si algo desborda de verdad (RenderFlex
   overflow es un `FlutterError` real), así que estos tests ya prueban "no
-  se rompe", más allá de que Bruno las mire.
+  se rompe", más allá de que el dueño las mire.
 - **Pendiente**: el resto de las pantallas de gestión (Cierre, Historial,
   Configuración, Equilibrio) no se revisaron una por una a 960 — heredan
   el arreglo de la barra lateral compartida y de `Metrica`, pero ninguna
-  se probó con una captura propia todavía. Si Bruno nota algo raro en
+  se probó con una captura propia todavía. Si el dueño nota algo raro en
   alguna, avisar para revisarla puntual.
 
-**Pulido de fricción en la companion** (Bruno, 2026-09-07: "no me gusta que
+**Pulido de fricción en la companion** (El dueño, 2026-09-07: "no me gusta que
 se abra el teclado al entrar o volver, en las ventas históricas no me
 gusta que aparezca abajo las ventas por agregar, también necesito que
 saques la versión de abajo, y que la barra del carrito aparezca arriba
@@ -1798,7 +1808,7 @@ del teclado, no abajo del todo, es fricción innecesaria"):
   cargando ventas de un día.
 - **Diagnóstico de versión sacado de la pantalla principal** —
   `_PantallaMenuCompanionState` mostraba un texto de estado del último
-  chequeo de actualización (`_diagnosticoVersion`); Bruno lo consideró
+  chequeo de actualización (`_diagnosticoVersion`); el dueño lo consideró
   ruido. Se sacó el campo y toda su UI; `_revisarActualizacion()` sigue
   revisando en segundo plano (silencioso si falla: sin conexión a la PC
   no es un error para mostrar).
@@ -1809,7 +1819,7 @@ del teclado, no abajo del todo, es fricción innecesaria"):
   defecto, el Scaffold ya la sube sola cuando aparece el teclado, sin
   código extra.
 
-**Cobro a mano agregado al diálogo de Point de la companion** (Bruno,
+**Cobro a mano agregado al diálogo de Point de la companion** (El dueño,
 2026-09-07, en medio del pulido anterior: "recordá poner el cobro manual
 del qr/posnet, es para cargar las ventas de hoy y seguir cargando
 mientras tanto") — mismo criterio que el diálogo de escritorio
@@ -1822,7 +1832,7 @@ salida sin elegir una de las dos). Nuevo método de cliente
 `cobrarVirtualAMano` y parámetro `canal` en `POST /ventas/cobrar` del lado
 del servidor, con test end-to-end nuevo.
 
-**"Arqueo" en vivo, sin contar nada a mano** (Bruno, 2026-09-07: "un botón
+**"Arqueo" en vivo, sin contar nada a mano** (El dueño, 2026-09-07: "un botón
 de arqueo también para saber que tal vamos en cualquier momento sin tener
 que contar a mano las ventas del día" — mezclado con el indicador de caja
 abierta/cerrada que ya se había pensado):
@@ -1841,7 +1851,7 @@ abierta/cerrada que ya se había pensado):
   importa si la sesión está abierta o cerrada. Nuevo endpoint
   `GET /caja/estado` (409 si no hay caja abierta), nuevo
   `cantidadVentasDelDia` en `repositorio_cierre.dart`.
-- **Pendiente de confirmar con Bruno, no tocado**: al escribir el test de
+- **Pendiente de confirmar con el dueño, no tocado**: al escribir el test de
   este endpoint apareció que `efectivoEsperadoCentavos` (y por lo tanto
   también el del cierre real, `calcularResumenCierre.efectivoEsperadoCentavos`,
   que usa la misma fórmula) suma el redondeo dos veces cuando hay ventas
@@ -1852,11 +1862,11 @@ abierta/cerrada que ya se había pensado):
   (~$3.000/día de redondeo acumulado), la caja esperada del cierre real
   quedaría sobrestimada en esa misma magnitud todos los días. No se tocó
   nada de esto — es lógica preexistente del cierre de escritorio, ya
-  probada y en uso — pero vale la pena que Bruno revise si el arqueo real
+  probada y en uso — pero vale la pena que el dueño revise si el arqueo real
   viene mostrando un "sobra" sistemático de ese orden.
 
 **Cobro a mano directo en el carrito de venta, sin pasar por Point**
-(Bruno, 2026-09-07: "el carrito de venta no tiene venta manual por QR") —
+(El dueño, 2026-09-07: "el carrito de venta no tiene venta manual por QR") —
 lo que se había agregado antes era el fallback DENTRO del diálogo de Point
 (aparece recién si la orden falla/expira/da error, igual que el
 escritorio). Pero el pedido original ("cargar las ventas de hoy y seguir
@@ -1870,11 +1880,11 @@ mismo endpoint que ya usaba el fallback del diálogo (Regla 3) — ninguna
 orden Point se crea en este camino.
 
 **El arqueo (y el resumen de un día histórico) ahora muestran toda la
-plata, cigarrillos incluidos** (Bruno, 2026-09-07: "el arqueo muestra
+plata, cigarrillos incluidos** (El dueño, 2026-09-07: "el arqueo muestra
 solamente una fracción del monto... porque no me marcan los cigarrillos
-de Serra Cigarros, y eso que vendí. ni la apk ni la desktop") —
+de Distribuidora de Cigarrillos, y eso que vendí. ni la apk ni la desktop") —
 investigado antes de tocar nada: el dato estaba bien guardado (la venta
-de cigarrillos tenía el `proveedorIdFoto` de Serra Cigarros correcto), el
+de cigarrillos tenía el `proveedorIdFoto` de Distribuidora de Cigarrillos correcto), el
 hueco era de visibilidad. Los cigarrillos se excluyen a propósito de "por
 proveedor" (Regla 6: se separan por la lata, no por reposición estándar)
 tanto en Reportes del escritorio como en este resumen — correcto — pero
@@ -1886,9 +1896,9 @@ cierre real (que pide contar primero). Arreglado sin fórmulas nuevas:
 Resumen de `pantalla_carga_historica.dart`. Pendiente para más adelante,
 no tocado: el equivalente en "Reportes" del escritorio necesitaría el
 saldo *acumulado* de la lata (no "vendido hoy"), que es una decisión de
-diseño distinta — a confirmar con Bruno antes de tocar esa pantalla.
+diseño distinta — a confirmar con el dueño antes de tocar esa pantalla.
 
-**Detalle de qué falta completar, no solo el total** (Bruno: "de lo
+**Detalle de qué falta completar, no solo el total** (El dueño: "de lo
 vendido decime que no tiene costo o proveedor, así le asignamos uno y
 medio calculamos el costo") — `vendidoSinCostoCentavos` ya daba el
 total, pero no A QUÉ ir a completarle el dato. Nueva
@@ -1903,11 +1913,11 @@ costo / las dos), y cuánto se vendió. Reemplaza a la vieja línea suelta
 producto era). Todavía no es tocable para ir directo a editarlo — hoy hay
 que buscarlo a mano en "Precios y alta de producto".
 
-**Historial de ventas, filtrable, "tipo Mercado Pago"** (Bruno, 2026-09-07:
+**Historial de ventas, filtrable, "tipo Mercado Pago"** (El dueño, 2026-09-07:
 "hagamos la sección de reportes para móvil con el historial de ventas, lo
 mismo para desktop, que sea filtrable... para un control manual en caso
 de desconfiar de los números... toma inspiración de mercado pago") —
-diseño acordado con Bruno antes de escribir código (CLAUDE.md: plan antes
+diseño acordado con el dueño antes de escribir código (CLAUDE.md: plan antes
 de pantalla grande): celular solo lectura por ahora ("no hace falta
 tanto de momento"), escritorio en pestaña nueva de "Reportes" al lado de
 la de proveedores (nunca la reemplaza), sesiones desde hoy en adelante.
@@ -1932,19 +1942,19 @@ la de proveedores (nunca la reemplaza), sesiones desde hoy en adelante.
 - **Celular**: acceso nuevo "Historial de ventas" en el menú
   (`pantalla_historial_ventas.dart`) — mismos filtros que el escritorio,
   agrupado por día ("Hoy"/"Ayer"/fecha) como el feed de Mercado Pago que
-  Bruno tomó de referencia. Sin las acciones de separar/retener/retirar
+  El dueño tomó de referencia. Sin las acciones de separar/retener/retirar
   — eso sigue siendo exclusivo de "Reportes" en el escritorio.
-- **Pendiente, no construido todavía** (Bruno: "sin confirmaciones" — pero
+- **Pendiente, no construido todavía** (El dueño: "sin confirmaciones" — pero
   esto es solo lectura, no hacía falta ninguna): llevar
   "Separar todo"/"Retener como colchón"/"Retirar ganancia" al celular
-  quedó fuera de esta vuelta a pedido explícito de Bruno ("celular solo
+  quedó fuera de esta vuelta a pedido explícito de el dueño ("celular solo
   historial, no hace falta tanto de momento") — si lo pide después, reusar
   tal cual la lógica de `ReportesControlador`/`repositorio_reposicion.dart`
   vía nuevos endpoints, sin inventar nada nuevo.
 
 **Falta (próximos pasos, en orden)**:
 
-1. Ajustar el layout de conteo de stock cuando Bruno mande la referencia
+1. Ajustar el layout de conteo de stock cuando el dueño mande la referencia
    visual que tiene en mente, para eso y para la navegación en general.
 2. Tests para `lib/companion/` — todavía no tiene ninguno del lado del
    cliente/UI (ni unitarios del cliente HTTP, ni de widget de las
@@ -1959,20 +1969,20 @@ la de proveedores (nunca la reemplaza), sesiones desde hoy en adelante.
    ya se probó contra hardware real, esto todavía no.
 4. Mixto y descuento (Regla 17) quedaron fuera de esta primera versión a
    propósito — sin fecha.
-5. **Bot de WhatsApp** (idea de Bruno, 2026-09-07, junto con la de
+5. **Bot de WhatsApp** (idea de el dueño, 2026-09-07, junto con la de
    actualización) — mucho más grande y con riesgos reales (automatizar
    WhatsApp sin la API oficial de Meta viola los términos de servicio y
    puede terminar en un baneo del número; la API oficial pide aprobación
-   de Meta, un número de negocio y tiene costo). Falta que Bruno diga para
+   de Meta, un número de negocio y tiene costo). Falta que el dueño diga para
    qué lo quiere (¿avisarle a él —stock bajo, cierre del día—, o que
    responda a clientes?) antes de elegir un camino — no se empezó a
    diseñar ni a construir nada todavía.
 
 **Sincronización sin depender del escritorio — fase 1 y 2 del rediseño
-(2026-09-17)**: Bruno pidió que la companion tenga su propia base,
+(2026-09-17)**: El dueño pidió que la companion tenga su propia base,
 sincronizada con la de la PC, para poder seguir operando (vender, gasto/
 ingreso rápido, conteo, precios) con la PC cerrada — plan completo en
-`C:\Users\Bruno\.claude\plans\recursive-greeting-rose.md`. La migración
+`C:\Users\el dueño\.claude\plans\recursive-greeting-rose.md`. La migración
 v29→v30 (2026-09-15) había dejado las columnas listas (`global_id`/
 `origen_dispositivo`/`actualizado_en`) pero sin usar; esta vuelta las puso a
 trabajar:
@@ -1993,7 +2003,7 @@ trabajar:
   `servicio_sincronizacion.dart` (`sincronizarConPc`) mueven filas en el
   orden correcto (categorías/proveedores/productos antes que las ventas que
   los referencian). Conflictos: gana `actualizado_en` más reciente (decisión
-  de Bruno); el stock nunca sincroniza como contador — sigue el log de
+  de el dueño); el stock nunca sincroniza como contador — sigue el log de
   `movimientos_de_stock` + `stockRecalculado` (`lib/domain/stock.dart`), ya
   diseñado antes, ahora conectado. Dispara solo al detectar la PC (pairing y
   cada apertura de la companion) más un pull-to-refresh manual en "Inicio"
@@ -2036,7 +2046,7 @@ primera vez.
   `sincronizarConPc` (fase 2) ya recoge solo por el cursor de push.
 - **Regla de sesión de caja, aplicada de verdad**: `abrirSesion` NUNCA cae a
   la base local — sin PC alcanzable, rechaza con un mensaje claro en vez de
-  abrir una caja propia del celular (Bruno: "no permite vender si no había
+  abrir una caja propia del celular (El dueño: "no permite vender si no había
   una sesión abierta al momento de perder la conexión" — evita el choque de
   dos aperturas del mismo día que ya preveía el comentario de
   `dispositivoAperturaDesignadoId` en `tables/configuracion.dart`). `sesion()`
@@ -2112,11 +2122,11 @@ no solo una pregunta teórica.
   **Sigue sin desplegarse a la PC real** — y sigue faltando la prueba que
   ningún test automático puede reemplazar: cortar WiFi de verdad en el
   celular, vender ahí, reconectar, y confirmar a ojo que la PC terminó con
-  la venta, el stock y la caja bien. Esa la tiene que hacer Bruno con
+  la venta, el stock y la caja bien. Esa la tiene que hacer el dueño con
   hardware real.
 
 **Ronda de arreglos reales, 2026-09-17 a la noche (no quedó documentada en su
-momento)**: Bruno probó la companion en modo local de verdad y encontró un
+momento)**: El dueño probó la companion en modo local de verdad y encontró un
 bug ("no detecta la caja abierta... hacelo de una vez bien" — sin forma de
 distinguir "está cargando" de "está en modo local porque no encontró la
 PC"). Arreglado con dos piezas nuevas:
@@ -2132,11 +2142,11 @@ PC"). Arreglado con dos piezas nuevas:
 
 ## En curso: companion Android como "POS aparte" — sync vía Firebase (2026-09-18)
 
-Bruno pidió ir más lejos que el rediseño de arriba: que el celular sea un POS
+El dueño pidió ir más lejos que el rediseño de arriba: que el celular sea un POS
 totalmente aparte (ni PC abierta ni misma WiFi), sincronizando por internet
 vía Firebase, con login real (Google o registro por email/contraseña) en vez
 de auth anónima, y que el cobro por Point y la impresión también anden sin la
-PC. Plan completo en `C:\Users\Bruno\.claude\plans\clever-greeting-lagoon.md`.
+PC. Plan completo en `C:\Users\el dueño\.claude\plans\clever-greeting-lagoon.md`.
 Hallazgo que cambia el tamaño del problema: `cobro_posnet.dart` e
 `impresion_posnet.dart` ya son llamadas HTTP puras a la nube de Mercado Pago
 — no dependen de Windows ni de la LAN, solo de tener las credenciales a mano
@@ -2145,7 +2155,7 @@ Hallazgo que cambia el tamaño del problema: `cobro_posnet.dart` e
 tal cual cuando llegue la fase de Firestore.
 
 **Fase 0 y 1 (esta sesión): infraestructura Firebase + login como primer
-APK distribuible** — a propósito antes que el motor de sync (Bruno: "es lo
+APK distribuible** — a propósito antes que el motor de sync (El dueño: "es lo
 primero que me gustaría distribuir").
 
 - `applicationId`/`namespace` de la companion pasó de `com.example.la_plazoleta`
@@ -2153,8 +2163,8 @@ primero que me gustaría distribuir").
   registrar la app en Firebase — `android/app/build.gradle.kts` y
   `MainActivity.kt` movido a su nuevo paquete.
 - Proyecto Firebase nuevo ("La Plazoleta", `la-plazoleta-3f77b`, plan Spark)
-  creado con browser automation guiada por Bruno (login con su propia cuenta
-  de Google, `gtalovergamer@gmail.com`) — Authentication con Google y
+  creado con browser automation guiada por el dueño (login con su propia cuenta
+  de Google, `tu-cuenta@ejemplo.com`) — Authentication con Google y
   Correo/contraseña habilitados, Firestore creado (sin usar todavía, es de
   la próxima fase), app Android registrada con la huella SHA-1 de la firma
   debug (`android/app/google-services.json`, no versionado — cada máquina de
@@ -2166,7 +2176,7 @@ primero que me gustaría distribuir").
   `android/settings.gradle.kts`/`android/app/build.gradle.kts`.
 - `lib/companion/autenticacion.dart`: Google o email/contraseña, todo
   detrás de `emailAutorizadoCompanion` — **una sola cuenta autorizada para
-  toda la companion** (Bruno: "una sola cuenta para todo"), sin lista
+  toda la companion** (El dueño: "una sola cuenta para todo"), sin lista
   dinámica ni panel — el selector de usuario/turno de
   `pantalla_elegir_usuario.dart` sigue siendo un concepto totalmente aparte.
 - `lib/companion/pantalla_login.dart`: primera pantalla de la companion,
@@ -2187,7 +2197,7 @@ primero que me gustaría distribuir").
   puerta de entrada con un stream falso: sin emitir todavía, sin sesión, con
   cuenta no autorizada, con la autorizada).
 - Suite completa: 1031 tests, analyzer limpio, `flutter build apk --debug`
-  compila. **Prueba real hecha** (Bruno, 2026-09-18): instaló el APK y el
+  compila. **Prueba real hecha** (El dueño, 2026-09-18): instaló el APK y el
   login con Google anduvo contra su cuenta real — primera vez que el
   proyecto habla con un servicio de Google de verdad. Falta confirmar que el
   resto de la companion (emparejamiento con la PC, elegir usuario, menú)
@@ -2198,7 +2208,7 @@ primero que me gustaría distribuir").
   release de verdad, hay que volver a agregar ese SHA-1 en la consola de
   Firebase o el login con Google deja de andar.
 
-**Migración histórica (Bruno, 2026-09-18: "cómo migramos TODOS los datos
+**Migración histórica (El dueño, 2026-09-18: "cómo migramos TODOS los datos
 actuales"), hecha** — migración de drift v30→v31
 (`lib/data/database.dart`, `schemaVersion` ahora 31): a las filas de antes
 de la migración v29→v30 que quedaron con `global_id` NULL a propósito
@@ -2212,7 +2222,7 @@ que una edición de ayer en un conflicto de sync futuro. Los 4 logs de
 solo-inserción (`movimientos_de_stock`/`movimientos_de_caja`/
 `arqueos_intermedios`/`historial_de_precios`) no tienen `actualizado_en`
 (usan `id` como cursor), así que solo necesitan la identidad. Contado
-contra la base real de Bruno antes de escribir esto: ~650 de ~1100 filas
+contra la base real de el dueño antes de escribir esto: ~650 de ~1100 filas
 totales entre las 13 tablas no tenían `global_id` — todas coordinadas para
 entrar cómodas en el límite gratis de Firestore (20.000 escrituras/día).
 Test real de upgrade `test/data/migracion_v31_test.dart` (mismo patrón que
@@ -2222,14 +2232,14 @@ forma de ejercitar `onUpgrade`); tuvo que actualizarse
 código de hoy corren las dos migraciones seguidas (v29→v30 y v30→v31 en la
 misma apertura) — dos aserciones que esperaban `globalId: isNull` pasan a
 `isNotNull`, correctamente. Suite completa: 1032 tests, analyzer limpio.
-**Corre sola la próxima vez que Bruno abra la app de escritorio** — se hizo
+**Corre sola la próxima vez que el dueño abra la app de escritorio** — se hizo
 un backup de la base real primero
 (`la_plazoleta.sqlite.backup-pre-migracion-v31-20260918-123122`), mismo
 criterio que los backups anteriores del proyecto.
 
 **Fase 1b — login del escritorio con la misma cuenta, HECHA**. Límite real
 de plataforma: `google_sign_in` no tiene implementación para Windows (tabla
-de soporte oficial Android/iOS/macOS/Web nada más) — Bruno eligió la
+de soporte oficial Android/iOS/macOS/Web nada más) — El dueño eligió la
 alternativa con más trabajo en vez de resignarse a un login por contraseña
 en el escritorio (2026-09-18: "que abra una ventana en Chrome... y luego
 volver a la app").
@@ -2270,7 +2280,7 @@ volver a la app").
   andar — no afecta al del escritorio (usa su propio cliente OAuth, sin
   SHA-1 de por medio).
 
-**Fase 2 — motor de sync sobre Firestore, HECHA** (Bruno, 2026-09-18: "cómo
+**Fase 2 — motor de sync sobre Firestore, HECHA** (El dueño, 2026-09-18: "cómo
 hacemos con las sync, es el principal problema"). Reemplaza (por ahora, se
 suma a) el emparejamiento HTTP viejo — ver Fase 4 más abajo para cuándo se
 retira del todo.
@@ -2279,12 +2289,12 @@ retira del todo.
   más cercana a Bariloche disponible) y reglas de seguridad publicadas
   (`firestore.rules`, copia versionada de las reglas reales): todo bajo
   `negocios/{negocioId}/**` exige `request.auth.token.email ==
-  'gtalovergamer@gmail.com'` — la única cuenta autorizada, la misma que ya
+  'tu-cuenta@ejemplo.com'` — la única cuenta autorizada, la misma que ya
   usa el login de las dos plataformas.
 - `lib/data/transporte_firestore.dart`: capa mínima que sabe de Firestore
   (subir una tanda de filas en un batch, `global_id` como id de documento;
   escuchar una colección entera con `snapshots()`) — `negocioIdFirestore`
-  fijo (`'la-plazoleta'`, Bruno no tiene ni va a tener más de un local, no
+  fijo (`'la-plazoleta'`, el dueño no tiene ni va a tener más de un local, no
   hace falta generar/coordinar un id entre dispositivos).
 - `lib/data/sincronizacion_firestore.dart` (`SincronizacionFirestore`):
   el orquestador, reusa `repositorio_sincronizacion.dart` (`cambiosDesde`/
@@ -2331,7 +2341,7 @@ retira del todo.
   real PC↔celular con las cuentas reales conectadas — es el próximo paso
   antes de dar la fase por cerrada.
 
-**Prueba con hardware real y bug real encontrado (2026-09-18)** — Bruno pidió
+**Prueba con hardware real y bug real encontrado (2026-09-18)** — El dueño pidió
 probar de punta a punta: push de todos los datos reales a Firestore, APK
 nuevo al celular, desktop nuevo. Apareció un bug real de sync (no solo un
 gap de cobertura): `_aplicarPendientes` en `sincronizacion_firestore.dart`
@@ -2341,14 +2351,14 @@ una fila local vieja que nunca se había empujado podía tener un cursor más
 bajo que lo recién recibido (`actualizado_en` NULL en cualquier fila
 histórica de antes de que esa columna existiera), y adelantar el cursor la
 excluía de cualquier empuje futuro para siempre. Dejó 11 de las 13
-categorías reales de Bruno sin sincronizar, silenciosamente. Arreglado sacando
+categorías reales de el dueño sin sincronizar, silenciosamente. Arreglado sacando
 ese adelanto (el costo es reenviar alguna vez lo ya recibido — inofensivo,
 `subirFilasAFirestore` escribe por `global_id`). Verificado documento por
 documento contra la consola de Firebase después del fix: ventas 116/116,
 productos 150/150, proveedores 19/19, categorías 13/13.
 
 **Fase 4 — companion sin PC de verdad, no solo "se puede", HECHA
-(2026-09-18)** — al probar el APK recién instalado, Bruno encontró que
+(2026-09-18)** — al probar el APK recién instalado, el dueño encontró que
 igual pedía escanear el QR de emparejamiento antes de dejar hacer nada
 ("no debería tener que escanear ya, es innecesario"). La causa real: sacar
 el gate de `companion_app.dart` no alcanzaba, porque CASI TODAS las
@@ -2390,12 +2400,12 @@ PC, ahora con aviso en vez de tirar si no hay PC):
   `puerto_local.dart`) que arma `VentaHistoricaPendiente` de dominio directo
   desde el DTO de la companion, sin la vuelta por JSON que hace el servidor.
 - **Cobro por terminal Point directo desde el celular, sin pasar por la PC**
-  (Bruno: "revisá cómo hacer para que el celular mande la orden
+  (El dueño: "revisá cómo hacer para que el celular mande la orden
   directamente al posnet") — hallazgo clave: `cobro_posnet.dart` YA es un
   cliente HTTP puro contra `api.mercadopago.com`, nunca habló con hardware
   local; la terminal recibe la orden de los servidores de Mercado Pago sin
   importar qué dispositivo hizo el POST. Lo único que hacía falta:
-  - Confirmado con Bruno (el token puede cobrar/cancelar cobros, no es un
+  - Confirmado con el dueño (el token puede cobrar/cancelar cobros, no es un
     dato cualquiera): sincronizar `mpAccessToken`/`mpTerminalCobroId` a un
     documento propio de Firestore (`negocios/la-plazoleta/configuracion/cobro`),
     aparte de las 14 tablas — nunca mezclado con el resto de
@@ -2421,8 +2431,8 @@ PC, ahora con aviso en vez de tirar si no hay PC):
   analyzer y los 1033 tests, y el documento de credenciales confirmado en
   Firestore, pero la orden real a la terminal Point todavía no se disparó
   desde el celular en esta sesión (acción con plata real de por medio,
-  mejor que la primera vez la haga Bruno mismo, supervisado).
-- **Pendiente, no de código**: la instalación de producción de Bruno
+  mejor que la primera vez la haga el dueño mismo, supervisado).
+- **Pendiente, no de código**: la instalación de producción de el dueño
   (`C:\LaPlazoleta\app\la_plazoleta.exe`) seguía corriendo el build de ANTES
   de todo esto — hay que copiarle el build nuevo y reiniciarla para que
   también empiece a empujar `usuarios`/`configuracion/cobro` y a beneficiarse
@@ -2456,7 +2466,7 @@ Ver `DECISIONES.md` para el detalle de cada uno.
 
 ## Resuelto: tres correcciones tras revisar el demo_planilla.pdf
 
-Bruno revisó el PDF de demo contra la planilla de papel real y encontró tres
+El dueño revisó el PDF de demo contra la planilla de papel real y encontró tres
 problemas antes de que la app saliera al local:
 
 - **El RETIRO nunca mostraba un número** cuando no había fijos cargados en el
@@ -2490,7 +2500,7 @@ Detalle completo de las tres en `DECISIONES.md`.
 - **Prueba real de impresión física** contra la terminal Point del local
   (Newland N950): las credenciales ya están cargadas y el código está
   escrito, pero nunca se disparó una impresión de prueba real (consume un
-  ticket de papel) — queda pendiente de que Bruno la corra o la autorice
+  ticket de papel) — queda pendiente de que el dueño la corra o la autorice
   explícitamente.
 - **Carga adelantada sin mover**: el colchón de reposición vive en la
   pantalla de Reposición, la carga de fijos vive en Equilibrio, y la
@@ -2508,11 +2518,11 @@ Detalle completo de las tres en `DECISIONES.md`.
   atribución por línea. Los montos de cada grilla y el arqueo salen bien
   igual; es solo información que no está. Arreglarlo pide guardar
   atribución de medio de pago por línea, un cambio de modelo más grande —
-  confirmado con Bruno que queda así por ahora.
+  confirmado con el dueño que queda así por ahora.
 
 ## Resuelto: "sin stock, no aparece en ventas" (reemplaza a Regla 8) — versión inicial
 
-Bruno, 2026-09-06: "si algo no hay stock, el producto no aparece en
+El dueño, 2026-09-06: "si algo no hay stock, el producto no aparece en
 ventas. Luego refinamos ese apartado" — pedido explícito, revierte a
 propósito la regla vieja de `REGLAS-NEGOCIO.md` §8 ("el stock informa,
 nunca bloquea"). Detalle técnico completo, incluidos los casos borde que
@@ -2530,14 +2540,14 @@ en ventas").
   (`VentaControlador.productoSinStockEncontrado`,
   `columna_busqueda.dart`).
 - Se usó de paso para cargar 63 productos nuevos que llegaron sin stock
-  todavía (`lista_productos_proveedores.csv`, proveedores Serra/Puelche/
+  todavía (`lista_productos_proveedores.csv`, proveedores Distribuidora/Puelche/
   Varios Eli — nuevo, código `VE` — y ocho sin proveedor conocido): quedan
-  en el catálogo pero invisibles en Venta hasta que Bruno haga el conteo
+  en el catálogo pero invisibles en Venta hasta que el dueño haga el conteo
   físico y cargue el stock real.
 
 ## Resuelto: aprovechar la pantalla de venta a 1920×1080
 
-Bruno, 2026-09-06: "aprovechemos la pantalla de ventas al máximo" — el
+El dueño, 2026-09-06: "aprovechemos la pantalla de ventas al máximo" — el
 carrito se veía desaprovechado y "todo se ve chico en general", más dos
 pedidos concretos que salieron de esa conversación: información pobre en
 el carrito + sacar la eliminación de línea por teclado, y un apartado de
@@ -2556,7 +2566,7 @@ quedó construido:
   ya no existe) — reemplazado por `eliminarLinea(index)`, cualquier línea,
   no solo la última.
 - **Descuento sobre el total** (Regla 17, generalizada — antes solo
-  hardcodeada para Jam Rock, 15%): nuevo dominio
+  hardcodeada para Cliente Frecuente, 15%): nuevo dominio
   `lib/domain/descuento.dart` (`calcularDescuento`, `TipoDescuento`),
   `calcularTotalVenta` gana el paso recargo→**descuento**→redondeo.
   `Ventas.descuentoCentavos` ya existía en el esquema (reservado para
@@ -2572,7 +2582,7 @@ quedó construido:
 
 ## Resuelto: ajuste de cantidad en el carrito, posnet directo desde el atajo, y lápiz en accesos directos
 
-Bruno, 2026-09-06, mismo día que lo anterior: "que en el carrito se pueda
+El dueño, 2026-09-06, mismo día que lo anterior: "que en el carrito se pueda
 ajustar la cantidad tanto con botones de suma o resta como haciendo doble
 click, y debería haber una manera de editar los atajos rápidos", más una
 interjección a mitad de la conversación: "los atajos en lugar de
@@ -2604,7 +2614,7 @@ posnet en caso de ser por medios virtuales".
 
 ## Resuelto: cobro manual en el desktop, y un bug real de recargo en la companion
 
-Bruno, 2026-09-08: "necesito cobro manual en el desktop ya que al poner
+El dueño, 2026-09-08: "necesito cobro manual en el desktop ya que al poner
 los atajos rápidos no hay más modal para seleccionarlo" — el paso único
 de Alt+Q/Alt+D (arriba, 2026-09-06) le sacó la posibilidad de cobrar por
 QR/Débito sin tocar la terminal Point salvo que la orden fallara primero.
@@ -2612,7 +2622,7 @@ QR/Débito sin tocar la terminal Point salvo que la orden fallara primero.
 - **Alt+Q/Alt+D vuelven a ser de dos pasos** (`pantalla_venta.dart`,
   `columna_cobro.dart`): eligen el canal nada más; "Cobrar" (Enter con el
   campo vacío, o el botón) recién ahí abre el diálogo de Point. Revierte
-  el paso único de la entrada anterior — decisión explícita de Bruno,
+  el paso único de la entrada anterior — decisión explícita de el dueño,
   eligiendo la opción "aditiva" que se le ofreció (agregar un atajo nuevo
   en vez de tocar el existente) para minimizar el riesgo sobre un flujo
   que ya usa todos los días.
@@ -2626,7 +2636,7 @@ QR/Débito sin tocar la terminal Point salvo que la orden fallara primero.
 - `CLAUDE.md`, sección Atajos, actualizada para reflejar el cambio.
 
 **Bug real, encontrado revisando "que los recargos se apliquen
-correctamente en las dos apps" (mismo pedido de Bruno)**: la carga
+correctamente en las dos apps" (mismo pedido de el dueño)**: la carga
 histórica de la companion (`pantalla_carga_historica.dart`,
 `_ArmadorDeVentaState._confirmarVenta`) mandaba el medio tal cual se
 apretó ("mixto" si se eligió Mixto) sin importar el monto en efectivo
@@ -2648,7 +2658,7 @@ igual que en el escritorio.
 
 ## Resuelto: recargo de cigarrillos sueltos (Regla 6)
 
-Bruno, 2026-09-10: "revisá en las configs globales, que los puchos sueltos
+El dueño, 2026-09-10: "revisá en las configs globales, que los puchos sueltos
 también deben tener recargo por MP, sin eso los cálculos dan mal. son $50
 por cigarro, solo eso." Investigado antes de tocar nada: el CÓDIGO ya
 estaba bien — `recargoCigarrillos` (`lib/domain/recargo_cigarrillos.dart`)
@@ -2679,7 +2689,7 @@ todos verdes).
 
 ## Resuelto: primera tanda de pulido UI/UX de la companion
 
-Bruno, 2026-09-10: "pulí la UI/UX de los distintos apartados para que la
+El dueño, 2026-09-10: "pulí la UI/UX de los distintos apartados para que la
 app se sienta cómoda de usar y no un bodrio". Auditoría de código primero
 (sin tocar nada) — patrón de fondo encontrado: no es una pantalla mal
 hecha en particular, es inconsistencia entre pantallas (la mitad ya sigue
@@ -2725,7 +2735,7 @@ limpio + suite completa verde al final).
 
 ## Resuelto: descuento en el carrito de la companion (Regla 17 generalizada)
 
-Bruno, 2026-09-10: "el carrito del celular no tiene para descuento" — cierto,
+El dueño, 2026-09-10: "el carrito del celular no tiene para descuento" — cierto,
 era una exclusión explícita de la primera versión (`pantalla_carrito_venta.dart`,
 2026-09-07: "Efectivo, QR y Débito... sin Mixto ni descuento"). Agregado con el
 mismo mecanismo que el escritorio, cableado por las tres capas:
@@ -2767,7 +2777,7 @@ todos verdes).
 
 ## Resuelto: organización de elementos en la companion (tercera tanda)
 
-Bruno, 2026-09-10: "quiero que se piense mejor la organización de los
+El dueño, 2026-09-10: "quiero que se piense mejor la organización de los
 elementos de todas las pantallas para evitar fricciones" — distinto de
 las dos tandas anteriores (esas fueron consistencia visual y manejo de
 errores; esto es específicamente qué elemento está dónde, en qué orden,
@@ -2777,7 +2787,7 @@ cómo se agrupa). Auditoría primero, cuatro hallazgos:
   peso, orden de construcción) a dos grupos — "Uso diario" (Consultar
   precio, Gasto rápido, Conteo de stock) y "Gestión y reportes" (Precios y
   alta, Cargar día histórico, Historial de ventas). El agrupamiento no se
-  podía inferir del código — es un dato del negocio de Bruno, confirmado
+  podía inferir del código — es un dato del negocio de el dueño, confirmado
   antes de tocar nada: esos tres son los que se usan todos los días.
 - **Arqueo**: efectivo, redondeo, Mercado Pago, lata y cigarrillos
   estaban apilados en un solo `Bloque` como seis líneas sin agrupar,
@@ -2800,7 +2810,7 @@ cómo se agrupa). Auditoría primero, cuatro hallazgos:
   pago").
 
 **Ya bien organizadas, sin cambios** (la auditoría no encontró fricción
-real, o el orden actual refleja una decisión de Bruno ya documentada en
+real, o el orden actual refleja una decisión de el dueño ya documentada en
 el propio código): Carga histórica, carrito de venta, formulario de
 Precios, Consultar precio, Gasto rápido, apertura de emergencia.
 
@@ -2809,7 +2819,7 @@ todos verdes).
 
 ## Resuelto: crash en Arqueo por desfasaje companion/escritorio
 
-Bruno, 2026-09-10, probando contra la PC real: "type 'null' is not a
+El dueño, 2026-09-10, probando contra la PC real: "type 'null' is not a
 subtype of type 'int' in type cast" al abrir Arqueo. Causa: los dos campos
 nuevos de esa misma sesión (`redondeoAcumuladoCentavos`/
 `lataInicialCentavos`, ver "Resuelto: visibilidad de la lata y del
@@ -2832,7 +2842,7 @@ menciona como pendiente).
 
 ## Resuelto: segunda tanda de pulido UI/UX de la companion
 
-Bruno, 2026-09-10: "quiero que sigas con todo eso" — completa la lista que
+El dueño, 2026-09-10: "quiero que sigas con todo eso" — completa la lista que
 había quedado anotada en "Próximos pasos" tras la primera tanda:
 
 - **El menú principal ahora usa el kit compartido**: `TextField` crudo →
@@ -2876,7 +2886,7 @@ todos verdes) después de cada cambio.
 
 ## Resuelto: teclado fantasma al volver de un apartado (companion)
 
-Bug real reportado por Bruno, 2026-09-10: "si en un apartado ingreso al
+Bug real reportado por el dueño, 2026-09-10: "si en un apartado ingreso al
 teclado, al volver al menú principal usando el botón de atrás vuelve a
 salir el teclado". Causa: cada ruta de Flutter tiene su propio
 `FocusScopeNode`, que recuerda qué widget tenía el foco antes de que se
@@ -2894,7 +2904,7 @@ Conteo de stock).
 Conteo de stock ×2, Carga histórica ×3). Un solo mecanismo (Regla 3) en
 vez de desenfocar a mano después de cada push.
 
-**Primer intento incompleto, corregido el mismo día** (Bruno: "sigue
+**Primer intento incompleto, corregido el mismo día** (El dueño: "sigue
 pasando el mismo bug"): desenfocar recién DESPUÉS de que se resuelve el
 `push` (es decir, después del `pop`) no alcanzaba — la memoria de
 `focusedChild` que el `Navigator` restaura al volver se graba en el
@@ -2903,7 +2913,7 @@ el momento en que se recupera. El desenfoque real tiene que ir ANTES del
 `push`, no después — detalle completo del mecanismo en `TRAMPAS.md`.
 
 **Segundo intento, todavía no conforme, resuelto con un cambio
-estructural (mismo día)** — Bruno: "sigue pasando el mismo bug de
+estructural (mismo día)** — El dueño: "sigue pasando el mismo bug de
 mierda... por qué no ponemos un ícono de búsqueda en la navbar mejor".
 `pushSinTeclado` (el mecanismo de arriba) sigue siendo correcto y se
 queda para las demás pantallas, pero en el menú principal específicamente
@@ -2921,7 +2931,7 @@ completo en `TRAMPAS.md`.
 
 ## Resuelto: visibilidad de la lata y del redondeo en la companion (Arqueo/apertura)
 
-Bruno, 2026-09-10, después de la ronda de rendimiento: "deberíamos tener
+El dueño, 2026-09-10, después de la ronda de rendimiento: "deberíamos tener
 las 2 cajas, la de los cigarros y la normal [al abrir/arquear desde el
 celular]... al momento de arqueo, qué parámetros toma, ¿solo ventas en
 efectivo?... revisemos el tema de los redondeos, porque eso puede llevar a
@@ -2958,7 +2968,7 @@ Verificado con `flutter analyze` (limpio) y los 849 tests (todos verdes).
 
 ## Resuelto: optimización de rendimiento en la companion Android (POS/stock/caja)
 
-Bruno, 2026-09-10: pedido original de "optimizar el apk" (la companion
+El dueño, 2026-09-10: pedido original de "optimizar el apk" (la companion
 Android, no el escritorio — ver la corrección de alcance al principio de
 "En curso: companion app Android" más arriba, la confusión inicial de esta
 sesión fue exactamente esa). A diferencia del escritorio, cada operación
@@ -3003,7 +3013,7 @@ todos verdes) después de cada cambio.
 
 ## Resuelto: optimización de rendimiento en POS/stock/caja
 
-Bruno, 2026-09-10: "seguir optimizando la app, con énfasis en POS, stock y
+El dueño, 2026-09-10: "seguir optimizando la app, con énfasis en POS, stock y
 contabilidad de caja". Auditoría de código (sin cambiar comportamiento
 visible, solo velocidad) en las tres áreas — ningún bug de correctitud de
 plata encontrado al pasar, las fórmulas ya cumplían Regla 3.
@@ -3051,7 +3061,7 @@ plata encontrado al pasar, las fórmulas ya cumplían Regla 3.
 
 ## Resuelto: rediseño visual del inicio y el layout de la companion
 
-Bruno, 2026-09-10: "rediseña levemente el inicio y el layout, no me
+El dueño, 2026-09-10: "rediseña levemente el inicio y el layout, no me
 termina de gustar, hacelo sin preguntarme, solo que se vea diferente" —
 pedido puramente estético, sin cambio de comportamiento ni de servidor.
 Todo en `pantalla_menu_companion.dart`:
@@ -3083,7 +3093,7 @@ verdes — el rediseño no tocó lógica, solo estructura visual.
 
 ## Resuelto: migración del motor de sync de Firestore a Supabase
 
-Bruno, 2026-09-18: "nos vamos a supabase" — decisión tomada después de que
+El dueño, 2026-09-18: "nos vamos a supabase" — decisión tomada después de que
 un solo día de testing intensivo (varias reinstalaciones completas de la
 companion) agotara la cuota gratuita de Firestore (20.000 escrituras/día).
 
@@ -3170,9 +3180,9 @@ del histórico ya subido para completarlas ahí también. Dos tests nuevos en
 coinciden entre dispositivos, y una referencia que todavía no llegó).
 
 De paso, encontrado pero NO arreglado por ser dato, no código: la tabla
-`usuarios` real de la PC tiene dos filas distintas llamadas "Bruno" (mismo
+`usuarios` real de la PC tiene dos filas distintas llamadas "El dueño" (mismo
 nombre, `global_id` distinto) — no es un bug de sync, ya estaba así antes
-de cualquier migración. Bruno puede fusionarlas o desactivar una desde la
+de cualquier migración. El dueño puede fusionarlas o desactivar una desde la
 app cuando quiera, no bloquea nada.
 
 Los archivos viejos de Firebase (`firebase_init.dart`,
@@ -3182,14 +3192,14 @@ Los archivos viejos de Firebase (`firebase_init.dart`,
 todavía no se borraron — ya no compilan (se sacaron sus dependencias de
 `pubspec.yaml`) pero no los importa nada, así que no bloquean el build
 real. Este repo todavía no es un repositorio git, así que no hay manera de
-"deshacer" ese borrado más adelante — vale la pena que Bruno corra
+"deshacer" ese borrado más adelante — vale la pena que el dueño corra
 `git init` en algún momento antes de esa limpieza final.
 
 **Incidente real en el primer deploy a producción (2026-09-18), YA
 RESUELTO**: al actualizar `C:\LaPlazoleta\app` con el build de Supabase, la
 app arrancaba con **pantalla en negro**. Causa real, encontrada recién
 lanzando la versión debug para ver la consola (la release no muestra
-nada): la base de datos real de Bruno tenía `PRAGMA user_version = 30`
+nada): la base de datos real de el dueño tenía `PRAGMA user_version = 30`
 pero la tabla `usuarios` YA tenía las columnas de la migración v32 (de
 algún momento anterior de esta misma sesión de trabajo, donde una
 migración alcanzó a tocar las columnas sin llegar a confirmar la versión)
@@ -3197,7 +3207,7 @@ migración alcanzó a tocar las columnas sin llegar a confirmar la versión)
 columnas que ya estaban, `ALTER TABLE ... duplicate column name`, sin
 capturar, tiraba abajo el arranque entero antes de dibujar nada. Arreglado
 en dos frentes:
-1. **Del lado de los datos** (con permiso explícito de Bruno, corrigiendo
+1. **Del lado de los datos** (con permiso explícito de el dueño, corrigiendo
    directo la base real): `PRAGMA user_version = 32;` — no tocó ninguna
    fila, solo la marca de versión, ya que los datos estaban completos y
    consistentes.
@@ -3210,7 +3220,7 @@ en dos frentes:
    deja un rastro en la consola en vez de una pantalla negra muda. Test
    nuevo en `test/data/migracion_v32_test.dart` reproduce el bug exacto.
 
-**Optimización de velocidad, mismo día** (Bruno: "tarda mucho al loguear
+**Optimización de velocidad, mismo día** (El dueño: "tarda mucho al loguear
 la primera vez... tiene que ser completamente instantáneo"): el pull y el
 push de las 14 tablas sincronizables eran secuenciales — 14 viajes de red
 seguidos, cada uno esperando al anterior. Ahora corren en paralelo
@@ -3342,7 +3352,7 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
   diálogo `dialogo_cuenta_corriente.dart` (saldo, libro, cargar, pagar) desde
   Proveedores → botón "Deuda". La lista muestra "le debés $X" y el detalle una
   cifra "Le debés".
-- Decisiones de Bruno: libro independiente de lo separado (no consume el
+- Decisiones de el dueño: libro independiente de lo separado (no consume el
   separado), cualquier proveedor, monto+fecha+nota (sin vencimientos).
 - Pendiente: mostrar la deuda total en el Dashboard; la companion Android no
   tiene el apartado.

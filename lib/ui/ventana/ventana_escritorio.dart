@@ -1,5 +1,5 @@
 // Ventana propia de la app de escritorio ("ventana-la-plazoleta/", mocks de
-// Bruno, 2026-09-29): se saca la barra de título nativa de Windows y se
+// El dueño, 2026-09-29): se saca la barra de título nativa de Windows y se
 // dibuja una propia de 40 px, con la marca, el estado de la caja y el
 // respaldo, y los tres botones de siempre. Distribución y medidas del
 // LEEME de esa carpeta; los colores salen de los tokens de la app (así el

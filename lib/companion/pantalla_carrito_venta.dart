@@ -1,11 +1,11 @@
-// El carrito de una venta desde el celular (Bruno, 2026-09-07: "que la
+// El carrito de una venta desde el celular (El dueño, 2026-09-07: "que la
 // parte de vender use la misma lógica que la app de desktop"). Efectivo,
-// QR y Débito en esta primera versión, sin Mixto (decisión de Bruno,
+// QR y Débito en esta primera versión, sin Mixto (decisión de el dueño,
 // 2026-09-07) — descuento (Regla 17 generalizada) sí, agregado el
 // 2026-09-10 ("el carrito del celular no tiene para descuento"), mismo
 // mecanismo que el escritorio.
 //
-// El buscador vivía en una pestaña propia de la navbar hasta que Bruno
+// El buscador vivía en una pestaña propia de la navbar hasta que el dueño
 // (2026-09-13) pidió juntarlo acá: "buscar está estrictamente ligado al
 // carrito... para que al entrar en el carrito directamente se pueda
 // agregar y cobrar desde ahí mismo". Con texto en el campo, esta pantalla
@@ -13,7 +13,7 @@
 // igual que agregaba la pestaña vieja (misma lógica de dominio,
 // `lineaDesdeResultadoBusqueda`/`sumarLineasVenta`, Regla 3).
 //
-// El descuento (Bruno, 2026-09-13: "usa muchísimo espacio... se usa cada
+// El descuento (El dueño, 2026-09-13: "usa muchísimo espacio... se usa cada
 // tanto") pasó de un bloque siempre visible a un botón chico que abre un
 // diálogo — mismo mecanismo (tipo monto/porcentaje + `CampoPlata`), solo
 // que ahora ocupa espacio nada más cuando hace falta.
@@ -53,7 +53,7 @@ class PantallaCarritoVenta extends StatefulWidget {
     required this.carrito,
   });
 
-  /// Imprimir ticket — exclusivo de la PC (Bruno, 2026-09-18: la orden de
+  /// Imprimir ticket — exclusivo de la PC (El dueño, 2026-09-18: la orden de
   /// Point ahora sale directo desde `widget.servicio`, sin pasar por acá;
   /// solo imprimir sigue necesitando de verdad la impresora/PDF de la PC).
   /// Null sin PC emparejada — "Imprimir ticket" avisa en vez de tirar.
@@ -84,7 +84,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   bool _cobrando = false;
   String? _error;
 
-  // Descuento sobre el total (Regla 17 generalizada) — Bruno, 2026-09-10:
+  // Descuento sobre el total (Regla 17 generalizada) — El dueño, 2026-09-10:
   // "el carrito del celular no tiene para descuento". Mismo mecanismo que
   // el escritorio (`VentaControlador`): `parsearARS` sirve igual de bien
   // para plata que para porcentaje, las dos escalas son "dos decimales"
@@ -93,7 +93,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   final _descuentoCtrl = TextEditingController();
   final _debouncerDescuento = Debouncer();
 
-  // Buscador para agregar productos sin salir de esta pantalla (Bruno,
+  // Buscador para agregar productos sin salir de esta pantalla (El dueño,
   // 2026-09-13). Con `_busquedaCtrl` no vacío, el cuerpo muestra
   // `_resultadosBusqueda` en vez de las líneas del carrito.
   final _busquedaCtrl = TextEditingController();
@@ -158,7 +158,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// kilo no se agrega, avisa por qué. Un producto repetido suma cantidad
   /// en la misma línea (`sumarLineasVenta`), no crea una segunda.
   ///
-  /// Bruno, 2026-09-14: "es complicado el hecho de agregar productos de
+  /// El dueño, 2026-09-14: "es complicado el hecho de agregar productos de
   /// manera continua... no hay espacio" — tocar un resultado (un `InkWell`
   /// fuera del campo) le sacaba el foco al buscador y cerraba el teclado
   /// solo, así que agregar el producto siguiente pedía volver a tocar el
@@ -238,7 +238,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  /// Une elegir el medio y cobrar en un solo toque (Bruno, 2026-09-18:
+  /// Une elegir el medio y cobrar en un solo toque (El dueño, 2026-09-18:
   /// "para seleccionar si es efectivo, qr o débito se hace al momento de
   /// tocar y confirmar la venta") — antes eran dos pasos: tocar un medio
   /// (solo calculaba el total) y recién ahí tocar "Cobrar" aparte. Ahora
@@ -255,7 +255,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   void _eliminarLinea(int index) => _actualizarLinea(index, null);
 
   /// `nueva` null = eliminar la línea (mismo criterio que el escritorio:
-  /// restar por debajo de 1 saca la línea entera, Bruno, 2026-09-07: "no
+  /// restar por debajo de 1 saca la línea entera, el dueño, 2026-09-07: "no
   /// puedo agregar más de 1 unidad a la vez... misma funcionalidad que
   /// carrito").
   void _actualizarLinea(int index, LineaVenta? nueva) {
@@ -345,7 +345,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  /// Mantener presionado QR/Débito (Bruno, 2026-09-18: el paso previo de
+  /// Mantener presionado QR/Débito (El dueño, 2026-09-18: el paso previo de
   /// "elegir y después Cobrar" que sostenía este atajo desapareció al
   /// unificar los botones) llama directo a esto, sin pasar por
   /// `_elegirMedio` — no hace falta calcular el total con Point de por
@@ -356,7 +356,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   /// Salta la terminal Point directamente, sin intentar la orden primero
-  /// (Bruno, 2026-09-07: "el cobro manual del qr/posnet, es para cargar
+  /// (El dueño, 2026-09-07: "el cobro manual del qr/posnet, es para cargar
   /// las ventas de hoy y seguir cargando mientras tanto") — a diferencia
   /// de "Cobrar a mano" adentro del diálogo de Point (que aparece recién
   /// si la orden falla), esta es para cuando ya se sabe que no hace falta
@@ -478,7 +478,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                   // los resultados (no entran los dos juntos en la
                   // pantalla) — esta franja chica es la única señal de que
                   // lo que ya se agregó sigue ahí, sin tener que borrar la
-                  // búsqueda para confirmarlo (Bruno, 2026-09-14: "no hay
+                  // búsqueda para confirmarlo (El dueño, 2026-09-14: "no hay
                   // espacio").
                   if (buscando && widget.carrito.isNotEmpty)
                     _resumenCarritoCompacto(context),
@@ -505,7 +505,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       child: TextField(
         controller: _busquedaCtrl,
         focusNode: _busquedaFocus,
-        // Bruno, 2026-09-19: "abre siempre el teclado automáticamente, cosa
+        // El dueño, 2026-09-19: "abre siempre el teclado automáticamente, cosa
         // que solo debería pasar cuando se entra la primera vez" — "primera
         // vez" es empezar una venta nueva (carrito vacío), no cada
         // reingreso a esta pantalla con líneas ya cargadas.
@@ -659,7 +659,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
-  /// Reducido a fondo (Bruno, 2026-09-18: "el carrito ocupa demasiado
+  /// Reducido a fondo (El dueño, 2026-09-18: "el carrito ocupa demasiado
   /// espacio con los botones y poco para los productos") — el descuento
   /// pasó de ser una fila propia (botón de 56px + su separación) a un ícono
   /// chico arriba a la derecha de la tarjeta del total; los botones de
@@ -680,7 +680,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             Text(_error!, style: TextStyle(color: colores.error)),
             const SizedBox(height: Espaciado.sm),
           ],
-          // La tarjeta del precio ES el botón de cobrar (Bruno, 2026-09-18:
+          // La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18:
           // "no entendiste, quiero que el botón del precio sea COBRAR") —
           // no una tarjeta con el total y, aparte, un botón separado abajo:
           // tocar el precio directamente abre el menú de medios, y elegir
@@ -693,7 +693,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
-  /// La tarjeta del precio ES el botón de cobrar (Bruno, 2026-09-18: "quiero
+  /// La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18: "quiero
   /// que el botón del precio sea COBRAR") — un solo elemento, no una
   /// tarjeta con el total y un botón separado debajo. Tocarla abre una hoja
   /// con Efectivo/QR/Débito (cada uno con su color propio) más, separado
@@ -703,7 +703,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// propio adentro, con su toque independiente del resto de la tarjeta.
   ///
   /// Antes esto abría un `PopupMenuButton` (el desplegable nativo de
-  /// Android) — Bruno, 2026-09-19: "está bug el dropdown del método de
+  /// Android) — El dueño, 2026-09-19: "está bug el dropdown del método de
   /// pago". Ese widget está pensado para un ícono chico como disparador;
   /// acá el disparador es la tarjeta entera (bien ancha, cerca del borde
   /// inferior de la pantalla), y su cálculo de posición no está pensado
@@ -890,7 +890,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   /// Ícono chico con el valor cargado si ya hay uno — antes era un
-  /// `OutlinedButton.icon` de ancho completo en su propia fila (Bruno,
+  /// `OutlinedButton.icon` de ancho completo en su propia fila (El dueño,
   /// 2026-09-18: "el carrito ocupa demasiado espacio con los botones");
   /// ahora vive adentro de la tarjeta del total, a la derecha del número.
   Widget _botonDescuento(BuildContext context, {required bool deshabilitado}) {

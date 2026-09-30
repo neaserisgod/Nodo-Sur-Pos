@@ -1,14 +1,14 @@
-// Conteo de stock, rediseñado (Bruno, 2026-09-07: "el conteo de stock es
+// Conteo de stock, rediseñado (El dueño, 2026-09-07: "el conteo de stock es
 // muy nefasto"): mismo menú que la app de escritorio — listar proveedores,
 // al entrar listar los productos de ese proveedor con su stock real
 // (solo lectura) y un recuadro para el conteo. Vacío = el stock guardado
 // ya está bien, no se toca.
 //
-// El buscador con precio (Bruno: "nada que ver con el tema de conteo")
+// El buscador con precio (El dueño: "nada que ver con el tema de conteo")
 // vive en la pantalla principal del menú (`pantalla_menu_companion.dart`),
 // no acá — esta pantalla es solo el flujo proveedor → productos.
 //
-// "Sin stock" (Bruno, 2026-09-07: "yo debería poder revisar los productos
+// "Sin stock" (El dueño, 2026-09-07: "yo debería poder revisar los productos
 // sin stock desde la app Android para ajustarlos") — un segundo punto de
 // entrada, arriba de la lista de proveedores, que salta directo a los
 // agotados de TODOS los proveedores juntos en vez de tener que entrar
@@ -63,7 +63,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
 
   /// Sin usuario elegido, error explícito con reintentar (no debería pasar
   /// normalmente — se llega acá recién con usuario elegido). Sin PC
-  /// emparejada (Bruno, 2026-09-18: "no debería tener que escanear ya, es
+  /// emparejada (El dueño, 2026-09-18: "no debería tener que escanear ya, es
   /// innecesario") cae a la base local sincronizada por Supabase, no es un
   /// error.
   Future<void> _iniciar() async {
@@ -136,7 +136,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
                     child: RefreshIndicator(
                       onRefresh: _iniciar,
                       // `ListTile` crudo sin padding de pantalla ni `Bloque`
-                      // (Bruno, 2026-09-13: "se ve muy genérica") — el resto
+                      // (El dueño, 2026-09-13: "se ve muy genérica") — el resto
                       // de la companion usa tarjetas propias (`_TileCompacta`
                       // en Gestión/Más) para cualquier lista de accesos;
                       // esta pantalla se había quedado con el estilo
@@ -340,7 +340,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
   }
 
   /// Guarda solo los productos con un valor tipeado — el resto se deja tal
-  /// cual está guardado (Bruno: "si no se pone nada se asume que el stock
+  /// cual está guardado (El dueño: "si no se pone nada se asume que el stock
   /// guardado es correcto").
   ///
   /// Las requests salen todas juntas, no una detrás de la otra: un conteo
@@ -520,7 +520,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
                                 // (16 arriba y abajo) — en una lista de
                                 // 30-80 productos (recorrer la góndola
                                 // entera) eso hacía que cada fila ocupara
-                                // demasiado espacio vertical (Bruno,
+                                // demasiado espacio vertical (El dueño,
                                 // 2026-09-13). Menos padding vertical que
                                 // horizontal es suficiente acá: la fila ya
                                 // tiene su propio aire por el contenido.
@@ -573,7 +573,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
                                       // fijo para el estado "con contenido"
                                       // aunque el campo esté vacío — en una
                                       // lista de 30-80 filas eso solo
-                                      // pesa (Bruno, 2026-09-13: "las cards
+                                      // pesa (El dueño, 2026-09-13: "las cards
                                       // ocupan demasiado espacio vertical").
                                       child: TextField(
                                         controller: _controladores[p.id],

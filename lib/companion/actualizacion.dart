@@ -1,4 +1,4 @@
-// Sistema de actualización de la companion app (2026-09-07, Bruno: "para
+// Sistema de actualización de la companion app (2026-09-07, el dueño: "para
 // poder probar sin tener que pasar la apk a cada rato"): la PC ofrece su
 // propio .apk empaquetado como asset (`servidor_companion.dart`), el
 // celular lo descarga y le pide a Android que lo instale — sin depender de
@@ -16,7 +16,7 @@ class EstadoActualizacion {
   final bool hayActualizacion;
 
   /// Texto para mostrar tal cual en pantalla — a propósito nunca se
-  /// esconde, ni en el caso de "está todo bien" ni en el de error (Bruno,
+  /// esconde, ni en el caso de "está todo bien" ni en el de error (El dueño,
   /// 2026-09-07: "no salió nada" — el chequeo fallaba en silencio y no
   /// había forma de saber si era "misma versión" o "no se pudo conectar").
   final String diagnostico;

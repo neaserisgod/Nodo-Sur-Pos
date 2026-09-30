@@ -1,7 +1,7 @@
 // Descuento sobre el total de una venta — generaliza la Regla 17
-// (REGLAS-NEGOCIO.md, "Jam Rock": 15% fijo sobre el importe total) a
+// (REGLAS-NEGOCIO.md, "Cliente Frecuente": 15% fijo sobre el importe total) a
 // cualquier venta: el cajero tipea un monto o un porcentaje, en vez de
-// tener el 15% de Jam Rock hardcodeado. `Ventas.descuentoCentavos`
+// tener el 15% de Cliente Frecuente hardcodeado. `Ventas.descuentoCentavos`
 // (lib/data/tables/ventas.dart) ya existía en el esquema para esto — lo
 // que faltaba era este cálculo y quien lo llame.
 

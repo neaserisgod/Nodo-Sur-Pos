@@ -7,7 +7,7 @@
 const int centavosPorPeso = 100;
 
 /// Formatea centavos como moneda es-AR, SIN centavos: 150050 → "$1.501"
-/// (Bruno, 2026-09-16: "dejemos de mostrar centavos" — coherente con "el
+/// (El dueño, 2026-09-16: "dejemos de mostrar centavos" — coherente con "el
 /// negocio no maneja centavos" de arriba). Redondea al peso más cercano,
 /// no trunca — mostrar de menos sistemáticamente sería más engañoso que
 /// redondear, y esto es solo la CAPA DE TEXTO: `precioCentavos` sigue

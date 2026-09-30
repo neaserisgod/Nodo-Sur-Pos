@@ -34,7 +34,7 @@ Future<int> _leerCursor(SharedPreferences prefs, String direccion, String tabla)
 /// en vez de propagar [ErrorCompanion] (token inválido, tabla rara) o
 /// cualquier excepción de conexión (`SocketException`, timeout — la PC
 /// apagada o fuera de la WiFi no tira `ErrorCompanion`, nunca llega a
-/// responder nada) — sincronizar es best-effort (Bruno: "si las dos están
+/// responder nada) — sincronizar es best-effort (El dueño: "si las dos están
 /// abiertas, se pasan los datos"; si no se puede en este momento, se sigue
 /// funcionando contra la PC en vivo como siempre, o se reintenta en el
 /// próximo pull-to-refresh).
@@ -109,7 +109,7 @@ Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
 
     // 2) Lo que cambió del lado de la PC — PEDIR (`GET`) sí se puede en
     // paralelo, las 14 tablas a la vez: no hay ningún `INSERT` de por medio
-    // todavía, así que el orden de las respuestas no importa (Bruno,
+    // todavía, así que el orden de las respuestas no importa (El dueño,
     // 2026-09-17: "todo tarda horrores" — 14 pedidos uno detrás del otro,
     // cada uno con su propio viaje de ida y vuelta por WiFi, era la mayor
     // parte de esa demora). Recién APLICAR (`aplicarCambios`, que si

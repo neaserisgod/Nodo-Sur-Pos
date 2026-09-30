@@ -1,5 +1,5 @@
 // `PuertoLocal`, pero sin dejar abrir una caja propia — fase 3 del
-// rediseño "companion sin depender del escritorio". Bruno: "no permite
+// rediseño "companion sin depender del escritorio". El dueño: "no permite
 // vender si no había una sesión abierta al momento de perder la conexión."
 // Sin PC alcanzable no hay forma de saber si otro dispositivo (la PC misma,
 // más tarde) ya abrió una para hoy, y abrir una propia acá arriesgaría dos
@@ -46,7 +46,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
   @override
   Future<List<CategoriaCompanion>> categorias() => _local.categorias();
 
-  // ─── Configuración (Bruno, 2026-09-19) — delega tal cual, sin política
+  // ─── Configuración (El dueño, 2026-09-19) — delega tal cual, sin política
   // propia: a diferencia de `abrirSesion`, editar reglas de negocio no
   // arriesga duplicar ninguna sesión, así que funciona igual con o sin PC.
   @override
@@ -277,7 +277,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
   );
 
   /// A diferencia de [abrirSesion] (bloqueada arriba), CERRAR sin la PC sí
-  /// se permite (Bruno, 2026-09-19: "que funcione también sin la PC") — no
+  /// se permite (El dueño, 2026-09-19: "que funcione también sin la PC") — no
   /// arriesga duplicar ninguna sesión, solo escribe sobre la que ya existe.
   /// El aviso de que el cálculo puede no reflejar algo que todavía no
   /// sincronizó a este celular vive en la UI (`AvisoModoLocal`, mismo

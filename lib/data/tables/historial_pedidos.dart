@@ -23,7 +23,7 @@ class HistorialPedidos extends Table {
 
   /// Null mientras el pedido está en camino: esa ausencia es lo que permite
   /// mostrar "a quién le pedí y todavía no me entregó" (bonus pedido por
-  /// Bruno) sin necesitar una columna de estado aparte.
+  /// El dueño) sin necesitar una columna de estado aparte.
   DateTimeColumn get fechaRecibido => dateTime().nullable()();
 
   /// Se completan recién al recibir, con el mismo cálculo que ya usa el

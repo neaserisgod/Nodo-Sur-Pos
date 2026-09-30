@@ -1,5 +1,5 @@
-// Panel de solo lectura de la lata de cigarrillos, para Serra Cigarros en
-// Proveedores (Bruno, 2026-09-25). Reemplaza a Separar/Pagar, que para SC
+// Panel de solo lectura de la lata de cigarrillos, para Distribuidora de Cigarrillos en
+// Proveedores (El dueño, 2026-09-25). Reemplaza a Separar/Pagar, que para SC
 // quedaban siempre en $0 sin explicar por qué: sus líneas no pasan por la
 // reposición genérica (Regla 6 — la lata ya reserva el costo aparte, al
 // cerrar caja), así que acá se muestra lo que sí existe para cigarrillos.

@@ -1,6 +1,6 @@
 // Retiro de ganancia real (Regla 13). Desde 2026-09-26 se abre desde
 // Separaciones → "Lo vendido" → tarjeta del proveedor (antes, desde Reportes,
-// que se sacó del menú). Bruno, 2026-09-06: necesita poder
+// que se sacó del menú). El dueño, 2026-09-06: necesita poder
 // volver a retirar plata al bolsillo (no solo retener como colchón, la
 // única acción que quedó tras la simplificación del 2026-09-05), "pero
 // todo simple: que me calcule las ganancias de manera automática en base
@@ -11,7 +11,7 @@
 // (repositorio_reposicion.dart): la proporción real en que se cobraron las
 // ventas que generaron esa ganancia, no una adivinanza. Quedan editables
 // para el caso sin atribución exacta (un mixto de varios productos —
-// limitación conocida, ver ESTADO.md) o porque Bruno decide otra cosa. Lo
+// limitación conocida, ver ESTADO.md) o porque el dueño decide otra cosa. Lo
 // que no se retira de los dos campos queda como colchón automáticamente
 // (`revisarGananciaProveedor` ya lo hace así) — no hace falta un tercer
 // campo para eso.

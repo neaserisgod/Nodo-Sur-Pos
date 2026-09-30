@@ -1,4 +1,4 @@
-// Arqueo obligatorio cada 2hs desde el celular (Bruno, 2026-09-13: "el
+// Arqueo obligatorio cada 2hs desde el celular (El dueño, 2026-09-13: "el
 // bloqueo cada 2hs sincronizado con la app desktop") — mismo diálogo de
 // dos fases que el escritorio (`dialogo_arqueo_intermedio.dart` +
 // `arqueo_intermedio_controlador.dart`): conteo → revisado → confirmar, sin
@@ -7,7 +7,7 @@
 // Supabase sin ella (Regla 6: un arqueo hecho en cualquier dispositivo
 // resetea la cuenta del resto la próxima vez que consulten `sesion()`).
 //
-// Contra [ServicioCompanion], no [ClienteCompanion] a secas (Bruno,
+// Contra [ServicioCompanion], no [ClienteCompanion] a secas (El dueño,
 // 2026-09-18: "no debería tener que escanear ya, es innecesario").
 
 import 'package:flutter/material.dart';
@@ -29,7 +29,7 @@ Future<bool> mostrarDialogoArqueoIntermedioCompanion(
   required ServicioCompanion servicio,
   required int usuarioId,
 }) async {
-  // Hoja de vidrio en vez de `AlertDialog` chico de 360px (Bruno,
+  // Hoja de vidrio en vez de `AlertDialog` chico de 360px (El dueño,
   // 2026-09-18: "los modales no me gustan, hay que desplazarse demasiado")
   // — tres cajas para contar necesitan aire real, no un cuadro centrado que
   // obliga a scrollear adentro. `esDescartable: false`: sigue siendo un

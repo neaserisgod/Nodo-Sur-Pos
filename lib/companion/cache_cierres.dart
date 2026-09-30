@@ -1,4 +1,4 @@
-// Caché offline de "Cierres" (Bruno, 2026-09-13: "quiero la pantalla nueva
+// Caché offline de "Cierres" (El dueño, 2026-09-13: "quiero la pantalla nueva
 // de cierres con caché offline") — mismo mecanismo que `emparejamiento.dart`
 // (shared_preferences, un JSON como texto), para poder ver la última copia
 // conocida de los cierres reales aunque el celular esté fuera del local o

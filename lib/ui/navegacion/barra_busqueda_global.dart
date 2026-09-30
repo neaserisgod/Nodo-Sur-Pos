@@ -1,5 +1,5 @@
 // Campo de búsqueda de productos, disponible en TODAS las pantallas de
-// gestión (Bruno, tercera pasada de venta: "quiero que la barra de busqueda
+// gestión (El dueño, tercera pasada de venta: "quiero que la barra de busqueda
 // este en todos lados" — confirmado: en toda la app, no solo en Venta).
 //
 // Liviano y separado de `BarraBusquedaVenta` (venta/columna_busqueda.dart):

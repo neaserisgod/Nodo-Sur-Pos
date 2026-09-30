@@ -14,7 +14,7 @@ void main() {
   test('listarUsuarios trae al usuario sembrado, activo', () async {
     final usuarios = await listarUsuarios(db);
     expect(usuarios, hasLength(1));
-    expect(usuarios.single.nombre, 'Bruno');
+    expect(usuarios.single.nombre, 'Dueño');
     expect(usuarios.single.activo, isTrue);
   });
 

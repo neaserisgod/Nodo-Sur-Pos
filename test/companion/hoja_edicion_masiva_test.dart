@@ -1,4 +1,4 @@
-// Bug real (Bruno, revisión de "errores humanos evitables"): "Aplicar"
+// Bug real (El dueño, revisión de "errores humanos evitables"): "Aplicar"
 // escribía DIRECTO sobre todos los productos marcados, sin ningún resumen
 // ni techo de sanidad en el porcentaje — mismo problema que ya tenía
 // `dialogo_edicion_masiva.dart` del escritorio (Regla 3: mismo arreglo acá).
@@ -42,7 +42,7 @@ Future<void> _abrir(
               cliente: cliente,
               usuarioId: usuarioId,
               productoIds: productoIds,
-              nombreProveedor: 'Serra',
+              nombreProveedor: 'Distribuidora',
             ),
           ),
           child: const Text('Abrir'),
@@ -62,7 +62,7 @@ void main() {
 
   setUp(() async {
     db = baseDeTest();
-    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Bruno'));
+    usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     productoId = await db
         .into(db.productos)
         .insert(
@@ -146,7 +146,7 @@ void main() {
     await tester.tap(find.text('Volver'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Productos de Serra'), findsOneWidget);
+    expect(find.text('Productos de Distribuidora'), findsOneWidget);
     expect(await precioActual(), 112000);
   });
 

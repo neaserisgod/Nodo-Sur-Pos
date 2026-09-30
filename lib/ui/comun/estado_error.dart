@@ -2,7 +2,7 @@
 // con un botón sólido para reintentar sin salir de la pantalla — antes cada
 // carga inicial fallida dejaba a la companion en un spinner infinito o un
 // mensaje mudo, sin forma de reintentar salvo salir y volver a entrar
-// (Bruno, 2026-09-17: "hacelo de una vez bien" tras varios incidentes donde
+// (El dueño, 2026-09-17: "hacelo de una vez bien" tras varios incidentes donde
 // no se podía distinguir "cargando" de "roto"). Remake de la estética
 // (2026-09-19): mismo criterio que
 // `lib/companion/tema/estado_error_companion.dart` — ícono con tinte del

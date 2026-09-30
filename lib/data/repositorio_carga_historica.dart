@@ -4,10 +4,10 @@
 // única fecha elegida una sola vez; acá se persiste todo junto, recién al
 // guardar el día completo.
 //
-// Nada toca la base hasta `cargarDiaHistoricoDesdeVentas`: si Bruno cierra la
+// Nada toca la base hasta `cargarDiaHistoricoDesdeVentas`: si el dueño cierra la
 // app a mitad de carga, no queda ninguna sesión a medio armar dando vueltas.
 //
-// El arqueo se deja de lado a propósito (Bruno: "es simplemente para tener
+// El arqueo se deja de lado a propósito (El dueño: "es simplemente para tener
 // un histórico") — el día se cierra solo con contado = esperado (diferencia
 // 0), reusando la misma fórmula que un cierre real (`calcularResumenCierre`/
 // `cerrarSesion`, Regla 3: una sola fórmula, un solo lugar), nunca una nueva.
@@ -46,12 +46,12 @@ class VentaHistoricaPendiente {
 const notaCargaHistorica = 'Carga histórica';
 
 /// Recalcula el resumen automático (contado = esperado, mismo criterio que
-/// al cargar el día — Bruno: "el arqueo dejalo de lado") y lo vuelve a
+/// al cargar el día — El dueño: "el arqueo dejalo de lado") y lo vuelve a
 /// escribir. La usan tanto crear un día nuevo como agregar o borrar una
-/// venta de uno ya cargado (Bruno, 2026-09-07: "dejame verlos y
+/// venta de uno ya cargado (El dueño, 2026-09-07: "dejame verlos y
 /// editarlos") — para que el resumen de Historial nunca quede
 /// desactualizado respecto de lo que hay de verdad. `exigirAbierta: false`
-/// (Bruno, 2026-09-19: "aislar los usuarios para que no se pisen" agregó
+/// (El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" agregó
 /// esa guarda a `cerrarSesion` para el cierre real) — acá es una UPDATE
 /// simple de los campos cacheados, intencionalmente segura de llamar de
 /// nuevo sobre una sesión que ya está CERRADA.
@@ -116,7 +116,7 @@ Future<int> cargarDiaHistoricoDesdeVentas(
   });
 }
 
-/// Un día histórico ya cargado (Bruno, 2026-09-07: "dejame verlos y
+/// Un día histórico ya cargado (El dueño, 2026-09-07: "dejame verlos y
 /// editarlos porque le erré y lo cerré sin completarlo") — lo que se
 /// necesita para listarlo en el celular.
 class DiaHistorico {
@@ -200,7 +200,7 @@ Future<List<VentaHistoricaResumen>> ventasDeDiaHistorico(AppDatabase db, int ses
   return resultado;
 }
 
-/// Agrega más ventas a un día ya cargado (Bruno: "le erré y lo cerré sin
+/// Agrega más ventas a un día ya cargado (El dueño: "le erré y lo cerré sin
 /// completarlo" — seguir cargando en vez de tener que borrar todo). No
 /// hace falta "reabrir" la sesión primero: `registrarVenta` no exige
 /// ningún estado particular, y el resumen se recalcula solo al final.
@@ -260,7 +260,7 @@ Future<void> eliminarVentaHistorica(
   });
 }
 
-/// Borra el día completo — todas sus ventas y la sesión misma (Bruno: "le
+/// Borra el día completo — todas sus ventas y la sesión misma (El dueño: "le
 /// erré... para recomenzarlo" — el escape hatch cuando conviene empezar de
 /// cero antes que corregir venta por venta).
 Future<void> eliminarDiaHistorico(AppDatabase db, {required int sesionId}) {
@@ -296,7 +296,7 @@ class ResumenProveedorDia {
   });
 }
 
-/// Un producto vendido ese día sin proveedor o sin costo cargado (Bruno,
+/// Un producto vendido ese día sin proveedor o sin costo cargado (El dueño,
 /// 2026-09-07: "de lo vendido decime que no tiene costo o proveedor, así
 /// le asignamos uno") — el detalle de `vendidoSinCostoCentavos`: no solo
 /// cuánto falta completar, sino A QUÉ ir a completarle el dato.
@@ -318,7 +318,7 @@ class ProductoSinDatos {
   });
 }
 
-/// El resumen de un día histórico (Bruno, 2026-09-07: "necesitaría un
+/// El resumen de un día histórico (El dueño, 2026-09-07: "necesitaría un
 /// resumen de lo vendido por medio de pago, por proveedor, y la
 /// separación teórica") — nada de esto es una fórmula nueva: reusa
 /// `efectivoDeVentasDelDia`/`pagosNoEfectivoDelDia` (por medio de pago) y
@@ -330,7 +330,7 @@ class ResumenDiaHistorico {
   final int mercadoPagoCentavos;
 
   /// Precio de lista de los cigarrillos vendidos (Regla 6) — lo que hay
-  /// que separar a la lata para Serra Cigarros. Bruno, 2026-09-07: "el
+  /// que separar a la lata para Distribuidora de Cigarrillos. El dueño, 2026-09-07: "el
   /// arqueo muestra solamente una fracción del monto... así que me
   /// gustaría que aparezca" — antes ni el arqueo en vivo ni este resumen
   /// mostraban esta plata en ningún lado fuera del cierre real (que pide

@@ -107,7 +107,7 @@ void main() {
     test(
       'un error en formato {"errors": [...]} (el que devuelve MP de verdad) también se entiende',
       () async {
-        // Caso real (Bruno probó contra el posnet): MP no siempre manda
+        // Caso real (El dueño probó contra el posnet): MP no siempre manda
         // {"message": "..."} — para validaciones y para el cancel manda
         // {"errors": [{"code", "message"}]}. Antes de esto se mostraba el
         // JSON crudo entero en vez del mensaje.
@@ -247,7 +247,7 @@ void main() {
     test(
       'cannot_cancel_order (orden ya en la terminal) da un mensaje de negocio, no el JSON crudo',
       () async {
-        // Caso real contra el posnet de Bruno: la orden pasa a `at_terminal`
+        // Caso real contra el posnet de el dueño: la orden pasa a `at_terminal`
         // casi al instante de crearse, y desde ahí MP ya no permite
         // cancelarla por API — 409, código `cannot_cancel_order`.
         final client = MockClient((request) async {

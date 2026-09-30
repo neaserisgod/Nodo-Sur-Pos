@@ -1,6 +1,6 @@
 // Historial de ventas: listado filtrable de ventas individuales, para la
 // pestaña nueva de "Reportes" (escritorio) y la pantalla del celular
-// (Bruno, 2026-09-07: "hagamos la sección de reportes... con el historial
+// (El dueño, 2026-09-07: "hagamos la sección de reportes... con el historial
 // de ventas, lo mismo para desktop, que sea filtrable... tipo mercado
 // pago... que también sirva para un control manual en caso de desconfiar
 // de los números"). Mismo criterio de agrupar pagos en "efectivo/virtual/
@@ -13,7 +13,7 @@ import 'database.dart';
 
 /// 'efectivo' | 'qr' | 'debitCard' | 'mixto' — más granular que el
 /// `medioResumen` de la carga histórica porque acá interesa poder filtrar
-/// QR y Débito por separado (Bruno: "tipo mercado pago").
+/// QR y Débito por separado (El dueño: "tipo mercado pago").
 enum MedioVentaHistorial { efectivo, qr, debitCard, mixto }
 
 class VentaDelHistorial {
@@ -29,7 +29,7 @@ class VentaDelHistorial {
   final bool anulada;
 
   /// Si la sesión de caja de esta venta sigue 'ABIERTA' — condición para
-  /// poder anularla (Bruno, 2026-09-13: anular una venta de un cierre ya
+  /// poder anularla (El dueño, 2026-09-13: anular una venta de un cierre ya
   /// arqueado descuadraría ese arqueo). Se calcula acá, no en la UI, para
   /// que el celular no necesite una segunda consulta solo para esto.
   final bool sesionAbierta;

@@ -70,6 +70,7 @@ void main() {
 
     final db = AppDatabase(NativeDatabase(archivo));
     addTearDown(() => db.close());
-    expect((await db.select(db.configuracionNegocioTabla).getSingle()).modulosDesactivados, '');
+    // Las columnas ya estaban: la migración no toca lo guardado (una base nueva trae el comparador apagado).
+    expect((await db.select(db.configuracionNegocioTabla).getSingle()).modulosDesactivados, 'comparar_precios');
   });
 }

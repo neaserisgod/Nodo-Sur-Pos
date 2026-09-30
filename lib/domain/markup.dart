@@ -60,7 +60,7 @@ int gananciaBruta(
 const int centavosPorCentena = 10000;
 
 /// Precio de venta = costo + [markupBp], redondeado hacia arriba a la
-/// PRÓXIMA CENTENA de pesos (Bruno, 2026-09-29: "un selector de porcentaje
+/// PRÓXIMA CENTENA de pesos (El dueño, 2026-09-29: "un selector de porcentaje
 /// por proveedor + redondeo para arriba a la próxima centena"). Ej.: costo
 /// $1.030 con 30% = $1.339 → $1.400; un resultado que ya cae justo en centena
 /// no sube ($1.000 con 30% = $1.300).
@@ -77,7 +77,7 @@ int precioConMarkupACentena(int costoCentavos, int markupBp) {
   return redondearFraccionHaciaArriba(numerador, 10000, centavosPorCentena);
 }
 
-/// Precio de una promo (Bruno, 2026-09-29: "se carga precio costo de 2 o más
+/// Precio de una promo (El dueño, 2026-09-29: "se carga precio costo de 2 o más
 /// artículos, se le suma el porcentaje, y no se tiene que pasar del precio
 /// de lista normal"). Costo total de los artículos + [markupBp], redondeado a
 /// la próxima centena como cualquier precio por porcentaje

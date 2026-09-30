@@ -1,7 +1,7 @@
 // Tarjeta de acceso para una grilla de dos columnas — reemplaza la fila
 // "ícono + texto + flecha" (patrón de lista de configuración, genérico en
 // cualquier app) en las pantallas que son sobre todo un menú de accesos
-// (Gestión, Más) — Bruno, 2026-09-18, tras ver que la primera pasada de
+// (Gestión, Más) — El dueño, 2026-09-18, tras ver que la primera pasada de
 // remake "se ve exactamente igual": una grilla de tarjetas de color, como ya
 // tiene "Inicio", en vez de una lista de filas iguales, cambia la
 // composición real de la pantalla, no solo el color.
