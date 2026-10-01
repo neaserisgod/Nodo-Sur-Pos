@@ -14,8 +14,9 @@
 name: publicar-beta
 
 on:
-  # Cada merge a main publica solo una BETA (solo la ven los administradores). Pasarla a estable es manual:
-  # correr este mismo workflow a mano eligiendo "stable". Los commits de este workflow llevan [skip ci] y no lo vuelven a disparar.
+  # Cada merge a main publica una BETA (solo la ven los administradores). Si el título del PR empieza con "release:"
+  # (el commit del merge lo conserva), ese merge publica ESTABLE: le llega a los clientes. También se puede correr a mano
+  # eligiendo canal. Los commits de este workflow llevan [skip ci] y no lo vuelven a disparar.
   push:
     branches: [main]
     paths-ignore:
@@ -59,9 +60,9 @@ jobs:
       DSA_PRIVATE_KEY: ${{ secrets.DSA_PRIVATE_KEY }}
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
       SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
-      # Al disparar por merge no hay inputs: beta al 100 % y el título del commit como nota.
+      # Al disparar por merge no hay inputs: canal según el título (release: → stable, si no beta), al 100 %, y el título como nota.
       NOTAS: ${{ inputs.notas || github.event.head_commit.message || 'Versión de prueba' }}
-      CANAL: ${{ inputs.canal || 'beta' }}
+      CANAL: ${{ inputs.canal || (startsWith(github.event.head_commit.message, 'release:') && 'stable') || 'beta' }}
       ROLLOUT: ${{ inputs.rollout || '100' }}
     steps:
       - name: Comprobar que están los secretos (antes de compilar nada)
