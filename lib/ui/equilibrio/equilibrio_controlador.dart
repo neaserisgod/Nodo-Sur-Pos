@@ -7,7 +7,9 @@ import 'package:flutter/widgets.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_equilibrio.dart';
+import '../../data/repositorio_rentabilidad.dart';
 import '../../domain/equilibrio.dart';
+import '../../domain/rentabilidad.dart';
 
 class EquilibrioControlador extends ChangeNotifier {
   EquilibrioControlador(this.db, {required this.usuarioId, this.sesionCajaId});
@@ -27,6 +29,13 @@ class EquilibrioControlador extends ChangeNotifier {
   int? fijosPendientesCentavos;
   int? ventaDiariaEquilibrio;
   int? reservaDiariaCentavos;
+
+  /// Estado de resultados del mes (ganancia bruta → retirable). Siempre se
+  /// calcula, aunque falten fijos: en ese caso viene marcado incompleto.
+  EstadoDeResultados? estado;
+
+  /// Si ya existe el concepto de fijo "Sueldo del dueño".
+  bool tieneConceptoSueldo = false;
 
   bool cargando = true;
 
@@ -51,6 +60,9 @@ class EquilibrioControlador extends ChangeNotifier {
     final referencias = await referenciasDiarias(db, mesAnio);
     ventaDiariaEquilibrio = referencias.ventaDiaria;
     reservaDiariaCentavos = referencias.reservaDiaria;
+
+    estado = await estadoDeResultadosDelMes(db, mesAnio);
+    tieneConceptoSueldo = await conceptoSueldoId(db) != null;
 
     cargando = false;
     notifyListeners();

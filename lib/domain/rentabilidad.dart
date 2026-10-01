@@ -33,6 +33,7 @@ class DatosDelMes {
     required this.sueldoObjetivoCentavos,
     required this.retirosDelMesCentavos,
     this.reservaCentavos = 0,
+    this.arrastreCentavos = 0,
     this.fijosCompletos = true,
   });
 
@@ -61,6 +62,13 @@ class DatosDelMes {
 
   /// Colchón que el dueño quiere dejar siempre en el negocio (opcional).
   final int reservaCentavos;
+
+  /// Lo que quedó sin retirar del mes anterior (su retirable, nunca negativo):
+  /// la ganancia de los últimos días de un mes se retira recién en el
+  /// siguiente, y sin esto el primer retiro de cada mes se vería como exceso.
+  /// 0 si el mes anterior no se puede calcular completo (más vale avisar de
+  /// más que dar por retirable plata que no se sabe si existe).
+  final int arrastreCentavos;
 
   /// false si algún fijo activo no tiene monto cargado este mes.
   final bool fijosCompletos;
@@ -104,7 +112,8 @@ class EstadoDeResultados {
   final int retirosDelMesCentavos;
 
   /// Lo que se puede retirar HOY sin comerse los gastos del negocio:
-  /// resultado operativo − reserva − retiros ya hechos, nunca negativo.
+  /// resultado operativo + arrastre del mes anterior − reserva − retiros ya
+  /// hechos, nunca negativo.
   final int retirableCentavos;
 
   /// Cuánto de lo ya retirado excede lo que el resultado operativo justifica.
@@ -132,7 +141,7 @@ EstadoDeResultados calcularEstadoDeResultados(DatosDelMes d) {
   // llevó. El sueldo objetivo NO se resta: es un tope de referencia, y el
   // dueño cobra su sueldo justamente retirando — restarlo dos veces haría que
   // retirar el sueldo pareciera un exceso.
-  final techo = operativo - d.reservaCentavos;
+  final techo = operativo - d.reservaCentavos + d.arrastreCentavos;
   final retirable = techo - d.retirosDelMesCentavos;
   final exceso = d.retirosDelMesCentavos - (techo < 0 ? 0 : techo);
 

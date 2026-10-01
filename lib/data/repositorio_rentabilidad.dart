@@ -36,12 +36,29 @@ Future<int> _sumaMovimientos(
   return fila.read(m.montoCentavos.sum()) ?? 0;
 }
 
+/// Nombre del concepto de gasto fijo que representa el sueldo del dueño. Es una
+/// convención exacta (no una búsqueda aproximada): el nombre es único en la
+/// tabla, así que o existe o no existe.
+const nombreConceptoSueldo = 'Sueldo del dueño';
+
+Future<int?> conceptoSueldoId(AppDatabase db) async {
+  final fila = await (db.select(db.gastosFijos)..where((g) => g.nombre.equals(nombreConceptoSueldo))).getSingleOrNull();
+  return fila?.id;
+}
+
+String _mesAnterior(String mesAnio) {
+  final (inicio, _) = _rango(mesAnio);
+  final anterior = DateTime(inicio.year, inicio.month - 1);
+  return mesAnioDe(anterior);
+}
+
 /// Estado de resultados de [mesAnio] ("YYYY-MM").
 ///
 /// [sueldoGastoFijoId] es el concepto de gasto fijo que representa el sueldo
-/// del dueño (por ejemplo uno llamado "Sueldo del dueño"): su monto del mes se
-/// toma como sueldo objetivo y se saca de los fijos, para no contarlo dos
-/// veces. Sin él, el sueldo objetivo es 0 y el estado lo advierte.
+/// del dueño: su monto del mes se toma como sueldo objetivo y se saca de los
+/// fijos, para no contarlo dos veces. Si no se pasa, se busca el concepto
+/// llamado [nombreConceptoSueldo]; sin ninguno, el sueldo objetivo es 0 y el
+/// estado lo advierte.
 ///
 /// Los fijos sin monto cargado NO se suman como 0: el estado queda incompleto
 /// (`fijosCompletos: false`) y lo dice.
@@ -50,7 +67,24 @@ Future<EstadoDeResultados> estadoDeResultadosDelMes(
   String mesAnio, {
   int? sueldoGastoFijoId,
   int reservaCentavos = 0,
+  bool conArrastre = true,
 }) async {
+  sueldoGastoFijoId ??= await conceptoSueldoId(db);
+
+  // El retirable que dejó el mes anterior, calculado sin arrastre propio (no
+  // se encadena hacia atrás) y solo si ese mes se puede calcular completo.
+  var arrastre = 0;
+  if (conArrastre) {
+    final anterior = await estadoDeResultadosDelMes(
+      db,
+      _mesAnterior(mesAnio),
+      sueldoGastoFijoId: sueldoGastoFijoId,
+      reservaCentavos: reservaCentavos,
+      conArrastre: false,
+    );
+    if (anterior.esCompleto) arrastre = anterior.retirableCentavos;
+  }
+
   final ganancia = await gananciaBrutaDelMes(db, mesAnio);
   final fijos = await fijosDelMes(db, mesAnio);
 
@@ -79,6 +113,7 @@ Future<EstadoDeResultados> estadoDeResultadosDelMes(
       sueldoObjetivoCentavos: sueldo,
       retirosDelMesCentavos: retiros,
       reservaCentavos: reservaCentavos,
+      arrastreCentavos: arrastre,
       fijosCompletos: fijos.faltantes.isEmpty,
     ),
   );

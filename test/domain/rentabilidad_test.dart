@@ -10,6 +10,7 @@ DatosDelMes datos({
   int sueldo = 100000000, // $1.000.000
   int retiros = 0,
   int reserva = 0,
+  int arrastre = 0,
   bool fijosCompletos = true,
 }) =>
     DatosDelMes(
@@ -21,6 +22,7 @@ DatosDelMes datos({
       sueldoObjetivoCentavos: sueldo,
       retirosDelMesCentavos: retiros,
       reservaCentavos: reserva,
+      arrastreCentavos: arrastre,
       fijosCompletos: fijosCompletos,
     );
 
@@ -51,6 +53,14 @@ void main() {
     test('lo ya retirado y la reserva bajan lo retirable', () {
       final e = calcularEstadoDeResultados(datos(retiros: 60000000, reserva: 30000000));
       expect(e.retirableCentavos, 150000000 - 30000000 - 60000000);
+      expect(e.excesoDeRetirosCentavos, 0);
+    });
+
+    test('el arrastre del mes anterior suma a lo retirable (y evita un falso exceso a principio de mes)', () {
+      // Mes recién empezado: operativo 0, pero quedaban $500.000 del anterior.
+      final e = calcularEstadoDeResultados(datos(ganancia: 135000000, arrastre: 50000000, retiros: 40000000));
+      expect(e.resultadoOperativoCentavos, 0);
+      expect(e.retirableCentavos, 10000000);
       expect(e.excesoDeRetirosCentavos, 0);
     });
 

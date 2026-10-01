@@ -104,4 +104,28 @@ void main() {
     expect(e.gananciaBrutaCentavos, 0);
     expect(e.esCompleto, isFalse);
   });
+
+  test('lo que sobró del mes anterior (completo) se arrastra a lo retirable', () async {
+    for (final c in await db.select(db.gastosFijos).get()) {
+      await cargarMontoDelMes(db, gastoFijoId: c.id, mesAnio: '2026-07', montoCentavos: 100);
+      await cargarMontoDelMes(db, gastoFijoId: c.id, mesAnio: '2026-08', montoCentavos: 100);
+    }
+    await venta(DateTime(2026, 7, 15), 2000, 1000); // julio: ganancia 1000 − fijos 400 = 600
+    await venta(DateTime(2026, 8, 15), 1100, 1000); // agosto: ganancia 100 − fijos 400 = −300
+
+    final e = await estadoDeResultadosDelMes(db, '2026-08');
+    expect(e.resultadoOperativoCentavos, -300);
+    expect(e.retirableCentavos, 300); // −300 + 600 de julio
+  });
+
+  test('si el mes anterior está incompleto no se arrastra nada', () async {
+    for (final c in await db.select(db.gastosFijos).get()) {
+      await cargarMontoDelMes(db, gastoFijoId: c.id, mesAnio: '2026-08', montoCentavos: 100);
+    }
+    await venta(DateTime(2026, 7, 15), 2000, 1000); // julio sin fijos cargados
+    await venta(DateTime(2026, 8, 15), 2000, 1000); // agosto: 1000 − 400 = 600
+
+    final e = await estadoDeResultadosDelMes(db, '2026-08');
+    expect(e.retirableCentavos, 600);
+  });
 }

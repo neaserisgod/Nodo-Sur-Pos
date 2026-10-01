@@ -3411,3 +3411,11 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
   dicen "ganancia"; los chips de la companion pasan a 20/30/40% de ganancia.
 - **Sin verificar en esta sesión**: no había Flutter/Dart instalado, así que los tests no se corrieron. Correr
   `flutter test` antes de dar esto por cerrado.
+
+## Hecho: asistente contable, primera parte (2026-10-01)
+
+- `domain/rentabilidad.dart`, `data/repositorio_rentabilidad.dart`; tarjeta "Estado de resultados del mes" en
+  Equilibrio y aviso "Retirar igual" en el retiro de ganancia. Ver `DECISIONES.md`.
+- Pendiente: pantalla del margen necesario / precio mínimo sugerido y lista de productos por debajo del margen.
+- **Sin verificar**: sin Flutter en la sesión, nada de esto se compiló ni se corrió. `flutter analyze` y `flutter test`
+  primero.

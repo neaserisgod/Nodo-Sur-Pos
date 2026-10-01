@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
+import '../../data/repositorio_rentabilidad.dart' show nombreConceptoSueldo;
 import '../comun/botones.dart';
 import '../comun/tarjetas.dart';
 import '../tema/tokens.dart';
@@ -68,6 +69,8 @@ class _ContenidoEquilibrioState extends State<ContenidoEquilibrio> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _FilaIndicadoresMes(),
+              SizedBox(height: Espaciado.lg),
+              _TarjetaEstadoDeResultados(),
               SizedBox(height: Espaciado.lg),
               IntrinsicHeight(
                 child: Row(
@@ -142,6 +145,87 @@ class _FilaIndicadoresMes extends StatelessWidget {
             if (i > 0) const SizedBox(width: Espaciado.lg),
             Expanded(child: tarjetas[i]),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Del bruto a lo que realmente se puede retirar: la cascada contable del mes
+/// (`domain/rentabilidad.dart`). La ganancia bruta no es plata libre — primero
+/// hay que pagar los gastos —, y esta tarjeta lo muestra de arriba hacia abajo.
+class _TarjetaEstadoDeResultados extends StatelessWidget {
+  const _TarjetaEstadoDeResultados();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.watch<EquilibrioControlador>();
+    final e = c.estado!;
+    final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
+
+    Widget fila(String etiqueta, int centavos, {bool resta = false, bool fuerte = false}) {
+      final estilo = textTheme.bodyMedium!.copyWith(fontWeight: fuerte ? Pesos.fuerte : null);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Expanded(child: Text(etiqueta, style: estilo)),
+            Text(
+              '${resta && centavos > 0 ? '− ' : ''}${formatearARS(centavos)}',
+              style: estilo.tabular,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return TarjetaSeccion(
+      titulo: 'Estado de resultados del mes',
+      insignia: e.esCompleto
+          ? const Insignia(texto: 'Completo', tono: Tono.ganancia)
+          : const Insignia(texto: 'Incompleto', tono: Tono.alerta),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          fila('Ventas', e.ventasNetasCentavos),
+          fila('Costo de la mercadería', e.costoMercaderiaCentavos, resta: true),
+          const Divider(),
+          fila('Ganancia bruta${e.gananciaBrutaBp == null ? '' : ' (${(e.gananciaBrutaBp! / 100).round()}% de lo vendido)'}', e.gananciaBrutaCentavos, fuerte: true),
+          fila('Gastos fijos', e.gastosFijosCentavos, resta: true),
+          fila('Gastos variables', e.gastosVariablesCentavos, resta: true),
+          const Divider(),
+          fila('Resultado del negocio', e.resultadoOperativoCentavos, fuerte: true),
+          fila('Sueldo objetivo del dueño', e.sueldoObjetivoCentavos, resta: true),
+          const Divider(),
+          fila('Queda para el negocio', e.resultadoDespuesDelSueldoCentavos, fuerte: true),
+          const SizedBox(height: Espaciado.md),
+          BloqueSuave(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                fila('Ya retirado este mes', e.retirosDelMesCentavos),
+                fila('Retirable hoy', e.retirableCentavos, fuerte: true),
+              ],
+            ),
+          ),
+          if (e.advertencias.isNotEmpty) ...[
+            const SizedBox(height: Espaciado.md),
+            for (final a in e.advertencias)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(a, style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario)),
+              ),
+          ],
+          if (!c.tieneConceptoSueldo)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(IconosPlazoleta.add),
+                label: const Text('Agregar sueldo del dueño'),
+                onPressed: () => c.agregarConcepto(nombreConceptoSueldo),
+              ),
+            ),
         ],
       ),
     );

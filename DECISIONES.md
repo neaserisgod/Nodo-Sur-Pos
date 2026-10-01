@@ -1376,3 +1376,20 @@ Decididas con el dueño antes de empezar (fase 1):
   sobre ganancia bruta y no se subordina a gastos fijos/Equilibrio; el reporte de ganancia por línea no incluye el
   redondeo ni el recargo de la venta (diferencia de centavos contra lo cobrado); el reparto por línea de
   `separacion_por_medio` trunca y puede perder centavos sueltos por venta.
+
+### Asistente contable: estado de resultados y retiros (2026-10-01)
+
+- **El problema.** La ganancia bruta se trataba como plata disponible: el retiro por proveedor (Regla 13) salía de
+  ella sin mirar los gastos del mes. Se podía "retirar la ganancia" y quedarse sin plata para el alquiler.
+- **Estado de resultados** (`domain/rentabilidad.dart`): ventas netas − costo (costo-foto) = ganancia bruta; − fijos −
+  variables = resultado del negocio; − sueldo objetivo = lo que queda para el negocio. Se muestra en Inicio →
+  Equilibrio. Siempre dice si está completo: ventas sin costo o fijos sin monto lo marcan "Incompleto".
+- **Retirable = resultado del negocio + arrastre − reserva − ya retirado.** El sueldo objetivo NO se resta (se cobra
+  retirando; restarlo dos veces haría que retirar el sueldo pareciera un exceso). El arrastre es lo retirable que
+  dejó el mes anterior, solo si ese mes se puede calcular completo.
+- **Retiro con aviso (decisión del dueño):** al retirar ganancia, si el monto pasa de lo retirable se muestra cuánto se
+  pasa y se pide confirmar; confirmando se retira igual. No bloquea.
+- **El sueldo del dueño es un fijo llamado exactamente "Sueldo del dueño"** (sin tocar el esquema); el botón de
+  Equilibrio lo crea y el monto se carga como cualquier fijo del mes. Los pagos GASTO sin fijo son los variables.
+- **Sin fijos cargados el retirable está sobreestimado** (no hay gastos que restar): por eso el aviso lo dice.
+- **Margen necesario y precio mínimo sugerido** están en el dominio; falta la pantalla que los muestra.
