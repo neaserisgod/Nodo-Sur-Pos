@@ -435,28 +435,31 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   bool _actualizacionSinConexion = false;
 
   Future<void> _revisarActualizacion() async {
+    // Sin PC emparejada igual se mira el sitio: ahí vive el APK publicado.
     final conexion = await leerConexion();
-    if (conexion == null) {
-      if (mounted) setState(() => _actualizacionSinConexion = false);
-      return;
-    }
     try {
-      final estado = await revisarActualizacion(ClienteCompanion(conexion));
+      final estado = await revisarActualizacion(
+        conexion == null ? null : ClienteCompanion(conexion),
+      );
       if (mounted) setState(() => _actualizacionSinConexion = false);
       if (estado.hayActualizacion && !_actualizacionYaOfrecida) {
         _actualizacionYaOfrecida = true;
-        await _actualizar();
+        await _actualizar(estado.oferta);
       }
     } catch (_) {
-      if (mounted) setState(() => _actualizacionSinConexion = true);
+      // Sin PC emparejada y sin sitio no hay a quién culpar: no se avisa.
+      if (mounted) setState(() => _actualizacionSinConexion = conexion != null);
     }
   }
 
-  Future<void> _actualizar() async {
+  Future<void> _actualizar([OfertaSitio? oferta]) async {
     final conexion = await leerConexion();
-    if (conexion == null) return;
+    if (conexion == null && oferta == null) return;
     try {
-      await descargarEInstalarActualizacion(ClienteCompanion(conexion));
+      await descargarEInstalarActualizacion(
+        conexion == null ? null : ClienteCompanion(conexion),
+        oferta: oferta,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

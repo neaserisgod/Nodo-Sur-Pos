@@ -1,0 +1,94 @@
+# Compila el APK de la companion app (celular) y lo publica en el sitio (Cloudflare) como plataforma "android".
+# El celular lo busca ahí al abrir el menú (lib/companion/actualizacion.dart). Se dispara a mano:
+# Actions → publicar-apk → Run workflow.
+#
+# Secretos (los mismos de publicar-beta, más uno):
+#   RELEASE_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+#   ANDROID_KEYSTORE_BASE64  el debug.keystore de la PC donde se compiló el APK que ya está instalado en el celular
+#                            (Windows: %USERPROFILE%\.android\debug.keystore), en base64. SIN este secreto el APK sale con
+#                            otra firma y Android se niega a instalarlo encima del anterior.
+#                            PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.android\debug.keystore"))
+# Opcional: SITE_REPO_TOKEN si el repo del sitio es privado.
+#
+# Usa el número de compilación que ya esté en pubspec.yaml (no lo sube): el de la última versión publicada de la PC.
+name: publicar-apk
+
+on:
+  workflow_dispatch:
+    inputs:
+      canal:
+        description: "beta = solo administradores. stable = a todos"
+        required: true
+        type: choice
+        options: [beta, stable]
+        default: stable
+      notas:
+        description: Qué cambió
+        required: true
+        default: Actualización de la companion
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
+    steps:
+      - name: Comprobar secretos
+        run: |
+          for v in RELEASE_TOKEN CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ANDROID_KEYSTORE_BASE64; do
+            [ -n "${!v}" ] || { echo "::error::Falta el secreto $v (mirá el encabezado del workflow)"; exit 1; }
+          done
+
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: neaserisgod/NodoSurPage
+          path: sitio
+          token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g wrangler
+
+      - name: Keystore (afuera del repo)
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - run: flutter pub get
+
+      # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
+      # (ver tool/publicar_actualizacion_companion.sh).
+      - run: flutter build apk --release --target-platform android-arm64
+
+      - name: Publicar en el sitio
+        env:
+          NOTAS: ${{ inputs.notas }}
+          CANAL: ${{ inputs.canal }}
+        run: |
+          version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
+          cp build/app/outputs/flutter-apk/app-release.apk "LaPlazoleta-Companion-${version}.apk"
+          node sitio/scripts/publicar-release.mjs --file "LaPlazoleta-Companion-${version}.apk" --platform android \
+            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout 100
