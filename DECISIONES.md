@@ -1444,6 +1444,16 @@ Decididas con el dueño antes de empezar (fase 1):
 - **Reintentos seguros**: el id del lote es el hash de su contenido; si se cortó la respuesta, el reintento no duplica.
 - **Sin secretos**: las tablas sincronizadas no tienen tokens (la configuración sensible vive en `configuracion_tabla`,
   que no se sincroniza); hay un test que lo vigila. Los lotes además van cifrados en el servidor.
+- **Bajar solo cuando se detecta (2026-10-01).** El dueño: "que baje los cambios solo cuando los detecte, hay que
+  economizar lo más posible el uso de Cloudflare". Un sondeo cada 20 s se descartó. Un Durable Object por cuenta
+  (`SyncHub`, `NodoSurPage`) mantiene WebSockets que **hibernan** y avisa `{"seq":N}` a los demás dispositivos cuando
+  alguien sube un lote; recién ahí bajan. Costo según la documentación de Cloudflare: conectar es 1 pedido, un socket
+  quieto no consume cómputo, los avisos salientes y los pings del protocolo no se cobran, y está en el plan gratis
+  (solo con SQLite). Conectado y sin novedades: **cero pedidos**. Sin conexión de avisos (sin internet, o servidor sin
+  el Durable Object) se reintenta espaciando 5 s, 20 s, 1 min y 5 min, con una consulta por intento. Las subidas se
+  agrupan 1 s (una venta escribe varias tablas). Del lado del servidor también se recortó: las tablas se aseguran
+  una vez por instancia (antes 4 consultas en cada pedido), subir hace una escritura en vez de cuatro consultas y la
+  purga corre cada 25 lotes.
 - **Estado local** en `nodosur_sync.json` (junto al token de la cuenta, fuera de la base). Si el servidor ya no guarda
   lo que faltaba (60 días de retención) avisa `SyncNubeExpirada` y hay que ponerse al día desde una copia.
 - **Pendiente**: tras restaurar una copia hay que llamar a `ServicioSyncNube.reiniciar()`; y desvincular debería borrar

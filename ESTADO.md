@@ -161,6 +161,9 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
 - **Sync por la nube, fase 2 (PC) — hecha, sin probar contra el servidor real**: `servicios/sync_nube.dart` baja
   y sube lotes por `/api/sync` con cada cambio de la base (más un latido de 20 s), sin eco y con "gana el último en
   llegar" (`DECISIONES.md`, "Sync por la nube entre dispositivos"). Se arranca solo con la app, si hay cuenta vinculada.
+  Baja solo cuando el servidor avisa (WebSocket a un Durable Object, sin sondeo): hay que **desplegar `NodoSurPage`**
+  (agrega el binding `SYNC_HUB` y su migración) y probarlo con dos dispositivos reales — la hibernación y el upgrade
+  del WebSocket no se pueden probar sin Cloudflare.
   Falta: el celular (fase 3, traspaso automático wifi → nube), elegir "PC y celular" / "solo celular" (fase 4), la
   estética nueva de la companion (fase 5), y un indicador de estado en la UI. Servidor en `NodoSurPage` (rama
   `claude/quirky-noether-pbunw6`).

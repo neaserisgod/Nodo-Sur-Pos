@@ -130,10 +130,19 @@ class ServicioSyncNube {
   /// Último resultado: lo que muestra la pantalla de dispositivos ("sin conexión", "al día").
   ResultadoSyncNube? ultimo;
 
+  /// Hay una conexión de avisos abierta: mientras la haya no se consulta nada por las dudas.
+  bool escuchando = false;
+
   bool _enCurso = false;
   bool _otraVez = false;
+  bool _activa = false;
+  int _generacion = 0;
   StreamSubscription<void>? _cambios;
-  Timer? _latido;
+  StreamSubscription<void>? _avisos;
+  Completer<void>? _corteDeAvisos;
+  Timer? _esperaSubida;
+  Timer? _esperaBajada;
+  Timer? _esperaReintento;
 
   /// Una vuelta completa (bajar, subir). Si ya hay una corriendo, anota que hace falta otra al terminar.
   Future<ResultadoSyncNube> sincronizar() async {
@@ -211,20 +220,99 @@ class ServicioSyncNube {
     return subidas;
   }
 
-  /// Arranca la sync automática: una vuelta con cada aviso de [cambiosLocales] (ya agrupado por quien lo emite)
-  /// y un latido cada [latido] para enterarse de lo que subieron los demás.
-  void iniciar({required Stream<void> cambiosLocales, Duration latido = const Duration(seconds: 20)}) {
+  /// Arranca la sync automática (El dueño, 2026-10-01: "que baje los cambios solo cuando los detecte, hay que
+  /// economizar lo más posible el uso de Cloudflare"):
+  ///  - Subir: con cada cambio local de [cambiosLocales], agrupados [agruparCambios] para que una ráfaga (una venta
+  ///    escribe varias tablas) sea una sola subida.
+  ///  - Bajar: no se consulta por tiempo. Se abre una conexión de avisos y recién cuando otro dispositivo sube algo
+  ///    llega el aviso y se baja. Mientras la conexión esté abierta no hay NINGÚN pedido por las dudas.
+  ///  - Si no se puede escuchar (sin internet, o el servidor sin aviso en vivo) se reintenta cada vez más espaciado
+  ///    ([reintentos], el último se repite) y en cada intento se consulta una vez, por si se perdió algo.
+  void iniciar({
+    required Stream<void> cambiosLocales,
+    Duration agruparCambios = const Duration(seconds: 1),
+    Duration agruparAvisos = const Duration(milliseconds: 300),
+    List<Duration> reintentos = const [
+      Duration(seconds: 5),
+      Duration(seconds: 20),
+      Duration(minutes: 1),
+      Duration(minutes: 5),
+    ],
+    Duration sinCuenta = const Duration(minutes: 1),
+  }) {
     detener();
-    _cambios = cambiosLocales.listen((_) => unawaited(sincronizar()));
-    _latido = Timer.periodic(latido, (_) => unawaited(sincronizar()));
-    unawaited(sincronizar());
+    _activa = true;
+    final generacion = ++_generacion;
+    _cambios = cambiosLocales.listen((_) {
+      _esperaSubida?.cancel();
+      _esperaSubida = Timer(agruparCambios, () => unawaited(sincronizar()));
+    });
+    unawaited(_bucleDeAvisos(generacion, agruparAvisos, reintentos, sinCuenta));
+  }
+
+  Future<void> _bucleDeAvisos(int generacion, Duration agruparAvisos, List<Duration> reintentos, Duration sinCuenta) async {
+    var intento = 0;
+    bool vigente() => _activa && generacion == _generacion;
+    while (vigente()) {
+      final cuenta = await almacenCuenta.leer();
+      if (!vigente()) return;
+      if (cuenta == null) {
+        // Sin cuenta no hay red que gastar: se mira el archivo de vez en cuando por si se vincula.
+        await _dormir(sinCuenta);
+        continue;
+      }
+      try {
+        final avisos = await cliente.escuchar(cuenta.token);
+        if (!vigente()) return;
+        escuchando = true;
+        intento = 0;
+        final corte = _corteDeAvisos = Completer<void>();
+        _avisos = avisos.listen(
+          (_) {
+            _esperaBajada?.cancel();
+            _esperaBajada = Timer(agruparAvisos, () => unawaited(sincronizar()));
+          },
+          onDone: () => corte.isCompleted ? null : corte.complete(),
+          onError: (_) => corte.isCompleted ? null : corte.complete(),
+        );
+        // Ponerse al día de lo que pasó mientras no se escuchaba (arranque, reconexión).
+        unawaited(sincronizar());
+        await corte.future;
+      } catch (_) {
+        // sin conexión o sin aviso en vivo: se sigue abajo
+      }
+      escuchando = false;
+      await _avisos?.cancel();
+      _avisos = null;
+      if (!vigente()) return;
+      // Mientras no se pueda escuchar: una consulta por intento, cada vez más espaciada.
+      unawaited(sincronizar());
+      await _dormir(reintentos[intento < reintentos.length ? intento : reintentos.length - 1]);
+      intento++;
+    }
+  }
+
+  Completer<void>? _sueno;
+
+  Future<void> _dormir(Duration d) {
+    final c = _sueno = Completer<void>();
+    _esperaReintento = Timer(d, () => c.isCompleted ? null : c.complete());
+    return c.future;
   }
 
   void detener() {
+    _activa = false;
+    _generacion++;
     _cambios?.cancel();
-    _latido?.cancel();
+    _avisos?.cancel();
+    _esperaSubida?.cancel();
+    _esperaBajada?.cancel();
+    _esperaReintento?.cancel();
+    if (_corteDeAvisos?.isCompleted == false) _corteDeAvisos!.complete();
+    if (_sueno?.isCompleted == false) _sueno!.complete(); // que el bucle termine, no que quede colgado
     _cambios = null;
-    _latido = null;
+    _avisos = null;
+    escuchando = false;
   }
 
   /// Olvida el registro: la próxima vuelta baja todo desde el principio. Para después de restaurar una copia.

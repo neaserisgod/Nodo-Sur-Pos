@@ -4,8 +4,9 @@
 // numerados por orden de llegada, idempotentes por `X-Lote-Id`, y cada
 // dispositivo recibe solo los de los otros.
 
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show gzip;
+import 'dart:io' show WebSocketException, gzip;
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
@@ -39,22 +40,53 @@ class _Servidor {
   bool perderRespuestaDelProximoPost = false;
   bool expirado = false;
 
-  late final cliente = http.Client();
+  /// Avisos en vivo: un canal por dispositivo conectado. `sinAvisoEnVivo` imita un servidor sin el Durable Object.
+  final canales = <String, StreamController<String>>{};
+  bool sinAvisoEnVivo = false;
+  int conexiones = 0;
+  int consultas = 0; // GET /api/sync
+  final consultasDe = <String, int>{};
+  int subidas = 0; // POST /api/sync
+
+  Future<Stream<dynamic>> abrir(Uri uri, Map<String, String> cabeceras) async {
+    if (caido) throw const WebSocketException('sin red');
+    if (sinAvisoEnVivo) throw const WebSocketException('was not upgraded to websocket, HTTP status code: 503');
+    final token = cabeceras['Authorization']!.substring('Bearer '.length);
+    conexiones++;
+    final c = canales[token] = StreamController<String>();
+    return c.stream;
+  }
+
+  /// Corta las conexiones de avisos (se reinició el servidor, se cayó la red).
+  void cortarAvisos() {
+    for (final c in canales.values) {
+      c.close();
+    }
+    canales.clear();
+  }
 
   MockClient get http_ => MockClient((r) async {
         if (caido) throw http.ClientException('sin red');
         final token = r.headers['Authorization']!.substring('Bearer '.length);
         if (r.method == 'POST') {
+          subidas++;
           final id = r.headers['X-Lote-Id']!;
           final previo = lotes.where((l) => l.id == id).firstOrNull;
           final lote = previo ?? _Lote(++_seq, token, id, r.bodyBytes);
-          if (previo == null) lotes.add(lote);
+          if (previo == null) {
+            lotes.add(lote);
+            for (final e in canales.entries) {
+              if (e.key != token) e.value.add('{"seq":${lote.seq}}');
+            }
+          }
           if (perderRespuestaDelProximoPost) {
             perderRespuestaDelProximoPost = false;
             throw http.ClientException('se cortó');
           }
           return http.Response(jsonEncode({'ok': true, 'seq': lote.seq, 'repetido': previo != null}), 200);
         }
+        consultas++;
+        consultasDe[token] = (consultasDe[token] ?? 0) + 1;
         if (expirado) return http.Response(jsonEncode({'expirado': true, 'purgadoHasta': 9}), 200);
         final desde = int.parse(r.url.queryParameters['desde']!);
         final nuevos = lotes.where((l) => l.seq > desde).toList();
@@ -81,7 +113,7 @@ class _Dispositivo {
     servicio = ServicioSyncNube(
       db: db,
       almacenCuenta: cuenta,
-      cliente: ClienteNube(http: servidor.http_),
+      cliente: ClienteNube(http: servidor.http_, abrirEscucha: servidor.abrir),
       almacenEstado: estado,
       alAplicarBajada: () => bajadas++,
     );
@@ -309,6 +341,138 @@ void main() {
         expect(nombre.contains('token') || nombre.contains('secret') || nombre.contains('password'), isFalse, reason: '$tabla.$nombre');
       }
     }
+  });
+
+  group('aviso en vivo (sin consultar por tiempo)', () {
+    // Tiempos cortos a propósito: lo que se prueba es el comportamiento, no los valores reales.
+    void arrancar(_Dispositivo d, {StreamController<void>? cambios, List<Duration>? reintentos}) {
+      d.servicio.iniciar(
+        cambiosLocales: cambios?.stream ?? const Stream.empty(),
+        agruparCambios: const Duration(milliseconds: 20),
+        agruparAvisos: const Duration(milliseconds: 10),
+        reintentos: reintentos ?? const [Duration(milliseconds: 30)],
+        sinCuenta: const Duration(milliseconds: 30),
+      );
+      addTearDown(d.servicio.detener);
+    }
+
+    Future<void> esperar(bool Function() condicion, {String que = 'la condición'}) async {
+      final limite = DateTime.now().add(const Duration(seconds: 3));
+      while (!condicion()) {
+        if (DateTime.now().isAfter(limite)) fail('no se cumplió: $que');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+
+    test('conectado y sin novedades no se hace NINGUNA consulta por las dudas', () async {
+      arrancar(cel);
+      await esperar(() => cel.servicio.escuchando, que: 'conectar');
+      await esperar(() => servidor.consultas >= 1, que: 'la puesta al día inicial');
+      await Future<void>.delayed(const Duration(milliseconds: 100)); // que termine la inicial
+      final consultas = servidor.consultas;
+      await Future<void>.delayed(const Duration(milliseconds: 500)); // muchos "ticks" de lo que antes era el latido
+      expect(servidor.consultas, consultas, reason: 'sin avisos no hay pedidos');
+    });
+
+    test('cuando otro dispositivo sube algo, llega el aviso y recién ahí se baja', () async {
+      arrancar(cel);
+      await esperar(() => cel.servicio.escuchando, que: 'conectar');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final antes = servidor.consultasDe['tok-cel'] ?? 0;
+
+      await nuevoProducto(dbPc, usuarioPc, 'Jamón cocido');
+      await pc.servicio.sincronizar();
+      await esperar(() => (servidor.consultasDe['tok-cel'] ?? 0) > antes, que: 'que baje por el aviso');
+      await esperar(() => cel.bajadas > 0, que: 'que se aplique');
+      expect((await producto(dbCel, 'Jamón cocido')).stock, 10);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect((servidor.consultasDe['tok-cel'] ?? 0) - antes, 1, reason: 'una sola bajada por ese aviso');
+    });
+
+    test('un aviso no se dispara por los lotes propios', () async {
+      arrancar(pc);
+      await esperar(() => pc.servicio.escuchando, que: 'conectar');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final antes = servidor.consultas;
+      await nuevoProducto(dbPc, usuarioPc, 'Yerba 1 kg');
+      await pc.servicio.sincronizar(); // sube; el servidor no le avisa a quien subió
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(servidor.consultas - antes, 1, reason: 'la bajada de la propia vuelta, ninguna extra por aviso');
+    });
+
+    test('si se corta la conexión reconecta sola y se pone al día de lo que se perdió', () async {
+      arrancar(cel);
+      await esperar(() => cel.servicio.escuchando, que: 'conectar');
+      servidor.cortarAvisos();
+      await esperar(() => !cel.servicio.escuchando, que: 'notar el corte');
+      await nuevoProducto(dbPc, usuarioPc, 'Leche 1 L'); // mientras el celular no escuchaba
+      await pc.servicio.sincronizar();
+      await esperar(() => cel.servicio.escuchando && servidor.conexiones >= 2, que: 'reconectar');
+      await esperar(() => cel.bajadas > 0, que: 'ponerse al día');
+      expect((await producto(dbCel, 'Leche 1 L')).precioCentavos, 100000);
+    });
+
+    test('sin aviso en vivo en el servidor consulta una vez por intento, cada vez más espaciado', () async {
+      servidor.sinAvisoEnVivo = true;
+      arrancar(cel, reintentos: const [Duration(milliseconds: 40), Duration(milliseconds: 80), Duration(milliseconds: 160)]);
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(cel.servicio.escuchando, isFalse);
+      expect(servidor.consultas, inInclusiveRange(3, 7), reason: 'espaciando: nada de una consulta cada pocos milisegundos');
+      // Y aun así lo que sube otro le llega en alguno de esos intentos.
+      await nuevoProducto(dbPc, usuarioPc, 'Fideos 500 g');
+      await pc.servicio.sincronizar();
+      await esperar(() => cel.bajadas > 0, que: 'llegar por consulta');
+    });
+
+    test('cuando vuelve el aviso en vivo, deja de consultar', () async {
+      servidor.sinAvisoEnVivo = true;
+      arrancar(cel, reintentos: const [Duration(milliseconds: 30)]);
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      servidor.sinAvisoEnVivo = false;
+      await esperar(() => cel.servicio.escuchando, que: 'conectar');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final consultas = servidor.consultas;
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      expect(servidor.consultas, consultas);
+    });
+
+    test('una ráfaga de cambios locales es una sola subida', () async {
+      final cambios = StreamController<void>();
+      addTearDown(cambios.close);
+      arrancar(pc, cambios: cambios);
+      await esperar(() => pc.servicio.escuchando, que: 'conectar');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final antes = servidor.subidas;
+      await nuevoProducto(dbPc, usuarioPc, 'Agua mineral');
+      cambios..add(null)..add(null)..add(null);
+      await esperar(() => servidor.subidas > antes, que: 'que suba');
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(servidor.subidas - antes, 1);
+    });
+
+    test('sin cuenta vinculada no abre conexiones; al vincular, empieza sola', () async {
+      await cel.cuenta.borrar();
+      arrancar(cel);
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(servidor.conexiones, 0);
+      expect(servidor.consultas, 0);
+      await cel.cuenta.guardar(const CuentaVinculada(token: 'tok-cel', email: 'a@b.com', idDispositivo: 'tok-cel', nombreDispositivo: 'cel', vence: 99));
+      await esperar(() => cel.servicio.escuchando, que: 'conectar al vincular');
+    });
+
+    test('detener corta todo: ni conexiones ni consultas nuevas', () async {
+      arrancar(cel);
+      await esperar(() => cel.servicio.escuchando, que: 'conectar');
+      cel.servicio.detener();
+      expect(cel.servicio.escuchando, isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final consultas = servidor.consultas;
+      final conexiones = servidor.conexiones;
+      servidor.cortarAvisos();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(servidor.consultas, consultas);
+      expect(servidor.conexiones, conexiones);
+    });
   });
 
   test('el registro se guarda y se lee igual; un archivo roto vuelve a empezar', () {

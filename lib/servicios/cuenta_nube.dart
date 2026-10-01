@@ -220,9 +220,22 @@ class RespuestaBajada {
   final bool expirada;
 }
 
-class ClienteNube {
-  ClienteNube({required this.http, this.host = hostNodoSur, this.esquema = 'https', this.puerto});
+/// Abre la conexión de avisos. Se inyecta para probar sin red: devuelve lo que llega por el socket.
+typedef AbrirEscucha = Future<Stream<dynamic>> Function(Uri uri, Map<String, String> cabeceras);
 
+Future<Stream<dynamic>> _abrirWebSocket(Uri uri, Map<String, String> cabeceras) async {
+  final socket = await WebSocket.connect(uri.toString(), headers: cabeceras).timeout(const Duration(seconds: 20));
+  // Ping del protocolo (no se cobra y lo contesta el borde de Cloudflare): si la red se cae sin avisar, el socket
+  // se cierra solo en vez de quedar "conectado" sin recibir nunca nada.
+  socket.pingInterval = const Duration(seconds: 45);
+  return socket;
+}
+
+class ClienteNube {
+  ClienteNube({required this.http, this.host = hostNodoSur, this.esquema = 'https', this.puerto, AbrirEscucha? abrirEscucha})
+      : _abrirEscucha = abrirEscucha ?? _abrirWebSocket;
+
+  final AbrirEscucha _abrirEscucha;
   final h.Client http;
   final String host;
   final String esquema;
@@ -342,6 +355,22 @@ class ClienteNube {
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (seq: (j['seq'] as num).toInt(), repetido: j['repetido'] == true);
   });
+
+  /// Se conecta a los avisos de la cuenta: cada elemento del stream es "otro dispositivo subió algo, andá a bajar".
+  /// El stream termina cuando se corta la conexión. Lanza [ErrorNube] si no se pudo conectar.
+  Future<Stream<void>> escuchar(String token) async {
+    try {
+      final uri = Uri(scheme: esquema == 'https' ? 'wss' : 'ws', host: host, port: puerto, path: '/api/sync/escuchar');
+      final mensajes = await _abrirEscucha(uri, _auth(token));
+      return mensajes.where((m) => m is String).map((_) {});
+    } on TimeoutException {
+      throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
+    } on SocketException {
+      throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
+    } on WebSocketException catch (e) {
+      throw ErrorNube('sin_escucha', 'No se pudo abrir el aviso en vivo: ${e.message}');
+    }
+  }
 
   /// Baja los lotes que subieron los otros dispositivos, a partir de [desde] (el último `seq` ya visto).
   Future<RespuestaBajada> bajarLotes(String token, {required int desde}) => _conRed(() async {
