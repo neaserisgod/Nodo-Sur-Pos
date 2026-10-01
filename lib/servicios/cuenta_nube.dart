@@ -133,6 +133,7 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'no_restore' => 'No hay copias disponibles para restaurar con esta cuenta.',
   'backups_no_configurados' => 'El servicio de copias todavía no está listo. Probá más tarde.',
   'mp_error' => 'No se pudo comprobar la suscripción en este momento. Probá más tarde.',
+  'sync_no_configurada' => 'La sincronización por internet todavía no está lista. Probá más tarde.',
   'too_large' => 'La base es demasiado grande para subirla.',
   'hash_mismatch' => 'La copia se dañó en el camino. Probá de nuevo.',
   'not_found' => 'Esa copia ya no existe.',
@@ -186,6 +187,37 @@ class RespuestaAviso {
 
   /// Si al token le quedaban menos de 60 días, el servidor manda uno nuevo.
   final String? tokenNuevo;
+}
+
+/// Un lote bajado tal como lo manda el servidor (los bytes ya vienen descifrados, siguen comprimidos).
+class LoteRecibido {
+  const LoteRecibido({required this.seq, required this.deviceId, required this.creadoEn, required this.bytes});
+  final int seq;
+  final String deviceId;
+
+  /// Hora del servidor (segundos) en que llegó el lote.
+  final int creadoEn;
+  final List<int> bytes;
+}
+
+class RespuestaBajada {
+  const RespuestaBajada({required this.lotes, required this.hasta, required this.mas}) : expirada = false;
+
+  /// El servidor ya no guarda lo que este dispositivo se perdió.
+  const RespuestaBajada.expirada()
+      : lotes = const [],
+        hasta = 0,
+        mas = false,
+        expirada = true;
+
+  final List<LoteRecibido> lotes;
+
+  /// Cursor para el próximo pedido (avanza también sobre los lotes propios, que no se devuelven).
+  final int hasta;
+
+  /// Quedan más lotes por bajar.
+  final bool mas;
+  final bool expirada;
 }
 
 class ClienteNube {
@@ -291,6 +323,45 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (id: (j['id'] as num).toInt(), guardadas: (j['guardadas'] as num?)?.toInt() ?? 0);
+  });
+
+  /// Sube un lote de cambios de la sync entre dispositivos. [loteId] hace que reintentar sea seguro: el servidor
+  /// no guarda dos veces el mismo. [sha256] es el hex de [bytes] (ya comprimidos).
+  Future<({int seq, bool repetido})> subirLote(
+    String token, {
+    required String loteId,
+    required List<int> bytes,
+    required String sha256,
+  }) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/sync'),
+      headers: _auth(token, {'Content-Type': 'application/octet-stream', 'X-Lote-Id': loteId, 'X-Sha256': sha256}),
+      body: bytes,
+    ).timeout(const Duration(minutes: 1));
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (seq: (j['seq'] as num).toInt(), repetido: j['repetido'] == true);
+  });
+
+  /// Baja los lotes que subieron los otros dispositivos, a partir de [desde] (el último `seq` ya visto).
+  Future<RespuestaBajada> bajarLotes(String token, {required int desde}) => _conRed(() async {
+    final r = await http.get(_uri('/api/sync', {'desde': '$desde'}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    if (j['expirado'] == true) return const RespuestaBajada.expirada();
+    return RespuestaBajada(
+      lotes: [
+        for (final l in (j['lotes'] as List? ?? const []).cast<Map<String, dynamic>>())
+          LoteRecibido(
+            seq: (l['seq'] as num).toInt(),
+            deviceId: l['deviceId'] as String,
+            creadoEn: (l['creadoEn'] as num).toInt(),
+            bytes: base64Decode(l['datos'] as String),
+          ),
+      ],
+      hasta: (j['hasta'] as num?)?.toInt() ?? desde,
+      mas: j['mas'] == true,
+    );
   });
 
   /// Baja una copia propia. Devuelve los bytes y el hash que informó el servidor.

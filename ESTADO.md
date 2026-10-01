@@ -158,6 +158,12 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `nodosur_cuenta.json` (carpeta de datos de la app), fuera de la base: restaurar no
   lo pisa. Suite: 1375 verdes + 4 que no compilan por `test/capturas/`.
   Falta: probar contra el servidor real con una cuenta (ver PR).
+- **Sync por la nube, fase 2 (PC) — hecha, sin probar contra el servidor real**: `servicios/sync_nube.dart` baja
+  y sube lotes por `/api/sync` con cada cambio de la base (más un latido de 20 s), sin eco y con "gana el último en
+  llegar" (`DECISIONES.md`, "Sync por la nube entre dispositivos"). Se arranca solo con la app, si hay cuenta vinculada.
+  Falta: el celular (fase 3, traspaso automático wifi → nube), elegir "PC y celular" / "solo celular" (fase 4), la
+  estética nueva de la companion (fase 5), y un indicador de estado en la UI. Servidor en `NodoSurPage` (rama
+  `claude/quirky-noether-pbunw6`).
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no

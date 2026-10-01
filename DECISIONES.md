@@ -1422,3 +1422,29 @@ Decididas con el dueño antes de empezar (fase 1):
   instalación existente y arriesga la base. El instalador borra los accesos directos con el nombre viejo
   para no dejar duplicados.
 - El nombre del local (encabezado del ticket) sigue siendo el del negocio, no el del programa.
+
+### Sync por la nube entre dispositivos, sin depender de la PC (2026-10-01)
+
+- **El pedido.** El dueño: si se apaga la PC el sistema tiene que seguir funcionando; "el dispositivo que manda es el
+  último que hizo una modificación y cada modificación lanza una sync"; el traspaso PC → nube es automático. La nube
+  (Worker + D1 de `NodoSurPage`, `POST/GET /api/sync`) es un buzón ordenado de lotes de cambios, no una copia maestra.
+- **Quién gana: el orden de llegada al servidor, no el reloj.** El dueño: "¿por qué no usamos el horario del server y que
+  se vea qué elemento llegó último?". Cada lote lleva un `seq` y la hora del servidor; quien aplica los recibe en orden y
+  el último pisa (`aplicarCambios(..., ordenDeLlegada: true)`). Los relojes de los dispositivos dejan de decidir. Stock
+  y caja siguen sumando movimientos (no se pisan). La sync directa por wifi todavía compara `actualizado_en`: pasa al
+  mismo criterio cuando el celular hable con la nube (fase 3).
+- **Caso aceptado**: un dispositivo que edita sin conexión y sincroniza horas después pisa lo que otro hizo mientras
+  tanto, porque su lote llega último. Mitigación mínima: cada vuelta BAJA primero y SUBE después.
+- **Sin eco.** Lo que un dispositivo recibe no se vuelve a subir como propio (llegaría después de lo que el otro editó
+  entretanto y lo pisaría con datos viejos). `data/registro_sync_nube.dart` guarda, por fila, valor de cursor y huella;
+  lo ya sincronizado no se sube. El stock de un producto queda fuera de la huella (lo mueven los movimientos).
+- **Cursores**: en las tablas por `actualizado_en` el cursor solo avanza con lo que este dispositivo subió (un reloj
+  adelantado de otro dejaría sin subir las ediciones propias siguientes); en los logs por `id` local avanza también
+  sobre lo recibido.
+- **Reintentos seguros**: el id del lote es el hash de su contenido; si se cortó la respuesta, el reintento no duplica.
+- **Sin secretos**: las tablas sincronizadas no tienen tokens (la configuración sensible vive en `configuracion_tabla`,
+  que no se sincroniza); hay un test que lo vigila. Los lotes además van cifrados en el servidor.
+- **Estado local** en `nodosur_sync.json` (junto al token de la cuenta, fuera de la base). Si el servidor ya no guarda
+  lo que faltaba (60 días de retención) avisa `SyncNubeExpirada` y hay que ponerse al día desde una copia.
+- **Pendiente**: tras restaurar una copia hay que llamar a `ServicioSyncNube.reiniciar()`; y desvincular debería borrar
+  el estado. Ninguno de los dos está conectado todavía.
