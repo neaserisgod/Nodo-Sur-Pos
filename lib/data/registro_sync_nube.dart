@@ -157,7 +157,7 @@ class PlanSubida {
 
 /// Tope de un lote: el servidor acepta 1 MB, se deja margen.
 const maxBytesLote = 900 * 1024;
-const maxFilasLote = 400;
+const maxFilasLote = 2000;
 
 String _hex(List<int> bytes) => sha256.convert(bytes).toString();
 

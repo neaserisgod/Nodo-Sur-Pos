@@ -6,12 +6,10 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show WebSocketException, gzip;
+import 'dart:io' show gzip;
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/identidad_sync.dart';
 import 'package:la_plazoleta/data/registro_sync_nube.dart';
@@ -21,92 +19,10 @@ import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/sync_nube.dart';
 
 import '../helpers/base_para_tests.dart';
-
-class _Lote {
-  _Lote(this.seq, this.token, this.id, this.bytes);
-  final int seq;
-  final String token;
-  final String id;
-  final List<int> bytes;
-}
-
-/// El Worker, en memoria. `token` identifica al dispositivo (como el token real).
-class _Servidor {
-  final lotes = <_Lote>[];
-  var _seq = 0;
-  bool caido = false;
-
-  /// Simula un corte DESPUÉS de guardar: el lote queda, pero la respuesta nunca llega.
-  bool perderRespuestaDelProximoPost = false;
-  bool expirado = false;
-
-  /// Avisos en vivo: un canal por dispositivo conectado. `sinAvisoEnVivo` imita un servidor sin el Durable Object.
-  final canales = <String, StreamController<String>>{};
-  bool sinAvisoEnVivo = false;
-  int conexiones = 0;
-  int consultas = 0; // GET /api/sync
-  final consultasDe = <String, int>{};
-  int subidas = 0; // POST /api/sync
-
-  Future<Stream<dynamic>> abrir(Uri uri, Map<String, String> cabeceras) async {
-    if (caido) throw const WebSocketException('sin red');
-    if (sinAvisoEnVivo) throw const WebSocketException('was not upgraded to websocket, HTTP status code: 503');
-    final token = cabeceras['Authorization']!.substring('Bearer '.length);
-    conexiones++;
-    final c = canales[token] = StreamController<String>();
-    return c.stream;
-  }
-
-  /// Corta las conexiones de avisos (se reinició el servidor, se cayó la red).
-  void cortarAvisos() {
-    for (final c in canales.values) {
-      c.close();
-    }
-    canales.clear();
-  }
-
-  MockClient get http_ => MockClient((r) async {
-        if (caido) throw http.ClientException('sin red');
-        final token = r.headers['Authorization']!.substring('Bearer '.length);
-        if (r.method == 'POST') {
-          subidas++;
-          final id = r.headers['X-Lote-Id']!;
-          final previo = lotes.where((l) => l.id == id).firstOrNull;
-          final lote = previo ?? _Lote(++_seq, token, id, r.bodyBytes);
-          if (previo == null) {
-            lotes.add(lote);
-            for (final e in canales.entries) {
-              if (e.key != token) e.value.add('{"seq":${lote.seq}}');
-            }
-          }
-          if (perderRespuestaDelProximoPost) {
-            perderRespuestaDelProximoPost = false;
-            throw http.ClientException('se cortó');
-          }
-          return http.Response(jsonEncode({'ok': true, 'seq': lote.seq, 'repetido': previo != null}), 200);
-        }
-        consultas++;
-        consultasDe[token] = (consultasDe[token] ?? 0) + 1;
-        if (expirado) return http.Response(jsonEncode({'expirado': true, 'purgadoHasta': 9}), 200);
-        final desde = int.parse(r.url.queryParameters['desde']!);
-        final nuevos = lotes.where((l) => l.seq > desde).toList();
-        return http.Response(
-          jsonEncode({
-            'expirado': false,
-            'lotes': [
-              for (final l in nuevos.where((l) => l.token != token))
-                {'seq': l.seq, 'deviceId': l.token, 'creadoEn': 1, 'datos': base64Encode(l.bytes)},
-            ],
-            'hasta': nuevos.isEmpty ? desde : nuevos.last.seq,
-            'mas': false,
-          }),
-          200,
-        );
-      });
-}
+import '../helpers/servidor_sync_falso.dart';
 
 class _Dispositivo {
-  _Dispositivo(this.token, _Servidor servidor, this.db)
+  _Dispositivo(this.token, ServidorSyncFalso servidor, this.db)
       : estado = AlmacenEstadoSyncEnMemoria(),
         cuenta = AlmacenCuentaEnMemoria() {
     cuenta.guardar(CuentaVinculada(token: token, email: 'a@b.com', idDispositivo: token, nombreDispositivo: token, vence: 99));
@@ -130,7 +46,7 @@ class _Dispositivo {
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  late _Servidor servidor;
+  late ServidorSyncFalso servidor;
   late AppDatabase dbPc;
   late AppDatabase dbCel;
   late _Dispositivo pc;
@@ -139,7 +55,7 @@ void main() {
   late int usuarioCel;
 
   setUp(() async {
-    servidor = _Servidor();
+    servidor = ServidorSyncFalso();
     dbPc = baseDeTest();
     dbCel = baseDeTest();
     establecerIdDispositivo('desktop');

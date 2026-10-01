@@ -44,6 +44,7 @@ import '../domain/venta.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
+import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'base_local.dart';
 import 'boton_escaner_companion.dart';
@@ -211,16 +212,44 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
+    final sync = await syncNubeDelCelular();
+    sync.conmutador.definirPc(emparejada: conexion != null);
     if (conexion != null) {
-      final actual = escuchaPcCompanion;
-      if (actual == null || actual.conexion.ip != conexion.ip || actual.conexion.token != conexion.token) {
-        actual?.detener();
-        escuchaPcCompanion = EscuchaPc(conexion, baseLocalCompanion())..iniciar();
+      var escucha = escuchaPcCompanion;
+      if (escucha == null || escucha.conexion.ip != conexion.ip || escucha.conexion.token != conexion.token) {
+        escucha?.detener();
+        escucha = escuchaPcCompanion = EscuchaPc(conexion, baseLocalCompanion());
+        escucha.alCambiarConexion = _alCambiarConexionPc;
+        escucha.iniciar();
+      } else {
+        // Una escucha ya andando de una apertura anterior del menú: el aviso pasa a este.
+        escucha.alCambiarConexion = _alCambiarConexionPc;
+        _alCambiarConexionPc(escucha.conectada);
       }
     } else {
       escuchaPcCompanion?.detener();
       escuchaPcCompanion = null;
     }
+  }
+
+  /// La PC dejó de contestar o volvió (2026-10-01: "si se apaga la PC el sistema tiene que seguir funcionando").
+  /// Las pantallas pasan al instante a trabajar con la base local — que la sync por wifi mantiene al día — y de
+  /// vuelta a la PC cuando contesta. Si la PC sigue sin contestar, el conmutador pasa a la nube pasados unos
+  /// segundos (`conmutador_sync.dart`).
+  void _alCambiarConexionPc(bool conectada) {
+    syncNubeCompanion?.conmutador.pcConectada(conectada);
+    if (!mounted) return;
+    unawaited(_cambiarServicioPorConexion(conectada));
+  }
+
+  Future<void> _cambiarServicioPorConexion(bool conectada) async {
+    final conexion = await leerConexion();
+    if (conexion == null || !mounted) return;
+    final ServicioCompanion servicio =
+        conectada ? ClienteCompanion(conexion) : ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()));
+    setState(() => _servicio = servicio);
+    _cargarCatalogoParaEscaner(servicio);
+    _revisarSesion();
   }
 
   /// Silencioso si falla (sin diagnóstico visible, mismo criterio que

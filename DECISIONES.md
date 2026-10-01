@@ -1458,3 +1458,28 @@ Decididas con el dueño antes de empezar (fase 1):
   lo que faltaba (60 días de retención) avisa `SyncNubeExpirada` y hay que ponerse al día desde una copia.
 - **Pendiente**: tras restaurar una copia hay que llamar a `ServicioSyncNube.reiniciar()`; y desvincular debería borrar
   el estado. Ninguno de los dos está conectado todavía.
+
+### Sync por la nube, fase 3: el celular pasa solo de la PC a la nube (2026-10-01)
+
+- **Una sola a la vez.** Con la PC conectada, el celular sincroniza con ella por wifi y la PC sube a la nube; la nube
+  del celular queda **en pausa** (ni conexión de avisos ni consultas). Si el celular también subiera, la nube
+  recibiría cada cambio dos veces y gastaría el doble. `lib/companion/conmutador_sync.dart` decide:
+  PC conectada → modo `pc`; PC caída → modo `nube` (si hay cuenta) pasados 10 s; sin PC emparejada ("solo
+  celular") → nube de una; sin cuenta → `local`. La espera de 10 s evita abrir una conexión por un corte de wifi de
+  un instante; la vuelta a la PC es inmediata.
+- **Las pantallas cambian de servicio al instante** (`_cambiarServicioPorConexion` del menú): PC caída → base local,
+  que la sync por wifi mantuvo al día; PC de vuelta → HTTP a la PC. Antes seguían hablándole a una PC muerta hasta
+  volver a entrar a la pantalla.
+- **Al pasar a la nube, primero baja y después sube** (igual que la PC). Lo que el celular recibió de la PC por wifi
+  no figura en su registro de la nube, así que ese tramo se vuelve a subir una vez al traspaso (inofensivo: es
+  idéntico a lo que la PC ya subió); el costo es un lote más grande por traspaso.
+- **Caso conocido**: si la PC se cae antes de subir su último cambio y el celular ya lo recibió por wifi, al pasar a
+  la nube el celular baja la versión anterior que sí estaba en la nube y la aplica encima. La ventana es de ~1 s (la
+  PC sube cada cambio al momento) y la PC lo vuelve a subir al volver.
+- **Primera vuelta con datos previos**: un celular que ya tenía datos y se vincula por primera vez adopta lo que hay
+  en la nube (gana la nube) y sube solo lo que la nube no tiene. Una edición local de la misma fila antes de vincular
+  se pierde; se acepta por rara.
+- **Vincular el celular** reusa el flujo de la PC (navegador + servidor en `127.0.0.1` + PKCE): Gestión → Cuenta.
+  Falta verificarlo en un Android real: si el sistema duerme la app mientras está el navegador al frente, la
+  vinculación puede no completarse; la alternativa es un código corto que se escribe en el celular.
+- **Lotes de hasta 2.000 filas** (antes 400): la primera subida de una base grande son 5 veces menos pedidos.

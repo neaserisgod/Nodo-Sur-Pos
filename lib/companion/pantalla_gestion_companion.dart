@@ -23,6 +23,8 @@ import 'cliente_companion.dart';
 import 'navbar_companion.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_configuracion_companion.dart';
+import 'pantalla_cuenta_companion.dart';
+import 'sync_nube_companion.dart';
 import 'pantalla_conteo_stock.dart';
 import 'tema/colores_companion.dart';
 import 'tema/tarjeta_accion.dart';
@@ -106,6 +108,20 @@ class PantallaGestionCompanion extends StatelessWidget {
                   titulo: 'Cambiar usuario',
                   subtitulo: 'Elegir otra persona',
                   onTap: onCambiarUsuario,
+                ),
+                TarjetaAccion(
+                  icono: IconosPlazoleta.cloudSync,
+                  color: context.acentos.qr,
+                  titulo: 'Cuenta',
+                  subtitulo: 'Sincronización',
+                  onTap: navegando
+                      ? null
+                      : () => irA((_) => FutureBuilder<SyncNubeCompanion>(
+                            future: syncNubeDelCelular(),
+                            builder: (context, snap) => snap.hasData
+                                ? PantallaCuentaCompanion(sync: snap.data!)
+                                : const Scaffold(body: Center(child: CircularProgressIndicator())),
+                          )),
                 ),
                 TarjetaAccion(
                   icono: IconosPlazoleta.settingsOutlined,

@@ -50,6 +50,7 @@ abstract final class IconosPlazoleta {
   static const creditCardOutlined = Icons.credit_card_rounded;
   static const creditCard = Icons.credit_card_rounded;
   static const cloudOff = Icons.cloud_off_rounded;
+  static const cloudSync = Icons.cloud_sync_rounded;
   static const backup = Icons.backup_rounded;
   static const descripcionArchivo = Icons.description_outlined;
   static const shoppingCartOutlined = Icons.shopping_cart_rounded;

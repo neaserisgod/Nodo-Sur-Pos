@@ -167,6 +167,12 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   Falta: el celular (fase 3, traspaso automático wifi → nube), elegir "PC y celular" / "solo celular" (fase 4), la
   estética nueva de la companion (fase 5), y un indicador de estado en la UI. Servidor en `NodoSurPage` (rama
   `claude/quirky-noether-pbunw6`).
+- **Sync por la nube, fase 3 (celular) — hecha, sin probar en un Android real**: el celular sincroniza con la PC por
+  wifi mientras contesta y pasa solo a la nube cuando se apaga (`conmutador_sync.dart`, `sync_nube_companion.dart`);
+  las pantallas cambian al servicio local al instante. Gestión → **Cuenta** (`pantalla_cuenta_companion.dart`): modo
+  actual, vincular/desvincular, sincronizar ahora. Suite de las áreas tocadas: 331 verdes. Falta: elegir "PC y
+  celular" / "solo celular" al primer arranque (fase 4), la estética nueva (fase 5), y probar la vinculación en un
+  Android real.
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no

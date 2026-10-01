@@ -100,6 +100,17 @@ void main() {
     expect(avisos, despuesDelCambio);
   });
 
+  test('si la PC se apaga, la escucha avisa que se cortó (el celular pasa solo a la nube)', () async {
+    final cambios = <bool>[];
+    escucha.alCambiarConexion = cambios.add;
+
+    await server.close(force: true); // la PC se apagó
+
+    await _esperarHasta(() async => cambios.contains(false));
+    expect(escucha.conectada, isFalse);
+    expect(cambios, [false], reason: 'un solo aviso por corte, no uno por cada reintento');
+  });
+
   test('lo que escribe el celular en su base llega solo a la PC', () async {
     await crearCategoria(celular, 'Cargada en el celular');
     await _esperarHasta(() async {
