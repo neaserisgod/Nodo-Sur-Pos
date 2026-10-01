@@ -20,7 +20,7 @@ import '../tema/tokens.dart';
 import 'proveedores_controlador.dart';
 
 /// Porcentajes a un toque, en basis points. El resto se carga con "Otro".
-const _atajos = [2000, 3000, 4000, 5000, 7000, 10000];
+const _atajos = [1500, 2000, 2500, 3000, 3500, 4000];
 
 String _porcentajeTexto(int bp) =>
     '${bp % 100 == 0 ? bp ~/ 100 : (bp / 100).toStringAsFixed(1)}%';
@@ -73,7 +73,7 @@ class SelectorPorcentajeProveedor extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          'Ganancia sobre el costo',
+          'Ganancia sobre el precio',
           style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.medium),
         ),
         GrupoPildoras<int?>(
@@ -135,8 +135,9 @@ class _DialogoOtroPorcentajeState extends State<_DialogoOtroPorcentaje> {
       setState(() => _error = 'Escribí un porcentaje, por ejemplo 35');
       return;
     }
-    if (bp <= 0 || bp > 100000) {
-      setState(() => _error = 'El porcentaje tiene que estar entre 0 y 1000');
+    // 100% de ganancia es imposible: el precio tendería a infinito.
+    if (bp <= 0 || bp >= 10000) {
+      setState(() => _error = 'La ganancia tiene que ser mayor a 0 y menor a 100');
       return;
     }
     Navigator.of(context).pop(bp);
@@ -146,7 +147,7 @@ class _DialogoOtroPorcentajeState extends State<_DialogoOtroPorcentaje> {
   Widget build(BuildContext context) {
     return Modal(
       titulo: 'Otro porcentaje',
-      subtitulo: 'Ganancia sobre el costo',
+      subtitulo: 'Ganancia sobre el precio de venta',
       ancho: 480,
       contenido: Column(
         mainAxisSize: MainAxisSize.min,
@@ -196,7 +197,7 @@ class _DialogoAplicar extends StatelessWidget {
     return Modal(
       titulo: 'Aplicar ${_porcentajeTexto(bp)} a $proveedor',
       subtitulo:
-          'Costo + ${_porcentajeTexto(bp)}, redondeado hacia arriba a la próxima centena',
+          'Precio con ${_porcentajeTexto(bp)} de ganancia sobre el precio, redondeado hacia arriba a la próxima centena',
       ancho: 620,
       contenido: Column(
         mainAxisSize: MainAxisSize.min,

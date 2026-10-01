@@ -405,10 +405,11 @@ siguiente reviso ese cierre"*.
 - **Precio por proveedor (2026-09-29, el dueño: "simplificar el sistema de
   precios: un selector de porcentaje por proveedor + redondeo para arriba a la
   próxima centena, exceptuando los cigarros").** Cada proveedor puede tener un
-  porcentaje de ganancia sobre el costo. El precio de un producto con costo es
-  `costo + porcentaje`, **redondeado hacia arriba a la próxima centena de
-  pesos** (costo $1.030 con 30% = $1.339 → $1.400; si cae justo en centena no
-  sube). Elegir el porcentaje solo lo guarda: los precios cambian cuando se
+  porcentaje de **ganancia sobre el precio de venta** (ganancia % = (precio −
+  costo) / precio; nunca un recargo sobre el costo). El precio de un producto
+  con costo es `costo / (1 − ganancia)`, **redondeado hacia arriba a la próxima
+  centena de pesos** (costo $1.000 con 30% = $1.428,57 → $1.500; si cae justo
+  en centena no sube). Un 100% de ganancia no existe: el tope es menor a 100. Elegir el porcentaje solo lo guarda: los precios cambian cuando se
   toca "Aplicar a los precios" (que antes muestra cuántos cambian) y, después,
   cada vez que cambia el costo de un producto. Un producto puede quedar con
   **precio fijo** (a mano) y el porcentaje no lo toca; tipear el precio a mano
@@ -416,8 +417,11 @@ siguiente reviso ese cierre"*.
   un monto fijo por atado) y "Varios" no tiene costo. Sin porcentaje en el
   proveedor, el precio se carga a mano como siempre. Cada cambio queda en el
   historial de precios.
-- Mientras se escribe el precio, la app **muestra el margen resultante en vivo**.
-  Así se ve cuándo un aumento de costo se comió el margen, sin obligar a nada.
+- Mientras se escribe el precio, la app **muestra la ganancia resultante en vivo**
+  (sobre el precio, misma fórmula que el porcentaje del proveedor). Así se ve
+  cuándo un aumento de costo se comió la ganancia, sin obligar a nada.
+  **La app no habla de markup**: en ninguna pantalla aparece un porcentaje
+  sobre el costo.
 - Cada cambio de precio o costo queda en historial con fecha.
 - (Reemplazado por el porcentaje por proveedor, arriba.) Markup de referencia por categoría (configurable, solo informativo). Categorías
   reales del catálogo: Almacén, Bebidas, Cervezas, Gaseosas, Vinos, Cigarrillos,

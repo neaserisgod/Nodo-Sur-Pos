@@ -19,6 +19,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../domain/rentabilidad.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
 import '../comun/modal.dart';
@@ -83,7 +84,7 @@ class _DialogoRetirarGananciaState extends State<_DialogoRetirarGanancia> {
   static String _sinSigno(int centavos) =>
       formatearARS(centavos).replaceAll('\$', '');
 
-  void _confirmar() {
+  Future<void> _confirmar() async {
     final int efectivo;
     final int virtual;
     try {
@@ -105,6 +106,22 @@ class _DialogoRetirarGananciaState extends State<_DialogoRetirarGanancia> {
             'Entre los dos no pueden superar ${formatearARS(widget.gananciaCentavos)}',
       );
       return;
+    }
+    // Asistente contable: la ganancia bruta no es plata libre (faltan pagar
+    // los gastos). Se retira igual si el dueño lo decide, pero avisando
+    // cuánto se pasa de lo retirable (El dueño, 2026-10-01: "avisa y pide
+    // confirmar").
+    if (efectivo + virtual > 0) {
+      final estado = await widget.controlador.estadoDelMes();
+      if (!mounted) return;
+      final evaluacion = evaluarRetiro(montoCentavos: efectivo + virtual, estado: estado);
+      if (evaluacion.requiereConfirmacion) {
+        final seguir = await mostrarModal<bool>(
+          context,
+          builder: (context) => _AvisoRetiroEnExceso(evaluacion: evaluacion, estado: estado),
+        );
+        if (seguir != true || !mounted) return;
+      }
     }
     widget.controlador.retirarGanancia(
       widget.proveedorId,
@@ -194,6 +211,76 @@ class _DialogoRetirarGananciaState extends State<_DialogoRetirarGanancia> {
         ),
         BotonPrimario(texto: 'Retirar', onPressed: _confirmar),
       ],
+    );
+  }
+}
+
+/// El aviso de "te pasás": cuánto es realmente retirable este mes y cuánto se
+/// excede el retiro. Se puede confirmar igual — la decisión es del dueño.
+class _AvisoRetiroEnExceso extends StatelessWidget {
+  const _AvisoRetiroEnExceso({required this.evaluacion, required this.estado});
+
+  final EvaluacionDeRetiro evaluacion;
+  final EstadoDeResultados estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Modal(
+      titulo: 'Estás retirando más de lo que el negocio ganó',
+      subtitulo: 'Después de pagar los gastos del mes',
+      ancho: 560,
+      contenido: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Fila('Ganancia bruta del mes', formatearARS(estado.gananciaBrutaCentavos)),
+          _Fila('Gastos fijos y variables', '− ${formatearARS(estado.gastosFijosCentavos + estado.gastosVariablesCentavos)}'),
+          _Fila('Ya retirado este mes', '− ${formatearARS(estado.retirosDelMesCentavos)}'),
+          const Divider(),
+          _Fila('Retirable hoy', formatearARS(evaluacion.retirableCentavos), fuerte: true),
+          _Fila('Querés retirar', formatearARS(evaluacion.montoCentavos)),
+          _Fila('Te pasás por', formatearARS(evaluacion.excedeCentavos), fuerte: true),
+          const SizedBox(height: Espaciado.md),
+          Text(
+            'Esa plata la va a necesitar el negocio para pagar sus gastos. Si retirás igual, queda registrado.',
+            style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+          ),
+          if (!estado.esCompleto) ...[
+            const SizedBox(height: Espaciado.sm),
+            Text(
+              'Ojo: faltan datos (ventas sin costo o fijos sin cargar), así que lo retirable puede ser menos todavía.',
+              style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+            ),
+          ],
+        ],
+      ),
+      botones: [
+        BotonSecundario(texto: 'Cancelar', onPressed: () => Navigator.of(context).pop(false)),
+        BotonPrimario(texto: 'Retirar igual', onPressed: () => Navigator.of(context).pop(true)),
+      ],
+    );
+  }
+}
+
+class _Fila extends StatelessWidget {
+  const _Fila(this.etiqueta, this.valor, {this.fuerte = false});
+
+  final String etiqueta;
+  final String valor;
+  final bool fuerte;
+
+  @override
+  Widget build(BuildContext context) {
+    final estilo = Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: fuerte ? Pesos.fuerte : null);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(child: Text(etiqueta, style: estilo)),
+          Text(valor, style: estilo.tabular),
+        ],
+      ),
     );
   }
 }

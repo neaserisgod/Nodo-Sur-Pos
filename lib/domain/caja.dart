@@ -115,10 +115,13 @@ ResultadoSeparacionCigarrillos separarCigarrillos({
   final montoASeparar =
       precioListaCigarrillosVendidosHoyCentavos +
       pendienteDeCierresAnterioresCentavos;
-  final separado = montoASeparar < efectivoContadoCentavos
-      ? montoASeparar
-      : efectivoContadoCentavos;
-  final pendiente = montoASeparar - separado;
+  // Nunca se separa un monto negativo, ni más de lo que hay contado: un
+  // efectivo contado negativo (error de tipeo) no puede "devolverle" plata a
+  // la lata ni dejar un cajón con más efectivo del que se contó.
+  final disponible = efectivoContadoCentavos < 0 ? 0 : efectivoContadoCentavos;
+  final aSepararNoNegativo = montoASeparar < 0 ? 0 : montoASeparar;
+  final separado = aSepararNoNegativo < disponible ? aSepararNoNegativo : disponible;
+  final pendiente = aSepararNoNegativo - separado;
 
   return ResultadoSeparacionCigarrillos(
     separadoCentavos: separado,

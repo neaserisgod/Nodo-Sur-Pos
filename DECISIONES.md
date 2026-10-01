@@ -680,8 +680,8 @@ a cuánto, a cuánto lo vendo, cuánto gano" — la reposición y el resumen
 siempre hablaron en agregados (todo lo vendido, todo el costo), nunca
 producto por producto. El dueño la señaló como "el corazón de la pantalla":
 es la razón real para entrar a un proveedor puntual, más que cualquiera de
-las cifras de arriba. Reusa `markupBpDesdeCostoYPrecio`
-(`lib/domain/markup.dart`) — la misma fórmula que "Margen en vivo" de
+las cifras de arriba. Reusa `gananciaBpDesdeCostoYPrecio`
+(`lib/domain/ganancia.dart`) — la misma fórmula que "Margen en vivo" de
 Productos (Regla 14) — para no inventar una segunda definición de margen.
 
 **Colchón, medio de pago, código, días, y las acciones de separar/pagar,
@@ -1336,3 +1336,64 @@ Decididas con el dueño antes de empezar (fase 1):
   mezclan datos: restaurar reemplaza la base entera por la de esa copia.
 - **Cobro con Point desde el celular sin la PC**: no está resuelto (las credenciales ya no viajan por ningún lado).
   Una opción futura es que un Worker guarde el token cifrado por comercio y mande la orden.
+
+### Ganancia real en vez de markup (2026-10-01)
+
+- **El pedido.** El dueño: "que la fórmula para markup y ganancia sea completamente real, y que la UI muestre
+  ganancia en lugar del markup". Hasta acá, un "30%" del selector de proveedor era un recargo sobre el costo
+  (precio = costo × 1,30), que deja solo 23,08% de ganancia real; la pantalla de productos mostraba además un
+  "margen" sobre el costo. Dos números distintos para lo mismo, y ninguno era lo que de verdad queda de cada
+  $100 cobrados.
+- **La definición.** Ganancia % = (precio − costo) / precio. Precio = costo / (1 − ganancia). Vive en un solo
+  lugar, `lib/domain/ganancia.dart` (antes `markup.dart`). Es la misma que ya usaban el tablero, el equilibrio y la
+  reposición (ganancia ÷ venta); ahora el precio y la "ganancia en vivo" hablan igual. Con 100% o más de ganancia
+  la fórmula no existe: lanza error, y los diálogos piden menos de 100.
+- **Datos viejos: se convierten para que los precios casi no se muevan.** Migración v46: ganancia = markup / (1 + markup) sobre
+  `proveedores.markup_bp` y `categorias.markup_default_bp` (50% de markup → 33,33% de ganancia; el precio sigue
+  siendo costo × 1,5). Se eligió convertir y no reinterpretar el número porque reinterpretarlo subía todos los
+  precios en la próxima aplicación del porcentaje. **No es exacto**: la ganancia se guarda en puntos básicos enteros (70% de
+  markup → 41,18%), y con el redondeo a la próxima centena, entre ~1 y ~5% de los costos posibles terminan una centena
+  más arriba (nunca más) al recalcular. Los precios ya guardados en productos no se tocan en la migración; el efecto aparece
+  solo al aplicar el porcentaje o cambiar un costo. Medido sobre la base real del dueño (esquema 42): 1 proveedor con 70%,
+  17 productos, 0 cambian de precio.
+- **Nombres de columna sin tocar** (`markup_bp`, `markup_default_bp`, y `markupDefaultBp` en el protocolo de la
+  companion): renombrarlos obligaba a regenerar drift y rompía celulares con una versión anterior. Lo que cambió
+  es el significado; está dicho en el comentario de cada columna. En Dart, lo escrito a mano habla de ganancia
+  (`gananciaBp`, `precioConGananciaACentena`, `gananciaBpDesdeCostoYPrecio`).
+- **Atajos de porcentaje** pasan de 20/30/40/50/70/100 (markup) a 15/20/25/30/35/40 (ganancia): con ganancia, 50%
+  ya es duplicar el costo y 100% es imposible.
+
+### Auditoría de fórmulas ante datos tipeados (2026-10-01)
+
+- **`parsearARS` es estricto y exacto.** Antes pasaba por `double.tryParse`: "1e3" se leía como $1.000, "Infinity"/"NaN"
+  tiraban un error que ningún campo atrapaba (solo atrapan `FormatException`) y un monto enorme desbordaba las cuentas
+  siguientes. Ahora parsea con enteros, rechaza todo lo que no sea un decimal común y topea en $100.000.000.000
+  (`maximoMontoCentavos`).
+- **`redondearFraccionHaciaArriba` es un techo verdadero con negativos** (la división entera trunca hacia cero) y lanza
+  `ArgumentError` con paso o denominador ≤ 0. `redondeoDeVenta` con paso ≤ 0 cobra el total exacto: una configuración
+  rota no puede trabar el cobro. Guardar un paso ≤ 0, un fondo o un recargo negativos se rechaza en Configuración.
+- **Defensas de borde**: descuento sobre base ≤ 0, separación de cigarrillos con efectivo contado negativo, prorrateo
+  de ganancia sin cobro, días del mes en 0, promo con cantidad 0. El stock valorizado con stock negativo NO se tocó: sigue valorizando en negativo (Regla 8, ya decidido y testeado).
+- **`pagarProveedor` y `revisarGananciaProveedor` van en una transacción**: antes, si fallaba la escritura de caja
+  después de marcar pagado al proveedor, el pago quedaba sin salida en el arqueo.
+- **Lo que NO se tocó (decisión de negocio, a preguntar)**: el retiro de ganancia por proveedor (Regla 13) trabaja
+  sobre ganancia bruta y no se subordina a gastos fijos/Equilibrio; el reporte de ganancia por línea no incluye el
+  redondeo ni el recargo de la venta (diferencia de centavos contra lo cobrado); el reparto por línea de
+  `separacion_por_medio` trunca y puede perder centavos sueltos por venta.
+
+### Asistente contable: estado de resultados y retiros (2026-10-01)
+
+- **El problema.** La ganancia bruta se trataba como plata disponible: el retiro por proveedor (Regla 13) salía de
+  ella sin mirar los gastos del mes. Se podía "retirar la ganancia" y quedarse sin plata para el alquiler.
+- **Estado de resultados** (`domain/rentabilidad.dart`): ventas netas − costo (costo-foto) = ganancia bruta; − fijos −
+  variables = resultado del negocio; − sueldo objetivo = lo que queda para el negocio. Se muestra en Inicio →
+  Equilibrio. Siempre dice si está completo: ventas sin costo o fijos sin monto lo marcan "Incompleto".
+- **Retirable = resultado del negocio + arrastre − reserva − ya retirado.** El sueldo objetivo NO se resta (se cobra
+  retirando; restarlo dos veces haría que retirar el sueldo pareciera un exceso). El arrastre es lo retirable que
+  dejó el mes anterior, solo si ese mes se puede calcular completo.
+- **Retiro con aviso (decisión del dueño):** al retirar ganancia, si el monto pasa de lo retirable se muestra cuánto se
+  pasa y se pide confirmar; confirmando se retira igual. No bloquea.
+- **El sueldo del dueño es un fijo llamado exactamente "Sueldo del dueño"** (sin tocar el esquema); el botón de
+  Equilibrio lo crea y el monto se carga como cualquier fijo del mes. Los pagos GASTO sin fijo son los variables.
+- **Sin fijos cargados el retirable está sobreestimado** (no hay gastos que restar): por eso el aviso lo dice.
+- **Margen necesario y precio mínimo sugerido**: tarjeta en Equilibrio; los dos datos que se tipean (venta objetivo, ganancia a retener) viven en `shared_preferences`, sin tocar el esquema.

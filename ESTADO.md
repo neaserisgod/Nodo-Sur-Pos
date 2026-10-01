@@ -538,8 +538,8 @@ y, para las decisiones de negocio, en `DECISIONES.md`.
      arriba, un resumen de CINCO cifras (Stock, Costo, Venta, Ganancia,
      Separado — "es para mirar"); abajo, una tabla de productos del
      proveedor **nueva** (nombre, costo, venta, margen %) — "el corazón
-     de la pantalla" (El dueño). Reusa `markupBpDesdeCostoYPrecio`
-     (`lib/domain/markup.dart`, la misma fórmula de "Margen en vivo" de
+     de la pantalla" (El dueño). Reusa `gananciaBpDesdeCostoYPrecio`
+     (`lib/domain/ganancia.dart`, la misma fórmula de "Margen en vivo" de
      Productos) — `lib/data/repositorio_reposicion.dart`,
      `productosDeProveedor`.
    - **"Avanzado" absorbe todo lo accionable**: colchón, medio de pago,
@@ -3378,7 +3378,7 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
 
 ## Hecho: precio automático por proveedor (2026-09-29)
 
-- `precioConMarkupACentena` (domain/markup.dart), `proveedores.markup_bp` y
+- `precioConGananciaACentena` (domain/ganancia.dart), `proveedores.markup_bp` y
   `productos.precio_fijo` (migración v42), `aplicarPorcentajeDeProveedor` /
   `cambiosPorPorcentaje` / `guardarPorcentajeProveedor` (repositorio_productos)
   y recálculo automático al cambiar el costo dentro de `actualizarProducto`.
@@ -3399,3 +3399,23 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
   con precio en vivo y tope.
 - Pendiente: la promo no se vende desde el celular; la venta ya cobrada se
   edita como líneas sueltas.
+
+## Hecho: ganancia real en vez de markup (2026-10-01)
+
+- `domain/markup.dart` → `domain/ganancia.dart`: `precioDesdeCostoYGanancia`, `costoDesdePrecioYGanancia`,
+  `gananciaBpDesdeCostoYPrecio`, `precioConGananciaACentena`, `precioDePromo(gananciaBp:)`. Ganancia sobre el
+  precio; ver `DECISIONES.md`.
+- Migración v46 convierte los porcentajes guardados (proveedores y categorías) sin mover precios
+  (`test/data/migracion_v46_test.dart`).
+- UI: el selector del proveedor, las promos, el diálogo de producto, la companion, Configuración y los tableros
+  dicen "ganancia"; los chips de la companion pasan a 20/30/40% de ganancia.
+- **Sin verificar en esta sesión**: no había Flutter/Dart instalado, así que los tests no se corrieron. Correr
+  `flutter test` antes de dar esto por cerrado.
+
+## Hecho: asistente contable, primera parte (2026-10-01)
+
+- `domain/rentabilidad.dart`, `data/repositorio_rentabilidad.dart`; tarjeta "Estado de resultados del mes" en
+  Equilibrio y aviso "Retirar igual" en el retiro de ganancia. Ver `DECISIONES.md`.
+- Tarjeta "Margen necesario" en Equilibrio: venta objetivo y ganancia a retener (se guardan en el dispositivo), margen necesario vs. el de hoy, venta necesaria y productos por debajo con precio sugerido (solo sugerencia, Regla 14).
+- **Sin verificar**: sin Flutter en la sesión, nada de esto se compiló ni se corrió. `flutter analyze` y `flutter test`
+  primero.

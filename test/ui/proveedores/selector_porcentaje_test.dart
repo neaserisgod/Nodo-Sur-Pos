@@ -24,7 +24,7 @@ void main() {
             nombre: 'Yerba',
             proveedorId: Value(proveedorId),
             costoCentavos: const Value(103000),
-            precioCentavos: const Value(150000),
+            precioCentavos: const Value(140000),
             stock: const Value(5),
           ),
         );
@@ -51,13 +51,13 @@ void main() {
     await tester.tap(find.descendant(of: lista, matching: find.text('Distribuidora')).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Ganancia sobre el costo'), findsOneWidget);
+    expect(find.text('Ganancia sobre el precio'), findsOneWidget);
     expect(find.text('Aplicar a los precios'), findsNothing);
 
     await tester.tap(find.text('30%'));
     await tester.pumpAndSettle();
     var yerba = await tester.runAsync(() => (db.select(db.productos)..where((p) => p.nombre.equals('Yerba'))).getSingle());
-    expect(yerba!.precioCentavos, 150000, reason: 'elegir el % solo lo guarda');
+    expect(yerba!.precioCentavos, 140000, reason: 'elegir el % solo lo guarda');
     expect(find.text('Aplicar a los precios'), findsOneWidget);
 
     await tester.tap(find.text('Aplicar a los precios'));
@@ -70,7 +70,7 @@ void main() {
     await tester.pumpAndSettle();
 
     yerba = await tester.runAsync(() => (db.select(db.productos)..where((p) => p.nombre.equals('Yerba'))).getSingle());
-    expect(yerba!.precioCentavos, 140000); // $1.030 * 1,3 = $1.339 → $1.400
+    expect(yerba!.precioCentavos, 150000); // $1.030 / 0,7 = $1.471,43 → $1.500
     final marlboro = await tester.runAsync(() => (db.select(db.productos)..where((p) => p.nombre.equals('Marlboro'))).getSingle());
     expect(marlboro!.precioCentavos, 500000, reason: 'los cigarros no se tocan');
   });
@@ -83,6 +83,6 @@ void main() {
     );
     await tester.tap(find.descendant(of: find.byType(ListaProveedores), matching: find.text('Distribuidora de Cigarrillos')));
     await tester.pumpAndSettle();
-    expect(find.text('Ganancia sobre el costo'), findsNothing);
+    expect(find.text('Ganancia sobre el precio'), findsNothing);
   });
 }

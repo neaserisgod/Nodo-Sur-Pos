@@ -80,6 +80,9 @@ Future<void> configurarRecargoCigarrillos(
   required int atadoAdicionalCentavos,
   required int sueltoCentavos,
 }) {
+  if (primerAtadoCentavos < 0 || atadoAdicionalCentavos < 0 || sueltoCentavos < 0) {
+    throw const FormatException('Los recargos no pueden ser negativos');
+  }
   return db.update(db.configuracionNegocioTabla).write(
         ConfiguracionNegocioTablaCompanion(
           recargoPrimerAtadoCentavos: Value(primerAtadoCentavos),
@@ -91,10 +94,13 @@ Future<void> configurarRecargoCigarrillos(
 }
 
 Future<void> configurarFondoFijo(AppDatabase db, int montoCentavos) {
+  if (montoCentavos < 0) throw const FormatException('El fondo fijo no puede ser negativo');
   return db.update(db.configuracionTabla).write(ConfiguracionTablaCompanion(fondoFijoCentavos: Value(montoCentavos)));
 }
 
 Future<void> configurarPasoRedondeo(AppDatabase db, int montoCentavos) {
+  // Un paso de 0 o negativo rompería el redondeo de cada cobro en efectivo.
+  if (montoCentavos <= 0) throw const FormatException('El paso de redondeo tiene que ser mayor a 0');
   return db.update(db.configuracionNegocioTabla).write(
         ConfiguracionNegocioTablaCompanion(
           pasoRedondeoCentavos: Value(montoCentavos),

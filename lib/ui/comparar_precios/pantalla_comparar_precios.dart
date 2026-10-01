@@ -27,7 +27,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_comparacion_precios.dart';
 import '../../domain/dinero.dart';
-import '../../domain/markup.dart';
+import '../../domain/ganancia.dart';
 import '../../servicios/comparador_precios.dart';
 import '../../servicios/comparador_precios_todoatucasa.dart';
 import '../comun/armazon_gestion.dart';
@@ -366,7 +366,7 @@ class _Detalle extends StatelessWidget {
             etiqueta: 'Con tu costo',
             valor: formatearARS(c.miPrecioCentavos - costo),
             nota:
-                'de ganancia por ${c.esPesable ? 'kilo' : 'unidad'} · costo ${_formatear(c, costo)} · margen ${(markupBpDesdeCostoYPrecio(costo, c.miPrecioCentavos) / 100).round()} %',
+                'de ganancia por ${c.esPesable ? 'kilo' : 'unidad'} · costo ${_formatear(c, costo)} · ganancia ${c.miPrecioCentavos > 0 ? (gananciaBpDesdeCostoYPrecio(costo, c.miPrecioCentavos) / 100).round() : 0} %',
           ),
         ],
       ],

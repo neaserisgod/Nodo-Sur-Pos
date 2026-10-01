@@ -574,8 +574,8 @@ void main() {
         expect(productos.first.nombre, 'Coca-Cola');
         expect(productos.first.costoCentavos, 80000);
         expect(productos.first.precioCentavos, 150000);
-        // markupBpDesdeCostoYPrecio(80000, 150000) = 8750 bp = 87,50%.
-        expect(productos.first.margenBp, 8750);
+        // gananciaBpDesdeCostoYPrecio(80000, 150000) = 4667 bp = 46,67%.
+        expect(productos.first.gananciaBp, 4667);
       });
 
       test('un pesable usa costo/precio por kilo, no por unidad', () async {
@@ -611,7 +611,7 @@ void main() {
         final productos = await productosDeProveedor(db, proveedorId);
 
         expect(productos.first.costoCentavos, isNull);
-        expect(productos.first.margenBp, isNull);
+        expect(productos.first.gananciaBp, isNull);
       });
 
       test('un producto desactivado no aparece', () async {

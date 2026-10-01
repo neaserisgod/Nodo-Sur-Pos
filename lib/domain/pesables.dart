@@ -17,7 +17,11 @@ int subtotalPesable({required int? montoPorKiloCentavos, required int gramos}) {
   if (montoPorKiloCentavos == null) {
     throw StateError('Pesable sin precio/costo por kilo cargado');
   }
-  return (montoPorKiloCentavos * gramos / 1000).round();
+  // Con enteros, no con `double`: medio centavo se redondea siempre hacia
+  // arriba (en valor absoluto), sin depender de cómo represente el punto
+  // flotante a la división.
+  final bruto = montoPorKiloCentavos * gramos;
+  return bruto >= 0 ? (bruto + 500) ~/ 1000 : -((-bruto + 500) ~/ 1000);
 }
 
 /// Stock en gramos después de vender [gramosVendidos].

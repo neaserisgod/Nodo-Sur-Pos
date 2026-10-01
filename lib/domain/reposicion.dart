@@ -152,6 +152,9 @@ int pendienteBaseTrasPago({
   required int virtualDeLaVentaCentavos,
 }) {
   final totalVenta = efectivoDeLaVentaCentavos + virtualDeLaVentaCentavos;
+  // Sin cobro registrado no hay proporción que calcular: todo al efectivo, en
+  // vez de una división por cero.
+  if (totalVenta <= 0) return (efectivoCentavos: gananciaCentavos, virtualCentavos: 0);
   final efectivo = (gananciaCentavos * efectivoDeLaVentaCentavos) ~/ totalVenta;
   return (
     efectivoCentavos: efectivo,

@@ -44,7 +44,9 @@ int stockDePromo(List<({int stock, int cantidadPorPromo})> componentes) {
   if (componentes.isEmpty) return 0;
   var minimo = 1 << 30;
   for (final c in componentes) {
-    final alcanza = c.stock <= 0 ? 0 : c.stock ~/ c.cantidadPorPromo;
+    // Un artículo sin cantidad por promo (dato roto) deja la promo en 0 en vez
+    // de dividir por cero.
+    final alcanza = c.stock <= 0 || c.cantidadPorPromo <= 0 ? 0 : c.stock ~/ c.cantidadPorPromo;
     if (alcanza < minimo) minimo = alcanza;
   }
   return minimo;

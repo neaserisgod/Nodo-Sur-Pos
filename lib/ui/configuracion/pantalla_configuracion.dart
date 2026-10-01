@@ -205,7 +205,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cigarrillos => 'atado suelto lata cigarrillos recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
   SeccionConfiguracion.vuelto => 'caramelo vuelto producto alt c',
-  SeccionConfiguracion.categorias => 'rubro markup margen categoria',
+  SeccionConfiguracion.categorias => 'rubro ganancia margen markup categoria',
   SeccionConfiguracion.usuarios => 'empleado turno persona nombre',
   SeccionConfiguracion.mediosPago => 'efectivo mercado pago qr debito',
   SeccionConfiguracion.menu => 'menu orden ocultar secciones',
@@ -223,7 +223,7 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
   SeccionConfiguracion.vuelto => 'Botón de vuelto',
-  SeccionConfiguracion.categorias => 'Categorías (markup)',
+  SeccionConfiguracion.categorias => 'Categorías (ganancia)',
   SeccionConfiguracion.usuarios => 'Usuarios',
   SeccionConfiguracion.mediosPago => 'Medios de pago',
   SeccionConfiguracion.menu => 'Secciones del menú',
@@ -378,10 +378,15 @@ class _SeccionRecargoCigarrillosState
 
   void _guardar() {
     try {
+      final primerAtado = parsearARS(_primerAtadoCtrl.text);
+      final atadoAdicional = parsearARS(_atadoAdicionalCtrl.text);
+      final suelto = parsearARS(_sueltoCtrl.text);
+      // Un recargo negativo restaría plata al cliente: no se guarda.
+      if (primerAtado < 0 || atadoAdicional < 0 || suelto < 0) return;
       widget.c.guardarRecargo(
-        primerAtado: parsearARS(_primerAtadoCtrl.text),
-        atadoAdicional: parsearARS(_atadoAdicionalCtrl.text),
-        suelto: parsearARS(_sueltoCtrl.text),
+        primerAtado: primerAtado,
+        atadoAdicional: atadoAdicional,
+        suelto: suelto,
       );
     } on FormatException {
       // se ignora hasta que los 3 campos sean válidos
@@ -460,7 +465,8 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
             etiqueta: 'Fondo fijo del cajón (para dar vuelto)',
             onSubmitted: (_) {
               try {
-                widget.c.guardarFondoFijo(parsearARS(_fondoFijoCtrl.text));
+                final fondo = parsearARS(_fondoFijoCtrl.text);
+                if (fondo >= 0) widget.c.guardarFondoFijo(fondo);
               } on FormatException {
                 /* se ignora hasta que sea válido */
               }
@@ -473,7 +479,9 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
             etiqueta: 'Paso de redondeo en efectivo (Regla 2)',
             onSubmitted: (_) {
               try {
-                widget.c.guardarPasoRedondeo(parsearARS(_redondeoCtrl.text));
+                // Paso 0 o negativo rompería el redondeo de cada cobro en efectivo.
+                final paso = parsearARS(_redondeoCtrl.text);
+                if (paso > 0) widget.c.guardarPasoRedondeo(paso);
               } on FormatException {
                 /* se ignora hasta que sea válido */
               }
@@ -536,7 +544,7 @@ class _SeccionCategorias extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Markup de referencia por categoría (Regla 14, informativo)',
+            'Ganancia de referencia por categoría, sobre el precio (Regla 14, informativo)',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: Espaciado.lg),
@@ -565,7 +573,7 @@ class _SeccionCategorias extends StatelessWidget {
                       ),
                       onFieldSubmitted: (v) {
                         final pct = int.tryParse(v);
-                        if (pct != null) {
+                        if (pct != null && pct >= 0 && pct < 100) {
                           c.guardarMarkupCategoria(categoria.id, pct * 100);
                         }
                       },

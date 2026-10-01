@@ -24,7 +24,7 @@ import '../tema/tema.dart' show radioControlEscritorio;
 import '../tema/tokens.dart';
 import 'selector_porcentaje.dart' show pedirOtroPorcentaje;
 
-const _atajosPorcentaje = [2000, 3000, 4000, 5000, 7000, 10000];
+const _atajosPorcentaje = [1500, 2000, 2500, 3000, 3500, 4000];
 
 String _pct(int bp) =>
     '${bp % 100 == 0 ? bp ~/ 100 : (bp / 100).toStringAsFixed(1)}%';
@@ -325,7 +325,7 @@ class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
           for (final e in _elegidos)
             (productoId: e.producto.id, cantidad: e.cantidad),
         ],
-        markupBp: _bp,
+        gananciaBp: _bp,
         usuarioId: widget.usuarioId,
       );
     } on ArgumentError catch (e) {
@@ -474,7 +474,7 @@ class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
                 ),
               const SizedBox(height: Espaciado.lg),
               Text(
-                'Ganancia sobre el costo',
+                'Ganancia sobre el precio',
                 style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.medium),
               ),
               const SizedBox(height: Espaciado.sm),
@@ -594,7 +594,7 @@ class _Resumen extends StatelessWidget {
                 tono: Tono.alerta,
               )
             else
-              Insignia(texto: 'Costo + ${_pct(bp)}, a la centena'),
+              Insignia(texto: '${_pct(bp)} de ganancia, a la centena'),
             if (c.listaCentavos > c.precioCentavos)
               Insignia(
                 texto:

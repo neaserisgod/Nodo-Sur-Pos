@@ -172,8 +172,8 @@ real (lo que hay que construir igual en Productos):
   ver qué le comprás, a cuánto, a cuánto lo vendés y cuánto sacás" (El dueño).
   A diferencia del resumen, este bloque SÍ es `Expanded` a todo el ancho —
   tiene contenido real que lo aprovecha (`lib/data/repositorio_reposicion.dart`,
-  `productosDeProveedor`; margen vía `markupBpDesdeCostoYPrecio`,
-  `lib/domain/markup.dart` — mismo cálculo que "Margen en vivo" de
+  `productosDeProveedor`; margen vía `gananciaBpDesdeCostoYPrecio`,
+  `lib/domain/ganancia.dart` — mismo cálculo que "Margen en vivo" de
   Productos, Regla 14, un producto sin costo cargado no inventa un margen).
   `ListView.builder` (CLAUDE.md: la lista de productos de un proveedor no
   tiene cota).

@@ -12,9 +12,12 @@
 import 'package:flutter/widgets.dart';
 
 import '../../data/database.dart';
+import '../../data/repositorio_equilibrio.dart' show mesAnioDe;
 import '../../data/repositorio_reposicion.dart';
+import '../../data/repositorio_rentabilidad.dart';
 import '../../domain/ajuste_a_disponible.dart';
 import '../../domain/periodo.dart';
+import '../../domain/rentabilidad.dart';
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
 
 enum VistaSeparaciones { queSeparar, loVendido }
@@ -319,6 +322,10 @@ class SeparacionesControlador extends ChangeNotifier {
     final proveedor = gananciaSinRevisar[proveedorId]!.proveedor;
     return gananciaPorMedioDesde(db, proveedor);
   }
+
+  /// Estado de resultados del mes en curso: de ahí sale cuánto es realmente
+  /// retirable (ganancia bruta menos gastos), para avisar antes de un retiro.
+  Future<EstadoDeResultados> estadoDelMes() => estadoDeResultadosDelMes(db, mesAnioDe(DateTime.now()));
 
   /// Retira [efectivoCentavos] + [virtualCentavos]; lo que no se retira de
   /// [gananciaCentavos] queda como colchón.
