@@ -3416,6 +3416,6 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
 
 - `domain/rentabilidad.dart`, `data/repositorio_rentabilidad.dart`; tarjeta "Estado de resultados del mes" en
   Equilibrio y aviso "Retirar igual" en el retiro de ganancia. Ver `DECISIONES.md`.
-- Pendiente: pantalla del margen necesario / precio mínimo sugerido y lista de productos por debajo del margen.
+- Tarjeta "Margen necesario" en Equilibrio: venta objetivo y ganancia a retener (se guardan en el dispositivo), margen necesario vs. el de hoy, venta necesaria y productos por debajo con precio sugerido (solo sugerencia, Regla 14).
 - **Sin verificar**: sin Flutter en la sesión, nada de esto se compiló ni se corrió. `flutter analyze` y `flutter test`
   primero.

@@ -1392,4 +1392,4 @@ Decididas con el dueño antes de empezar (fase 1):
 - **El sueldo del dueño es un fijo llamado exactamente "Sueldo del dueño"** (sin tocar el esquema); el botón de
   Equilibrio lo crea y el monto se carga como cualquier fijo del mes. Los pagos GASTO sin fijo son los variables.
 - **Sin fijos cargados el retirable está sobreestimado** (no hay gastos que restar): por eso el aviso lo dice.
-- **Margen necesario y precio mínimo sugerido** están en el dominio; falta la pantalla que los muestra.
+- **Margen necesario y precio mínimo sugerido**: tarjeta en Equilibrio; los dos datos que se tipean (venta objetivo, ganancia a retener) viven en `shared_preferences`, sin tocar el esquema.
