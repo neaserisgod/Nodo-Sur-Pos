@@ -106,6 +106,7 @@ jobs:
         shell: pwsh
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
+          SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
         run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal beta -Rollout ([int]$env:ROLLOUT)
 
       - name: Guardar el instalador también como archivo de la corrida
