@@ -11,7 +11,6 @@ import 'package:la_plazoleta/domain/pesables.dart';
 import 'package:la_plazoleta/domain/promo.dart';
 import 'package:la_plazoleta/domain/redondeo.dart';
 import 'package:la_plazoleta/domain/reposicion.dart';
-import 'package:la_plazoleta/domain/stock_valorizado.dart';
 
 void main() {
   group('parsearARS — estricto', () {
@@ -157,17 +156,6 @@ void main() {
     test('0 días no tira error', () {
       expect(ventaDiariaDeEquilibrio(fijosMensualesCentavos: 100000, margenPonderado: 0.3, diasDelMes: 0), isNull);
       expect(reservaDiariaFijosCentavos(fijosMensualesCentavos: 100000, diasDelMes: 0), 0);
-    });
-  });
-
-  group('stock valorizado', () {
-    test('un stock negativo no resta valor: cuenta como 0', () {
-      final r = calcularStockValorizado(productos: const [
-        ProductoParaValorizar(proveedorId: 'A', esPesable: false, stock: -5, costoCentavos: 1000, precioCentavos: 2000),
-        ProductoParaValorizar(proveedorId: 'A', esPesable: false, stock: 2, costoCentavos: 1000, precioCentavos: 2000),
-      ]);
-      expect(r.valorizadoPorProveedorCentavos['A'], 2000);
-      expect(r.valorizadoAPrecioPorProveedorCentavos['A'], 4000);
     });
   });
 

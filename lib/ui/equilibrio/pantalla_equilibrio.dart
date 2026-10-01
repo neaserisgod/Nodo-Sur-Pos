@@ -250,6 +250,7 @@ class _TarjetaMargenNecesario extends StatefulWidget {
 class _TarjetaMargenNecesarioState extends State<_TarjetaMargenNecesario> {
   late final TextEditingController _ventaCtrl;
   late final TextEditingController _retenerCtrl;
+  bool _sincronizado = false;
 
   static String _texto(int centavos) => centavos == 0 ? '' : formatearARS(centavos, conSigno: false);
 
@@ -285,6 +286,16 @@ class _TarjetaMargenNecesarioState extends State<_TarjetaMargenNecesario> {
   @override
   Widget build(BuildContext context) {
     final c = context.watch<EquilibrioControlador>();
+    // Lo guardado llega después de que la pantalla ya se mostró: se vuelca a los
+    // campos una sola vez, sin pisar lo que el dueño haya empezado a tipear.
+    if (c.objetivoCargado && !_sincronizado) {
+      _sincronizado = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_ventaCtrl.text.isEmpty) _ventaCtrl.text = _texto(c.ventaObjetivoCentavos);
+        if (_retenerCtrl.text.isEmpty) _retenerCtrl.text = _texto(c.gananciaARetenerCentavos);
+      });
+    }
     final textTheme = Theme.of(context).textTheme;
     final colores = context.colores;
     final necesario = c.margenNecesario;

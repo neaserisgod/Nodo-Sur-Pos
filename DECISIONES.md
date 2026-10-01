@@ -1369,7 +1369,7 @@ Decididas con el dueño antes de empezar (fase 1):
   `ArgumentError` con paso o denominador ≤ 0. `redondeoDeVenta` con paso ≤ 0 cobra el total exacto: una configuración
   rota no puede trabar el cobro. Guardar un paso ≤ 0, un fondo o un recargo negativos se rechaza en Configuración.
 - **Defensas de borde**: descuento sobre base ≤ 0, separación de cigarrillos con efectivo contado negativo, prorrateo
-  de ganancia sin cobro, días del mes en 0, promo con cantidad 0 y stock valorizado con stock negativo (cuenta 0, no resta).
+  de ganancia sin cobro, días del mes en 0, promo con cantidad 0. El stock valorizado con stock negativo NO se tocó: sigue valorizando en negativo (Regla 8, ya decidido y testeado).
 - **`pagarProveedor` y `revisarGananciaProveedor` van en una transacción**: antes, si fallaba la escritura de caja
   después de marcar pagado al proveedor, el pago quedaba sin salida en el arqueo.
 - **Lo que NO se tocó (decisión de negocio, a preguntar)**: el retiro de ganancia por proveedor (Regla 13) trabaja

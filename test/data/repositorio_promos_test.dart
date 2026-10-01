@@ -154,7 +154,7 @@ void main() {
   });
 
   test('el precio se reparte según la lista y nunca queda un artículo por encima de su lista', () async {
-    final promoId = await crear(bp: 10000); // tope: lista 2.300
+    final promoId = await crear(bp: 6000); // tope: lista 2.300 (1.500 / 0,4 = 3.750 → 3.800)
     final promo = await leer(promoId);
     final linea = LineaVentaPorUnidad(
       productoId: promo.id.toString(),

@@ -3,6 +3,8 @@
 // (Regla 12: "avisar antes que inventar") — la pantalla lo refleja mostrando
 // un aviso en vez de un número en esas tarjetas puntuales.
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -46,6 +48,10 @@ class EquilibrioControlador extends ChangeNotifier {
 
   static const _claveVenta = 'objetivo_venta_centavos';
   static const _claveRetener = 'objetivo_retener_centavos';
+
+  /// true cuando ya se leyeron del dispositivo (o se supo que no se puede):
+  /// la tarjeta rellena sus campos recién entonces.
+  bool objetivoCargado = false;
 
   int ventaObjetivoCentavos = 0;
   int gananciaARetenerCentavos = 0;
@@ -129,11 +135,28 @@ class EquilibrioControlador extends ChangeNotifier {
 
     estado = await estadoDeResultadosDelMes(db, mesAnio);
     tieneConceptoSueldo = await conceptoSueldoId(db) != null;
-    await _leerObjetivo();
-    await _recalcularMargenNecesario();
-
     cargando = false;
     notifyListeners();
+
+    // El objetivo del dueño vive en el dispositivo (`shared_preferences`) y
+    // se lee aparte: la pantalla no tiene que esperarlo para mostrarse, y un
+    // almacenamiento lento o ausente no puede dejarla vacía.
+    unawaited(_cargarObjetivo());
+  }
+
+  Future<void> _cargarObjetivo() async {
+    await _leerObjetivo();
+    await _recalcularMargenNecesario();
+    objetivoCargado = true;
+    if (!_descartado) notifyListeners();
+  }
+
+  bool _descartado = false;
+
+  @override
+  void dispose() {
+    _descartado = true;
+    super.dispose();
   }
 
   Future<void> cargarMonto({required int gastoFijoId, required int montoCentavos}) async {
