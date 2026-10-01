@@ -98,9 +98,9 @@ ResultadoStockValorizado calcularStockValorizado({
       final valor = producto.esPesable
           ? subtotalPesable(
               montoPorKiloCentavos: costoUnitario,
-              gramos: producto.stockGramos ?? 0,
+              gramos: _noNegativo(producto.stockGramos ?? 0),
             )
-          : costoUnitario * producto.stock;
+          : costoUnitario * _noNegativo(producto.stock);
       valorizado.update(proveedorId, (actual) => actual + valor, ifAbsent: () => valor);
     }
 
@@ -113,9 +113,9 @@ ResultadoStockValorizado calcularStockValorizado({
       final valor = producto.esPesable
           ? subtotalPesable(
               montoPorKiloCentavos: precioUnitario,
-              gramos: producto.stockGramos ?? 0,
+              gramos: _noNegativo(producto.stockGramos ?? 0),
             )
-          : precioUnitario * producto.stock;
+          : precioUnitario * _noNegativo(producto.stock);
       valorizadoAPrecio.update(proveedorId, (actual) => actual + valor, ifAbsent: () => valor);
     }
   }
@@ -127,3 +127,8 @@ ResultadoStockValorizado calcularStockValorizado({
     sinPrecioPorProveedor: sinPrecio,
   );
 }
+
+/// Un stock negativo (se vendió más de lo que figuraba, Regla 8) informa un
+/// faltante de registro, no mercadería con valor negativo: restaría del total
+/// lo que sí hay en otros productos.
+int _noNegativo(int n) => n < 0 ? 0 : n;

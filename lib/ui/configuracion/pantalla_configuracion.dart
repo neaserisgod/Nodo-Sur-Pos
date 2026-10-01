@@ -378,10 +378,15 @@ class _SeccionRecargoCigarrillosState
 
   void _guardar() {
     try {
+      final primerAtado = parsearARS(_primerAtadoCtrl.text);
+      final atadoAdicional = parsearARS(_atadoAdicionalCtrl.text);
+      final suelto = parsearARS(_sueltoCtrl.text);
+      // Un recargo negativo restaría plata al cliente: no se guarda.
+      if (primerAtado < 0 || atadoAdicional < 0 || suelto < 0) return;
       widget.c.guardarRecargo(
-        primerAtado: parsearARS(_primerAtadoCtrl.text),
-        atadoAdicional: parsearARS(_atadoAdicionalCtrl.text),
-        suelto: parsearARS(_sueltoCtrl.text),
+        primerAtado: primerAtado,
+        atadoAdicional: atadoAdicional,
+        suelto: suelto,
       );
     } on FormatException {
       // se ignora hasta que los 3 campos sean válidos
@@ -460,7 +465,8 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
             etiqueta: 'Fondo fijo del cajón (para dar vuelto)',
             onSubmitted: (_) {
               try {
-                widget.c.guardarFondoFijo(parsearARS(_fondoFijoCtrl.text));
+                final fondo = parsearARS(_fondoFijoCtrl.text);
+                if (fondo >= 0) widget.c.guardarFondoFijo(fondo);
               } on FormatException {
                 /* se ignora hasta que sea válido */
               }
@@ -473,7 +479,9 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
             etiqueta: 'Paso de redondeo en efectivo (Regla 2)',
             onSubmitted: (_) {
               try {
-                widget.c.guardarPasoRedondeo(parsearARS(_redondeoCtrl.text));
+                // Paso 0 o negativo rompería el redondeo de cada cobro en efectivo.
+                final paso = parsearARS(_redondeoCtrl.text);
+                if (paso > 0) widget.c.guardarPasoRedondeo(paso);
               } on FormatException {
                 /* se ignora hasta que sea válido */
               }

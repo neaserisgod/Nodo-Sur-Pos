@@ -32,7 +32,10 @@ ResultadoRedondeo redondeoDeVenta({
   required ComposicionPago composicionPago,
   required int pasoCentavos,
 }) {
-  if (!composicionPago.incluyeEfectivo) {
+  // Un paso ≤ 0 (configuración rota) no puede trabar el cobro: se cobra el
+  // total exacto, sin redondeo. El valor se rechaza al guardarlo
+  // (`configurarPasoRedondeo`); esto es la última defensa.
+  if (!composicionPago.incluyeEfectivo || pasoCentavos <= 0) {
     return ResultadoRedondeo(totalCentavos: totalCentavos, montoRedondeoCentavos: 0);
   }
   final redondeado = redondearHaciaArriba(totalCentavos, pasoCentavos);

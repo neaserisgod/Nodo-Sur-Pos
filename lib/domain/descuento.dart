@@ -18,9 +18,12 @@ int calcularDescuento({
   required TipoDescuento tipo,
   required int valor,
 }) {
+  // Sin base no hay nada que descontar (y `clamp(0, negativo)` lanzaría).
+  if (baseCentavos <= 0 || valor <= 0) return 0;
   final bruto = switch (tipo) {
     TipoDescuento.monto => valor,
-    TipoDescuento.porcentaje => (baseCentavos * valor) ~/ 10000,
+    // Hacia abajo (a favor del negocio): nunca se regala un centavo de más.
+    TipoDescuento.porcentaje => (baseCentavos * (valor > 10000 ? 10000 : valor)) ~/ 10000,
   };
-  return bruto.clamp(0, baseCentavos);
+  return bruto > baseCentavos ? baseCentavos : bruto;
 }

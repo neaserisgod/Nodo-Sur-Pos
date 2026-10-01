@@ -1031,7 +1031,7 @@ Future<void> revisarGananciaProveedor(
   int retiroEfectivoCentavos = 0,
   int retiroMercadoPagoCentavos = 0,
   DateTime? fecha,
-}) async {
+}) => db.transaction(() async {
   if (retiroEfectivoCentavos > 0) {
     await registrarRetiroProveedor(
       db,
@@ -1068,7 +1068,7 @@ Future<void> revisarGananciaProveedor(
   )..where((p) => p.id.equals(proveedorId))).write(
     ProveedoresCompanion(gananciaRevisadaFecha: Value(fecha ?? DateTime.now())),
   );
-}
+});
 
 /// Aviso corto para la apertura de caja (El dueño separa con la persiana
 /// baja): proveedores con algo sugerido para separar, con su monto.
@@ -1171,7 +1171,7 @@ Future<void> pagarProveedor(
   required int montoCentavos,
   DateTime? fecha,
   int? montoMpCentavos,
-}) async {
+}) => db.transaction(() async {
   final proveedor = await (db.select(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).getSingle();
@@ -1230,7 +1230,7 @@ Future<void> pagarProveedor(
           ),
         );
   }
-}
+});
 
 /// Regla 13: retiene [montoCentavos] de la ganancia de este proveedor como
 /// colchón — plata real que el dueño decide no llevarse del negocio, para

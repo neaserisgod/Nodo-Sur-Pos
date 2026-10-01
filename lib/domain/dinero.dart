@@ -55,28 +55,91 @@ String _agruparMiles(int pesos) {
   return buffer.toString();
 }
 
+/// Tope de un monto tipeado: $100.000.000.000 en centavos. Muy por encima de
+/// cualquier plata de este negocio, y lo bastante bajo para que ninguna cuenta
+/// posterior (× 10.000 de un porcentaje, × cantidad) desborde un `int` de 64
+/// bits: un "1e30" o un dígito de más no puede terminar en un total basura.
+const int maximoMontoCentavos = 10000000000000;
+
+final _soloDigitos = RegExp(r'^\d+$');
+final _miles = RegExp(r'^\d{1,3}(\.\d{3})+$');
+
 /// Parsea un monto en texto a centavos.
 ///
-/// Acepta "1.500,50" (es-AR), "1500.50", "$1.500,50" y "1500". Es el único
-/// punto de conversión texto → centavos (Regla 1): así todos los campos de
-/// carga de precio/costo entienden los mismos formatos.
+/// Acepta "1.500,50" (es-AR), "1500.50", "$1.500,50", "1500" y "-200". Es el
+/// único punto de conversión texto → centavos (Regla 1): así todos los campos
+/// de carga de precio/costo entienden los mismos formatos.
+///
+/// Estricto a propósito: todo lo que no sea un número decimal común lanza
+/// [FormatException] — "1e3", "NaN", "Infinity", "1,2,3", "12abc" o un monto
+/// fuera de [maximoMontoCentavos]. `double.tryParse` aceptaba los primeros
+/// (y "1e3" se leía como $1.000, "Infinity" tiraba un error no capturado por
+/// quien solo atrapa `FormatException`). Se hace con enteros, sin pasar por
+/// `double`: el redondeo al centavo es exacto (medio centavo hacia arriba).
+///
+/// Regla del punto: es separador de miles solo si el texto entero es grupos
+/// de exactamente 3 dígitos ("1.500", "2.093.000", nunca "0.500" ni "1.5");
+/// si no, es decimal. La coma es siempre decimal (es-AR).
 int parsearARS(String valor) {
-  var limpio = valor.replaceAll('\$', '').trim();
-  // Quita puntos de miles: un punto seguido de exactamente 3 dígitos es
-  // separador de miles en es-AR, nunca decimal (el decimal usa coma).
-  limpio = limpio.replaceAllMapped(RegExp(r'\.(\d{3})'), (m) => m.group(1)!);
-  limpio = limpio.replaceAll(',', '.');
-  final numero = double.tryParse(limpio);
-  if (numero == null) {
-    throw FormatException('Monto inválido: "$valor"');
+  final original = valor;
+  var limpio = valor.replaceAll(r'$', '').replaceAll(RegExp(r'\s'), '');
+  var negativo = false;
+  if (limpio.startsWith('-')) {
+    negativo = true;
+    limpio = limpio.substring(1);
   }
-  return (numero * centavosPorPeso).round();
+  Never invalido() => throw FormatException('Monto inválido: "$original"');
+  if (limpio.isEmpty) invalido();
+
+  String entera;
+  String fraccion = '';
+  final coma = limpio.indexOf(',');
+  if (coma != -1) {
+    if (limpio.indexOf(',', coma + 1) != -1) invalido();
+    entera = limpio.substring(0, coma);
+    fraccion = limpio.substring(coma + 1);
+    // Con coma decimal, los puntos de la parte entera solo pueden ser miles.
+    if (entera.contains('.')) {
+      if (!_miles.hasMatch(entera)) invalido();
+      entera = entera.replaceAll('.', '');
+    }
+  } else if (_miles.hasMatch(limpio) && !limpio.startsWith('0.')) {
+    entera = limpio.replaceAll('.', '');
+  } else {
+    final punto = limpio.indexOf('.');
+    if (punto == -1) {
+      entera = limpio;
+    } else {
+      if (limpio.indexOf('.', punto + 1) != -1) invalido();
+      entera = limpio.substring(0, punto);
+      fraccion = limpio.substring(punto + 1);
+    }
+  }
+
+  if (entera.isEmpty && fraccion.isEmpty) invalido();
+  if (entera.isEmpty) entera = '0';
+  if (!_soloDigitos.hasMatch(entera)) invalido();
+  if (fraccion.isNotEmpty && !_soloDigitos.hasMatch(fraccion)) invalido();
+  // Más dígitos que el tope ya son demasiado grandes: se corta antes de parsear.
+  if (entera.length > 14) invalido();
+
+  final pesos = int.parse(entera);
+  final dosDecimales = fraccion.padRight(2, '0');
+  var centavos = int.parse(dosDecimales.substring(0, 2));
+  // Medio centavo hacia arriba, mirando solo el tercer decimal.
+  if (dosDecimales.length > 2 && int.parse(dosDecimales[2]) >= 5) centavos += 1;
+
+  final total = pesos * centavosPorPeso + centavos;
+  if (total > maximoMontoCentavos) invalido();
+  return negativo ? -total : total;
 }
 
 /// Redondea [centavos] hacia arriba al múltiplo de [pasoCentavos] más cercano.
 ///
-/// Precondición: [centavos] >= 0 y [pasoCentavos] > 0 (todo monto de venta o
-/// precio de este negocio es no negativo).
+/// Un [pasoCentavos] ≤ 0 lanza [ArgumentError] (no hay múltiplos de 0): la
+/// capa que lo guarda como configuración lo rechaza antes, y
+/// `redondeoDeVenta` lo trata como "sin redondeo" para que una configuración
+/// rota nunca trabe el cobro.
 ///
 /// Único punto de esta fórmula (Regla 3 de convenciones): la usa el redondeo
 /// del total de venta en efectivo, al paso configurable (Regla 2 de negocio).
@@ -87,15 +150,23 @@ int redondearHaciaArriba(int centavos, int pasoCentavos) {
 /// Redondea la fracción [numerador]/[denominador] hacia arriba al múltiplo
 /// de [paso] más cercano, en una sola operación exacta con enteros.
 ///
-/// La usa el triángulo de `markup` para llevar un precio o costo calculado
+/// La usa el triángulo de `ganancia` para llevar un precio o costo calculado
 /// al peso entero (Regla 1) sin encadenar un redondeo al centavo primero:
 /// redondear dos veces (al centavo y después al peso) puede alejar el
 /// resultado final del valor exacto en más de lo que un solo redondeo lo haría.
 ///
-/// Precondición: [numerador] >= 0, [denominador] > 0, [paso] > 0.
+/// Es un techo verdadero también con [numerador] negativo (−150/100 → −1, no
+/// 0): la división entera de Dart trunca hacia cero y con negativos daba un
+/// resultado un paso más abajo. [denominador] y [paso] tienen que ser > 0.
 int redondearFraccionHaciaArriba(int numerador, int denominador, int paso) {
+  if (denominador <= 0) throw ArgumentError('denominador tiene que ser > 0');
+  if (paso <= 0) throw ArgumentError('paso tiene que ser > 0');
   final unidades = _ceilDiv(numerador, denominador * paso);
   return unidades * paso;
 }
 
-int _ceilDiv(int a, int b) => (a + b - 1) ~/ b;
+/// Techo de a/b con b > 0, correcto para a negativo.
+int _ceilDiv(int a, int b) {
+  final cociente = a ~/ b; // trunca hacia cero
+  return a > 0 && a % b != 0 ? cociente + 1 : cociente;
+}

@@ -77,7 +77,7 @@ int? ventaDiariaDeEquilibrio({
   required double margenPonderado,
   int diasDelMes = 30,
 }) {
-  if (margenPonderado <= 0) return null;
+  if (margenPonderado <= 0 || diasDelMes <= 0) return null;
   final ventaMensual = fijosMensualesCentavos / margenPonderado;
   return (ventaMensual / diasDelMes).round();
 }
@@ -146,5 +146,6 @@ int reservaDiariaFijosCentavos({
   required int fijosMensualesCentavos,
   int diasDelMes = 30,
 }) {
+  if (diasDelMes <= 0) return 0;
   return (fijosMensualesCentavos / diasDelMes).round();
 }

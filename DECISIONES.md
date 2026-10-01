@@ -1358,3 +1358,21 @@ Decididas con el dueño antes de empezar (fase 1):
   (`gananciaBp`, `precioConGananciaACentena`, `gananciaBpDesdeCostoYPrecio`).
 - **Atajos de porcentaje** pasan de 20/30/40/50/70/100 (markup) a 15/20/25/30/35/40 (ganancia): con ganancia, 50%
   ya es duplicar el costo y 100% es imposible.
+
+### Auditoría de fórmulas ante datos tipeados (2026-10-01)
+
+- **`parsearARS` es estricto y exacto.** Antes pasaba por `double.tryParse`: "1e3" se leía como $1.000, "Infinity"/"NaN"
+  tiraban un error que ningún campo atrapaba (solo atrapan `FormatException`) y un monto enorme desbordaba las cuentas
+  siguientes. Ahora parsea con enteros, rechaza todo lo que no sea un decimal común y topea en $100.000.000.000
+  (`maximoMontoCentavos`).
+- **`redondearFraccionHaciaArriba` es un techo verdadero con negativos** (la división entera trunca hacia cero) y lanza
+  `ArgumentError` con paso o denominador ≤ 0. `redondeoDeVenta` con paso ≤ 0 cobra el total exacto: una configuración
+  rota no puede trabar el cobro. Guardar un paso ≤ 0, un fondo o un recargo negativos se rechaza en Configuración.
+- **Defensas de borde**: descuento sobre base ≤ 0, separación de cigarrillos con efectivo contado negativo, prorrateo
+  de ganancia sin cobro, días del mes en 0, promo con cantidad 0 y stock valorizado con stock negativo (cuenta 0, no resta).
+- **`pagarProveedor` y `revisarGananciaProveedor` van en una transacción**: antes, si fallaba la escritura de caja
+  después de marcar pagado al proveedor, el pago quedaba sin salida en el arqueo.
+- **Lo que NO se tocó (decisión de negocio, a preguntar)**: el retiro de ganancia por proveedor (Regla 13) trabaja
+  sobre ganancia bruta y no se subordina a gastos fijos/Equilibrio; el reporte de ganancia por línea no incluye el
+  redondeo ni el recargo de la venta (diferencia de centavos contra lo cobrado); el reparto por línea de
+  `separacion_por_medio` trunca y puede perder centavos sueltos por venta.
