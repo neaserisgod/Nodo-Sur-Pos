@@ -1,0 +1,92 @@
+# Genera un par NUEVO de claves DSA para firmar las actualizaciones, sin usar ninguna PC:
+#   - commitea la pública (dsa_pub.pem) en main, que es la que se embebe en el .exe;
+#   - deja la privada como artefacto de la corrida (1 día) para pegarla en el secreto DSA_PRIVATE_KEY.
+# Usa el generate_keys.bat del propio paquete auto_updater (el mismo que tool\generar_claves_actualizacion.ps1).
+#
+# Después de correrlo:
+#   1. Bajá el artefacto "dsa-priv" (abajo de la página de la corrida), abrí dsa_priv.pem y pegá TODO su contenido
+#      en Settings → Secrets → Actions → DSA_PRIVATE_KEY (reemplaza el valor).
+#   2. Guardá una copia de dsa_priv.pem en un lugar seguro (gestor de contraseñas) y borrá el artefacto
+#      (botón de tacho en la página de la corrida). Quien tenga la privada puede firmar actualizaciones.
+#   3. Corré publicar-beta (canal stable) y reinstalá a mano UNA vez en cada PC que ya tenga la app.
+# Solo corrélo si la privada actual se perdió o no es la pareja de dsa_pub.pem: las apps ya instaladas
+# dejan de poder actualizarse hasta reinstalarlas.
+name: rotar-claves-actualizacion
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Escribí ROTAR para confirmar (reemplaza dsa_pub.pem del repo)'
+        required: true
+        default: ''
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  rotar:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Confirmación
+        shell: pwsh
+        run: if ($env:CONFIRMAR -ne 'ROTAR') { throw "Hay que escribir ROTAR para confirmar." }
+        env:
+          CONFIRMAR: ${{ inputs.confirmar }}
+
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - run: flutter pub get
+
+      - name: Generar el par de claves
+        shell: pwsh
+        run: |
+          $bat = Get-ChildItem -Recurse -Filter generate_keys.bat -Path "windows\flutter\ephemeral\.plugin_symlinks", "$env:PUB_CACHE" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'WinSparkle' } | Select-Object -First 1
+          if (-not $bat) { throw "No encuentro generate_keys.bat del paquete auto_updater." }
+          $git = "${env:ProgramFiles}\Git\usr\bin"
+          $env:PATH = "$git;$env:PATH"
+          $carpeta = Join-Path $env:RUNNER_TEMP 'claves'
+          New-Item -ItemType Directory -Force $carpeta | Out-Null
+          Push-Location $carpeta
+          try { & $bat.FullName } finally { Pop-Location }
+          foreach ($f in 'dsa_priv.pem', 'dsa_pub.pem') {
+            if (-not (Test-Path (Join-Path $carpeta $f))) { throw "No se generó $f" }
+          }
+          # Comprobar que son pareja antes de tocar el repo.
+          $pubDeLaPriv = & openssl dsa -in (Join-Path $carpeta 'dsa_priv.pem') -pubout 2>$null
+          $pub = Get-Content (Join-Path $carpeta 'dsa_pub.pem')
+          if ((($pubDeLaPriv -join "`n").Trim()) -ne (($pub -join "`n").Trim())) { throw "La pública generada no es la pareja de la privada." }
+          Copy-Item (Join-Path $carpeta 'dsa_pub.pem') (Join-Path $PWD 'dsa_pub.pem') -Force
+          "CARPETA_CLAVES=$carpeta" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Privada como artefacto (1 día)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsa-priv
+          path: ${{ env.CARPETA_CLAVES }}/dsa_priv.pem
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Guardar la pública nueva en el repositorio
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dsa_pub.pem
+          git commit -m "Clave pública de actualizaciones nueva (rotación) [skip ci]"
+          git push
+
+      - name: Borrar la privada del runner
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Recurse -Force (Join-Path $env:RUNNER_TEMP 'claves') -ErrorAction SilentlyContinue
