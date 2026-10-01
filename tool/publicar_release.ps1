@@ -94,6 +94,24 @@ if (-not $coincidencia.Success -or $coincidencia.Groups[1].Value.Length -lt 40) 
 }
 $firma = $coincidencia.Groups[1].Value
 
+# Verifica la firma contra la PÚBLICA que lleva embebida el .exe (dsa_pub.pem). Si la privada
+# (p. ej. el secreto DSA_PRIVATE_KEY) no es la pareja de esa pública, WinSparkle en la PC del
+# cliente dice "La actualización no está firmada adecuadamente": mejor cortar acá, antes de subir.
+$publica = Join-Path $raiz "dsa_pub.pem"
+$tmp = Join-Path ([IO.Path]::GetTempPath()) ("firma-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force $tmp | Out-Null
+try {
+    [IO.File]::WriteAllBytes((Join-Path $tmp "firma.bin"), [Convert]::FromBase64String($firma))
+    $sha1 = [Security.Cryptography.SHA1]::Create()
+    $stream = [IO.File]::OpenRead($archivo)
+    try { [IO.File]::WriteAllBytes((Join-Path $tmp "digest.bin"), $sha1.ComputeHash($stream)) } finally { $stream.Dispose() }
+    $verif = & openssl dgst -sha1 -verify $publica -signature (Join-Path $tmp "firma.bin") (Join-Path $tmp "digest.bin") 2>&1
+    if ($LASTEXITCODE -ne 0 -or ($verif -join " ") -notmatch "Verified OK") {
+        throw "La firma DSA NO verifica contra dsa_pub.pem: la clave privada usada no es la pareja de la pública embebida en la app. No se publica. ($($verif -join ' '))"
+    }
+    Write-Output "Firma DSA verificada contra dsa_pub.pem."
+} finally { Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue }
+
 # --- 4. Subida ---
 $argumentos = @(
     $scriptPublicar,
