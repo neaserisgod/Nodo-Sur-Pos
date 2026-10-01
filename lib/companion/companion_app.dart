@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 
 import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
+import 'flujo_modo_uso.dart';
+import 'modo_uso.dart';
 import 'identidad_dispositivo.dart';
 import 'pantalla_elegir_usuario.dart';
 import 'pantalla_menu_companion.dart';
@@ -59,10 +61,17 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // esta PC" (mismo botón sirve para conectar si todavía no hay nada que
     // desconectar).
     final usuario = await leerUsuario();
+    final conexion = await leerConexion();
+    final guardado = await leerModoUso();
+    final modo = resolverModoUso(guardado: guardado, tieneConexion: conexion != null, tieneUsuario: usuario != null);
+    // Instalaciones anteriores a la pantalla de elegir modo: se les asigna el que ya venían usando.
+    if (modo != null && guardado == null) await guardarModoUso(modo);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => usuario == null
+        builder: (_) => modo == null
+            ? pantallaDeElegirModoInicial()
+            : usuario == null
             ? const PantallaElegirUsuario()
             : const PantallaMenuCompanion(),
       ),

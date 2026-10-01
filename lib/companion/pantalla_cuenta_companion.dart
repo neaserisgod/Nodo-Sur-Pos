@@ -18,10 +18,14 @@ import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
-  const PantallaCuentaCompanion({super.key, required this.sync});
+  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar});
 
   /// La sync del celular (en la app real, `syncNubeDelCelular()`).
   final SyncNubeCompanion sync;
+
+  /// Al elegir "solo celular" por primera vez la pantalla se ofrece como un paso más (vincular ahora o después):
+  /// con esto aparece el botón para seguir.
+  final void Function(BuildContext context)? alContinuar;
 
   @override
   State<PantallaCuentaCompanion> createState() => _PantallaCuentaCompanionState();
@@ -102,7 +106,7 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cuenta y sincronización')),
+      appBar: AppBar(title: const Text('Cuenta y sincronización'), automaticallyImplyLeading: widget.alContinuar == null),
       body: SafeArea(
         child: _cargando
             ? const Center(child: CircularProgressIndicator())
@@ -149,6 +153,13 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
                     TextButton(
                       onPressed: _ocupado ? null : _desvincular,
                       child: Text('Desvincular', style: TextStyle(color: context.colores.error)),
+                    ),
+                  ],
+                  if (widget.alContinuar != null) ...[
+                    const SizedBox(height: EspacioCompanion.lg),
+                    OutlinedButton(
+                      onPressed: _ocupado ? null : () => widget.alContinuar!(context),
+                      child: Text(_cuenta == null ? 'Vincular más tarde' : 'Continuar'),
                     ),
                   ],
                   const SizedBox(height: EspacioCompanion.xl),
@@ -210,6 +221,23 @@ class _TarjetaModo extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// La pantalla con la sync real del celular: la arma la primera vez que se abre.
+class PantallaCuentaDelCelular extends StatelessWidget {
+  const PantallaCuentaDelCelular({super.key, this.alContinuar});
+
+  final void Function(BuildContext context)? alContinuar;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<SyncNubeCompanion>(
+      future: syncNubeDelCelular(),
+      builder: (context, snap) => snap.hasData
+          ? PantallaCuentaCompanion(sync: snap.data!, alContinuar: alContinuar)
+          : const Scaffold(body: Center(child: CircularProgressIndicator())),
     );
   }
 }

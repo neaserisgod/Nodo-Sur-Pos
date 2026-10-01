@@ -173,6 +173,10 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   actual, vincular/desvincular, sincronizar ahora. Suite de las áreas tocadas: 331 verdes. Falta: elegir "PC y
   celular" / "solo celular" al primer arranque (fase 4), la estética nueva (fase 5), y probar la vinculación en un
   Android real.
+- **Sync por la nube, fase 4 (elegir modo) — hecha, sin probar en un Android real**: pantalla "¿Cómo vas a usar el
+  sistema?" al primer arranque (`pantalla_elegir_modo.dart`, `modo_uso.dart`, `flujo_modo_uso.dart`), "PC y celular" o
+  "solo celular", cambiable desde Gestión; las instalaciones viejas conservan el modo que ya tenían. Suite de las áreas
+  tocadas: 346 verdes. Falta: la estética nueva del PDF en la companion (fase 5).
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no

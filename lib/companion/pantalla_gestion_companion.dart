@@ -24,7 +24,7 @@ import 'navbar_companion.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_cuenta_companion.dart';
-import 'sync_nube_companion.dart';
+import 'modo_uso.dart';
 import 'pantalla_conteo_stock.dart';
 import 'tema/colores_companion.dart';
 import 'tema/tarjeta_accion.dart';
@@ -39,7 +39,8 @@ class PantallaGestionCompanion extends StatelessWidget {
     required this.onAbrirArqueo,
     required this.onCerrarCaja,
     required this.onCambiarUsuario,
-    required this.onDesconectar,
+    required this.onCambiarModo,
+    required this.modoUso,
   });
 
   final bool navegando;
@@ -53,7 +54,10 @@ class PantallaGestionCompanion extends StatelessWidget {
   /// cerrar.
   final VoidCallback onCerrarCaja;
   final VoidCallback onCambiarUsuario;
-  final VoidCallback onDesconectar;
+  final VoidCallback onCambiarModo;
+
+  /// El modo en uso, para mostrarlo en el botón de abajo.
+  final ModoUso? modoUso;
 
   @override
   Widget build(BuildContext context) {
@@ -116,12 +120,7 @@ class PantallaGestionCompanion extends StatelessWidget {
                   subtitulo: 'Sincronización',
                   onTap: navegando
                       ? null
-                      : () => irA((_) => FutureBuilder<SyncNubeCompanion>(
-                            future: syncNubeDelCelular(),
-                            builder: (context, snap) => snap.hasData
-                                ? PantallaCuentaCompanion(sync: snap.data!)
-                                : const Scaffold(body: Center(child: CircularProgressIndicator())),
-                          )),
+                      : () => irA((_) => const PantallaCuentaDelCelular()),
                 ),
                 TarjetaAccion(
                   icono: IconosPlazoleta.settingsOutlined,
@@ -137,11 +136,15 @@ class PantallaGestionCompanion extends StatelessWidget {
             const SizedBox(height: Espaciado.xl),
             Center(
               child: TextButton.icon(
-                onPressed: onDesconectar,
-                icon: Icon(IconosPlazoleta.linkOff, size: 18, color: context.colores.error),
+                onPressed: onCambiarModo,
+                icon: Icon(
+                  modoUso == ModoUso.soloCelular ? IconosPlazoleta.smartphone : IconosPlazoleta.computer,
+                  size: 18,
+                ),
                 label: Text(
-                  'Desconectar de esta PC',
-                  style: TextStyle(color: context.colores.error),
+                  modoUso == ModoUso.soloCelular
+                      ? 'Modo: solo celular · Cambiar'
+                      : 'Modo: PC y celular · Cambiar',
                 ),
               ),
             ),

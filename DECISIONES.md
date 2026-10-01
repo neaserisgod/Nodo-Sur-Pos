@@ -1483,3 +1483,20 @@ Decididas con el dueño antes de empezar (fase 1):
   Falta verificarlo en un Android real: si el sistema duerme la app mientras está el navegador al frente, la
   vinculación puede no completarse; la alternativa es un código corto que se escribe en el celular.
 - **Lotes de hasta 2.000 filas** (antes 400): la primera subida de una base grande son 5 veces menos pedidos.
+
+### Sync por la nube, fase 4: elegir "PC y celular" o "solo celular" (2026-10-01)
+
+- **El pedido.** El dueño: que la app dé a elegir si se tiene una PC o si solo se usa el móvil como sistema; con ambos
+  se sigue con la conexión directa, y con solo el celular funciona en local y sincroniza con la nube como la PC.
+- **Una pregunta al primer arranque** (`pantalla_elegir_modo.dart`) y cambiable desde Gestión → "Modo: … · Cambiar".
+  Reemplaza al botón "Desconectar de esta PC", que en la práctica solo servía para volver a emparejar.
+- **El modo se guarda recién cuando corresponde**: "PC y celular" cuando el emparejamiento sale bien (si se vuelve
+  atrás sin emparejar, queda como estaba); "solo celular" al tocarlo, que además olvida la PC y avisa al conmutador
+  (`flujo_modo_uso.dart`). Tocar el modo que ya está en uso no hace nada.
+- **Instalaciones anteriores no vuelven a preguntar** (`resolverModoUso`): con PC emparejada → "PC y celular"; sin PC
+  pero con usuario elegido → "solo celular" (desde 2026-09-18 ya funcionaban así); instalación nueva → pregunta.
+- **"Solo celular" ofrece vincular la cuenta antes de entrar** (la pantalla Cuenta como paso del arranque, con
+  "Vincular más tarde"): sin cuenta el celular no sincroniza ni guarda copias. También es el camino para un celular
+  nuevo de un comercio que ya tiene cuenta: al vincular adopta lo que hay en la nube.
+- **Emparejar limpia la pila de pantallas** (`pushAndRemoveUntil`): ni el menú anterior ni la elección de modo tienen
+  sentido debajo de "¿Quién sos?" después de emparejar.

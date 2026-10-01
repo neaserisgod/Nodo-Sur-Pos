@@ -44,6 +44,9 @@ import '../domain/venta.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
+import 'flujo_modo_uso.dart';
+import 'modo_uso.dart';
+import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'base_local.dart';
@@ -57,7 +60,6 @@ import 'navbar_companion.dart';
 import 'navegacion.dart';
 import 'pantalla_arqueo.dart';
 import 'pantalla_carrito_venta.dart';
-import 'pantalla_emparejamiento.dart';
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_gestion_companion.dart';
 import 'pantalla_historial_ventas.dart';
@@ -114,6 +116,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// `AvisoModoLocal`: sin esto, ese aviso aparecería siempre que no hay PC,
   /// aunque nunca se haya emparejado ninguna (su modo normal hoy).
   bool _pcEmparejada = false;
+  ModoUso? _modoUso;
   int? _usuarioId;
   final List<LineaVenta> _carrito = [];
 
@@ -198,6 +201,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// PC de verdad.
   Future<void> _iniciarConexion() async {
     final conexion = await leerConexion();
+    final modo = resolverModoUso(guardado: await leerModoUso(), tieneConexion: conexion != null, tieneUsuario: true);
     if (!mounted) return;
     final servicio = conexion == null
         ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()))
@@ -207,6 +211,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _cliente = conexion == null ? null : ClienteCompanion(conexion);
       _servicio = servicio;
       _pcEmparejada = conexion != null;
+      _modoUso = modo;
     });
     _cargarCatalogoParaEscaner(servicio);
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
@@ -505,13 +510,16 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     if (mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _olvidarConexion() async {
-    await olvidarConexion();
-    await olvidarUsuario();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const PantallaEmparejamiento()),
-      (route) => false,
+  /// Cambiar entre "PC y celular" y "solo celular" (antes "Desconectar de esta PC", que solo servía para volver
+  /// a emparejar). Ver `flujo_modo_uso.dart`.
+  void _cambiarModo() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PantallaElegirModo(
+          actual: _modoUso,
+          alElegir: (contexto, modo) => elegirModo(contexto, modo, actual: _modoUso),
+        ),
+      ),
     );
   }
 
@@ -570,7 +578,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 onAbrirArqueo: _abrirArqueo,
                 onCerrarCaja: _cerrarCaja,
                 onCambiarUsuario: _cambiarUsuario,
-                onDesconectar: _olvidarConexion,
+                onCambiarModo: _cambiarModo,
+                modoUso: _modoUso,
               ),
             ),
           ],

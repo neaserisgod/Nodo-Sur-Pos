@@ -11,6 +11,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
+import 'modo_uso.dart';
 import 'pantalla_elegir_usuario.dart';
 import 'tema/superficie.dart';
 
@@ -60,13 +61,16 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
 
     final conexion = DatosConexion(ip: ip, puerto: puerto, token: token);
     await guardarConexion(conexion);
+    await guardarModoUso(ModoUso.pcYCelular);
     // El primer pull de la base local (fase 2) NO se dispara solo acá —
     // mismo motivo que `companion_app.dart` (El dueño, 2026-09-17: "que sea
     // instantáneo"): sincronizar es siempre a pedido, con el pull-to-refresh
     // de "Inicio", nunca automático.
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
+    // Sin nada por debajo: ni el menú viejo ni la pantalla de elegir modo tienen sentido después de emparejar.
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const PantallaElegirUsuario()),
+      (route) => false,
     );
   }
 
