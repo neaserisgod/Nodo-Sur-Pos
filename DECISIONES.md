@@ -1348,10 +1348,14 @@ Decididas con el dueño antes de empezar (fase 1):
   lugar, `lib/domain/ganancia.dart` (antes `markup.dart`). Es la misma que ya usaban el tablero, el equilibrio y la
   reposición (ganancia ÷ venta); ahora el precio y la "ganancia en vivo" hablan igual. Con 100% o más de ganancia
   la fórmula no existe: lanza error, y los diálogos piden menos de 100.
-- **Datos viejos: se convierten, los precios no se mueven.** Migración v46: ganancia = markup / (1 + markup) sobre
+- **Datos viejos: se convierten para que los precios casi no se muevan.** Migración v46: ganancia = markup / (1 + markup) sobre
   `proveedores.markup_bp` y `categorias.markup_default_bp` (50% de markup → 33,33% de ganancia; el precio sigue
   siendo costo × 1,5). Se eligió convertir y no reinterpretar el número porque reinterpretarlo subía todos los
-  precios en la próxima aplicación del porcentaje.
+  precios en la próxima aplicación del porcentaje. **No es exacto**: la ganancia se guarda en puntos básicos enteros (70% de
+  markup → 41,18%), y con el redondeo a la próxima centena, entre ~1 y ~5% de los costos posibles terminan una centena
+  más arriba (nunca más) al recalcular. Los precios ya guardados en productos no se tocan en la migración; el efecto aparece
+  solo al aplicar el porcentaje o cambiar un costo. Medido sobre la base real del dueño (esquema 42): 1 proveedor con 70%,
+  17 productos, 0 cambian de precio.
 - **Nombres de columna sin tocar** (`markup_bp`, `markup_default_bp`, y `markupDefaultBp` en el protocolo de la
   companion): renombrarlos obligaba a regenerar drift y rompía celulares con una versión anterior. Lo que cambió
   es el significado; está dicho en el comentario de cada columna. En Dart, lo escrito a mano habla de ganancia
