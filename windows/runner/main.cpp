@@ -37,7 +37,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // esa es la resolución de diseño ahora, no 1280×720 (piso de la PC de
   // 2008 que ya no corre esta app).
   Win32Window::Size size(1920, 1080);
-  if (!window.Create(L"la_plazoleta", origin, size)) {
+  if (!window.Create(L"Nodo Sur POS", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

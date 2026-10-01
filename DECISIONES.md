@@ -1410,3 +1410,15 @@ Decididas con el dueño antes de empezar (fase 1):
   verifica el sha256 antes de dárselo a Android, y solo si el sitio no responde cae al plan B de siempre (la PC
   emparejada). Ya no hace falta estar emparejado para actualizar.
 - Pendiente de probar de punta a punta en un celular real.
+
+## Renombre visible a "Nodo Sur POS" (2026-10-01)
+
+- Cambia solo lo que se ve: nombre del programa en el instalador, accesos directos, título de ventana,
+  ficha del .exe (ProductName/FileDescription), nombre del archivo del instalador (`NodoSurPOS-Setup-<v>.exe`),
+  etiqueta de la app Android y del APK publicado.
+- **No cambia** a propósito: `AppId` del instalador (si cambia, la versión nueva no se reconoce como
+  actualización y queda una segunda instalación), carpeta `C:\LaPlazoleta\app`, `la_plazoleta.exe`,
+  el mutex, `Documents\la_plazoleta.sqlite` y la clave de la base — renombrarlos obliga a migrar la
+  instalación existente y arriesga la base. El instalador borra los accesos directos con el nombre viejo
+  para no dejar duplicados.
+- El nombre del local (encabezado del ticket) sigue siendo el del negocio, no el del programa.

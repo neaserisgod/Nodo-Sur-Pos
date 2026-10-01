@@ -14,6 +14,16 @@
 name: publicar-beta
 
 on:
+  # Cada merge a main publica una BETA (solo la ven los administradores). Si el título del PR empieza con "release:"
+  # (el commit del merge lo conserva), ese merge publica ESTABLE: le llega a los clientes. También se puede correr a mano
+  # eligiendo canal. Los commits de este workflow llevan [skip ci] y no lo vuelven a disparar.
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - '.github/**'
   workflow_dispatch:
     inputs:
       canal:
@@ -50,9 +60,10 @@ jobs:
       DSA_PRIVATE_KEY: ${{ secrets.DSA_PRIVATE_KEY }}
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
       SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
-      NOTAS: ${{ inputs.notas }}
-      CANAL: ${{ inputs.canal }}
-      ROLLOUT: ${{ inputs.rollout }}
+      # Al disparar por merge no hay inputs: canal según el título (release: → stable, si no beta), al 100 %, y el título como nota.
+      NOTAS: ${{ inputs.notas || github.event.head_commit.message || 'Versión de prueba' }}
+      CANAL: ${{ inputs.canal || (startsWith(github.event.head_commit.message, 'release:') && 'stable') || 'beta' }}
+      ROLLOUT: ${{ inputs.rollout || '100' }}
     steps:
       - name: Comprobar que están los secretos (antes de compilar nada)
         shell: pwsh
@@ -62,7 +73,11 @@ jobs:
           if ($faltan) { throw "Faltan secretos del repositorio: $($faltan -join ', '). Mirá el encabezado de este archivo." }
           if ($env:ROLLOUT -notmatch '^\d{1,3}$' -or [int]$env:ROLLOUT -lt 1 -or [int]$env:ROLLOUT -gt 100) { throw "El porcentaje tiene que ser un número de 1 a 100." }
 
+      # Siempre la punta de main al momento de correr (no el commit que disparó): si hay dos merges seguidos, la
+      # segunda corrida ya ve el número de compilación que subió la primera y no intenta publicar el mismo.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       # El script que registra la versión en el sitio (publicar-release.mjs) vive en el repo del sitio.
       - uses: actions/checkout@v4
@@ -120,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: instalador-beta
-          path: dist/LaPlazoleta-Setup-*.exe
+          path: dist/NodoSurPOS-Setup-*.exe
           retention-days: 14
 
       # El script subió el número de compilación: hay que dejarlo en el repo, o la próxima corrida intentaría publicar el mismo.
@@ -133,6 +148,7 @@ jobs:
           if (git diff --cached --quiet) { Write-Host "pubspec.yaml no cambió."; exit 0 }
           $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
           git commit -m "Publicada la beta $v [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
           if ($LASTEXITCODE -ne 0) { throw "No se pudo subir el cambio de pubspec.yaml (¿la rama está protegida?). La beta SÍ quedó publicada: pasá el número de compilación $v a mano antes de la próxima." }
 

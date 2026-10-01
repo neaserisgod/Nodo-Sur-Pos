@@ -42,7 +42,7 @@ se subió nada.
 .\tool\publicar_release.ps1 -Notas "Primera versión generalizada" -Canal beta -Rollout 100
 ```
 
-Sube el build number en `pubspec.yaml` (commiteá ese cambio), arma `dist\LaPlazoleta-Setup-<versión>.exe` y lo sube al
+Sube el build number en `pubspec.yaml` (commiteá ese cambio), arma `dist\NodoSurPOS-Setup-<versión>.exe` y lo sube al
 servidor en el canal beta.
 
 ### Alternativa: publicar la beta desde GitHub (sin tocar tu PC)
@@ -68,7 +68,7 @@ del repo y se borran al terminar.
 
 ## 4. Instalar en tu PC y revisar
 
-1. Ejecutá `dist\LaPlazoleta-Setup-<versión>.exe` (instala encima: abre tu base y la actualiza sola).
+1. Ejecutá `dist\NodoSurPOS-Setup-<versión>.exe` (instala encima: abre tu base y la actualiza sola).
 2. Al abrir aparece **"Datos de tu comercio"**: cargá nombre y dirección (salen en ventana, menú y tickets).
 3. Mirá **Configuración → Módulos**: todo debería estar prendido como antes. Vender, cerrar caja y un ticket de prueba.
 4. **Configuración → Impresión**: tu token de Mercado Pago sigue ahí (solo la copia de la nube es la que no lo lleva).

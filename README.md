@@ -101,7 +101,7 @@ sigue sirviendo para la PC de desarrollo (y ahora también sube el build).
 # Claves de firma de las actualizaciones (UNA vez; la privada queda fuera del repo)
 .\tool\generar_claves_actualizacion.ps1
 
-# Instalador en dist\LaPlazoleta-Setup-<version>.exe (imprime el SHA-256)
+# Instalador en dist\NodoSurPOS-Setup-<version>.exe (imprime el SHA-256)
 .\tool\crear_instalador.ps1
 .\tool\crear_instalador.ps1 -CertificadoDePrueba   # firma autofirmada, solo para probar
 

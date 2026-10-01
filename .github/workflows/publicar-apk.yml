@@ -89,6 +89,6 @@ jobs:
           CANAL: ${{ inputs.canal }}
         run: |
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
-          cp build/app/outputs/flutter-apk/app-release.apk "LaPlazoleta-Companion-${version}.apk"
-          node sitio/scripts/publicar-release.mjs --file "LaPlazoleta-Companion-${version}.apk" --platform android \
+          cp build/app/outputs/flutter-apk/app-release.apk "NodoSurPOS-Companion-${version}.apk"
+          node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
             --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout 100
