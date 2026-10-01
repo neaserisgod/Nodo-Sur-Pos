@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import '../ui/comun/tarjetas.dart';
 
 import '../domain/dinero.dart';
-import '../domain/markup.dart';
+import '../domain/ganancia.dart';
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
@@ -138,7 +138,7 @@ class _PantallaFormularioProductoState
   void _marcarDirty([String? _]) => _dirty = true;
 
   /// A diferencia de `_marcarDirty`, esto SÍ reconstruye — precio y costo
-  /// alimentan el margen en vivo de abajo (`_margenTexto`), así que
+  /// alimentan la ganancia en vivo de abajo (`_margenTexto`), así que
   /// necesitan un rebuild por cada tecla. Nombre/código no lo necesitan
   /// (el propio `TextField` ya se repinta solo), por eso siguen con la
   /// versión liviana.
@@ -147,11 +147,11 @@ class _PantallaFormularioProductoState
     setState(() {});
   }
 
-  /// Margen en vivo (El dueño, 2026-09-19: "que sea compacta a la vez que
-  /// potente") — mismo cálculo que "Margen en vivo" de Productos en el
-  /// escritorio (Regla 3, `markupBpDesdeCostoYPrecio`,
-  /// `lib/domain/markup.dart`), que la companion no tenía todavía. Null si
-  /// falta un dato o el costo es 0 (no hay margen que mostrar, no un error).
+  /// Ganancia en vivo (El dueño, 2026-09-19: "que sea compacta a la vez que
+  /// potente") — mismo cálculo que "Ganancia en vivo" de Productos en el
+  /// escritorio (Regla 3, `gananciaBpDesdeCostoYPrecio`,
+  /// `lib/domain/ganancia.dart`), que la companion no tenía todavía. Null si
+  /// falta un dato o el costo es 0 (no hay ganancia que mostrar, no un error).
   ///
   /// "Lenguaje de diseño" (2026-09-26, mock `MovilEditar`): dice cuánto se
   /// gana por unidad, además del porcentaje, y avisa si el precio no cubre
@@ -163,9 +163,9 @@ class _PantallaFormularioProductoState
     try {
       final precio = parsearARS(textoPrecio);
       if (precio <= costo) return (texto: 'El precio no cubre el costo', cubre: false);
-      final markupBp = markupBpDesdeCostoYPrecio(costo, precio);
+      final gananciaBp = gananciaBpDesdeCostoYPrecio(costo, precio);
       return (
-        texto: 'Ganás ${formatearARS(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(markupBp / 100).round()}%',
+        texto: 'Ganás ${formatearARS(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(gananciaBp / 100).round()}%',
         cubre: true,
       );
     } on FormatException {
@@ -187,13 +187,13 @@ class _PantallaFormularioProductoState
     }
   }
 
-  /// Precio rápido: costo + [markupBp], redondeado hacia arriba al peso
-  /// (`precioDesdeCostoYMarkup`, Regla 5) — un botón que se toca a
+  /// Precio rápido: el que da [gananciaBp] de ganancia sobre el precio, redondeado hacia arriba al peso
+  /// (`precioDesdeCostoYGanancia`, Regla 5) — un botón que se toca a
   /// propósito, nunca un autocompletado (Regla 14).
-  void _aplicarPrecioRapido(int markupBp) {
+  void _aplicarPrecioRapido(int gananciaBp) {
     final costo = _costoParseado;
     if (costo == null) return;
-    _precioCtrl.text = formatearARS(precioDesdeCostoYMarkup(costo, markupBp)).replaceAll('\$', '');
+    _precioCtrl.text = formatearARS(precioDesdeCostoYGanancia(costo, gananciaBp)).replaceAll('\$', '');
     _alCambiarPrecioOCosto('');
   }
 
@@ -344,7 +344,7 @@ class _PantallaFormularioProductoState
           ),
           const SizedBox(height: Espaciado.md),
           // Alto acotado + scroll propio adentro de la hoja — con seis
-          // campos más el margen en vivo, en un celular chico (o con el
+          // campos más la ganancia en vivo, en un celular chico (o con el
           // teclado ya abierto achicando el espacio disponible) puede no
           // entrar entero; la hoja en sí no scrollea (`mostrarHojaVidrio`),
           // así que el que scrollea es este contenido, no la hoja completa
@@ -430,9 +430,9 @@ class _PantallaFormularioProductoState
                                 tono: _margenTexto!.cubre ? Tono.ganancia : Tono.error,
                               ),
                             if (_costoParseado != null)
-                              for (final bp in const [3000, 4000, 5000])
+                              for (final bp in const [2000, 3000, 4000])
                                 ActionChip(
-                                  label: Text('+${bp ~/ 100}%'),
+                                  label: Text('${bp ~/ 100}% ganancia'),
                                   onPressed: () => _aplicarPrecioRapido(bp),
                                 ),
                           ],

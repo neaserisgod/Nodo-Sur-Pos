@@ -130,7 +130,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 45;
+  int get schemaVersion => 46;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -950,6 +950,27 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(proveedores, proveedores.cajaAparte);
         }
         await customStatement("UPDATE proveedores SET caja_aparte = 1 WHERE codigo = 'SC'");
+      }
+      // v45 → v46 (El dueño, 2026-10-01: "la fórmula para markup y ganancia
+      // completamente real"): `proveedores.markup_bp` y
+      // `categorias.markup_default_bp` pasan de ser un markup sobre el costo a
+      // ser una GANANCIA sobre el precio de venta (`domain/ganancia.dart`). Los
+      // nombres de columna quedan (renombrar obligaba a regenerar drift); lo
+      // que cambia es el significado, y por eso se convierte cada valor
+      // guardado para que los precios no se muevan: ganancia = markup /
+      // (1 + markup) (50% de markup → 33,33% de ganancia; el precio sigue
+      // siendo costo × 1,5). La fórmula se congela acá a propósito: es un paso
+      // único sobre datos viejos, no el cálculo vivo de la app. Sin tocar
+      // `actualizado_en`: cada dispositivo corre esta misma migración.
+      if (from < 46) {
+        await customStatement(
+          'UPDATE proveedores SET markup_bp = CAST(ROUND(markup_bp * 10000.0 / (10000 + markup_bp)) AS INTEGER) '
+          'WHERE markup_bp IS NOT NULL AND markup_bp > -10000',
+        );
+        await customStatement(
+          'UPDATE categorias SET markup_default_bp = CAST(ROUND(markup_default_bp * 10000.0 / (10000 + markup_default_bp)) AS INTEGER) '
+          'WHERE markup_default_bp > -10000',
+        );
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

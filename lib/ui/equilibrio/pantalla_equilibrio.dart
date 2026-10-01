@@ -105,7 +105,7 @@ class _FilaIndicadoresMes extends StatelessWidget {
         valor: formatearARS(ganancia.gananciaBrutaCentavos),
         tonoValor: Tono.ganancia,
         nota: [
-          if (margen != null) 'Margen ${(margen * 100).round()}%',
+          if (margen != null) 'Ganancia ${(margen * 100).round()}%',
           if (ganancia.vendidoSinCostoCentavos > 0) 'sin costo ${formatearARS(ganancia.vendidoSinCostoCentavos)}',
         ].join(' · '),
       ),
@@ -122,8 +122,8 @@ class _FilaIndicadoresMes extends StatelessWidget {
         etiqueta: 'Venta diaria de equilibrio',
         valor: c.ventaDiariaEquilibrio == null ? '—' : formatearARS(c.ventaDiariaEquilibrio!),
         nota: c.reservaDiariaCentavos == null
-            ? (c.ventaDiariaEquilibrio == null ? 'Falta margen o fijos para estimarla' : null)
-            : 'Margen a generar por día: ${formatearARS(c.reservaDiariaCentavos!)}',
+            ? (c.ventaDiariaEquilibrio == null ? 'Falta ganancia o fijos para estimarla' : null)
+            : 'Ganancia a generar por día: ${formatearARS(c.reservaDiariaCentavos!)}',
       ),
       TarjetaIndicador(
         etiqueta: 'Fijos pendientes de pago',

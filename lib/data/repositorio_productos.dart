@@ -7,7 +7,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/edicion_masiva_precios.dart';
 import '../domain/edicion_masiva_stock.dart';
-import '../domain/markup.dart' show precioConMarkupACentena;
+import '../domain/ganancia.dart' show precioConGananciaACentena;
 import '../domain/pesables.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
@@ -863,7 +863,7 @@ Future<List<Proveedor>> listarProveedores(AppDatabase db) =>
 //
 // El dueño, 2026-09-29: "un selector de porcentaje por proveedor + redondeo
 // para arriba a la próxima centena, exceptuando los cigarros". El precio de
-// un producto con costo sale de `precioConMarkupACentena` (domain/markup.dart)
+// un producto con costo sale de `precioConGananciaACentena` (domain/ganancia.dart)
 // con el porcentaje de su proveedor — salvo cigarrillos, "Varios" y los
 // productos marcados con precio fijo.
 
@@ -885,7 +885,7 @@ Future<int?> _precioAutomatico(
   )..where((p) => p.id.equals(proveedorId))).getSingleOrNull();
   final bp = proveedor?.markupBp;
   if (bp == null) return null;
-  return precioConMarkupACentena(costoCentavos, bp);
+  return precioConGananciaACentena(costoCentavos, bp);
 }
 
 /// Fija (o saca, con null) el porcentaje de ganancia de un proveedor. No toca
@@ -893,13 +893,13 @@ Future<int?> _precioAutomatico(
 Future<void> guardarPorcentajeProveedor(
   AppDatabase db, {
   required int proveedorId,
-  required int? markupBp,
+  required int? gananciaBp,
 }) {
   return (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
     ProveedoresCompanion(
-      markupBp: Value(markupBp),
+      markupBp: Value(gananciaBp),
       actualizadoEn: Value(DateTime.now()),
     ),
   );

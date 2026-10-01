@@ -94,7 +94,7 @@ void main() {
 
       await _pump(tester, db, usuarioId: usuarioId);
 
-      expect(find.textContaining('Margen 35%'), findsOneWidget);
+      expect(find.textContaining('Ganancia 35%'), findsOneWidget);
     });
   });
 
@@ -116,7 +116,7 @@ void main() {
       // planilla real nunca restó los fijos pendientes del retiro).
       expect(find.textContaining('Pendiente:'), findsOneWidget);
       expect(find.textContaining('Pendiente (lo que descuenta el retiro)'), findsNothing);
-      expect(find.textContaining('Margen a generar por día'), findsOneWidget);
+      expect(find.textContaining('Ganancia a generar por día'), findsOneWidget);
     });
 
     testWidgets('registrar un pago de un fijo reduce lo pendiente', (tester) async {

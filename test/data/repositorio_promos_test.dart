@@ -54,29 +54,29 @@ void main() {
         db,
         nombre: nombre,
         articulos: [(productoId: yerba, cantidad: 1), (productoId: galletitas, cantidad: 1)],
-        markupBp: bp,
+        gananciaBp: bp,
         usuarioId: usuarioId,
       );
 
   Future<Producto> leer(int id) => (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle();
 
-  test('la promo suma los costos, agrega el porcentaje y redondea a la centena', () async {
-    final id = await crear(); // costo 1.500 * 1,3 = 1.950 → 2.000 (lista 2.300)
+  test('la promo suma los costos, aplica la ganancia y redondea a la centena', () async {
+    final id = await crear(); // costo 1.500 / 0,7 = 2.142,86 → 2.200 (lista 2.300)
     final promo = await leer(id);
     expect(promo.esPromo, true);
     expect(promo.costoCentavos, 150000);
-    expect(promo.precioCentavos, 200000);
+    expect(promo.precioCentavos, 220000);
     expect((await listarPromos(db)).single.componentes, hasLength(2));
   });
 
-  test('nunca pasa del precio de lista: con 100% el tope es la suma de las listas', () async {
-    final id = await crear(bp: 10000); // 1.500 * 2 = 3.000, pero la lista suma 2.300
+  test('nunca pasa del precio de lista: con 60% el tope es la suma de las listas', () async {
+    final id = await crear(bp: 6000); // 1.500 / 0,4 = 3.750 → 3.800, pero la lista suma 2.300
     expect((await leer(id)).precioCentavos, 230000);
   });
 
   test('no se guarda con menos de dos artículos, con cigarrillos, pesables o sin costo', () async {
     await expectLater(
-      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 2)], markupBp: 3000, usuarioId: usuarioId),
+      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 2)], gananciaBp: 3000, usuarioId: usuarioId),
       throwsArgumentError,
     );
     final atado = await db.into(db.productos).insert(
@@ -88,12 +88,12 @@ void main() {
           ),
         );
     await expectLater(
-      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 1), (productoId: atado, cantidad: 1)], markupBp: 3000, usuarioId: usuarioId),
+      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 1), (productoId: atado, cantidad: 1)], gananciaBp: 3000, usuarioId: usuarioId),
       throwsArgumentError,
     );
     final sinCosto = await db.into(db.productos).insert(ProductosCompanion.insert(nombre: 'Sin costo', precioCentavos: const Value(100000)));
     await expectLater(
-      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 1), (productoId: sinCosto, cantidad: 1)], markupBp: 3000, usuarioId: usuarioId),
+      guardarPromo(db, nombre: 'X', articulos: [(productoId: yerba, cantidad: 1), (productoId: sinCosto, cantidad: 1)], gananciaBp: 3000, usuarioId: usuarioId),
       throwsArgumentError,
     );
   });
@@ -106,13 +106,13 @@ void main() {
           ProductosCompanion.insert(nombre: 'Barato 2', costoCentavos: const Value(100000), precioCentavos: const Value(80000)),
         );
     await expectLater(
-      guardarPromo(db, nombre: 'X', articulos: [(productoId: barato, cantidad: 1), (productoId: barato2, cantidad: 1)], markupBp: 3000, usuarioId: usuarioId),
+      guardarPromo(db, nombre: 'X', articulos: [(productoId: barato, cantidad: 1), (productoId: barato2, cantidad: 1)], gananciaBp: 3000, usuarioId: usuarioId),
       throwsArgumentError,
     );
   });
 
   test('cobrar una promo descuenta el stock de cada artículo y abre la venta en sus líneas', () async {
-    final promoId = await crear(); // precio 2.000
+    final promoId = await crear(); // precio 2.200
     final promo = await leer(promoId);
     final linea = LineaVentaPorUnidad(
       productoId: promo.id.toString(),
@@ -139,9 +139,9 @@ void main() {
     expect(stock.map((s) => s.productoId).toSet(), {yerba, galletitas});
 
     // Las líneas guardadas son las de los artículos, con su costo y proveedor,
-    // y suman exactamente lo cobrado (2 × $2.000 = $4.000).
+    // y suman exactamente lo cobrado (2 × $2.200 = $4.400).
     final lineas = await (db.select(db.lineasDeVenta)..where((l) => l.ventaId.equals(ventaId))).get();
-    expect(lineas.fold<int>(0, (a, l) => a + l.precioUnitarioCentavos * (l.cantidad ?? 1)), 400000);
+    expect(lineas.fold<int>(0, (a, l) => a + l.precioUnitarioCentavos * (l.cantidad ?? 1)), 440000);
     final deYerba = lineas.where((l) => l.productoId == yerba);
     expect(deYerba.every((l) => l.proveedorIdFoto == provA && l.costoUnitarioCentavos == 100000), true);
     expect(lineas.where((l) => l.productoId == galletitas).every((l) => l.proveedorIdFoto == provB), true);

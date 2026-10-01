@@ -18,7 +18,7 @@
 import 'package:drift/drift.dart';
 
 import '../domain/ajuste_a_disponible.dart';
-import '../domain/markup.dart';
+import '../domain/ganancia.dart';
 import '../domain/reposicion.dart';
 import '../domain/separacion_por_medio.dart';
 import 'database.dart';
@@ -251,7 +251,7 @@ class SeparacionDelDia {
   final int vendidoSinCostoCentavos;
 
   /// Reposición (costo) y ganancia de las líneas CON costo: vendido con
-  /// costo = costo + ganancia (costo + markup).
+  /// costo = costo + ganancia.
   final int costoCentavos;
   final int gananciaCentavos;
   final int gananciaMpCentavos;
@@ -1416,10 +1416,11 @@ class ProductoDeProveedor {
   final int? costoCentavos;
   final int? precioCentavos;
 
-  /// Basis points (`markupBpDesdeCostoYPrecio`) — null si falta costo o
-  /// precio, o si el costo es 0 (Regla 5: un producto sin costo cargado no
-  /// se puede valorizar, y un costo en 0 daría un margen infinito).
-  final int? margenBp;
+  /// Ganancia sobre el precio en basis points (`gananciaBpDesdeCostoYPrecio`)
+  /// — null si falta costo o precio, si el costo es 0 (Regla 5: un producto
+  /// sin costo cargado no se puede valorizar) o si el precio es 0 (daría una
+  /// ganancia infinita).
+  final int? gananciaBp;
 
   /// Para la barra de acento por rubro de la fila (`BarraCategoria`,
   /// `ui/comun/color_categoria.dart`) — rediseño de Proveedores 2026-09-25,
@@ -1444,7 +1445,7 @@ class ProductoDeProveedor {
     required this.nombre,
     required this.costoCentavos,
     required this.precioCentavos,
-    required this.margenBp,
+    required this.gananciaBp,
     required this.categoriaId,
     this.proveedorId,
     this.esPesable = false,
@@ -1460,7 +1461,7 @@ ProductoDeProveedor _productoDeProveedorDesde(Producto p) =>
       nombre: p.nombre,
       costoCentavos: p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos,
       precioCentavos: p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos,
-      margenBp: _margenBpDeProducto(p),
+      gananciaBp: _gananciaBpDeProducto(p),
       categoriaId: p.categoriaId,
       proveedorId: p.proveedorId,
       esPesable: p.esPesable,
@@ -1531,9 +1532,9 @@ Future<List<ProductoDeProveedor>> productosSinProveedor(AppDatabase db) async {
   return productos.map(_productoDeProveedorDesde).toList();
 }
 
-int? _margenBpDeProducto(Producto p) {
+int? _gananciaBpDeProducto(Producto p) {
   final costo = p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos;
   final precio = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
-  if (costo == null || costo == 0 || precio == null) return null;
-  return markupBpDesdeCostoYPrecio(costo, precio);
+  if (costo == null || costo == 0 || precio == null || precio == 0) return null;
+  return gananciaBpDesdeCostoYPrecio(costo, precio);
 }

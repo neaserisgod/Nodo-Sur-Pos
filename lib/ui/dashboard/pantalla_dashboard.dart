@@ -254,8 +254,8 @@ class _FilaIndicadores extends StatelessWidget {
 
     final margen = t.margen;
     final notaGanancia = t.vendidoSinCostoCentavos > 0
-        ? '${margen == null ? '' : 'Margen ${_porcentaje(margen)} · '}sin costo ${_plata(t.vendidoSinCostoCentavos)}'
-        : (margen == null ? null : 'Margen ${_porcentaje(margen)}');
+        ? '${margen == null ? '' : 'Ganancia ${_porcentaje(margen)} · '}sin costo ${_plata(t.vendidoSinCostoCentavos)}'
+        : (margen == null ? null : 'Ganancia ${_porcentaje(margen)}');
 
     final notaSeparar = t.proveedoresConAlgoQueSeparar == 0
         ? 'Nada que separar todavía'

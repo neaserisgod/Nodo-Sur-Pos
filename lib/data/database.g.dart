@@ -1679,7 +1679,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
 
   /// Porcentaje de ganancia sobre el costo (basis points, 3000 = 30%) con el
   /// que se calculan los precios de sus productos: costo + esto, redondeado
-  /// hacia arriba a la próxima centena (`precioConMarkupACentena`). Null =
+  /// hacia arriba a la próxima centena (`precioConGananciaACentena`). Null =
   /// sin porcentaje, los precios se cargan a mano. Bruno, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   final int? markupBp;

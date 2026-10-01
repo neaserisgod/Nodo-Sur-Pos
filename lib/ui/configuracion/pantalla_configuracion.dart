@@ -205,7 +205,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cigarrillos => 'atado suelto lata cigarrillos recargo qr',
   SeccionConfiguracion.cajaYRedondeo => 'fondo vuelto cajon efectivo redondeo paso',
   SeccionConfiguracion.vuelto => 'caramelo vuelto producto alt c',
-  SeccionConfiguracion.categorias => 'rubro markup margen categoria',
+  SeccionConfiguracion.categorias => 'rubro ganancia margen markup categoria',
   SeccionConfiguracion.usuarios => 'empleado turno persona nombre',
   SeccionConfiguracion.mediosPago => 'efectivo mercado pago qr debito',
   SeccionConfiguracion.menu => 'menu orden ocultar secciones',
@@ -223,7 +223,7 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
   SeccionConfiguracion.vuelto => 'Botón de vuelto',
-  SeccionConfiguracion.categorias => 'Categorías (markup)',
+  SeccionConfiguracion.categorias => 'Categorías (ganancia)',
   SeccionConfiguracion.usuarios => 'Usuarios',
   SeccionConfiguracion.mediosPago => 'Medios de pago',
   SeccionConfiguracion.menu => 'Secciones del menú',
@@ -536,7 +536,7 @@ class _SeccionCategorias extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Markup de referencia por categoría (Regla 14, informativo)',
+            'Ganancia de referencia por categoría, sobre el precio (Regla 14, informativo)',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: Espaciado.lg),
@@ -565,7 +565,7 @@ class _SeccionCategorias extends StatelessWidget {
                       ),
                       onFieldSubmitted: (v) {
                         final pct = int.tryParse(v);
-                        if (pct != null) {
+                        if (pct != null && pct >= 0 && pct < 100) {
                           c.guardarMarkupCategoria(categoria.id, pct * 100);
                         }
                       },

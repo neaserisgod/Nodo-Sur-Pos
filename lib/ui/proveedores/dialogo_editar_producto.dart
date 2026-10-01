@@ -17,7 +17,7 @@ import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart';
 import '../../domain/dinero.dart';
-import '../../domain/markup.dart';
+import '../../domain/ganancia.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
 import '../comun/modal.dart';
@@ -165,7 +165,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
     if (precio == null || costo == null || costo <= 0) return null;
     if (precio <= costo)
       return (texto: 'El precio no cubre el costo', cubre: false);
-    final bp = markupBpDesdeCostoYPrecio(costo, precio);
+    final bp = gananciaBpDesdeCostoYPrecio(costo, precio);
     return (
       texto:
           'Ganás ${formatearARS(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(bp / 100).round()}%',
@@ -175,7 +175,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
 
   /// Porcentaje del proveedor elegido en el diálogo (basis points), o null si
   /// no tiene. Los cigarrillos nunca lo usan (Regla 6).
-  int? get _markupBp {
+  int? get _gananciaBp {
     if (_tipoCigarrillo != 'ninguno') return null;
     for (final r in widget.controlador.resumenes) {
       if (r.proveedor.id == _proveedorId) return r.proveedor.markupBp;
@@ -184,25 +184,25 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
   }
 
   /// El producto puede tener precio automático (su proveedor tiene %).
-  bool get _aplicaAutomatico => _markupBp != null;
+  bool get _aplicaAutomatico => _gananciaBp != null;
 
   /// Y hoy lo tiene: el precio sale del costo, no se tipea.
   bool get _esAutomatico => _aplicaAutomatico && !_fijo;
 
-  /// Precio = costo + porcentaje del proveedor, redondeado a la próxima
-  /// centena (`precioConMarkupACentena`, Regla 3: mismo cálculo que al aplicar
+  /// Precio con la ganancia del proveedor, redondeado a la próxima
+  /// centena (`precioConGananciaACentena`, Regla 3: mismo cálculo que al aplicar
   /// el porcentaje desde Proveedores). Solo en modo automático y con costo.
   void _recalcularPrecioAutomatico() {
     if (!_esAutomatico) return;
     final costo = _parsearONulo(_ctrlCosto.text);
     if (costo == null || costo <= 0) return;
     _ctrlPrecio.text = formatearARS(
-      precioConMarkupACentena(costo, _markupBp!),
+      precioConGananciaACentena(costo, _gananciaBp!),
     ).replaceAll('\$', '');
   }
 
   String get _porcentajeTexto {
-    final bp = _markupBp!;
+    final bp = _gananciaBp!;
     return '${bp % 100 == 0 ? bp ~/ 100 : (bp / 100).toStringAsFixed(1)}%';
   }
 
@@ -516,7 +516,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Insignia(
-                          texto: ganancia?.texto ?? 'Margen: sin costo cargado',
+                          texto: ganancia?.texto ?? 'Ganancia: sin costo cargado',
                           tono: ganancia == null
                               ? Tono.neutro
                               : (ganancia.cubre ? Tono.ganancia : Tono.error),
@@ -527,7 +527,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                             label: Text(
                               _fijo
                                   ? 'Precio fijo (a mano)'
-                                  : 'Automático: costo + $_porcentajeTexto, a la centena',
+                                  : 'Automático: $_porcentajeTexto de ganancia, a la centena',
                             ),
                             selected: _fijo,
                             onSelected: (fijo) => setState(() {

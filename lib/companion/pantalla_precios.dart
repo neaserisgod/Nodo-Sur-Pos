@@ -15,7 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../domain/markup.dart';
+import '../domain/ganancia.dart';
 import '../ui/comun/tarjetas.dart';
 
 import '../domain/dinero.dart';
@@ -646,7 +646,7 @@ class _TarjetaProducto extends StatelessWidget {
     final costo = p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos;
     final porKilo = p.esPesable ? '/kg' : '';
     // Costo $0 = sin costo (Regla 4): sin margen que mostrar.
-    final margen = precio == null || costo == null || costo <= 0 ? null : markupBpDesdeCostoYPrecio(costo, precio);
+    final margen = precio == null || costo == null || costo <= 0 || precio <= 0 ? null : gananciaBpDesdeCostoYPrecio(costo, precio);
     final stock = p.esPesable ? p.stockGramos ?? 0 : p.stock;
     return Superficie(
       padding: EdgeInsets.zero,
@@ -678,7 +678,7 @@ class _TarjetaProducto extends StatelessWidget {
                         ),
                         if (margen != null) ...[
                           const SizedBox(width: Espaciado.sm),
-                          Insignia(texto: '+${(margen / 100).round()}%', tono: Tono.ganancia),
+                          Insignia(texto: '${(margen / 100).round()}% gan.', tono: Tono.ganancia),
                         ],
                       ],
                     ),

@@ -4,9 +4,11 @@ class Categorias extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get nombre => text().withLength(min: 1, max: 60)();
 
-  /// Solo informativo (Regla 14: "no se sugiere ni se aplica markup
-  /// automático"). Se muestra en la pantalla de productos, nunca se usa
-  /// para calcular ni completar un precio o costo.
+  /// Ganancia de referencia sobre el precio de venta (basis points; ver
+  /// `domain/ganancia.dart`). El nombre de la columna es histórico: hasta la
+  /// v46 guardaba un markup sobre el costo. Solo informativo (Regla 14: "no se
+  /// sugiere ni se aplica ganancia automática"): nunca se usa para calcular ni
+  /// completar un precio o costo.
   IntColumn get markupDefaultBp => integer().withDefault(const Constant(0))();
 
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
@@ -120,9 +122,11 @@ class Proveedores extends Table {
   /// significa "desde siempre".
   DateTimeColumn get gananciaRevisadaFecha => dateTime().nullable()();
 
-  /// Porcentaje de ganancia sobre el costo (basis points, 3000 = 30%) con el
-  /// que se calculan los precios de sus productos: costo + esto, redondeado
-  /// hacia arriba a la próxima centena (`precioConMarkupACentena`). Null =
+  /// Porcentaje de ganancia sobre el PRECIO de venta (basis points, 3000 =
+  /// 30%) con el que se calculan los precios de sus productos: costo / (1 −
+  /// esto), redondeado hacia arriba a la próxima centena
+  /// (`precioConGananciaACentena`). El nombre de la columna es histórico (hasta
+  /// la v46 guardaba un markup sobre el costo; la migración lo convirtió). Null =
   /// sin porcentaje, los precios se cargan a mano. El dueño, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   IntColumn get markupBp => integer().nullable()();

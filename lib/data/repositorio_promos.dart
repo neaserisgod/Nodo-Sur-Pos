@@ -7,7 +7,7 @@
 
 import 'package:drift/drift.dart';
 
-import '../domain/markup.dart';
+import '../domain/ganancia.dart';
 import '../domain/promo.dart';
 import 'database.dart';
 import 'repositorio_productos.dart' show registrarCambioDePrecio;
@@ -87,14 +87,14 @@ class PrecioDePromoCalculado {
 }
 
 /// Null si falta algún costo o precio (no hay con qué calcular).
-PrecioDePromoCalculado? calcularPromo(List<ComponenteDePromo> componentes, int markupBp) {
+PrecioDePromoCalculado? calcularPromo(List<ComponenteDePromo> componentes, int gananciaBp) {
   if (componentes.isEmpty) return null;
   for (final c in componentes) {
     if ((c.producto.costoCentavos ?? 0) <= 0 || c.producto.precioCentavos == null) return null;
   }
   final costo = componentes.fold(0, (a, c) => a + c.costoCentavos);
   final lista = componentes.fold(0, (a, c) => a + c.listaCentavos);
-  final r = precioDePromo(costoTotalCentavos: costo, precioListaTotalCentavos: lista, markupBp: markupBp);
+  final r = precioDePromo(costoTotalCentavos: costo, precioListaTotalCentavos: lista, gananciaBp: gananciaBp);
   return PrecioDePromoCalculado(
     costoCentavos: costo,
     listaCentavos: lista,
@@ -113,7 +113,7 @@ Future<int> guardarPromo(
   int? promoId,
   required String nombre,
   required List<({int productoId, int cantidad})> articulos,
-  required int markupBp,
+  required int gananciaBp,
   required int usuarioId,
 }) {
   return db.transaction(() async {
@@ -135,7 +135,7 @@ Future<int> guardarPromo(
       componentes.add(ComponenteDePromo(producto: p, cantidad: a.cantidad));
     }
 
-    final calculo = calcularPromo(componentes, markupBp)!;
+    final calculo = calcularPromo(componentes, gananciaBp)!;
     if (!calculo.cubreElCosto) {
       throw ArgumentError('El precio de lista de los artículos no cubre su costo: la promo perdería plata');
     }

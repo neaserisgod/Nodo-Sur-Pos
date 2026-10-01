@@ -83,7 +83,7 @@ class TableroCompanionState extends State<TableroCompanion> {
                 etiqueta: 'Ganancia',
                 valor: formatearARS(t.gananciaCentavos),
                 tonoValor: Tono.ganancia,
-                nota: margen == null ? null : 'Margen ${(margen * 100).round()}%',
+                nota: margen == null ? null : 'Ganancia ${(margen * 100).round()}%',
               ),
             ),
           ],

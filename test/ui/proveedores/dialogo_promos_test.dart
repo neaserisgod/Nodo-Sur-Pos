@@ -72,13 +72,13 @@ void main() {
     await tester.tap(find.text('Galletitas Terrabusi').last);
     await tester.pumpAndSettle();
 
-    // 30%: costo 1.500 → 1.950 → 2.000 (sueltos 2.300).
-    expect(find.text(r'$2.000'), findsWidgets);
-    expect(find.textContaining('Costo + 30%'), findsOneWidget);
+    // 30%: costo 1.500 / 0,7 = 2.142,86 → 2.200 (sueltos 2.300).
+    expect(find.text(r'$2.200'), findsWidgets);
+    expect(find.textContaining('30% de ganancia'), findsOneWidget);
     await guardarCaptura(tester, llave, 'proveedores-promo-creador');
 
-    // 100%: pediría 3.000 pero la lista suma 2.300 → tope.
-    await tester.tap(find.text('100%'));
+    // 40%: pediría 2.500 pero la lista suma 2.300 → tope.
+    await tester.tap(find.text('40%'));
     await tester.pumpAndSettle();
     expect(find.text(r'$2.300'), findsWidgets);
     expect(find.textContaining('Tope'), findsOneWidget);
@@ -90,7 +90,7 @@ void main() {
 
     final promos = await tester.runAsync(() => listarPromos(db));
     expect(promos!.single.promo.nombre, 'Merienda');
-    expect(promos.single.promo.precioCentavos, 200000);
+    expect(promos.single.promo.precioCentavos, 220000);
     expect(find.text('Merienda'), findsOneWidget); // ya en la lista
   });
 }

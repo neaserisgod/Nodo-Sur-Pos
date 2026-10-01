@@ -138,7 +138,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             valor: config.productoVueltoId == null ? 'Sin configurar' : 'Configurado',
             onTap: _elegirProductoVuelto,
           ),
-          _tituloSeccion(context, 'Categorías (markup de referencia)'),
+          _tituloSeccion(context, 'Categorías (ganancia de referencia)'),
           for (final c in _categorias)
             FilaDatoCompanion(
               etiqueta: c.nombre,
@@ -222,12 +222,12 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       context,
       builder: (context) => _HojaTextoSimple(
         titulo: categoria.nombre,
-        etiqueta: 'Markup de referencia (%)',
+        etiqueta: 'Ganancia de referencia sobre el precio (%)',
         controller: ctrl,
         keyboardType: TextInputType.number,
         onGuardar: (texto) async {
           final pct = int.tryParse(texto.trim());
-          if (pct == null) throw const FormatException('Escribí un número entero');
+          if (pct == null || pct < 0 || pct >= 100) throw const FormatException('Escribí un número entero, de 0 a 99');
           await _servicio!.actualizarMarkupCategoria(categoria.id, pct * 100);
         },
       ),

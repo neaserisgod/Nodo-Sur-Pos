@@ -31,7 +31,7 @@ void main() {
       db,
       nombre: 'Merienda',
       articulos: [(productoId: yerba, cantidad: 1), (productoId: galletitas, cantidad: 1)],
-      markupBp: 3000,
+      gananciaBp: 3000,
       usuarioId: usuarioId,
     );
   });
@@ -46,7 +46,7 @@ void main() {
 
     c.agregarProducto(c.coincidencias.single);
     c.elegirMedio(ComposicionPago.efectivo);
-    expect(c.resultado!.totalCentavos, 200000);
+    expect(c.resultado!.totalCentavos, 220000);
     await c.cobrarActual();
 
     // Se llevó las galletitas (había 1): la promo ya no alcanza.

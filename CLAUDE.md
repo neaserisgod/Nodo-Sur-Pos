@@ -134,7 +134,7 @@ lib/
 **`domain/` no importa nada de Flutter ni de la base.** Es la única capa que se
 testea exhaustivamente y la que tiene que sobrevivir a cualquier cambio de interfaz.
 
-Módulos de dominio previstos: `dinero`, `markup`, `pesables`, `recargo_cigarrillos`,
+Módulos de dominio previstos: `dinero`, `ganancia`, `pesables`, `recargo_cigarrillos`,
 `redondeo`, `reposicion`, `equilibrio`, `retiro`, `caja`, `ticket`.
 
 ## Convenciones que no se rompen
@@ -396,7 +396,7 @@ El recargo de cigarrillos **no tiene tecla**: se calcula solo según el medio de
 
 ## Qué es configurable y qué no
 
-**Configurable:** los tres montos del recargo de cigarrillos · markup por defecto
+**Configurable:** los tres montos del recargo de cigarrillos · ganancia de referencia (sobre el precio)
 por categoría · fondo fijo de caja · reserva diaria de fijos · día del retiro
 semanal · colchón de reposición por proveedor · paso de redondeo en efectivo
 (default 100) · producto del botón de vuelto · rutas de respaldo y de PDF · qué

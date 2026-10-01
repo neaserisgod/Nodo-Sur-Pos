@@ -352,10 +352,10 @@ class _TarjetaProductoProveedor extends StatelessWidget {
                     child: Text(precio, style: textTheme.titleLarge?.tabular),
                   ),
                 ),
-                if (producto.margenBp != null) ...[
+                if (producto.gananciaBp != null) ...[
                   const SizedBox(width: Espaciado.sm),
                   Insignia(
-                    texto: '+${(producto.margenBp! / 100).round()}%',
+                    texto: '${(producto.gananciaBp! / 100).round()}% gan.',
                     tono: Tono.ganancia,
                   ),
                 ],

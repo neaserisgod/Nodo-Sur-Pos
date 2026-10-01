@@ -520,11 +520,11 @@ class ProveedoresControlador extends ChangeNotifier {
   // ─── Porcentaje de ganancia del proveedor (2026-09-29) ───────────────
 
   /// Guarda el porcentaje (null = sin porcentaje). No cambia ningún precio.
-  Future<void> guardarPorcentaje(int? markupBp) async {
+  Future<void> guardarPorcentaje(int? gananciaBp) async {
     await repo_productos.guardarPorcentajeProveedor(
       db,
       proveedorId: seleccionado!.id,
-      markupBp: markupBp,
+      gananciaBp: gananciaBp,
     );
     await cargarTodo();
   }
