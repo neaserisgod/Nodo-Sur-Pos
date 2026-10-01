@@ -70,7 +70,7 @@ void main() {
     await venta(DateTime(2026, 7, 31), 9000, 1000); // otro mes: no entra
     await cargarFijos();
     await movimiento('GASTO', 150, DateTime(2026, 8, 5)); // gasto rápido (variable)
-    await movimiento('GASTO', 500, DateTime(2026, 8, 6), gastoFijoId: 1); // pago de un fijo: NO es variable
+    await movimiento('GASTO', 500, DateTime(2026, 8, 6), gastoFijoId: sueldoId); // pago de un fijo: NO es variable
     await movimiento('RETIRO', 400, DateTime(2026, 8, 20));
     await movimiento('RETIRO', 999, DateTime(2026, 7, 20)); // otro mes: no entra
 
