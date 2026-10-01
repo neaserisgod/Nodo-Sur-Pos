@@ -164,8 +164,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   Baja solo cuando el servidor avisa (WebSocket a un Durable Object, sin sondeo): hay que **desplegar `NodoSurPage`**
   (agrega el binding `SYNC_HUB` y su migración) y probarlo con dos dispositivos reales — la hibernación y el upgrade
   del WebSocket no se pueden probar sin Cloudflare.
-  Falta: el celular (fase 3, traspaso automático wifi → nube), elegir "PC y celular" / "solo celular" (fase 4), la
-  estética nueva de la companion (fase 5), y un indicador de estado en la UI. Servidor en `NodoSurPage` (rama
+  Falta: un indicador de estado de la sync en la UI de escritorio. Servidor en `NodoSurPage` (rama
   `claude/quirky-noether-pbunw6`).
 - **Sync por la nube, fase 3 (celular) — hecha, sin probar en un Android real**: el celular sincroniza con la PC por
   wifi mientras contesta y pasa solo a la nube cuando se apaga (`conmutador_sync.dart`, `sync_nube_companion.dart`);
@@ -176,7 +175,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
 - **Sync por la nube, fase 4 (elegir modo) — hecha, sin probar en un Android real**: pantalla "¿Cómo vas a usar el
   sistema?" al primer arranque (`pantalla_elegir_modo.dart`, `modo_uso.dart`, `flujo_modo_uso.dart`), "PC y celular" o
   "solo celular", cambiable desde Gestión; las instalaciones viejas conservan el modo que ya tenían. Suite de las áreas
-  tocadas: 346 verdes. Falta: la estética nueva del PDF en la companion (fase 5).
+  tocadas: 346 verdes. La estética nueva de la companion (fase 5) no se toca: el dueño dice que ya está aplicada. Las pantallas nuevas (Cuenta, Elegir modo) usan el mismo kit de la companion.
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no
