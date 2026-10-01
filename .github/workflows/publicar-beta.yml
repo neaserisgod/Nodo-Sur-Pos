@@ -1,7 +1,7 @@
 # Compila el instalador de Windows, lo firma para el actualizador y lo publica en el canal BETA de horsepos.com:
 # desde ahí la bajan las cuentas de administrador en horsepos.com/descargar/ y la reciben por actualización automática.
-# Se dispara a mano (Actions → "publicar-beta" → Run workflow). NO publica para clientes (canal estable): eso
-# sigue siendo una decisión tuya, con `tool/publicar_release.ps1` o desde este mismo flujo cambiando el canal más adelante.
+# Se dispara a mano (Actions → "publicar-beta" → Run workflow). Por defecto publica en beta (solo administradores).
+# Con canal = stable le llega a los clientes: es una decisión tuya, siempre a mano, nunca automática.
 #
 # Secretos que tiene que tener el repositorio (Settings → Secrets and variables → Actions):
 #   RELEASE_TOKEN          el mismo valor que el secreto del Worker (registra la versión en el sitio)
@@ -16,12 +16,18 @@ name: publicar-beta
 on:
   workflow_dispatch:
     inputs:
+      canal:
+        description: "beta = solo administradores (prueba). stable = les llega a los clientes por actualización automática"
+        required: true
+        type: choice
+        options: [beta, stable]
+        default: beta
       notas:
         description: Qué cambió (se ve en las notas de la versión)
         required: true
         default: Versión de prueba
       rollout:
-        description: Porcentaje de las PC con acceso (la beta solo la ven administradores; dejá 100)
+        description: Porcentaje de las PC con acceso (en beta dejá 100; en stable conviene empezar bajo y subirlo desde /admin/)
         required: true
         default: '100'
 
@@ -45,6 +51,7 @@ jobs:
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
       SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
       NOTAS: ${{ inputs.notas }}
+      CANAL: ${{ inputs.canal }}
       ROLLOUT: ${{ inputs.rollout }}
     steps:
       - name: Comprobar que están los secretos (antes de compilar nada)
@@ -107,7 +114,7 @@ jobs:
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
           SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
-        run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal beta -Rollout ([int]$env:ROLLOUT)
+        run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT)
 
       - name: Guardar el instalador también como archivo de la corrida
         uses: actions/upload-artifact@v4
