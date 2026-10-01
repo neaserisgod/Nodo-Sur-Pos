@@ -24,11 +24,25 @@ android {
         versionName = flutter.versionName
     }
 
+    // Android solo deja actualizar una app instalada si el APK nuevo lleva la MISMA firma. El APK que ya
+    // está en el celular salió firmado con el debug.keystore de la PC del dueño; para que el CI genere APK
+    // que lo actualicen, ese mismo keystore va como secreto (ANDROID_KEYSTORE_BASE64) y el workflow
+    // exporta ANDROID_KEYSTORE_PATH. Sin esa variable (build local) se sigue firmando con el debug de la máquina.
+    val keystoreCI = System.getenv("ANDROID_KEYSTORE_PATH")
+    if (keystoreCI != null) {
+        signingConfigs {
+            create("ci") {
+                storeFile = file(keystoreCI)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "android"
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "androiddebugkey"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "android"
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (keystoreCI != null) "ci" else "debug")
         }
     }
 }

@@ -1397,3 +1397,16 @@ Decididas con el dueño antes de empezar (fase 1):
   Equilibrio lo crea y el monto se carga como cualquier fijo del mes. Los pagos GASTO sin fijo son los variables.
 - **Sin fijos cargados el retirable está sobreestimado** (no hay gastos que restar): por eso el aviso lo dice.
 - **Margen necesario y precio mínimo sugerido**: tarjeta en Equilibrio; los dos datos que se tipean (venta objetivo, ganancia a retener) viven en `shared_preferences`, sin tocar el esquema.
+
+## APK de la companion por el sitio (2026-10-01)
+
+- **El APK se publica como plataforma `android` en el sitio** (workflow `publicar-apk`, ubuntu): R2 + `releases`,
+  mismo mecanismo que el instalador de Windows. No sube el build number (usa el de `pubspec.yaml`).
+- **Firma de Android = la del APK ya instalado.** Android rechaza actualizar si cambia la firma. El APK del celular
+  salió firmado con el `debug.keystore` de la PC del dueño, así que ese archivo va como secreto
+  `ANDROID_KEYSTORE_BASE64` y `build.gradle.kts` lo usa cuando existe `ANDROID_KEYSTORE_PATH`. Sin secreto el
+  workflow no corre (un APK con otra firma obligaría a desinstalar y perder el emparejamiento).
+- **El celular mira primero el sitio** (`/api/update/latest.json`, estable, sin `cid` → solo versiones al 100 %),
+  verifica el sha256 antes de dárselo a Android, y solo si el sitio no responde cae al plan B de siempre (la PC
+  emparejada). Ya no hace falta estar emparejado para actualizar.
+- Pendiente de probar de punta a punta en un celular real.
