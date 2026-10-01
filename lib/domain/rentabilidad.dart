@@ -247,3 +247,20 @@ bool estaPorDebajoDelMargen({required int costoCentavos, required int precioCent
   if (costoCentavos <= 0 || precioCentavos <= 0) return false;
   return gananciaBpDesdeCostoYPrecio(costoCentavos, precioCentavos) < margenNecesarioBp;
 }
+
+/// El margen necesario del mes contra los gastos REALES ya cargados en [estado]
+/// (fijos, variables y sueldo objetivo), la ganancia que el dueño quiere
+/// retener y la venta que espera. Un solo lugar para esta cuenta: la pantalla
+/// no arma el `margenNecesarioBp` a mano.
+int? margenNecesarioBpDe(
+  EstadoDeResultados estado, {
+  required int ventaObjetivoCentavos,
+  required int gananciaARetenerCentavos,
+}) =>
+    margenNecesarioBp(
+      gastosFijosCentavos: estado.gastosFijosCentavos,
+      gastosVariablesCentavos: estado.gastosVariablesCentavos,
+      sueldoObjetivoCentavos: estado.sueldoObjetivoCentavos,
+      gananciaARetenerCentavos: gananciaARetenerCentavos,
+      ventaEstimadaCentavos: ventaObjetivoCentavos,
+    );

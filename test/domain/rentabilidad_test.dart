@@ -115,6 +115,22 @@ void main() {
     });
   });
 
+  group('margenNecesarioBpDe — contra los gastos reales del mes', () {
+    test('toma fijos, variables y sueldo del estado y suma lo que se quiere retener', () {
+      final e = calcularEstadoDeResultados(datos(variables: 0));
+      // fijos 1.350.000 + sueldo 1.000.000 + retener 500.000 sobre 5.000.000 → 57%
+      expect(
+        margenNecesarioBpDe(e, ventaObjetivoCentavos: 500000000, gananciaARetenerCentavos: 50000000),
+        5700,
+      );
+    });
+
+    test('sin venta objetivo es null', () {
+      final e = calcularEstadoDeResultados(datos());
+      expect(margenNecesarioBpDe(e, ventaObjetivoCentavos: 0, gananciaARetenerCentavos: 0), isNull);
+    });
+  });
+
   group('margen necesario y precio sugerido', () {
     test('fijos 1.350.000 + sueldo 1.000.000 + retener 500.000 sobre 5.000.000 → 57%', () {
       expect(

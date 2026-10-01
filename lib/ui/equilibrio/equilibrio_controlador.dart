@@ -4,6 +4,7 @@
 // un aviso en vez de un número en esas tarjetas puntuales.
 
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_equilibrio.dart';
@@ -37,6 +38,71 @@ class EquilibrioControlador extends ChangeNotifier {
   /// Si ya existe el concepto de fijo "Sueldo del dueño".
   bool tieneConceptoSueldo = false;
 
+  // ─── Margen necesario ────────────────────────────────────────────────
+  // Los dos datos que el dueño tipea: cuánto espera vender en el mes y cuánta
+  // ganancia quiere dejar en el negocio además de gastos y sueldo. Se guardan
+  // en el dispositivo (son del dueño, no del negocio contable) y la pantalla
+  // los recalcula contra los gastos reales del mes.
+
+  static const _claveVenta = 'objetivo_venta_centavos';
+  static const _claveRetener = 'objetivo_retener_centavos';
+
+  int ventaObjetivoCentavos = 0;
+  int gananciaARetenerCentavos = 0;
+
+  /// Null sin venta objetivo, o si el objetivo pide 100% o más (imposible).
+  int? margenNecesario;
+
+  /// Venta mensual que haría falta con el margen que hoy tiene el negocio.
+  int? ventaNecesariaConMargenActualCentavos;
+
+  List<ProductoBajoMargen> productosBajoMargen = const [];
+
+  Future<void> _leerObjetivo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      ventaObjetivoCentavos = prefs.getInt(_claveVenta) ?? 0;
+      gananciaARetenerCentavos = prefs.getInt(_claveRetener) ?? 0;
+    } catch (_) {
+      // Sin almacenamiento disponible: arranca vacío, se puede tipear igual.
+    }
+  }
+
+  Future<void> _recalcularMargenNecesario() async {
+    final e = estado;
+    if (e == null) return;
+    final bp = margenNecesario = margenNecesarioBpDe(
+      e,
+      ventaObjetivoCentavos: ventaObjetivoCentavos,
+      gananciaARetenerCentavos: gananciaARetenerCentavos,
+    );
+    final actual = e.gananciaBrutaBp;
+    ventaNecesariaConMargenActualCentavos = (bp == null || actual == null)
+        ? null
+        : ventaNecesariaCentavos(
+            necesarioCentavos: e.gastosFijosCentavos +
+                e.gastosVariablesCentavos +
+                e.sueldoObjetivoCentavos +
+                gananciaARetenerCentavos,
+            margenBp: actual,
+          );
+    productosBajoMargen = bp == null ? const [] : await productosPorDebajoDelMargen(db, bp);
+  }
+
+  Future<void> guardarObjetivo({required int ventaCentavos, required int retenerCentavos}) async {
+    ventaObjetivoCentavos = ventaCentavos < 0 ? 0 : ventaCentavos;
+    gananciaARetenerCentavos = retenerCentavos < 0 ? 0 : retenerCentavos;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_claveVenta, ventaObjetivoCentavos);
+      await prefs.setInt(_claveRetener, gananciaARetenerCentavos);
+    } catch (_) {
+      // No se pudo guardar: se usa igual en esta sesión.
+    }
+    await _recalcularMargenNecesario();
+    notifyListeners();
+  }
+
   bool cargando = true;
 
   Future<void> cargarTodo() async {
@@ -63,6 +129,8 @@ class EquilibrioControlador extends ChangeNotifier {
 
     estado = await estadoDeResultadosDelMes(db, mesAnio);
     tieneConceptoSueldo = await conceptoSueldoId(db) != null;
+    await _leerObjetivo();
+    await _recalcularMargenNecesario();
 
     cargando = false;
     notifyListeners();

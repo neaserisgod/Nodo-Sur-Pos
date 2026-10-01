@@ -128,4 +128,54 @@ void main() {
     final e = await estadoDeResultadosDelMes(db, '2026-08');
     expect(e.retirableCentavos, 600);
   });
+
+  group('productosPorDebajoDelMargen', () {
+    Future<void> producto(
+      String nombre, {
+      int? costo,
+      int? precio,
+      String tipoCigarrillo = 'ninguno',
+      bool esPesable = false,
+      bool activo = true,
+    }) =>
+        db.into(db.productos).insert(
+              ProductosCompanion.insert(
+                nombre: nombre,
+                tipoCigarrillo: Value(tipoCigarrillo),
+                esPesable: Value(esPesable),
+                activo: Value(activo),
+                costoCentavos: Value(esPesable ? null : costo),
+                precioCentavos: Value(esPesable ? null : precio),
+                costoPorKiloCentavos: Value(esPesable ? costo : null),
+                precioPorKiloCentavos: Value(esPesable ? precio : null),
+              ),
+            );
+
+    test('lista solo los que dejan menos del margen, del peor al mejor, con su precio sugerido', () async {
+      await producto('Bien', costo: 100000, precio: 250000); // 60% ≥ 57%
+      await producto('Justo abajo', costo: 100000, precio: 200000); // 50%
+      await producto('Muy abajo', costo: 100000, precio: 120000); // 16,67%
+      await producto('Queso', costo: 600000, precio: 900000, esPesable: true); // 33,33% por kilo
+
+      final r = await productosPorDebajoDelMargen(db, 5700);
+      expect(r.map((p) => p.nombre), ['Muy abajo', 'Queso', 'Justo abajo']);
+      expect(r.first.gananciaBp, 1667);
+      expect(r.first.precioSugeridoCentavos, 240000); // $1.000 / 0,43 = $2.326 → $2.400
+      expect(r[1].esPesable, isTrue);
+    });
+
+    test('cigarrillos, inactivos y sin costo o precio no entran', () async {
+      await producto('Atado', costo: 400000, precio: 450000, tipoCigarrillo: 'atado');
+      await producto('Viejo', costo: 100000, precio: 110000, activo: false);
+      await producto('Sin costo', precio: 110000);
+      await producto('Sin precio', costo: 100000);
+      expect(await productosPorDebajoDelMargen(db, 5700), isEmpty);
+    });
+
+    test('un margen inválido (0 o ≥ 100%) no lista nada', () async {
+      await producto('X', costo: 100000, precio: 110000);
+      expect(await productosPorDebajoDelMargen(db, 0), isEmpty);
+      expect(await productosPorDebajoDelMargen(db, 10000), isEmpty);
+    });
+  });
 }

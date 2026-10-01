@@ -5,6 +5,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../domain/ganancia.dart';
 import '../domain/rentabilidad.dart';
 import 'database.dart';
 import 'repositorio_equilibrio.dart';
@@ -117,4 +118,74 @@ Future<EstadoDeResultados> estadoDeResultadosDelMes(
       fijosCompletos: fijos.faltantes.isEmpty,
     ),
   );
+}
+
+/// Un producto cuyo precio actual deja menos ganancia que el margen necesario.
+class ProductoBajoMargen {
+  const ProductoBajoMargen({
+    required this.nombre,
+    required this.esPesable,
+    required this.costoCentavos,
+    required this.precioCentavos,
+    required this.gananciaBp,
+    required this.precioSugeridoCentavos,
+  });
+
+  final String nombre;
+
+  /// Costo y precios por kilo si es pesable, por unidad si no.
+  final bool esPesable;
+  final int costoCentavos;
+  final int precioCentavos;
+
+  /// Ganancia sobre el precio que deja hoy, en basis points.
+  final int gananciaBp;
+
+  /// El precio que dejaría exactamente el margen necesario (a la centena).
+  /// Solo una sugerencia: nunca se aplica solo (Regla 14).
+  final int precioSugeridoCentavos;
+}
+
+/// Productos activos con costo y precio cargados que dejan menos de
+/// [margenNecesarioBp], de menor a mayor ganancia (los peores primero).
+///
+/// Quedan afuera los cigarrillos (su ganancia es un monto fijo por atado,
+/// Regla 6), "Varios" (sin costo) y las promos (su precio sale de otra cuenta):
+/// compararlos contra un margen del negocio no tiene sentido.
+Future<List<ProductoBajoMargen>> productosPorDebajoDelMargen(AppDatabase db, int margenNecesarioBp) async {
+  if (margenNecesarioBp <= 0 || margenNecesarioBp >= 10000) return const [];
+  final productos = await (db.select(db.productos)
+        ..where(
+          (p) =>
+              p.activo.equals(true) &
+              p.esVarios.equals(false) &
+              p.esPromo.equals(false) &
+              p.tipoCigarrillo.equals('ninguno'),
+        ))
+      .get();
+
+  final resultado = <ProductoBajoMargen>[];
+  for (final p in productos) {
+    final costo = p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos;
+    final precio = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
+    if (costo == null || precio == null) continue;
+    if (!estaPorDebajoDelMargen(costoCentavos: costo, precioCentavos: precio, margenNecesarioBp: margenNecesarioBp)) {
+      continue;
+    }
+    resultado.add(
+      ProductoBajoMargen(
+        nombre: p.nombre,
+        esPesable: p.esPesable,
+        costoCentavos: costo,
+        precioCentavos: precio,
+        gananciaBp: gananciaBpDesdeCostoYPrecio(costo, precio),
+        precioSugeridoCentavos: precioMinimoSugeridoCentavos(costoCentavos: costo, margenBp: margenNecesarioBp),
+      ),
+    );
+  }
+  resultado.sort((a, b) {
+    final porGanancia = a.gananciaBp.compareTo(b.gananciaBp);
+    return porGanancia != 0 ? porGanancia : a.nombre.compareTo(b.nombre);
+  });
+  return resultado;
 }

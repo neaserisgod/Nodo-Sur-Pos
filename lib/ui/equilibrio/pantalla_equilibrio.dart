@@ -20,6 +20,7 @@ import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../../data/repositorio_rentabilidad.dart' show nombreConceptoSueldo;
 import '../comun/botones.dart';
+import '../comun/campo_texto.dart';
 import '../comun/tarjetas.dart';
 import '../tema/tokens.dart';
 import 'dialogo_cargar_monto_fijo.dart';
@@ -71,6 +72,8 @@ class _ContenidoEquilibrioState extends State<ContenidoEquilibrio> {
               _FilaIndicadoresMes(),
               SizedBox(height: Espaciado.lg),
               _TarjetaEstadoDeResultados(),
+              SizedBox(height: Espaciado.lg),
+              _TarjetaMargenNecesario(),
               SizedBox(height: Espaciado.lg),
               IntrinsicHeight(
                 child: Row(
@@ -226,6 +229,169 @@ class _TarjetaEstadoDeResultados extends StatelessWidget {
                 onPressed: () => c.agregarConcepto(nombreConceptoSueldo),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+String _porcentaje(int bp) => '${(bp / 100).toStringAsFixed(1)}%';
+
+/// Cuánto margen tienen que dejar las ventas para cubrir gastos, sueldo y la
+/// ganancia que el dueño quiere retener, y qué productos hoy dejan menos que
+/// eso. Todo es sugerencia: ningún precio se cambia desde acá (Regla 14).
+class _TarjetaMargenNecesario extends StatefulWidget {
+  const _TarjetaMargenNecesario();
+
+  @override
+  State<_TarjetaMargenNecesario> createState() => _TarjetaMargenNecesarioState();
+}
+
+class _TarjetaMargenNecesarioState extends State<_TarjetaMargenNecesario> {
+  late final TextEditingController _ventaCtrl;
+  late final TextEditingController _retenerCtrl;
+
+  static String _texto(int centavos) => centavos == 0 ? '' : formatearARS(centavos, conSigno: false);
+
+  @override
+  void initState() {
+    super.initState();
+    final c = context.read<EquilibrioControlador>();
+    _ventaCtrl = TextEditingController(text: _texto(c.ventaObjetivoCentavos));
+    _retenerCtrl = TextEditingController(text: _texto(c.gananciaARetenerCentavos));
+  }
+
+  @override
+  void dispose() {
+    _ventaCtrl.dispose();
+    _retenerCtrl.dispose();
+    super.dispose();
+  }
+
+  int _leer(TextEditingController ctrl) => ctrl.text.trim().isEmpty ? 0 : parsearARS(ctrl.text);
+
+  void _aplicar() {
+    final int venta;
+    final int retener;
+    try {
+      venta = _leer(_ventaCtrl);
+      retener = _leer(_retenerCtrl);
+    } on FormatException {
+      return; // se espera a que el texto sea un monto válido
+    }
+    context.read<EquilibrioControlador>().guardarObjetivo(ventaCentavos: venta, retenerCentavos: retener);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.watch<EquilibrioControlador>();
+    final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
+    final necesario = c.margenNecesario;
+    final actual = c.estado!.gananciaBrutaBp;
+
+    Widget fila(String etiqueta, String valor, {bool fuerte = false}) {
+      final estilo = textTheme.bodyMedium!.copyWith(fontWeight: fuerte ? Pesos.fuerte : null);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(children: [Expanded(child: Text(etiqueta, style: estilo)), Text(valor, style: estilo.tabular)]),
+      );
+    }
+
+    return TarjetaSeccion(
+      titulo: 'Margen necesario',
+      insignia: necesario == null || actual == null
+          ? null
+          : actual >= necesario
+              ? const Insignia(texto: 'Tu margen alcanza', tono: Tono.ganancia)
+              : Insignia(texto: 'Te faltan ${((necesario - actual) / 100).toStringAsFixed(1)} puntos', tono: Tono.alerta),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Cuánta ganancia sobre el precio tienen que dejar tus ventas para pagar los gastos, tu sueldo y lo que querés dejar en el negocio.',
+            style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
+          ),
+          const SizedBox(height: Espaciado.md),
+          Row(
+            children: [
+              Expanded(
+                child: CampoPlata(
+                  key: const Key('campo_venta_objetivo'),
+                  controller: _ventaCtrl,
+                  etiqueta: 'Venta que querés hacer en el mes',
+                  onChanged: (_) => _aplicar(),
+                ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              Expanded(
+                child: CampoPlata(
+                  key: const Key('campo_ganancia_retener'),
+                  controller: _retenerCtrl,
+                  etiqueta: 'Ganancia que querés dejar en el negocio',
+                  onChanged: (_) => _aplicar(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espaciado.md),
+          if (necesario == null)
+            Text(
+              c.ventaObjetivoCentavos == 0
+                  ? 'Cargá la venta que esperás hacer en el mes para ver el margen que necesitás.'
+                  : 'Con esos números no hay precio que alcance: los gastos y la ganancia pedida igualan o superan la venta.',
+              style: textTheme.bodyMedium,
+            )
+          else ...[
+            fila('Margen necesario', _porcentaje(necesario), fuerte: true),
+            fila('Margen que tenés hoy', actual == null ? 'sin ventas con costo' : _porcentaje(actual)),
+            if (c.ventaNecesariaConMargenActualCentavos != null)
+              fila('Venta del mes que haría falta con tu margen de hoy', formatearARS(c.ventaNecesariaConMargenActualCentavos!)),
+            if (c.estado!.sueldoObjetivoCentavos == 0 || !c.estado!.esCompleto) ...[
+              const SizedBox(height: Espaciado.sm),
+              Text(
+                'Ojo: sin sueldo cargado, fijos completos y costos de todo lo vendido, el margen necesario queda más bajo de lo real.',
+                style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
+              ),
+            ],
+            const SizedBox(height: Espaciado.md),
+            if (c.productosBajoMargen.isEmpty)
+              Text('Ningún producto con costo y precio cargados queda por debajo.', style: textTheme.bodyMedium)
+            else ...[
+              Text(
+                c.productosBajoMargen.length == 1
+                    ? '1 producto deja menos que ese margen:'
+                    : '${c.productosBajoMargen.length} productos dejan menos que ese margen:',
+                style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.medium),
+              ),
+              const SizedBox(height: Espaciado.xs),
+              for (final p in c.productosBajoMargen.take(8))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(p.nombre, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Text(
+                        '${formatearARS(p.precioCentavos)} → ${formatearARS(p.precioSugeridoCentavos)}${p.esPesable ? ' /kg' : ''}',
+                        style: textTheme.bodySmall!.copyWith(color: colores.textoSecundario).tabular,
+                      ),
+                      const SizedBox(width: Espaciado.sm),
+                      Insignia(texto: _porcentaje(p.gananciaBp), tono: Tono.alerta),
+                    ],
+                  ),
+                ),
+              if (c.productosBajoMargen.length > 8)
+                Padding(
+                  padding: const EdgeInsets.only(top: Espaciado.xs),
+                  child: Text('y ${c.productosBajoMargen.length - 8} más…', style: textTheme.bodySmall),
+                ),
+              const SizedBox(height: Espaciado.xs),
+              Text(
+                'El precio de la derecha es una sugerencia: no se cambia nada solo.',
+                style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
+              ),
+            ],
+          ],
         ],
       ),
     );
