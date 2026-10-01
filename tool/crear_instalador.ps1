@@ -1,5 +1,5 @@
 ﻿# Compila la app en release, la firma, arma el instalador de Inno Setup y lo
-# deja en dist\LaPlazoleta-Setup-<version>.exe (imprime el SHA-256).
+# deja en dist\NodoSurPOS-Setup-<version>.exe (imprime el SHA-256).
 #
 # Corré desde la raíz del repo:
 #   .\tool\crear_instalador.ps1
@@ -38,7 +38,7 @@ Set-Location $raiz
 $version = Get-VersionPubspec
 $carpetaBuild = Join-Path $raiz "build\windows\x64\runner\Release"
 $exeApp = Join-Path $carpetaBuild "la_plazoleta.exe"
-$instalador = Join-Path $raiz "dist\LaPlazoleta-Setup-$($version.Feed).exe"
+$instalador = Join-Path $raiz "dist\NodoSurPOS-Setup-$($version.Feed).exe"
 $urlTimestamp = if ($env:SIGN_TIMESTAMP_URL) { $env:SIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }
 
 function Find-Signtool {

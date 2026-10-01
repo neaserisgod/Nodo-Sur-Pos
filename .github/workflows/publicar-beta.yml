@@ -134,7 +134,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: instalador-beta
-          path: dist/LaPlazoleta-Setup-*.exe
+          path: dist/NodoSurPOS-Setup-*.exe
           retention-days: 14
 
       # El script subió el número de compilación: hay que dejarlo en el repo, o la próxima corrida intentaría publicar el mismo.

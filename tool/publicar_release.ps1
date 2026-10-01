@@ -80,7 +80,7 @@ $argsInstalador = @{}
 if ($CertificadoDePrueba) { $argsInstalador["CertificadoDePrueba"] = $true }
 & "$PSScriptRoot\crear_instalador.ps1" @argsInstalador
 
-$archivo = Join-Path $raiz "dist\LaPlazoleta-Setup-$($version.Feed).exe"
+$archivo = Join-Path $raiz "dist\NodoSurPOS-Setup-$($version.Feed).exe"
 if (-not (Test-Path $archivo)) { throw "No encuentro el instalador $archivo" }
 
 # --- 3. Firma para el actualizador (sign_update del paquete auto_updater) ---

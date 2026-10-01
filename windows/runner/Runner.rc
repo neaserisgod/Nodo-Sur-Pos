@@ -110,12 +110,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.laplazoleta" "\0"
-            VALUE "FileDescription", "la_plazoleta" "\0"
+            VALUE "FileDescription", "Nodo Sur POS" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "la_plazoleta" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.laplazoleta. All rights reserved." "\0"
             VALUE "OriginalFilename", "la_plazoleta.exe" "\0"
-            VALUE "ProductName", "la_plazoleta" "\0"
+            VALUE "ProductName", "Nodo Sur POS" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

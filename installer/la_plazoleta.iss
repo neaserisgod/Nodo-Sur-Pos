@@ -1,4 +1,4 @@
-﻿; Instalador de La Plazoleta (Inno Setup 6). Lo compila tool/crear_instalador.ps1,
+﻿; Instalador de Nodo Sur POS (Inno Setup 6). Lo compila tool/crear_instalador.ps1,
 ; que pasa la versión y la carpeta del build:
 ;   iscc /DMyAppVersion=1.0.0.2098 /DSourceDir=..\build\windows\x64\runner\Release installer\la_plazoleta.iss
 ;
@@ -21,7 +21,7 @@
 #ifndef SourceDir
   #define SourceDir "..\build\windows\x64\runner\Release"
 #endif
-#define MyAppName "La Plazoleta"
+#define MyAppName "Nodo Sur POS"
 #define MyAppExe "la_plazoleta.exe"
 ; Tiene que coincidir EXACTO con el mutex de windows/runner/main.cpp.
 #define MyAppMutex "LaPlazoletaAppMutex"
@@ -33,7 +33,7 @@ AppId={{6F1B7D52-3C0E-4B8A-9E4D-2A7C5D91B3E8}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 VersionInfoVersion={#MyAppVersion}
-AppPublisher=La Plazoleta
+AppPublisher=Nodo Sur
 DefaultDirName=C:\LaPlazoleta\app
 ; Siempre la misma ruta: que el que actualiza no pueda instalar en otro lado
 ; y dejar dos copias. /DIR sigue funcionando para las pruebas.
@@ -57,7 +57,7 @@ RestartApplications=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist
-OutputBaseFilename=LaPlazoleta-Setup-{#MyAppVersion}
+OutputBaseFilename=NodoSurPOS-Setup-{#MyAppVersion}
 SetupIconFile=..\windows\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\{#MyAppExe}
 UninstallDisplayName={#MyAppName}
@@ -74,6 +74,9 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Type: filesandordirs; Name: "{app}\data"
 Type: files; Name: "{app}\*.dll"
 Type: files; Name: "{app}\*.exe"
+; Accesos directos con el nombre anterior (renombre a Nodo Sur POS): se borran para no dejar duplicados.
+Type: files; Name: "{userstartup}\La Plazoleta.lnk"
+Type: files; Name: "{userdesktop}\la_plazoleta - Acceso directo.lnk"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -81,11 +84,11 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdi
 [Icons]
 ; Mismos nombres que crea hoy tool/publicar_actualizacion_desktop.ps1, para que
 ; el instalador los pise en vez de duplicarlos.
-Name: "{userstartup}\La Plazoleta"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Comment: "La Plazoleta"; Check: CrearAccesos
-Name: "{userdesktop}\la_plazoleta - Acceso directo"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Comment: "La Plazoleta"; Check: CrearAccesos
+Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Comment: "{#MyAppName}"; Check: CrearAccesos
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Comment: "{#MyAppName}"; Check: CrearAccesos
 
 [Run]
-; Instalación a mano: casilla "Abrir La Plazoleta" al final.
+; Instalación a mano: casilla "Abrir Nodo Sur POS" al final.
 Filename: "{app}\{#MyAppExe}"; Description: "Abrir {#MyAppName}"; Flags: nowait postinstall skipifsilent
 ; Actualización silenciosa (WinSparkle): la reabre sola, que el local siga
 ; vendiendo sin que nadie tenga que buscar el icono.
