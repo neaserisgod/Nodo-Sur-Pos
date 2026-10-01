@@ -74,6 +74,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Instalar Wrangler
+        run: npm install -g wrangler
+
       - name: Inno Setup
         shell: pwsh
         run: |
