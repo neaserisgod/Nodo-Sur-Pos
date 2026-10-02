@@ -96,42 +96,39 @@ class AcentosPlazoleta extends ThemeExtension<AcentosPlazoleta> {
   }
 }
 
-// "Lenguaje de diseño" (El dueño, 2026-09-26): efectivo naranja y Mercado Pago
-// azul, como en los mocks — QR es el azul de MP puro y Débito un azul más
-// profundo de la misma familia, porque en la caja los dos son el mismo
-// medio "Mercado Pago" (CLAUDE.md, pantalla de venta) y tienen que leerse
-// como parientes; Mixto va en violeta, que no se confunde con ninguno de
-// los dos ni con el verde de ganancia. Las piezas "hero" (el total, la
-// acción principal) dejan de ser un degradé con brillo: son la tarjeta
-// casi negra del mock en claro, y el azul de acento en oscuro (una tarjeta
-// negra sobre un fondo oscuro no destaca nada). Los dos "degradés" quedan
-// casi planos: se mantiene el tipo para no tocar a los llamadores.
+// Rediseño "antigravity": los mismos acentos con significado que la
+// companion (`colores_companion.dart`) — efectivo ámbar, QR azul, débito
+// verde-azulado, mixto violeta — y las piezas "hero" (el total, la acción
+// principal) como el bloque negro con un velo de color de la web.
+const _heroClaro = [Color(0xFF0A0B10), Color(0xFF1B1F3A)];
+const _heroOscuro = [Color(0xFF14161C), Color(0xFF232A55)];
+
 const acentosEscritorioClaro = AcentosPlazoleta(
   dinero: Color(0xFFB45309),
-  qr: Color(0xFF0B57D0),
-  debito: Color(0xFF00639B),
-  mixto: Color(0xFF6750A4),
+  qr: Color(0xFF3B6CFF),
+  debito: Color(0xFF0E9F85),
+  mixto: Color(0xFF8A5CF6),
   textoSobreColor: Color(0xFFFFFFFF),
-  gradienteAcento: [Color(0xFF1F1F1F), Color(0xFF2D2F31)],
-  gradienteDinero: [Color(0xFF1F1F1F), Color(0xFF2D2F31)],
-  ganancia: Color(0xFF146C2E),
-  gananciaSuave: Color(0xFFE6F4EA),
-  alerta: Color(0xFF7A3A04),
-  alertaSuave: Color(0xFFFEF1E0),
+  gradienteAcento: _heroClaro,
+  gradienteDinero: _heroClaro,
+  ganancia: Color(0xFF0E7C5A),
+  gananciaSuave: Color(0xFFE3F6EF),
+  alerta: Color(0xFF9A4A06),
+  alertaSuave: Color(0xFFFFF1DC),
 );
 
 const acentosEscritorioOscuro = AcentosPlazoleta(
   dinero: Color(0xFFC26A12),
-  qr: Color(0xFF3B7DE8),
-  debito: Color(0xFF1A7FB8),
-  mixto: Color(0xFF8A6FD1),
+  qr: Color(0xFF4F7CFF),
+  debito: Color(0xFF0E9F85),
+  mixto: Color(0xFF8A5CF6),
   textoSobreColor: Color(0xFFFFFFFF),
-  gradienteAcento: [Color(0xFF0B57D0), Color(0xFF0842A0)],
-  gradienteDinero: [Color(0xFF0B57D0), Color(0xFF0842A0)],
-  ganancia: Color(0xFF6DD58C),
-  gananciaSuave: Color(0xFF173A24),
-  alerta: Color(0xFFFFB68A),
-  alertaSuave: Color(0xFF3F2410),
+  gradienteAcento: _heroOscuro,
+  gradienteDinero: _heroOscuro,
+  ganancia: Color(0xFF6FE3B8),
+  gananciaSuave: Color(0xFF12332A),
+  alerta: Color(0xFFFFB878),
+  alertaSuave: Color(0xFF3A2410),
 );
 
 extension AcentosDelContexto on BuildContext {

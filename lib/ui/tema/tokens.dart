@@ -265,6 +265,10 @@ abstract final class Medidas {
   /// desborda.
   static const double anchoBarraBusquedaVenta = 640;
 
+  /// Ancho de la búsqueda de la barra superior en las pantallas de gestión
+  /// (a la derecha de las pastillas de secciones).
+  static const double anchoBarraBusquedaGestion = 300;
+
   /// Ancho fijo del panel de carrito + cobro a la derecha de la pantalla de
   /// venta (rediseño 2026-09-25, segunda pasada: El dueño mandó una referencia
   /// de POS con el carrito en un panel fijo y contestó "1 pero manteniendo

@@ -109,29 +109,20 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              navbar,
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final anchoBarra = constraints.maxWidth
-                        .clamp(0.0, Medidas.anchoBarraBusquedaVenta);
-                    return Padding(
-                      padding: const EdgeInsets.only(top: Espaciado.md),
-                      child: Center(
-                        child: SizedBox(
-                          width: anchoBarra,
-                          height: 52,
-                          child: widget.busqueda == null
-                              ? BarraBusquedaGlobal(
-                                  db: widget.db,
-                                  anchoDropdown: anchoBarra,
-                                  onElegir: _irAVentaConTexto,
-                                )
-                              : CampoBusquedaContextual(busqueda: widget.busqueda!),
-                        ),
-                      ),
-                    );
-                  },
+              Expanded(child: navbar),
+              const SizedBox(width: Espaciado.lg),
+              Padding(
+                padding: const EdgeInsets.only(top: Espaciado.md),
+                child: SizedBox(
+                  width: Medidas.anchoBarraBusquedaGestion,
+                  height: altoNavbarSuperior,
+                  child: widget.busqueda == null
+                      ? BarraBusquedaGlobal(
+                          db: widget.db,
+                          anchoDropdown: Medidas.anchoBarraBusquedaGestion,
+                          onElegir: _irAVentaConTexto,
+                        )
+                      : CampoBusquedaContextual(busqueda: widget.busqueda!),
                 ),
               ),
             ],

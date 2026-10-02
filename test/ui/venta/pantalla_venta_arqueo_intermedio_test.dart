@@ -5,6 +5,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/navegacion/navbar_superior.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
@@ -85,7 +86,7 @@ void main() {
       // A diferencia de los otros dos bloqueos de esta pantalla (sin sesión
       // / sesión de otro día), esto es solo un aviso: se sigue vendiendo con
       // el campo de búsqueda visible al mismo tiempo.
-      expect(find.byTooltip('Cambiar de sección'), findsOneWidget);
+      expect(find.byType(NavbarSuperior), findsOneWidget);
       expect(find.byType(TextField), findsWidgets);
     },
   );

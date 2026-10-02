@@ -6,7 +6,6 @@
 import 'package:flutter/material.dart';
 
 import 'presionable.dart';
-import 'resplandor.dart';
 import 'tokens.dart';
 
 class ChipSeleccionable extends StatelessWidget {
@@ -31,17 +30,13 @@ class ChipSeleccionable extends StatelessWidget {
         decoration: BoxDecoration(
           color: seleccionado ? colores.acento : colores.fondoBloque,
           borderRadius: BorderRadius.circular(999),
-          border: seleccionado ? null : Border.all(color: colores.borde),
-          boxShadow: seleccionado
-              ? resplandorNeon(colores.acento, alpha: 0.35, radio: 12, offset: const Offset(0, 2))
-              : null,
         ),
         padding: const EdgeInsets.symmetric(horizontal: Espaciado.md, vertical: Espaciado.sm),
         alignment: Alignment.center,
         child: Text(
           texto,
           style: TextStyle(
-            color: seleccionado ? colores.acentoTexto : colores.textoSecundario,
+            color: seleccionado ? colores.acentoTexto : colores.textoPrimario,
             fontWeight: seleccionado ? Pesos.medium : Pesos.regular,
           ),
         ),

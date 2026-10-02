@@ -42,6 +42,7 @@ import '../../domain/dinero.dart';
 import '../../domain/pesables.dart';
 import '../comun/color_categoria.dart';
 import '../tema/superficie.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/tokens.dart';
 import 'acciones_venta.dart';
 import 'tacto_venta.dart';
@@ -339,8 +340,9 @@ class _FilaResultado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final inv = coloresDeFila(context, seleccionado);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
 
     final String stockTexto;
     final String precioTexto;
@@ -387,7 +389,7 @@ class _FilaResultado extends StatelessWidget {
     }
 
     return SuperficieTactil(
-      color: seleccionado ? colores.destacado : Colors.transparent,
+      color: seleccionado ? colores.acento : Colors.transparent,
       borderRadius: BorderRadius.circular(TactoVenta.radio),
       onTap: onTap,
       child: Padding(
@@ -578,10 +580,10 @@ class _RejillaProductosState extends State<RejillaProductos> {
                 )
               : GridView.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 160,
-                    mainAxisSpacing: Espaciado.sm,
-                    crossAxisSpacing: Espaciado.sm,
-                    childAspectRatio: 1.15,
+                    maxCrossAxisExtent: 300,
+                    mainAxisSpacing: Espaciado.md,
+                    crossAxisSpacing: Espaciado.md,
+                    childAspectRatio: 1.55,
                   ),
                   itemCount: productos.length,
                   itemBuilder: (context, index) =>
@@ -613,9 +615,8 @@ class _PildoraCategoria extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: seleccionada ? colores.acento : colores.fondoBloque.withValues(alpha: 0.6),
+        color: seleccionada ? colores.acento : colores.fondoBloque,
         borderRadius: BorderRadius.circular(999),
-        border: seleccionada ? null : Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: SuperficieTactil(
         borderRadius: BorderRadius.circular(999),
@@ -678,7 +679,7 @@ class _TarjetaProducto extends StatelessWidget {
           c.focoCampoPrincipal.requestFocus();
         },
         child: Padding(
-          padding: const EdgeInsets.all(Espaciado.md),
+          padding: const EdgeInsets.all(Espaciado.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -692,9 +693,7 @@ class _TarjetaProducto extends StatelessWidget {
               ),
               Text(
                 precioTexto,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: colores.textoSecundario).tabular,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w400).tabular,
               ),
             ],
           ),

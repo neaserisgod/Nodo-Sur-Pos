@@ -60,10 +60,8 @@ class PantallaGestion extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (subtitulo != null || accion != null) ...[
-                  EncabezadoPantalla(titulo: titulo, subtitulo: subtitulo, accion: accion),
-                  const SizedBox(height: Espaciado.lg),
-                ],
+                EncabezadoPantalla(titulo: titulo, subtitulo: subtitulo, accion: accion),
+                const SizedBox(height: Espaciado.lg),
                 Expanded(child: child),
               ],
             ),

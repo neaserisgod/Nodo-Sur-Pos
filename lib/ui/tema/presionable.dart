@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'tema_inverso.dart';
 import 'tokens.dart';
 
 class Presionable extends StatefulWidget {
@@ -62,7 +63,10 @@ class _PresionableState extends State<Presionable> {
           onTapCancel: () => _fijar(false),
           onTapUp: (_) => _fijar(false),
           borderRadius: BorderRadius.circular(widget.radio),
-          child: widget.child,
+          child: TemaInverso(
+            activo: widget.color != null && widget.color == context.colores.acento,
+            child: widget.child,
+          ),
         ),
       ),
     );

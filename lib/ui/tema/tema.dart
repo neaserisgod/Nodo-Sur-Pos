@@ -18,15 +18,15 @@ import 'acentos.dart';
 import 'colores_escritorio.dart';
 import 'tokens.dart';
 
-/// Radio de `Superficie` (el reemplazo de `Bloque`) — 20, el de las
-/// tarjetas de los mocks de "Lenguaje de diseño" (2026-09-26). Mismo valor
-/// que `radioSuperficieCompanion`.
-const double radioSuperficieEscritorio = 20;
+/// Radio de `Superficie` — 28, tarjetas muy redondeadas como las de la web
+/// de Nodo Sur (rediseño "antigravity"). Mismo valor que
+/// `radioSuperficieCompanion`.
+const double radioSuperficieEscritorio = 28;
 
 /// Radio de controles rectangulares (campos, chips de ícono, filas
-/// resaltadas dentro de una tarjeta) — 14 como en los mocks. Los botones
-/// no lo usan: son pastilla (`StadiumBorder`), mismo lenguaje del mock.
-const double radioControlEscritorio = 14;
+/// resaltadas dentro de una tarjeta) — 16. Los botones no lo usan: son
+/// pastilla (`StadiumBorder`).
+const double radioControlEscritorio = 16;
 
 /// Tema automático (revisión visual fase 13, sin tocar en el remake): claro
 /// en horario de local abierto (10 a 22), oscuro fuera de ese rango. Sigue
@@ -120,7 +120,7 @@ abstract final class TemaPlazoleta {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colores.fondo,
+        fillColor: colores.fondoBloque,
         contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radioControlEscritorio),
@@ -186,12 +186,13 @@ abstract final class TemaPlazoleta {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? colores.acento : colores.textoTenue,
+          (states) => states.contains(WidgetState.selected) ? colores.acentoTexto : colores.fondo,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? colores.acento.withValues(alpha: 0.4) : colores.borde,
+          (states) => states.contains(WidgetState.selected) ? colores.acento : colores.textoTenue.withValues(alpha: 0.5),
         ),
       ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: colores.acento, circularTrackColor: colores.borde),
     );
   }
 
@@ -204,14 +205,17 @@ abstract final class TemaPlazoleta {
           height: altura,
         );
 
-    // Un rol de texto = un tamaño = un peso, siempre el mismo en toda la
-    // app. Regular para todo lo que es lectura; Medium solo para lo que
-    // tiene que destacar. Misma escala que `TemaCompanion._construirTextTheme`.
+    // Titulares livianos y apretados (peso 400/500), como la web y la
+    // companion: la jerarquía la da el tamaño, no el negrita. Un rol de
+    // texto = un tamaño = un peso, siempre el mismo en toda la app.
+    TextStyle apretado(double tamanio, FontWeight peso, Color color, {double altura = 1.25, double espaciado = 0}) =>
+        estilo(tamanio, peso, color, altura: altura).copyWith(letterSpacing: tamanio * espaciado);
+
     return base.copyWith(
-      displayLarge: estilo(TamanioTexto.total, Pesos.fuerte, colores.textoPrimario, altura: 1.1).tabular,
-      headlineMedium: estilo(TamanioTexto.grande, Pesos.fuerte, colores.textoPrimario, altura: 1.1).tabular,
-      titleLarge: estilo(TamanioTexto.titulo, Pesos.fuerte, colores.textoPrimario),
-      titleMedium: estilo(TamanioTexto.subtitulo, Pesos.medium, colores.textoPrimario),
+      displayLarge: apretado(TamanioTexto.total, FontWeight.w400, colores.textoPrimario, altura: 1.05, espaciado: -0.05).tabular,
+      headlineMedium: apretado(TamanioTexto.grande, FontWeight.w400, colores.textoPrimario, altura: 1.08, espaciado: -0.045).tabular,
+      titleLarge: apretado(TamanioTexto.titulo, FontWeight.w500, colores.textoPrimario, espaciado: -0.03),
+      titleMedium: apretado(TamanioTexto.subtitulo, FontWeight.w500, colores.textoPrimario, espaciado: -0.02),
       titleSmall: estilo(TamanioTexto.cuerpo, Pesos.medium, colores.textoPrimario),
       bodyLarge: estilo(TamanioTexto.subtitulo, Pesos.regular, colores.textoPrimario),
       bodyMedium: estilo(TamanioTexto.cuerpo, Pesos.regular, colores.textoPrimario),
