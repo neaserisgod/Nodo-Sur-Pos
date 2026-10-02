@@ -122,64 +122,71 @@ class FilaLineaCarrito extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
     final esPorUnidad = linea is LineaVentaPorUnidad;
-    final detalle = switch (linea) {
+    final valor = switch (linea) {
       LineaVentaPesable l => '${l.gramos} g',
-      LineaVentaPorUnidad l => 'x${l.cantidad}',
+      LineaVentaPorUnidad l => '${l.cantidad}',
     };
-    // `ListTile` crudo (El dueño, 2026-09-13: "hay algo más sin el
-    // lenguaje?") — el carrito es de las pantallas más usadas de la
-    // companion, no tenía sentido que se quedara con el look de fábrica.
-    return Superficie(
-      padding: EdgeInsets.zero,
+    // Mock completo del celular: arriba el nombre y el subtotal; abajo el
+    // selector de cantidad (o los gramos) y "Quitar". El doble toque sobre la
+    // cantidad o los gramos sigue abriendo el campo para tipear el valor exacto.
+    final cantidad = GestureDetector(
+      onDoubleTap: () => _editarExacto(context),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Espaciado.lg,
-          vertical: Espaciado.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    linea.nombreProducto,
-                    style: Theme.of(context).textTheme.titleMedium,
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.md, vertical: Espaciado.sm),
+        child: Text(valor, style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte)),
+      ),
+    );
+    return Superficie(
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.md, Espaciado.lg, Espaciado.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text(linea.nombreProducto, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium)),
+              const SizedBox(width: Espaciado.md),
+              Text(formatearARS(linea.subtotalCentavos), style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte)),
+            ],
+          ),
+          const SizedBox(height: Espaciado.xs),
+          Row(
+            children: [
+              if (esPorUnidad)
+                DecoratedBox(
+                  decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(999)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Quitar uno',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(IconosPlazoleta.remove),
+                        onPressed: () => _ajustar(-1),
+                      ),
+                      cantidad,
+                      IconButton(
+                        tooltip: 'Agregar uno',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(IconosPlazoleta.add),
+                        onPressed: () => _ajustar(1),
+                      ),
+                    ],
                   ),
-                  GestureDetector(
-                    onDoubleTap: () => _editarExacto(context),
-                    child: Text(
-                      detalle,
-                      style: TextStyle(color: context.colores.textoSecundario),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (esPorUnidad) ...[
-              IconButton(
-                tooltip: 'Quitar uno',
-                icon: const Icon(IconosPlazoleta.removeCircleOutline),
-                onPressed: () => _ajustar(-1),
-              ),
-              IconButton(
-                tooltip: 'Agregar uno',
-                icon: const Icon(IconosPlazoleta.addCircleOutline),
-                onPressed: () => _ajustar(1),
+                )
+              else
+                cantidad,
+              const Spacer(),
+              TextButton(
+                onPressed: onEliminar,
+                child: Text('Quitar', style: TextStyle(color: colores.textoSecundario, fontWeight: Pesos.fuerte)),
               ),
             ],
-            Text(
-              formatearARS(linea.subtotalCentavos),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            IconButton(
-              tooltip: 'Sacar del carrito',
-              icon: Icon(IconosPlazoleta.deleteOutline, color: context.colores.textoSecundario),
-              onPressed: onEliminar,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

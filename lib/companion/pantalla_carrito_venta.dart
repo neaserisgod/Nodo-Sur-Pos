@@ -23,12 +23,15 @@ import 'package:flutter/material.dart';
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/venta.dart';
+import '../domain/vuelto.dart';
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'carrito_venta.dart';
 import 'cliente_companion.dart';
 import 'debounce.dart';
+import 'boton_escaner_companion.dart';
 import 'dialogo_cobro_posnet_companion.dart';
+import 'escanear_codigo.dart';
 import 'fila_linea_carrito.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
@@ -46,6 +49,14 @@ import 'tema/error_en_linea.dart';
 import 'tema/app_bar_companion.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
+
+/// Los tres momentos de una venta en esta pantalla (mock completo del
+/// celular): armar el carrito, elegir cómo paga y confirmar, y el resumen de
+/// la venta cobrada.
+enum _Paso { carrito, cobro, cobrado }
+
+/// Lo que muestra la pantalla de "Venta cobrada" una vez asentada la venta.
+typedef _ResumenCobro = ({int ventaId, int totalCentavos, _MedioVenta medio, int productos, int vueltoCentavos});
 
 class PantallaCarritoVenta extends StatefulWidget {
   const PantallaCarritoVenta({
@@ -86,6 +97,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   bool _calculando = false;
   bool _cobrando = false;
   String? _error;
+
+  _Paso _paso = _Paso.carrito;
+  _ResumenCobro? _cobrado;
+
+  /// Con cuánto paga en efectivo: null hasta que elige un atajo (se toma el
+  /// primero) y `_pagaJusto` para "Justo". Solo orienta el vuelto, no se registra.
+  int? _pagaCentavos;
+  bool _pagaJusto = false;
+  bool _escaneando = false;
 
   // Descuento sobre el total (Regla 17 generalizada) — El dueño, 2026-09-10:
   // "el carrito del celular no tiene para descuento". Mismo mecanismo que
