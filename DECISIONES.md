@@ -1422,3 +1422,30 @@ Decididas con el dueño antes de empezar (fase 1):
   instalación existente y arriesga la base. El instalador borra los accesos directos con el nombre viejo
   para no dejar duplicados.
 - El nombre del local (encabezado del ticket) sigue siendo el del negocio, no el del programa.
+
+### Negocio, sucursales y miembros (2026-10-02)
+
+- **El pedido.** El dueño: usuarios que se registran con SU mail, con una cuenta madre (la dueña, la que paga) y
+  cuentas de empleado; y que sea multisucursal "de la forma más fácil".
+- **Negocio entre la persona y todo lo demás.** Hasta ahora la cuenta de Nodo Sur era una persona. Ahora hay un
+  **negocio** (el que paga) con **sucursales**, y personas que son **miembros** con rol: dueño (todo), encargado
+  (descarga, copias, opera) y empleado (solo opera, solo en su sucursal). Los permisos se afinan más adelante; viven
+  en un solo archivo del sitio (`permisos.js`). El servidor está en `NodoSurPage`.
+- **Paga el negocio entero**, una vez, con sucursales ilimitadas. Miembros ilimitados; si algún negocio llega a ~50 se
+  empieza a cobrar algo (un número configurable, sin hacerse cumplir todavía).
+- **Varios negocios por persona: sí.** La propiedad se puede **transferir** (dos pasos: la otra persona acepta). El
+  mail con el que se paga queda aparte del dueño (`billing_email`): tras transferir, la suscripción sigue a nombre de
+  quien pagó.
+- **Sucursal = etiqueta que organiza dispositivos y personas, no datos.** Cada PC se vincula a UNA sucursal y baja solo
+  los miembros de esa sucursal. Las ventas y la caja siguen siendo locales por PC (no cambia "no es un POS
+  multi-comercio en un servidor"): **no hay reportes consolidados entre sucursales** todavía; exigirían subir las
+  ventas a la nube y otro modelo de sincronización. `branch_id` en el dispositivo deja la puerta abierta.
+- **El POS no pide login con Google en cada turno.** Sigue funcionando sin internet: el dueño vincula la PC una vez y
+  el empleado se elige de la lista de miembros de su sucursal (guardada en disco), con PIN opcional. El PIN identifica,
+  no protege: un PIN corto con hash local se rompe con fuerza bruta; sirve para no vender a nombre de otro por
+  descuido, coherente con "sin contraseñas" (Regla 18).
+- **Quitar a un miembro lo deja inactivo, no lo borra**: las ventas viejas conservan su nombre.
+- **Panel de administrador y panel del negocio son distintos.** `/admin/` es de Nodo Sur; el dueño de un negocio no es
+  admin de la plataforma. La cuenta del dueño de Nodo Sur cumple las dos funciones, pero el código las trata separadas.
+- **Estado:** en construcción por fases (ver el README de `NodoSurPage`). Esta entrada se actualiza al cerrar cada una.
+
