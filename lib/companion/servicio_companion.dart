@@ -335,15 +335,30 @@ abstract class ServicioCompanion {
     required int fondoInicialCentavos,
   });
 
-  /// Con [proveedorId] el gasto es un pago a ese proveedor (sin deuda cargada
-  /// antes); queda anotado con el proveedor.
+  /// Lo que se le debe a cada proveedor con movimientos en su cuenta corriente
+  /// (`proveedorId` → centavos). La cuenta corriente no se sincroniza al
+  /// celular: solo se puede leer y pagar con la PC al alcance.
+  Future<Map<int, int>> saldosProveedores();
+
+  /// Le paga [montoCentavos] a un proveedor (cuenta corriente de la PC).
+  /// [origen] es la clave de `OrigenPagoDeuda` (cajon | mp | lata | fuera).
+  /// Si no había deuda cargada por ese monto, la PC anota la diferencia como
+  /// "Pago sin deuda previa": el gasto queda documentado igual.
+  Future<int> pagarProveedor({
+    required int proveedorId,
+    required int usuarioId,
+    required int montoCentavos,
+    required String origen,
+    int? sesionCajaId,
+    String? nota,
+  });
+
   Future<int> registrarGasto({
     required int sesionCajaId,
     required int usuarioId,
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
-    int? proveedorId,
   });
 
   Future<int> registrarIngreso({

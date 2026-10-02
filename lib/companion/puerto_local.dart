@@ -881,6 +881,28 @@ class PuertoLocal implements ServicioCompanion {
     MedioGastoCompanion.mercadoPago => repo_gastos.MedioGasto.mercadoPago,
   };
 
+  /// La cuenta corriente con proveedores (`movimientos_deuda`) no se
+  /// sincroniza al celular, así que sin la PC no hay saldo que mostrar ni
+  /// dónde anotar el pago: se avisa en vez de grabar algo que la PC no vería.
+  static const _soloConPcProveedores = ErrorCompanion(
+    400,
+    'Pagarle a un proveedor se hace conectado a la PC del local. '
+    'Conectate al wifi del local para anotar el pago.',
+  );
+
+  @override
+  Future<Map<int, int>> saldosProveedores() async => throw _soloConPcProveedores;
+
+  @override
+  Future<int> pagarProveedor({
+    required int proveedorId,
+    required int usuarioId,
+    required int montoCentavos,
+    required String origen,
+    int? sesionCajaId,
+    String? nota,
+  }) async => throw _soloConPcProveedores;
+
   @override
   Future<int> registrarGasto({
     required int sesionCajaId,
@@ -888,7 +910,6 @@ class PuertoLocal implements ServicioCompanion {
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
-    int? proveedorId,
   }) {
     return repo_gastos.registrarGastoRapido(
       db,
@@ -897,7 +918,6 @@ class PuertoLocal implements ServicioCompanion {
       montoCentavos: montoCentavos,
       medio: _medioGastoDesde(medio),
       motivo: motivo,
-      proveedorId: proveedorId,
     );
   }
 

@@ -1,7 +1,8 @@
 // Pestaña "Inicio" de la navbar — banda de actualización, el CTA de "Vender"
 // (la acción del mostrador, con su propio peso visual, y que además
 // comunica el estado de la caja — ver `_CtaVender`) y dos accesos
-// secundarios (Consultar precio, Movimiento de caja). Reacomodada (El dueño,
+// secundarios (Consultar precio, Movimiento de caja, Pagar proveedor y, con
+// la caja abierta, Hacer arqueo). Reacomodada (El dueño,
 // 2026-09-18): "Conteo de stock" se mudó a Gestión (tarea de inventario, no
 // algo que se abra a mitad de una venta); "Gasto rápido" e "Ingreso rápido"
 // se fusionaron en "Movimiento de caja" (`pantalla_movimiento_caja.dart`).
@@ -21,6 +22,7 @@ import 'mensaje_error.dart';
 import 'navbar_companion.dart';
 import 'pantalla_consultar_precio.dart';
 import 'pantalla_movimiento_caja.dart';
+import 'pantalla_pagar_proveedor.dart';
 import 'servicio_companion.dart';
 import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
@@ -295,34 +297,59 @@ class PantallaInicioCompanion extends StatelessWidget {
             onTap: navegando ? null : (cerrada ? () => _abrirCajaRapida(context) : onVender),
           ),
           const SizedBox(height: Espaciado.md),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _Tile(
-                    icono: IconosPlazoleta.priceCheckOutlined,
-                    color: acentos.debito,
-                    titulo: 'Consultar precio',
-                    onTap: navegando ? null : () => irA((_) => const PantallaConsultarPrecio()),
-                  ),
-                ),
-                const SizedBox(width: Espaciado.md),
-                Expanded(
-                  child: _Tile(
-                    icono: IconosPlazoleta.accountBalanceWalletOutlined,
-                    color: acentos.mixto,
-                    titulo: 'Movimiento de caja',
-                    onTap: navegando ? null : () => onAbrirMovimientoCaja(TipoMovimientoCaja.gasto),
-                  ),
-                ),
-              ],
+          ..._filasDeAccesos([
+            _Tile(
+              icono: IconosPlazoleta.priceCheckOutlined,
+              color: acentos.debito,
+              titulo: 'Consultar precio',
+              onTap: navegando ? null : () => irA((_) => const PantallaConsultarPrecio()),
             ),
-          ),
+            _Tile(
+              icono: IconosPlazoleta.accountBalanceWalletOutlined,
+              color: acentos.mixto,
+              titulo: 'Movimiento de caja',
+              onTap: navegando ? null : () => onAbrirMovimientoCaja(TipoMovimientoCaja.gasto),
+            ),
+            // Único camino del celular para pagarle a un proveedor (necesita
+            // la PC: la cuenta corriente no se sincroniza al celular).
+            _Tile(
+              icono: IconosPlazoleta.localShippingOutlined,
+              color: acentos.dinero,
+              titulo: 'Pagar proveedor',
+              onTap: navegando ? null : () => irA((_) => const PantallaPagarProveedor()),
+            ),
+            // El arqueo del turno solo tiene sentido con la caja abierta.
+            if (sesion?.abierta ?? false)
+              _Tile(
+                icono: IconosPlazoleta.factCheckOutlined,
+                color: acentos.qr,
+                titulo: 'Hacer arqueo',
+                onTap: navegando ? null : onHacerArqueoIntermedio,
+              ),
+          ]),
         ],
       ),
     );
   }
+}
+
+/// Acomoda los accesos de a dos por fila; si queda uno solo, no se estira.
+List<Widget> _filasDeAccesos(List<Widget> tiles) {
+  return [
+    for (var i = 0; i < tiles.length; i += 2) ...[
+      if (i > 0) const SizedBox(height: Espaciado.md),
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: tiles[i]),
+            const SizedBox(width: Espaciado.md),
+            Expanded(child: i + 1 < tiles.length ? tiles[i + 1] : const SizedBox.shrink()),
+          ],
+        ),
+      ),
+    ],
+  ];
 }
 
 class _CtaVender extends StatelessWidget {

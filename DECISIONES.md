@@ -1438,3 +1438,22 @@ Decididas con el dueño antes de empezar (fase 1):
 - Cambio de criterio: el comentario de `EspacioCompanion` decía que tener una escala propia evitaba que
   un cambio en el espaciado de la PC moviera el celular. Hoy mandan los dos con el mismo criterio; si
   alguna vez tienen que diferir, se vuelve a separar.
+## Pagar proveedor: un solo camino, y también sin deuda previa (2026-10-02)
+
+- **Se sacó "no se puede pagar más que la deuda"** de `pagarDeuda`. Motivo (el
+  dueño): la idea es documentar los gastos, y a veces se le paga a un proveedor
+  al que todavía no se le cargó nada. Lo que supera el saldo se anota solo como
+  un cargo "Pago sin deuda previa" en la misma transacción, justo antes del
+  pago: el saldo nunca queda negativo y las anulaciones siguen funcionando.
+- **Se sacó el selector de proveedor del gasto rápido** (PC) y del movimiento de
+  caja (celular), que había agregado el PR #28. Dejaba dos caminos para lo
+  mismo, y el del gasto rápido creaba un `PAGO_PROVEEDOR` que no tocaba la
+  cuenta corriente: con deuda cargada, la caja bajaba y la deuda quedaba igual.
+  Queda un solo camino: **Pagar proveedor**.
+- **Pagar proveedor en el celular** (acceso directo del Inicio, `pantalla_pagar_proveedor.dart`)
+  llama a la PC (`GET /proveedores/saldos`, `POST /proveedores/<id>/pagos`).
+  **Necesita la PC**: `movimientos_deuda` no se sincroniza al celular, y un pago
+  grabado solo en el celular dejaría la cuenta corriente sin enterarse. Sin PC
+  (modo local) avisa, como el cobro con Point.
+- Un pago desde una caja valida que la sesión siga abierta (409 si ya se cerró),
+  igual que `/gastos`.
