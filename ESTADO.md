@@ -175,7 +175,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
 - **Sync por la nube, fase 4 (elegir modo) — hecha, sin probar en un Android real**: pantalla "¿Cómo vas a usar el
   sistema?" al primer arranque (`pantalla_elegir_modo.dart`, `modo_uso.dart`, `flujo_modo_uso.dart`), "PC y celular" o
   "solo celular", cambiable desde Gestión; las instalaciones viejas conservan el modo que ya tenían. Suite de las áreas
-  tocadas: 346 verdes. La estética nueva de la companion (fase 5) no se toca: el dueño dice que ya está aplicada. Las pantallas nuevas (Cuenta, Elegir modo) usan el mismo kit de la companion.
+  tocadas: 346 verdes. El rediseño de la companion (P41 #23, 2026-10-02) ya está en `main`; la rama de la sync lo mezcló y las pantallas nuevas (Cuenta, Elegir modo) usan sus piezas (`EncabezadoCompanion`, `BloqueHero`, bloques grises).
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no

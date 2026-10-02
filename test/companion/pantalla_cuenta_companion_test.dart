@@ -38,7 +38,12 @@ void main() {
   }
 
   Future<void> abrir(WidgetTester tester, SyncNubeCompanion sync) async {
-    await tester.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: PantallaCuentaCompanion(sync: sync)));
+    await tester.pumpWidget(MaterialApp(
+      theme: TemaCompanion.claro,
+      builder: (context, child) =>
+          MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+      home: PantallaCuentaCompanion(sync: sync),
+    ));
     await tester.pumpAndSettle();
   }
 

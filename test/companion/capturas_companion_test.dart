@@ -18,6 +18,13 @@ import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:la_plazoleta/companion/pantalla_elegir_usuario.dart';
 import 'package:la_plazoleta/companion/pantalla_gestion_companion.dart';
+import 'package:la_plazoleta/companion/conmutador_sync.dart';
+import 'package:la_plazoleta/companion/modo_uso.dart';
+import 'package:la_plazoleta/companion/pantalla_cuenta_companion.dart';
+import 'package:la_plazoleta/companion/pantalla_elegir_modo.dart';
+import 'package:la_plazoleta/companion/sync_nube_companion.dart';
+import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/servicios/sync_nube.dart';
 
 import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
 import 'package:la_plazoleta/companion/pantalla_consultar_precio.dart';
@@ -31,6 +38,7 @@ import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 import '../helpers/base_para_tests.dart';
+import '../helpers/servidor_sync_falso.dart';
 
 final _clave = GlobalKey();
 
@@ -194,5 +202,33 @@ void main() {
       await preparar(tester);
       await _capturar(tester, 'elegir-usuario', const PantallaElegirUsuario(), oscuro: oscuro);
     });
+    testWidgets('elegir modo$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'elegir-modo', PantallaElegirModo(alElegir: (_, _) {}), oscuro: oscuro);
+    });
+    testWidgets('cambiar modo$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'cambiar-modo', PantallaElegirModo(alElegir: (_, _) {}, actual: ModoUso.pcYCelular), oscuro: oscuro);
+    });
+    for (final vinculada in [false, true]) {
+      testWidgets('cuenta ${vinculada ? 'vinculada' : 'sin vincular'}$sufijo', (tester) async {
+        await preparar(tester);
+        final almacen = AlmacenCuentaEnMemoria();
+        if (vinculada) {
+          await almacen.guardar(const CuentaVinculada(
+              token: 't', email: 'bruno@correo.com', idDispositivo: 'android-1', nombreDispositivo: 'Celular (android)', vence: 99));
+        }
+        final servidor = ServidorSyncFalso();
+        final sync = armarSyncNubeCompanion(
+          almacen: almacen,
+          almacenEstado: AlmacenEstadoSyncEnMemoria(),
+          cliente: ClienteNube(http: servidor.http_, abrirEscucha: servidor.abrir),
+          abrirNavegador: (_) async {},
+          db: baseLocalCompanion(),
+        );
+        sync.conmutador.modo.value = vinculada ? ModoSync.nube : ModoSync.local;
+        await _capturar(tester, 'cuenta-${vinculada ? 'vinculada' : 'sin-vincular'}', PantallaCuentaCompanion(sync: sync), oscuro: oscuro);
+      });
+    }
   }
 }

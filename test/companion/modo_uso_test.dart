@@ -19,6 +19,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/base_para_tests.dart';
 import '../helpers/servidor_sync_falso.dart';
 
+
+/// La app de prueba, con las animaciones apagadas (las partículas del encabezado nunca terminan de animar y
+/// `pumpAndSettle` no volvería): igual que "reducir animaciones" en el celular.
+Widget _app(Widget home) => MaterialApp(
+  theme: TemaCompanion.claro,
+  builder: (context, child) =>
+      MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+  home: home,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -69,10 +79,7 @@ void main() {
   group('la pantalla de elegir', () {
     Future<List<ModoUso>> abrir(WidgetTester tester, {ModoUso? actual}) async {
       final elegidos = <ModoUso>[];
-      await tester.pumpWidget(MaterialApp(
-        theme: TemaCompanion.claro,
-        home: PantallaElegirModo(actual: actual, alElegir: (_, m) => elegidos.add(m)),
-      ));
+      await tester.pumpWidget(_app(PantallaElegirModo(actual: actual, alElegir: (_, m) => elegidos.add(m))));
       await tester.pumpAndSettle();
       return elegidos;
     }
@@ -182,7 +189,7 @@ void main() {
     }
 
     Future<void> arrancar(WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: pantallaDeElegirModoInicial()));
+      await tester.pumpWidget(_app(pantallaDeElegirModoInicial()));
       await tester.pumpAndSettle();
     }
 
@@ -216,9 +223,8 @@ void main() {
     testWidgets('tocar el modo que ya está en uso, desde Gestión, no cambia nada y vuelve', (tester) async {
       await armar(conCuenta: false);
       await guardarModoUso(ModoUso.soloCelular);
-      await tester.pumpWidget(MaterialApp(
-        theme: TemaCompanion.claro,
-        home: Builder(
+      await tester.pumpWidget(_app(
+        Builder(
           builder: (context) => Scaffold(
             body: TextButton(
               onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(

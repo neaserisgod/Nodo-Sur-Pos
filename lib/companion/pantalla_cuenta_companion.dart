@@ -12,8 +12,8 @@ import '../ui/tema/iconos.dart';
 import '../ui/tema/tokens.dart';
 import 'conmutador_sync.dart';
 import 'sync_nube_companion.dart';
-import 'tema/chip_icono.dart';
 import 'tema/fila_dato_companion.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
 
@@ -106,13 +106,18 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cuenta y sincronización'), automaticallyImplyLeading: widget.alContinuar == null),
+      appBar: widget.alContinuar == null ? AppBar(scrolledUnderElevation: 0) : null,
       body: SafeArea(
         child: _cargando
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.all(EspacioCompanion.lg),
+                padding: const EdgeInsets.fromLTRB(EspacioCompanion.xl, 0, EspacioCompanion.xl, EspacioCompanion.xl),
                 children: [
+                  const EncabezadoCompanion(
+                    rotulo: 'Gestión',
+                    titulo: 'Cuenta y sincronización',
+                    padding: EdgeInsets.fromLTRB(0, EspacioCompanion.lg, 0, EspacioCompanion.lg),
+                  ),
                   ValueListenableBuilder<ModoSync>(
                     valueListenable: _sync.conmutador.modo,
                     builder: (context, modo, _) => _TarjetaModo(modo: modo, hayCuenta: _cuenta != null),
@@ -201,24 +206,26 @@ class _TarjetaModo extends StatelessWidget {
         IconosPlazoleta.cloudOff,
       ),
     };
-    return Superficie(
-      relleno: const Color(0xFF1B1B1F),
-      colorTexto: Colors.white,
+    final textTheme = Theme.of(context).textTheme;
+    // El bloque negro del rediseño: lo más importante de la pantalla (con quién se sincroniza ahora).
+    return BloqueHero(
+      animar: false,
+      minAlto: 112,
       child: Row(
         children: [
-          ChipIcono(icono: icono, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: EspacioCompanion.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ahora', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
-                Text(titulo, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
+                Text('Ahora', style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
+                Text(titulo, style: textTheme.headlineMedium?.copyWith(color: Colors.white)),
                 const SizedBox(height: 2),
-                Text(detalle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
+                Text(detalle, style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
               ],
             ),
           ),
+          const SizedBox(width: EspacioCompanion.md),
+          BotonFlecha(icono: icono, tamanio: 48),
         ],
       ),
     );
