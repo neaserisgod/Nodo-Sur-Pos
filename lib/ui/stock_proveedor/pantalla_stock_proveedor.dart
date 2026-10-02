@@ -213,7 +213,6 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
                     ),
                   ),
                 ),
-                const Divider(height: 1),
                 Expanded(
                   child: visibles.isEmpty
                       ? Center(child: Text('No hay productos con este filtro.', style: textTheme.bodyMedium))
@@ -333,8 +332,12 @@ class _FilaConteo extends StatelessWidget {
       final d => Insignia(texto: _signado(d, unidad), tono: d < 0 ? Tono.error : Tono.acento),
     };
     return Container(
-      color: (dif ?? 0) != 0 ? acentos.alertaSuave.withValues(alpha: 0.45) : null,
-      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.xs + 2),
+      margin: const EdgeInsets.only(bottom: Espaciado.sm),
+      decoration: BoxDecoration(
+        color: (dif ?? 0) != 0 ? acentos.alertaSuave : colores.fondo,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.sm),
       child: Row(
         children: [
           Expanded(
@@ -361,7 +364,7 @@ class _FilaConteo extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Container(
                 height: 44,
-                decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(18)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

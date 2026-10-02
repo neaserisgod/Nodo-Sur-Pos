@@ -110,7 +110,7 @@ void main() {
 
     final serra = tester.getTopLeft(find.text('Distribuidora'));
     final mazzota = tester.getTopLeft(find.text('Fiambrería'));
-    expect(serra.dx, lessThan(mazzota.dx)); // Distribuidora ($600) va antes que Fiambrería ($300)
+    expect(serra.dy, lessThan(mazzota.dy)); // Distribuidora ($600) va antes que Fiambrería ($300)
     expect(find.text('A separar'), findsNWidgets(2));
     expect(find.byKey(const Key('progreso_separados')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('progreso_separados'))).data, '0 de 2 separados');
