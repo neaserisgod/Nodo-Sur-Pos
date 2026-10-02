@@ -1618,6 +1618,11 @@ bloques grises) ya era el mismo desde el rediseño del 2026-10-02.
 aparece "Agregar caramelo", que suma el producto de vuelto como una línea normal
 (`REGLAS-NEGOCIO.md` §3); el escritorio lo hace con Alt+C.
 
-**Pendiente del mock**: Conteo de stock en una sola pantalla con botones −/+,
-Configuración con campos editables y medios de pago, y el emparejamiento con el hero de
-escáner. Siguen con su diseño anterior.
+**Conteo de stock** (una de las funciones más importantes): una sola pantalla con chips de
+proveedor y de filtro ("Sin stock") y, por producto, el stock del sistema y un campo con
+−/+. Las reglas no cambiaron: vacío no toca el stock, lo cargado se guarda como valor
+contado con el motivo "Conteo físico", y cambiar de proveedor o de filtro no pierde lo
+cargado. Tests en `test/companion/pantalla_conteo_stock_test.dart`.
+
+**Pendiente del mock**: Configuración con campos editables y medios de pago, y el
+emparejamiento con el hero de escáner. Siguen con su diseño anterior.
