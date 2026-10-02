@@ -191,7 +191,7 @@ class Usuario extends DataClass implements Insertable<Usuario> {
   final String nombre;
   final bool activo;
 
-  /// Identidad de sincronización (migración v31→v32, Bruno, 2026-09-18: "no
+  /// Identidad de sincronización (migración v31→v32, el dueño, 2026-09-18: "no
   /// debería tener que escanear ya, es innecesario") — hasta acá, `usuarios`
   /// había quedado deliberadamente afuera de la migración v29→v30
   /// ("autoridad exclusiva del escritorio"), pero sacar el emparejamiento
@@ -655,9 +655,11 @@ class Categoria extends DataClass implements Insertable<Categoria> {
   final int id;
   final String nombre;
 
-  /// Solo informativo (Regla 14: "no se sugiere ni se aplica markup
-  /// automático"). Se muestra en la pantalla de productos, nunca se usa
-  /// para calcular ni completar un precio o costo.
+  /// Ganancia de referencia sobre el precio de venta (basis points; ver
+  /// `domain/ganancia.dart`). El nombre de la columna es histórico: hasta la
+  /// v46 guardaba un markup sobre el costo. Solo informativo (Regla 14: "no se
+  /// sugiere ni se aplica ganancia automática"): nunca se usa para calcular ni
+  /// completar un precio o costo.
   final int markupDefaultBp;
   final bool activo;
 
@@ -1600,7 +1602,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   final int id;
 
   /// Los 15 proveedores reales de Regla 16, cada uno con su código propio.
-  /// Serra Cigarros (SC) es un proveedor aparte de Serra almacén (S) —mismo
+  /// Distribuidora de Cigarrillos (SC) es un proveedor aparte de Distribuidora almacén (S) —mismo
   /// vendedor, dos cuentas— pero eso no cambia cómo se calcula la
   /// reposición: el dinero de los cigarrillos queda afuera de
   /// `calcularReposicion` por `LineaParaReposicion.esCigarrillo` (una
@@ -1644,7 +1646,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   final int separadoCentavos;
 
   /// Parte de [separadoCentavos] que está en Mercado Pago, no en el cajón
-  /// (schemaVersion 35, Bruno 2026-09-26) — congelada al separar junto con
+  /// (schemaVersion 35, el dueño 2026-09-26) — congelada al separar junto con
   /// el total, ver `lib/domain/separacion_por_medio.dart`. La parte del
   /// cajón es la diferencia. Vuelve a 0 al pagar, igual que el total.
   final int separadoMpCentavos;
@@ -1670,24 +1672,26 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   /// [corteReposicionFecha]. Tienen que ser dos fechas separadas: revisar
   /// la ganancia de ayer (retirarla o guardarla como colchón) es una
   /// decisión diaria, mientras que separar el costo real para pagarle al
-  /// proveedor sigue siendo una decisión de Bruno, cuando a él le
+  /// proveedor sigue siendo una decisión de el dueño, cuando a él le
   /// corresponda — mezclar los dos cortes haría que revisar la ganancia
-  /// también reseteara "cuánto separar" sin que Bruno lo pidiera, o que
+  /// también reseteara "cuánto separar" sin que el dueño lo pidiera, o que
   /// separar diera por revisada una ganancia que todavía no se miró. Null
   /// significa "desde siempre".
   final DateTime? gananciaRevisadaFecha;
 
-  /// Porcentaje de ganancia sobre el costo (basis points, 3000 = 30%) con el
-  /// que se calculan los precios de sus productos: costo + esto, redondeado
-  /// hacia arriba a la próxima centena (`precioConGananciaACentena`). Null =
-  /// sin porcentaje, los precios se cargan a mano. Bruno, 2026-09-29. Los
+  /// Porcentaje de ganancia sobre el PRECIO de venta (basis points, 3000 =
+  /// 30%) con el que se calculan los precios de sus productos: costo / (1 −
+  /// esto), redondeado hacia arriba a la próxima centena
+  /// (`precioConGananciaACentena`). El nombre de la columna es histórico (hasta
+  /// la v46 guardaba un markup sobre el costo; la migración lo convirtió). Null =
+  /// sin porcentaje, los precios se cargan a mano. El dueño, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   final int? markupBp;
   final bool activo;
 
   /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
   /// lleva su propia caja (la "lata"), así que queda afuera de la reposición genérica y tiene su propio panel.
-  /// Reemplaza al código fijo `'SC'` (Serra Cigarros) que estaba repetido en la app; la migración lo marca en
+  /// Reemplaza al código fijo `'SC'` (Distribuidora de Cigarrillos) que estaba repetido en la app; la migración lo marca en
   /// las bases que ya lo tenían. Nace en falso.
   final bool cajaAparte;
 
@@ -2764,7 +2768,7 @@ class Cliente extends DataClass implements Insertable<Cliente> {
   final String nombre;
   final String? telefono;
 
-  /// Basis points, ej. 1500 = 15% (Jam Rock, Regla 17). Null para todos los
+  /// Basis points, ej. 1500 = 15% (Cliente Frecuente, Regla 17). Null para todos los
   /// clientes que no tienen descuento fijo.
   final int? descuentoBp;
   final String? notas;
@@ -3334,7 +3338,7 @@ class MedioDePago extends DataClass implements Insertable<MedioDePago> {
   final int orden;
   final bool activo;
 
-  /// Identidad de sincronización, migración v32→v33 (Bruno, 2026-09-19:
+  /// Identidad de sincronización, migración v32→v33 (El dueño, 2026-09-19:
   /// "que se puedan modificar las reglas del negocio... desde el celular"
   /// — medios de pago entra junto con la Configuración completa de la
   /// companion). A diferencia de [Categorias.globalId], estas 2 filas se
@@ -4372,13 +4376,13 @@ class Producto extends DataClass implements Insertable<Producto> {
   final int? stockMinimoGramos;
 
   /// true = el precio se cargó a mano y el porcentaje del proveedor NO lo
-  /// toca (Bruno, 2026-09-29). Por defecto false: el precio sigue al
+  /// toca (El dueño, 2026-09-29). Por defecto false: el precio sigue al
   /// porcentaje de su proveedor cuando ese proveedor tiene uno. Local: no se
   /// sincroniza.
   final bool precioFijo;
 
   /// Promo armada con varios artículos (`promo_componentes`). Su stock no es
-  /// una columna: es el de sus artículos (`stockDePromo`). Bruno, 2026-09-29.
+  /// una columna: es el de sus artículos (`stockDePromo`). El dueño, 2026-09-29.
   final bool esPromo;
   final bool activo;
   final DateTime creadoEn;
@@ -6725,7 +6729,7 @@ class SesionCaja extends DataClass implements Insertable<SesionCaja> {
   final int fondoInicialCentavos;
   final int lataInicialCentavos;
 
-  /// Revivida el 2026-09-12 (Bruno, reboot de la base) — había quedado
+  /// Revivida el 2026-09-12 (El dueño, reboot de la base) — había quedado
   /// muerta desde que MP pasó a arquearse como una caja más (siempre
   /// arrancaba en 0, no se preguntaba), pero un reseteo de datos no vacía la
   /// cuenta real de Mercado Pago. Se pregunta al abrir, igual que
@@ -6747,7 +6751,7 @@ class SesionCaja extends DataClass implements Insertable<SesionCaja> {
 
   /// Arqueo propio de la lata (ítem 3, "la vieja arquea la lata como una
   /// caja de verdad"): [lataFinalCentavos] es lo esperado (inicial +
-  /// separado hoy − pagos a Serra Cigarros), este es lo que Bruno contó de
+  /// separado hoy − pagos a Distribuidora de Cigarrillos), este es lo que el dueño contó de
   /// verdad en la lata al cerrar — mismo trío contado/esperado/diferencia
   /// que el efectivo y Mercado Pago.
   final int? lataContadoCentavos;
@@ -8221,7 +8225,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
   final DateTime fecha;
   final int subtotalCentavos;
 
-  /// Jam Rock (Regla 17): 15% sobre el importe total. 0 para el resto.
+  /// Cliente Frecuente (Regla 17): 15% sobre el importe total. 0 para el resto.
   final int descuentoCentavos;
   final int recargoCigarrillosCentavos;
   final int redondeoCentavos;
@@ -8236,7 +8240,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
   final String? motivoEdicion;
 
   /// Una venta cobrada se puede anular, pero solo mientras la sesión de
-  /// caja de esa venta siga abierta (Bruno, 2026-09-13: eliminar una venta
+  /// caja de esa venta siga abierta (El dueño, 2026-09-13: eliminar una venta
   /// de un cierre ya arqueado descuadraría ese arqueo). A diferencia de
   /// editar, anular NUNCA borra `lineas_de_venta`/`pagos` ni reemplaza
   /// nada — revierte stock y caja (mismo mecanismo, `repositorio_edicion_venta.dart`)
@@ -13179,6 +13183,17 @@ class $PendientesTable extends Pendientes
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lineasJsonMeta = const VerificationMeta(
+    'lineasJson',
+  );
+  @override
+  late final GeneratedColumn<String> lineasJson = GeneratedColumn<String>(
+    'lineas_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _estadoMeta = const VerificationMeta('estado');
   @override
   late final GeneratedColumn<String> estado = GeneratedColumn<String>(
@@ -13285,6 +13300,7 @@ class $PendientesTable extends Pendientes
     nombreLibre,
     montoCentavos,
     descripcion,
+    lineasJson,
     estado,
     ventaId,
     fechaCreacion,
@@ -13348,6 +13364,12 @@ class $PendientesTable extends Pendientes
           data['descripcion']!,
           _descripcionMeta,
         ),
+      );
+    }
+    if (data.containsKey('lineas_json')) {
+      context.handle(
+        _lineasJsonMeta,
+        lineasJson.isAcceptableOrUnknown(data['lineas_json']!, _lineasJsonMeta),
       );
     }
     if (data.containsKey('estado')) {
@@ -13445,6 +13467,10 @@ class $PendientesTable extends Pendientes
         DriftSqlType.string,
         data['${effectivePrefix}descripcion'],
       ),
+      lineasJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lineas_json'],
+      ),
       estado: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}estado'],
@@ -13492,7 +13518,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
   /// 'FIADO' | 'ENCARGUE'.
   final String tipo;
 
-  /// Jam Rock es cliente formal porque tiene descuento configurado (Regla
+  /// Cliente Frecuente es cliente formal porque tiene descuento configurado (Regla
   /// 17) y hace falta linkearlo. Un fiado ocasional es solo un nombre
   /// escrito: Regla 15 dice explícitamente "sin cuenta corriente formal",
   /// así que no todo fiado obliga a crear una fila en `clientes`.
@@ -13505,7 +13531,13 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
   /// Encargue: qué se pidió.
   final String? descripcion;
 
-  /// 'PENDIENTE' | 'RESUELTO'.
+  /// Encargue por apartado (El dueño, 2026-10-02): lo que se apartó, como JSON
+  /// `[{"gid": <global_id del producto>, "nombre": ..., "cantidad"|"gramos": ...}]`. Va por `global_id` y no por `id`
+  /// porque el encargue se sincroniza y el id local de un producto no vale en otro dispositivo. Null en un encargue
+  /// viejo de texto libre (`descripcion`).
+  final String? lineasJson;
+
+  /// 'PENDIENTE' | 'RESUELTO' | 'CANCELADO' (un encargue cancelado devolvió lo apartado al stock).
   final String estado;
 
   /// Cuando un fiado se cobra, entra como venta de ese día (Regla 15): acá
@@ -13528,6 +13560,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     this.nombreLibre,
     this.montoCentavos,
     this.descripcion,
+    this.lineasJson,
     required this.estado,
     this.ventaId,
     required this.fechaCreacion,
@@ -13553,6 +13586,9 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     }
     if (!nullToAbsent || descripcion != null) {
       map['descripcion'] = Variable<String>(descripcion);
+    }
+    if (!nullToAbsent || lineasJson != null) {
+      map['lineas_json'] = Variable<String>(lineasJson);
     }
     map['estado'] = Variable<String>(estado);
     if (!nullToAbsent || ventaId != null) {
@@ -13591,6 +13627,9 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       descripcion: descripcion == null && nullToAbsent
           ? const Value.absent()
           : Value(descripcion),
+      lineasJson: lineasJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lineasJson),
       estado: Value(estado),
       ventaId: ventaId == null && nullToAbsent
           ? const Value.absent()
@@ -13624,6 +13663,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       nombreLibre: serializer.fromJson<String?>(json['nombreLibre']),
       montoCentavos: serializer.fromJson<int?>(json['montoCentavos']),
       descripcion: serializer.fromJson<String?>(json['descripcion']),
+      lineasJson: serializer.fromJson<String?>(json['lineasJson']),
       estado: serializer.fromJson<String>(json['estado']),
       ventaId: serializer.fromJson<int?>(json['ventaId']),
       fechaCreacion: serializer.fromJson<DateTime>(json['fechaCreacion']),
@@ -13646,6 +13686,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       'nombreLibre': serializer.toJson<String?>(nombreLibre),
       'montoCentavos': serializer.toJson<int?>(montoCentavos),
       'descripcion': serializer.toJson<String?>(descripcion),
+      'lineasJson': serializer.toJson<String?>(lineasJson),
       'estado': serializer.toJson<String>(estado),
       'ventaId': serializer.toJson<int?>(ventaId),
       'fechaCreacion': serializer.toJson<DateTime>(fechaCreacion),
@@ -13664,6 +13705,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     Value<String?> nombreLibre = const Value.absent(),
     Value<int?> montoCentavos = const Value.absent(),
     Value<String?> descripcion = const Value.absent(),
+    Value<String?> lineasJson = const Value.absent(),
     String? estado,
     Value<int?> ventaId = const Value.absent(),
     DateTime? fechaCreacion,
@@ -13681,6 +13723,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
         ? montoCentavos.value
         : this.montoCentavos,
     descripcion: descripcion.present ? descripcion.value : this.descripcion,
+    lineasJson: lineasJson.present ? lineasJson.value : this.lineasJson,
     estado: estado ?? this.estado,
     ventaId: ventaId.present ? ventaId.value : this.ventaId,
     fechaCreacion: fechaCreacion ?? this.fechaCreacion,
@@ -13710,6 +13753,9 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       descripcion: data.descripcion.present
           ? data.descripcion.value
           : this.descripcion,
+      lineasJson: data.lineasJson.present
+          ? data.lineasJson.value
+          : this.lineasJson,
       estado: data.estado.present ? data.estado.value : this.estado,
       ventaId: data.ventaId.present ? data.ventaId.value : this.ventaId,
       fechaCreacion: data.fechaCreacion.present
@@ -13738,6 +13784,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           ..write('nombreLibre: $nombreLibre, ')
           ..write('montoCentavos: $montoCentavos, ')
           ..write('descripcion: $descripcion, ')
+          ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
           ..write('fechaCreacion: $fechaCreacion, ')
@@ -13758,6 +13805,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     nombreLibre,
     montoCentavos,
     descripcion,
+    lineasJson,
     estado,
     ventaId,
     fechaCreacion,
@@ -13777,6 +13825,7 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           other.nombreLibre == this.nombreLibre &&
           other.montoCentavos == this.montoCentavos &&
           other.descripcion == this.descripcion &&
+          other.lineasJson == this.lineasJson &&
           other.estado == this.estado &&
           other.ventaId == this.ventaId &&
           other.fechaCreacion == this.fechaCreacion &&
@@ -13794,6 +13843,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
   final Value<String?> nombreLibre;
   final Value<int?> montoCentavos;
   final Value<String?> descripcion;
+  final Value<String?> lineasJson;
   final Value<String> estado;
   final Value<int?> ventaId;
   final Value<DateTime> fechaCreacion;
@@ -13809,6 +13859,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.nombreLibre = const Value.absent(),
     this.montoCentavos = const Value.absent(),
     this.descripcion = const Value.absent(),
+    this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
@@ -13825,6 +13876,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.nombreLibre = const Value.absent(),
     this.montoCentavos = const Value.absent(),
     this.descripcion = const Value.absent(),
+    this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
@@ -13842,6 +13894,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Expression<String>? nombreLibre,
     Expression<int>? montoCentavos,
     Expression<String>? descripcion,
+    Expression<String>? lineasJson,
     Expression<String>? estado,
     Expression<int>? ventaId,
     Expression<DateTime>? fechaCreacion,
@@ -13858,6 +13911,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       if (nombreLibre != null) 'nombre_libre': nombreLibre,
       if (montoCentavos != null) 'monto_centavos': montoCentavos,
       if (descripcion != null) 'descripcion': descripcion,
+      if (lineasJson != null) 'lineas_json': lineasJson,
       if (estado != null) 'estado': estado,
       if (ventaId != null) 'venta_id': ventaId,
       if (fechaCreacion != null) 'fecha_creacion': fechaCreacion,
@@ -13876,6 +13930,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Value<String?>? nombreLibre,
     Value<int?>? montoCentavos,
     Value<String?>? descripcion,
+    Value<String?>? lineasJson,
     Value<String>? estado,
     Value<int?>? ventaId,
     Value<DateTime>? fechaCreacion,
@@ -13892,6 +13947,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       nombreLibre: nombreLibre ?? this.nombreLibre,
       montoCentavos: montoCentavos ?? this.montoCentavos,
       descripcion: descripcion ?? this.descripcion,
+      lineasJson: lineasJson ?? this.lineasJson,
       estado: estado ?? this.estado,
       ventaId: ventaId ?? this.ventaId,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
@@ -13923,6 +13979,9 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     }
     if (descripcion.present) {
       map['descripcion'] = Variable<String>(descripcion.value);
+    }
+    if (lineasJson.present) {
+      map['lineas_json'] = Variable<String>(lineasJson.value);
     }
     if (estado.present) {
       map['estado'] = Variable<String>(estado.value);
@@ -13960,6 +14019,7 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
           ..write('nombreLibre: $nombreLibre, ')
           ..write('montoCentavos: $montoCentavos, ')
           ..write('descripcion: $descripcion, ')
+          ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
           ..write('fechaCreacion: $fechaCreacion, ')
@@ -15554,7 +15614,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   final int id;
 
   /// Regla 6, los "tres montos" del recargo de cigarrillos. El de suelto
-  /// pasó de 0 a 5000 ($50) el 2026-09-10 (Bruno: "los puchos sueltos
+  /// pasó de 0 a 5000 ($50) el 2026-09-10 (El dueño: "los puchos sueltos
   /// también deben tener recargo por MP, sin eso los cálculos dan mal") —
   /// una base ya existente necesita la migración v23→v24 de `database.dart`
   /// además de este default nuevo, que solo alcanza a una base recién creada.
@@ -15597,7 +15657,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   final String? mpTerminalId;
 
   /// Fase 12: la terminal que cobra por QR/Débito — campo separado de
-  /// [mpTerminalId] aunque hoy señalen la misma terminal física (Bruno
+  /// [mpTerminalId] aunque hoy señalen la misma terminal física (El dueño
   /// tiene dos posnets: uno para cobro manual que la app nunca toca, y
   /// este, "el del sistema", que imprime Y cobra).
   final String? mpTerminalCobroId;
@@ -15617,7 +15677,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// Modo oscuro elegido a mano. Solo se lee cuando [temaAutomatico] está
   /// apagado — con el automático prendido, `oscuroPorHorarioDelLocal`
   /// decide, y esta columna sigue guardando el último valor manual para
-  /// volver a él si Bruno apaga el automático.
+  /// volver a él si el dueño apaga el automático.
   final bool temaOscuro;
 
   /// Tema automático según el horario del local (revisión visual fase 13):
@@ -15634,7 +15694,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   final bool retiroDescuentaFijosPendientes;
 
   /// Si la barra lateral de navegación arranca plegada (solo íconos) o
-  /// desplegada (íconos + nombre). Plegada por default (2026-09-12, Bruno:
+  /// desplegada (íconos + nombre). Plegada por default (2026-09-12, el dueño:
   /// "no quiero 50 botones en cualquier lado") — revierte la corrección de
   /// fase 13 ("desplegada por default", ver DECISIONES.md), que había
   /// ganado por el motivo contrario ("no saber dónde hacer clic"). Los
@@ -15646,14 +15706,14 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// Período del selector compartido entre Proveedores y Productos (fase
   /// 13) — guarda el nombre de `PeriodoResumen` ('hoy'/'semana'/'mes'/
   /// 'desdeUltimoPago'), un enum y no un booleano porque son cuatro
-  /// opciones, no dos. Default 'mes' (Bruno). Se recuerda entre visitas,
+  /// opciones, no dos. Default 'mes' (El dueño). Se recuerda entre visitas,
   /// mismo criterio que `barraLateralPlegada`.
   final String periodoResumen;
 
   /// Token compartido para que el celular se autentique contra el servidor
   /// HTTP local (`lib/servidor/servidor_companion.dart`) — null hasta que se
   /// genera desde Configuración. No es login de usuario (la app sigue "sin
-  /// autenticación" para las personas, Bruno/su empleado eligen quién son
+  /// autenticación" para las personas, el dueño/su empleado eligen quién son
   /// de una lista, igual que al abrir caja): es solo la llave que evita que
   /// cualquier otro dispositivo de la misma WiFi pueda pegarle al servidor.
   final String? companionToken;
@@ -15662,7 +15722,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// dispositivos que pueden vender sin verse, un solo cajón físico necesita
   /// un solo dueño fijo para "abrir el día" — el otro dispositivo se suma a
   /// esa apertura al sincronizar en vez de abrir la suya propia (decisión de
-  /// Bruno: nunca fusión automática y silenciosa de dos aperturas). Null
+  /// El dueño: nunca fusión automática y silenciosa de dos aperturas). Null
   /// significa "todavía no se decidió" — cualquier dispositivo puede abrir
   /// la primera vez, mismo comportamiento que hoy. Valores: `'desktop'` o el
   /// `dispositivoId` estable del celular emparejado (`emparejamiento.dart`).
@@ -17521,7 +17581,7 @@ class HistorialPedido extends DataClass implements Insertable<HistorialPedido> {
 
   /// Null mientras el pedido está en camino: esa ausencia es lo que permite
   /// mostrar "a quién le pedí y todavía no me entregó" (bonus pedido por
-  /// Bruno) sin necesitar una columna de estado aparte.
+  /// El dueño) sin necesitar una columna de estado aparte.
   final DateTime? fechaRecibido;
 
   /// Se completan recién al recibir, con el mismo cálculo que ya usa el
@@ -18536,7 +18596,7 @@ class OrdenCobroPendiente extends DataClass
   final String? ordenIdMp;
 
   /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' |
-  /// 'rechazada' | 'cancelada' (Bruno la canceló desde el diálogo).
+  /// 'rechazada' | 'cancelada' (El dueño la canceló desde el diálogo).
   final String estado;
   final DateTime creadaEn;
 
@@ -19616,6 +19676,17 @@ class $VentasAbiertasTable extends VentasAbiertas
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _encargueIdMeta = const VerificationMeta(
+    'encargueId',
+  );
+  @override
+  late final GeneratedColumn<int> encargueId = GeneratedColumn<int>(
+    'encargue_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
     'actualizadoEn',
   );
@@ -19640,6 +19711,7 @@ class $VentasAbiertasTable extends VentasAbiertas
     canal,
     tipoDescuento,
     textoDescuento,
+    encargueId,
     actualizadoEn,
   ];
   @override
@@ -19719,6 +19791,12 @@ class $VentasAbiertasTable extends VentasAbiertas
         ),
       );
     }
+    if (data.containsKey('encargue_id')) {
+      context.handle(
+        _encargueIdMeta,
+        encargueId.isAcceptableOrUnknown(data['encargue_id']!, _encargueIdMeta),
+      );
+    }
     if (data.containsKey('actualizado_en')) {
       context.handle(
         _actualizadoEnMeta,
@@ -19773,6 +19851,10 @@ class $VentasAbiertasTable extends VentasAbiertas
         DriftSqlType.string,
         data['${effectivePrefix}texto_descuento'],
       )!,
+      encargueId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}encargue_id'],
+      ),
       actualizadoEn: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}actualizado_en'],
@@ -19806,6 +19888,11 @@ class VentaAbiertaFila extends DataClass
   /// descuento (texto crudo, se vuelve a parsear igual que en vivo).
   final String tipoDescuento;
   final String textoDescuento;
+
+  /// El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`). Se guarda con el borrador: si la
+  /// app se cierra antes de cobrar, la venta retomada tiene que seguir sabiendo que libera lo apartado — si no, el stock
+  /// se descontaría dos veces.
+  final int? encargueId;
   final DateTime actualizadoEn;
   const VentaAbiertaFila({
     required this.id,
@@ -19817,6 +19904,7 @@ class VentaAbiertaFila extends DataClass
     this.canal,
     required this.tipoDescuento,
     required this.textoDescuento,
+    this.encargueId,
     required this.actualizadoEn,
   });
   @override
@@ -19839,6 +19927,9 @@ class VentaAbiertaFila extends DataClass
     }
     map['tipo_descuento'] = Variable<String>(tipoDescuento);
     map['texto_descuento'] = Variable<String>(textoDescuento);
+    if (!nullToAbsent || encargueId != null) {
+      map['encargue_id'] = Variable<int>(encargueId);
+    }
     map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
     return map;
   }
@@ -19861,6 +19952,9 @@ class VentaAbiertaFila extends DataClass
           : Value(canal),
       tipoDescuento: Value(tipoDescuento),
       textoDescuento: Value(textoDescuento),
+      encargueId: encargueId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encargueId),
       actualizadoEn: Value(actualizadoEn),
     );
   }
@@ -19882,6 +19976,7 @@ class VentaAbiertaFila extends DataClass
       canal: serializer.fromJson<String?>(json['canal']),
       tipoDescuento: serializer.fromJson<String>(json['tipoDescuento']),
       textoDescuento: serializer.fromJson<String>(json['textoDescuento']),
+      encargueId: serializer.fromJson<int?>(json['encargueId']),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
     );
   }
@@ -19900,6 +19995,7 @@ class VentaAbiertaFila extends DataClass
       'canal': serializer.toJson<String?>(canal),
       'tipoDescuento': serializer.toJson<String>(tipoDescuento),
       'textoDescuento': serializer.toJson<String>(textoDescuento),
+      'encargueId': serializer.toJson<int?>(encargueId),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
     };
   }
@@ -19914,6 +20010,7 @@ class VentaAbiertaFila extends DataClass
     Value<String?> canal = const Value.absent(),
     String? tipoDescuento,
     String? textoDescuento,
+    Value<int?> encargueId = const Value.absent(),
     DateTime? actualizadoEn,
   }) => VentaAbiertaFila(
     id: id ?? this.id,
@@ -19927,6 +20024,7 @@ class VentaAbiertaFila extends DataClass
     canal: canal.present ? canal.value : this.canal,
     tipoDescuento: tipoDescuento ?? this.tipoDescuento,
     textoDescuento: textoDescuento ?? this.textoDescuento,
+    encargueId: encargueId.present ? encargueId.value : this.encargueId,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
   );
   VentaAbiertaFila copyWithCompanion(VentasAbiertasCompanion data) {
@@ -19950,6 +20048,9 @@ class VentaAbiertaFila extends DataClass
       textoDescuento: data.textoDescuento.present
           ? data.textoDescuento.value
           : this.textoDescuento,
+      encargueId: data.encargueId.present
+          ? data.encargueId.value
+          : this.encargueId,
       actualizadoEn: data.actualizadoEn.present
           ? data.actualizadoEn.value
           : this.actualizadoEn,
@@ -19968,6 +20069,7 @@ class VentaAbiertaFila extends DataClass
           ..write('canal: $canal, ')
           ..write('tipoDescuento: $tipoDescuento, ')
           ..write('textoDescuento: $textoDescuento, ')
+          ..write('encargueId: $encargueId, ')
           ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
@@ -19984,6 +20086,7 @@ class VentaAbiertaFila extends DataClass
     canal,
     tipoDescuento,
     textoDescuento,
+    encargueId,
     actualizadoEn,
   );
   @override
@@ -19999,6 +20102,7 @@ class VentaAbiertaFila extends DataClass
           other.canal == this.canal &&
           other.tipoDescuento == this.tipoDescuento &&
           other.textoDescuento == this.textoDescuento &&
+          other.encargueId == this.encargueId &&
           other.actualizadoEn == this.actualizadoEn);
 }
 
@@ -20012,6 +20116,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
   final Value<String?> canal;
   final Value<String> tipoDescuento;
   final Value<String> textoDescuento;
+  final Value<int?> encargueId;
   final Value<DateTime> actualizadoEn;
   const VentasAbiertasCompanion({
     this.id = const Value.absent(),
@@ -20023,6 +20128,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     this.canal = const Value.absent(),
     this.tipoDescuento = const Value.absent(),
     this.textoDescuento = const Value.absent(),
+    this.encargueId = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
   });
   VentasAbiertasCompanion.insert({
@@ -20035,6 +20141,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     this.canal = const Value.absent(),
     this.tipoDescuento = const Value.absent(),
     this.textoDescuento = const Value.absent(),
+    this.encargueId = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
   }) : sesionCajaId = Value(sesionCajaId);
   static Insertable<VentaAbiertaFila> custom({
@@ -20047,6 +20154,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     Expression<String>? canal,
     Expression<String>? tipoDescuento,
     Expression<String>? textoDescuento,
+    Expression<int>? encargueId,
     Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
@@ -20060,6 +20168,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
       if (canal != null) 'canal': canal,
       if (tipoDescuento != null) 'tipo_descuento': tipoDescuento,
       if (textoDescuento != null) 'texto_descuento': textoDescuento,
+      if (encargueId != null) 'encargue_id': encargueId,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
@@ -20074,6 +20183,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     Value<String?>? canal,
     Value<String>? tipoDescuento,
     Value<String>? textoDescuento,
+    Value<int?>? encargueId,
     Value<DateTime>? actualizadoEn,
   }) {
     return VentasAbiertasCompanion(
@@ -20087,6 +20197,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
       canal: canal ?? this.canal,
       tipoDescuento: tipoDescuento ?? this.tipoDescuento,
       textoDescuento: textoDescuento ?? this.textoDescuento,
+      encargueId: encargueId ?? this.encargueId,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
@@ -20123,6 +20234,9 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     if (textoDescuento.present) {
       map['texto_descuento'] = Variable<String>(textoDescuento.value);
     }
+    if (encargueId.present) {
+      map['encargue_id'] = Variable<int>(encargueId.value);
+    }
     if (actualizadoEn.present) {
       map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
     }
@@ -20141,6 +20255,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
           ..write('canal: $canal, ')
           ..write('tipoDescuento: $tipoDescuento, ')
           ..write('textoDescuento: $textoDescuento, ')
+          ..write('encargueId: $encargueId, ')
           ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
@@ -34087,6 +34202,7 @@ typedef $$PendientesTableCreateCompanionBuilder =
       Value<String?> nombreLibre,
       Value<int?> montoCentavos,
       Value<String?> descripcion,
+      Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
       Value<DateTime> fechaCreacion,
@@ -34104,6 +34220,7 @@ typedef $$PendientesTableUpdateCompanionBuilder =
       Value<String?> nombreLibre,
       Value<int?> montoCentavos,
       Value<String?> descripcion,
+      Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
       Value<DateTime> fechaCreacion,
@@ -34201,6 +34318,11 @@ class $$PendientesTableFilterComposer
 
   ColumnFilters<String> get descripcion => $composableBuilder(
     column: $table.descripcion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lineasJson => $composableBuilder(
+    column: $table.lineasJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -34338,6 +34460,11 @@ class $$PendientesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get lineasJson => $composableBuilder(
+    column: $table.lineasJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get estado => $composableBuilder(
     column: $table.estado,
     builder: (column) => ColumnOrderings(column),
@@ -34465,6 +34592,11 @@ class $$PendientesTableAnnotationComposer
 
   GeneratedColumn<String> get descripcion => $composableBuilder(
     column: $table.descripcion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lineasJson => $composableBuilder(
+    column: $table.lineasJson,
     builder: (column) => column,
   );
 
@@ -34598,6 +34730,7 @@ class $$PendientesTableTableManager
                 Value<String?> nombreLibre = const Value.absent(),
                 Value<int?> montoCentavos = const Value.absent(),
                 Value<String?> descripcion = const Value.absent(),
+                Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
@@ -34613,6 +34746,7 @@ class $$PendientesTableTableManager
                 nombreLibre: nombreLibre,
                 montoCentavos: montoCentavos,
                 descripcion: descripcion,
+                lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
                 fechaCreacion: fechaCreacion,
@@ -34630,6 +34764,7 @@ class $$PendientesTableTableManager
                 Value<String?> nombreLibre = const Value.absent(),
                 Value<int?> montoCentavos = const Value.absent(),
                 Value<String?> descripcion = const Value.absent(),
+                Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
@@ -34645,6 +34780,7 @@ class $$PendientesTableTableManager
                 nombreLibre: nombreLibre,
                 montoCentavos: montoCentavos,
                 descripcion: descripcion,
+                lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
                 fechaCreacion: fechaCreacion,
@@ -38298,6 +38434,7 @@ typedef $$VentasAbiertasTableCreateCompanionBuilder =
       Value<String?> canal,
       Value<String> tipoDescuento,
       Value<String> textoDescuento,
+      Value<int?> encargueId,
       Value<DateTime> actualizadoEn,
     });
 typedef $$VentasAbiertasTableUpdateCompanionBuilder =
@@ -38311,6 +38448,7 @@ typedef $$VentasAbiertasTableUpdateCompanionBuilder =
       Value<String?> canal,
       Value<String> tipoDescuento,
       Value<String> textoDescuento,
+      Value<int?> encargueId,
       Value<DateTime> actualizadoEn,
     });
 
@@ -38388,6 +38526,11 @@ class $$VentasAbiertasTableFilterComposer
 
   ColumnFilters<String> get textoDescuento => $composableBuilder(
     column: $table.textoDescuento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38469,6 +38612,11 @@ class $$VentasAbiertasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
     column: $table.actualizadoEn,
     builder: (column) => ColumnOrderings(column),
@@ -38536,6 +38684,11 @@ class $$VentasAbiertasTableAnnotationComposer
 
   GeneratedColumn<String> get textoDescuento => $composableBuilder(
     column: $table.textoDescuento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
     builder: (column) => column,
   );
 
@@ -38607,6 +38760,7 @@ class $$VentasAbiertasTableTableManager
                 Value<String?> canal = const Value.absent(),
                 Value<String> tipoDescuento = const Value.absent(),
                 Value<String> textoDescuento = const Value.absent(),
+                Value<int?> encargueId = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
               }) => VentasAbiertasCompanion(
                 id: id,
@@ -38618,6 +38772,7 @@ class $$VentasAbiertasTableTableManager
                 canal: canal,
                 tipoDescuento: tipoDescuento,
                 textoDescuento: textoDescuento,
+                encargueId: encargueId,
                 actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
@@ -38631,6 +38786,7 @@ class $$VentasAbiertasTableTableManager
                 Value<String?> canal = const Value.absent(),
                 Value<String> tipoDescuento = const Value.absent(),
                 Value<String> textoDescuento = const Value.absent(),
+                Value<int?> encargueId = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
               }) => VentasAbiertasCompanion.insert(
                 id: id,
@@ -38642,6 +38798,7 @@ class $$VentasAbiertasTableTableManager
                 canal: canal,
                 tipoDescuento: tipoDescuento,
                 textoDescuento: textoDescuento,
+                encargueId: encargueId,
                 actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0

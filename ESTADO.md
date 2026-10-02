@@ -3451,3 +3451,9 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
 - Tarjeta "Margen necesario" en Equilibrio: venta objetivo y ganancia a retener (se guardan en el dispositivo), margen necesario vs. el de hoy, venta necesaria y productos por debajo con precio sugerido (solo sugerencia, Regla 14).
 - **Sin verificar**: sin Flutter en la sesión, nada de esto se compiló ni se corrió. `flutter analyze` y `flutter test`
   primero.
+
+
+## Encargues por apartado (2026-10-02)
+
+Hecho en PC y celular, con tests: apartar (baja el stock), cancelar (lo devuelve), entregar (abre una venta con lo apartado y la cobra liberándolo). Ver `DECISIONES.md` ("Encargues por apartado"). Pantalla `lib/ui/encargues/` en la PC, `lib/companion/pantalla_encargues_companion.dart` en el celular; reglas en `lib/data/repositorio_encargues.dart`.
+Pendiente de decidir con el dueño: nada de lo pedido. Fuera de alcance a propósito: seña, fecha prometida, aviso al cliente, "pedir al proveedor".

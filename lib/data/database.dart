@@ -79,6 +79,7 @@ const seccionesMenuIniciales = [
   ('proveedores', 'Proveedores'),
   ('separaciones', 'Separaciones'),
   ('historial', 'Historial'),
+  ('encargues', 'Encargues'),
 ];
 
 @DriftDatabase(
@@ -130,7 +131,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -971,6 +972,30 @@ class AppDatabase extends _$AppDatabase {
           'UPDATE categorias SET markup_default_bp = CAST(ROUND(markup_default_bp * 10000.0 / (10000 + markup_default_bp)) AS INTEGER) '
           'WHERE markup_default_bp > -10000',
         );
+      }
+      // v46 → v47 (El dueño, 2026-10-02: encargues = mercadería que ya está y se aparta): `pendientes.lineas_json` guarda qué
+      // se apartó. Aditiva, con chequeo de columna como v43→v44.
+      if (from < 47) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('pendientes')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('lineas_json')) {
+          await m.addColumn(pendientes, pendientes.lineasJson);
+        }
+        final abiertas = (await customSelect("SELECT name FROM pragma_table_info('ventas_abiertas')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!abiertas.contains('encargue_id')) {
+          await m.addColumn(ventasAbiertas, ventasAbiertas.encargueId);
+        }
+        // La sección del menú, al final como las anteriores (el orden se cambia desde Configuración).
+        final yaEncargues = await (select(seccionesMenu)..where((s) => s.clave.equals('encargues'))).getSingleOrNull();
+        if (yaEncargues == null) {
+          final ultimo = await customSelect('SELECT COALESCE(MAX(orden), 0) AS m FROM secciones_menu').getSingle();
+          await into(seccionesMenu).insert(
+            SeccionesMenuCompanion.insert(clave: 'encargues', etiqueta: 'Encargues', orden: (ultimo.data['m'] as int) + 1),
+          );
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

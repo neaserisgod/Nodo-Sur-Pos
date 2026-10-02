@@ -32,6 +32,19 @@ abstract class ServicioCompanion {
 
   Future<List<ProveedorCompanion>> proveedores();
 
+  // ─── Encargues por apartado (El dueño, 2026-10-02) ───────────────────
+
+  Future<List<EncargueCompanion>> encargues();
+
+  /// Aparta lo pedido (baja el stock). Tira [ErrorCompanion] si no alcanza o falta algún dato.
+  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId});
+
+  /// Devuelve lo apartado al stock. Cancelar uno ya entregado o ya cancelado no hace nada.
+  Future<void> cancelarEncargue(int id, {required int usuarioId});
+
+  /// Lo apartado como líneas de venta a los precios de hoy. Se cobra con `encargueId:` en cualquiera de los cobros.
+  Future<List<LineaVenta>> lineasDeEncargue(int id);
+
   /// Catálogo fijo de categorías (Regla 14) — para el desplegable del alta/
   /// edición completa de producto (`PantallaFormularioProducto`). Nunca
   /// crea una categoría nueva desde acá, solo elige entre las que ya hay,
@@ -293,6 +306,7 @@ abstract class ServicioCompanion {
     required String canal,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   });
 
   /// Crea la orden en la terminal Point — `canal`: `'qr'` | `'debit_card'`.
@@ -318,6 +332,7 @@ abstract class ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   });
 
   Future<void> resolverCobroPosnetNoAprobado({
@@ -387,5 +402,6 @@ abstract class ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   });
 }

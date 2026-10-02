@@ -1152,6 +1152,79 @@ void main() {
       });
     });
 
+    group('encargues por apartado', () {
+      test('apartar por HTTP baja el stock; el listado, las líneas y la entrega por /ventas/cobrar liberan lo apartado', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+
+        final alta = await http.post(
+          url('/encargues'),
+          headers: headers(),
+          body: jsonEncode({
+            'nombreCliente': 'María',
+            'usuarioId': usuarioId,
+            'lineas': [
+              {'productoId': cocaId, 'cantidad': 3},
+            ],
+          }),
+        );
+        expect(alta.statusCode, 201);
+        final id = (jsonDecode(alta.body) as Map)['id'] as int;
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 17);
+
+        final lista = jsonDecode((await http.get(url('/encargues'), headers: headers())).body) as List;
+        expect((lista.single as Map)['nombreCliente'], 'María');
+        expect((lista.single as Map)['lineas'], ['3 × Coca-Cola 500ml']);
+
+        final lineas = jsonDecode((await http.get(url('/encargues/$id/lineas'), headers: headers())).body) as List;
+        final cobro = await http.post(
+          url('/ventas/cobrar'),
+          headers: headers(),
+          body: jsonEncode({'lineas': lineas, 'medio': 'efectivo', 'sesionCajaId': sesionId, 'usuarioId': usuarioId, 'encargueId': id}),
+        );
+        expect(cobro.statusCode, 201);
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 17, reason: '20 - 3, una sola vez');
+        expect(jsonDecode((await http.get(url('/encargues'), headers: headers())).body), isEmpty);
+      });
+
+      test('sin stock suficiente responde 409 con el producto y no aparta nada', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final alta = await http.post(
+          url('/encargues'),
+          headers: headers(),
+          body: jsonEncode({
+            'nombreCliente': 'María',
+            'usuarioId': usuarioId,
+            'lineas': [
+              {'productoId': cocaId, 'cantidad': 999},
+            ],
+          }),
+        );
+        expect(alta.statusCode, 409);
+        expect(jsonDecode(alta.body)['error'] ?? alta.body, contains('Coca-Cola 500ml'));
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 20);
+      });
+
+      test('cancelar devuelve el stock', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final alta = await http.post(
+          url('/encargues'),
+          headers: headers(),
+          body: jsonEncode({
+            'nombreCliente': 'María',
+            'usuarioId': usuarioId,
+            'lineas': [
+              {'productoId': cocaId, 'cantidad': 3},
+            ],
+          }),
+        );
+        final id = (jsonDecode(alta.body) as Map)['id'] as int;
+        final r = await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}));
+        expect(r.statusCode, 200);
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 20);
+      });
+    });
+
     group('/ventas/cobrar (efectivo, sin posnet)', () {
       test('registra la venta y descuenta el stock', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);

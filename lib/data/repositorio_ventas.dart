@@ -14,6 +14,7 @@ import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
+import 'repositorio_encargues.dart' show liberarEncargueEntregado;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
 
@@ -280,6 +281,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // MISMA transacción, así una caída entre cobrar y limpiar no deja la venta
   // cobrada y también armada, lista para cobrarse dos veces.
   int? ventaAbiertaId,
+  // El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`): se libera en la MISMA transacción,
+  // porque la venta descuenta el stock y lo apartado ya estaba descontado.
+  int? encargueId,
 }) {
   return db.transaction(() async {
     if (ventaAbiertaId != null) {
@@ -305,6 +309,12 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
             actualizadoEn: Value(DateTime.now()),
           ),
         );
+
+    // Antes de las líneas: así el stock que cada línea lee y devuelve (`stockActualizado`, que la pantalla de venta
+    // aplica en memoria) ya es el final, sin pasar por un valor intermedio.
+    if (encargueId != null) {
+      await liberarEncargueEntregado(db, encargueId, ventaId: ventaId, usuarioId: usuarioId);
+    }
 
     final stockActualizado = <ActualizacionStock>[];
     for (final linea in venta.lineas) {
@@ -721,6 +731,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   required int usuarioId,
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
+  int? encargueId,
 }) async {
   final resultado = await calcularResultadoVenta(
     db,
@@ -742,6 +753,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
     sesionCajaId: sesionCajaId,
     usuarioId: usuarioId,
     pagos: pagos,
+    encargueId: encargueId,
   );
   return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
 }

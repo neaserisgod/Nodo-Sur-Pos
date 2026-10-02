@@ -20,7 +20,7 @@ void main() {
     expect(c.categorias, hasLength(11));
     expect(c.usuarios, hasLength(1));
     expect(c.mediosDePago, hasLength(2));
-    expect(c.secciones, hasLength(3));
+    expect(c.secciones, hasLength(4));
   });
 
   test('guardarRecargo actualiza y recarga', () async {

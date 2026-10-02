@@ -11,10 +11,10 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('listarSecciones trae las 3 sembradas, en orden', () async {
+  test('listarSecciones trae las 4 sembradas, en orden', () async {
     final secciones = await listarSecciones(db);
-    expect(secciones, hasLength(3));
-    expect(secciones.map((s) => s.orden), [0, 1, 2]);
+    expect(secciones, hasLength(4));
+    expect(secciones.map((s) => s.orden), [0, 1, 2, 3]);
     expect(secciones.first.clave, 'proveedores');
   });
 
@@ -58,7 +58,7 @@ void main() {
     final visibles = await listarSeccionesVisibles(db);
 
     expect(visibles.any((s) => s.clave == 'proveedores'), isFalse);
-    // 3 sembradas - "proveedores" (recién ocultada acá).
-    expect(visibles, hasLength(2));
+    // 4 sembradas - "proveedores" (recién ocultada acá).
+    expect(visibles, hasLength(3));
   });
 }

@@ -62,6 +62,7 @@ class PantallaCarritoVenta extends StatefulWidget {
     required this.servicio,
     required this.usuarioId,
     required this.carrito,
+    this.encargueId,
   });
 
   /// Imprimir ticket — exclusivo de la PC (El dueño, 2026-09-18: la orden de
@@ -82,6 +83,9 @@ class PantallaCarritoVenta extends StatefulWidget {
   /// (mismo criterio que cualquier otra pantalla de gestión que vuelve a
   /// cargar al hacer pop).
   final List<LineaVenta> carrito;
+
+  /// El encargue por apartado que esta venta entrega: al cobrar, por cualquier medio, libera lo apartado.
+  final int? encargueId;
 
   @override
   State<PantallaCarritoVenta> createState() => _PantallaCarritoVentaState();
@@ -301,6 +305,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         usuarioId: widget.usuarioId,
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
+        encargueId: widget.encargueId,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -340,6 +345,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         montoCentavos: total,
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
+        encargueId: widget.encargueId,
       );
       if (resultado != null) {
         await _ventaCobrada(resultado.ventaId, resultado.totalCentavos);
@@ -375,6 +381,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         canal: medio == _MedioVenta.qr ? 'qr' : 'debit_card',
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
+        encargueId: widget.encargueId,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {

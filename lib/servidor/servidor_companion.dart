@@ -70,6 +70,7 @@ import '../data/repositorio_sincronizacion.dart';
 import '../data/repositorio_ticket.dart';
 import '../servicios/actualizaciones.dart' show leerVersionApp;
 import '../data/repositorio_usuarios.dart';
+import '../data/repositorio_encargues.dart';
 import '../data/repositorio_ventas.dart';
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/cobro_posnet.dart';
@@ -337,6 +338,55 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       archivo.openRead(),
       headers: {'content-type': 'application/vnd.android.package-archive'},
     );
+  });
+
+  // ─── Encargues por apartado (El dueño, 2026-10-02) ───────────────────
+  router.get('/encargues', (Request request) async {
+    final lista = await listarEnarguesPendientes(db);
+    return _json([
+      for (final e in lista)
+        {
+          'id': e.id,
+          'nombreCliente': e.nombreCliente,
+          'desdeMs': e.desde.millisecondsSinceEpoch,
+          'lineas': [for (final l in e.lineas) l.texto],
+        },
+    ]);
+  });
+
+  router.post('/encargues', (Request request) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    try {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: _textoRequerido(body, 'nombreCliente'),
+        lineas: [
+          for (final l in body['lineas'] as List)
+            LineaEncargueNueva(
+              productoId: (l as Map)['productoId'] as int,
+              cantidad: l['cantidad'] as int?,
+              gramos: l['gramos'] as int?,
+            ),
+        ],
+        usuarioId: _intRequerido(body, 'usuarioId'),
+      );
+      return _json({'id': id}, status: 201);
+    } on EncargueSinStock catch (e) {
+      return _error(409, 'No alcanza el stock de ${e.nombreProducto}.');
+    } on ArgumentError catch (e) {
+      return _error(400, '${e.message}');
+    }
+  });
+
+  router.post('/encargues/<id>/cancelar', (Request request, String id) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
+    return _json({'ok': true});
+  });
+
+  router.get('/encargues/<id>/lineas', (Request request, String id) async {
+    final lineas = await lineasParaEntregar(db, int.parse(id));
+    return _json([for (final l in lineas) lineaVentaAJson(l)]);
   });
 
   router.get('/usuarios', (Request request) async {
@@ -1157,6 +1207,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       usuarioId: _intRequerido(body, 'usuarioId'),
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: body['encargueId'] as int?,
     );
     return _json({
       'ventaId': resultado.ventaId,
@@ -1253,6 +1304,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       usuarioId: _intRequerido(body, 'usuarioId'),
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: body['encargueId'] as int?,
     );
     await marcarOrdenResuelta(
       db,

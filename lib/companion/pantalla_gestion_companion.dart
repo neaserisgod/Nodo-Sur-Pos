@@ -47,6 +47,7 @@ class PantallaGestionCompanion extends StatelessWidget {
     required this.onCambiarModo,
     required this.modoUso,
     this.usuarioId,
+    this.onAbrirEncargues,
   });
 
   final bool navegando;
@@ -67,6 +68,9 @@ class PantallaGestionCompanion extends StatelessWidget {
 
   /// Para abrir Separaciones, que atribuye lo que se tilda a quien lo hizo.
   final int? usuarioId;
+
+  /// Abre Encargues (lo apartado para un cliente); lo resuelve el menú porque "Entregar" arma el carrito de ahí.
+  final VoidCallback? onAbrirEncargues;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +116,13 @@ class PantallaGestionCompanion extends StatelessWidget {
                         titulo: 'Conteo de stock',
                         subtitulo: 'Por proveedor',
                         onTap: navegando ? null : () => irA((_) => const PantallaConteoStock()),
+                      ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.inboxOutlined,
+                        color: context.acentos.mixto,
+                        titulo: 'Encargues',
+                        subtitulo: 'Lo apartado para clientes',
+                        onTap: navegando ? null : onAbrirEncargues,
                       ),
                       TarjetaAccion(
                         icono: IconosPlazoleta.history,

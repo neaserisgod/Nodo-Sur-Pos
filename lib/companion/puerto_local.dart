@@ -23,6 +23,7 @@ import '../data/repositorio_cierre.dart' as repo_cierre;
 import '../data/repositorio_cobro.dart' as repo_cobro;
 import '../data/repositorio_configuracion.dart' as repo_configuracion;
 import '../data/repositorio_edicion_venta.dart' as repo_edicion_venta;
+import '../data/repositorio_encargues.dart' as repo_encargues;
 import '../data/repositorio_gastos.dart' as repo_gastos;
 import '../data/repositorio_historial.dart' as repo_historial;
 import '../data/repositorio_historial_ventas.dart' as repo_historial_ventas;
@@ -150,6 +151,47 @@ class PuertoLocal implements ServicioCompanion {
       for (final u in filas) UsuarioCompanion(id: u.id, nombre: u.nombre, activo: u.activo),
     ];
   }
+
+  // ─── Encargues por apartado ──────────────────────────────────────────
+
+  @override
+  Future<List<EncargueCompanion>> encargues() async {
+    final lista = await repo_encargues.listarEnarguesPendientes(db);
+    return [
+      for (final e in lista)
+        EncargueCompanion(id: e.id, nombreCliente: e.nombreCliente, desde: e.desde, lineas: [for (final l in e.lineas) l.texto]),
+    ];
+  }
+
+  @override
+  Future<int> crearEncargue({
+    required String nombreCliente,
+    required List<ApartadoCompanion> lineas,
+    required int usuarioId,
+  }) async {
+    try {
+      return await repo_encargues.crearEncargueApartando(
+        db,
+        nombreCliente: nombreCliente,
+        lineas: [
+          for (final l in lineas)
+            repo_encargues.LineaEncargueNueva(productoId: l.productoId, cantidad: l.cantidad, gramos: l.gramos),
+        ],
+        usuarioId: usuarioId,
+      );
+    } on repo_encargues.EncargueSinStock catch (e) {
+      throw ErrorCompanion(409, 'No alcanza el stock de ${e.nombreProducto}.');
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
+
+  @override
+  Future<void> cancelarEncargue(int id, {required int usuarioId}) =>
+      repo_encargues.cancelarEncargue(db, id, usuarioId: usuarioId);
+
+  @override
+  Future<List<LineaVenta>> lineasDeEncargue(int id) => repo_encargues.lineasParaEntregar(db, id);
 
   @override
   Future<List<ProveedorCompanion>> proveedores() async {
@@ -982,6 +1024,7 @@ class PuertoLocal implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
       db,
@@ -991,6 +1034,7 @@ class PuertoLocal implements ServicioCompanion {
       usuarioId: usuarioId,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: encargueId,
     );
   }
 
@@ -1002,6 +1046,7 @@ class PuertoLocal implements ServicioCompanion {
     required String canal,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
       db,
@@ -1012,6 +1057,7 @@ class PuertoLocal implements ServicioCompanion {
       usuarioId: usuarioId,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: encargueId,
     );
   }
 
@@ -1097,6 +1143,7 @@ class PuertoLocal implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) async {
     final resultado = await repo_ventas.registrarVentaSegunMedio(
       db,
@@ -1107,6 +1154,7 @@ class PuertoLocal implements ServicioCompanion {
       usuarioId: usuarioId,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: encargueId,
     );
     await repo_cobro.marcarOrdenResuelta(
       db,

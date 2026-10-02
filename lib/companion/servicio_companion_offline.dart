@@ -40,6 +40,20 @@ class ServicioCompanionOffline implements ServicioCompanion {
   @override
   Future<List<UsuarioCompanion>> usuarios() => _local.usuarios();
 
+  // Encargues: delegan tal cual, apartar y entregar funcionan sin la PC (la base local los sincroniza después).
+  @override
+  Future<List<EncargueCompanion>> encargues() => _local.encargues();
+
+  @override
+  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId}) =>
+      _local.crearEncargue(nombreCliente: nombreCliente, lineas: lineas, usuarioId: usuarioId);
+
+  @override
+  Future<void> cancelarEncargue(int id, {required int usuarioId}) => _local.cancelarEncargue(id, usuarioId: usuarioId);
+
+  @override
+  Future<List<LineaVenta>> lineasDeEncargue(int id) => _local.lineasDeEncargue(id);
+
   @override
   Future<List<ProveedorCompanion>> proveedores() => _local.proveedores();
 
@@ -375,6 +389,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required String canal,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) => _local.cobrarVirtualAMano(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
@@ -382,6 +397,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     canal: canal,
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
+    encargueId: encargueId,
   );
 
   @override
@@ -412,6 +428,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) => _local.confirmarCobroPosnet(
     ordenPendienteId: ordenPendienteId,
     lineas: lineas,
@@ -420,6 +437,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     usuarioId: usuarioId,
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
+    encargueId: encargueId,
   );
 
   @override
@@ -508,11 +526,13 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) => _local.cobrarEfectivo(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
     usuarioId: usuarioId,
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
+    encargueId: encargueId,
   );
 }

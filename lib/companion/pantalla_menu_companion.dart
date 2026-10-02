@@ -59,6 +59,7 @@ import 'navbar_companion.dart';
 import 'navegacion.dart';
 import 'pantalla_arqueo.dart';
 import 'pantalla_carrito_venta.dart';
+import 'pantalla_encargues_companion.dart';
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_gestion_companion.dart';
 import 'pantalla_historial_ventas.dart';
@@ -380,9 +381,42 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         servicio: _servicio!,
         usuarioId: _usuarioId!,
         carrito: _carrito,
+        encargueId: _encargueId,
       ),
     );
+    // Cobrada o vaciada: ya no entrega ese encargue (si quedó con líneas, sigue siendo la misma venta).
+    if (_carrito.isEmpty) _encargueId = null;
     _revisarSesion();
+  }
+
+  /// El encargue por apartado que el carrito está entregando (null en una venta común).
+  int? _encargueId;
+
+  /// Encargues (El dueño, 2026-10-02). "Entregar" vuelve acá con el encargue elegido: se arma el carrito con lo
+  /// apartado a los precios de hoy y se abre; al cobrar, la venta libera lo apartado.
+  Future<void> _abrirEncargues() async {
+    if (_servicio == null || _usuarioId == null || _navegando) return;
+    setState(() => _navegando = true);
+    EntregaEncargue? entrega;
+    try {
+      entrega = await pushSinTeclado<EntregaEncargue>(
+        context,
+        (_) => PantallaEncarguesCompanion(servicio: _servicio!, usuarioId: _usuarioId!, hayVentaArmada: _carrito.isNotEmpty),
+      );
+    } finally {
+      if (mounted) setState(() => _navegando = false);
+    }
+    if (entrega == null || !mounted) return;
+    try {
+      final lineas = await _servicio!.lineasDeEncargue(entrega.id);
+      _carrito
+        ..clear()
+        ..addAll(lineas);
+      _encargueId = entrega.id;
+    } catch (_) {
+      return; // sin lineas no se abre un carrito vacío: el encargue sigue pendiente y se puede reintentar
+    }
+    await _abrirCarritoDesdeInicio();
   }
 
   Future<void> _abrirMovimientoCaja(TipoMovimientoCaja tipo) async {
@@ -552,6 +586,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 onCambiarModo: _cambiarModo,
                 modoUso: _modoUso,
                 usuarioId: _usuarioId,
+                onAbrirEncargues: _abrirEncargues,
               ),
             ),
           ],

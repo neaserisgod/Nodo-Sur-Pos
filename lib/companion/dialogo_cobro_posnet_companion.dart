@@ -38,6 +38,7 @@ Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
   required int montoCentavos,
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
+  int? encargueId,
 }) {
   return mostrarHojaVidrio<({int ventaId, int totalCentavos})?>(
     context,
@@ -51,6 +52,7 @@ Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
       montoCentavos: montoCentavos,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
+      encargueId: encargueId,
     ),
   );
 }
@@ -76,6 +78,7 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
     required this.montoCentavos,
     this.tipoDescuento,
     this.valorDescuento = 0,
+    this.encargueId,
   });
 
   final ServicioCompanion cliente;
@@ -86,6 +89,9 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
   final int montoCentavos;
   final TipoDescuento? tipoDescuento;
   final int valorDescuento;
+
+  /// El encargue por apartado que esta venta entrega: se libera al grabar la venta, por Point o a mano.
+  final int? encargueId;
 
   @override
   State<_DialogoCobroPosnetCompanion> createState() =>
@@ -173,6 +179,7 @@ class _DialogoCobroPosnetCompanionState
             usuarioId: widget.usuarioId,
             tipoDescuento: widget.tipoDescuento,
             valorDescuento: widget.valorDescuento,
+            encargueId: widget.encargueId,
           );
           if (mounted) setState(() => _fase = _Fase.aprobado);
         } catch (e) {
@@ -260,6 +267,7 @@ class _DialogoCobroPosnetCompanionState
         canal: widget.canal,
         tipoDescuento: widget.tipoDescuento,
         valorDescuento: widget.valorDescuento,
+        encargueId: widget.encargueId,
       );
       if (mounted) Navigator.of(context).pop(resultado);
     } catch (e) {

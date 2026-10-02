@@ -32,5 +32,10 @@ class VentasAbiertas extends Table {
   TextColumn get tipoDescuento => text().withDefault(const Constant('monto'))();
   TextColumn get textoDescuento => text().withDefault(const Constant(''))();
 
+  /// El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`). Se guarda con el borrador: si la
+  /// app se cierra antes de cobrar, la venta retomada tiene que seguir sabiendo que libera lo apartado — si no, el stock
+  /// se descontaría dos veces.
+  IntColumn get encargueId => integer().nullable()();
+
   DateTimeColumn get actualizadoEn => dateTime().withDefault(currentDateAndTime)();
 }

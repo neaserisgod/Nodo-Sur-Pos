@@ -20,6 +20,7 @@ import '../../data/database.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import '../configuracion/pantalla_configuracion.dart';
+import '../encargues/pantalla_encargues.dart';
 import '../historial/pantalla_historial.dart';
 import '../proveedores/pantalla_proveedores.dart';
 import '../separaciones/pantalla_separaciones.dart';
@@ -60,6 +61,7 @@ Future<void> navegarASeccionDeGestion(
   required int usuarioId,
   int? sesionCajaId,
   String? textoBusquedaPendiente,
+  int? encarguePendienteId,
 }) async {
   final navigator = Navigator.of(context);
   navigator.popUntil((route) => route.isFirst);
@@ -68,7 +70,7 @@ Future<void> navegarASeccionDeGestion(
   final sesionIdReal = sesionCajaId ?? (await sesionAbierta(db))?.id;
 
   final Widget? pantalla = switch (clave) {
-    'venta' => PantallaVenta(db: db, textoBusquedaPendiente: textoBusquedaPendiente),
+    'venta' => PantallaVenta(db: db, textoBusquedaPendiente: textoBusquedaPendiente, encarguePendienteId: encarguePendienteId),
     'proveedores' => PantallaProveedores(
       db: db,
       usuarioId: usuarioId,
@@ -80,6 +82,7 @@ Future<void> navegarASeccionDeGestion(
       sesionCajaId: sesionIdReal,
     ),
     'historial' => PantallaHistorial(db: db, usuarioId: usuarioId),
+    'encargues' => PantallaEncargues(db: db, usuarioId: usuarioId, sesionCajaId: sesionIdReal),
     'configuracion' => PantallaConfiguracion(db: db, usuarioId: usuarioId),
     _ => null,
   };
