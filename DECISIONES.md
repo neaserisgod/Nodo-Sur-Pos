@@ -1447,5 +1447,15 @@ Decididas con el dueño antes de empezar (fase 1):
 - **Quitar a un miembro lo deja inactivo, no lo borra**: las ventas viejas conservan su nombre.
 - **Panel de administrador y panel del negocio son distintos.** `/admin/` es de Nodo Sur; el dueño de un negocio no es
   admin de la plataforma. La cuenta del dueño de Nodo Sur cumple las dos funciones, pero el código las trata separadas.
-- **Estado:** en construcción por fases (ver el README de `NodoSurPage`). Esta entrada se actualiza al cerrar cada una.
+- **Transferencia de propiedad (fase 5 del sitio).** En dos pasos: el dueño propone y la otra persona acepta; hasta
+  entonces no cambia nada. El dueño anterior queda de **encargado** y no se va: sus PC siguen funcionando (si el nuevo
+  dueño lo quita después, esas PC dejan de valer, y la pantalla lo avisa). Para el POS esto significa que **quien vinculó
+  la PC puede dejar de ser el dueño**: lo que vale es que siga siendo miembro activo del negocio.
+- **Cobro: nadie cancela la suscripción de otra persona.** Una suscripción puede cubrir más de un negocio de quien paga;
+  si el nuevo dueño pudiera cancelarla, dejaría sin acceso a un negocio ajeno. Cancela quien paga. El nuevo dueño, en
+  cambio, **pasa el cobro a su propia suscripción**. Ese pase solo acepta el mail verificado de quien lo pide (nunca uno
+  que venga en el pedido) y con una suscripción vigente: si no, cualquiera podría apuntar su negocio a la suscripción de
+  otro cliente y usar el sistema sin pagar. El administrador de la plataforma puede ajustar el mail de cobro (soporte).
+- **Estado:** en construcción por fases (ver el README de `NodoSurPage`): hechas las del sitio (modelo, acceso, miembros,
+  pantallas, transferencia). Falta la del POS (lista de miembros cacheada + PIN). Esta entrada se actualiza al cerrar cada una.
 
