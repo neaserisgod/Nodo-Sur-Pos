@@ -368,11 +368,13 @@ class _PantallaFormularioProductoState
                         controller: _nombreCtrl,
                         etiqueta: 'Nombre',
                         autofocus: esAlta,
+                        textInputAction: TextInputAction.next,
                         onChanged: _marcarDirty,
                       ),
                       CampoTexto(
                         controller: _codigoCtrl,
                         etiqueta: 'Código de barras (opcional)',
+                        textInputAction: TextInputAction.next,
                         onChanged: _marcarDirty,
                         suffixIcon: IconButton(
                           icon: const Icon(IconosPlazoleta.qrCodeScanner),
@@ -405,6 +407,7 @@ class _PantallaFormularioProductoState
                             child: CampoPlata(
                               controller: _precioCtrl,
                               etiqueta: _esPesable ? 'Precio/kilo' : 'Precio',
+                              textInputAction: TextInputAction.next,
                               onChanged: _alCambiarPrecioOCosto,
                             ),
                           ),
@@ -413,6 +416,7 @@ class _PantallaFormularioProductoState
                             child: CampoPlata(
                               controller: _costoCtrl,
                               etiqueta: _esPesable ? 'Costo/kilo' : 'Costo',
+                              textInputAction: TextInputAction.next,
                               onChanged: _alCambiarPrecioOCosto,
                             ),
                           ),

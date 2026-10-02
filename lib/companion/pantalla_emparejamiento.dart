@@ -168,12 +168,14 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
               children: [
                 TextField(
                   controller: _ipCtrl,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'IP de la PC'),
                 ),
                 const SizedBox(height: Espaciado.lg),
                 TextField(
                   controller: _puertoCtrl,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Puerto'),
                 ),
                 const SizedBox(height: Espaciado.lg),

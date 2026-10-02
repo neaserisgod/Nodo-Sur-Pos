@@ -303,6 +303,7 @@ class _DialogoCierreCompanionState extends State<_DialogoCierreCompanion> {
           CampoPlata(
             controller: _efectivoCtrl,
             etiqueta: 'Efectivo contado (se puede corregir)',
+            textInputAction: TextInputAction.next,
             onChanged: _alCambiarConteo,
           ),
           if (r != null) ...[
@@ -314,6 +315,7 @@ class _DialogoCierreCompanionState extends State<_DialogoCierreCompanion> {
           CampoPlata(
             controller: _mpCtrl,
             etiqueta: 'MP contado (según la app de Mercado Pago)',
+            textInputAction: TextInputAction.next,
             onChanged: _alCambiarConteo,
           ),
           if (mpDiferencia != null) ...[

@@ -42,10 +42,16 @@ class CampoTexto extends StatelessWidget {
     this.sobreElFondo = false,
     this.maxLines = 1,
     this.minLines,
+    this.textInputAction,
   });
 
   final TextEditingController controller;
   final String? etiqueta;
+
+  /// Qué hace la tecla de acción del teclado del celular. En un formulario de
+  /// varios campos, "next" en todos menos el último pasa al campo siguiente en
+  /// vez de cerrar el teclado. Null = el de siempre.
+  final TextInputAction? textInputAction;
 
   /// Más de una línea (ej. el encabezado del ticket: una línea por renglón). Por defecto, una sola.
   final int maxLines;
@@ -90,6 +96,7 @@ class CampoTexto extends StatelessWidget {
         autofocus: autofocus,
         obscureText: obscureText,
         keyboardType: keyboardType ?? (maxLines == 1 ? null : TextInputType.multiline),
+        textInputAction: textInputAction,
         maxLines: obscureText ? 1 : maxLines,
         minLines: obscureText ? null : minLines,
         decoration: InputDecoration(
@@ -115,6 +122,7 @@ class CampoPlata extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.sobreElFondo = false,
+    this.textInputAction,
   });
 
   final TextEditingController controller;
@@ -123,6 +131,9 @@ class CampoPlata extends StatelessWidget {
   final FocusNode? focusNode;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+
+  /// Ver `CampoTexto.textInputAction`.
+  final TextInputAction? textInputAction;
 
   /// Mismo criterio que `CampoTexto.sobreElFondo`: sobre el color del
   /// canvas (o un `BloqueSuave`) se rellena con el blanco de tarjeta.
@@ -143,6 +154,7 @@ class CampoPlata extends StatelessWidget {
         // `decimal: true` el teclado numérico incluye la coma/punto.
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: TextAlign.right,
+        textInputAction: textInputAction,
         style: Theme.of(context).textTheme.bodyMedium?.tabular,
         decoration: InputDecoration(fillColor: sobreElFondo ? context.colores.fondoBloque : context.colores.fondo),
         onChanged: onChanged,

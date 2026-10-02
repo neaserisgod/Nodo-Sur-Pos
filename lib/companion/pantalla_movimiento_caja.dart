@@ -210,7 +210,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto'),
+                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto', textInputAction: TextInputAction.next),
                           const SizedBox(height: Espaciado.lg),
                           CampoTexto(
                             controller: _motivoCtrl,
