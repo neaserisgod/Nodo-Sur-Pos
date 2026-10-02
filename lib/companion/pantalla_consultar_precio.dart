@@ -25,8 +25,8 @@ import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
@@ -179,7 +179,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
         child: _cargandoInicial
             ? const EsqueletoLista()
             : _cliente == null
-            ? EstadoErrorCompanion(
+            ? EstadoError(
                 mensaje: _errorInicial ?? 'No se pudo conectar.',
                 onReintentar: _iniciar,
               )
@@ -214,7 +214,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                   else
                     Expanded(
                       child: _resultados.isEmpty && !_buscando
-                          ? EstadoVacioCompanion(
+                          ? EstadoVacio(
                               mensaje: _busquedaCtrl.text.trim().isEmpty
                                   ? 'Escribí para buscar, o escaneá'
                                   : 'Sin resultados',

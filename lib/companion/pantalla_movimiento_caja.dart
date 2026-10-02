@@ -24,7 +24,7 @@ import 'servicio_companion_offline.dart';
 import 'sesion_abierta_gate.dart';
 import 'tema/chip_seleccionable.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_error_companion.dart';
+import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
@@ -169,7 +169,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
         child: _cargandoInicial
             ? const Center(child: CircularProgressIndicator())
             : _cliente == null
-            ? EstadoErrorCompanion(
+            ? EstadoError(
                 mensaje: _errorInicial ?? 'No se pudo conectar.',
                 onReintentar: _iniciar,
               )

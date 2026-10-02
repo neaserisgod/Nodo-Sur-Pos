@@ -23,7 +23,7 @@ import 'mensaje_error.dart';
 import 'pantalla_carga_historica.dart'
     show FilaDatoSimple, SeccionProductosSinDatos;
 import 'servicio_companion.dart';
-import 'tema/estado_error_companion.dart';
+import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 
@@ -79,7 +79,7 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
         child: _cargando
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-            ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _cargar)
+            ? EstadoError(mensaje: _error!, onReintentar: _cargar)
             : _contenido(context),
       ),
     );

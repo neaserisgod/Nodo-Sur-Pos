@@ -1422,3 +1422,19 @@ Decididas con el dueño antes de empezar (fase 1):
   instalación existente y arriesga la base. El instalador borra los accesos directos con el nombre viejo
   para no dejar duplicados.
 - El nombre del local (encabezado del ticket) sigue siendo el del negocio, no el del programa.
+
+## Primitivas compartidas entre PC y celular (2026-10-02)
+
+- Antes había copias casi iguales de piezas visuales en `lib/ui/` y en `lib/companion/tema/`. Se
+  unificaron las que eran **idénticas salvo el nombre**: `EstadoError`/`EstadoVacio` (el celular usa los
+  de `ui/comun/`), `Presionable` (el de `ui/tema/`; la copia del celular solo omitía invertir colores
+  sobre el acento, que ninguna pantalla del celular usa) y la escala de espaciado (`Espaciado`; la copia
+  `EspacioCompanion` tenía los mismos valores). Se verificó con las capturas de cada pantalla, que
+  quedaron iguales píxel por píxel.
+- **Se dejaron separadas a propósito** las que son otra versión del diseño: `ChipIcono` (círculo en el
+  celular, cuadrado redondeado en la PC), `ChipSeleccionable` (el del celular lleva borde y brillo),
+  `Superficie` (radios distintos), `FilaDato` (en el celular es una fila tocable con subtítulo) y el
+  esqueleto de carga. Unirlas obligaría a elegir un diseño o a llenarlas de parámetros.
+- Cambio de criterio: el comentario de `EspacioCompanion` decía que tener una escala propia evitaba que
+  un cambio en el espaciado de la PC moviera el celular. Hoy mandan los dos con el mismo criterio; si
+  alguna vez tienen que diferir, se vuelve a separar.

@@ -35,7 +35,7 @@ import 'servicio_companion.dart';
 import 'sesion_abierta_gate.dart';
 import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
@@ -596,7 +596,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _listaResultadosBusqueda(BuildContext context) {
     if (_resultadosBusqueda.isEmpty && !_buscando) {
-      return const EstadoVacioCompanion(mensaje: 'Sin resultados', icono: IconosPlazoleta.searchOff);
+      return const EstadoVacio(mensaje: 'Sin resultados', icono: IconosPlazoleta.searchOff);
     }
     return ListView.builder(
       padding: const EdgeInsets.all(Espaciado.lg),
@@ -638,7 +638,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _listaLineas(BuildContext context) {
     if (widget.carrito.isEmpty) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'El carrito está vacío',
         icono: IconosPlazoleta.shoppingCartOutlined,
       );

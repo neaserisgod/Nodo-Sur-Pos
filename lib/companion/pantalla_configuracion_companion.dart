@@ -32,7 +32,7 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/estado_error_companion.dart';
+import '../ui/comun/estado_error.dart';
 import 'tema/fila_dato_companion.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
@@ -105,7 +105,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         child: _cargando
             ? const EsqueletoLista()
             : _error != null
-            ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _cargar)
+            ? EstadoError(mensaje: _error!, onReintentar: _cargar)
             : _contenido(context),
       ),
     );

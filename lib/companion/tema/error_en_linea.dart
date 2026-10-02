@@ -4,7 +4,7 @@
 // aparece (`liveRegion`), que un texto común no hace.
 //
 // Es para errores de ACCIÓN (guardar, cobrar, abrir caja). Un error al CARGAR
-// una pantalla va con `EstadoErrorCompanion`, que ofrece reintentar; el
+// una pantalla va con `EstadoError`, que ofrece reintentar; el
 // `SnackBar` queda para confirmaciones, porque desaparece solo.
 
 import 'package:flutter/material.dart';

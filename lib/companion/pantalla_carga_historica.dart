@@ -39,7 +39,7 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/chip_icono.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
@@ -163,7 +163,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
                 child: ErrorEnLinea(_error!),
               )
             : _dias.isEmpty
-            ? const EstadoVacioCompanion(
+            ? const EstadoVacio(
                 mensaje: 'Todavía no cargaste ningún día — tocá "Nuevo día"',
                 icono: IconosPlazoleta.history,
               )
@@ -461,7 +461,7 @@ class _PantallaDetalleDiaHistoricoState
 
   Widget _pestanaVentas(BuildContext context) {
     if (_ventas.isEmpty) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'Sin ventas — "Agregar más" para cargar',
         icono: IconosPlazoleta.receiptLongOutlined,
       );
@@ -1120,7 +1120,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
 
   Widget _listaResultados(BuildContext context) {
     if (_resultados.isEmpty && !_buscando) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'Sin resultados',
         icono: IconosPlazoleta.searchOff,
       );

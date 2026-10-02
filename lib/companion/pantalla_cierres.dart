@@ -38,8 +38,8 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
@@ -138,9 +138,9 @@ class _PantallaCierresState extends State<PantallaCierres> {
     return _cargando
         ? const EsqueletoLista()
         : _error != null
-        ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _cargar)
+        ? EstadoError(mensaje: _error!, onReintentar: _cargar)
         : _cierres.isEmpty
-        ? const EstadoVacioCompanion(
+        ? const EstadoVacio(
             mensaje: 'Sin cierres todavía',
             icono: IconosPlazoleta.pointOfSaleOutlined,
           )
