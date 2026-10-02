@@ -115,7 +115,7 @@ class _OpcionModo extends StatelessWidget {
       radio: radioSuperficieCompanion,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(EspacioCompanion.lg),
+        padding: const EdgeInsets.all(Espaciado.lg),
         decoration: BoxDecoration(
           color: colores.fondoBloque,
           borderRadius: BorderRadius.circular(radioSuperficieCompanion),
@@ -130,19 +130,19 @@ class _OpcionModo extends StatelessWidget {
               decoration: BoxDecoration(color: colores.fondo, shape: BoxShape.circle),
               child: Icon(icono, color: colores.textoPrimario, size: 24),
             ),
-            const SizedBox(width: EspacioCompanion.lg),
+            const SizedBox(width: Espaciado.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(titulo, style: textTheme.titleMedium),
-                  const SizedBox(height: EspacioCompanion.xs),
+                  const SizedBox(height: Espaciado.xs),
                   Text(detalle, style: textTheme.bodySmall),
                 ],
               ),
             ),
             if (marcado) ...[
-              const SizedBox(width: EspacioCompanion.sm),
+              const SizedBox(width: Espaciado.sm),
               Icon(IconosPlazoleta.check, color: colores.textoPrimario, size: 22),
             ],
           ],

@@ -111,18 +111,18 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
         child: _cargando
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.fromLTRB(EspacioCompanion.xl, 0, EspacioCompanion.xl, EspacioCompanion.xl),
+                padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
                 children: [
                   const EncabezadoCompanion(
                     rotulo: 'Gestión',
                     titulo: 'Cuenta y sincronización',
-                    padding: EdgeInsets.fromLTRB(0, EspacioCompanion.lg, 0, EspacioCompanion.lg),
+                    padding: EdgeInsets.fromLTRB(0, Espaciado.lg, 0, Espaciado.lg),
                   ),
                   ValueListenableBuilder<ModoSync>(
                     valueListenable: _sync.conmutador.modo,
                     builder: (context, modo, _) => _TarjetaModo(modo: modo, hayCuenta: _cuenta != null),
                   ),
-                  const SizedBox(height: EspacioCompanion.lg),
+                  const SizedBox(height: Espaciado.lg),
                   Superficie(
                     padding: EdgeInsets.zero,
                     child: Column(
@@ -137,10 +137,10 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: EspacioCompanion.lg),
+                  const SizedBox(height: Espaciado.lg),
                   if (_mensaje != null) ...[
                     Text(_mensaje!, style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: EspacioCompanion.md),
+                    const SizedBox(height: Espaciado.md),
                   ],
                   if (_cuenta == null)
                     FilledButton(
@@ -154,20 +154,20 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
                       onPressed: _ocupado ? null : _sincronizarAhora,
                       child: const Text('Sincronizar ahora'),
                     ),
-                    const SizedBox(height: EspacioCompanion.sm),
+                    const SizedBox(height: Espaciado.sm),
                     TextButton(
                       onPressed: _ocupado ? null : _desvincular,
                       child: Text('Desvincular', style: TextStyle(color: context.colores.error)),
                     ),
                   ],
                   if (widget.alContinuar != null) ...[
-                    const SizedBox(height: EspacioCompanion.lg),
+                    const SizedBox(height: Espaciado.lg),
                     OutlinedButton(
                       onPressed: _ocupado ? null : () => widget.alContinuar!(context),
                       child: Text(_cuenta == null ? 'Vincular más tarde' : 'Continuar'),
                     ),
                   ],
-                  const SizedBox(height: EspacioCompanion.xl),
+                  const SizedBox(height: Espaciado.xl),
                   Text(
                     'Con la PC prendida, el celular sincroniza con ella. Si la PC se apaga o queda fuera del wifi, '
                     'pasa solo a internet; cuando la PC vuelve, vuelve a ella.',
@@ -224,7 +224,7 @@ class _TarjetaModo extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: EspacioCompanion.md),
+          const SizedBox(width: Espaciado.md),
           BotonFlecha(icono: icono, tamanio: 48),
         ],
       ),
