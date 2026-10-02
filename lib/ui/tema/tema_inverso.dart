@@ -27,9 +27,13 @@ import 'tokens.dart';
 }
 
 class TemaInverso extends StatelessWidget {
-  const TemaInverso({super.key, required this.activo, required this.child});
+  const TemaInverso({super.key, required this.activo, required this.child, this.invertirAcento = false});
 
   final bool activo;
+
+  /// También intercambia el acento con su texto (para dibujar con el acento
+  /// sobre un bloque oscuro, ej. las barras de un gráfico).
+  final bool invertirAcento;
   final Widget child;
 
   @override
@@ -43,6 +47,8 @@ class TemaInverso extends StatelessWidget {
       textoSecundario: sobre.withValues(alpha: 0.78),
       textoTenue: sobre.withValues(alpha: 0.6),
       borde: sobre.withValues(alpha: 0.24),
+      acento: invertirAcento ? sobre : colores.acento,
+      acentoTexto: invertirAcento ? colores.acento : colores.acentoTexto,
     );
     final extensiones = [
       for (final e in base.extensions.values)
