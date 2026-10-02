@@ -205,12 +205,19 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
           children: [
             BotonPrimario(
               texto: c.subiendo ? 'Guardando…' : 'Guardar una copia ahora',
-              onPressed: c.subiendo || (estado != null && !estado.puedeSubir) ? null : c.subirAhora,
+              onPressed: c.subiendo || (estado != null && !estado.puedeSubir) ? null : c.subirAhora, // sin permiso también queda apagado
             ),
             BotonSecundario(texto: 'Desvincular esta PC', onPressed: c.subiendo ? null : c.desvincular),
           ],
         ),
-        if (estado != null && !estado.puedeSubir) ...[
+        if (estado != null && estado.sinPermiso) ...[
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            'Las copias de seguridad las maneja el dueño del negocio: con tu cuenta no hace falta suscripción ni guardar nada acá.',
+            key: const Key('nube_sin_rol_copias'),
+            style: secundario,
+          ),
+        ] else if (estado != null && !estado.puedeSubir) ...[
           const SizedBox(height: Espaciado.sm),
           Text(
             'Tu suscripción no está activa: podés restaurar copias, pero no guardar nuevas.',

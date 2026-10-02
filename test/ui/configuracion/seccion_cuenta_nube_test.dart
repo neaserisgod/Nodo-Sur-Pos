@@ -117,6 +117,13 @@ void main() {
     expect(find.textContaining('caja abierta'), findsOneWidget);
   });
 
+  testWidgets('un empleado no ve "sin suscripción": se le dice que las copias las maneja el dueño', (tester) async {
+    await almacen.guardar(_cuenta);
+    await abrirSeccion(tester, nubeCon((r) async => _json({'upload': false, 'restore': false, 'noPermission': true, 'max': 5, 'backups': []})));
+    expect(find.byKey(const Key('nube_sin_rol_copias')), findsOneWidget);
+    expect(find.byKey(const Key('nube_sin_permiso_subir')), findsNothing);
+  });
+
   testWidgets('sin suscripción activa: no se puede guardar pero sí restaurar, y se dice', (tester) async {
     await almacen.guardar(_cuenta);
     await abrirSeccion(tester, nubeCon((r) async => _json(_estado(sube: false, copias: [_copia]))));

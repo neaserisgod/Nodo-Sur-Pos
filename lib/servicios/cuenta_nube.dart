@@ -196,9 +196,12 @@ class CopiaEnNube {
 }
 
 class EstadoCopias {
-  const EstadoCopias({required this.puedeSubir, required this.puedeRestaurar, required this.maximo, required this.copias});
+  const EstadoCopias({required this.puedeSubir, required this.puedeRestaurar, required this.maximo, required this.copias, this.sinPermiso = false});
   final bool puedeSubir;
   final bool puedeRestaurar;
+
+  /// El rol de esta cuenta no administra copias (un empleado): no es falta de suscripción, el negocio sí la tiene.
+  final bool sinPermiso;
   final int maximo;
   final List<CopiaEnNube> copias;
 }
@@ -395,6 +398,7 @@ class ClienteNube {
     return EstadoCopias(
       puedeSubir: j['upload'] == true,
       puedeRestaurar: j['restore'] == true,
+      sinPermiso: j['noPermission'] == true,
       maximo: (j['max'] as num?)?.toInt() ?? 5,
       copias: [for (final c in (j['backups'] as List? ?? const [])) CopiaEnNube.desdeJson(c as Map<String, dynamic>)],
     );

@@ -37,6 +37,12 @@ void main() {
   });
 
   group('el cliente', () {
+    test('estado: un empleado llega como sinPermiso, no como falta de suscripción', () async {
+      final c = ClienteNube(http: MockClient((r) async => _json({'upload': false, 'restore': false, 'noPermission': true, 'backups': []})));
+      final e = await c.estado('t1');
+      expect((e.sinPermiso, e.puedeSubir), (true, false));
+    });
+
     test('estado: lee los permisos y las copias', () async {
       final c = ClienteNube(http: MockClient((r) async {
         expect(r.url.path, '/api/backups');
