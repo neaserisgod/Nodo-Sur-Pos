@@ -80,7 +80,7 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
           db: widget.db,
           claveActiva: 'proveedores',
           usuarioId: widget.usuarioId,
-          titulo: 'Proveedores',
+          titulo: 'Conteo de stock',
           busqueda: BusquedaContextual(pista: 'Buscar o escanear producto', alCambiar: c.buscar),
           child: c.cargando ? const SizedBox.shrink() : _contenido(context, c),
         ),
@@ -108,7 +108,6 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Conteo de stock', style: textTheme.headlineMedium),
                   Text(
                     'Contá lo que hay en góndola y depósito. Nada cambia hasta que apliques los ajustes.',
                     style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario),

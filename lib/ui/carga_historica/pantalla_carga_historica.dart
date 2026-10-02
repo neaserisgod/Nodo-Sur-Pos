@@ -208,7 +208,6 @@ class _SelectorFechaState extends State<_SelectorFecha> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Carga histórica', style: textTheme.headlineMedium),
                   Text(
                     'Pasá al sistema las ventas que anotaste en el cuaderno, día por día.',
                     style: textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario),

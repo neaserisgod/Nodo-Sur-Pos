@@ -28,7 +28,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../tema/iconos.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 
 const Color _colorVelo = Color(0x99808080);
@@ -91,81 +90,74 @@ class Modal extends StatelessWidget {
               Navigator.of(context).maybePop(),
         },
         child: Dialog(
-          elevation: 8,
-          shadowColor: Colors.black.withValues(alpha: 0.35),
-          backgroundColor: colores.fondoBloque,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioSuperficieEscritorio + 4)),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(Espaciado.xl),
           child: ConstrainedBox(
             constraints: restricciones,
-            // "Lenguaje de diseño" (El dueño, 2026-09-26): diálogo opaco con
-            // una sombra suave para despegarlo del velo, en vez del vidrio
-            // esmerilado (blur + relleno translúcido) de antes — el lenguaje
-            // nuevo es plano, y el blur dejaba el diálogo grisáceo.
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(radioSuperficieEscritorio + 4),
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: colores.fondoBloque),
-                child: Container(
-                  decoration: const BoxDecoration(),
-                  // `Material` transparente propio: sin esto, cualquier
-                  // `ListTile`/`InkWell` de `contenido` pinta su ink en el
-                  // `Material` del `Dialog`, que queda TAPADO por este
-                  // `Container` decorado — Flutter lo detecta y tira un
-                  // assert en tests (`ListTile background color or ink
-                  // splashes may be invisible`). Este `Material` de acá es
-                  // el ancestro más cercano, así el ink pinta donde
-                  // corresponde.
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Padding(
-                      padding: const EdgeInsets.all(Espaciado.xl),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // "Lenguaje de diseño" (mocks `Dialogos*`): título
-                          // con una línea de contexto y una cruz para cerrar
-                          // con el mouse — Esc ya lo hacía, pero no se veía.
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(titulo, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: Pesos.fuerte)),
-                                    if (subtitulo != null)
-                                      Text(
-                                        subtitulo!,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colores.textoSecundario),
-                                      ),
+            // Rediseño "antigravity": tarjeta blanca muy redondeada con una
+            // sombra grande y suave sobre el velo, título liviano y grande,
+            // botones en píldoras que se reparten el ancho (como el mock).
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colores.fondo,
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 60, offset: const Offset(0, 20)),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                // `Material` transparente propio: sin esto, cualquier
+                // `ListTile`/`InkWell` de `contenido` pinta su ink en el
+                // `Material` del `Dialog`, que queda tapado por la
+                // decoración — Flutter lo detecta y tira un assert en tests.
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(Espaciado.xxl, Espaciado.xl + 4, Espaciado.xxl, Espaciado.xl + 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
+                                  if (subtitulo != null) ...[
+                                    const SizedBox(height: Espaciado.xs),
+                                    Text(
+                                      subtitulo!,
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colores.textoSecundario),
+                                    ),
                                   ],
-                                ),
+                                ],
                               ),
-                              IconButton(
+                            ),
+                            const SizedBox(width: Espaciado.md),
+                            Material(
+                              color: colores.fondoBloque,
+                              shape: const CircleBorder(),
+                              child: IconButton(
                                 tooltip: 'Cerrar',
                                 icon: const Icon(IconosPlazoleta.close),
                                 onPressed: () => Navigator.of(context).maybePop(),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: Espaciado.lg),
-                          // Sin alto fijo, el contenido scrollea si no entra en la
-                          // ventana (a 1366×768 un diálogo con teclado numérico
-                          // o varias filas de chips puede no entrar).
-                          alturaMaxima == null ? Flexible(child: SingleChildScrollView(child: contenido)) : Flexible(child: contenido),
-                          const SizedBox(height: Espaciado.lg),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              for (var i = 0; i < botones.length; i++) ...[
-                                if (i != 0) const SizedBox(width: Espaciado.sm),
-                                botones[i],
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Espaciado.lg),
+                        // Sin alto fijo, el contenido scrollea si no entra en la
+                        // ventana (a 1366×768 un diálogo con teclado numérico
+                        // o varias filas de chips puede no entrar).
+                        alturaMaxima == null ? Flexible(child: SingleChildScrollView(child: contenido)) : Flexible(child: contenido),
+                        const SizedBox(height: Espaciado.xl),
+                        _FilaBotones(botones: botones),
+                      ],
                     ),
                   ),
                 ),
@@ -173,6 +165,51 @@ class Modal extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Los botones del modal, en píldoras que se reparten el ancho: el último
+/// (la acción de confirmar) va en tinta; los demás, en gris.
+class _FilaBotones extends StatelessWidget {
+  const _FilaBotones({required this.botones});
+
+  final List<Widget> botones;
+
+  @override
+  Widget build(BuildContext context) {
+    if (botones.isEmpty) return const SizedBox.shrink();
+    final colores = context.colores;
+    final base = Theme.of(context);
+    final gris = TextButton.styleFrom(
+      backgroundColor: colores.fondoBloque,
+      foregroundColor: colores.textoPrimario,
+      minimumSize: const Size.fromHeight(Medidas.alturaControl + 8),
+      shape: const StadiumBorder(),
+      textStyle: base.textTheme.labelLarge,
+    );
+    return Theme(
+      data: base.copyWith(
+        textButtonTheme: TextButtonThemeData(style: gris),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            backgroundColor: colores.fondoBloque,
+            foregroundColor: colores.textoPrimario,
+            side: BorderSide.none,
+            minimumSize: const Size.fromHeight(Medidas.alturaControl + 8),
+            shape: const StadiumBorder(),
+            textStyle: base.textTheme.labelLarge,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < botones.length; i++) ...[
+            if (i != 0) const SizedBox(width: Espaciado.sm),
+            botones.length <= 3 ? Expanded(child: botones[i]) : botones[i],
+          ],
+        ],
       ),
     );
   }

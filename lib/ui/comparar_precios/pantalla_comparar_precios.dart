@@ -137,7 +137,6 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Comparar precios', style: Theme.of(context).textTheme.headlineMedium),
                     Text(
                       'Tu precio al lado del de los súper, para ver qué quedó muy caro o muy barato.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario),
