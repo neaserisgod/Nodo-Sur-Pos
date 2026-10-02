@@ -80,6 +80,7 @@ class _PildoraSalida extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
             child: Center(
               widthFactor: 1,
+              heightFactor: 1,
               child: Text(
                 etiqueta,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: Pesos.fuerte, color: colores.textoPrimario),

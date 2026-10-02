@@ -87,10 +87,10 @@ class _Pestania extends StatelessWidget {
               etiqueta,
               maxLines: 1,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 15,
                 fontWeight: Pesos.fuerte,
                 // Sobre la píldora de tinta el texto inactivo va apagado; el activo, en tinta sobre el claro.
-                color: activa ? colores.acento : colores.acentoTexto.withValues(alpha: 0.72),
+                color: activa ? colores.acento : colores.acentoTexto.withValues(alpha: 0.82),
               ),
             ),
           ),

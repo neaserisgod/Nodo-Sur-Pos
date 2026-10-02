@@ -24,6 +24,7 @@ import 'pantalla_consultar_precio.dart';
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_pagar_proveedor.dart';
 import 'servicio_companion.dart';
+import 'servicio_companion_offline.dart';
 import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
 import 'tema/hoja_vidrio.dart';
@@ -210,7 +211,10 @@ class PantallaInicioCompanion extends StatelessWidget {
               builder: (context, marca, _) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  EtiquetaSeccion(marca.nombre),
+                  if (pcEmparejada)
+                    _EstadoConexion(conectada: servicio is! ServicioCompanionOffline)
+                  else
+                    EtiquetaSeccion(marca.nombre),
                   const SizedBox(height: Espaciado.sm),
                   Text(
                     nombreUsuario == null ? 'Inicio' : 'Hola, $nombreUsuario',
@@ -361,49 +365,22 @@ class _CtaVender extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
     final textTheme = Theme.of(context).textTheme;
     final subtitulo = cerrada
         ? 'Tocá para abrirla'
         : contador > 0
         ? '$contador producto(s) en el carrito'
         : 'Buscar y cobrar';
-    if (cerrada) {
-      return Presionable(
-        radio: radioSuperficieCompanion + 4,
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(Espaciado.xl),
-          decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(radioSuperficieCompanion + 4)),
-          child: Row(
-            children: [
-              Icon(IconosPlazoleta.lockOutline, color: colores.textoSecundario, size: 28),
-              const SizedBox(width: Espaciado.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Caja cerrada', style: textTheme.titleLarge),
-                    Text(subtitulo, style: textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              Icon(IconosPlazoleta.lockOpenOutlined, color: colores.textoSecundario),
-            ],
-          ),
-        ),
-      );
-    }
     return BloqueHero(
       onTap: onTap,
-      minAlto: 196,
+      minAlto: 252,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
-            child: Text('Caja abierta', style: textTheme.labelMedium?.copyWith(color: Colors.white)),
+            child: Text(cerrada ? 'Caja cerrada' : 'Caja abierta', style: textTheme.labelMedium?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: Espaciado.xl),
           Row(
@@ -413,7 +390,7 @@ class _CtaVender extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Vender', style: textTheme.displayLarge?.copyWith(color: Colors.white)),
+                    Text(cerrada ? 'Abrir caja' : 'Vender', style: textTheme.displayLarge?.copyWith(color: Colors.white)),
                     Text(subtitulo, style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
                   ],
                 ),
@@ -423,6 +400,35 @@ class _CtaVender extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Punto de color y texto chico sobre el saludo: si el celular está hablando
+/// con la PC emparejada o está usando su copia local (mock completo, Inicio).
+class _EstadoConexion extends StatelessWidget {
+  const _EstadoConexion({required this.conectada});
+
+  final bool conectada;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final acentos = context.acentos;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: conectada ? const Color(0xFF1B873F) : acentos.dinero, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: Espaciado.sm),
+        Text(
+          conectada ? 'Conectado a la PC' : 'Sin conexión con la PC',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colores.textoSecundario, fontWeight: Pesos.fuerte),
+        ),
+      ],
     );
   }
 }
