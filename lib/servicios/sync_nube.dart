@@ -139,7 +139,7 @@ VistaSync vistaDeSync(ResultadoSyncNube? r) => switch (r) {
   SyncNubeExpirada() => const VistaSync(
     TonoSync.atencion,
     'Quedó atrás de la nube',
-    'Pasó mucho tiempo sin sincronizar. Podés bajar todo de nuevo: lo que hay acá no se pierde.',
+    'Pasó mucho tiempo sin sincronizar. Podés bajar todo de nuevo: lo que cargaste acá y no estaba en la nube se conserva; si algo editado acá también cambió en otro dispositivo, queda la versión de la nube.',
     puedeVolverABajar: true,
   ),
   SyncNubeFallida(sinRed: true) => const VistaSync(
@@ -368,9 +368,10 @@ class ServicioSyncNube {
   /// Olvida el registro: la próxima vuelta baja todo desde el principio. Para después de restaurar una copia.
   Future<void> reiniciar() => almacenEstado.borrar();
 
-  /// Salida de "quedaste atrás de lo que guarda la nube" sin tocar nada de lo que hay en este dispositivo: se olvida el
-  /// registro y se baja todo de nuevo. Lo local no se pierde — cada fila se resuelve por "gana la más reciente" y el
-  /// stock y la caja viajan como movimientos —, así que no hace falta restaurar una copia (que el celular ni puede).
+  /// Salida de "quedaste atrás de lo que guarda la nube": se olvida el registro y se baja todo de nuevo. Se conserva
+  /// lo que solo existe acá (filas nuevas, y el stock y la caja, que viajan como movimientos y se suman); una fila que
+  /// existe también en la nube queda con la versión de la nube ("gana el último en llegar"). No hace falta restaurar
+  /// una copia, que el celular ni puede.
   Future<ResultadoSyncNube> volverABajarTodo() async {
     await reiniciar();
     return sincronizar();
