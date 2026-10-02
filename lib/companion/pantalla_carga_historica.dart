@@ -45,6 +45,7 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/esqueleto_companion.dart';
 
 enum _MedioHistorico { efectivo, virtual, mixto }
 
@@ -157,7 +158,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
       ),
       body: SafeArea(
         child: _cargando
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoLista()
             : _error != null
             ? Center(
                 child: ErrorEnLinea(_error!),
@@ -365,7 +366,7 @@ class _PantallaDetalleDiaHistoricoState
         ),
         body: SafeArea(
           child: _cargando
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoLista()
               : _error != null
               ? Center(
                   child: ErrorEnLinea(_error!),

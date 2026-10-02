@@ -26,6 +26,7 @@ import 'servicio_companion.dart';
 import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/esqueleto_companion.dart';
 
 class PantallaArqueo extends StatefulWidget {
   const PantallaArqueo({super.key, required this.servicio});
@@ -77,7 +78,7 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
       ),
       body: SafeArea(
         child: _cargando
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoLista()
             : _error != null
             ? EstadoError(mensaje: _error!, onReintentar: _cargar)
             : _contenido(context),
