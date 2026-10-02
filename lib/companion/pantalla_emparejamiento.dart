@@ -12,7 +12,7 @@ import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'modo_uso.dart';
-import 'pantalla_elegir_usuario.dart';
+import 'pantalla_entrar_con_cuenta.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
@@ -72,7 +72,7 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
     if (!mounted) return;
     // Sin nada por debajo: ni el menú viejo ni la pantalla de elegir modo tienen sentido después de emparejar.
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const PantallaElegirUsuario()),
+      MaterialPageRoute(builder: (_) => const PantallaEntrarConCuenta()),
       (route) => false,
     );
   }

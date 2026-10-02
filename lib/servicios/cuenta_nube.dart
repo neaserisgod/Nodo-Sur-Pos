@@ -13,6 +13,15 @@ import 'package:path/path.dart' as p;
 import '../domain/vinculacion.dart';
 
 /// Lo que guarda la PC después de vincularse.
+/// La persona detrás de una cuenta vinculada: `rol` es 'owner' | 'manager' | 'employee' (null si el dispositivo es de antes
+/// del modelo de negocios).
+class PerfilDeCuenta {
+  const PerfilDeCuenta({required this.email, required this.nombre, this.rol});
+  final String email;
+  final String nombre;
+  final String? rol;
+}
+
 class CuentaVinculada {
   const CuentaVinculada({
     required this.token,
@@ -292,6 +301,15 @@ class ClienteNube {
     );
   });
 
+  /// Quién es la persona que vinculó este dispositivo (nombre de su cuenta, rol y sucursal). El celular lo usa para tomar su
+  /// perfil de la cuenta en vez de elegirlo de una lista.
+  Future<PerfilDeCuenta> yo(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/device/me'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return PerfilDeCuenta(email: j['email'] as String, nombre: (j['name'] as String).trim(), rol: j['role'] as String?);
+  });
+
   Future<RespuestaAviso> avisar(String token, {required String cid, required String version, required String sistema}) => _conRed(() async {
     final r = await http.post(
       _uri('/api/device/ping'),
@@ -415,6 +433,7 @@ Future<CuentaVinculada> vincularEstaPc({
   required Future<void> Function(Uri) abrirNavegador,
   Duration espera = const Duration(minutes: 5),
   String host = hostNodoSur,
+  bool celular = false,
 }) async {
   final verificador = generarVerificador();
   final state = generarState();
@@ -430,7 +449,7 @@ Future<CuentaVinculada> vincularEstaPc({
       pedido.response.write(
         '<!doctype html><meta charset="utf-8"><title>Nodo Sur POS</title>'
         '<body style="font-family:sans-serif;text-align:center;margin-top:15vh">'
-        '<h2>Listo, tu PC quedó vinculada</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
+        '<h2>${celular ? 'Listo, entraste en tu celular' : 'Listo, tu PC quedó vinculada'}</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
       );
       if (!codigo.isCompleted) codigo.complete(code);
     }
@@ -444,6 +463,7 @@ Future<CuentaVinculada> vincularEstaPc({
       idDispositivo: idDispositivo,
       nombre: nombre,
       host: host,
+      celular: celular,
     ));
     final code = await codigo.future.timeout(
       espera,

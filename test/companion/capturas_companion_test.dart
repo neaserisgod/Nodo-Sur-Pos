@@ -16,7 +16,6 @@ import 'package:la_plazoleta/companion/pantalla_inicio_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:la_plazoleta/companion/pantalla_elegir_usuario.dart';
 import 'package:la_plazoleta/companion/pantalla_gestion_companion.dart';
 import 'package:la_plazoleta/companion/conmutador_sync.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
@@ -110,7 +109,6 @@ Widget _gestion({required bool abierta}) => Scaffold(
         sesion: SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime.now()),
         onAbrirArqueo: () {},
         onCerrarCaja: () {},
-        onCambiarUsuario: () {},
         onCambiarModo: () {},
         modoUso: null,
       ),
@@ -184,10 +182,6 @@ void main() {
         PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
         oscuro: oscuro,
       );
-    });
-    testWidgets('elegir usuario$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'elegir-usuario', const PantallaElegirUsuario(), oscuro: oscuro);
     });
     testWidgets('elegir modo$sufijo', (tester) async {
       await preparar(tester);

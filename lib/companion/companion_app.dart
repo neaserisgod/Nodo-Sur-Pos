@@ -3,6 +3,8 @@
 // (`emparejamiento.dart`) y entra directo al menú. Emparejar con una PC por
 // LAN ya no es parte de este arranque (ver comentario en `_decidir`).
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,7 +13,7 @@ import 'emparejamiento.dart';
 import 'flujo_modo_uso.dart';
 import 'modo_uso.dart';
 import 'identidad_dispositivo.dart';
-import 'pantalla_elegir_usuario.dart';
+import 'pantalla_entrar_con_cuenta.dart';
 import 'pantalla_menu_companion.dart';
 import 'tema/tema_companion.dart';
 import '../servicios/marca_actual.dart';
@@ -72,13 +74,15 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     final modo = resolverModoUso(guardado: guardado, tieneConexion: conexion != null, tieneUsuario: usuario != null);
     // Instalaciones anteriores a la pantalla de elegir modo: se les asigna el que ya venían usando.
     if (modo != null && guardado == null) await guardarModoUso(modo);
+    // Con perfil ya guardado el arranque no espera a la red; si hay cuenta vinculada, el perfil se corrige solo por detrás.
+    if (usuario != null) unawaited(reconciliarPerfilDeCuenta());
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => modo == null
             ? pantallaDeElegirModoInicial()
             : usuario == null
-            ? const PantallaElegirUsuario()
+            ? const PantallaEntrarConCuenta()
             : const PantallaMenuCompanion(),
       ),
     );

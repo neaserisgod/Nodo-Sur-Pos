@@ -131,6 +131,43 @@ void main() {
     });
   });
 
+  group('quién es la persona (celular)', () {
+    test('yo: devuelve el nombre de la cuenta y el rol, con el token del dispositivo', () async {
+      final c = ClienteNube(http: MockClient((r) async {
+        expect(r.url.path, '/api/device/me');
+        expect(r.headers['Authorization'], 'Bearer tok');
+        return _json({'email': 'marta@x.com', 'name': ' Marta Gómez ', 'role': 'employee', 'orgId': 1, 'branchId': 2});
+      }));
+      final p = await c.yo('tok');
+      expect((p.email, p.nombre, p.rol), ('marta@x.com', 'Marta Gómez', 'employee'));
+    });
+
+    test('yo: un dispositivo que ya no vale (la sacaron del negocio) pide entrar de nuevo', () async {
+      final c = ClienteNube(http: MockClient((r) async => http.Response('{"error":"no_device"}', 401)));
+      await expectLater(c.yo('tok'), throwsA(isA<ErrorNube>().having((e) => e.pideVincularDeNuevo, 'pide vincular', isTrue)));
+    });
+
+    test('vincular como celular abre /vincular/?tipo=celular', () async {
+      final cliente = ClienteNube(http: MockClient((r) async => _json({'token': 'tok', 'email': 'a@b.com', 'deviceId': 'd', 'expiresAt': 1})));
+      Uri? abierta;
+      await vincularEstaPc(
+        cliente: cliente,
+        almacen: AlmacenCuentaEnMemoria(),
+        idDispositivo: 'd',
+        nombre: 'Celular',
+        celular: true,
+        abrirNavegador: (url) async {
+          abierta = url;
+          final destino = Uri.parse('http://127.0.0.1:${url.queryParameters['port']}/callback?code=C&state=${url.queryParameters['state']}');
+          final c = HttpClient();
+          await (await (await c.getUrl(destino)).close()).drain<void>();
+          c.close();
+        },
+      );
+      expect(abierta!.queryParameters['tipo'], 'celular');
+    });
+  });
+
   group('vincular esta PC', () {
     test('abre el navegador, recibe el código en el servidor local, lo canjea y guarda la cuenta', () async {
       late Map canje;

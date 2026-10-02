@@ -510,11 +510,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     }
   }
 
-  Future<void> _cambiarUsuario() async {
-    await olvidarUsuario();
-    if (mounted) Navigator.of(context).pop();
-  }
-
   /// Cambiar entre "PC y celular" y "solo celular" (antes "Desconectar de esta PC", que solo servía para volver
   /// a emparejar). Ver `flujo_modo_uso.dart`.
   void _cambiarModo() {
@@ -582,7 +577,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 sesion: _sesion,
                 onAbrirArqueo: _abrirArqueo,
                 onCerrarCaja: _cerrarCaja,
-                onCambiarUsuario: _cambiarUsuario,
                 onCambiarModo: _cambiarModo,
                 modoUso: _modoUso,
                 usuarioId: _usuarioId,
