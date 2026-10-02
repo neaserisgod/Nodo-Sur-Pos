@@ -1688,3 +1688,16 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
 - **Celular sin PC**: `PuertoLocal` usa la misma elección; ya no hace falta estar en el wifi del local para cobrar con la terminal.
 - **Solo el dueño conecta**: el sitio lo exige; las apps muestran el estado (`EstadoMercadoPago`) y abren /negocio.
 - Misma regla de siempre: en la caja QR y débito siguen siendo UN medio (Mercado Pago); el canal es dato del pago.
+
+## Interruptor "Cobrar e imprimir por Nodo Sur" (2026-10-02)
+
+- **Qué**: en Configuración → Impresión, un interruptor DE ESTE EQUIPO (no viaja con la base ni la sync) que manda el cobro con terminal
+  y la impresión del ticket por el servidor de Nodo Sur (Mercado Pago que el negocio conectó en horsepos.com/negocio), aunque haya
+  un access token local cargado. Apagado (por defecto) todo sigue como antes. Sirve para probar la integración Nodo Sur sin borrar el token.
+- **Por qué en memoria y no en la base**: se lee una vez al arrancar (`PreferenciaCobroNube.cargar`) y después el cobro lo consulta sin
+  tocar disco (prioridad operación sobre arranque). No lleva migración.
+- **Imprimir por el servidor**: `imprimirTicketPosnet` elige directo (token y terminal locales, sin el interruptor) o `POST /api/mp/imprimir`
+  del sitio, que manda el ticket a la terminal de la sucursal con el token del negocio. Sin token local ni cuenta, el error dice qué
+  falta en vez de fallar mudo. El contenido del ticket lo sigue armando la app (`contenidoTicketPosnetMp`).
+- **Camino a "definitiva"**: con esto probado, el camino directo (token local) queda como respaldo avanzado y después se puede quitar.
+  Las suscripciones del sitio NO cambian: usan otra credencial.

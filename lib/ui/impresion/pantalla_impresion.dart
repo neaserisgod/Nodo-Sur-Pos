@@ -154,7 +154,7 @@ class _ColumnaConfig extends StatelessWidget {
                   : const Insignia(texto: 'Sin configurar', tono: Tono.alerta),
             ],
           ),
-          const SizedBox(height: Espaciado.lg),
+          const SizedBox(height: Espaciado.md),
           CampoTexto(
             key: const Key('campo_mp_token'),
             controller: tokenCtrl,
@@ -192,6 +192,27 @@ class _ColumnaConfig extends StatelessWidget {
             controller: terminalCobroCtrl,
             etiqueta: 'Terminal ID (cobro)',
             onSubmitted: c.guardarTerminalCobroId,
+          ),
+          const SizedBox(height: Espaciado.md),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cobrar e imprimir por Nodo Sur (servidor)', style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: Espaciado.xs),
+                    Text(
+                      'Usa el Mercado Pago que el negocio conectó en horsepos.com/negocio, sin el access token de este equipo. '
+                      'Apagado, todo sigue como siempre. Sirve para probar sin borrar el token.',
+                      style: TextStyle(color: context.colores.textoSecundario, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              Switch(key: const Key('switch_usar_nodo_sur'), value: c.usarNodoSur, onChanged: c.cambiarUsarNodoSur),
+            ],
           ),
           const SizedBox(height: Espaciado.xl),
           Text('Carpeta de tickets (PDF)', style: Theme.of(context).textTheme.titleMedium),

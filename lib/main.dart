@@ -24,6 +24,7 @@ import 'data/repositorio_configuracion.dart';
 import 'domain/modulos.dart';
 import 'servicios/modulos_activos.dart';
 import 'servicios/nube.dart';
+import 'servicios/preferencia_cobro_nube.dart';
 import 'servicios/marca_actual.dart';
 import 'servicios/migracion_carpeta_datos.dart';
 import 'package:path_provider/path_provider.dart';
@@ -63,6 +64,8 @@ Future<void> _main() async {
       // Nunca frenar el arranque por esto: peor caso, hay que volver a vincular.
     }
   }
+
+  await PreferenciaCobroNube.cargar(); // interruptor de prueba "cobrar por Nodo Sur": se lee una vez, después va en memoria
 
   // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la
   // barra de título nativa y deja que la app decida el cierre. También

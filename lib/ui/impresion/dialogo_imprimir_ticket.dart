@@ -11,7 +11,10 @@ import '../../data/impresion_posnet.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
 import '../tema/tokens.dart';
+import '../../servicios/impresion_posnet_nube.dart';
 import '../../servicios/marca_actual.dart';
+import '../../servicios/nube.dart' show nubeApp;
+import '../../servicios/preferencia_cobro_nube.dart';
 
 Future<void> mostrarDialogoImprimirTicket(
   BuildContext context, {
@@ -67,14 +70,14 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
 
   Future<void> _enviarAPosnet() => _accion(() async {
         final config = _config!;
-        if (config.mpAccessToken == null || config.mpTerminalId == null) {
-          return 'Falta configurar el posnet (pantalla de Impresión)';
-        }
         final ticket = await ticketDeVenta(widget.db, widget.ventaId);
-        await imprimirEnPosnet(
-          accessToken: config.mpAccessToken!,
-          terminalId: config.mpTerminalId!,
+        await imprimirTicketPosnet(
+          accessToken: config.mpAccessToken,
+          terminalId: config.mpTerminalId,
           terminalCobroId: config.mpTerminalCobroId,
+          forzarNube: PreferenciaCobroNube.activo,
+          almacen: nubeApp?.almacen,
+          cliente: nubeApp?.cliente,
           ticket: ticket,
           encabezadoNegocio: (await marcaDeBase(widget.db)).encabezadoTicketEfectivo,
         );
