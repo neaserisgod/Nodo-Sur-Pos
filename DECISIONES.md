@@ -1624,5 +1624,18 @@ proveedor y de filtro ("Sin stock") y, por producto, el stock del sistema y un c
 contado con el motivo "Conteo físico", y cambiar de proveedor o de filtro no pierde lo
 cargado. Tests en `test/companion/pantalla_conteo_stock_test.dart`.
 
-**Pendiente del mock**: Configuración con campos editables y medios de pago, y el
-emparejamiento con el hero de escáner. Siguen con su diseño anterior.
+**Configuración**: se edita en la misma página (chips de redondeo, los tres montos del
+recargo, producto de vuelto, interruptores de medios de pago y usuarios, ganancia de
+referencia por categoría de a 5 puntos) y un solo **Guardar** aplica lo que cambió, con los
+mismos métodos de servicio de antes. Nada se escribe hasta tocarlo; salir con cambios
+pregunta. Renombrar un medio de pago o un usuario sigue siendo una hoja que se aplica en el
+momento. El paso de redondeo que no sea $50 ni $100 (por ejemplo $200) se muestra como una
+opción más y "Otro…" permite cargar cualquier monto: el mock solo traía tres opciones.
+Tests en `test/companion/pantalla_configuracion_companion_test.dart`.
+
+**Emparejamiento**: marca arriba, título grande y la cámara en vivo dentro de un bloque
+oscuro con el marco de escaneo. Se dejó la cámara abierta de entrada, sin el botón
+"Escanear código" del mock, para no sumar un toque; el ingreso a mano sigue como botón
+secundario.
+
+Con esto el celular queda al día con el mock completo.

@@ -42,8 +42,8 @@ class ChipSeleccionable extends StatelessWidget {
               ? resplandorNeon(colores.acento, alpha: 0.35, radio: 12, offset: const Offset(0, 2))
               : null,
         ),
+        // Sin `alignment`: un `Container` con alineación se estira a todo el ancho en un `Wrap`.
         padding: const EdgeInsets.symmetric(horizontal: Espaciado.md, vertical: Espaciado.sm),
-        alignment: Alignment.center,
         child: Text(
           texto,
           style: TextStyle(
