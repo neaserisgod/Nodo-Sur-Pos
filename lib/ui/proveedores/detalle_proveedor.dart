@@ -19,8 +19,8 @@ import '../comun/tarjetas.dart';
 import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/presionable.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/superficie.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'dialogo_avanzado_proveedor.dart';
 import 'dialogo_cuenta_corriente.dart';
@@ -219,6 +219,9 @@ class DetalleProveedor extends StatelessWidget {
   }
 }
 
+/// Los productos como una tabla de filas (igual que el mock): nombre con lo
+/// vendido, stock, costo, precio y margen. Tocar una fila abre el editor;
+/// mantener apretado (o el casillero) la marca para la edición masiva.
 class _GrillaProductos extends StatelessWidget {
   const _GrillaProductos({required this.controlador});
 
@@ -236,39 +239,56 @@ class _GrillaProductos extends StatelessWidget {
       );
     }
     final enModoSeleccion = c.enModoSeleccionMasiva;
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 300,
-        mainAxisSpacing: Espaciado.md,
-        crossAxisSpacing: Espaciado.md,
-        mainAxisExtent: 168,
-      ),
-      itemCount: productos.length,
-      itemBuilder: (context, i) {
-        final producto = productos[i];
-        return _TarjetaProductoProveedor(
-          producto: producto,
-          vendidos: c.vendidoEnPeriodo[producto.id] ?? 0,
-          avisaStock: c.avisaStock(producto),
-          seleccionado: c.seleccionMasiva.contains(producto.id),
-          onTap: enModoSeleccion
-              ? () => c.alternarSeleccionMasiva(producto.id)
-              : () => mostrarDialogoEditarProducto(
-                  context,
-                  controlador: c,
-                  productoId: producto.id,
-                ),
-          onToggleSeleccion: () => c.alternarSeleccionMasiva(producto.id),
-        );
-      },
+    final colores = context.colores;
+    final estiloCabecera = Theme.of(context).textTheme.labelMedium?.copyWith(color: colores.textoTenue);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.sm),
+          child: Row(
+            children: [
+              const SizedBox(width: 32),
+              Expanded(flex: 5, child: Text('Producto', style: estiloCabecera)),
+              Expanded(flex: 3, child: Text('Stock', style: estiloCabecera)),
+              Expanded(flex: 2, child: Text('Costo', textAlign: TextAlign.right, style: estiloCabecera)),
+              Expanded(flex: 3, child: Text('Precio', textAlign: TextAlign.right, style: estiloCabecera)),
+              Expanded(flex: 2, child: Text('Margen', textAlign: TextAlign.right, style: estiloCabecera)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            itemCount: productos.length,
+            separatorBuilder: (_, _) => const SizedBox(height: Espaciado.sm),
+            itemBuilder: (context, i) {
+              final producto = productos[i];
+              return _FilaProductoProveedor(
+                producto: producto,
+                vendidos: c.vendidoEnPeriodo[producto.id] ?? 0,
+                avisaStock: c.avisaStock(producto),
+                seleccionado: c.seleccionMasiva.contains(producto.id),
+                onTap: enModoSeleccion
+                    ? () => c.alternarSeleccionMasiva(producto.id)
+                    : () => mostrarDialogoEditarProducto(
+                        context,
+                        controlador: c,
+                        productoId: producto.id,
+                      ),
+                onToggleSeleccion: () => c.alternarSeleccionMasiva(producto.id),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Nombre y casillero arriba; precio grande con su margen; costo y
-/// vendidos; y el stock contra el mínimo abajo — el orden del mock.
-class _TarjetaProductoProveedor extends StatelessWidget {
-  const _TarjetaProductoProveedor({
+/// Una fila de la tabla de productos: casillero, nombre (con lo vendido),
+/// stock contra el mínimo, costo, precio y margen.
+class _FilaProductoProveedor extends StatelessWidget {
+  const _FilaProductoProveedor({
     required this.producto,
     required this.vendidos,
     required this.avisaStock,
@@ -286,9 +306,10 @@ class _TarjetaProductoProveedor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
+    final inv = coloresDeFila(context, seleccionado);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
     final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
     final unidad = producto.esPesable ? ' g' : '';
     final porKilo = producto.esPesable ? '/kg' : '';
     final precio = producto.precioCentavos == null
@@ -298,104 +319,89 @@ class _TarjetaProductoProveedor extends StatelessWidget {
         ? 'sin costo'
         : formatearARS(producto.costoCentavos!);
     final agotado = producto.stock <= 0;
-    final colorStock = agotado && avisaStock
-        ? colores.error
-        : (avisaStock ? acentos.alerta : colores.textoSecundario);
+    final colorStock = seleccionado
+        ? colores.textoSecundario
+        : agotado && avisaStock
+            ? colores.error
+            : (avisaStock ? acentos.alerta : colores.textoSecundario);
 
     return Presionable(
-      radio: radioControlEscritorio + 2,
+      radio: 26,
       onTap: onTap,
       onLongPress: onToggleSeleccion,
-      color: seleccionado
-          ? colores.acento
-          : Color.lerp(colores.fondo, colores.fondoBloque, 0.4),
+      color: seleccionado ? colores.acento : colores.fondo,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Espaciado.lg,
-          Espaciado.md,
-          Espaciado.sm,
-          Espaciado.md,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+        child: Row(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
+            SizedBox(
+              width: 32,
+              // Casillero de edición masiva (El dueño, 2026-09-16: "subir el
+              // precio de 3 productos... a la vez").
+              child: Checkbox(
+                value: seleccionado,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                onChanged: (_) => onToggleSeleccion(),
+              ),
+            ),
+            Expanded(
+              flex: 5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     producto.nombre,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: Pesos.fuerte,
-                    ),
+                    style: textTheme.titleMedium,
                   ),
-                ),
-                // Casillero de edición masiva (El dueño, 2026-09-16: "subir el
-                // precio de 3 productos... a la vez").
-                Checkbox(
-                  value: seleccionado,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  onChanged: (_) => onToggleSeleccion(),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(precio, style: textTheme.titleLarge?.tabular),
-                  ),
-                ),
-                if (producto.gananciaBp != null) ...[
-                  const SizedBox(width: Espaciado.sm),
-                  Insignia(
-                    texto: '${(producto.gananciaBp! / 100).round()}% gan.',
-                    tono: Tono.ganancia,
-                  ),
+                  Text('vendidos $vendidos$unidad', style: textTheme.bodySmall),
                 ],
-              ],
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              'Costo $costo · vendidos $vendidos$unidad',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodySmall,
-            ),
-            const SizedBox(height: Espaciado.sm),
-            Row(
-              children: [
-                if (avisaStock) ...[
-                  Icon(
-                    IconosPlazoleta.errorOutline,
-                    size: 16,
-                    color: colorStock,
-                  ),
-                  const SizedBox(width: Espaciado.xs),
-                ],
-                Text(
-                  agotado ? 'Sin stock' : 'Stock ${producto.stock}$unidad',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorStock,
-                    fontWeight: Pesos.fuerte,
-                  ),
-                ),
-                const Spacer(),
-                if (producto.stockMinimo != null && producto.stockMinimo! > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(right: Espaciado.sm),
+            Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  if (avisaStock) ...[
+                    Icon(IconosPlazoleta.errorOutline, size: 16, color: colorStock),
+                    const SizedBox(width: Espaciado.xs),
+                  ],
+                  Flexible(
                     child: Text(
-                      'mín. ${producto.stockMinimo}$unidad',
-                      style: textTheme.bodySmall,
+                      agotado ? 'Sin stock' : '${producto.stock}$unidad',
+                      style: textTheme.bodyMedium?.copyWith(color: colorStock, fontWeight: Pesos.medium).tabular,
                     ),
                   ),
-              ],
+                  if (producto.stockMinimo != null && producto.stockMinimo! > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: Espaciado.sm),
+                      child: Text('mín. ${producto.stockMinimo}$unidad', style: textTheme.bodySmall),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(costo, textAlign: TextAlign.right, style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario).tabular),
+            ),
+            Expanded(
+              flex: 3,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(precio, style: textTheme.titleLarge?.tabular),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: producto.gananciaBp == null
+                    ? const SizedBox.shrink()
+                    : Insignia(texto: '${(producto.gananciaBp! / 100).round()} %', tono: Tono.ganancia),
+              ),
             ),
           ],
         ),

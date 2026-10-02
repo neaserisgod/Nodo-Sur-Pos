@@ -12,7 +12,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
+import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
+import 'package:la_plazoleta/ui/comparar_precios/pantalla_comparar_precios.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
+import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
+import 'package:la_plazoleta/ui/stock_proveedor/pantalla_stock_proveedor.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
@@ -162,6 +167,42 @@ void main() {
         () => PantallaSeparaciones(db: db, usuarioId: usuarioId, sesionCajaId: sesionId),
         oscuro: oscuro,
       );
+    });
+
+
+    testWidgets('cierre$sufijo', (tester) async {
+      final (db, usuarioId, sesionId) = await _base();
+      addTearDown(db.close);
+      await _capturar(tester, 'cierre', () => PantallaCierre(db: db, sesionId: sesionId, usuarioId: usuarioId), oscuro: oscuro);
+    });
+
+    testWidgets('comparar precios$sufijo', (tester) async {
+      final (db, usuarioId, sesionId) = await _base();
+      addTearDown(db.close);
+      await _capturar(
+        tester,
+        'comparar-precios',
+        () => PantallaCompararPrecios(db: db, usuarioId: usuarioId, sesionCajaId: sesionId),
+        oscuro: oscuro,
+      );
+    });
+
+    testWidgets('stock por proveedor$sufijo', (tester) async {
+      final (db, usuarioId, _) = await _base();
+      addTearDown(db.close);
+      await _capturar(tester, 'stock-proveedor', () => PantallaStockProveedor(db: db, usuarioId: usuarioId), oscuro: oscuro);
+    });
+
+    testWidgets('carga historica$sufijo', (tester) async {
+      final (db, usuarioId, _) = await _base();
+      addTearDown(db.close);
+      await _capturar(tester, 'carga-historica', () => PantallaCargaHistorica(db: db, usuarioId: usuarioId), oscuro: oscuro);
+    });
+
+    testWidgets('detalle del dia$sufijo', (tester) async {
+      final (db, usuarioId, sesionId) = await _base();
+      addTearDown(db.close);
+      await _capturar(tester, 'detalle-dia', () => PantallaDetalleDia(db: db, sesionId: sesionId, usuarioId: usuarioId), oscuro: oscuro);
     });
 
     testWidgets('configuracion$sufijo', (tester) async {
