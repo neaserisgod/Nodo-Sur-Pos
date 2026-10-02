@@ -36,24 +36,6 @@ void main() {
       expect(movimiento.montoCentavos, 5000);
     });
 
-    test('con un proveedor: queda como PAGO_PROVEEDOR a ese proveedor, sin deuda cargada', () async {
-      final proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PX', nombre: 'Proveedor X'));
-      final id = await registrarGastoRapido(
-        db,
-        sesionCajaId: sesionId,
-        usuarioId: usuarioId,
-        montoCentavos: 8000,
-        medio: MedioGasto.cajonNormal,
-        motivo: 'Mercadería',
-        proveedorId: proveedorId,
-      );
-
-      final movimiento = await (db.select(db.movimientosDeCaja)..where((m) => m.id.equals(id))).getSingle();
-      expect(movimiento.tipo, 'PAGO_PROVEEDOR');
-      expect(movimiento.proveedorId, proveedorId);
-      expect(movimiento.montoCentavos, 8000);
-    });
-
     test(
       'con la sesión ya CERRADA: tira SesionCerradaException, no graba nada',
       () async {

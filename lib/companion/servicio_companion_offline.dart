@@ -433,20 +433,38 @@ class ServicioCompanionOffline implements ServicioCompanion {
       _local.cancelarCobroPosnet(ordenPendienteId: ordenPendienteId, ordenIdMp: ordenIdMp);
 
   @override
+  Future<Map<int, int>> saldosProveedores() => _local.saldosProveedores();
+
+  @override
+  Future<int> pagarProveedor({
+    required int proveedorId,
+    required int usuarioId,
+    required int montoCentavos,
+    required String origen,
+    int? sesionCajaId,
+    String? nota,
+  }) => _local.pagarProveedor(
+    proveedorId: proveedorId,
+    usuarioId: usuarioId,
+    montoCentavos: montoCentavos,
+    origen: origen,
+    sesionCajaId: sesionCajaId,
+    nota: nota,
+  );
+
+  @override
   Future<int> registrarGasto({
     required int sesionCajaId,
     required int usuarioId,
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
-    int? proveedorId,
   }) => _local.registrarGasto(
     sesionCajaId: sesionCajaId,
     usuarioId: usuarioId,
     montoCentavos: montoCentavos,
     medio: medio,
     motivo: motivo,
-    proveedorId: proveedorId,
   );
 
   @override

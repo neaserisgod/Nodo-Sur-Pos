@@ -313,7 +313,13 @@ descuadre real.
   puede salir del cajón, de Mercado Pago, de la lata, o "fuera de la caja"
   (no toca ninguna caja); los tres primeros dejan un movimiento de caja
   PAGO_PROVEEDOR **con el proveedor puesto**, así el arqueo baja lo que salió.
-  No se paga más que la deuda. Anular un cargo o un pago lo saca del saldo
+  **Se le puede pagar a un proveedor sin cargarle deuda antes (2026-10-02, el
+  dueño: "la idea es documentar los gastos")**: lo que supera el saldo se anota
+  solo como un cargo "Pago sin deuda previa" justo antes del pago, así el saldo
+  nunca queda negativo y el gasto queda con su proveedor. **Pagar proveedor
+  (cuenta corriente) es el único camino**: el gasto/movimiento rápido de caja
+  no elige proveedor, para que un mismo pago no se anote dos veces ni quede
+  fuera de la deuda. Anular un cargo o un pago lo saca del saldo
   (un pago desde caja se devuelve con un movimiento nuevo en la caja abierta).
 
 ## 12. Fijos y punto de equilibrio

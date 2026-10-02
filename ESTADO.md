@@ -11,6 +11,19 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
+## Android: accesos del Inicio y pagar proveedor (2026-10-02) — hecho, falta publicar
+
+- Inicio del celular: grilla de accesos con **Consultar precio**, **Movimiento de caja**,
+  **Pagar proveedor** (nuevo) y **Hacer arqueo** (nuevo, solo con la caja abierta).
+- **Pagar proveedor** va por la cuenta corriente de la PC (necesita la PC; ver `DECISIONES.md`,
+  "Pagar proveedor: un solo camino"). Se sacó el selector de proveedor del gasto rápido/movimiento
+  de caja que había agregado el PR #28. Sin tocar el esquema (`schemaVersion` igual).
+- Tests: rutas nuevas del servidor (5) y el aviso sin PC del modo local; los que ya existían, igual.
+  Siguen sin cargar los tests que importan `test/capturas/` (no está en el repo).
+- No probado en un celular real ni contra la PC real.
+
+---
+
 ## Instalador y actualización automática (2026-09-30) — hecho, falta publicar la primera versión
 
 La app ya se puede distribuir con instalador (Inno Setup) y actualizarse sola
