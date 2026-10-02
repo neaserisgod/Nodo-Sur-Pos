@@ -130,7 +130,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -971,6 +971,16 @@ class AppDatabase extends _$AppDatabase {
           'UPDATE categorias SET markup_default_bp = CAST(ROUND(markup_default_bp * 10000.0 / (10000 + markup_default_bp)) AS INTEGER) '
           'WHERE markup_default_bp > -10000',
         );
+      }
+      // v46 → v47 (El dueño, 2026-10-02: encargues = mercadería que ya está y se aparta): `pendientes.lineas_json` guarda qué
+      // se apartó. Aditiva, con chequeo de columna como v43→v44.
+      if (from < 47) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('pendientes')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('lineas_json')) {
+          await m.addColumn(pendientes, pendientes.lineasJson);
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
