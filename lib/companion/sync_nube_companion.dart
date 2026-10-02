@@ -49,6 +49,7 @@ class SyncNubeCompanion {
       idDispositivo: await idDispositivoEstable(),
       nombre: nombre,
       abrirNavegador: abrirNavegador,
+      celular: true,
     );
     // Un registro de otra vinculación no vale para esta cuenta.
     await almacenEstado.borrar();

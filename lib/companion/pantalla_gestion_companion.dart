@@ -43,7 +43,6 @@ class PantallaGestionCompanion extends StatelessWidget {
     required this.sesion,
     required this.onAbrirArqueo,
     required this.onCerrarCaja,
-    required this.onCambiarUsuario,
     required this.onCambiarModo,
     required this.modoUso,
     this.usuarioId,
@@ -60,7 +59,6 @@ class PantallaGestionCompanion extends StatelessWidget {
   /// el celular") — deshabilitada sin sesión abierta, no hay nada que
   /// cerrar.
   final VoidCallback onCerrarCaja;
-  final VoidCallback onCambiarUsuario;
   final VoidCallback onCambiarModo;
 
   /// El modo en uso, para mostrarlo en el botón de abajo.
@@ -168,13 +166,6 @@ class PantallaGestionCompanion extends StatelessWidget {
                                   body: SafeArea(child: PantallaCierres()),
                                 ),
                               ),
-                      ),
-                      TarjetaAccion(
-                        icono: IconosPlazoleta.personOutline,
-                        color: context.acentos.mixto,
-                        titulo: 'Cambiar usuario',
-                        subtitulo: 'Elegir otra persona',
-                        onTap: onCambiarUsuario,
                       ),
                       TarjetaAccion(
                         icono: IconosPlazoleta.cloudSync,

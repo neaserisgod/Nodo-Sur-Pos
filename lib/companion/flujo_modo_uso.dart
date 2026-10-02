@@ -5,9 +5,8 @@ import 'package:flutter/material.dart';
 import 'emparejamiento.dart';
 import 'escucha_pc.dart';
 import 'modo_uso.dart';
-import 'pantalla_cuenta_companion.dart';
 import 'pantalla_elegir_modo.dart';
-import 'pantalla_elegir_usuario.dart';
+import 'pantalla_entrar_con_cuenta.dart';
 import 'pantalla_emparejamiento.dart';
 import 'pantalla_menu_companion.dart';
 import 'sync_nube_companion.dart';
@@ -42,16 +41,10 @@ Future<void> elegirModo(BuildContext context, ModoUso modo, {required ModoUso? a
     case ModoUso.soloCelular:
       await aplicarModoSoloCelular();
       if (actual == null) {
-        // Primer arranque: se ofrece vincular la cuenta antes de entrar (sin ella el celular no sincroniza).
+        // Primer arranque: se entra con la cuenta de la persona. Eso vincula la sync por internet Y fija su perfil, así que
+        // reemplaza al paso de "vincular la cuenta" y a la lista de usuarios (`pantalla_entrar_con_cuenta.dart`).
         navigator.pushAndRemoveUntil(
-          MaterialPageRoute<void>(
-            builder: (_) => PantallaCuentaDelCelular(
-              alContinuar: (context) => Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute<void>(builder: (_) => const PantallaElegirUsuario()),
-                (route) => false,
-              ),
-            ),
-          ),
+          MaterialPageRoute<void>(builder: (_) => const PantallaEntrarConCuenta()),
           (route) => false,
         );
       } else {

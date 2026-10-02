@@ -35,6 +35,9 @@ Uri urlVincular({
   required String idDispositivo,
   required String nombre,
   String host = hostNodoSur,
+  // El celular se vincula con la cuenta de CADA persona (no con la del dueño): el sitio le ofrece sus sucursales y le dice
+  // quién es, y la app toma su perfil de ahí en vez de pedir que lo elija.
+  bool celular = false,
 }) => Uri(
   scheme: 'https',
   host: host,
@@ -45,6 +48,7 @@ Uri urlVincular({
     'challenge': desafio,
     'device': idDispositivo,
     'name': nombre,
+    if (celular) 'tipo': 'celular',
   },
 );
 
