@@ -74,6 +74,8 @@ import '../data/repositorio_encargues.dart';
 import '../data/repositorio_ventas.dart';
 import '../servicios/nube.dart' show nubeApp;
 import '../servicios/pasarela_point_nube.dart';
+import '../servicios/impresion_posnet_nube.dart';
+import '../servicios/preferencia_cobro_nube.dart';
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
@@ -121,6 +123,7 @@ Future<PasarelaPoint> _pasarelaPoint(AppDatabase db, http.Client? httpClientDePr
   final config = await db.select(db.configuracionTabla).getSingle();
   return elegirPasarelaPoint(
     soloToken: soloToken,
+    forzarNube: PreferenciaCobroNube.activo,
     accessToken: config.mpAccessToken,
     terminalId: config.mpTerminalCobroId,
     almacen: nubeApp?.almacen,
@@ -1394,18 +1397,15 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final ventaId = int.tryParse(id);
     if (ventaId == null) return _error(400, 'Id de venta inválido');
     final config = await db.select(db.configuracionTabla).getSingle();
-    if (config.mpAccessToken == null || config.mpTerminalId == null) {
-      return _error(
-        400,
-        'Falta configurar el posnet de impresión (pantalla de Impresión)',
-      );
-    }
     try {
       final ticket = await ticketDeVenta(db, ventaId);
-      await imprimirEnPosnet(
-        accessToken: config.mpAccessToken!,
-        terminalId: config.mpTerminalId!,
+      await imprimirTicketPosnet(
+        accessToken: config.mpAccessToken,
+        terminalId: config.mpTerminalId,
         terminalCobroId: config.mpTerminalCobroId,
+        forzarNube: PreferenciaCobroNube.activo,
+        almacen: nubeApp?.almacen,
+        cliente: nubeApp?.cliente,
         ticket: ticket,
         encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
         client: httpClientDePrueba,

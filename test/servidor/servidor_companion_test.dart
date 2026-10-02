@@ -1566,7 +1566,7 @@ void main() {
     });
 
     group('/ventas/<id>/imprimir', () {
-      test('sin configurar la terminal de impresión da 400', () async {
+      test('sin configurar la terminal de impresión avisa qué hacer (sin token local ni cuenta vinculada)', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
         final (ventaId, _) = await registrarVenta(
@@ -1594,7 +1594,8 @@ void main() {
         );
 
         final respuesta = await http.post(url('/ventas/$ventaId/imprimir'), headers: headers());
-        expect(respuesta.statusCode, 400);
+        expect(respuesta.statusCode, 502);
+        expect(respuesta.body, contains('horsepos.com/negocio'));
       });
 
       test('enviada la configuración, manda el ticket a la terminal', () async {

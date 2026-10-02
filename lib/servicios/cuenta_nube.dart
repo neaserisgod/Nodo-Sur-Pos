@@ -371,6 +371,16 @@ class ClienteNube {
     return estado;
   });
 
+  /// Manda un ticket a la terminal de la sucursal por el servidor (el token de Mercado Pago no sale de ahí).
+  Future<void> imprimirTicketPoint(String token, {required String externalReference, required String idempotencyKey, required String contenido}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/imprimir'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'externalReference': externalReference, 'idempotencyKey': idempotencyKey, 'contenido': contenido}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   Future<void> cancelarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
     final r = await http.post(
       _uri('/api/mp/orden/cancelar'),

@@ -14,6 +14,7 @@ import '../../data/busqueda_productos.dart';
 import '../../data/cobro_posnet.dart';
 import '../../servicios/nube.dart' show nubeApp;
 import '../../servicios/pasarela_point_nube.dart';
+import '../../servicios/preferencia_cobro_nube.dart';
 import '../../data/database.dart';
 import '../../data/normalizacion_texto.dart';
 import '../../data/repositorio_arqueo_intermedio.dart';
@@ -946,8 +947,9 @@ class VentaControlador extends ChangeNotifier {
   ///
   /// Tira `CobroPosnetException` si falta configurar la terminal de cobro,
   /// o si la API responde con un error — el diálogo decide qué mostrar.
-  Future<PasarelaPoint> _pasarelaPoint({bool soloToken = false}) => elegirPasarelaPoint(
+  Future<PasarelaPoint> _pasarelaPoint({bool soloToken = false}) async => elegirPasarelaPoint(
     soloToken: soloToken,
+    forzarNube: PreferenciaCobroNube.activo,
     accessToken: configuracion?.mpAccessToken,
     terminalId: configuracion?.mpTerminalCobroId,
     almacen: nubeApp?.almacen,

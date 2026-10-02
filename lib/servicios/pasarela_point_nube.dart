@@ -59,11 +59,13 @@ Future<PasarelaPoint> elegirPasarelaPoint({
   PasarelaPoint Function(String accessToken, String terminalId)? directa,
   // Consultar y cancelar una orden ya creada no necesitan la terminal: alcanza con el token (como siempre).
   bool soloToken = false,
+  // Interruptor de prueba: ignora el access token local y cobra siempre por el servidor.
+  bool forzarNube = false,
   String mensajeSinCuenta =
       'Configurá el access token y la terminal de cobro en Configuración → Impresión antes de cobrar por acá, '
       'o vinculá este dispositivo a tu cuenta y conectá Mercado Pago en horsepos.com/negocio.',
 }) async {
-  if (accessToken != null && (terminalId != null || soloToken)) {
+  if (!forzarNube && accessToken != null && (terminalId != null || soloToken)) {
     final terminal = terminalId ?? '';
     return directa != null ? directa(accessToken, terminal) : PasarelaPointDirecta(accessToken: accessToken, terminalId: terminal);
   }

@@ -10,7 +10,10 @@ import '../../data/impresion_posnet.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
 import '../../domain/ticket.dart';
+import '../../servicios/impresion_posnet_nube.dart';
 import '../../servicios/marca_actual.dart';
+import '../../servicios/nube.dart' show nubeApp;
+import '../../servicios/preferencia_cobro_nube.dart';
 
 class ImpresionControlador extends ChangeNotifier {
   ImpresionControlador(this.db, {this.httpClientDePrueba});
@@ -25,12 +28,15 @@ class ImpresionControlador extends ChangeNotifier {
   String? mpTerminalCobroId;
   String? carpetaTickets;
 
+  /// Interruptor de prueba (de este equipo): cobrar e imprimir por la integración Nodo Sur aunque haya un access token cargado.
+  bool usarNodoSur = false;
+
   List<FilaVenta> resultados = [];
   String? mensaje;
   bool procesando = false;
   bool cargando = true;
 
-  bool get posnetConfigurado => mpAccessToken != null && mpTerminalId != null;
+  bool get posnetConfigurado => (mpAccessToken != null && mpTerminalId != null) || usarNodoSur;
 
   Future<void> cargarTodo() async {
     final config = await db.select(db.configuracionTabla).getSingle();
@@ -38,8 +44,15 @@ class ImpresionControlador extends ChangeNotifier {
     mpTerminalId = config.mpTerminalId;
     mpTerminalCobroId = config.mpTerminalCobroId;
     carpetaTickets = config.rutaTicketsCarpeta;
+    usarNodoSur = PreferenciaCobroNube.activo;
     resultados = await buscarVentasParaReimprimir(db);
     cargando = false;
+    notifyListeners();
+  }
+
+  Future<void> cambiarUsarNodoSur(bool valor) async {
+    await PreferenciaCobroNube.guardar(valor);
+    usarNodoSur = valor;
     notifyListeners();
   }
 
@@ -122,10 +135,13 @@ class ImpresionControlador extends ChangeNotifier {
     if (!posnetConfigurado) {
       throw StateError('Falta configurar el access token o el terminal id');
     }
-    await imprimirEnPosnet(
-      accessToken: mpAccessToken!,
-      terminalId: mpTerminalId!,
+    await imprimirTicketPosnet(
+      accessToken: mpAccessToken,
+      terminalId: mpTerminalId,
       terminalCobroId: mpTerminalCobroId,
+      forzarNube: usarNodoSur,
+      almacen: nubeApp?.almacen,
+      cliente: nubeApp?.cliente,
       ticket: ticket,
       encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
       client: httpClientDePrueba,
