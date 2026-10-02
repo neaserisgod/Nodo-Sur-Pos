@@ -20,6 +20,8 @@ import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
+import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers/base_para_tests.dart';
 
@@ -57,7 +59,13 @@ Future<(AppDatabase, int, int)> _base() async {
   return (db, usuarioId, sesionId);
 }
 
-Future<void> _capturar(WidgetTester tester, String nombre, Widget Function() pantalla, {bool oscuro = false}) async {
+Future<void> _capturar(
+  WidgetTester tester,
+  String nombre,
+  Widget Function() pantalla, {
+  bool oscuro = false,
+  Future<void> Function()? antes,
+}) async {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -76,6 +84,10 @@ Future<void> _capturar(WidgetTester tester, String nombre, Widget Function() pan
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
+  if (antes != null) {
+    await antes();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
   await tester.pump(const Duration(milliseconds: 600));
   await tester.runAsync(() async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -98,6 +110,24 @@ void main() {
       final (db, _, _) = await _base();
       addTearDown(db.close);
       await _capturar(tester, 'venta', () => PantallaVenta(db: db), oscuro: oscuro);
+    });
+
+    testWidgets('venta con carrito$sufijo', (tester) async {
+      final (db, _, _) = await _base();
+      addTearDown(db.close);
+      await _capturar(
+        tester,
+        'venta-carrito',
+        () => PantallaVenta(db: db),
+        oscuro: oscuro,
+        antes: () async {
+          final c = Provider.of<VentaControlador>(tester.element(find.byType(Scaffold).first), listen: false);
+          final productos = await tester.runAsync(() => db.select(db.productos).get()) ?? [];
+          for (final p in productos.where((p) => p.precioCentavos != null && !p.esPesable).take(3)) {
+            c.agregarProducto(p);
+          }
+        },
+      );
     });
 
     testWidgets('dashboard$sufijo', (tester) async {

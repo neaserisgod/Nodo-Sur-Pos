@@ -35,6 +35,7 @@ import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import '../comun/botones.dart';
+import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
 import '../configuracion/pantalla_configuracion.dart';
 import '../historial/pantalla_historial.dart';
@@ -57,7 +58,11 @@ import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 
 class PantallaVenta extends StatefulWidget {
-  const PantallaVenta({super.key, required this.db, this.textoBusquedaPendiente});
+  const PantallaVenta({
+    super.key,
+    required this.db,
+    this.textoBusquedaPendiente,
+  });
 
   final AppDatabase db;
 
@@ -73,7 +78,8 @@ class PantallaVenta extends StatefulWidget {
   State<PantallaVenta> createState() => _PantallaVentaState();
 }
 
-class _PantallaVentaState extends State<PantallaVenta> with RouteAware , RefrescoPorCelular{
+class _PantallaVentaState extends State<PantallaVenta>
+    with RouteAware, RefrescoPorCelular {
   @override
   void alCambiarDesdeElCelular() => _controlador.cargarTodo();
 
@@ -119,7 +125,8 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
     );
   }
 
-  void _publicarVentaEnCurso() => hayVentaEnCurso.value = _controlador.hayVentaAbierta;
+  void _publicarVentaEnCurso() =>
+      hayVentaEnCurso.value = _controlador.hayVentaAbierta;
 
   @override
   void dispose() {
@@ -510,43 +517,19 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
                   // hay nada que buscar (el handler global de teclado ya
                   // bloquea toda entrada en ese caso, ver más abajo) — la
                   // navbar sola vuelve a quedar sin acompañantes.
+                  // Rediseño "antigravity": la barra de arriba lleva la marca,
+                  // las secciones en pastillas y las acciones de caja; la
+                  // búsqueda baja a la columna de productos, debajo del
+                  // título "Vender" (igual que el mock).
                   if (hayVenta)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Espaciado.lg,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          navbar,
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                // `clamp`, no el ancho fijo directo: a una
-                                // ventana angosta (por debajo del piso
-                                // mínimo probado) la barra se achica con el
-                                // espacio real en vez de desbordar. El
-                                // dropdown de resultados usa este mismo
-                                // ancho ya resuelto (`BarraBusquedaVenta`),
-                                // nunca uno propio.
-                                final anchoBarra = constraints.maxWidth
-                                    .clamp(0.0, Medidas.anchoBarraBusquedaVenta);
-                                return Padding(
-                                  // Mismo `Espaciado.md` que ya trae
-                                  // `NavbarSuperior` internamente (su
-                                  // propio `Padding`) — sin este offset la
-                                  // barra de búsqueda queda más arriba que
-                                  // la navbar, desalineadas.
-                                  padding: const EdgeInsets.only(top: Espaciado.md),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: anchoBarra,
-                                      height: 52,
-                                      child: BarraBusquedaVenta(anchoDropdown: anchoBarra),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                          Expanded(child: navbar),
                           Padding(
                             padding: const EdgeInsets.only(top: Espaciado.md),
                             child: accionesPie,
@@ -555,7 +538,12 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
                       ),
                     )
                   else
-                    navbar,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Espaciado.lg,
+                      ),
+                      child: navbar,
+                    ),
                   Expanded(
                     child: c.sesion == null
                         ? _EstadoBloqueado(
@@ -601,7 +589,41 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
                                     crossAxisAlignment:
                                         CrossAxisAlignment.stretch,
                                     children: [
-                                      const Expanded(child: RejillaProductos()),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            const EncabezadoPantalla(
+                                              titulo: 'Vender',
+                                              subtitulo:
+                                                  'Escribí, escaneá o tocá un producto',
+                                            ),
+                                            const SizedBox(
+                                              height: Espaciado.lg,
+                                            ),
+                                            LayoutBuilder(
+                                              builder:
+                                                  (context, restricciones) =>
+                                                      SizedBox(
+                                                        height: 60,
+                                                        child:
+                                                            BarraBusquedaVenta(
+                                                              anchoDropdown:
+                                                                  restricciones
+                                                                      .maxWidth,
+                                                            ),
+                                                      ),
+                                            ),
+                                            const SizedBox(
+                                              height: Espaciado.lg,
+                                            ),
+                                            const Expanded(
+                                              child: RejillaProductos(),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       const SizedBox(width: Espaciado.md),
                                       SizedBox(
                                         width: Medidas.anchoPanelCobroVenta,
@@ -611,13 +633,17 @@ class _PantallaVentaState extends State<PantallaVenta> with RouteAware , Refresc
                                           children: [
                                             Expanded(
                                               child: ColumnaCarrito(
-                                                ventaConfirmada: c.ultimaVentaId,
-                                                totalConfirmadoCentavos:
-                                                    c.ultimoTotalCobradoCentavos,
-                                                onImprimir: _imprimirUltimoTicket,
+                                                ventaConfirmada:
+                                                    c.ultimaVentaId,
+                                                totalConfirmadoCentavos: c
+                                                    .ultimoTotalCobradoCentavos,
+                                                onImprimir:
+                                                    _imprimirUltimoTicket,
                                               ),
                                             ),
-                                            const SizedBox(height: Espaciado.md),
+                                            const SizedBox(
+                                              height: Espaciado.md,
+                                            ),
                                             PanelCobro(
                                               usuarioId:
                                                   c.sesion?.usuarioAbrioId ?? 0,

@@ -32,6 +32,7 @@ import '../comun/tarjetas.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
 import '../tema/acentos.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/presionable.dart';
 import '../tema/superficie.dart';
 import '../tema/tema.dart';
@@ -319,14 +320,15 @@ class _FilaVenta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final inv = coloresDeFila(context, elegida);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
     final v = venta;
     final apagado = v.anulada ? colores.textoTenue : null;
     return Presionable(
       radio: radioControlEscritorio,
       onTap: onTap,
-      color: elegida ? colores.destacado : Colors.transparent,
+      color: elegida ? colores.acento : Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm, vertical: Espaciado.sm),
         child: Row(

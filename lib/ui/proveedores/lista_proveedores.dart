@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../domain/dinero.dart';
 import '../comun/tarjetas.dart';
 import '../tema/iconos.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/presionable.dart';
 import '../tema/tema.dart';
 import '../tema/tokens.dart';
@@ -98,12 +99,13 @@ class _FilaProveedor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final inv = coloresDeFila(context, elegida);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
     return Presionable(
       radio: radioControlEscritorio + 4,
       onTap: onTap,
-      color: elegida ? colores.destacado : colores.fondoBloque,
+      color: elegida ? colores.acento : colores.fondoBloque,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: Espaciado.md,

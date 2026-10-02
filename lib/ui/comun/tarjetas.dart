@@ -310,7 +310,6 @@ class GrupoPildoras<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: colores.fondoBloque,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: colores.borde),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -321,15 +320,13 @@ class GrupoPildoras<T> extends StatelessWidget {
               child: Presionable(
                 radio: 999,
                 onTap: () => onElegir(valor),
-                color: valor == elegida
-                    ? (oscura ? colores.textoPrimario : colores.acento.withValues(alpha: 0.18))
-                    : Colors.transparent,
+                color: valor == elegida ? colores.acento : Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm + 2),
                   child: Text(
                     texto,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: valor == elegida && oscura ? colores.fondoBloque : colores.textoPrimario,
+                      color: valor == elegida ? colores.acentoTexto : colores.textoPrimario,
                     ),
                   ),
                 ),

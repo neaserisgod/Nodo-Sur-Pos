@@ -20,6 +20,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/navegacion/navbar_superior.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/main.dart';
@@ -88,7 +89,7 @@ void main() {
       // caja. La navbar pasó a ser un solo botón que abre un menú (El dueño,
       // rediseño 2026-09-25) — ya no hay un ícono con tooltip propio por
       // sección, alcanza con que el botón que abre ese menú exista.
-      expect(find.byTooltip('Cambiar de sección'), findsOneWidget);
+      expect(find.byType(NavbarSuperior), findsOneWidget);
 
       await _desmontar(tester);
     },
@@ -136,7 +137,7 @@ void main() {
       );
       // El resto de la navegación sigue disponible (ver el comentario del
       // primer test — la navbar es un dropdown de un solo botón).
-      expect(find.byTooltip('Cambiar de sección'), findsOneWidget);
+      expect(find.byType(NavbarSuperior), findsOneWidget);
 
       await _desmontar(tester);
     },

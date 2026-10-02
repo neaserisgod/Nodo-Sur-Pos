@@ -26,13 +26,15 @@
 
 import 'package:flutter/material.dart';
 
+import '../tema/tema_inverso.dart';
+
 import '../tema/tokens.dart';
 
 abstract final class TactoVenta {
   /// Entre `radioControlEscritorio` (18) y `radioSuperficieEscritorio` (22)
   /// — un botón grande se lee como control táctil, nunca se confunde con
   /// una `Superficie` de contenido.
-  static const double radio = 20;
+  static const double radio = 28;
 
   /// Altura de los botones grandes de venta (medios de pago, "Cobrar",
   /// "$"/"%" del descuento). Sigue siendo `Medidas.alturaControl` (48), a
@@ -102,7 +104,10 @@ class _SuperficieTactilState extends State<SuperficieTactil> {
           onTapDown: widget.onTap == null ? null : (_) => _fijar(true),
           onTapCancel: () => _fijar(false),
           onTapUp: (_) => _fijar(false),
-          child: widget.child,
+          child: TemaInverso(
+            activo: widget.color == context.colores.acento,
+            child: widget.child,
+          ),
         ),
       ),
     );

@@ -307,7 +307,7 @@ class _TarjetaProductoProveedor extends StatelessWidget {
       onTap: onTap,
       onLongPress: onToggleSeleccion,
       color: seleccionado
-          ? colores.destacado
+          ? colores.acento
           : Color.lerp(colores.fondo, colores.fondoBloque, 0.4),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(

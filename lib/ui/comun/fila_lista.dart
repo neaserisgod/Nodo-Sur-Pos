@@ -15,7 +15,7 @@
 import 'package:flutter/material.dart';
 
 import '../tema/presionable.dart';
-import '../tema/tema.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/tokens.dart';
 
 class FilaLista extends StatelessWidget {
@@ -63,59 +63,66 @@ class FilaLista extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final inv = coloresDeFila(context, seleccionada);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
     final colorTexto = apagada && !seleccionada ? colores.textoTenue : null;
 
     return Presionable(
-      radio: radioControlEscritorio,
-      color: seleccionada ? colores.destacado : null,
+      radio: 22,
+      color: seleccionada ? colores.acento : null,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm, vertical: Espaciado.sm),
-        child: Row(
-          children: [
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: Espaciado.sm),
-            ],
-            if (tienePendiente) ...[
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: colores.acento,
-                  shape: BoxShape.circle,
+      child: TemaInverso(
+        activo: seleccionada,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Espaciado.sm,
+            vertical: Espaciado.sm,
+          ),
+          child: Row(
+            children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: Espaciado.sm),
+              ],
+              if (tienePendiente) ...[
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: colores.acento,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: Espaciado.sm),
-            ],
-            Expanded(
-              child: Text(
-                nombre,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorTexto,
-                  fontWeight: seleccionada ? Pesos.medium : Pesos.regular,
-                ),
-              ),
-            ),
-            for (final valor in valores) ...[
-              const SizedBox(width: Espaciado.sm),
-              SizedBox(
-                width: Medidas.anchoValorListaCompacto,
+                const SizedBox(width: Espaciado.sm),
+              ],
+              Expanded(
                 child: Text(
-                  valor,
-                  textAlign: TextAlign.right,
-                  style: textTheme.bodyMedium!.copyWith(color: colorTexto).tabular,
+                  nombre,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorTexto,
+                    fontWeight: seleccionada ? Pesos.medium : Pesos.regular,
+                  ),
                 ),
               ),
+              for (final valor in valores) ...[
+                const SizedBox(width: Espaciado.sm),
+                SizedBox(
+                  width: Medidas.anchoValorListaCompacto,
+                  child: Text(
+                    valor,
+                    textAlign: TextAlign.right,
+                    style: textTheme.bodyMedium!
+                        .copyWith(color: colorTexto)
+                        .tabular,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
-

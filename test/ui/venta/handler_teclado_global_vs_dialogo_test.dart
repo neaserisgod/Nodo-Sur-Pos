@@ -28,6 +28,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/navegacion/navbar_superior.dart';
 import 'package:la_plazoleta/ui/comun/boton_destacado.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
@@ -109,17 +110,10 @@ Future<void> _presionarAltGr(
   await tester.pump();
 }
 
-/// La navbar pasó a ser un solo botón que abre un dropdown de secciones
-/// (El dueño, rediseño 2026-09-25) — hay que abrirlo antes de poder tocar el
-/// nombre de la sección destino, en vez de tocar directo un ícono con
-/// tooltip propio (`find.descendant(of: find.byType(NavbarSuperior),
-/// matching: find.byTooltip(...))`, el patrón viejo que reemplaza).
+/// La navbar es una fila de pastillas (rediseño "antigravity"): se toca
+/// directo la del destino, dentro de la barra.
 Future<void> _navegarA(WidgetTester tester, String etiqueta) async {
-  await tester.tap(find.byTooltip('Cambiar de sección'));
-  await tester.pumpAndSettle();
-  // Adentro del menú: con la pantalla de atrás visible, "Venta" también
-  // puede ser una métrica de la pantalla (Proveedores).
-  await tester.tap(find.descendant(of: find.byKey(const Key('menu_secciones')), matching: find.text(etiqueta)).last);
+  await tester.tap(find.descendant(of: find.byType(NavbarSuperior), matching: find.text(etiqueta)).last);
   await tester.pumpAndSettle();
 }
 
