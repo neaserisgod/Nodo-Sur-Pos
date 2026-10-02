@@ -1660,3 +1660,10 @@ El dueño: "la parte de encargues y pedidos que me hacen". Cuatro decisiones suy
 - **Los tres cobros del celular** (efectivo, a mano, terminal Point) reciben `encargueId`, igual que el servidor HTTP de la PC; el celular funciona sin la PC porque `PuertoLocal` usa el mismo repositorio.
 - **Migración v47**: `pendientes.lineas_json`, `ventas_abiertas.encargue_id` y la sección "Encargues" del menú (al final, reordenable desde Configuración).
 - **Hay que actualizar PC y celular juntos.** Un celular con una APK vieja que reciba un encargue nuevo por sync no tiene la columna `lineas_json`: esa fila no se aplica (se reintenta en cada bajada, sin romper el resto) hasta que se actualice.
+
+## Versión propia del APK (2026-10-02)
+
+El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de Windows: no se podía relanzar un APK sin esperar una beta, y publicar el mismo número daba "ya estaba publicada". Ahora `publicar-apk` acepta un dato opcional **`build`**: el APK se compila con `--build-number` y se publica con esa versión (`1.0.0+<build>`), sin tocar `pubspec.yaml` ni depender de Windows. Vacío = el de siempre.
+- **Volver atrás no existe en Android**: una versión más vieja no se instala encima de una más nueva. Si un APK sale mal, se publica el arreglo con un `build` MÁS ALTO, y la mala se bloquea o se baja de rollout desde `/admin → Versiones`.
+- **El celular no depende de la versión de la PC para actualizarse**: `revisarActualizacion` le pregunta al sitio con su propia versión (`consultarSitio`). Comparar contra la PC (`/companion/version`) es solo el plan B sin internet, y esa versión sale del `.apk` que sirve la PC por el script local, no de la app de escritorio.
+- Elegir el número: mayor que el último APK publicado (hoy 2118). Conviene un rango propio y claro (por ejemplo, seguir desde el último y subir de a uno).
