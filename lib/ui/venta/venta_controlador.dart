@@ -17,6 +17,7 @@ import '../../data/normalizacion_texto.dart';
 import '../../data/repositorio_arqueo_intermedio.dart';
 import '../../data/repositorio_cierre.dart' show esDeOtroDia;
 import '../../data/repositorio_cobro.dart';
+import '../../data/repositorio_encargues.dart' show lineasParaEntregar;
 import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
 import '../../data/repositorio_productos.dart' show listarCategorias;
 import '../../data/repositorio_ventas.dart';
@@ -547,6 +548,31 @@ class VentaControlador extends ChangeNotifier {
   // pantalla, cerrar la app o un corte de luz. Son borradores: no reservan
   // stock ni tocan la caja hasta cobrar.
 
+  /// El encargue por apartado que la venta activa entrega (null en una venta común). Al cobrar libera lo apartado.
+  int? encargueId;
+
+  /// Entregar un encargue: abre una venta con lo apartado a los precios de hoy, en una pestaña aparte si ya había una
+  /// venta armada (no se pisa lo que se estaba cobrando). No toca stock ni caja hasta cobrar.
+  Future<void> cargarEncargue(int id) async {
+    final lineas = await lineasParaEntregar(db, id);
+    if (lineas.isEmpty) return;
+    // Ya está abierto en alguna pestaña: se va a esa en vez de duplicarlo.
+    _pestanas[pestanaActiva].estado = _borradorActivo();
+    final existente = _pestanas.indexWhere((p) => p.estado.encargueId == id);
+    if (existente != -1) {
+      _activar(existente);
+      return;
+    }
+    if (!_borradorActivo().estaVacio) {
+      _pestanas.add(_Pestana(const BorradorVenta()));
+      _activar(_pestanas.length - 1, notificar: false);
+    }
+    carrito = lineas;
+    encargueId = id;
+    indiceUltimaLinea = null;
+    notifyListeners();
+  }
+
   final List<_Pestana> _pestanas = [_Pestana(const BorradorVenta())];
   int pestanaActiva = 0;
   int? _sesionIdDePestanas;
@@ -581,6 +607,7 @@ class VentaControlador extends ChangeNotifier {
     canal: canalElegido,
     tipoDescuento: tipoDescuento.name,
     textoDescuento: campoDescuentoCtrl.text,
+    encargueId: encargueId,
   );
 
   /// Guarda la pestaña activa si cambió desde la última vez. Corre fuera del
@@ -663,6 +690,7 @@ class VentaControlador extends ChangeNotifier {
       avisoCobro = null;
       tipoDescuento = TipoDescuento.values.byName(e.tipoDescuento);
       campoDescuentoCtrl.text = e.textoDescuento;
+      encargueId = e.encargueId;
       _limpiarCampo();
       _firmaGuardada = e.firma;
     } finally {
@@ -693,6 +721,7 @@ class VentaControlador extends ChangeNotifier {
   /// cierra su pestaña y pasa a la vecina.
   void cancelarVenta() {
     carrito = [];
+    encargueId = null;
     indiceUltimaLinea = null;
     medioElegido = null;
     montoEfectivoMixtoCentavos = null;
@@ -871,6 +900,7 @@ class VentaControlador extends ChangeNotifier {
         usuarioId: usuarioId,
         pagos: pagos,
         ventaAbiertaId: pestanaCobrada.dbId,
+        encargueId: encargueId,
       );
       pestanaCobrada.dbId = null;
 

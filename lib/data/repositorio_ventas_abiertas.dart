@@ -22,6 +22,7 @@ class BorradorVenta {
     this.canal,
     this.tipoDescuento = 'monto',
     this.textoDescuento = '',
+    this.encargueId,
   });
 
   /// Null hasta que se guarda por primera vez (una pestaña vacía no ocupa
@@ -34,6 +35,9 @@ class BorradorVenta {
   final String tipoDescuento;
   final String textoDescuento;
 
+  /// El encargue por apartado que esta venta entrega, si es una entrega.
+  final int? encargueId;
+
   /// Vacía = nada que conservar: sin líneas ni descuento tipeado.
   bool get estaVacio => lineas.isEmpty && textoDescuento.trim().isEmpty;
 
@@ -45,6 +49,7 @@ class BorradorVenta {
     canal: canal,
     tipoDescuento: tipoDescuento,
     textoDescuento: textoDescuento,
+    encargueId: encargueId,
   );
 
   /// Clave de comparación: si no cambió, no hay nada que volver a escribir.
@@ -55,6 +60,7 @@ class BorradorVenta {
     canal,
     tipoDescuento,
     textoDescuento,
+    encargueId,
   ]);
 }
 
@@ -71,6 +77,7 @@ BorradorVenta _desdeFila(VentaAbiertaFila fila) {
     canal: fila.canal,
     tipoDescuento: fila.tipoDescuento,
     textoDescuento: fila.textoDescuento,
+    encargueId: fila.encargueId,
   );
 }
 
@@ -109,6 +116,7 @@ Future<int> guardarVentaAbierta(
     canal: Value(borrador.canal),
     tipoDescuento: Value(borrador.tipoDescuento),
     textoDescuento: Value(borrador.textoDescuento),
+    encargueId: Value(borrador.encargueId),
     actualizadoEn: Value(DateTime.now()),
   );
   final id = borrador.id;

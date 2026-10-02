@@ -310,6 +310,12 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
           ),
         );
 
+    // Antes de las líneas: así el stock que cada línea lee y devuelve (`stockActualizado`, que la pantalla de venta
+    // aplica en memoria) ya es el final, sin pasar por un valor intermedio.
+    if (encargueId != null) {
+      await liberarEncargueEntregado(db, encargueId, ventaId: ventaId, usuarioId: usuarioId);
+    }
+
     final stockActualizado = <ActualizacionStock>[];
     for (final linea in venta.lineas) {
       stockActualizado.addAll(
@@ -360,10 +366,6 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
               ),
             );
       }
-    }
-
-    if (encargueId != null) {
-      await liberarEncargueEntregado(db, encargueId, ventaId: ventaId, usuarioId: usuarioId);
     }
 
     return (ventaId, stockActualizado);

@@ -104,6 +104,15 @@ Future<void> _moverStock(
 Future<Producto> _productoPorGlobalId(AppDatabase db, String gid) =>
     (db.select(db.productos)..where((p) => p.globalId.equals(gid))).getSingle();
 
+/// Un producto sin identidad de sincronización (anterior a la sync, o cargado por un camino que no se la dio) la recibe
+/// acá: el encargue se refiere a él por `global_id`. Se marca como cambiado para que suba con esa identidad.
+Future<String> _darIdentidad(AppDatabase db, Producto producto) async {
+  final gid = generarGlobalId();
+  await (db.update(db.productos)..where((p) => p.id.equals(producto.id)))
+      .write(ProductosCompanion(globalId: Value(gid), actualizadoEn: Value(DateTime.now())));
+  return gid;
+}
+
 /// Aparta [lineas] para [nombreCliente]: baja el stock y deja el encargue pendiente. Todo o nada.
 Future<int> crearEncargueApartando(
   AppDatabase db, {
@@ -121,7 +130,7 @@ Future<int> crearEncargueApartando(
       final gramos = l.gramos;
       final unidades = l.cantidad;
       if ((gramos ?? unidades ?? 0) <= 0) throw ArgumentError('La cantidad apartada tiene que ser mayor a cero.');
-      if (producto.globalId == null) throw StateError('El producto ${producto.nombre} no tiene identidad de sincronización.');
+      final gid = producto.globalId ?? await _darIdentidad(db, producto);
       final alcanza = gramos != null ? (producto.stockGramos ?? 0) >= gramos : producto.stock >= unidades!;
       if (!alcanza) throw EncargueSinStock(producto.nombre);
       await _moverStock(
@@ -132,7 +141,7 @@ Future<int> crearEncargueApartando(
         deltaGramos: gramos == null ? null : -gramos,
         motivo: 'Apartado para $nombre',
       );
-      guardadas.add(LineaEncargue(productoGlobalId: producto.globalId!, nombre: producto.nombre, cantidad: unidades, gramos: gramos));
+      guardadas.add(LineaEncargue(productoGlobalId: gid, nombre: producto.nombre, cantidad: unidades, gramos: gramos));
     }
     return db.into(db.pendientes).insert(
           PendientesCompanion.insert(

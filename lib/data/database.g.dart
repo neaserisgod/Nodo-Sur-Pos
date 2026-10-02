@@ -19676,6 +19676,17 @@ class $VentasAbiertasTable extends VentasAbiertas
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _encargueIdMeta = const VerificationMeta(
+    'encargueId',
+  );
+  @override
+  late final GeneratedColumn<int> encargueId = GeneratedColumn<int>(
+    'encargue_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
     'actualizadoEn',
   );
@@ -19700,6 +19711,7 @@ class $VentasAbiertasTable extends VentasAbiertas
     canal,
     tipoDescuento,
     textoDescuento,
+    encargueId,
     actualizadoEn,
   ];
   @override
@@ -19779,6 +19791,12 @@ class $VentasAbiertasTable extends VentasAbiertas
         ),
       );
     }
+    if (data.containsKey('encargue_id')) {
+      context.handle(
+        _encargueIdMeta,
+        encargueId.isAcceptableOrUnknown(data['encargue_id']!, _encargueIdMeta),
+      );
+    }
     if (data.containsKey('actualizado_en')) {
       context.handle(
         _actualizadoEnMeta,
@@ -19833,6 +19851,10 @@ class $VentasAbiertasTable extends VentasAbiertas
         DriftSqlType.string,
         data['${effectivePrefix}texto_descuento'],
       )!,
+      encargueId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}encargue_id'],
+      ),
       actualizadoEn: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}actualizado_en'],
@@ -19866,6 +19888,11 @@ class VentaAbiertaFila extends DataClass
   /// descuento (texto crudo, se vuelve a parsear igual que en vivo).
   final String tipoDescuento;
   final String textoDescuento;
+
+  /// El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`). Se guarda con el borrador: si la
+  /// app se cierra antes de cobrar, la venta retomada tiene que seguir sabiendo que libera lo apartado — si no, el stock
+  /// se descontaría dos veces.
+  final int? encargueId;
   final DateTime actualizadoEn;
   const VentaAbiertaFila({
     required this.id,
@@ -19877,6 +19904,7 @@ class VentaAbiertaFila extends DataClass
     this.canal,
     required this.tipoDescuento,
     required this.textoDescuento,
+    this.encargueId,
     required this.actualizadoEn,
   });
   @override
@@ -19899,6 +19927,9 @@ class VentaAbiertaFila extends DataClass
     }
     map['tipo_descuento'] = Variable<String>(tipoDescuento);
     map['texto_descuento'] = Variable<String>(textoDescuento);
+    if (!nullToAbsent || encargueId != null) {
+      map['encargue_id'] = Variable<int>(encargueId);
+    }
     map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
     return map;
   }
@@ -19921,6 +19952,9 @@ class VentaAbiertaFila extends DataClass
           : Value(canal),
       tipoDescuento: Value(tipoDescuento),
       textoDescuento: Value(textoDescuento),
+      encargueId: encargueId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encargueId),
       actualizadoEn: Value(actualizadoEn),
     );
   }
@@ -19942,6 +19976,7 @@ class VentaAbiertaFila extends DataClass
       canal: serializer.fromJson<String?>(json['canal']),
       tipoDescuento: serializer.fromJson<String>(json['tipoDescuento']),
       textoDescuento: serializer.fromJson<String>(json['textoDescuento']),
+      encargueId: serializer.fromJson<int?>(json['encargueId']),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
     );
   }
@@ -19960,6 +19995,7 @@ class VentaAbiertaFila extends DataClass
       'canal': serializer.toJson<String?>(canal),
       'tipoDescuento': serializer.toJson<String>(tipoDescuento),
       'textoDescuento': serializer.toJson<String>(textoDescuento),
+      'encargueId': serializer.toJson<int?>(encargueId),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
     };
   }
@@ -19974,6 +20010,7 @@ class VentaAbiertaFila extends DataClass
     Value<String?> canal = const Value.absent(),
     String? tipoDescuento,
     String? textoDescuento,
+    Value<int?> encargueId = const Value.absent(),
     DateTime? actualizadoEn,
   }) => VentaAbiertaFila(
     id: id ?? this.id,
@@ -19987,6 +20024,7 @@ class VentaAbiertaFila extends DataClass
     canal: canal.present ? canal.value : this.canal,
     tipoDescuento: tipoDescuento ?? this.tipoDescuento,
     textoDescuento: textoDescuento ?? this.textoDescuento,
+    encargueId: encargueId.present ? encargueId.value : this.encargueId,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
   );
   VentaAbiertaFila copyWithCompanion(VentasAbiertasCompanion data) {
@@ -20010,6 +20048,9 @@ class VentaAbiertaFila extends DataClass
       textoDescuento: data.textoDescuento.present
           ? data.textoDescuento.value
           : this.textoDescuento,
+      encargueId: data.encargueId.present
+          ? data.encargueId.value
+          : this.encargueId,
       actualizadoEn: data.actualizadoEn.present
           ? data.actualizadoEn.value
           : this.actualizadoEn,
@@ -20028,6 +20069,7 @@ class VentaAbiertaFila extends DataClass
           ..write('canal: $canal, ')
           ..write('tipoDescuento: $tipoDescuento, ')
           ..write('textoDescuento: $textoDescuento, ')
+          ..write('encargueId: $encargueId, ')
           ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
@@ -20044,6 +20086,7 @@ class VentaAbiertaFila extends DataClass
     canal,
     tipoDescuento,
     textoDescuento,
+    encargueId,
     actualizadoEn,
   );
   @override
@@ -20059,6 +20102,7 @@ class VentaAbiertaFila extends DataClass
           other.canal == this.canal &&
           other.tipoDescuento == this.tipoDescuento &&
           other.textoDescuento == this.textoDescuento &&
+          other.encargueId == this.encargueId &&
           other.actualizadoEn == this.actualizadoEn);
 }
 
@@ -20072,6 +20116,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
   final Value<String?> canal;
   final Value<String> tipoDescuento;
   final Value<String> textoDescuento;
+  final Value<int?> encargueId;
   final Value<DateTime> actualizadoEn;
   const VentasAbiertasCompanion({
     this.id = const Value.absent(),
@@ -20083,6 +20128,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     this.canal = const Value.absent(),
     this.tipoDescuento = const Value.absent(),
     this.textoDescuento = const Value.absent(),
+    this.encargueId = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
   });
   VentasAbiertasCompanion.insert({
@@ -20095,6 +20141,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     this.canal = const Value.absent(),
     this.tipoDescuento = const Value.absent(),
     this.textoDescuento = const Value.absent(),
+    this.encargueId = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
   }) : sesionCajaId = Value(sesionCajaId);
   static Insertable<VentaAbiertaFila> custom({
@@ -20107,6 +20154,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     Expression<String>? canal,
     Expression<String>? tipoDescuento,
     Expression<String>? textoDescuento,
+    Expression<int>? encargueId,
     Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
@@ -20120,6 +20168,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
       if (canal != null) 'canal': canal,
       if (tipoDescuento != null) 'tipo_descuento': tipoDescuento,
       if (textoDescuento != null) 'texto_descuento': textoDescuento,
+      if (encargueId != null) 'encargue_id': encargueId,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
@@ -20134,6 +20183,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     Value<String?>? canal,
     Value<String>? tipoDescuento,
     Value<String>? textoDescuento,
+    Value<int?>? encargueId,
     Value<DateTime>? actualizadoEn,
   }) {
     return VentasAbiertasCompanion(
@@ -20147,6 +20197,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
       canal: canal ?? this.canal,
       tipoDescuento: tipoDescuento ?? this.tipoDescuento,
       textoDescuento: textoDescuento ?? this.textoDescuento,
+      encargueId: encargueId ?? this.encargueId,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
@@ -20183,6 +20234,9 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
     if (textoDescuento.present) {
       map['texto_descuento'] = Variable<String>(textoDescuento.value);
     }
+    if (encargueId.present) {
+      map['encargue_id'] = Variable<int>(encargueId.value);
+    }
     if (actualizadoEn.present) {
       map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
     }
@@ -20201,6 +20255,7 @@ class VentasAbiertasCompanion extends UpdateCompanion<VentaAbiertaFila> {
           ..write('canal: $canal, ')
           ..write('tipoDescuento: $tipoDescuento, ')
           ..write('textoDescuento: $textoDescuento, ')
+          ..write('encargueId: $encargueId, ')
           ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
@@ -38379,6 +38434,7 @@ typedef $$VentasAbiertasTableCreateCompanionBuilder =
       Value<String?> canal,
       Value<String> tipoDescuento,
       Value<String> textoDescuento,
+      Value<int?> encargueId,
       Value<DateTime> actualizadoEn,
     });
 typedef $$VentasAbiertasTableUpdateCompanionBuilder =
@@ -38392,6 +38448,7 @@ typedef $$VentasAbiertasTableUpdateCompanionBuilder =
       Value<String?> canal,
       Value<String> tipoDescuento,
       Value<String> textoDescuento,
+      Value<int?> encargueId,
       Value<DateTime> actualizadoEn,
     });
 
@@ -38469,6 +38526,11 @@ class $$VentasAbiertasTableFilterComposer
 
   ColumnFilters<String> get textoDescuento => $composableBuilder(
     column: $table.textoDescuento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38550,6 +38612,11 @@ class $$VentasAbiertasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
     column: $table.actualizadoEn,
     builder: (column) => ColumnOrderings(column),
@@ -38617,6 +38684,11 @@ class $$VentasAbiertasTableAnnotationComposer
 
   GeneratedColumn<String> get textoDescuento => $composableBuilder(
     column: $table.textoDescuento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get encargueId => $composableBuilder(
+    column: $table.encargueId,
     builder: (column) => column,
   );
 
@@ -38688,6 +38760,7 @@ class $$VentasAbiertasTableTableManager
                 Value<String?> canal = const Value.absent(),
                 Value<String> tipoDescuento = const Value.absent(),
                 Value<String> textoDescuento = const Value.absent(),
+                Value<int?> encargueId = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
               }) => VentasAbiertasCompanion(
                 id: id,
@@ -38699,6 +38772,7 @@ class $$VentasAbiertasTableTableManager
                 canal: canal,
                 tipoDescuento: tipoDescuento,
                 textoDescuento: textoDescuento,
+                encargueId: encargueId,
                 actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
@@ -38712,6 +38786,7 @@ class $$VentasAbiertasTableTableManager
                 Value<String?> canal = const Value.absent(),
                 Value<String> tipoDescuento = const Value.absent(),
                 Value<String> textoDescuento = const Value.absent(),
+                Value<int?> encargueId = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
               }) => VentasAbiertasCompanion.insert(
                 id: id,
@@ -38723,6 +38798,7 @@ class $$VentasAbiertasTableTableManager
                 canal: canal,
                 tipoDescuento: tipoDescuento,
                 textoDescuento: textoDescuento,
+                encargueId: encargueId,
                 actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0

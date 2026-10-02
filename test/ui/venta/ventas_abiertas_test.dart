@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
+import 'package:la_plazoleta/data/repositorio_encargues.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/data/repositorio_ventas_abiertas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -155,5 +156,88 @@ void main() {
     );
     final sesion = await (db.select(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId))).getSingle();
     expect(sesion.estado, 'CERRADA');
+  });
+
+  group('entregar un encargue (apartado)', () {
+    test('abre la venta con lo apartado; cobrar libera el apartado y el stock queda como si se hubiera vendido una vez', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: coca.id, cantidad: 3)],
+        usuarioId: usuarioId,
+      );
+      expect((await (db.select(db.productos)..where((p) => p.id.equals(coca.id))).getSingle()).stock, 17);
+
+      final c = await nuevoControlador();
+      await c.cargarEncargue(id);
+      expect((c.carrito.single as LineaVentaPorUnidad).cantidad, 3);
+      expect(c.encargueId, id);
+      c.elegirMedio(ComposicionPago.efectivo);
+      expect(await c.cobrarActual(), isNotNull);
+
+      expect((await (db.select(db.productos)..where((p) => p.id.equals(coca.id))).getSingle()).stock, 17, reason: '20 - 3');
+      expect(await listarEnarguesPendientes(db), isEmpty);
+      expect(c.encargueId, isNull);
+      c.dispose();
+    });
+
+    test('con otra venta armada, el encargue abre en una pestaña aparte y no pisa lo que se estaba cobrando', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: coca.id, cantidad: 1)],
+        usuarioId: usuarioId,
+      );
+      final c = await nuevoControlador();
+      c.agregarProducto(fernet);
+      await c.cargarEncargue(id);
+
+      expect(c.cantidadPestanas, 2);
+      expect(c.carrito.single.nombreProducto, 'Coca');
+      c.cambiarAPestana(0);
+      expect(c.carrito.single.nombreProducto, 'Fernet');
+      expect(c.encargueId, isNull, reason: 'la otra venta no entrega nada');
+      // Volver a tocar "Entregar" va a la pestaña que ya existe, no abre otra.
+      await c.cargarEncargue(id);
+      expect(c.cantidadPestanas, 2);
+      expect(c.encargueId, id);
+      c.dispose();
+    });
+
+    test('si la app se cierra antes de cobrar, la venta retomada sigue sabiendo que entrega el encargue', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: coca.id, cantidad: 3)],
+        usuarioId: usuarioId,
+      );
+      final c1 = await nuevoControlador();
+      await c1.cargarEncargue(id);
+      await esperarGuardado();
+      c1.dispose();
+
+      final c2 = await nuevoControlador();
+      expect(c2.encargueId, id);
+      c2.elegirMedio(ComposicionPago.efectivo);
+      await c2.cobrarActual();
+      expect((await (db.select(db.productos)..where((p) => p.id.equals(coca.id))).getSingle()).stock, 17);
+      c2.dispose();
+    });
+
+    test('cancelar la venta (Esc) NO libera el apartado: el encargue sigue pendiente y el stock apartado', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: coca.id, cantidad: 3)],
+        usuarioId: usuarioId,
+      );
+      final c = await nuevoControlador();
+      await c.cargarEncargue(id);
+      c.cancelarVenta();
+
+      expect(await listarEnarguesPendientes(db), hasLength(1));
+      expect((await (db.select(db.productos)..where((p) => p.id.equals(coca.id))).getSingle()).stock, 17);
+      c.dispose();
+    });
   });
 }
