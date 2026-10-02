@@ -20,7 +20,6 @@ import '../tema/acentos.dart';
 import '../tema/tema_inverso.dart';
 import '../tema/presionable.dart';
 import '../tema/superficie.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 
 class VistaCierres extends StatefulWidget {
@@ -138,12 +137,14 @@ class _FilaCierre extends StatelessWidget {
     final textTheme = inv.textTheme;
     final apertura = dia.sesion.fechaApertura;
     final cierre = dia.sesion.fechaCierre;
-    return Presionable(
-      radio: radioControlEscritorio,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaciado.sm),
+      child: Presionable(
+      radio: 26,
       onTap: onTap,
-      color: elegida ? colores.acento : Colors.transparent,
+      color: elegida ? colores.acento : colores.fondo,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm, vertical: Espaciado.sm),
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
         child: Row(
           children: [
             _ChipDia(fecha: apertura),
@@ -173,6 +174,7 @@ class _FilaCierre extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

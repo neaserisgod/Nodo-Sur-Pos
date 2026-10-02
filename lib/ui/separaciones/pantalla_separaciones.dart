@@ -230,44 +230,37 @@ class _VistaQueSeparar extends StatelessWidget {
         'No alcanza Mercado Pago: ${_plata(-c.ajuste.corridoAMpCentavos)} se separan del cajón.',
     ];
 
-    return Column(
+    // Rediseño "antigravity" (igual que el mock): a la izquierda los
+    // proveedores como filas con su tilde; a la derecha el resumen — el total
+    // a separar en el bloque negro, efectivo y Mercado Pago debajo, los
+    // avisos y el avance.
+    final resumen = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _TarjetaCaja(
-                titulo: 'Efectivo',
-                colorPunto: acentos.dinero,
-                cobrado: c.cobrado.efectivoCentavos,
-                separar: c.separarEfectivoCentavos,
-                queda: c.quedaEfectivoCentavos,
-                lata: c.cobrado.cigarrillosCentavos,
-              ),
-            ),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: _TarjetaCaja(
-                titulo: 'Mercado Pago',
-                colorPunto: acentos.qr,
-                cobrado: c.cobrado.mpCentavos,
-                separar: c.separarMpCentavos,
-                queda: c.quedaMpCentavos,
-              ),
-            ),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: _TarjetaCaja(
-                titulo: 'Total',
-                cobrado: c.cobrado.efectivoCentavos + c.cobrado.mpCentavos,
-                separar: c.separarEfectivoCentavos + c.separarMpCentavos,
-                queda: c.quedaEfectivoCentavos + c.quedaMpCentavos,
-                lata: c.cobrado.cigarrillosCentavos,
-                invertida: true,
-              ),
-            ),
-          ],
+        _TarjetaCaja(
+          titulo: 'Total',
+          cobrado: c.cobrado.efectivoCentavos + c.cobrado.mpCentavos,
+          separar: c.separarEfectivoCentavos + c.separarMpCentavos,
+          queda: c.quedaEfectivoCentavos + c.quedaMpCentavos,
+          lata: c.cobrado.cigarrillosCentavos,
+          invertida: true,
+        ),
+        const SizedBox(height: Espaciado.md),
+        _TarjetaCaja(
+          titulo: 'Efectivo',
+          colorPunto: acentos.dinero,
+          cobrado: c.cobrado.efectivoCentavos,
+          separar: c.separarEfectivoCentavos,
+          queda: c.quedaEfectivoCentavos,
+          lata: c.cobrado.cigarrillosCentavos,
+        ),
+        const SizedBox(height: Espaciado.md),
+        _TarjetaCaja(
+          titulo: 'Mercado Pago',
+          colorPunto: acentos.qr,
+          cobrado: c.cobrado.mpCentavos,
+          separar: c.separarMpCentavos,
+          queda: c.quedaMpCentavos,
         ),
         for (final aviso in avisos) ...[
           const SizedBox(height: Espaciado.sm),
@@ -306,24 +299,105 @@ class _VistaQueSeparar extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: Espaciado.md),
+        if (tarjetas.isNotEmpty) ...[
+          const SizedBox(height: Espaciado.md),
+          const SizedBox(height: _altoTarjeta, child: _TarjetaProgreso()),
+        ],
+      ],
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Expanded(
           child: tarjetas.isEmpty
               ? EstadoVacio(mensaje: c.busqueda.isEmpty ? 'Hoy no hay nada para separar' : 'Ningún proveedor coincide con "${c.busqueda}"')
-              : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: _anchoMaximoTarjeta,
-                    mainAxisExtent: _altoTarjeta,
-                    mainAxisSpacing: Espaciado.md,
-                    crossAxisSpacing: Espaciado.md,
-                  ),
-                  itemCount: tarjetas.length + 1,
-                  itemBuilder: (context, i) => i == tarjetas.length
-                      ? const _TarjetaProgreso()
-                      : _TarjetaProveedor(tarjeta: tarjetas[i]),
+              : ListView.separated(
+                  itemCount: tarjetas.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: Espaciado.sm),
+                  itemBuilder: (context, i) => _FilaProveedorSeparar(tarjeta: tarjetas[i]),
                 ),
         ),
+        const SizedBox(width: Espaciado.lg),
+        SizedBox(width: 460, child: SingleChildScrollView(child: resumen)),
       ],
+    );
+  }
+}
+
+/// Un proveedor como fila (en vez de tarjeta): tilde, nombre, cuánto sale de
+/// cada caja y el total a separar. Tocar la fila lo marca o desmarca.
+class _FilaProveedorSeparar extends StatelessWidget {
+  const _FilaProveedorSeparar({required this.tarjeta});
+
+  final TarjetaSeparacion tarjeta;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.read<SeparacionesControlador>();
+    final procesando = context.select<SeparacionesControlador, bool>(
+      (c) => c.procesando.contains(tarjeta.proveedorId),
+    );
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final t = tarjeta;
+    final apagada = t.separada;
+    final colorTexto = apagada ? colores.textoTenue : colores.textoPrimario;
+    final estado = t.bloqueada
+        ? 'Separado — ya pagado'
+        : (t.separada ? 'Separado' : 'A separar');
+    final partes = [
+      if (t.efectivoCentavos > 0) 'Efectivo ${_plata(t.efectivoCentavos)}',
+      if (t.mpCentavos > 0) 'Mercado Pago ${_plata(t.mpCentavos)}',
+    ];
+    return Opacity(
+      opacity: apagada ? 0.6 : 1,
+      child: Presionable(
+        radio: 999,
+        color: colores.fondoBloque,
+        onTap: procesando || t.bloqueada ? null : () => c.alternar(t),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+          child: Row(
+            children: [
+              _Tilde(marcado: t.separada, bloqueado: t.bloqueada),
+              const SizedBox(width: Espaciado.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.fila.nombre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleMedium?.copyWith(color: colorTexto),
+                    ),
+                    Row(
+                      children: [
+                        Text(estado, style: textTheme.bodySmall),
+                        if (partes.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              ' · ${partes.join(' · ')}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              Text(
+                _plata(t.totalCentavos),
+                style: textTheme.headlineMedium?.copyWith(color: colorTexto).tabular,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -555,110 +629,6 @@ class _TarjetaCaja extends StatelessWidget {
   }
 }
 
-/// Un proveedor: nombre y tilde arriba, cuánto separar, y de qué caja.
-class _TarjetaProveedor extends StatelessWidget {
-  const _TarjetaProveedor({required this.tarjeta});
-
-  final TarjetaSeparacion tarjeta;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.read<SeparacionesControlador>();
-    final procesando = context.select<SeparacionesControlador, bool>(
-      (c) => c.procesando.contains(tarjeta.proveedorId),
-    );
-    final colores = context.colores;
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
-    final t = tarjeta;
-    final apagada = t.separada;
-    final colorTexto = apagada ? colores.textoTenue : colores.textoPrimario;
-    final yaSeparadoAntes = !t.separada && t.fila.separadoHoyCentavos > 0;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: apagada
-            ? colores.fondoBloque.withValues(alpha: 0.55)
-            : colores.fondoBloque,
-        borderRadius: BorderRadius.circular(radioSuperficieEscritorio),
-        // Separada: borde verde de "hecho", como en el mock; sin separar,
-        // tarjeta plana sin borde (lenguaje de 2026-09-26).
-        border: apagada ? Border.all(color: context.acentosPlazoleta.ganancia.withValues(alpha: 0.8), width: 2) : null,
-      ),
-      child: Presionable(
-        radio: radioSuperficieEscritorio,
-        onTap: procesando || t.bloqueada ? null : () => c.alternar(t),
-        child: Padding(
-          padding: const EdgeInsets.all(Espaciado.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      t.fila.nombre,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorTexto,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Espaciado.sm),
-                  _Tilde(marcado: t.separada, bloqueado: t.bloqueada),
-                ],
-              ),
-              const SizedBox(height: Espaciado.sm),
-              Text(
-                t.bloqueada
-                    ? 'Separado — ya pagado'
-                    : (t.separada ? 'Separado' : 'A separar'),
-                style: textTheme.bodySmall?.copyWith(
-                  color: colores.textoSecundario,
-                ),
-              ),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _plata(t.totalCentavos),
-                  style: textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800, color: colorTexto)
-                      .tabular,
-                ),
-              ),
-              if (yaSeparadoAntes)
-                Text(
-                  'Ya separado hoy ${_plata(t.fila.separadoHoyCentavos)}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colores.textoSecundario,
-                  ),
-                ),
-              const Spacer(),
-              _Chip(
-                etiqueta: 'Efectivo',
-                color: acentos.dinero,
-                monto: t.efectivoCentavos,
-                apagado: apagada,
-              ),
-              const SizedBox(height: Espaciado.xs),
-              _Chip(
-                etiqueta: 'Mercado Pago',
-                color: acentos.qr,
-                monto: t.mpCentavos,
-                apagado: apagada,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Tilde extends StatelessWidget {
   const _Tilde({required this.marcado, required this.bloqueado});
 
@@ -693,13 +663,11 @@ class _Chip extends StatelessWidget {
     required this.etiqueta,
     required this.color,
     required this.monto,
-    this.apagado = false,
   });
 
   final String etiqueta;
   final Color color;
   final int monto;
-  final bool apagado;
 
   @override
   Widget build(BuildContext context) {
@@ -711,7 +679,7 @@ class _Chip extends StatelessWidget {
         vertical: Espaciado.sm,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: apagado ? 0.06 : 0.13),
+        color: color.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -720,7 +688,7 @@ class _Chip extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: apagado ? 0.5 : 1),
+              color: color,
               shape: BoxShape.circle,
             ),
           ),
@@ -731,7 +699,7 @@ class _Chip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: textTheme.bodySmall?.copyWith(
-                color: apagado ? colores.textoTenue : colores.textoSecundario,
+                color: colores.textoSecundario,
               ),
             ),
           ),
@@ -741,7 +709,7 @@ class _Chip extends StatelessWidget {
             estilo: textTheme.titleSmall
                 ?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: apagado ? colores.textoTenue : colores.textoPrimario,
+                  color: colores.textoPrimario,
                 )
                 .tabular,
           ),

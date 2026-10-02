@@ -387,7 +387,7 @@ const double _anchoHora = 64;
 const double _anchoNumero = 76;
 const double _anchoMedio = 92;
 const double _anchoTotal = 120;
-const double _anchoAcciones = 140;
+const double _anchoAcciones = 156;
 
 class _EncabezadoTabla extends StatelessWidget {
   const _EncabezadoTabla();
@@ -397,10 +397,6 @@ class _EncabezadoTabla extends StatelessWidget {
     final estilo = Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: Pesos.medium);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg + 2, vertical: Espaciado.md + 2),
-      decoration: BoxDecoration(
-        color: Color.lerp(context.colores.fondo, context.colores.fondoBloque, 0.5),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       child: Row(
         children: [
           SizedBox(width: _anchoHora, child: Text('Hora', style: estilo)),
@@ -444,8 +440,9 @@ class _FilaVentaDelDia extends StatelessWidget {
     final editada = v.venta.editadaEn != null;
     return Container(
       constraints: const BoxConstraints(minHeight: 56),
+      margin: const EdgeInsets.only(bottom: Espaciado.sm),
       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg + 2),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colores.fondo))),
+      decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(26)),
       child: Row(
         children: [
           SizedBox(

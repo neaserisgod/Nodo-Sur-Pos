@@ -35,7 +35,6 @@ import '../tema/acentos.dart';
 import '../tema/tema_inverso.dart';
 import '../tema/presionable.dart';
 import '../tema/superficie.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'pantalla_editor_venta.dart';
 import 'periodo_historial.dart';
@@ -325,12 +324,14 @@ class _FilaVenta extends StatelessWidget {
     final textTheme = inv.textTheme;
     final v = venta;
     final apagado = v.anulada ? colores.textoTenue : null;
-    return Presionable(
-      radio: radioControlEscritorio,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaciado.sm),
+      child: Presionable(
+      radio: 26,
       onTap: onTap,
-      color: elegida ? colores.acento : Colors.transparent,
+      color: elegida ? colores.acento : colores.fondo,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm, vertical: Espaciado.sm),
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
         child: Row(
           children: [
             SizedBox(width: 48, child: Text(horaCorta(v.fecha), style: textTheme.bodySmall?.tabular)),
@@ -362,6 +363,7 @@ class _FilaVenta extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
