@@ -40,8 +40,11 @@ import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/medio_pago.dart' show composicionPagoDesdeTexto;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta, Venta;
+import '../data/cobro_posnet.dart' show PasarelaPoint;
+import '../servicios/pasarela_point_nube.dart';
 import 'cliente_companion.dart';
 import 'servicio_companion.dart';
+import 'sync_nube_companion.dart';
 
 /// Convierte una fila de drift en el mismo DTO que hoy arma
 /// `ProductoCompanion.desdeJson` a partir de la respuesta HTTP — un solo
@@ -140,9 +143,12 @@ ResumenCierreCompanion _resumenCierreCompanionDesde(
 }
 
 class PuertoLocal implements ServicioCompanion {
-  PuertoLocal(this.db);
+  PuertoLocal(this.db, {this.pasarelaDePrueba});
 
   final AppDatabase db;
+
+  /// Solo para tests: la pasarela de cobro con la terminal. En la app real sale de la cuenta vinculada (`_pasarela`).
+  final Future<PasarelaPoint> Function()? pasarelaDePrueba;
 
   @override
   Future<List<UsuarioCompanion>> usuarios() async {
@@ -1061,14 +1067,18 @@ class PuertoLocal implements ServicioCompanion {
     );
   }
 
-  /// El cobro con la terminal Point necesita el access token de Mercado Pago, que vive en la PC (no se
-  /// sincroniza al celular: es un token de pago, no un dato de catálogo). Sin la PC al alcance no hay de
-  /// dónde sacarlo: se avisa en vez de intentar.
-  Future<({String accessToken, String terminalId})> _credencialesCobro() async {
-    throw const ErrorCompanion(
-      400,
-      'El cobro con la terminal Point se hace conectado a la PC del local. '
-      'Conectate al wifi del local o cobrá a mano.',
+  /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
+  /// de Mercado Pago que el negocio conectó (el token nunca baja al celular). Sin cuenta vinculada, o con el negocio sin
+  /// conectar o sin terminal elegida, se dice qué falta (`servicios/pasarela_point_nube.dart`).
+  Future<PasarelaPoint> _pasarela() async {
+    final inyectada = pasarelaDePrueba;
+    if (inyectada != null) return inyectada();
+    final sync = await syncNubeDelCelular();
+    return elegirPasarelaPoint(
+      almacen: sync.almacen,
+      cliente: sync.cliente,
+      mensajeSinCuenta: 'Para cobrar con la terminal sin la PC, entrá con tu cuenta y pedile al dueño que conecte Mercado Pago '
+          'en horsepos.com/negocio. Mientras tanto, conectate al wifi del local o cobrá a mano.',
     );
   }
 
@@ -1086,7 +1096,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
   }) async {
-    final credenciales = await _credencialesCobro();
+    final pasarela = await _pasarela();
     final resultado = await repo_ventas.calcularResultadoVenta(
       db,
       lineas: lineas,
@@ -1101,9 +1111,7 @@ class PuertoLocal implements ServicioCompanion {
       montoCentavos: resultado.totalCentavos,
     );
     try {
-      final creada = await mp.crearOrdenCobro(
-        accessToken: credenciales.accessToken,
-        terminalId: credenciales.terminalId,
+      final creada = await pasarela.crear(
         externalReference: pendiente.externalReference,
         idempotencyKey: pendiente.idempotencyKey,
         montoCentavos: resultado.totalCentavos,
@@ -1122,12 +1130,8 @@ class PuertoLocal implements ServicioCompanion {
 
   @override
   Future<ResultadoOrdenCobro> consultarEstadoPosnet(String ordenIdMp) async {
-    final credenciales = await _credencialesCobro();
     try {
-      final estado = await mp.consultarOrden(
-        accessToken: credenciales.accessToken,
-        ordenIdMp: ordenIdMp,
-      );
+      final estado = await (await _pasarela()).consultar(ordenIdMp);
       return clasificarEstadoOrden(estado);
     } on mp.CobroPosnetException catch (e) {
       throw ErrorCompanion(502, e.mensaje);
@@ -1177,9 +1181,8 @@ class PuertoLocal implements ServicioCompanion {
     String? ordenIdMp,
   }) async {
     if (ordenIdMp != null) {
-      final credenciales = await _credencialesCobro();
       try {
-        await mp.cancelarOrdenCobro(accessToken: credenciales.accessToken, ordenIdMp: ordenIdMp);
+        await (await _pasarela()).cancelar(ordenIdMp);
       } on mp.CobroPosnetException catch (e) {
         throw ErrorCompanion(502, e.mensaje);
       }

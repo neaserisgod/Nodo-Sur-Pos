@@ -72,6 +72,8 @@ import '../servicios/actualizaciones.dart' show leerVersionApp;
 import '../data/repositorio_usuarios.dart';
 import '../data/repositorio_encargues.dart';
 import '../data/repositorio_ventas.dart';
+import '../servicios/nube.dart' show nubeApp;
+import '../servicios/pasarela_point_nube.dart';
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
@@ -112,6 +114,20 @@ Future<File> _archivoVersionCompanion() async {
 
 const int puertoServidorCompanion = 8099;
 const String encabezadoToken = 'X-Companion-Token';
+
+/// Por dónde cobra la PC a la terminal: directo con el access token cargado en Configuración (lo de siempre), o por el
+/// servidor de Nodo Sur con la cuenta conectada. Ver `servicios/pasarela_point_nube.dart`.
+Future<PasarelaPoint> _pasarelaPoint(AppDatabase db, http.Client? httpClientDePrueba, {bool soloToken = false}) async {
+  final config = await db.select(db.configuracionTabla).getSingle();
+  return elegirPasarelaPoint(
+    soloToken: soloToken,
+    accessToken: config.mpAccessToken,
+    terminalId: config.mpTerminalCobroId,
+    almacen: nubeApp?.almacen,
+    cliente: nubeApp?.cliente,
+    directa: (token, terminal) => PasarelaPointDirecta(accessToken: token, terminalId: terminal, client: httpClientDePrueba),
+  );
+}
 
 Response _json(Object body, {int status = 200}) {
   return Response(
@@ -1223,14 +1239,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   router.post('/ventas/posnet/iniciar', (Request request) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    final config = await db.select(db.configuracionTabla).getSingle();
-    final accessToken = config.mpAccessToken;
-    final terminalId = config.mpTerminalCobroId;
-    if (accessToken == null || terminalId == null) {
-      return _error(
-        400,
-        'Configurá el access token y la terminal de cobro en Configuración → Impresión antes de cobrar por acá.',
-      );
+    // Directo con el access token de la PC si está cargado (lo de siempre); si no, por el servidor con la cuenta conectada.
+    final PasarelaPoint pasarela;
+    try {
+      pasarela = await _pasarelaPoint(db, httpClientDePrueba);
+    } on CobroPosnetException catch (e) {
+      return _error(400, e.mensaje);
     }
 
     final canal = _textoRequerido(body, 'canal');
@@ -1249,14 +1263,11 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       montoCentavos: resultado.totalCentavos,
     );
     try {
-      final creada = await crearOrdenCobro(
-        accessToken: accessToken,
-        terminalId: terminalId,
+      final creada = await pasarela.crear(
         externalReference: pendiente.externalReference,
         idempotencyKey: pendiente.idempotencyKey,
         montoCentavos: resultado.totalCentavos,
         canal: canal,
-        client: httpClientDePrueba,
       );
       await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
       return _json({
@@ -1273,13 +1284,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     Request request,
     String ordenIdMp,
   ) async {
-    final config = await db.select(db.configuracionTabla).getSingle();
     try {
-      final estado = await consultarOrden(
-        accessToken: config.mpAccessToken!,
-        ordenIdMp: ordenIdMp,
-        client: httpClientDePrueba,
-      );
+      final estado = await (await _pasarelaPoint(db, httpClientDePrueba, soloToken: true)).consultar(ordenIdMp);
       return _json({'estado': clasificarEstadoOrden(estado).name});
     } on CobroPosnetException catch (e) {
       return _error(502, e.mensaje);
@@ -1340,13 +1346,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     final ordenIdMp = body['ordenIdMp'] as String?;
     if (ordenIdMp != null) {
-      final config = await db.select(db.configuracionTabla).getSingle();
       try {
-        await cancelarOrdenCobro(
-          accessToken: config.mpAccessToken!,
-          ordenIdMp: ordenIdMp,
-          client: httpClientDePrueba,
-        );
+        await (await _pasarelaPoint(db, httpClientDePrueba, soloToken: true)).cancelar(ordenIdMp);
       } on CobroPosnetException catch (e) {
         return _error(502, e.mensaje);
       }

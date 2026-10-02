@@ -147,8 +147,23 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'hash_mismatch' => 'La copia se dañó en el camino. Probá de nuevo.',
   'not_found' => 'Esa copia ya no existe.',
   'corrupt' => 'Esa copia no se pudo recuperar del servidor.',
+  'mp_no_conectado' => 'Mercado Pago todavía no está conectado: el dueño lo conecta en horsepos.com/negocio.',
+  'mp_sin_terminal' => 'Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.',
+  'mp_no_configurado' => 'La conexión con Mercado Pago todavía no está lista en el servidor. Probá más tarde.',
+  'sin_negocio' => 'Este dispositivo no pertenece a ningún negocio: volvé a vincularlo con tu cuenta.',
+  'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
   _ => 'El servicio respondió con un error ($codigo).',
 };
+
+/// Lo que el servidor dice sobre cobrar con la terminal desde este dispositivo.
+class EstadoMp {
+  const EstadoMp({required this.conectado, required this.necesitaReconectar, required this.terminalElegida});
+  final bool conectado;
+  final bool necesitaReconectar;
+  final bool terminalElegida;
+
+  bool get puedeCobrar => conectado && terminalElegida;
+}
 
 class CopiaEnNube {
   const CopiaEnNube({
@@ -259,11 +274,15 @@ class ClienteNube {
 
   Never _falla(int estado, String cuerpo) {
     var codigo = 'http_$estado';
+    String? motivo;
     try {
       final j = jsonDecode(cuerpo);
       if (j is Map && j['error'] is String) codigo = j['error'] as String;
+      // Un rechazo de Mercado Pago trae su propio código y motivo: se muestran tal cual para poder diagnosticarlo.
+      if (j is Map && j['mensaje'] is String) motivo = j['mensaje'] as String;
     } catch (_) {}
-    throw ErrorNube(codigo, _mensajeDe(codigo), estado: estado);
+    final propio = motivo == null ? _mensajeDe(codigo) : 'Mercado Pago respondió ($estado): $motivo';
+    throw ErrorNube(codigo, propio, estado: estado);
   }
 
   Future<T> _conRed<T>(Future<T> Function() f) async {
@@ -308,6 +327,54 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return PerfilDeCuenta(email: j['email'] as String, nombre: (j['name'] as String).trim(), rol: j['role'] as String?);
+  });
+
+  // ─── Cobro con la terminal Point a través del servidor (el token de Mercado Pago del negocio no sale de ahí) ───
+
+  /// Si el negocio de este dispositivo puede cobrar por el servidor: Mercado Pago conectado y terminal elegida para su sucursal.
+  Future<EstadoMp> estadoMp(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/mp/estado'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return EstadoMp(conectado: j['connected'] == true, necesitaReconectar: j['needsReconnect'] == true, terminalElegida: j['terminalConfigured'] == true);
+  });
+
+  /// Crea la orden en la terminal. [idempotencyKey] repetida no duplica el cobro (mismo criterio que el cobro directo).
+  Future<({String id, String estado})> crearOrdenPoint(
+    String token, {
+    required String externalReference,
+    required String idempotencyKey,
+    required int montoCentavos,
+    required String canal,
+  }) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/orden'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'externalReference': externalReference, 'idempotencyKey': idempotencyKey, 'montoCentavos': montoCentavos, 'canal': canal}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    final id = j['id']?.toString();
+    final estado = j['status']?.toString();
+    if (id == null || estado == null) throw const ErrorNube('respuesta_invalida', 'Mercado Pago respondió sin id o estado de la orden.');
+    return (id: id, estado: estado);
+  });
+
+  Future<String> consultarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
+    final r = await http.get(_uri('/api/mp/orden', {'id': ordenIdMp}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final estado = (jsonDecode(r.body) as Map<String, dynamic>)['status']?.toString();
+    if (estado == null) throw const ErrorNube('respuesta_invalida', 'Mercado Pago respondió sin el estado de la orden.');
+    return estado;
+  });
+
+  Future<void> cancelarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/orden/cancelar'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'id': ordenIdMp}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
   Future<RespuestaAviso> avisar(String token, {required String cid, required String version, required String sistema}) => _conRed(() async {
