@@ -7,10 +7,12 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cliente_companion.dart';
+import 'modo_uso.dart';
 
 const _claveConexion = 'companion_conexion';
 const _claveUsuarioId = 'companion_usuario_id';
 const _claveUsuarioNombre = 'companion_usuario_nombre';
+const _claveModoUso = 'companion_modo_uso';
 
 Future<void> guardarConexion(DatosConexion c) async {
   final prefs = await SharedPreferences.getInstance();
@@ -55,4 +57,14 @@ Future<void> olvidarUsuario() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(_claveUsuarioId);
   await prefs.remove(_claveUsuarioNombre);
+}
+
+Future<void> guardarModoUso(ModoUso modo) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_claveModoUso, modo.clave);
+}
+
+Future<ModoUso?> leerModoUso() async {
+  final prefs = await SharedPreferences.getInstance();
+  return ModoUso.desdeClave(prefs.getString(_claveModoUso));
 }

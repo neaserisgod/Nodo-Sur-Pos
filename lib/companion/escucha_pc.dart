@@ -28,10 +28,14 @@ import 'cliente_companion.dart';
 import 'servicio_sincronizacion.dart';
 
 class EscuchaPc {
-  EscuchaPc(this.conexion, this.db);
+  EscuchaPc(this.conexion, this.db, {this.alCambiarConexion});
 
   final DatosConexion conexion;
   final AppDatabase db;
+
+  /// Se llama cada vez que la conexión con la PC se abre o se corta (`true` = conectada). Con eso el celular decide
+  /// solo si trabaja contra la PC o contra la nube (`conmutador_sync.dart`).
+  void Function(bool conectada)? alCambiarConexion;
 
   HttpClient? _http;
   StreamSubscription<String>? _lineas;
@@ -42,7 +46,13 @@ class EscuchaPc {
   int _intentos = 0;
 
   /// Si la conexión con la PC está viva ahora mismo.
-  bool conectada = false;
+  bool _conectada = false;
+  bool get conectada => _conectada;
+  set conectada(bool valor) {
+    if (_conectada == valor) return;
+    _conectada = valor;
+    alCambiarConexion?.call(valor);
+  }
 
   void iniciar() {
     if (_activa) return;

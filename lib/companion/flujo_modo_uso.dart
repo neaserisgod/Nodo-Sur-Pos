@@ -1,0 +1,65 @@
+// Qué pasa cuando se elige un modo de uso (`pantalla_elegir_modo.dart`).
+
+import 'package:flutter/material.dart';
+
+import 'emparejamiento.dart';
+import 'escucha_pc.dart';
+import 'modo_uso.dart';
+import 'pantalla_cuenta_companion.dart';
+import 'pantalla_elegir_modo.dart';
+import 'pantalla_elegir_usuario.dart';
+import 'pantalla_emparejamiento.dart';
+import 'pantalla_menu_companion.dart';
+import 'sync_nube_companion.dart';
+
+/// Deja el celular como único sistema: corta la escucha de la PC, olvida su emparejamiento y avisa al conmutador
+/// de la sync de que ya no hay a quién esperar (la nube arranca sola si hay cuenta). No toca los datos ni el usuario.
+Future<void> aplicarModoSoloCelular() async {
+  escuchaPcCompanion?.detener();
+  escuchaPcCompanion = null;
+  await olvidarConexion();
+  await guardarModoUso(ModoUso.soloCelular);
+  syncNubeCompanion?.conmutador.definirPc(emparejada: false);
+}
+
+/// La pantalla que se muestra al arrancar sin modo elegido.
+Widget pantallaDeElegirModoInicial() => PantallaElegirModo(
+  alElegir: (context, modo) => elegirModo(context, modo, actual: null),
+);
+
+/// Se tocó [modo]. [actual] es el modo en uso hoy (null en el primer arranque).
+Future<void> elegirModo(BuildContext context, ModoUso modo, {required ModoUso? actual}) async {
+  final navigator = Navigator.of(context);
+  if (modo == actual) {
+    navigator.pop(); // ya está en ese modo: no hay nada que cambiar
+    return;
+  }
+  switch (modo) {
+    case ModoUso.pcYCelular:
+      // El modo se guarda recién cuando el emparejamiento sale bien: si el usuario vuelve atrás sin emparejar,
+      // queda como estaba.
+      await navigator.push(MaterialPageRoute<void>(builder: (_) => const PantallaEmparejamiento()));
+    case ModoUso.soloCelular:
+      await aplicarModoSoloCelular();
+      if (actual == null) {
+        // Primer arranque: se ofrece vincular la cuenta antes de entrar (sin ella el celular no sincroniza).
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute<void>(
+            builder: (_) => PantallaCuentaDelCelular(
+              alContinuar: (context) => Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute<void>(builder: (_) => const PantallaElegirUsuario()),
+                (route) => false,
+              ),
+            ),
+          ),
+          (route) => false,
+        );
+      } else {
+        // Desde Gestión: se arma un menú nuevo, que lee el modo ya cambiado.
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute<void>(builder: (_) => const PantallaMenuCompanion()),
+          (route) => false,
+        );
+      }
+  }
+}

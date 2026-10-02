@@ -171,6 +171,24 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   `nodosur_cuenta.json` (carpeta de datos de la app), fuera de la base: restaurar no
   lo pisa. Suite: 1375 verdes + 4 que no compilan por `test/capturas/`.
   Falta: probar contra el servidor real con una cuenta (ver PR).
+- **Sync por la nube, fase 2 (PC) — hecha, sin probar contra el servidor real**: `servicios/sync_nube.dart` baja
+  y sube lotes por `/api/sync` con cada cambio de la base (más un latido de 20 s), sin eco y con "gana el último en
+  llegar" (`DECISIONES.md`, "Sync por la nube entre dispositivos"). Se arranca solo con la app, si hay cuenta vinculada.
+  Baja solo cuando el servidor avisa (WebSocket a un Durable Object, sin sondeo): hay que **desplegar `NodoSurPage`**
+  (agrega el binding `SYNC_HUB` y su migración) y probarlo con dos dispositivos reales — la hibernación y el upgrade
+  del WebSocket no se pueden probar sin Cloudflare.
+  Falta: un indicador de estado de la sync en la UI de escritorio. Servidor en `NodoSurPage` (rama
+  `claude/quirky-noether-pbunw6`).
+- **Sync por la nube, fase 3 (celular) — hecha, sin probar en un Android real**: el celular sincroniza con la PC por
+  wifi mientras contesta y pasa solo a la nube cuando se apaga (`conmutador_sync.dart`, `sync_nube_companion.dart`);
+  las pantallas cambian al servicio local al instante. Gestión → **Cuenta** (`pantalla_cuenta_companion.dart`): modo
+  actual, vincular/desvincular, sincronizar ahora. Suite de las áreas tocadas: 331 verdes. Falta: elegir "PC y
+  celular" / "solo celular" al primer arranque (fase 4), la estética nueva (fase 5), y probar la vinculación en un
+  Android real.
+- **Sync por la nube, fase 4 (elegir modo) — hecha, sin probar en un Android real**: pantalla "¿Cómo vas a usar el
+  sistema?" al primer arranque (`pantalla_elegir_modo.dart`, `modo_uso.dart`, `flujo_modo_uso.dart`), "PC y celular" o
+  "solo celular", cambiable desde Gestión; las instalaciones viejas conservan el modo que ya tenían. Suite de las áreas
+  tocadas: 346 verdes. El rediseño de la companion (P41 #23, 2026-10-02) ya está en `main`; la rama de la sync lo mezcló y las pantallas nuevas (Cuenta, Elegir modo) usan sus piezas (`EncabezadoCompanion`, `BloqueHero`, bloques grises).
 - **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no
