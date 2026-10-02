@@ -46,6 +46,6 @@ void main() {
     final db = AppDatabase(NativeDatabase(archivo));
     addTearDown(() => db.close());
     final claves = (await db.select(db.seccionesMenu).get()).map((s) => s.clave).toSet();
-    expect(claves, {'proveedores', 'historial', 'separaciones'});
+    expect(claves, {'proveedores', 'historial', 'separaciones', 'encargues'});
   });
 }

@@ -22,6 +22,8 @@
 // qué widget tenga el foco en un instante dado — que en la práctica siempre
 // va a ser el campo único.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +64,7 @@ class PantallaVenta extends StatefulWidget {
     super.key,
     required this.db,
     this.textoBusquedaPendiente,
+    this.encarguePendienteId,
   });
 
   final AppDatabase db;
@@ -73,6 +76,9 @@ class PantallaVenta extends StatefulWidget {
   /// agrega nada por su cuenta — solo deja el campo listo para que el
   /// usuario termine el mismo camino de siempre.
   final String? textoBusquedaPendiente;
+
+  /// Encargue por apartado a entregar: al llegar abre una venta con lo apartado (lo manda la pantalla de Encargues).
+  final int? encarguePendienteId;
 
   @override
   State<PantallaVenta> createState() => _PantallaVentaState();
@@ -99,6 +105,8 @@ class _PantallaVentaState extends State<PantallaVenta>
       if (mounted) {
         // El arranque tiene que ser inmediato (CLAUDE.md): el foco se pide
         // recién cuando ya hay algo cargado para mostrar, no antes.
+        final encargue = widget.encarguePendienteId;
+        if (encargue != null) unawaited(_controlador.cargarEncargue(encargue));
         final pendiente = widget.textoBusquedaPendiente;
         if (pendiente != null && pendiente.isNotEmpty) {
           // Dispara `_alCambiarTexto` solo (el controlador ya escucha a
