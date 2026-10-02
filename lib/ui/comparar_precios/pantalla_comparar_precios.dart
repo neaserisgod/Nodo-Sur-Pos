@@ -35,6 +35,7 @@ import '../comun/estado_vacio.dart';
 import '../comun/tarjetas.dart';
 import '../navegacion/busqueda_contextual.dart';
 import '../tema/presionable.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 import '../tema/iconos.dart';
@@ -202,13 +203,14 @@ class _ItemLista extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final inv = coloresDeFila(context, elegido);
+    final colores = inv.colores;
+    final textTheme = inv.textTheme;
     final n = comparacion.preciosPorComercio.length;
     final dif = comparacion.mayorDiferenciaAbs;
     return Presionable(
-      radio: 16,
-      color: elegido ? colores.acento.withValues(alpha: 0.18) : colores.fondoBloque,
+      radio: 26,
+      color: elegido ? colores.acento : colores.fondoBloque,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),

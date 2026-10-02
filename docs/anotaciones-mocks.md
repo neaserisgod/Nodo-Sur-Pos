@@ -31,3 +31,13 @@ caso si alguna merece implementarse.
   superior. Los diálogos existen; hoy se abren desde otros lugares.
 - **PC · Dashboard:** "Efectivo en caja" con "Retirar o ingresar dinero". El
   movimiento rápido existe; la tarjeta no.
+
+## Diferencias que quedan entre los mocks y las apps (por funciones reales)
+
+- **PC · Cierre de caja:** el mock pide efectivo, Mercado Pago y lata en un solo
+  paso; la app pide primero solo el efectivo (a ciegas) y recién después muestra
+  lo esperado y pide Mercado Pago y lata. Se mantuvo el flujo real.
+- **PC · Vender:** el mock cobra en dos pasos (ticket y después medio de pago);
+  la app deja los cuatro medios siempre a la vista, con sus atajos Alt+tecla.
+- **PC · Configuración, Equilibrio, Respaldo e Impresión:** llevan el estilo y los
+  componentes nuevos; sus secciones y campos son los de la app real.

@@ -34,6 +34,7 @@ import '../navegacion/route_observer.dart';
 import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/superficie.dart';
+import '../tema/tema_inverso.dart';
 import '../tema/tokens.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/marca_actual.dart';
@@ -202,23 +203,9 @@ class _VistaHoy extends StatelessWidget {
         final contenido = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _FilaIndicadores(tablero: tablero, alTocarSeparar: alTocarSeparar, hoy: hoy),
-            const SizedBox(height: Espaciado.lg),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Superficie(
-                      padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.lg + 4, Espaciado.xl, Espaciado.lg),
-                      child: GraficoPorHora(porHora: tablero.porHora, altura: entra ? 200 : 160),
-                    ),
-                  ),
-                  const SizedBox(width: Espaciado.lg),
-                  Expanded(child: _ComoTePagaron(tablero: tablero)),
-                ],
-              ),
+            SizedBox(
+              height: entra ? 400 : 390,
+              child: _FilaIndicadores(tablero: tablero, alTocarSeparar: alTocarSeparar, hoy: hoy),
             ),
             const SizedBox(height: Espaciado.lg),
             if (entra) Expanded(child: abajo) else SizedBox(height: 320, child: abajo),
@@ -286,20 +273,31 @@ class _FilaIndicadores extends StatelessWidget {
         onTap: alTocarSeparar,
       ),
     ];
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 6,
-            child: _HeroVendido(valor: _plata(t.vendidoCentavos), nota: notaVendido, tono: tonoVendido),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 3,
+          child: _HeroVendido(
+            valor: _plata(t.vendidoCentavos),
+            nota: notaVendido,
+            tono: tonoVendido,
+            porHora: t.porHora,
           ),
-          for (final tarjeta in chicas) ...[
-            const SizedBox(width: Espaciado.lg),
-            Expanded(flex: 3, child: tarjeta),
-          ],
-        ],
-      ),
+        ),
+        const SizedBox(width: Espaciado.lg),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < chicas.length; i++) ...[
+                if (i > 0) const SizedBox(height: Espaciado.md),
+                Expanded(child: chicas[i]),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -308,8 +306,9 @@ class _FilaIndicadores extends StatelessWidget {
 /// de la web de Nodo Sur, y la variación contra el mismo día de la semana
 /// pasada en una pastilla.
 class _HeroVendido extends StatelessWidget {
-  const _HeroVendido({required this.valor, required this.nota, required this.tono});
+  const _HeroVendido({required this.valor, required this.nota, required this.tono, required this.porHora});
 
+  final Map<int, int> porHora;
   final String valor;
   final String? nota;
   final Tono tono;
@@ -349,6 +348,18 @@ class _HeroVendido extends StatelessWidget {
               decoration: BoxDecoration(color: fondoNota, borderRadius: BorderRadius.circular(999)),
               child: Text(nota!, style: textTheme.labelLarge?.copyWith(color: textoNota)),
             ),
+          const Spacer(),
+          // Las ventas por hora, dentro del mismo bloque (igual que el mock).
+          TemaInverso(
+            activo: true,
+            invertirAcento: true,
+            child: Builder(
+              builder: (context) => DefaultTextStyle.merge(
+                style: TextStyle(color: context.colores.textoPrimario),
+                child: GraficoPorHora(porHora: porHora, altura: 120),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -398,6 +409,8 @@ class _FilaDeAbajo extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Expanded(child: _ComoTePagaron(tablero: tablero)),
+        const SizedBox(width: Espaciado.lg),
         Expanded(child: _MasVendidos(tablero: tablero)),
         const SizedBox(width: Espaciado.lg),
         Expanded(child: _StockBajo(tablero: tablero)),
