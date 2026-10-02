@@ -25,8 +25,10 @@ import 'servicio_companion.dart';
 import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
 import 'tema/hoja_vidrio.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
+import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
 import '../domain/marca.dart';
 import '../servicios/marca_actual.dart';
@@ -193,19 +195,28 @@ class PantallaInicioCompanion extends StatelessWidget {
   /// como pegote") pasa a ser una campanita con punto junto al saludo — se
   /// nota sin empujar el resto de la pantalla hacia abajo.
   Widget _saludo(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.lg, Espaciado.lg, 0),
+      padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: ValueListenableBuilder<MarcaNegocio>(
               valueListenable: marcaActual,
-              builder: (context, marca, _) => Text(nombreUsuario == null ? marca.nombre : 'Hola, $nombreUsuario', style: Theme.of(context).textTheme.headlineMedium),
+              builder: (context, marca, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  EtiquetaSeccion(marca.nombre),
+                  const SizedBox(height: Espaciado.sm),
+                  Text(
+                    nombreUsuario == null ? 'Inicio' : 'Hola, $nombreUsuario',
+                    style: textTheme.headlineLarge,
+                  ),
+                ],
+              ),
             ),
           ),
-          // Arqueo opcional (El dueño, 2026-09-28): la campanita está siempre
-          // que haya caja abierta, para contar cuando se quiera; a las 2hs
-          // solo se le prende el punto (el "aviso suave" que eligió).
           if (sesion?.abierta ?? false) _campanitaArqueo(context),
         ],
       ),
@@ -215,21 +226,25 @@ class PantallaInicioCompanion extends StatelessWidget {
   Widget _campanitaArqueo(BuildContext context) {
     final colores = context.colores;
     return Presionable(
+      radio: 999,
       onTap: onHacerArqueoIntermedio,
-      child: Padding(
-        padding: const EdgeInsets.all(Espaciado.sm),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(color: colores.fondoBloque, shape: BoxShape.circle),
         child: Stack(
+          alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            Icon(IconosPlazoleta.notificationsOutlined, color: colores.textoPrimario, size: 26),
+            Icon(IconosPlazoleta.notificationsOutlined, color: colores.textoPrimario, size: 24),
             if (arqueoIntermedioVencido)
               Positioned(
-                top: -2,
-                right: -2,
+                top: 11,
+                right: 12,
                 child: Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(color: colores.acento, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: colores.error, shape: BoxShape.circle, border: Border.all(color: colores.fondoBloque, width: 2)),
                 ),
               ),
           ],
@@ -238,12 +253,6 @@ class PantallaInicioCompanion extends StatelessWidget {
     );
   }
 
-  /// Hoja de apertura rápida de caja (El dueño, 2026-09-19: "que al momento de
-  /// tocar, en lugar de entrar como está la caja cerrada, ponga para
-  /// abrir") — mismo formulario que ya ofrecía `SesionAbiertaGate` al entrar
-  /// al carrito con la caja cerrada, pero adelantado acá para no tener que
-  /// navegar primero y toparse con eso recién adentro. Al abrir, sigue
-  /// directo a vender — es lo que se estaba por hacer al tocar el CTA.
   Future<void> _abrirCajaRapida(BuildContext context) async {
     final s = sesion;
     if (servicio == null || usuarioId == null || s == null) return;
@@ -270,13 +279,10 @@ class PantallaInicioCompanion extends StatelessWidget {
   /// venta) y "Gasto"/"Ingreso rápido" se fusionaron en "Movimiento de
   /// caja" — dos pantallas casi idénticas para una sola idea.
   Widget _accesosDiarios(BuildContext context) {
-    final colores = context.colores;
     final acentos = context.acentos;
-    // Null (todavía sin consultar la sesión) se trata como "abierta" — no
-    // hay que bloquear el CTA por un instante mientras carga.
     final cerrada = sesion != null && !sesion!.abierta;
     return Padding(
-      padding: const EdgeInsets.all(Espaciado.lg),
+      padding: const EdgeInsets.all(Espaciado.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -287,10 +293,9 @@ class PantallaInicioCompanion extends StatelessWidget {
             onTap: navegando ? null : (cerrada ? () => _abrirCajaRapida(context) : onVender),
           ),
           const SizedBox(height: Espaciado.md),
-          Text('Más accesos', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colores.textoSecundario)),
-          const SizedBox(height: Espaciado.sm),
           IntrinsicHeight(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: _Tile(
@@ -318,15 +323,6 @@ class PantallaInicioCompanion extends StatelessWidget {
   }
 }
 
-/// El CTA principal de "Inicio" — ancho completo, degradé, ícono en un
-/// círculo translúcido a la izquierda, flecha a la derecha. Una fila, no una
-/// tarjeta cuadrada: es la única acción que pesa más que las demás.
-///
-/// Con la caja cerrada (El dueño, 2026-09-19: "el botón de vender se vea
-/// bloqueado si la caja está cerrada... cuando esté abierta que no aparezca
-/// nada") pasa a un estilo apagado (sin degradé, ícono de candado) en vez de
-/// mostrar una tarjeta de estado aparte arriba — el mismo elemento comunica
-/// las dos cosas, y con la caja abierta no hay nada extra que mostrar.
 class _CtaVender extends StatelessWidget {
   const _CtaVender({required this.contador, required this.cerrada, required this.onTap});
 
@@ -336,63 +332,72 @@ class _CtaVender extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final acentos = context.acentos;
     final colores = context.colores;
-    final textoSobre = cerrada ? colores.textoPrimario : colores.acentoTexto;
-    return Superficie(
-      padding: EdgeInsets.zero,
-      degrade: cerrada ? null : acentos.gradienteAcento,
-      resplandor: !cerrada,
-      child: Presionable(
+    final textTheme = Theme.of(context).textTheme;
+    final subtitulo = cerrada
+        ? 'Tocá para abrirla'
+        : contador > 0
+        ? '$contador producto(s) en el carrito'
+        : 'Buscar y cobrar';
+    if (cerrada) {
+      return Presionable(
+        radio: radioSuperficieCompanion + 4,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(Espaciado.lg),
+        child: Container(
+          padding: const EdgeInsets.all(Espaciado.xl),
+          decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(radioSuperficieCompanion + 4)),
           child: Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(color: cerrada ? colores.borde : textoSobre.withValues(alpha: 0.18), shape: BoxShape.circle),
-                child: Icon(
-                  cerrada ? IconosPlazoleta.lockOutline : IconosPlazoleta.pointOfSaleOutlined,
-                  color: cerrada ? colores.textoSecundario : textoSobre,
-                  size: 26,
-                ),
-              ),
+              Icon(IconosPlazoleta.lockOutline, color: colores.textoSecundario, size: 28),
               const SizedBox(width: Espaciado.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(cerrada ? 'Caja cerrada' : 'Vender', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: textoSobre)),
-                    Text(
-                      cerrada
-                          ? 'Tocá para abrirla'
-                          : contador > 0
-                          ? '$contador producto(s) en el carrito'
-                          : 'Buscar y cobrar',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: cerrada ? colores.textoSecundario : textoSobre.withValues(alpha: 0.85)),
-                    ),
+                    Text('Caja cerrada', style: textTheme.titleLarge),
+                    Text(subtitulo, style: textTheme.bodySmall),
                   ],
                 ),
               ),
-              Icon(
-                cerrada ? IconosPlazoleta.lockOpenOutlined : IconosPlazoleta.arrowForwardRounded,
-                color: cerrada ? colores.textoSecundario : textoSobre,
-              ),
+              Icon(IconosPlazoleta.lockOpenOutlined, color: colores.textoSecundario),
             ],
           ),
         ),
+      );
+    }
+    return BloqueHero(
+      onTap: onTap,
+      minAlto: 196,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
+            child: Text('Caja abierta', style: textTheme.labelMedium?.copyWith(color: Colors.white)),
+          ),
+          const SizedBox(height: Espaciado.xl),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Vender', style: textTheme.displayLarge?.copyWith(color: Colors.white)),
+                    Text(subtitulo, style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
+                  ],
+                ),
+              ),
+              const BotonFlecha(tamanio: 56),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Formulario de apertura rápida — mismo contenido que
-/// `SesionAbiertaGate._abrirCaja`, pero como hoja de vidrio invocada desde
-/// el CTA de "Inicio" en vez de aparecer recién al entrar al carrito.
 class _HojaAbrirCaja extends StatefulWidget {
   const _HojaAbrirCaja({
     required this.servicio,
@@ -489,8 +494,6 @@ class _Tile extends StatelessWidget {
 
   final IconData icono;
 
-  /// Cada acceso tiene su propio color de marca (El dueño, 2026-09-17: "remake
-  /// desde 0") — se reconoce por color además de por ícono/texto.
   final Color color;
   final String titulo;
   final VoidCallback? onTap;
@@ -500,15 +503,17 @@ class _Tile extends StatelessWidget {
     return Superficie(
       padding: EdgeInsets.zero,
       child: Presionable(
+        radio: radioSuperficieCompanion,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.xl),
+          padding: const EdgeInsets.all(Espaciado.xl - 4),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               ChipIcono(icono: icono, color: color, tamanio: 48, tamanioIcono: 22),
-              const SizedBox(height: Espaciado.md),
-              Text(titulo, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: Espaciado.xl),
+              Text(titulo, style: Theme.of(context).textTheme.titleMedium),
             ],
           ),
         ),

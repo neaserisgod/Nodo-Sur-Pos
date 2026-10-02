@@ -35,6 +35,8 @@ import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
+import 'tema/piezas_companion.dart';
+import 'tema/tema_companion.dart';
 import 'tema/chip_seleccionable.dart';
 import 'tema/esqueleto_companion.dart';
 import 'tema/estado_error_companion.dart';
@@ -459,10 +461,17 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
             ? EstadoErrorCompanion(mensaje: _error ?? 'No se pudo conectar.', onReintentar: _iniciar)
             : Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.lg, Espaciado.lg, 0),
-                    child: _enSeleccion ? _barraSeleccion(context) : Text('Productos', style: Theme.of(context).textTheme.headlineMedium),
-                  ),
+                  if (_enSeleccion)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.lg, Espaciado.lg, 0),
+                      child: _barraSeleccion(context),
+                    )
+                  else
+                    const EncabezadoCompanion(
+                      rotulo: 'Catálogo',
+                      titulo: 'Productos',
+                      padding: EdgeInsets.fromLTRB(EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.xl, 0),
+                    ),
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
                   Padding(
                     padding: const EdgeInsets.all(Espaciado.lg),

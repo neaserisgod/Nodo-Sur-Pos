@@ -27,6 +27,7 @@ import 'tema/esqueleto_companion.dart';
 import 'tema/colores_companion.dart';
 import 'tema/estado_error_companion.dart';
 import 'tema/estado_vacio_companion.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
@@ -274,8 +275,8 @@ class _TarjetaPrecio extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(Espaciado.lg),
-        child: Superficie(
-          degrade: context.acentos.gradienteAcento,
+        child: BloqueHero(
+          animar: false,
           padding: const EdgeInsets.all(Espaciado.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -283,19 +284,19 @@ class _TarjetaPrecio extends StatelessWidget {
               Text(
                 producto.nombre,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colores.acentoTexto),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: context.acentos.textoSobreColor),
               ),
               const SizedBox(height: Espaciado.lg),
               Text(
                 precioTexto,
                 style: Theme.of(
                   context,
-                ).textTheme.displayLarge?.copyWith(fontSize: 56, color: colores.acentoTexto),
+                ).textTheme.displayLarge?.copyWith(fontSize: 56, color: context.acentos.textoSobreColor),
               ),
               const SizedBox(height: Espaciado.md),
               Text(
                 'Stock: $stockTexto',
-                style: TextStyle(color: colores.acentoTexto.withValues(alpha: 0.8)),
+                style: TextStyle(color: context.acentos.textoSobreColor.withValues(alpha: 0.8)),
               ),
               if (!producto.activo) ...[
                 const SizedBox(height: Espaciado.sm),

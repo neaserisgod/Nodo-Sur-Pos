@@ -9,18 +9,16 @@
 
 import 'package:flutter/material.dart';
 
-import '../../ui/tema/acentos.dart' show acentosEscritorioClaro, acentosEscritorioOscuro;
 import '../../ui/tema/tokens.dart';
 import 'colores_companion.dart';
 
-/// Radio de "Superficie" — 20, el de las tarjetas de los mocks de
-/// "Lenguaje de diseño" (2026-09-26). Mismo valor que
-/// `radioSuperficieEscritorio`.
-const double radioSuperficieCompanion = 20;
+/// Radio de "Superficie" — 28, tarjetas muy redondeadas como las de la web
+/// de Nodo Sur (rediseño "antigravity").
+const double radioSuperficieCompanion = 28;
 
-/// Radio de controles rectangulares (campos, chips de ícono) — mismo valor
-/// que `radioControlEscritorio`.
-const double radioControlCompanion = 14;
+/// Radio de controles rectangulares (campos, chips de ícono). Los botones son
+/// píldoras (`StadiumBorder`), no usan este radio.
+const double radioControlCompanion = 16;
 
 abstract final class TemaCompanion {
   static ThemeData get oscuro => _construir(coloresCompanionOscuro, acentosCompanionOscuro, Brightness.dark);
@@ -56,8 +54,8 @@ abstract final class TemaCompanion {
         },
       ),
       fontFamily: familiaTipografica,
-      splashColor: colores.acento.withValues(alpha: 0.16),
-      highlightColor: colores.acento.withValues(alpha: 0.08),
+      splashColor: colores.textoPrimario.withValues(alpha: 0.08),
+      highlightColor: colores.textoPrimario.withValues(alpha: 0.04),
       hoverColor: colores.textoPrimario.withValues(alpha: 0.04),
     );
 
@@ -68,7 +66,7 @@ abstract final class TemaCompanion {
       // También los acentos del escritorio: las piezas del kit compartido
       // (`lib/ui/comun/tarjetas.dart`, "Lenguaje de diseño" 2026-09-26) los
       // leen — mismos valores que `acentos`, ver `colores_companion.dart`.
-      extensions: [colores, acentos, brillo == Brightness.dark ? acentosEscritorioOscuro : acentosEscritorioClaro],
+      extensions: [colores, acentos, brillo == Brightness.dark ? acentosPlazoletaCompanionOscuro : acentosPlazoletaCompanionClaro],
       dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: EspacioCompanion.lg),
       appBarTheme: AppBarTheme(
         backgroundColor: colores.fondo,
@@ -99,7 +97,7 @@ abstract final class TemaCompanion {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colores.fondo,
+        fillColor: colores.fondoBloque,
         contentPadding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg, vertical: EspacioCompanion.md),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radioControlCompanion),
@@ -111,7 +109,7 @@ abstract final class TemaCompanion {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radioControlCompanion),
-          borderSide: BorderSide(color: colores.acento, width: 2),
+          borderSide: BorderSide(color: colores.acento, width: 1.5),
         ),
         labelStyle: TextStyle(color: colores.textoSecundario),
       ),
@@ -121,10 +119,10 @@ abstract final class TemaCompanion {
           foregroundColor: colores.acentoTexto,
           disabledBackgroundColor: colores.borde,
           disabledForegroundColor: colores.textoTenue,
-          textStyle: TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: Pesos.medium),
+          textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioControlCompanion)),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -132,10 +130,10 @@ abstract final class TemaCompanion {
           backgroundColor: colores.acento,
           foregroundColor: colores.acentoTexto,
           elevation: 0,
-          textStyle: TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: Pesos.medium),
+          textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioControlCompanion)),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -144,14 +142,32 @@ abstract final class TemaCompanion {
           side: BorderSide(color: colores.borde, width: 1.5),
           textStyle: textTheme.labelLarge,
           minimumSize: const Size.fromHeight(alturaControlCompanion),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioControlCompanion)),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: colores.acento,
           textStyle: textTheme.labelLarge,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colores.acento,
+        foregroundColor: colores.acentoTexto,
+        elevation: 3,
+        focusElevation: 3,
+        hoverElevation: 3,
+        highlightElevation: 3,
+        shape: const StadiumBorder(),
+        extendedTextStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: colores.acento, circularTrackColor: colores.borde),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colores.fondo,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radioSuperficieCompanion + 4)),
         ),
       ),
       iconTheme: IconThemeData(color: colores.textoSecundario),
@@ -161,39 +177,40 @@ abstract final class TemaCompanion {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? colores.acento : colores.textoTenue,
+          (states) => states.contains(WidgetState.selected) ? colores.acentoTexto : colores.fondo,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? colores.acento.withValues(alpha: 0.4) : colores.borde,
+          (states) => states.contains(WidgetState.selected) ? colores.acento : colores.textoTenue.withValues(alpha: 0.5),
         ),
       ),
     );
   }
 
   static TextTheme _construirTextTheme(TextTheme base, ColoresPlazoleta colores) {
-    TextStyle estilo(double tamanio, FontWeight peso, Color color, {double altura = 1.25}) => TextStyle(
+    TextStyle estilo(double tamanio, FontWeight peso, Color color, {double altura = 1.25, double apretado = 0}) => TextStyle(
           fontFamily: familiaTipografica,
           fontSize: tamanio,
           fontWeight: peso,
           color: color,
           height: altura,
+          letterSpacing: tamanio * apretado,
         );
 
-    // Escala propia, bien diferenciada de la del escritorio: más salto entre
-    // roles, y Bold (único peso "fuerte" que trae la fuente empaquetada) en
-    // más lugares — look "flat mobile" audaz en vez del bento discreto.
+    // Titulares livianos y muy apretados (peso 400/500, -0,04 em), como la
+    // web: la jerarquía la da el tamaño, no el negrita.
     return base.copyWith(
-      displayLarge: estilo(44, Pesos.medium, colores.textoPrimario, altura: 1.1).tabular,
-      headlineMedium: estilo(32, Pesos.medium, colores.textoPrimario, altura: 1.1).tabular,
-      titleLarge: estilo(22, Pesos.medium, colores.textoPrimario),
-      titleMedium: estilo(18, Pesos.medium, colores.textoPrimario),
-      titleSmall: estilo(16, Pesos.medium, colores.textoPrimario),
-      bodyLarge: estilo(17, Pesos.regular, colores.textoPrimario),
-      bodyMedium: estilo(16, Pesos.regular, colores.textoPrimario),
-      bodySmall: estilo(14, Pesos.regular, colores.textoSecundario),
-      labelLarge: estilo(16, Pesos.medium, colores.textoPrimario),
-      labelMedium: estilo(13, Pesos.regular, colores.textoSecundario),
-      labelSmall: estilo(12, Pesos.regular, colores.textoTenue),
+      displayLarge: estilo(52, FontWeight.w400, colores.textoPrimario, altura: 1.02, apretado: -0.05).tabular,
+      headlineLarge: estilo(40, FontWeight.w400, colores.textoPrimario, altura: 1.05, apretado: -0.045).tabular,
+      headlineMedium: estilo(34, FontWeight.w400, colores.textoPrimario, altura: 1.08, apretado: -0.045).tabular,
+      titleLarge: estilo(24, FontWeight.w500, colores.textoPrimario, apretado: -0.03),
+      titleMedium: estilo(19, FontWeight.w500, colores.textoPrimario, apretado: -0.02),
+      titleSmall: estilo(16, FontWeight.w600, colores.textoPrimario, apretado: -0.01),
+      bodyLarge: estilo(17, Pesos.regular, colores.textoPrimario, altura: 1.45),
+      bodyMedium: estilo(16, Pesos.regular, colores.textoPrimario, altura: 1.45),
+      bodySmall: estilo(14, Pesos.regular, colores.textoSecundario, altura: 1.4),
+      labelLarge: estilo(16, FontWeight.w600, colores.textoPrimario),
+      labelMedium: estilo(13, FontWeight.w500, colores.textoSecundario),
+      labelSmall: estilo(12, FontWeight.w500, colores.textoTenue),
     );
   }
 }

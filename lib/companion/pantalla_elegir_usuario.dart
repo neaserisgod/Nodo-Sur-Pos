@@ -23,11 +23,10 @@ import 'mensaje_error.dart';
 import 'pantalla_menu_companion.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
-import 'tema/chip_icono.dart';
+import '../domain/marca.dart';
+import '../servicios/marca_actual.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
+import 'tema/piezas_companion.dart';
 
 class PantallaElegirUsuario extends StatefulWidget {
   const PantallaElegirUsuario({super.key});
@@ -89,55 +88,42 @@ class _PantallaElegirUsuarioState extends State<PantallaElegirUsuario> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('¿Quién sos?')),
       body: SafeArea(
-        child: _error != null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(Espaciado.lg),
-                  child: Text(_error!),
-                ),
-              )
-            : _usuarios == null
-            ? const EsqueletoLista()
-            : ListView.builder(
-                padding: const EdgeInsets.all(Espaciado.lg),
-                itemCount: _usuarios!.length,
-                itemBuilder: (context, i) {
-                  final u = _usuarios![i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                    child: Superficie(
-                      padding: EdgeInsets.zero,
-                      child: Presionable(
-                        onTap: () => _elegir(u),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Espaciado.lg,
-                            vertical: Espaciado.md,
-                          ),
-                          child: Row(
-                            children: [
-                              ChipIcono(icono: IconosPlazoleta.personOutline, color: context.colores.acento),
-                              const SizedBox(width: Espaciado.md),
-                              Expanded(
-                                child: Text(
-                                  u.nombre,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              Icon(
-                                IconosPlazoleta.chevronRight,
-                                color: context.colores.textoTenue,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ValueListenableBuilder<MarcaNegocio>(
+              valueListenable: marcaActual,
+              builder: (context, marca, _) => EncabezadoCompanion(
+                rotulo: marca.nombre,
+                titulo: '¿Quién sos?',
+                bajada: 'Elegí tu usuario para empezar.',
+                particulas: true,
+                padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.xl),
               ),
+            ),
+            Expanded(
+              child: _error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(Espaciado.xl),
+                        child: Text(_error!),
+                      ),
+                    )
+                  : _usuarios == null
+                  ? const EsqueletoLista()
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
+                      itemCount: _usuarios!.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: Espaciado.sm),
+                      itemBuilder: (context, i) {
+                        final u = _usuarios![i];
+                        return FilaElegible(titulo: u.nombre, onTap: () => _elegir(u));
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
