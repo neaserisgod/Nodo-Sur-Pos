@@ -208,6 +208,11 @@ void main() {
     });
 
     testWidgets('con la cuenta ya vinculada el paso dice "Continuar"', (tester) async {
+      // Con la cuenta, la sync ya muestra su estado: el paso es más alto que la pantalla de test por defecto.
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await armar(conCuenta: true);
       await arrancar(tester);
 

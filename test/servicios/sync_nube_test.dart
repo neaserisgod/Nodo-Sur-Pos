@@ -215,6 +215,31 @@ void main() {
     expect((await cel.estado.leer()).necesitaCopia, isTrue);
   });
 
+  test('volverABajarTodo: sale de "expirado" sin pedir una copia y avisa a las pantallas', () async {
+    servidor.expirado = true;
+    expect(await cel.servicio.sincronizar(), isA<SyncNubeExpirada>());
+    var avisos = 0;
+    cel.servicio.alCambiarEstado.addListener(() => avisos++);
+    servidor.expirado = false; // la nube vuelve a tener la historia (o el celular nunca debió quedar así)
+    expect(await cel.servicio.volverABajarTodo(), isA<SyncNubeOk>());
+    expect((await cel.estado.leer()).necesitaCopia, isFalse);
+    expect(cel.servicio.ultimo, isA<SyncNubeOk>());
+    expect(avisos, greaterThan(0));
+  });
+
+  test('vistaDeSync: cada resultado se cuenta igual en la PC y en el celular, y solo "expirada" ofrece volver a bajar', () {
+    expect(vistaDeSync(const SyncNubeOk(bajadas: 0, subidas: 0)).tono, TonoSync.bien);
+    expect(vistaDeSync(const SyncNubeFallida('x', sinRed: true)).tono, TonoSync.espera);
+    expect(vistaDeSync(const SyncNubeFallida('x')).tono, TonoSync.espera);
+    final vincular = vistaDeSync(const SyncNubeFallida('Volvé a vincular.', pideVincular: true));
+    expect(vincular.pideVincular, isTrue);
+    expect(vincular.tono, TonoSync.atencion);
+    final expirada = vistaDeSync(const SyncNubeExpirada());
+    expect(expirada.puedeVolverABajar, isTrue);
+    expect(expirada.detalle, isNot(contains('restaurar')));
+    expect(vistaDeSync(const SyncNubeOk(bajadas: 1, subidas: 1)).puedeVolverABajar, isFalse);
+  });
+
   test('un lote de más de un MB se parte en varios, en el orden en que hay que aplicarlos', () async {
     final cat = await crearCategoria(dbPc, 'Almacén seco');
     for (var i = 0; i < 6; i++) {

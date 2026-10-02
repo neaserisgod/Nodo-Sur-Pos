@@ -1,6 +1,8 @@
 // Configuración → Cuenta de Nodo Sur: vincular esta PC a la cuenta de Google del sitio, guardar copias de la base en
 // la nube y restaurarlas (por ejemplo, después de reinstalar). La caja no depende de nada de esto.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
@@ -8,6 +10,7 @@ import '../../data/repositorio_respaldo.dart';
 import '../../servicios/copias_nube.dart';
 import '../../servicios/cuenta_nube.dart';
 import '../../servicios/nube.dart';
+import '../../servicios/sync_nube.dart';
 import '../comun/botones.dart';
 import '../comun/fechas.dart';
 import '../respaldo/dialogo_confirmar_restaurar.dart';
@@ -69,6 +72,40 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
     } on ErrorNube catch (e) {
       if (mounted) setState(() => _errorRestaurar = e.mensaje);
     }
+  }
+
+  /// Qué pasa con la sincronización entre dispositivos, con la salida cuando quedó atrás (nunca un callejón sin salida).
+  Widget _estadoSync(BuildContext context, ServicioSyncNube sync, TextStyle secundario) {
+    final vista = vistaDeSync(sync.ultimo);
+    final color = switch (vista.tono) {
+      TonoSync.bien => context.colores.acento,
+      TonoSync.espera => context.colores.textoSecundario,
+      TonoSync.atencion => context.colores.error,
+    };
+    return Padding(
+      key: const Key('nube_estado_sync'),
+      padding: const EdgeInsets.only(top: Espaciado.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.circle, size: 10, color: color),
+              const SizedBox(width: Espaciado.sm),
+              Expanded(child: Text('Sincronización con tus otros dispositivos: ${vista.titulo}')),
+            ],
+          ),
+          Text(vista.detalle, style: secundario),
+          if (vista.puedeVolverABajar) ...[
+            const SizedBox(height: Espaciado.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: BotonSecundario(texto: 'Volver a bajar todo', onPressed: () => unawaited(sync.volverABajarTodo())),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -151,6 +188,11 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
             Expanded(child: Text('Vinculada a ${c.cuenta!.email} · ${c.cuenta!.nombreDispositivo}', key: const Key('nube_vinculada'))),
           ],
         ),
+        if (c.nube.sync case final sync?)
+          ValueListenableBuilder<int>(
+            valueListenable: sync.alCambiarEstado,
+            builder: (context, _, _) => sync.ultimo == null ? const SizedBox.shrink() : _estadoSync(context, sync, secundario),
+          ),
         if (c.canal == 'beta') ...[
           const SizedBox(height: Espaciado.sm),
           Text('Esta PC recibe las versiones de prueba antes que los clientes.', key: const Key('nube_beta'), style: secundario),

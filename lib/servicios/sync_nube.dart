@@ -17,6 +17,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../data/database.dart';
@@ -110,6 +111,46 @@ class SyncNubeFallida extends ResultadoSyncNube {
   final bool sinRed;
 }
 
+/// Cómo se le cuenta a la persona el estado de la sync, igual en la PC y en el celular (Regla 3: un solo lugar).
+/// Solo hay tres tonos: todo bien, esperando (se arregla solo) y algo que tiene que tocar ella.
+enum TonoSync { bien, espera, atencion }
+
+class VistaSync {
+  const VistaSync(this.tono, this.titulo, this.detalle, {this.puedeVolverABajar = false, this.pideVincular = false});
+  final TonoSync tono;
+  final String titulo;
+  final String detalle;
+
+  /// Se ofrece "Volver a bajar todo": el dispositivo quedó atrás de lo que guarda la nube.
+  final bool puedeVolverABajar;
+
+  /// Hay que volver a vincular la cuenta (el permiso de este dispositivo ya no vale).
+  final bool pideVincular;
+}
+
+VistaSync vistaDeSync(ResultadoSyncNube? r) => switch (r) {
+  null => const VistaSync(TonoSync.espera, 'Sincronizando…', 'Todavía no hubo una vuelta en esta sesión.'),
+  SyncNubeOk(:final bajadas, :final subidas) => VistaSync(
+    TonoSync.bien,
+    'Al día',
+    bajadas == 0 && subidas == 0 ? 'No hay nada pendiente.' : 'Recibió $bajadas y mandó $subidas cambios.',
+  ),
+  SyncNubeSinCuenta() => const VistaSync(TonoSync.atencion, 'Sin cuenta', 'Vinculá la cuenta para sincronizar por internet.', pideVincular: true),
+  SyncNubeExpirada() => const VistaSync(
+    TonoSync.atencion,
+    'Quedó atrás de la nube',
+    'Pasó mucho tiempo sin sincronizar. Podés bajar todo de nuevo: lo que hay acá no se pierde.',
+    puedeVolverABajar: true,
+  ),
+  SyncNubeFallida(sinRed: true) => const VistaSync(
+    TonoSync.espera,
+    'Sin conexión',
+    'Los cambios quedan guardados acá y se mandan solos cuando vuelva internet.',
+  ),
+  SyncNubeFallida(:final mensaje, pideVincular: true) => VistaSync(TonoSync.atencion, 'Hay que volver a vincular', mensaje, pideVincular: true),
+  SyncNubeFallida(:final mensaje) => VistaSync(TonoSync.espera, 'No se pudo sincronizar', '$mensaje Se reintenta solo.'),
+};
+
 class ServicioSyncNube {
   ServicioSyncNube({
     required this.db,
@@ -128,7 +169,16 @@ class ServicioSyncNube {
   final void Function()? alAplicarBajada;
 
   /// Último resultado: lo que muestra la pantalla de dispositivos ("sin conexión", "al día").
-  ResultadoSyncNube? ultimo;
+  ResultadoSyncNube? get ultimo => _ultimo;
+  set ultimo(ResultadoSyncNube? r) {
+    _ultimo = r;
+    alCambiarEstado.value++;
+  }
+
+  ResultadoSyncNube? _ultimo;
+
+  /// Cambia con cada resultado nuevo, para que las pantallas muestren el estado sin tener que consultarlo.
+  final ValueNotifier<int> alCambiarEstado = ValueNotifier(0);
 
   /// Hay una conexión de avisos abierta: mientras la haya no se consulta nada por las dudas.
   bool escuchando = false;
@@ -317,4 +367,12 @@ class ServicioSyncNube {
 
   /// Olvida el registro: la próxima vuelta baja todo desde el principio. Para después de restaurar una copia.
   Future<void> reiniciar() => almacenEstado.borrar();
+
+  /// Salida de "quedaste atrás de lo que guarda la nube" sin tocar nada de lo que hay en este dispositivo: se olvida el
+  /// registro y se baja todo de nuevo. Lo local no se pierde — cada fila se resuelve por "gana la más reciente" y el
+  /// stock y la caja viajan como movimientos —, así que no hace falta restaurar una copia (que el celular ni puede).
+  Future<ResultadoSyncNube> volverABajarTodo() async {
+    await reiniciar();
+    return sincronizar();
+  }
 }

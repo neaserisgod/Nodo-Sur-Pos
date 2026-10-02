@@ -1639,3 +1639,12 @@ oscuro con el marco de escaneo. Se dejó la cámara abierta de entrada, sin el b
 secundario.
 
 Con esto el celular queda al día con el mock completo.
+
+## Sync PC / celular / nube: sin callejones sin salida (2026-10-02)
+
+Revisión pedida por El dueño ("revisá la sync entre pc/android/cloudflare y la UI para que el usuario no lo sienta incómodo"). Cuatro problemas, cuatro respuestas:
+
+- **Restaurar una copia dejaba el registro de sync viejo.** El registro (`nodosur_sync.json`: "hasta acá bajé / esto ya lo subí") vive fuera de la base a propósito, así que reemplazar la base no lo tocaba: la PC podía no bajar lo que la copia no tenía o subir como nuevo lo ya subido. Ahora restaurar y desvincular lo olvidan (`olvidarRegistroSync`); la próxima vuelta baja todo y la resolución por "gana la fila más reciente" evita pisar datos.
+- **La nube purgaba lotes a los 60 días.** Un celular nuevo arranca de cero, así que en un local que lleva más de dos meses quedaba "expirado" para siempre. Ahora el servidor solo purga lotes de más de 365 días Y cuando la sucursal acumula más de 50 MB; un local chico nunca purga.
+- **"Hace falta restaurar una copia" no tenía salida en el celular** (no puede restaurar). Se reemplazó por `volverABajarTodo()`: olvida el registro y baja todo de nuevo sin perder lo local. Se ofrece como botón en el celular y en la PC.
+- **La sync no se veía.** `vistaDeSync()` (un solo lugar, Regla 3) traduce el último resultado a tres tonos — al día / esperando (se arregla solo) / requiere atención — con una frase y, cuando corresponde, la acción. Se muestra en Cuenta y sincronización (celular) y en Configuración → Cuenta de Nodo Sur (PC), recién cuando hay un resultado: sin novedades no hay ruido.
