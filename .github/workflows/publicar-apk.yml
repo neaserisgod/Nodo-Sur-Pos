@@ -10,7 +10,10 @@
 #                            PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.android\debug.keystore"))
 # Opcional: SITE_REPO_TOKEN si el repo del sitio es privado.
 #
-# Usa el número de compilación que ya esté en pubspec.yaml (no lo sube): el de la última versión publicada de la PC.
+# Número de compilación: por defecto el que ya esté en pubspec.yaml (no lo sube): el de la última versión publicada de la PC.
+# Con el dato "build" el APK lleva SU PROPIO número, independiente de Windows: sirve para relanzar un APK sin esperar una beta
+# de la PC, o para publicar un arreglo cuando la última versión salió mal (Android no deja instalar una versión más vieja encima
+# de una más nueva: volver atrás = publicar un número MÁS ALTO). Tiene que ser mayor que el último APK publicado.
 name: publicar-apk
 
 on:
@@ -26,6 +29,10 @@ on:
         description: Qué cambió
         required: true
         default: Actualización de la companion
+      build:
+        description: "Opcional: número de compilación propio del APK (ej. 2125). Vacío = el de pubspec.yaml. Mayor que el último APK publicado"
+        required: false
+        default: ""
       rollout:
         description: "Porcentaje de celulares que la reciben (1-100). Conviene 10 y subirlo desde /admin → Versiones; 100 = a todos"
         required: true
@@ -85,15 +92,27 @@ jobs:
 
       # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
       # (ver tool/publicar_actualizacion_companion.sh).
-      - run: flutter build apk --release --target-platform android-arm64
+      - name: Compilar el APK
+        env:
+          BUILD: ${{ inputs.build }}
+        run: |
+          if [ -n "$BUILD" ]; then
+            [[ "$BUILD" =~ ^[0-9]+$ ]] || { echo "::error::build tiene que ser un número entero (recibí '$BUILD')"; exit 1; }
+            flutter build apk --release --target-platform android-arm64 --build-number "$BUILD"
+          else
+            flutter build apk --release --target-platform android-arm64
+          fi
 
       - name: Publicar en el sitio
         env:
           NOTAS: ${{ inputs.notas }}
           CANAL: ${{ inputs.canal }}
           ROLLOUT: ${{ inputs.rollout }}
+          BUILD: ${{ inputs.build }}
         run: |
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
+          # Con build propio, la versión publicada lleva ese número (el mismo que quedó adentro del APK).
+          if [ -n "$BUILD" ]; then version="${version%%+*}+${BUILD}"; fi
           cp build/app/outputs/flutter-apk/app-release.apk "NodoSurPOS-Companion-${version}.apk"
           node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
             --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
