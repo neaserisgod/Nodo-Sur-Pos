@@ -193,7 +193,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('"solo celular": guarda el modo y ofrece vincular la cuenta antes de entrar', (tester) async {
+    testWidgets('"solo celular": guarda el modo y pide entrar con la cuenta (sin lista de perfiles ni "más tarde")', (tester) async {
       await armar(conCuenta: false);
       await arrancar(tester);
 
@@ -201,28 +201,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(await leerModoUso(), ModoUso.soloCelular);
-      expect(find.text('Cuenta y sincronización'), findsOneWidget);
-      expect(find.text('Vincular con Nodo Sur'), findsOneWidget);
-      expect(find.text('Vincular más tarde'), findsOneWidget);
+      expect(find.text('Entrá con tu cuenta'), findsOneWidget);
+      expect(find.byKey(const Key('entrar_con_cuenta')), findsOneWidget);
+      expect(find.text('Vincular más tarde'), findsNothing, reason: 'el perfil sale de la cuenta: no se puede entrar sin ella');
+      expect(find.text('¿Quién sos?'), findsNothing);
       expect(find.byType(BackButton), findsNothing, reason: 'es un paso del arranque, no una pantalla a la que volver');
-    });
-
-    testWidgets('con la cuenta ya vinculada el paso dice "Continuar"', (tester) async {
-      // Con la cuenta, la sync ya muestra su estado: el paso es más alto que la pantalla de test por defecto.
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await armar(conCuenta: true);
-      await arrancar(tester);
-
-      await tester.tap(find.byKey(const Key('modo-solo-celular')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Continuar'), findsOneWidget);
-      expect(find.text('Vincular más tarde'), findsNothing);
-      // La sync de verdad arrancó (hay cuenta y no hay PC): se apaga acá para no dejar temporizadores al terminar.
-      sync.servicio.detener();
     });
 
     testWidgets('tocar el modo que ya está en uso, desde Gestión, no cambia nada y vuelve', (tester) async {

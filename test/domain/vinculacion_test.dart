@@ -31,6 +31,14 @@ void main() {
     });
   });
 
+  group('vincular un celular', () {
+    test('la dirección lleva tipo=celular: el sitio le ofrece sus sucursales y le dice quién es', () {
+      final u = urlVincular(puerto: 1234, state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'Celular', celular: true);
+      expect(u.queryParameters['tipo'], 'celular');
+      expect(urlVincular(puerto: 1234, state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'PC').queryParameters.containsKey('tipo'), isFalse);
+    });
+  });
+
   group('el aviso que vuelve al servidor local', () {
     test('con el state correcto devuelve el código', () {
       expect(codigoDeCallback(Uri.parse('/callback?code=xyz&state=ok'), stateEsperado: 'ok'), 'xyz');
