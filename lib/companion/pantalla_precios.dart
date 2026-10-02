@@ -46,6 +46,8 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'boton_escaner_companion.dart';
+import 'escanear_codigo.dart';
 
 class PantallaPrecios extends StatefulWidget {
   const PantallaPrecios({super.key});
@@ -62,6 +64,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   List<CategoriaCompanion> _categorias = [];
 
   final _busquedaCtrl = TextEditingController();
+  bool _escaneando = false;
   final _debouncer = Debouncer();
   List<ProductoCompanion> _resultados = [];
   bool _buscando = false;
@@ -99,6 +102,36 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     setState(() {
       if (!_seleccionados.remove(id)) _seleccionados.add(id);
     });
+  }
+
+  /// Escanea un código y abre directo a editar el producto (si existe) o a
+  /// darlo de alta con ese código (si no): el mismo camino que tenía el botón
+  /// central de la navbar, ahora al lado del buscador.
+  Future<void> _escanearYEditar() async {
+    final cliente = _cliente;
+    final usuarioId = _usuarioId;
+    if (cliente == null || usuarioId == null || _escaneando) return;
+    final codigo = await escanearCodigo(context);
+    if (codigo == null || !mounted) return;
+    setState(() => _escaneando = true);
+    try {
+      final producto = await cliente.porCodigoBarras(codigo);
+      if (!mounted) return;
+      await mostrarFormularioProducto(
+        context,
+        cliente: cliente,
+        usuarioId: usuarioId,
+        proveedores: _proveedores,
+        categorias: _categorias,
+        producto: producto,
+        codigoInicial: producto == null ? codigo : null,
+      );
+      if (mounted) await _buscar();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensajeDeError(e))));
+    } finally {
+      if (mounted) setState(() => _escaneando = false);
+    }
   }
 
   /// Cuál hoja abrir depende de POR QUÉ se está seleccionando (El dueño,
@@ -477,6 +510,9 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
                   Padding(
                     padding: const EdgeInsets.all(Espaciado.lg),
+                    child: Row(
+                      children: [
+                        Expanded(
                     child: Superficie(
                       child: CampoTexto(
                         controller: _busquedaCtrl,
@@ -490,6 +526,11 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                             : null,
                         onChanged: (_) => _debouncer.ejecutar(_buscar),
                       ),
+                    ),
+                        ),
+                        const SizedBox(width: Espaciado.sm),
+                        BotonEscanerCampo(onTap: _usuarioId == null ? null : _escanearYEditar, cargando: _escaneando),
+                      ],
                     ),
                   ),
                   Padding(

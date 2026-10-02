@@ -38,6 +38,7 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
 
 class PantallaConteoStock extends StatefulWidget {
   const PantallaConteoStock({super.key});
@@ -124,7 +125,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Conteo de stock')),
+      appBar: const AppBarCompanion(titulo: 'Conteo de stock'),
       body: SafeArea(
         child: _cargandoProveedores
             ? const EsqueletoLista()
@@ -432,7 +433,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(widget.titulo)),
+        appBar: AppBarCompanion(titulo: widget.titulo),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _guardando ? null : _guardar,
           icon: _guardando

@@ -23,6 +23,7 @@ import 'tema/colores_companion.dart';
 import 'tema/error_en_linea.dart';
 import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
+import 'tema/app_bar_companion.dart';
 
 /// De dónde sale la plata; las claves son las de `OrigenPagoDeuda`.
 const _origenes = <({String clave, String etiqueta})>[
@@ -182,7 +183,7 @@ class _PantallaPagarProveedorState extends State<PantallaPagarProveedor> {
     final acentos = context.acentos;
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Pagar proveedor')),
+      appBar: const AppBarCompanion(titulo: 'Pagar proveedor'),
       body: SafeArea(
         child: _cargando
             ? const Center(child: CircularProgressIndicator())

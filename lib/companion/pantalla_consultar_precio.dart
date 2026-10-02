@@ -32,6 +32,7 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
 
 class PantallaConsultarPrecio extends StatefulWidget {
   const PantallaConsultarPrecio({super.key});
@@ -158,9 +159,10 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Consultar precio'),
-        actions: [
+      appBar: AppBarCompanion(
+        titulo: 'Consultar precio',
+        etiquetaSalida: 'Cerrar',
+        acciones: [
           if (_cliente != null)
             IconButton(
               tooltip: 'Escanear código de barras',

@@ -38,6 +38,7 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
 
 class PantallaConfiguracionCompanion extends StatefulWidget {
   const PantallaConfiguracionCompanion({super.key});
@@ -100,7 +101,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuración')),
+      appBar: const AppBarCompanion(titulo: 'Configuración'),
       body: SafeArea(
         child: _cargando
             ? const EsqueletoLista()

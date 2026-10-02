@@ -43,6 +43,7 @@ import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
 
@@ -465,7 +466,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Widget build(BuildContext context) {
     final buscando = _busquedaCtrl.text.trim().isNotEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('Carrito')),
+      appBar: const AppBarCompanion(titulo: 'Carrito', etiquetaSalida: 'Cerrar'),
       body: SafeArea(
         child: _sesionCajaId == null
             ? SesionAbiertaGate(

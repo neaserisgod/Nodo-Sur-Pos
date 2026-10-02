@@ -27,6 +27,7 @@ import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
 
 enum TipoMovimientoCaja { gasto, ingreso }
 
@@ -149,7 +150,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     final acentos = context.acentos;
     final colorTipo = _tipo == TipoMovimientoCaja.gasto ? acentos.mixto : acentos.dinero;
     return Scaffold(
-      appBar: AppBar(title: const Text('Movimiento de caja')),
+      appBar: const AppBarCompanion(titulo: 'Movimiento de caja', etiquetaSalida: 'Cerrar'),
       body: SafeArea(
         child: _cargandoInicial
             ? const Center(child: CircularProgressIndicator())

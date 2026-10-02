@@ -27,6 +27,7 @@ import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/esqueleto_companion.dart';
+import 'tema/app_bar_companion.dart';
 
 class PantallaArqueo extends StatefulWidget {
   const PantallaArqueo({super.key, required this.servicio});
@@ -66,9 +67,9 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Arqueo'),
-        actions: [
+      appBar: AppBarCompanion(
+        titulo: 'Arqueo',
+        acciones: [
           IconButton(
             tooltip: 'Actualizar',
             icon: const Icon(IconosPlazoleta.refresh),

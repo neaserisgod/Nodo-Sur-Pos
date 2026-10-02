@@ -50,7 +50,6 @@ import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'base_local.dart';
-import 'boton_escaner_companion.dart';
 import 'cliente_companion.dart';
 import 'dialogo_arqueo_intermedio_companion.dart';
 import 'dialogo_cierre_companion.dart';
@@ -584,16 +583,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             ),
           ],
         ),
-        bottomNavigationBar: NavbarCompanion(
-          indice: _indice,
-          onSeleccionar: _irAPagina,
-          botonCentral: BotonEscanerCompanion(
-            servicio: _servicio,
-            usuarioId: _usuarioId,
-            proveedores: _proveedores,
-            categorias: _categorias,
-          ),
-        ),
+        bottomNavigationBar: NavbarCompanion(indice: _indice, onSeleccionar: _irAPagina),
       ),
     );
   }

@@ -46,6 +46,7 @@ import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 import 'tema/esqueleto_companion.dart';
+import 'tema/app_bar_companion.dart';
 
 enum _MedioHistorico { efectivo, virtual, mixto }
 
@@ -150,7 +151,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Días históricos')),
+      appBar: const AppBarCompanion(titulo: 'Días históricos'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _cliente == null ? null : _nuevoDia,
         icon: const Icon(IconosPlazoleta.add),
@@ -638,7 +639,7 @@ class _PantallaNuevoDiaHistoricoState
     final fecha = _fecha;
     if (fecha == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Nuevo día histórico')),
+        appBar: const AppBarCompanion(titulo: 'Nuevo día histórico'),
         body: SafeArea(
           child: Center(
             child: FilledButton(
