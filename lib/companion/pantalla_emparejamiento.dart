@@ -104,14 +104,16 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, 0),
+              child: Align(alignment: Alignment.centerLeft, child: _MarcaChica()),
+            ),
             EncabezadoCompanion(
-              rotulo: 'Companion',
               titulo: 'Emparejá con la PC',
               bajada: _manual
                   ? 'Cargá los datos que figuran en la PC.'
                   : 'Escaneá el código de Configuración → "App companion" en la PC.',
-              particulas: true,
-              padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.lg),
+              padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.lg, Espaciado.xl, Espaciado.lg),
             ),
             Expanded(child: _manual ? _formularioManual(context) : _escaner(context)),
           ],
@@ -133,7 +135,9 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  const ColoredBox(color: Color(0xFF0B0C12)),
                   MobileScanner(onDetect: _alDetectar),
+                  const IgnorePointer(child: CustomPaint(painter: _MarcoEscaner())),
                   if (_verificando) const ColoredBox(color: Colors.black45, child: Center(child: CircularProgressIndicator())),
                 ],
               ),
@@ -228,4 +232,57 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
       ),
     );
   }
+}
+
+/// La marca arriba del título: un cuadrado de tinta con "NS" y el nombre.
+class _MarcaChica extends StatelessWidget {
+  const _MarcaChica();
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: colores.acento, borderRadius: BorderRadius.circular(10)),
+          child: Text('NS', style: TextStyle(color: colores.acentoTexto, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+        ),
+        const SizedBox(width: Espaciado.sm),
+        Text('Nodo Sur', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      ],
+    );
+  }
+}
+
+/// Las cuatro esquinas del marco de escaneo sobre la cámara, como en el mock.
+class _MarcoEscaner extends CustomPainter {
+  const _MarcoEscaner();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final lado = size.shortestSide * 0.56;
+    final caja = Rect.fromCenter(center: size.center(Offset.zero), width: lado, height: lado);
+    final pincel = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    final largo = lado * 0.22;
+    void esquina(Offset origen, double dx, double dy) {
+      canvas.drawLine(origen, origen + Offset(dx * largo, 0), pincel);
+      canvas.drawLine(origen, origen + Offset(0, dy * largo), pincel);
+    }
+
+    esquina(caja.topLeft, 1, 1);
+    esquina(caja.topRight, -1, 1);
+    esquina(caja.bottomLeft, 1, -1);
+    esquina(caja.bottomRight, -1, -1);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -771,8 +771,8 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
 - **Sin cambiar a propósito**: la navbar de abajo del celular (el mock usa
   un menú desde el título).
 - **Celular**: el mock completo (canvas "Mocks Nodo Sur") ya llegó y se aplicó casi entero
-  (2026-10-02, ver `DECISIONES.md`, "Companion: mock completo del celular"). Falta
-  Configuración y el emparejamiento (el Conteo de stock ya está). Esquema sin cambios, sigue en v39.
+  (2026-10-02, ver `DECISIONES.md`, "Companion: mock completo del celular"). Aplicado
+  entero, incluidos Conteo de stock, Configuración y el emparejamiento. Esquema sin cambios, sigue en v39.
 - **Pregunta abierta**: Carga histórica por totales del día con costo
   estimado (lo que proponía el mock) o, como ahora, producto por producto.
 
