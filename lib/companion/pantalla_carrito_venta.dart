@@ -42,6 +42,7 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
 
@@ -671,14 +672,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Widget _panelTotal(BuildContext context) {
     final subtotal = Venta(lineas: widget.carrito).subtotalCentavos;
     final sinCarrito = widget.carrito.isEmpty || _calculando || _cobrando;
-    final colores = context.colores;
     return Padding(
       padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: colores.error)),
+            ErrorEnLinea(_error!),
             const SizedBox(height: Espaciado.sm),
           ],
           // La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18:

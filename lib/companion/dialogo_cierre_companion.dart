@@ -21,6 +21,7 @@ import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/hoja_vidrio.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 /// true si se cerró de verdad — false si se canceló (solo posible en la
 /// fase de conteo, antes de confirmar: una vez revelado el resumen, cerrar
@@ -280,7 +281,7 @@ class _DialogoCierreCompanionState extends State<_DialogoCierreCompanion> {
         ],
         if (_error != null) ...[
           const SizedBox(height: Espaciado.sm),
-          Text(_error!, style: TextStyle(color: context.colores.error)),
+          ErrorEnLinea(_error!),
         ],
       ],
     );
@@ -343,7 +344,7 @@ class _DialogoCierreCompanionState extends State<_DialogoCierreCompanion> {
           ],
           if (_error != null) ...[
             const SizedBox(height: Espaciado.md),
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
           ],
         ],
       ),

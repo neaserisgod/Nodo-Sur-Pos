@@ -32,6 +32,7 @@ import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
 import '../domain/marca.dart';
 import '../servicios/marca_actual.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaInicioCompanion extends StatelessWidget {
   const PantallaInicioCompanion({
@@ -475,7 +476,7 @@ class _HojaAbrirCajaState extends State<_HojaAbrirCaja> {
             style: TextStyle(color: context.colores.textoSecundario),
           ),
         ],
-        if (_error != null) ...[const SizedBox(height: Espaciado.md), Text(_error!, style: TextStyle(color: context.colores.error))],
+        if (_error != null) ...[const SizedBox(height: Espaciado.md), ErrorEnLinea(_error!)],
         const SizedBox(height: Espaciado.lg),
         FilledButton(
           onPressed: _abriendo ? null : _abrirCaja,

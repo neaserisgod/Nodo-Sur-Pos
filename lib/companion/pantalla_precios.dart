@@ -45,6 +45,7 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaPrecios extends StatefulWidget {
   const PantallaPrecios({super.key});
@@ -517,10 +518,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      child: ErrorEnLinea(_error!),
                     ),
                   Expanded(
                     child: RefreshIndicator(

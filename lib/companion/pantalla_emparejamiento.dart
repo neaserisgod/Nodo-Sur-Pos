@@ -15,6 +15,7 @@ import 'pantalla_elegir_usuario.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaEmparejamiento extends StatefulWidget {
   const PantallaEmparejamiento({super.key});
@@ -139,7 +140,7 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
             Container(
               padding: const EdgeInsets.all(Espaciado.lg),
               decoration: BoxDecoration(color: colores.error.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(radioControlCompanion)),
-              child: Text(_error!, style: TextStyle(color: colores.error)),
+              child: ErrorEnLinea(_error!),
             ),
           ],
           const SizedBox(height: Espaciado.md),
@@ -185,7 +186,7 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
           ),
           if (_error != null) ...[
             const SizedBox(height: Espaciado.md),
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
           ],
           const SizedBox(height: Espaciado.lg),
           FilledButton(

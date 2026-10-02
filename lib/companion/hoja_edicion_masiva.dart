@@ -32,6 +32,7 @@ import 'cliente_companion.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'tema/chip_seleccionable.dart';
+import 'tema/error_en_linea.dart';
 
 enum _AccionMasiva { stock, precio, costo, categoria, proveedor }
 
@@ -308,7 +309,7 @@ class _HojaEdicionMasivaState extends State<HojaEdicionMasiva> {
       ..._contenidoAccion(context),
       if (_error != null) ...[
         const SizedBox(height: Espaciado.sm),
-        Text(_error!, style: TextStyle(color: context.colores.error)),
+        ErrorEnLinea(_error!),
       ],
       const SizedBox(height: Espaciado.lg),
       FilledButton(onPressed: _revisar, child: const Text('Revisar')),
@@ -341,7 +342,7 @@ class _HojaEdicionMasivaState extends State<HojaEdicionMasiva> {
       ],
       if (_error != null) ...[
         const SizedBox(height: Espaciado.sm),
-        Text(_error!, style: TextStyle(color: colores.error)),
+        ErrorEnLinea(_error!),
       ],
       const SizedBox(height: Espaciado.lg),
       Row(

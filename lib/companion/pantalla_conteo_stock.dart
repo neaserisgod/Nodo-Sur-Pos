@@ -37,6 +37,7 @@ import 'tema/estado_vacio_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaConteoStock extends StatefulWidget {
   const PantallaConteoStock({super.key});
@@ -458,10 +459,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                _error!,
-                                style: TextStyle(color: context.colores.error),
-                              ),
+                              child: ErrorEnLinea(_error!),
                             ),
                             TextButton(
                               onPressed: _cargar,

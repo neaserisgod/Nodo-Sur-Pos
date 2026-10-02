@@ -37,6 +37,7 @@ import 'tema/fila_dato_companion.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaConfiguracionCompanion extends StatefulWidget {
   const PantallaConfiguracionCompanion({super.key});
@@ -313,7 +314,7 @@ class _HojaAccionState extends State<_HojaAccion> {
         widget.child,
         if (_error != null) ...[
           const SizedBox(height: Espaciado.sm),
-          Text(_error!, style: TextStyle(color: context.colores.error)),
+          ErrorEnLinea(_error!),
         ],
         const SizedBox(height: Espaciado.lg),
         FilledButton(

@@ -44,6 +44,7 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaCierres extends StatefulWidget {
   const PantallaCierres({super.key});
@@ -354,7 +355,7 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
             const SizedBox(height: Espaciado.sm),
             SeccionExtraCierreCompanion(resumen: _resumen!),
           ] else if (_error != null)
-            Text(_error!, style: TextStyle(color: context.colores.error))
+            ErrorEnLinea(_error!)
           else
             const Center(
               child: Padding(

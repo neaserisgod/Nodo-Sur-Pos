@@ -31,6 +31,7 @@ import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaConsultarPrecio extends StatefulWidget {
   const PantallaConsultarPrecio({super.key});
@@ -205,10 +206,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      child: ErrorEnLinea(_error!),
                     ),
                   if (_seleccionado != null)
                     Expanded(child: _TarjetaPrecio(producto: _seleccionado!))

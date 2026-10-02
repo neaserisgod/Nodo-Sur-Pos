@@ -27,6 +27,7 @@ import 'tema/colores_companion.dart';
 import 'tema/estado_error_companion.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum TipoMovimientoCaja { gasto, ingreso }
 
@@ -202,10 +203,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                     ),
                     const SizedBox(height: Espaciado.lg),
                     if (_error != null) ...[
-                      Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      ErrorEnLinea(_error!),
                       const SizedBox(height: Espaciado.md),
                     ],
                     Superficie(

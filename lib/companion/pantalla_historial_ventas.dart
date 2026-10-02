@@ -38,6 +38,7 @@ import 'tema/estado_vacio_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum _Periodo { hoy, ayer, ultimaSemana, esteMes }
 
@@ -358,10 +359,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               )
             else if (!_cargando)
               Padding(
@@ -594,7 +592,7 @@ class _HojaDesgloseState extends State<_HojaDesglose> {
             Espaciado.lg,
           ),
           child: _error != null
-              ? Center(child: Text(_error!, style: TextStyle(color: colores.error)))
+              ? Center(child: ErrorEnLinea(_error!))
               : detalle == null
               ? const Center(child: CircularProgressIndicator())
               : ListView(

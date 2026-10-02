@@ -44,6 +44,7 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum _MedioHistorico { efectivo, virtual, mixto }
 
@@ -159,10 +160,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
             ? const Center(child: CircularProgressIndicator())
             : _error != null
             ? Center(
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               )
             : _dias.isEmpty
             ? const EstadoVacioCompanion(
@@ -369,10 +367,7 @@ class _PantallaDetalleDiaHistoricoState
               ? const Center(child: CircularProgressIndicator())
               : _error != null
               ? Center(
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: context.colores.error),
-                  ),
+                  child: ErrorEnLinea(_error!),
                 )
               : TabBarView(
                   children: [_pestanaResumen(context), _pestanaVentas(context)],
@@ -830,10 +825,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(Espaciado.md),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               ),
             Expanded(
               child: _ArmadorDeVenta(
@@ -1207,7 +1199,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
             const SizedBox(height: Espaciado.sm),
           ],
           SegmentedButton<_MedioHistorico>(
