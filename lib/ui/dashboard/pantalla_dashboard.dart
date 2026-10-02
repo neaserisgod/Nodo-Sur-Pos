@@ -263,8 +263,10 @@ class _FilaIndicadores extends StatelessWidget {
         ? 'Todo separado'
         : '${t.proveedoresPendientes} de ${t.proveedoresConAlgoQueSeparar} proveedores pendientes';
 
-    final tarjetas = [
-      TarjetaIndicador(etiqueta: 'Vendido hoy', valor: _plata(t.vendidoCentavos), nota: notaVendido, tonoNota: tonoVendido),
+    // Rediseño "antigravity": lo vendido hoy pasa a ser la pieza grande de la
+    // pantalla (bloque negro, cifra enorme y liviana) y el resto de los
+    // indicadores se apilan a su lado como tarjetas chicas.
+    final chicas = [
       TarjetaIndicador(
         etiqueta: 'Ganancia hoy',
         valor: _plata(t.gananciaCentavos),
@@ -288,10 +290,65 @@ class _FilaIndicadores extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var i = 0; i < tarjetas.length; i++) ...[
-            if (i > 0) const SizedBox(width: Espaciado.lg),
-            Expanded(child: tarjetas[i]),
+          Expanded(
+            flex: 6,
+            child: _HeroVendido(valor: _plata(t.vendidoCentavos), nota: notaVendido, tono: tonoVendido),
+          ),
+          for (final tarjeta in chicas) ...[
+            const SizedBox(width: Espaciado.lg),
+            Expanded(flex: 3, child: tarjeta),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Lo vendido hoy, en grande: bloque negro con la cifra liviana y apretada
+/// de la web de Nodo Sur, y la variación contra el mismo día de la semana
+/// pasada en una pastilla.
+class _HeroVendido extends StatelessWidget {
+  const _HeroVendido({required this.valor, required this.nota, required this.tono});
+
+  final String valor;
+  final String? nota;
+  final Tono tono;
+
+  @override
+  Widget build(BuildContext context) {
+    final acentos = context.acentosPlazoleta;
+    final textTheme = Theme.of(context).textTheme;
+    final sobre = acentos.textoSobreColor;
+    final (fondoNota, textoNota) = switch (tono) {
+      Tono.ganancia => (acentos.gananciaSuave, acentos.ganancia),
+      Tono.error => (acentos.alertaSuave, acentos.alerta),
+      _ => (sobre.withValues(alpha: 0.14), sobre),
+    };
+    return Superficie(
+      degrade: acentos.gradienteAcento,
+      padding: const EdgeInsets.all(Espaciado.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Vendido hoy', style: textTheme.titleSmall?.copyWith(color: sobre.withValues(alpha: 0.72))),
+          const SizedBox(height: Espaciado.lg),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              valor,
+              maxLines: 1,
+              style: textTheme.displayLarge!.copyWith(fontSize: 72, color: sobre, letterSpacing: -3.6, height: 1),
+            ),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          if (nota != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: Espaciado.md + 2, vertical: Espaciado.xs + 2),
+              decoration: BoxDecoration(color: fondoNota, borderRadius: BorderRadius.circular(999)),
+              child: Text(nota!, style: textTheme.labelLarge?.copyWith(color: textoNota)),
+            ),
         ],
       ),
     );
