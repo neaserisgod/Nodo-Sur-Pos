@@ -16,9 +16,10 @@ import '../domain/dinero.dart';
 import '../ui/comun/fechas.dart';
 import '../ui/comun/grafico_por_hora.dart';
 import '../ui/comun/tarjetas.dart';
+import 'tema/piezas_companion.dart';
+import 'tema/tema_companion.dart';
 import '../ui/tema/acentos.dart';
 import '../ui/tema/iconos.dart';
-import '../ui/tema/superficie.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 
@@ -72,49 +73,74 @@ class TableroCompanionState extends State<TableroCompanion> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Hoy · ${fechaLarga(hoy)} · ${horaCorta(hoy)}', style: textTheme.bodySmall),
-        const SizedBox(height: Espaciado.md),
-        Row(
-          children: [
-            Expanded(child: TarjetaIndicador(etiqueta: 'Vendido', valor: formatearARS(t.vendidoCentavos))),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: TarjetaIndicador(
-                etiqueta: 'Ganancia',
-                valor: formatearARS(t.gananciaCentavos),
-                tonoValor: Tono.ganancia,
-                nota: margen == null ? null : 'Ganancia ${(margen * 100).round()}%',
-              ),
+        EtiquetaSeccion('Hoy · ${fechaLarga(hoy)} · ${horaCorta(hoy)}'),
+        const SizedBox(height: EspacioCompanion.lg),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            formatearARS(t.vendidoCentavos),
+            maxLines: 1,
+            style: textTheme.displayLarge?.copyWith(color: colores.textoPrimario).tabular,
+          ),
+        ),
+        Text('Vendido', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
+        const SizedBox(height: EspacioCompanion.xl),
+        FilaCifras(
+          cifras: [
+            CifraGrande(
+              etiqueta: 'Ganancia',
+              valor: formatearARS(t.gananciaCentavos),
+              tono: Tono.ganancia,
+              nota: margen == null ? null : '${(margen * 100).round()}%',
+            ),
+            CifraGrande(etiqueta: 'Tickets', valor: '${t.tickets}'),
+            CifraGrande(
+              etiqueta: 'Ticket prom.',
+              valor: t.tickets == 0 ? '—' : formatearARS(t.vendidoCentavos ~/ t.tickets),
             ),
           ],
         ),
-        const SizedBox(height: Espaciado.md),
-        Row(
-          children: [
-            Expanded(child: TarjetaIndicador(etiqueta: 'Tickets', valor: '${t.tickets}')),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: TarjetaIndicador(
-                etiqueta: 'Ticket prom.',
-                valor: t.tickets == 0 ? '—' : formatearARS(t.vendidoCentavos ~/ t.tickets),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Espaciado.md),
-        TarjetaIndicador(
-          etiqueta: t.proveedoresConAlgoQueSeparar == 0
-              ? 'Falta separar'
-              : 'Falta separar · ${t.proveedoresPendientes} de ${t.proveedoresConAlgoQueSeparar}',
-          valor: formatearARS(t.faltaSepararCentavos),
-          nota: t.proveedoresConAlgoQueSeparar > 0 && t.proveedoresPendientes == 0 ? 'Todo separado' : null,
-          destacada: true,
+        const SizedBox(height: EspacioCompanion.xl),
+        BloqueHero(
           onTap: widget.alTocarSeparar,
+          minAlto: 148,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.proveedoresConAlgoQueSeparar == 0
+                          ? 'Falta separar'
+                          : 'Falta separar · ${t.proveedoresPendientes} de ${t.proveedoresConAlgoQueSeparar}',
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72)),
+                    ),
+                    const SizedBox(height: EspacioCompanion.xs),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        formatearARS(t.faltaSepararCentavos),
+                        maxLines: 1,
+                        style: textTheme.headlineLarge?.copyWith(color: Colors.white).tabular,
+                      ),
+                    ),
+                    if (t.proveedoresConAlgoQueSeparar > 0 && t.proveedoresPendientes == 0)
+                      Text('Todo separado', style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
+                  ],
+                ),
+              ),
+              const SizedBox(width: EspacioCompanion.lg),
+              const BotonFlecha(),
+            ],
+          ),
         ),
-        const SizedBox(height: Espaciado.md),
-        Superficie(child: GraficoPorHora(porHora: t.porHora, altura: 140)),
-        const SizedBox(height: Espaciado.md),
-        TarjetaSeccion(
+        const SizedBox(height: EspacioCompanion.md),
+        SeccionCompanion(titulo: 'Ventas por hora', child: GraficoPorHora(porHora: t.porHora, altura: 140)),
+        const SizedBox(height: EspacioCompanion.md),
+        SeccionCompanion(
           titulo: 'Cómo te pagaron',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,8 +154,8 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ),
         if (t.masVendidos.isNotEmpty) ...[
-          const SizedBox(height: Espaciado.md),
-          TarjetaSeccion(
+          const SizedBox(height: EspacioCompanion.md),
+          SeccionCompanion(
             titulo: 'Más vendidos hoy',
             child: Column(
               children: [
@@ -147,10 +173,10 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ],
         if (t.stockBajo.isNotEmpty) ...[
-          const SizedBox(height: Espaciado.md),
-          TarjetaSeccion(
+          const SizedBox(height: EspacioCompanion.md),
+          SeccionCompanion(
             titulo: 'Stock bajo',
-            insignia: Insignia(texto: '${t.stockBajo.length}', tono: Tono.alerta),
+            derecha: Insignia(texto: '${t.stockBajo.length}', tono: Tono.alerta),
             child: Column(
               children: [
                 for (final p in t.stockBajo.take(8))
@@ -176,8 +202,8 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ],
         if (t.pendientes.isNotEmpty) ...[
-          const SizedBox(height: Espaciado.md),
-          TarjetaSeccion(
+          const SizedBox(height: EspacioCompanion.md),
+          SeccionCompanion(
             titulo: 'Fiados y encargues',
             child: Column(
               children: [

@@ -37,6 +37,7 @@ import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
 import 'tema/estado_vacio_companion.dart';
 import 'tema/hoja_vidrio.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
@@ -712,9 +713,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// (`mostrarHojaVidrio`) es consistente con el resto Y no depende de la
   /// geometría del botón que la abre.
   Widget _tarjetaCobrar(BuildContext context, {required int subtotal, required bool deshabilitado}) {
-    final colores = context.colores;
     final acentos = context.acentos;
-    final textoSobre = colores.acentoTexto;
+    final textoSobre = acentos.textoSobreColor;
     final procesando = _calculando || _cobrando;
     final resultado = _resultado;
     final hayDesglose = resultado != null &&
@@ -722,10 +722,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             resultado.descuentoCentavos > 0 ||
             resultado.redondeoCentavos > 0);
 
-    return Superficie(
-      degrade: acentos.gradienteAcento,
+    return BloqueHero(
+      animar: false,
       padding: EdgeInsets.zero,
-      resplandor: !deshabilitado,
       child: Presionable(
         radio: radioSuperficieCompanion,
         onTap: deshabilitado ? null : () => _abrirHojaCobrar(context),
@@ -895,12 +894,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// ahora vive adentro de la tarjeta del total, a la derecha del número.
   Widget _botonDescuento(BuildContext context, {required bool deshabilitado}) {
     final valor = _valorDescuentoIngresado;
-    final colores = context.colores;
     return IconButton(
       onPressed: deshabilitado ? null : _abrirHojaDescuento,
       icon: Icon(
         valor > 0 ? IconosPlazoleta.sellActivo : IconosPlazoleta.sellOutlined,
-        color: colores.acentoTexto,
+        color: context.acentos.textoSobreColor,
       ),
       tooltip: 'Descuento',
     );

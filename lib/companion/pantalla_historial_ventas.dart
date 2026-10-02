@@ -29,6 +29,8 @@ import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
+import 'tema/piezas_companion.dart';
+import 'tema/tema_companion.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/esqueleto_companion.dart';
 import 'tema/estado_error_companion.dart';
@@ -301,21 +303,24 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
         body: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Espaciado.lg,
-                  Espaciado.lg,
-                  Espaciado.lg,
-                  0,
-                ),
-                child: Text('Historial', style: Theme.of(context).textTheme.headlineMedium),
+              const EncabezadoCompanion(
+                rotulo: 'Registro',
+                titulo: 'Historial',
+                padding: EdgeInsets.fromLTRB(EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.md),
               ),
-              const SizedBox(height: Espaciado.sm),
-              TabBar(
-                tabs: const [Tab(text: 'Ventas'), Tab(text: 'Cierres')],
-                labelColor: context.colores.acento,
-                unselectedLabelColor: context.colores.textoSecundario,
-                indicatorColor: context.colores.acento,
+              Container(
+                margin: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.sm),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: context.colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
+                child: TabBar(
+                  tabs: const [Tab(text: 'Ventas'), Tab(text: 'Cierres')],
+                  labelColor: context.colores.acentoTexto,
+                  unselectedLabelColor: context.colores.textoSecundario,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  splashBorderRadius: BorderRadius.circular(999),
+                  indicator: BoxDecoration(color: context.colores.acento, borderRadius: BorderRadius.circular(999)),
+                ),
               ),
               Expanded(
                 child: TabBarView(

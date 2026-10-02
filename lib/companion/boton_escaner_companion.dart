@@ -16,8 +16,6 @@ import 'mensaje_error.dart';
 import 'navbar_companion.dart';
 import 'pantalla_formulario_producto.dart';
 import 'servicio_companion.dart';
-import 'tema/colores_companion.dart';
-import 'tema/resplandor.dart';
 import '../ui/tema/iconos.dart';
 
 class BotonEscanerCompanion extends StatefulWidget {
@@ -74,27 +72,17 @@ class _BotonEscanerCompanionState extends State<BotonEscanerCompanion> {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final acentos = context.acentos;
     final deshabilitado = widget.servicio == null || widget.usuarioId == null;
     return Container(
       width: BotonEscanerCompanion._diametro,
       height: BotonEscanerCompanion._diametro,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: deshabilitado
+        color: deshabilitado ? colores.borde : colores.acento,
+        border: Border.all(color: colores.fondo, width: 4),
+        boxShadow: deshabilitado
             ? null
-            : LinearGradient(
-                colors: acentos.gradienteAcento,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-        color: deshabilitado ? colores.borde : null,
-        // Resplandor de color en vez de sombra gris — el botón "flota" con
-        // luz propia, mismo espíritu que el degradé (El dueño, 2026-09-18: "una
-        // app moderna, útil y monetizable"; 2026-09-19: "cyberpunk me vuela
-        // la gorra" — el helper compartido, `resplandorNeon`, es este mismo
-        // halo que antes vivía solo acá, ahora reusado en toda la app).
-        boxShadow: deshabilitado ? null : resplandorNeon(colores.acento, alpha: 0.45, radio: 18),
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.22), blurRadius: 18, offset: const Offset(0, 6))],
       ),
       child: Material(
         color: Colors.transparent,

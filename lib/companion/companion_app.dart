@@ -4,6 +4,7 @@
 // LAN ya no es parte de este arranque (ver comentario en `_decidir`).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
@@ -25,6 +26,11 @@ class CompanionApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: TemaCompanion.claro,
       darkTheme: TemaCompanion.oscuro,
+      // Íconos de la barra de estado claros u oscuros según el tema.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: child!,
+      ),
       home: const _PantallaInicial(),
     );
   }

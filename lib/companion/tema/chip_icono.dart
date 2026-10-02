@@ -6,8 +6,6 @@
 
 import 'package:flutter/material.dart';
 
-import 'resplandor.dart';
-
 class ChipIcono extends StatelessWidget {
   const ChipIcono({
     super.key,
@@ -35,9 +33,8 @@ class ChipIcono extends StatelessWidget {
       width: tamanio,
       height: tamanio,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(tamanio * 0.32),
-        boxShadow: resplandor ? resplandorNeon(color, alpha: 0.35, radio: 14, offset: const Offset(0, 3)) : null,
+        color: color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
       ),
       child: Icon(icono, color: color, size: tamanioIcono),
     );
