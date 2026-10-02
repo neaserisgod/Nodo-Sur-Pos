@@ -731,6 +731,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   required int usuarioId,
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
+  int? encargueId,
 }) async {
   final resultado = await calcularResultadoVenta(
     db,
@@ -752,6 +753,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
     sesionCajaId: sesionCajaId,
     usuarioId: usuarioId,
     pagos: pagos,
+    encargueId: encargueId,
   );
   return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
 }

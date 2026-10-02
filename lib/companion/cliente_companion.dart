@@ -12,7 +12,7 @@ import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
-import '../domain/venta_json.dart' show lineaVentaAJson;
+import '../domain/venta_json.dart' show lineaVentaAJson, lineaVentaDesdeJson;
 import 'servicio_companion.dart';
 
 class DatosConexion {
@@ -154,6 +154,41 @@ class UsuarioCompanion {
     nombre: j['nombre'] as String,
     activo: j['activo'] as bool? ?? true,
   );
+}
+
+/// Un encargue por apartado pendiente (`repositorio_encargues.dart`).
+class EncargueCompanion {
+  final int id;
+  final String nombreCliente;
+  final DateTime desde;
+
+  /// Una línea de texto por producto apartado ("3 × Galletitas", "250 g Queso barra").
+  final List<String> lineas;
+  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas});
+
+  factory EncargueCompanion.desdeJson(Map<String, dynamic> j) => EncargueCompanion(
+    id: j['id'] as int,
+    nombreCliente: j['nombreCliente'] as String,
+    desde: DateTime.fromMillisecondsSinceEpoch((j['desdeMs'] as num).toInt()),
+    lineas: [for (final l in j['lineas'] as List) l as String],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'nombreCliente': nombreCliente,
+    'desdeMs': desde.millisecondsSinceEpoch,
+    'lineas': lineas,
+  };
+}
+
+/// Lo que se quiere apartar: unidades o, si es pesable, gramos (uno de los dos).
+class ApartadoCompanion {
+  final int productoId;
+  final int? cantidad;
+  final int? gramos;
+  const ApartadoCompanion({required this.productoId, this.cantidad, this.gramos});
+
+  Map<String, dynamic> toJson() => {'productoId': productoId, 'cantidad': ?cantidad, 'gramos': ?gramos};
 }
 
 class MedioDePagoCompanion {
@@ -351,6 +386,48 @@ class ClienteCompanion implements ServicioCompanion {
         .cast<Map<String, dynamic>>()
         .map(UsuarioCompanion.desdeJson)
         .toList();
+  }
+
+  // ─── Encargues por apartado ──────────────────────────────────────────
+
+  @override
+  Future<List<EncargueCompanion>> encargues() async {
+    final r = await _client.get(conexion._url('/encargues'), headers: _headers);
+    _revisar(r);
+    return [for (final j in jsonDecode(r.body) as List) EncargueCompanion.desdeJson(Map<String, dynamic>.from(j as Map))];
+  }
+
+  @override
+  Future<int> crearEncargue({
+    required String nombreCliente,
+    required List<ApartadoCompanion> lineas,
+    required int usuarioId,
+  }) async {
+    final r = await _client.post(
+      conexion._url('/encargues'),
+      headers: _headers,
+      body: jsonEncode({'nombreCliente': nombreCliente, 'usuarioId': usuarioId, 'lineas': [for (final l in lineas) l.toJson()]}),
+    );
+    _revisar(r);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;
+  }
+
+  @override
+  Future<void> cancelarEncargue(int id, {required int usuarioId}) async {
+    final r = await _client.post(
+      conexion._url('/encargues/$id/cancelar'),
+      headers: _headers,
+      body: jsonEncode({'usuarioId': usuarioId}),
+    );
+    _revisar(r);
+  }
+
+  /// Lo apartado como líneas de venta, a los precios de hoy, para abrir el carrito.
+  @override
+  Future<List<LineaVenta>> lineasDeEncargue(int id) async {
+    final r = await _client.get(conexion._url('/encargues/$id/lineas'), headers: _headers);
+    _revisar(r);
+    return [for (final j in jsonDecode(r.body) as List) lineaVentaDesdeJson(Map<String, dynamic>.from(j as Map))];
   }
 
   /// `versión+buildNumber` del lado de la PC — comparar tal cual contra
@@ -1083,6 +1160,7 @@ class ClienteCompanion implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1093,6 +1171,7 @@ class ClienteCompanion implements ServicioCompanion {
         'sesionCajaId': sesionCajaId,
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
+        'encargueId': ?encargueId,
       }),
     );
     _revisar(r);
@@ -1118,6 +1197,7 @@ class ClienteCompanion implements ServicioCompanion {
     required String canal,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1129,6 +1209,7 @@ class ClienteCompanion implements ServicioCompanion {
         'sesionCajaId': sesionCajaId,
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
+        'encargueId': ?encargueId,
       }),
     );
     _revisar(r);
@@ -1196,6 +1277,7 @@ class ClienteCompanion implements ServicioCompanion {
     required int usuarioId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? encargueId,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/posnet/confirmar'),
@@ -1207,6 +1289,7 @@ class ClienteCompanion implements ServicioCompanion {
         'sesionCajaId': sesionCajaId,
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
+        'encargueId': ?encargueId,
       }),
     );
     _revisar(r);
