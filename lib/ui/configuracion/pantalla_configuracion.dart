@@ -629,6 +629,7 @@ class _SeccionUsuariosState extends State<_SeccionUsuarios> {
                 ),
               ),
               IconButton(
+                tooltip: 'Agregar',
                 icon: const Icon(IconosPlazoleta.add),
                 onPressed: _agregar,
               ),
@@ -845,6 +846,7 @@ class _SeccionMenu extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
+                    tooltip: 'Subir',
                     icon: const Icon(IconosPlazoleta.arrowUpward, size: 16),
                     onPressed: i == 0
                         ? null
@@ -853,6 +855,7 @@ class _SeccionMenu extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
+                    tooltip: 'Bajar',
                     icon: const Icon(IconosPlazoleta.arrowDownward, size: 16),
                     onPressed: i == c.secciones.length - 1
                         ? null

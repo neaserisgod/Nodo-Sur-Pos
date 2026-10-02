@@ -74,7 +74,7 @@ class TableroCompanionState extends State<TableroCompanion> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         EtiquetaSeccion('Hoy · ${fechaLarga(hoy)} · ${horaCorta(hoy)}'),
-        const SizedBox(height: EspacioCompanion.lg),
+        const SizedBox(height: Espaciado.lg),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
@@ -85,7 +85,7 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ),
         Text('Vendido', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
-        const SizedBox(height: EspacioCompanion.xl),
+        const SizedBox(height: Espaciado.xl),
         FilaCifras(
           cifras: [
             CifraGrande(
@@ -101,7 +101,7 @@ class TableroCompanionState extends State<TableroCompanion> {
             ),
           ],
         ),
-        const SizedBox(height: EspacioCompanion.xl),
+        const SizedBox(height: Espaciado.xl),
         BloqueHero(
           onTap: widget.alTocarSeparar,
           minAlto: 148,
@@ -117,7 +117,7 @@ class TableroCompanionState extends State<TableroCompanion> {
                           : 'Falta separar · ${t.proveedoresPendientes} de ${t.proveedoresConAlgoQueSeparar}',
                       style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72)),
                     ),
-                    const SizedBox(height: EspacioCompanion.xs),
+                    const SizedBox(height: Espaciado.xs),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
@@ -132,14 +132,14 @@ class TableroCompanionState extends State<TableroCompanion> {
                   ],
                 ),
               ),
-              const SizedBox(width: EspacioCompanion.lg),
+              const SizedBox(width: Espaciado.lg),
               const BotonFlecha(),
             ],
           ),
         ),
-        const SizedBox(height: EspacioCompanion.md),
+        const SizedBox(height: Espaciado.md),
         SeccionCompanion(titulo: 'Ventas por hora', child: GraficoPorHora(porHora: t.porHora, altura: 140)),
-        const SizedBox(height: EspacioCompanion.md),
+        const SizedBox(height: Espaciado.md),
         SeccionCompanion(
           titulo: 'Cómo te pagaron',
           child: Column(
@@ -154,7 +154,7 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ),
         if (t.masVendidos.isNotEmpty) ...[
-          const SizedBox(height: EspacioCompanion.md),
+          const SizedBox(height: Espaciado.md),
           SeccionCompanion(
             titulo: 'Más vendidos hoy',
             child: Column(
@@ -173,7 +173,7 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ],
         if (t.stockBajo.isNotEmpty) ...[
-          const SizedBox(height: EspacioCompanion.md),
+          const SizedBox(height: Espaciado.md),
           SeccionCompanion(
             titulo: 'Stock bajo',
             derecha: Insignia(texto: '${t.stockBajo.length}', tono: Tono.alerta),
@@ -202,7 +202,7 @@ class TableroCompanionState extends State<TableroCompanion> {
           ),
         ],
         if (t.pendientes.isNotEmpty) ...[
-          const SizedBox(height: EspacioCompanion.md),
+          const SizedBox(height: Espaciado.md),
           SeccionCompanion(
             titulo: 'Fiados y encargues',
             child: Column(

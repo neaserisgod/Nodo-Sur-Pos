@@ -18,6 +18,7 @@ import '../tema/acentos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 import 'periodo_historial.dart';
+import '../tema/esqueleto.dart';
 
 String etiquetaTipoMovimiento(String tipo) => switch (tipo) {
   'GASTO' => 'Gasto',
@@ -132,7 +133,7 @@ class _TabHistorialMovimientosState extends State<TabHistorialMovimientos> with 
         const SizedBox(height: Espaciado.lg),
         Expanded(
           child: lista == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoLista()
               : visibles.isEmpty
               ? const EstadoVacio(mensaje: 'Sin movimientos en este período')
               : Superficie(padding: EdgeInsets.zero, child: _Lista(movimientos: visibles)),

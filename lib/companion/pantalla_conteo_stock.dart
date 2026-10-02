@@ -32,11 +32,12 @@ import 'servicio_companion_offline.dart';
 import 'seleccion_servicio.dart';
 import 'tema/chip_icono.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaConteoStock extends StatefulWidget {
   const PantallaConteoStock({super.key});
@@ -128,7 +129,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
         child: _cargandoProveedores
             ? const EsqueletoLista()
             : _error != null
-            ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _iniciar)
+            ? EstadoError(mensaje: _error!, onReintentar: _iniciar)
             : Column(
                 children: [
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
@@ -458,10 +459,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                _error!,
-                                style: TextStyle(color: context.colores.error),
-                              ),
+                              child: ErrorEnLinea(_error!),
                             ),
                             TextButton(
                               onPressed: _cargar,
@@ -478,7 +476,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
                             children: [
                               SizedBox(
                                 height: 300,
-                                child: EstadoVacioCompanion(
+                                child: EstadoVacio(
                                   mensaje: widget.mostrarProveedor
                                       ? 'Nada sin stock — todo contado'
                                       : 'Sin productos acá',

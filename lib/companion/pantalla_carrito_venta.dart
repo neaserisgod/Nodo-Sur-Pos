@@ -35,13 +35,14 @@ import 'servicio_companion.dart';
 import 'sesion_abierta_gate.dart';
 import 'tema/chip_icono.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
 
@@ -525,6 +526,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 )
               : _busquedaCtrl.text.isNotEmpty
               ? IconButton(
+                  tooltip: 'Borrar la búsqueda',
                   icon: const Icon(IconosPlazoleta.clear),
                   onPressed: () {
                     _debouncerBusqueda.cancelar();
@@ -594,7 +596,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _listaResultadosBusqueda(BuildContext context) {
     if (_resultadosBusqueda.isEmpty && !_buscando) {
-      return const EstadoVacioCompanion(mensaje: 'Sin resultados', icono: IconosPlazoleta.searchOff);
+      return const EstadoVacio(mensaje: 'Sin resultados', icono: IconosPlazoleta.searchOff);
     }
     return ListView.builder(
       padding: const EdgeInsets.all(Espaciado.lg),
@@ -636,7 +638,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _listaLineas(BuildContext context) {
     if (widget.carrito.isEmpty) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'El carrito está vacío',
         icono: IconosPlazoleta.shoppingCartOutlined,
       );
@@ -671,14 +673,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Widget _panelTotal(BuildContext context) {
     final subtotal = Venta(lineas: widget.carrito).subtotalCentavos;
     final sinCarrito = widget.carrito.isEmpty || _calculando || _cobrando;
-    final colores = context.colores;
     return Padding(
       padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: colores.error)),
+            ErrorEnLinea(_error!),
             const SizedBox(height: Espaciado.sm),
           ],
           // La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18:

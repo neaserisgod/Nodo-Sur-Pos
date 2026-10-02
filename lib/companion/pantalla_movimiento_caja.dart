@@ -24,9 +24,10 @@ import 'servicio_companion_offline.dart';
 import 'sesion_abierta_gate.dart';
 import 'tema/chip_seleccionable.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_error_companion.dart';
+import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum TipoMovimientoCaja { gasto, ingreso }
 
@@ -168,7 +169,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
         child: _cargandoInicial
             ? const Center(child: CircularProgressIndicator())
             : _cliente == null
-            ? EstadoErrorCompanion(
+            ? EstadoError(
                 mensaje: _errorInicial ?? 'No se pudo conectar.',
                 onReintentar: _iniciar,
               )
@@ -202,17 +203,14 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                     ),
                     const SizedBox(height: Espaciado.lg),
                     if (_error != null) ...[
-                      Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      ErrorEnLinea(_error!),
                       const SizedBox(height: Espaciado.md),
                     ],
                     Superficie(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto'),
+                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto', textInputAction: TextInputAction.next),
                           const SizedBox(height: Espaciado.lg),
                           CampoTexto(
                             controller: _motivoCtrl,

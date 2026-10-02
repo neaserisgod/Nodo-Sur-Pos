@@ -38,6 +38,7 @@ import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 import 'pantalla_editor_venta.dart';
 import 'periodo_historial.dart';
+import '../tema/esqueleto.dart';
 
 extension on MedioVentaHistorial {
   String get etiqueta => switch (this) {
@@ -197,7 +198,7 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
         const SizedBox(height: Espaciado.lg),
         Expanded(
           child: ventas == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoLista()
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

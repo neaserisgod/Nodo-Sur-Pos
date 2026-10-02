@@ -39,12 +39,13 @@ import 'tema/piezas_companion.dart';
 import 'tema/tema_companion.dart';
 import 'tema/chip_seleccionable.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaPrecios extends StatefulWidget {
   const PantallaPrecios({super.key});
@@ -353,6 +354,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     return Row(
       children: [
         Presionable(
+          etiqueta: 'Cancelar la selección',
           onTap: () => setState(_seleccionados.clear),
           child: const Padding(
             padding: EdgeInsets.all(Espaciado.xs),
@@ -458,7 +460,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
         child: _cargandoInicial
             ? const EsqueletoLista()
             : _cliente == null
-            ? EstadoErrorCompanion(mensaje: _error ?? 'No se pudo conectar.', onReintentar: _iniciar)
+            ? EstadoError(mensaje: _error ?? 'No se pudo conectar.', onReintentar: _iniciar)
             : Column(
                 children: [
                   if (_enSeleccion)
@@ -470,7 +472,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                     const EncabezadoCompanion(
                       rotulo: 'Catálogo',
                       titulo: 'Productos',
-                      padding: EdgeInsets.fromLTRB(EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.xl, 0),
+                      padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, 0),
                     ),
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
                   Padding(
@@ -517,10 +519,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      child: ErrorEnLinea(_error!),
                     ),
                   Expanded(
                     child: RefreshIndicator(
@@ -539,7 +538,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                               children: [
                                 SizedBox(
                                   height: 300,
-                                  child: EstadoVacioCompanion(
+                                  child: EstadoVacio(
                                     mensaje: _mensajeVacio(),
                                     icono: _busquedaCtrl.text.trim().isEmpty &&
                                             _filtro == _FiltroCatalogo.ninguno &&

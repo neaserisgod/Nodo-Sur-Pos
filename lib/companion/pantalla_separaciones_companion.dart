@@ -28,6 +28,7 @@ import 'cambios_companion.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
+import 'tema/esqueleto_companion.dart';
 
 class PantallaSeparacionesCompanion extends StatefulWidget {
   const PantallaSeparacionesCompanion({super.key, required this.db, required this.usuarioId});
@@ -75,7 +76,7 @@ class _PantallaSeparacionesCompanionState extends State<PantallaSeparacionesComp
     return Scaffold(
       appBar: AppBar(title: const Text('Separaciones')),
       body: c == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const EsqueletoLista()
           : ChangeNotifierProvider<SeparacionesControlador>.value(
               value: c,
               child: Consumer<SeparacionesControlador>(
@@ -270,6 +271,7 @@ class _TarjetaProveedor extends StatelessWidget {
                 // Tilde grande (44 px): separar / destildar, como en la PC.
                 Presionable(
                   radio: 12,
+                  etiqueta: t.separada ? 'Destildar ${t.fila.nombre}' : 'Marcar ${t.fila.nombre} como separado',
                   onTap: procesando || t.bloqueada ? null : () => c.alternar(t),
                   color: t.separada ? acentos.ganancia : Colors.transparent,
                   child: Container(

@@ -33,11 +33,12 @@ import 'tema/piezas_companion.dart';
 import 'tema/tema_companion.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/esqueleto_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 enum _Periodo { hoy, ayer, ultimaSemana, esteMes }
 
@@ -306,7 +307,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
               const EncabezadoCompanion(
                 rotulo: 'Registro',
                 titulo: 'Historial',
-                padding: EdgeInsets.fromLTRB(EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.md),
+                padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, Espaciado.md),
               ),
               Container(
                 margin: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.sm),
@@ -358,10 +359,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               )
             else if (!_cargando)
               Padding(
@@ -385,7 +383,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
               child: _cargando
                   ? const EsqueletoLista()
                   : _error != null
-                  ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _cargar)
+                  ? EstadoError(mensaje: _error!, onReintentar: _cargar)
                   : _ventas.isEmpty
                   ? RefreshIndicator(
                       onRefresh: _cargar,
@@ -393,7 +391,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
                         children: const [
                           SizedBox(
                             height: 300,
-                            child: EstadoVacioCompanion(
+                            child: EstadoVacio(
                               mensaje: 'Sin ventas en este período',
                               icono: IconosPlazoleta.receiptLongOutlined,
                             ),
@@ -488,6 +486,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
                           if (!v.anulada && v.sesionAbierta) ...[
                             const SizedBox(width: Espaciado.sm),
                             IconButton(
+                              tooltip: 'Anular la venta',
                               icon: Icon(
                                 IconosPlazoleta.deleteOutline,
                                 color: context.colores.textoSecundario,
@@ -594,7 +593,7 @@ class _HojaDesgloseState extends State<_HojaDesglose> {
             Espaciado.lg,
           ),
           child: _error != null
-              ? Center(child: Text(_error!, style: TextStyle(color: colores.error)))
+              ? Center(child: ErrorEnLinea(_error!))
               : detalle == null
               ? const Center(child: CircularProgressIndicator())
               : ListView(

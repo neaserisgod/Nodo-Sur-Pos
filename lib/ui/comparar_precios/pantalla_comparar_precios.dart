@@ -161,7 +161,7 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
                       SizedBox(
                         width: 420,
                         child: visibles.isEmpty
-                            ? const EstadoVacio(mensaje: 'Ningún producto coincide')
+                            ? const EstadoVacio(mensaje: 'Sin resultados')
                             : ListView.separated(
                                 itemCount: visibles.length,
                                 separatorBuilder: (_, _) => const SizedBox(height: Espaciado.xs + 2),

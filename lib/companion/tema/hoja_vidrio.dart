@@ -96,10 +96,10 @@ Future<T?> mostrarHojaVidrio<T>(
               ],
             ),
             padding: EdgeInsets.fromLTRB(
-              EspacioCompanion.xl,
-              EspacioCompanion.sm,
-              EspacioCompanion.xl,
-              EspacioCompanion.xl + MediaQuery.of(context).padding.bottom,
+              Espaciado.xl,
+              Espaciado.sm,
+              Espaciado.xl,
+              Espaciado.xl + MediaQuery.of(context).padding.bottom,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -110,7 +110,7 @@ Future<T?> mostrarHojaVidrio<T>(
                     child: Container(
                       width: 40,
                       height: 4,
-                      margin: const EdgeInsets.only(bottom: EspacioCompanion.lg),
+                      margin: const EdgeInsets.only(bottom: Espaciado.lg),
                       decoration: BoxDecoration(
                         color: colores.borde,
                         borderRadius: BorderRadius.circular(2),

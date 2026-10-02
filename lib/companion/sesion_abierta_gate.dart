@@ -15,6 +15,7 @@ import '../ui/tema/tokens.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'tema/superficie.dart';
+import 'tema/error_en_linea.dart';
 
 class SesionAbiertaGate extends StatefulWidget {
   const SesionAbiertaGate({
@@ -144,7 +145,7 @@ class _SesionAbiertaGateState extends State<SesionAbiertaGate> {
           ],
           if (_error != null) ...[
             const SizedBox(height: Espaciado.md),
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
           ],
           const SizedBox(height: Espaciado.lg),
           FilledButton(
