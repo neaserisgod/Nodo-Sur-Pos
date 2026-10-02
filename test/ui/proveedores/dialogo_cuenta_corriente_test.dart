@@ -83,7 +83,7 @@ void main() {
     expect(movs.single.montoCentavos, 1200000);
   });
 
-  testWidgets('un pago mayor a la deuda se rechaza en el diálogo', (tester) async {
+  testWidgets('un pago mayor a la deuda se acepta: baja la deuda a cero y anota el resto', (tester) async {
     await db.transaction(() async {
       await cargarDeuda(db, proveedorId: proveedor.id, montoCentavos: 500000, fecha: DateTime(2026, 9, 20), usuarioId: usuarioId);
     });
@@ -93,7 +93,6 @@ void main() {
     await tester.enterText(find.byKey(const Key('campo_monto_pago_deuda')), '6.000');
     await tester.tap(find.text('Registrar pago'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('No puede ser mayor a la deuda'), findsOneWidget);
-    expect(await tester.runAsync(() => saldoDeuda(db, proveedor.id)), 500000);
+    expect(await tester.runAsync(() => saldoDeuda(db, proveedor.id)), 0);
   });
 }

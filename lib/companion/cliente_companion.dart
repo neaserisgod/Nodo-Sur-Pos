@@ -929,6 +929,7 @@ class ClienteCompanion implements ServicioCompanion {
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
+    int? proveedorId,
   }) async {
     final r = await _client.post(
       conexion._url('/gastos'),
@@ -939,6 +940,7 @@ class ClienteCompanion implements ServicioCompanion {
         'montoCentavos': montoCentavos,
         'medio': medio.name,
         'motivo': ?motivo,
+        'proveedorId': ?proveedorId,
       }),
     );
     _revisar(r);

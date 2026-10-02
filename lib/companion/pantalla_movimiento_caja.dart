@@ -22,6 +22,7 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'sesion_abierta_gate.dart';
+import 'tema/chip_seleccionable.dart';
 import 'tema/colores_companion.dart';
 import 'tema/estado_error_companion.dart';
 import 'tema/superficie.dart';
@@ -51,6 +52,11 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
   final _montoCtrl = TextEditingController();
   final _motivoCtrl = TextEditingController();
   MedioGastoCompanion _medio = MedioGastoCompanion.cajonNormal;
+
+  /// Proveedores, para anotar el gasto como un pago a uno de ellos sin tener
+  /// que cargarle deuda antes.
+  List<ProveedorCompanion> _proveedores = const [];
+  int? _proveedorId;
   bool _guardando = false;
   bool _cargandoInicial = true;
   String? _error;
@@ -83,11 +89,13 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
       final servicio = conexion == null
           ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()))
           : await resolverServicioCompanion(conexion);
+      final proveedores = await servicio.proveedores().catchError((_) => <ProveedorCompanion>[]);
       if (!mounted) return;
       setState(() {
         _cliente = servicio;
         _pcEmparejada = conexion != null;
         _usuarioId = usuario.id;
+        _proveedores = proveedores;
       });
     } catch (e) {
       if (mounted) setState(() => _errorInicial = mensajeDeError(e));
@@ -120,6 +128,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
           montoCentavos: monto,
           medio: _medio,
           motivo: _motivoCtrl.text,
+          proveedorId: _proveedorId,
         );
       } else {
         await _cliente!.registrarIngreso(
@@ -132,7 +141,13 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_tipo == TipoMovimientoCaja.gasto ? 'Gasto anotado' : 'Ingreso anotado')),
+          SnackBar(
+            content: Text(
+              _tipo == TipoMovimientoCaja.gasto
+                  ? (_proveedorId == null ? 'Gasto anotado' : 'Pago al proveedor anotado')
+                  : 'Ingreso anotado',
+            ),
+          ),
         );
         Navigator.of(context).pop();
       }
@@ -203,6 +218,23 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                             controller: _motivoCtrl,
                             etiqueta: 'Motivo (opcional)',
                           ),
+                          if (_tipo == TipoMovimientoCaja.gasto && _proveedores.isNotEmpty) ...[
+                            const SizedBox(height: Espaciado.lg),
+                            Text('Pago a un proveedor (opcional)', style: Theme.of(context).textTheme.labelMedium),
+                            const SizedBox(height: Espaciado.sm),
+                            Wrap(
+                              spacing: Espaciado.sm,
+                              runSpacing: Espaciado.sm,
+                              children: [
+                                for (final p in _proveedores)
+                                  ChipSeleccionable(
+                                    texto: p.nombre,
+                                    seleccionado: _proveedorId == p.id,
+                                    onTap: () => setState(() => _proveedorId = _proveedorId == p.id ? null : p.id),
+                                  ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: Espaciado.lg),
                           SegmentedButton<MedioGastoCompanion>(
                             segments: const [

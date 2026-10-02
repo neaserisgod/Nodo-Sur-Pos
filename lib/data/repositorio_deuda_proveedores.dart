@@ -79,8 +79,11 @@ Future<int> cargarDeuda(
       );
 }
 
-/// Paga [montoCentavos] de la deuda. No puede superar el saldo: no hay una
-/// regla de negocio para un pago de más (avisar antes que inventar).
+/// Paga [montoCentavos] a un proveedor. Si hay deuda cargada, baja la deuda;
+/// si el pago es mayor (o no hay deuda), la parte que no estaba cargada se
+/// anota sola como un cargo "Pago sin deuda previa" justo antes del pago —
+/// así se le puede pagar a un proveedor sin cargarle deuda antes, el gasto
+/// queda registrado y el saldo nunca queda negativo.
 ///
 /// Si sale de una caja ([OrigenPagoDeuda.cajon]/[OrigenPagoDeuda.mp]/
 /// [OrigenPagoDeuda.lata]) graba en la misma transacción el movimiento de
@@ -99,7 +102,20 @@ Future<int> pagarDeuda(
   if (montoCentavos <= 0) throw ArgumentError('El monto del pago tiene que ser mayor a 0');
   return db.transaction(() async {
     final saldo = await saldoDeuda(db, proveedorId);
-    if (montoCentavos > saldo) throw ArgumentError('El pago no puede ser mayor a la deuda');
+    final hoy = fecha ?? DateTime.now();
+    final sinCargar = montoCentavos - saldo;
+    if (sinCargar > 0) {
+      await db.into(db.movimientosDeuda).insert(
+            MovimientosDeudaCompanion.insert(
+              proveedorId: proveedorId,
+              tipo: 'CARGO',
+              montoCentavos: sinCargar,
+              fecha: hoy,
+              nota: const Value('Pago sin deuda previa'),
+              usuarioId: usuarioId,
+            ),
+          );
+    }
 
     int? movimientoCajaId;
     if (origen != OrigenPagoDeuda.fuera) {
@@ -121,7 +137,7 @@ Future<int> pagarDeuda(
             proveedorId: proveedorId,
             tipo: 'PAGO',
             montoCentavos: montoCentavos,
-            fecha: fecha ?? DateTime.now(),
+            fecha: hoy,
             nota: Value(_limpiar(nota)),
             usuarioId: usuarioId,
             origenPago: Value(origen.clave),

@@ -439,12 +439,14 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
+    int? proveedorId,
   }) => _local.registrarGasto(
     sesionCajaId: sesionCajaId,
     usuarioId: usuarioId,
     montoCentavos: montoCentavos,
     medio: medio,
     motivo: motivo,
+    proveedorId: proveedorId,
   );
 
   @override

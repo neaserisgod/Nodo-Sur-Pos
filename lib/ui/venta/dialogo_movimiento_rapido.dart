@@ -19,6 +19,7 @@ import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_gastos.dart';
 import '../../data/repositorio_ingresos.dart';
+import '../../data/repositorio_productos.dart' show listarProveedores;
 import '../../data/repositorio_ventas.dart' show SesionCerradaException;
 import '../../domain/dinero.dart';
 import '../comun/botones.dart';
@@ -88,12 +89,23 @@ class _DialogoMovimientoRapidoState extends State<_DialogoMovimientoRapido> {
   String? _motivo;
   String? _error;
 
+  /// Proveedores para anotar el gasto como un pago a uno de ellos (sin tener
+  /// que cargarle deuda antes).
+  List<Proveedor> _proveedores = const [];
+  int? _proveedorId;
+
   bool get _esGasto => _tipo == TipoMovimientoRapido.gasto;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _focoMonto.requestFocus());
+    _cargarProveedores();
+  }
+
+  Future<void> _cargarProveedores() async {
+    final lista = await listarProveedores(widget.db);
+    if (mounted) setState(() => _proveedores = lista);
   }
 
   Future<void> _confirmar() async {
@@ -120,6 +132,7 @@ class _DialogoMovimientoRapidoState extends State<_DialogoMovimientoRapido> {
           montoCentavos: monto,
           medio: _medio,
           motivo: motivo,
+          proveedorId: _proveedorId,
         );
       } else {
         await registrarIngresoRapido(
@@ -192,6 +205,23 @@ class _DialogoMovimientoRapidoState extends State<_DialogoMovimientoRapido> {
                 ChipAtajo(texto: texto, elegido: _medio == medio, onTap: () => setState(() => _medio = medio)),
             ],
           ),
+          if (_esGasto && _proveedores.isNotEmpty) ...[
+            const SizedBox(height: Espaciado.md),
+            Text('Pago a un proveedor (opcional)', style: textTheme.labelMedium),
+            const SizedBox(height: Espaciado.xs + 2),
+            Wrap(
+              spacing: Espaciado.sm,
+              runSpacing: Espaciado.sm,
+              children: [
+                for (final p in _proveedores)
+                  ChipAtajo(
+                    texto: p.nombre,
+                    elegido: _proveedorId == p.id,
+                    onTap: () => setState(() => _proveedorId = _proveedorId == p.id ? null : p.id),
+                  ),
+              ],
+            ),
+          ],
           if (_esGasto) ...[
             const SizedBox(height: Espaciado.md),
             Text('Motivo', style: textTheme.labelMedium),

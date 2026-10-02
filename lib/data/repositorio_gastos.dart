@@ -20,6 +20,11 @@ enum MedioGasto { cajonNormal, lata, mercadoPago }
 
 /// Anota un gasto rápido y devuelve el id del movimiento de caja creado.
 ///
+/// Con [proveedorId] es un pago a ese proveedor hecho en el momento (sin
+/// deuda cargada antes): queda como 'PAGO_PROVEEDOR' con el proveedor puesto,
+/// que para el arqueo es lo mismo que un gasto (`tiposEgresoDeCaja`) y en el
+/// historial de movimientos se ve a quién se le pagó.
+///
 /// Un gasto pagado con Mercado Pago no sale de ningún cajón físico, pero
 /// `cajaId` no es nullable y MP no es una fila de `Cajas` (`DECISIONES.md`)
 /// — queda con `cajaId` = caja normal igual que uno en efectivo, y lo que
@@ -33,6 +38,7 @@ Future<int> registrarGastoRapido(
   required int montoCentavos,
   required MedioGasto medio,
   String? motivo,
+  int? proveedorId,
 }) {
   // Envuelto junto con `verificarSesionAbierta` en la misma transacción
   // (El dueño, 2026-09-19: "aislar los usuarios para que no se pisen") — sin
@@ -60,8 +66,9 @@ Future<int> registrarGastoRapido(
             sesionCajaId: sesionCajaId,
             cajaId: caja.id,
             usuarioId: usuarioId,
-            tipo: 'GASTO',
+            tipo: proveedorId == null ? 'GASTO' : 'PAGO_PROVEEDOR',
             montoCentavos: montoCentavos,
+            proveedorId: Value(proveedorId),
             medioPagoId: Value(medioPagoId),
             nota: Value(motivo?.trim().isEmpty ?? true ? null : motivo!.trim()),
             globalId: Value(generarGlobalId()),

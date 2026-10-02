@@ -242,6 +242,22 @@ void main() {
       expect(movimiento.medioPagoId, isNull); // solo se completa para mercadoPago
     });
 
+    test('registrarGasto con proveedor queda como pago a ese proveedor', () async {
+      final sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 100000);
+      final proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PY', nombre: 'Proveedor Y'));
+      final movimientoId = await puerto.registrarGasto(
+        sesionCajaId: sesionId,
+        usuarioId: usuarioId,
+        montoCentavos: 7000,
+        medio: MedioGastoCompanion.cajonNormal,
+        proveedorId: proveedorId,
+      );
+
+      final movimiento = await (db.select(db.movimientosDeCaja)..where((m) => m.id.equals(movimientoId))).getSingle();
+      expect(movimiento.tipo, 'PAGO_PROVEEDOR');
+      expect(movimiento.proveedorId, proveedorId);
+    });
+
     test('registrarIngreso con medio "mercadoPago" completa medioPagoId', () async {
       final sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 0);
       final movimientoId = await puerto.registrarIngreso(
