@@ -228,6 +228,7 @@ class PantallaInicioCompanion extends StatelessWidget {
     final colores = context.colores;
     return Presionable(
       radio: 999,
+      etiqueta: arqueoIntermedioVencido ? 'Hacer arqueo (vencido)' : 'Hacer arqueo',
       onTap: onHacerArqueoIntermedio,
       child: Container(
         width: 48,

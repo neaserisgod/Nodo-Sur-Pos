@@ -19,6 +19,7 @@ class Presionable extends StatefulWidget {
     required this.onTap,
     this.onLongPress,
     this.radio = 22,
+    this.etiqueta,
     this.color,
   });
 
@@ -30,6 +31,10 @@ class Presionable extends StatefulWidget {
   /// comportamiento de siempre (solo toque corto).
   final VoidCallback? onLongPress;
   final double radio;
+
+  /// Nombre para el lector de pantalla. Hace falta cuando el hijo es solo un
+  /// ícono o un dibujo (una campanita, un tilde): sin esto no se anuncia nada.
+  final String? etiqueta;
 
   /// Color de fondo del `Material` que envuelve — por defecto transparente
   /// (la superficie que lo contiene ya tiene su color).
@@ -49,7 +54,7 @@ class _PresionableState extends State<Presionable> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
+    final boton = AnimatedScale(
       // "Dark glass premium" (El dueño, rediseño 2026-09-25) — mismo criterio
       // que `lib/ui/tema/presionable.dart`: overshoot leve al soltar.
       scale: _presionado ? 0.97 : 1,
@@ -69,5 +74,8 @@ class _PresionableState extends State<Presionable> {
         ),
       ),
     );
+    final nombre = widget.etiqueta;
+    if (nombre == null) return boton;
+    return Semantics(button: true, enabled: widget.onTap != null, label: nombre, excludeSemantics: true, onTap: widget.onTap, child: boton);
   }
 }

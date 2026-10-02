@@ -721,6 +721,7 @@ class _ColumnaCarrito extends StatelessWidget {
                 children: [
                   Text(formatearARS(linea.subtotalCentavos)),
                   IconButton(
+                    tooltip: 'Quitar la línea',
                     icon: const Icon(IconosPlazoleta.deleteOutline, size: 18),
                     onPressed: () => controlador.eliminarLinea(i),
                   ),
@@ -847,6 +848,7 @@ class _ColumnaCobro extends StatelessWidget {
                                   children: [
                                     Text(formatearARS(v.totalCentavos)),
                                     IconButton(
+                                      tooltip: 'Quitar de la tanda',
                                       icon: const Icon(IconosPlazoleta.close, size: 16),
                                       onPressed: () =>
                                           controlador.quitarVentaDeLaTanda(i),

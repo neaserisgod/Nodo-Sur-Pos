@@ -69,6 +69,7 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
         title: const Text('Arqueo'),
         actions: [
           IconButton(
+            tooltip: 'Actualizar',
             icon: const Icon(IconosPlazoleta.refresh),
             onPressed: _cargando ? null : _cargar,
           ),

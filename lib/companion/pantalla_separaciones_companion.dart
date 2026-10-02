@@ -270,6 +270,7 @@ class _TarjetaProveedor extends StatelessWidget {
                 // Tilde grande (44 px): separar / destildar, como en la PC.
                 Presionable(
                   radio: 12,
+                  etiqueta: t.separada ? 'Destildar ${t.fila.nombre}' : 'Marcar ${t.fila.nombre} como separado',
                   onTap: procesando || t.bloqueada ? null : () => c.alternar(t),
                   color: t.separada ? acentos.ganancia : Colors.transparent,
                   child: Container(

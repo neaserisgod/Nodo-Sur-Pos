@@ -19,6 +19,7 @@ class Presionable extends StatefulWidget {
     required this.onTap,
     this.onLongPress,
     this.radio = 22,
+    this.etiqueta,
     this.color,
   });
 
@@ -26,6 +27,10 @@ class Presionable extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final double radio;
+
+  /// Nombre para el lector de pantalla. Hace falta cuando el hijo es solo un
+  /// ícono o un dibujo (una campanita, un tilde): sin esto no se anuncia nada.
+  final String? etiqueta;
 
   /// Color de fondo del `Material` que envuelve — por defecto transparente
   /// (la superficie que lo contiene ya tiene su color).
@@ -45,7 +50,7 @@ class _PresionableState extends State<Presionable> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
+    final boton = AnimatedScale(
       // "Dark glass premium" (El dueño, rediseño 2026-09-25): overshoot leve al
       // soltar (`curvaSpring`) da la sensación de rebote físico — con un
       // delta tan chico (3%) el overshoot en la ida a 0.97 no se percibe
@@ -70,5 +75,8 @@ class _PresionableState extends State<Presionable> {
         ),
       ),
     );
+    final nombre = widget.etiqueta;
+    if (nombre == null) return boton;
+    return Semantics(button: true, enabled: widget.onTap != null, label: nombre, excludeSemantics: true, onTap: widget.onTap, child: boton);
   }
 }

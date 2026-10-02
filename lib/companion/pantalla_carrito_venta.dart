@@ -526,6 +526,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 )
               : _busquedaCtrl.text.isNotEmpty
               ? IconButton(
+                  tooltip: 'Borrar la búsqueda',
                   icon: const Icon(IconosPlazoleta.clear),
                   onPressed: () {
                     _debouncerBusqueda.cancelar();

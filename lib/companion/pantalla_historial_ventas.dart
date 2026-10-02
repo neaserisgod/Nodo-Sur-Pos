@@ -486,6 +486,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
                           if (!v.anulada && v.sesionAbierta) ...[
                             const SizedBox(width: Espaciado.sm),
                             IconButton(
+                              tooltip: 'Anular la venta',
                               icon: Icon(
                                 IconosPlazoleta.deleteOutline,
                                 color: context.colores.textoSecundario,

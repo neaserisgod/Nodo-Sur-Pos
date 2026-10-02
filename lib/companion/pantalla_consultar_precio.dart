@@ -163,6 +163,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
         actions: [
           if (_cliente != null)
             IconButton(
+              tooltip: 'Escanear código de barras',
               icon: _escaneando
                   ? const SizedBox(
                       height: 20,

@@ -354,6 +354,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     return Row(
       children: [
         Presionable(
+          etiqueta: 'Cancelar la selección',
           onTap: () => setState(_seleccionados.clear),
           child: const Padding(
             padding: EdgeInsets.all(Espaciado.xs),

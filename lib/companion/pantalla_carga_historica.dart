@@ -346,6 +346,7 @@ class _PantallaDetalleDiaHistoricoState
           title: Text(_formatearFecha(widget.fecha)),
           actions: [
             IconButton(
+              tooltip: 'Borrar el día',
               icon: const Icon(IconosPlazoleta.deleteOutline),
               onPressed: _borrarDia,
             ),
@@ -499,6 +500,7 @@ class _PantallaDetalleDiaHistoricoState
                 ),
                 Text(formatearARS(v.totalCentavos)),
                 IconButton(
+                  tooltip: 'Eliminar la venta',
                   icon: const Icon(IconosPlazoleta.deleteOutline),
                   onPressed: () => _eliminarVenta(v),
                 ),
@@ -755,6 +757,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
                   ),
                   subtitle: Text(_medioDeTexto(v.medio)),
                   trailing: IconButton(
+                    tooltip: 'Quitar la venta',
                     icon: const Icon(IconosPlazoleta.deleteOutline),
                     onPressed: () => _quitarVenta(i),
                   ),
