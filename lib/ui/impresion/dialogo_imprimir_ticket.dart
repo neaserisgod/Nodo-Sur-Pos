@@ -74,6 +74,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
         await imprimirEnPosnet(
           accessToken: config.mpAccessToken!,
           terminalId: config.mpTerminalId!,
+          terminalCobroId: config.mpTerminalCobroId,
           ticket: ticket,
           encabezadoNegocio: (await marcaDeBase(widget.db)).encabezadoTicketEfectivo,
         );

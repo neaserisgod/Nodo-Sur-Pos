@@ -125,6 +125,7 @@ class ImpresionControlador extends ChangeNotifier {
     await imprimirEnPosnet(
       accessToken: mpAccessToken!,
       terminalId: mpTerminalId!,
+      terminalCobroId: mpTerminalCobroId,
       ticket: ticket,
       encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
       client: httpClientDePrueba,

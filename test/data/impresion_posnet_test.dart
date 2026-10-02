@@ -87,6 +87,33 @@ void main() {
     );
   });
 
+  test('terminalParaImprimir: serial pelado + cobro de la misma terminal en formato completo usa el completo', () {
+    const cobro = 'NEWLAND_N950__N950NCC503383252';
+    expect(terminalParaImprimir('N950NCC503383252', cobro), cobro);
+    expect(terminalParaImprimir('N950NCC503383252', null), 'N950NCC503383252');
+    expect(terminalParaImprimir('N950NCC503383252', 'OTRA_X__OTRO999'), 'N950NCC503383252'); // otra terminal: no se mezcla
+    expect(terminalParaImprimir(cobro, 'otro'), cobro);
+  });
+
+  test('imprimir manda el formato completo cuando el de cobro es la misma terminal', () async {
+    late Map<String, dynamic> cuerpo;
+    final client = MockClient((request) async {
+      cuerpo = jsonDecode(request.body) as Map<String, dynamic>;
+      return http.Response('{}', 200);
+    });
+    await imprimirEnPosnet(accessToken: 't', terminalId: 'N950NCC503383252', terminalCobroId: 'NEWLAND_N950__N950NCC503383252', ticket: ticket, encabezadoNegocio: 'x', client: client);
+    expect(cuerpo['config']['point']['terminal_id'], 'NEWLAND_N950__N950NCC503383252');
+  });
+
+  test('el error con errors[] se muestra con código, mensaje y detalle, no como JSON crudo', () async {
+    final client = MockClient((request) async => http.Response(
+        jsonEncode({'errors': [{'message': 'Invalid value for property', 'code': 'property_value', 'details': ["'\$.config.point.terminal_id' - does not match pattern"]}]}), 400));
+    await expectLater(
+      () => imprimirEnPosnet(accessToken: 't', terminalId: 'x', ticket: ticket, encabezadoNegocio: 'x', client: client),
+      throwsA(isA<ImpresionPosnetException>().having((e) => e.toString(), 'mensaje', allOf(contains('property_value'), contains('does not match pattern'), isNot(contains('{"errors"'))))),
+    );
+  });
+
   test('un 200 no tira ninguna excepción', () async {
     final client = MockClient((request) async => http.Response('{}', 200));
 

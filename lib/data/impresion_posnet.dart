@@ -30,9 +30,38 @@ String _claveIdempotencia() {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
+/// Mercado Pago pasó a exigir `MODELO__SERIAL` también para imprimir (antes aceptaba el serial pelado: ver TRAMPAS.md). Si el
+/// campo de impresión quedó con el serial solo y el de cobro es LA MISMA terminal en formato completo, se usa ese: no hace
+/// falta que quien configura cargue el mismo dato dos veces para que el ticket salga.
+String terminalParaImprimir(String terminalId, String? terminalCobroId) {
+  if (terminalId.contains('__')) return terminalId;
+  final cobro = terminalCobroId;
+  return cobro != null && cobro.endsWith('__$terminalId') ? cobro : terminalId;
+}
+
+/// Lo que Mercado Pago contestó, legible: `errors[{code, message, details}]` o `message`; si no, el cuerpo tal cual.
+String _detalleError(String cuerpo) {
+  try {
+    final j = jsonDecode(cuerpo);
+    if (j is Map) {
+      final errores = j['errors'];
+      if (errores is List && errores.isNotEmpty && errores.first is Map) {
+        final e = errores.first as Map;
+        final detalles = e['details'] is List ? (e['details'] as List).join('; ') : null;
+        return [e['code'], e['message'], detalles].where((x) => x != null && x.toString().isNotEmpty).join(' · ');
+      }
+      if (j['message'] != null) return j['message'].toString();
+    }
+  } catch (_) {
+    // Cuerpo no-JSON: se usa tal cual.
+  }
+  return cuerpo;
+}
+
 Future<void> imprimirEnPosnet({
   required String accessToken,
   required String terminalId,
+  String? terminalCobroId,
   required Ticket ticket,
   required String encabezadoNegocio,
   http.Client? client,
@@ -52,20 +81,14 @@ Future<void> imprimirEnPosnet({
         'type': 'print',
         'external_reference': 'ticket_${DateTime.now().millisecondsSinceEpoch}',
         'config': {
-          'point': {'terminal_id': terminalId, 'subtype': 'custom'},
+          'point': {'terminal_id': terminalParaImprimir(terminalId, terminalCobroId), 'subtype': 'custom'},
         },
         'content': contenido,
       }),
     );
 
     if (respuesta.statusCode < 200 || respuesta.statusCode >= 300) {
-      var mensaje = respuesta.body;
-      try {
-        final cuerpo = jsonDecode(respuesta.body);
-        if (cuerpo is Map && cuerpo['message'] != null) mensaje = cuerpo['message'].toString();
-      } catch (_) {
-        // Cuerpo no-JSON: se usa tal cual.
-      }
+      final mensaje = _detalleError(respuesta.body);
       throw ImpresionPosnetException('MercadoPago Terminals API (${respuesta.statusCode}): $mensaje');
     }
   } finally {

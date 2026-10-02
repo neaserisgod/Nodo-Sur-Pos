@@ -679,3 +679,8 @@ helper llamado `base_de_test.dart` se cargó como test y falló ("No tests
 found"). Los helpers se llaman distinto (`base_para_tests.dart`,
 `planilla_fixture.dart`).
 
+
+> **Actualización 2026-10-02**: la Terminals API (imprimir) también pasó a exigir `MODELO__SERIAL` (`400 property_value —
+> '$.config.point.terminal_id' does not match pattern` con el serial pelado). `imprimirEnPosnet` usa el id de cobro cuando es LA
+> MISMA terminal en formato completo (`terminalParaImprimir`), así que alcanza con tener bien cargado el de cobro. Los errores de
+> MP con `errors[]` se muestran con código, mensaje y detalle.

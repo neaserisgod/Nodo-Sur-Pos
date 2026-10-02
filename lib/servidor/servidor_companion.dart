@@ -1405,6 +1405,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       await imprimirEnPosnet(
         accessToken: config.mpAccessToken!,
         terminalId: config.mpTerminalId!,
+        terminalCobroId: config.mpTerminalCobroId,
         ticket: ticket,
         encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
         client: httpClientDePrueba,
