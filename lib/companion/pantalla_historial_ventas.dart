@@ -24,7 +24,6 @@ import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navbar_companion.dart';
-import 'pantalla_cierres.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
@@ -35,8 +34,8 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/esqueleto_companion.dart';
 import '../ui/comun/estado_error.dart';
 import '../ui/comun/estado_vacio.dart';
+import 'tema/chip_seleccionable.dart';
 import 'tema/presionable.dart';
-import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 
@@ -104,6 +103,14 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
   bool _cargando = true;
   String? _error;
 
+  /// La venta cuyo detalle está desplegado en la lista (una a la vez) y los
+  /// detalles ya traídos: el resumen de cada fila viene sin líneas
+  /// (`historialDeVentas`), así que se piden recién al abrirla (mismo `Ticket`
+  /// que la impresión, Regla 3).
+  int? _ventaAbierta;
+  final Map<int, DetalleVentaCompanion> _detalles = {};
+  String? _errorDetalle;
+
   /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
   /// sincronizó" — repite la carga sola apenas la sync trae algo nuevo.
   /// El dueño, 2026-09-19: "las pantallas se refrescan en cada sync, cosa que
@@ -164,6 +171,24 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
       if (mounted && !silencioso) setState(() => _error = mensajeDeError(e));
     } finally {
       if (mounted && !silencioso) setState(() => _cargando = false);
+    }
+  }
+
+  Future<void> _alternarDetalle(VentaDelHistorialCompanion v) async {
+    if (_ventaAbierta == v.ventaId) {
+      setState(() => _ventaAbierta = null);
+      return;
+    }
+    setState(() {
+      _ventaAbierta = v.ventaId;
+      _errorDetalle = null;
+    });
+    if (_detalles.containsKey(v.ventaId) || _cliente == null) return;
+    try {
+      final detalle = await _cliente!.detalleVenta(v.ventaId);
+      if (mounted) setState(() => _detalles[v.ventaId] = detalle);
+    } catch (e) {
+      if (mounted) setState(() => _errorDetalle = mensajeDeError(e));
     }
   }
 
@@ -244,20 +269,6 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
     }
   }
 
-  /// Desglose de una venta (El dueño, 2026-09-13: "poder ver un desglose de
-  /// la venta") — mismo `Ticket` que arma la impresión, del lado del
-  /// servidor (Regla 3). Una venta anulada abre igual: sigue siendo útil
-  /// ver qué tenía, aunque ya esté revertida.
-  Future<void> _abrirDesglose(VentaDelHistorialCompanion v) async {
-    if (_cliente == null) return;
-    final cliente = _cliente!;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _HojaDesglose(cliente: cliente, venta: v),
-    );
-  }
-
   /// Antes eran dos filas rotuladas ("Período"/"Medio de pago") de chips
   /// horizontales — El dueño, 2026-09-13: "comen demasiado espacio y es muy
   /// confuso" (no quedaba claro que esas filas se podían deslizar). Un
@@ -276,109 +287,33 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
     );
   }
 
-  Widget _selectorMedio(BuildContext context) {
-    return PopupMenuButton<MedioVentaHistorialCompanion?>(
-      initialValue: _filtroMedio,
-      onSelected: _elegirMedio,
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: null, child: Text('Todos los medios')),
-        for (final m in MedioVentaHistorialCompanion.values)
-          PopupMenuItem(value: m, child: Text(m.etiqueta)),
-      ],
-      child: _Pildora(
-        icono: _filtroMedio?.icono ?? IconosPlazoleta.paymentsOutlined,
-        texto: _filtroMedio?.etiqueta ?? 'Todos',
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Cierres se mudó acá adentro como segunda pestaña (El dueño, 2026-09-18:
-    // "reacomodación de absolutamente todos los elementos" — ventas y
-    // cierres son las dos formas de mirar para atrás, no dos ideas
-    // separadas que merezcan cada una su propio lugar en Gestión/Historial).
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              const EncabezadoCompanion(
-                rotulo: 'Registro',
-                titulo: 'Historial',
-                padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, Espaciado.md),
-              ),
-              Container(
-                margin: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.sm),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(color: context.colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
-                child: TabBar(
-                  tabs: const [Tab(text: 'Ventas'), Tab(text: 'Cierres')],
-                  labelColor: context.colores.acentoTexto,
-                  unselectedLabelColor: context.colores.textoSecundario,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  splashBorderRadius: BorderRadius.circular(999),
-                  indicator: BoxDecoration(color: context.colores.acento, borderRadius: BorderRadius.circular(999)),
-                ),
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [_pestanaVentas(context), const PantallaCierres()],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _pestanaVentas(BuildContext context) {
     // Una venta anulada no suma al total del período — su plata ya se
     // revirtió de la caja (`anularVenta`), contarla igual mostraría más de
     // lo que de verdad entró.
-    final total = _ventas
-        .where((v) => !v.anulada)
-        .fold<int>(0, (acc, v) => acc + v.totalCentavos);
-    return Column(
-      children: [
-        const SizedBox(height: Espaciado.sm),
-        Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-              child: Row(
-                children: [
-                  _selectorPeriodo(context),
-                  const SizedBox(width: Espaciado.sm),
-                  _selectorMedio(context),
-                ],
-              ),
+    final total = _ventas.where((v) => !v.anulada).fold<int>(0, (acc, v) => acc + v.totalCentavos);
+    final resumen = _cargando || _error != null
+        ? null
+        : '${_ventas.length} ${_ventas.length == 1 ? 'venta' : 'ventas'} · ${formatearARS(total)}';
+    // Los cierres ya no son una pestaña de acá: viven en Gestión → Cierres
+    // anteriores, como en el mock completo del celular.
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            EncabezadoCompanion(
+              titulo: 'Historial',
+              bajada: resumen,
+              padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, Espaciado.md),
             ),
+            _filaFiltrosVentas(context),
             const SizedBox(height: Espaciado.sm),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
                 child: ErrorEnLinea(_error!),
-              )
-            else if (!_cargando)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${_ventas.length} venta(s)',
-                      style: TextStyle(color: context.colores.textoSecundario),
-                    ),
-                    Text(
-                      formatearARS(total),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
               ),
-            const SizedBox(height: Espaciado.sm),
             Expanded(
               child: _cargando
                   ? const EsqueletoLista()
@@ -391,20 +326,36 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
                         children: const [
                           SizedBox(
                             height: 300,
-                            child: EstadoVacio(
-                              mensaje: 'Sin ventas en este período',
-                              icono: IconosPlazoleta.receiptLongOutlined,
-                            ),
+                            child: EstadoVacio(mensaje: 'Sin ventas en este período', icono: IconosPlazoleta.receiptLongOutlined),
                           ),
                         ],
                       ),
                     )
-                  : RefreshIndicator(
-                      onRefresh: _cargar,
-                      child: _lista(context),
-                    ),
+                  : RefreshIndicator(onRefresh: _cargar, child: _lista(context)),
             ),
-      ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// El período y, al lado, un chip por medio de pago (mock completo).
+  Widget _filaFiltrosVentas(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+        children: [
+          Center(child: _selectorPeriodo(context)),
+          const SizedBox(width: Espaciado.sm),
+          ChipSeleccionable(texto: 'Todos los medios', seleccionado: _filtroMedio == null, onTap: () => _elegirMedio(null)),
+          for (final m in MedioVentaHistorialCompanion.values) ...[
+            const SizedBox(width: Espaciado.sm),
+            ChipSeleccionable(texto: m.etiqueta, seleccionado: _filtroMedio == m, onTap: () => _elegirMedio(m)),
+          ],
+        ],
+      ),
     );
   }
 
@@ -415,91 +366,148 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
     for (final v in _ventas) {
       grupos.putIfAbsent(_tituloDia(v.fecha), () => []).add(v);
     }
-
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        0,
-        Espaciado.lg,
-        Espaciado.lg + NavbarCompanion.espacioReservado,
-      ),
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg + NavbarCompanion.espacioReservado),
       children: [
         for (final entrada in grupos.entries) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-            child: Text(
-              entrada.key,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            child: Text(entrada.key, style: Theme.of(context).textTheme.titleMedium),
           ),
           for (final v in entrada.value)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Espaciado.sm),
-              child: Superficie(
-                padding: EdgeInsets.zero,
-                child: Presionable(
-                  onTap: () => _abrirDesglose(v),
-                  child: Padding(
-                    padding: const EdgeInsets.all(Bento.paddingBloque),
-                    child: Row(
-                        children: [
-                          Icon(
-                            v.medio.icono,
-                            color: v.anulada
-                                ? context.colores.textoTenue
-                                : context.colores.textoSecundario,
-                          ),
-                          const SizedBox(width: Espaciado.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  v.detalle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: v.anulada ? context.colores.textoTenue : null,
-                                    decoration: v.anulada ? TextDecoration.lineThrough : null,
-                                  ),
-                                ),
-                                Text(
-                                  v.anulada
-                                      ? 'Anulada · ${_hora(v.fecha)} · ${v.medio.etiqueta}'
-                                      : '${_hora(v.fecha)} · ${v.medio.etiqueta}',
-                                  style: TextStyle(
-                                    color: v.anulada
-                                        ? context.colores.error
-                                        : context.colores.textoSecundario,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            formatearARS(v.totalCentavos),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: v.anulada ? context.colores.textoTenue : null,
-                              decoration: v.anulada ? TextDecoration.lineThrough : null,
-                            ),
-                          ),
-                          if (!v.anulada && v.sesionAbierta) ...[
-                            const SizedBox(width: Espaciado.sm),
-                            IconButton(
-                              tooltip: 'Anular la venta',
-                              icon: Icon(
-                                IconosPlazoleta.deleteOutline,
-                                color: context.colores.textoSecundario,
-                              ),
-                              onPressed: () => _confirmarYAnular(v),
-                            ),
-                          ],
-                        ],
-                      ),
+            Padding(padding: const EdgeInsets.only(bottom: Espaciado.sm), child: _FilaVenta(
+              venta: v,
+              abierta: _ventaAbierta == v.ventaId,
+              detalle: _detalles[v.ventaId],
+              errorDetalle: _ventaAbierta == v.ventaId ? _errorDetalle : null,
+              onTap: () => _alternarDetalle(v),
+              onEliminar: !v.anulada && v.sesionAbierta ? () => _confirmarYAnular(v) : null,
+            )),
+        ],
+      ],
+    );
+  }
+}
+
+/// Una venta de la lista: hora, número y medio, y el total. Al tocarla se
+/// despliega, sobre tinta, el detalle con sus líneas y "Eliminar venta".
+class _FilaVenta extends StatelessWidget {
+  const _FilaVenta({
+    required this.venta,
+    required this.abierta,
+    required this.detalle,
+    required this.errorDetalle,
+    required this.onTap,
+    required this.onEliminar,
+  });
+
+  final VentaDelHistorialCompanion venta;
+  final bool abierta;
+  final DetalleVentaCompanion? detalle;
+  final String? errorDetalle;
+  final VoidCallback onTap;
+  final VoidCallback? onEliminar;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final v = venta;
+    // Abierta, la fila pasa a tinta con letra clara (mismo giro del mock).
+    final fondo = abierta ? colores.acento : colores.fondoBloque;
+    final texto = abierta ? colores.acentoTexto : colores.textoPrimario;
+    final apagado = abierta ? colores.acentoTexto.withValues(alpha: 0.7) : colores.textoSecundario;
+    final tachado = v.anulada ? TextDecoration.lineThrough : null;
+    return Container(
+      decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(radioSuperficieCompanion)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Presionable(
+            radio: radioSuperficieCompanion,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(Espaciado.lg),
+              child: Row(
+                children: [
+                  Text(_hora(v.fecha), style: textTheme.headlineSmall?.copyWith(color: texto, decoration: tachado)),
+                  const SizedBox(width: Espaciado.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('#${v.ventaId}', style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
+                        Text(
+                          v.anulada ? 'Anulada · ${v.medio.etiqueta}' : v.medio.etiqueta,
+                          style: textTheme.bodySmall?.copyWith(color: v.anulada && !abierta ? colores.error : apagado),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  Text(formatearARS(v.totalCentavos), style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
+                ],
               ),
+            ),
+          ),
+          if (abierta)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg),
+              child: errorDetalle != null
+                  ? Text(errorDetalle!, style: TextStyle(color: colores.acentoTexto))
+                  : detalle == null
+                  ? const Center(child: Padding(padding: EdgeInsets.all(Espaciado.md), child: CircularProgressIndicator(strokeWidth: 2)))
+                  : _detalleLineas(context, detalle!, texto, apagado),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detalleLineas(BuildContext context, DetalleVentaCompanion d, Color texto, Color apagado) {
+    final colores = context.colores;
+    Widget fila(String etiqueta, int centavos, {bool fuerte = false}) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(etiqueta, style: TextStyle(color: fuerte ? texto : apagado, fontWeight: fuerte ? Pesos.fuerte : null)),
+          Text(
+            centavos < 0 ? '-${formatearARS(-centavos)}' : formatearARS(centavos),
+            style: TextStyle(color: fuerte ? texto : apagado, fontWeight: fuerte ? Pesos.fuerte : null),
+          ),
+        ],
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('${_fechaHora(d.fecha)} · ${d.vendedor}', style: TextStyle(color: apagado)),
+        const SizedBox(height: Espaciado.sm),
+        for (final l in d.lineas)
+          fila(
+            l.gramos != null ? '${l.gramos} g × ${l.nombreProducto}' : '${l.cantidad} × ${l.nombreProducto}',
+            l.subtotalCentavos,
+          ),
+        Divider(color: apagado.withValues(alpha: 0.3)),
+        if (d.recargoCigarrillosCentavos > 0 || d.descuentoCentavos > 0 || d.redondeoCentavos > 0) ...[
+          fila('Subtotal', d.subtotalCentavos),
+          if (d.recargoCigarrillosCentavos > 0) fila('Recargo cigarrillos', d.recargoCigarrillosCentavos),
+          if (d.descuentoCentavos > 0) fila('Descuento', -d.descuentoCentavos),
+          if (d.redondeoCentavos > 0) fila('Redondeo', d.redondeoCentavos),
+        ],
+        fila('Total', d.totalCentavos, fuerte: true),
+        if (onEliminar != null) ...[
+          const SizedBox(height: Espaciado.md),
+          TextButton(
+            onPressed: onEliminar,
+            style: TextButton.styleFrom(
+              backgroundColor: texto.withValues(alpha: 0.14),
+              foregroundColor: colores.error == colores.acentoTexto ? texto : const Color(0xFFFFB4AD),
+              padding: const EdgeInsets.symmetric(vertical: Espaciado.md),
+              shape: const StadiumBorder(),
+            ),
+            child: const Text('Eliminar venta'),
+          ),
         ],
       ],
     );
@@ -534,155 +542,6 @@ class _Pildora extends StatelessWidget {
           const SizedBox(width: Espaciado.xs),
           Text(texto, style: Theme.of(context).textTheme.bodyMedium),
           const Icon(IconosPlazoleta.arrowDropDown, size: 18),
-        ],
-      ),
-    );
-  }
-}
-
-/// Hoja del desglose de una venta (El dueño, 2026-09-13: "poder ver un
-/// desglose de la venta") — carga el detalle al abrirse (mismo `Ticket`
-/// que la impresión, Regla 3) en vez de pedirlo por adelantado para cada
-/// fila de la lista, que ya viene sin este detalle (`historialDeVentas`
-/// solo trae el resumen para no pagar N consultas por cada venta que se
-/// lista y nunca se abre).
-class _HojaDesglose extends StatefulWidget {
-  const _HojaDesglose({required this.cliente, required this.venta});
-
-  final ServicioCompanion cliente;
-  final VentaDelHistorialCompanion venta;
-
-  @override
-  State<_HojaDesglose> createState() => _HojaDesgloseState();
-}
-
-class _HojaDesgloseState extends State<_HojaDesglose> {
-  DetalleVentaCompanion? _detalle;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargar();
-  }
-
-  Future<void> _cargar() async {
-    try {
-      final detalle = await widget.cliente.detalleVenta(widget.venta.ventaId);
-      if (mounted) setState(() => _detalle = detalle);
-    } catch (e) {
-      if (mounted) setState(() => _error = mensajeDeError(e));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.4,
-      maxChildSize: 0.92,
-      expand: false,
-      builder: (context, scrollController) {
-        final detalle = _detalle;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Espaciado.lg,
-            Espaciado.md,
-            Espaciado.lg,
-            Espaciado.lg,
-          ),
-          child: _error != null
-              ? Center(child: ErrorEnLinea(_error!))
-              : detalle == null
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  controller: scrollController,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: Espaciado.md),
-                        decoration: BoxDecoration(
-                          color: colores.borde,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Venta #${widget.venta.ventaId}',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    if (widget.venta.anulada)
-                      Padding(
-                        padding: const EdgeInsets.only(top: Espaciado.xs),
-                        child: Text(
-                          'Anulada',
-                          style: TextStyle(color: colores.error, fontWeight: Pesos.medium),
-                        ),
-                      ),
-                    Text(
-                      '${_fechaHora(detalle.fecha)} · ${detalle.vendedor}',
-                      style: TextStyle(color: colores.textoSecundario),
-                    ),
-                    const SizedBox(height: Espaciado.lg),
-                    for (final l in detalle.lineas)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l.gramos != null
-                                    ? '${l.nombreProducto} (${l.gramos}g)'
-                                    : '${l.nombreProducto} x${l.cantidad}',
-                              ),
-                            ),
-                            Text(formatearARS(l.subtotalCentavos)),
-                          ],
-                        ),
-                      ),
-                    Divider(color: colores.borde),
-                    _filaTotal(context, 'Subtotal', detalle.subtotalCentavos),
-                    if (detalle.recargoCigarrillosCentavos > 0)
-                      _filaTotal(
-                        context,
-                        'Recargo cigarrillos',
-                        detalle.recargoCigarrillosCentavos,
-                      ),
-                    if (detalle.descuentoCentavos > 0)
-                      _filaTotal(context, 'Descuento', -detalle.descuentoCentavos),
-                    if (detalle.redondeoCentavos > 0)
-                      _filaTotal(context, 'Redondeo', detalle.redondeoCentavos),
-                    const SizedBox(height: Espaciado.sm),
-                    _filaTotal(context, 'Total', detalle.totalCentavos, destacado: true),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-
-  Widget _filaTotal(
-    BuildContext context,
-    String etiqueta,
-    int centavos, {
-    bool destacado = false,
-  }) {
-    final estilo = destacado
-        ? Theme.of(context).textTheme.titleLarge
-        : Theme.of(context).textTheme.bodyMedium;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Espaciado.xs),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(etiqueta, style: estilo),
-          Text(
-            centavos < 0 ? '-${formatearARS(-centavos)}' : formatearARS(centavos),
-            style: estilo?.copyWith(color: destacado ? context.colores.acento : null),
-          ),
         ],
       ),
     );
