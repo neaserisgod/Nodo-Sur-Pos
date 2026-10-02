@@ -37,7 +37,7 @@ class TarjetaAccion extends StatelessWidget {
       child: Presionable(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(EspacioCompanion.lg),
+          padding: const EdgeInsets.all(Espaciado.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -48,7 +48,7 @@ class TarjetaAccion extends StatelessWidget {
                 tamanio: 44,
                 resplandor: onTap != null,
               ),
-              const SizedBox(height: EspacioCompanion.md),
+              const SizedBox(height: Espaciado.md),
               Text(titulo, style: Theme.of(context).textTheme.titleSmall),
               if (subtitulo != null) ...[
                 const SizedBox(height: 2),
@@ -78,13 +78,13 @@ class GrillaAcciones extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < tarjetas.length; i += 2) ...[
-          if (i > 0) const SizedBox(height: EspacioCompanion.md),
+          if (i > 0) const SizedBox(height: Espaciado.md),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(child: tarjetas[i]),
-                const SizedBox(width: EspacioCompanion.md),
+                const SizedBox(width: Espaciado.md),
                 if (i + 1 < tarjetas.length) Expanded(child: tarjetas[i + 1]) else const Spacer(),
               ],
             ),

@@ -57,6 +57,7 @@ import '../data/repositorio_cierre.dart'
         SesionYaNoAbiertaException,
         VentasAbiertasPendientesException;
 import '../data/repositorio_cobro.dart';
+import '../data/repositorio_deuda_proveedores.dart';
 import '../data/repositorio_configuracion.dart';
 import '../data/repositorio_edicion_venta.dart';
 import '../data/repositorio_gastos.dart';
@@ -374,6 +375,44 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       for (final p in proveedores)
         {'id': p.id, 'codigo': p.codigo, 'nombre': p.nombre},
     ]);
+  });
+
+  // Cuenta corriente con proveedores: la tabla `movimientos_deuda` no se
+  // sincroniza al celular, así que el saldo y el pago pasan siempre por acá.
+  router.get('/proveedores/saldos', (Request request) async {
+    final saldos = await saldosDeuda(db);
+    return _json({for (final e in saldos.entries) '${e.key}': e.value});
+  });
+
+  router.post('/proveedores/<id>/pagos', (Request request, String id) async {
+    final proveedorId = int.tryParse(id);
+    if (proveedorId == null) return _error(400, 'Proveedor inválido');
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final origen = OrigenPagoDeuda.desde(_textoRequerido(body, 'origen'));
+    final sesionCajaId = _int(body['sesionCajaId']);
+    try {
+      // Un pago que sale de una caja necesita una sesión abierta; sin esto un
+      // pago que llega justo después de un cierre se grabaría en una sesión
+      // ya cerrada (mismo criterio que `/gastos`).
+      if (origen != OrigenPagoDeuda.fuera && sesionCajaId != null) {
+        await verificarSesionAbierta(db, sesionCajaId);
+      }
+      final movimientoId = await pagarDeuda(
+        db,
+        proveedorId: proveedorId,
+        montoCentavos: _intRequerido(body, 'montoCentavos'),
+        origen: origen,
+        nota: body['nota'] as String?,
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        sesionCajaId: sesionCajaId,
+      );
+      return _json({'id': movimientoId}, status: 201);
+    } on SesionCerradaException {
+      return _error(409, 'La caja ya se cerró, este pago no se guardó');
+    } on SinCajaAbiertaException {
+      return _error(409, 'Hace falta una caja abierta para pagar desde la caja');
+    }
   });
 
   // Para el desplegable del alta/edición completa de producto en la
@@ -1009,7 +1048,6 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         montoCentavos: _intRequerido(body, 'montoCentavos'),
         medio: medio,
         motivo: body['motivo'] as String?,
-        proveedorId: body['proveedorId'] as int?,
       );
       return _json({'id': movimientoId}, status: 201);
     } on SesionCerradaException {

@@ -23,9 +23,10 @@ import 'mensaje_error.dart';
 import 'pantalla_carga_historica.dart'
     show FilaDatoSimple, SeccionProductosSinDatos;
 import 'servicio_companion.dart';
-import 'tema/estado_error_companion.dart';
+import '../ui/comun/estado_error.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/esqueleto_companion.dart';
 
 class PantallaArqueo extends StatefulWidget {
   const PantallaArqueo({super.key, required this.servicio});
@@ -69,6 +70,7 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
         title: const Text('Arqueo'),
         actions: [
           IconButton(
+            tooltip: 'Actualizar',
             icon: const Icon(IconosPlazoleta.refresh),
             onPressed: _cargando ? null : _cargar,
           ),
@@ -76,9 +78,9 @@ class _PantallaArqueoState extends State<PantallaArqueo> {
       ),
       body: SafeArea(
         child: _cargando
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoLista()
             : _error != null
-            ? EstadoErrorCompanion(mensaje: _error!, onReintentar: _cargar)
+            ? EstadoError(mensaje: _error!, onReintentar: _cargar)
             : _contenido(context),
       ),
     );

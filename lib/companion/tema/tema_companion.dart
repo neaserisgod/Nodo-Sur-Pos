@@ -67,7 +67,7 @@ abstract final class TemaCompanion {
       // (`lib/ui/comun/tarjetas.dart`, "Lenguaje de diseño" 2026-09-26) los
       // leen — mismos valores que `acentos`, ver `colores_companion.dart`.
       extensions: [colores, acentos, brillo == Brightness.dark ? acentosPlazoletaCompanionOscuro : acentosPlazoletaCompanionClaro],
-      dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: EspacioCompanion.lg),
+      dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: Espaciado.lg),
       appBarTheme: AppBarTheme(
         backgroundColor: colores.fondo,
         foregroundColor: colores.textoPrimario,
@@ -98,7 +98,7 @@ abstract final class TemaCompanion {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colores.fondoBloque,
-        contentPadding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg, vertical: EspacioCompanion.md),
+        contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radioControlCompanion),
           borderSide: BorderSide.none,
@@ -122,7 +122,7 @@ abstract final class TemaCompanion {
           textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
           shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -133,7 +133,7 @@ abstract final class TemaCompanion {
           textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
           shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -143,7 +143,7 @@ abstract final class TemaCompanion {
           textStyle: textTheme.labelLarge,
           minimumSize: const Size.fromHeight(alturaControlCompanion),
           shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.xl),
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -213,21 +213,6 @@ abstract final class TemaCompanion {
       labelSmall: estilo(12, FontWeight.w500, colores.textoTenue),
     );
   }
-}
-
-/// Escala de espaciado propia — mismos valores base (múltiplos de 4) que el
-/// escritorio porque siguen siendo el criterio correcto para este estilo
-/// (la propia guía "flat mobile touch-first" recomienda 4/8/16/24/32/48),
-/// no porque se reuse el token del escritorio: `EspaciadoCompanion` es un
-/// tipo propio, así que un cambio futuro de uno nunca mueve al otro.
-abstract final class EspacioCompanion {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 24;
-  static const double xxl = 32;
-  static const double xxxl = 48;
 }
 
 /// Altura de cualquier botón/control principal — más alto que el del

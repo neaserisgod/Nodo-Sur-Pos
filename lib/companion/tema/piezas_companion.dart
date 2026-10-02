@@ -34,7 +34,7 @@ class EtiquetaSeccion extends StatelessWidget {
             gradient: LinearGradient(colors: [Color(0xFF3B6CFF), Color(0xFF8A5CF6), Color(0xFF18C3A4)]),
           ),
         ),
-        const SizedBox(width: EspacioCompanion.sm),
+        const SizedBox(width: Espaciado.sm),
         Expanded(
           child: Text(
             texto,
@@ -103,7 +103,7 @@ class FilaCifras extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < cifras.length; i++) ...[
-            if (i > 0) VerticalDivider(width: EspacioCompanion.xl, thickness: 1, color: borde),
+            if (i > 0) VerticalDivider(width: Espaciado.xl, thickness: 1, color: borde),
             Expanded(child: cifras[i]),
           ],
         ],
@@ -124,7 +124,7 @@ class SeccionCompanion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(EspacioCompanion.xl),
+      padding: const EdgeInsets.all(Espaciado.xl),
       decoration: BoxDecoration(
         color: context.colores.fondoBloque,
         borderRadius: BorderRadius.circular(radioSuperficieCompanion),
@@ -134,7 +134,7 @@ class SeccionCompanion extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           EtiquetaSeccion(titulo, derecha: derecha),
-          const SizedBox(height: EspacioCompanion.lg),
+          const SizedBox(height: Espaciado.lg),
           child,
         ],
       ),
@@ -150,7 +150,7 @@ class BloqueHero extends StatelessWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.padding = const EdgeInsets.all(EspacioCompanion.xl),
+    this.padding = const EdgeInsets.all(Espaciado.xl),
     this.minAlto = 0,
     this.animar = true,
   });
@@ -222,7 +222,7 @@ class EncabezadoCompanion extends StatelessWidget {
     this.bajada,
     this.particulas = false,
     this.derecha,
-    this.padding = const EdgeInsets.fromLTRB(EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.xl, EspacioCompanion.lg),
+    this.padding = const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, Espaciado.lg),
   });
 
   final String titulo;
@@ -245,10 +245,10 @@ class EncabezadoCompanion extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (rotulo != null) ...[EtiquetaSeccion(rotulo!), const SizedBox(height: EspacioCompanion.sm)],
+                if (rotulo != null) ...[EtiquetaSeccion(rotulo!), const SizedBox(height: Espaciado.sm)],
                 Text(titulo, style: textTheme.headlineLarge),
                 if (bajada != null) ...[
-                  const SizedBox(height: EspacioCompanion.sm),
+                  const SizedBox(height: Espaciado.sm),
                   Text(bajada!, style: textTheme.bodyLarge?.copyWith(color: context.colores.textoSecundario)),
                 ],
               ],
@@ -292,7 +292,7 @@ class FilaElegible extends StatelessWidget {
       radio: radioSuperficieCompanion,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: EspacioCompanion.lg, vertical: EspacioCompanion.lg),
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.lg),
         decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(radioSuperficieCompanion)),
         child: Row(
           children: [
@@ -306,7 +306,7 @@ class FilaElegible extends StatelessWidget {
                 style: textTheme.titleMedium,
               ),
             ),
-            const SizedBox(width: EspacioCompanion.lg),
+            const SizedBox(width: Espaciado.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

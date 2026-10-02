@@ -25,12 +25,13 @@ import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
 import 'tema/colores_companion.dart';
-import 'tema/estado_error_companion.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
 
 class PantallaConsultarPrecio extends StatefulWidget {
   const PantallaConsultarPrecio({super.key});
@@ -162,6 +163,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
         actions: [
           if (_cliente != null)
             IconButton(
+              tooltip: 'Escanear código de barras',
               icon: _escaneando
                   ? const SizedBox(
                       height: 20,
@@ -177,7 +179,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
         child: _cargandoInicial
             ? const EsqueletoLista()
             : _cliente == null
-            ? EstadoErrorCompanion(
+            ? EstadoError(
                 mensaje: _errorInicial ?? 'No se pudo conectar.',
                 onReintentar: _iniciar,
               )
@@ -205,17 +207,14 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(color: context.colores.error),
-                      ),
+                      child: ErrorEnLinea(_error!),
                     ),
                   if (_seleccionado != null)
                     Expanded(child: _TarjetaPrecio(producto: _seleccionado!))
                   else
                     Expanded(
                       child: _resultados.isEmpty && !_buscando
-                          ? EstadoVacioCompanion(
+                          ? EstadoVacio(
                               mensaje: _busquedaCtrl.text.trim().isEmpty
                                   ? 'Escribí para buscar, o escaneá'
                                   : 'Sin resultados',

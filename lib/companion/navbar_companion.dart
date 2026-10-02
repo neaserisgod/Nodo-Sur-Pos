@@ -142,7 +142,7 @@ class _Item extends StatelessWidget {
               duration: const Duration(milliseconds: 160),
               curve: Animaciones.curvaSpring,
               padding: const EdgeInsets.symmetric(
-                horizontal: EspacioCompanion.lg,
+                horizontal: Espaciado.lg,
                 vertical: 4,
               ),
               decoration: BoxDecoration(

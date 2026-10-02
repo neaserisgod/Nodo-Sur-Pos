@@ -768,26 +768,73 @@ void main() {
     expect(movimientos.single.montoCentavos, 50000);
   });
 
-  test('/gastos con "proveedorId" es un pago a ese proveedor, sin deuda cargada', () async {
-    final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
-    final proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PZ', nombre: 'Proveedor Z'));
+  group('cuenta corriente con proveedores', () {
+    late int proveedorId;
 
-    final respuesta = await http.post(
-      url('/gastos'),
-      headers: headers(),
-      body: jsonEncode({
+    setUp(() async {
+      proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PP', nombre: 'Proveedor test'));
+    });
+
+    Future<http.Response> pagar(Map<String, Object?> body) =>
+        http.post(url('/proveedores/$proveedorId/pagos'), headers: headers(), body: jsonEncode(body));
+
+    test('pagar sin deuda cargada anota el cargo "Pago sin deuda previa", el pago y el gasto de caja', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+
+      final respuesta = await pagar({
         'sesionCajaId': sesionId,
         'usuarioId': usuarioId,
-        'montoCentavos': 90000,
-        'medio': 'cajonNormal',
-        'proveedorId': proveedorId,
-      }),
-    );
-    expect(respuesta.statusCode, 201);
+        'montoCentavos': 80000,
+        'origen': 'cajon',
+      });
+      expect(respuesta.statusCode, 201);
 
-    final movimiento = (await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get()).single;
-    expect(movimiento.tipo, 'PAGO_PROVEEDOR');
-    expect(movimiento.proveedorId, proveedorId);
+      final saldos = await http.get(url('/proveedores/saldos'), headers: headers());
+      expect(jsonDecode(saldos.body), {'$proveedorId': 0});
+
+      final caja = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get();
+      expect(caja.single.tipo, 'PAGO_PROVEEDOR');
+      expect(caja.single.proveedorId, proveedorId);
+      expect(caja.single.montoCentavos, 80000);
+    });
+
+    test('pagar con la caja ya CERRADA da 409 y no graba nada', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await cerrarSesion(
+        db,
+        sesionId: sesionId,
+        usuarioId: usuarioId,
+        efectivoContadoCentavos: 0,
+        mpContadoCentavos: 0,
+        lataContadoCentavos: 0,
+      );
+
+      final respuesta = await pagar({
+        'sesionCajaId': sesionId,
+        'usuarioId': usuarioId,
+        'montoCentavos': 80000,
+        'origen': 'cajon',
+      });
+      expect(respuesta.statusCode, 409);
+      expect(await db.select(db.movimientosDeuda).get(), isEmpty);
+      expect(await db.select(db.movimientosDeCaja).get(), isEmpty);
+    });
+
+    test('pagar desde una caja sin mandar sesión da 409', () async {
+      final respuesta = await pagar({'usuarioId': usuarioId, 'montoCentavos': 80000, 'origen': 'cajon'});
+      expect(respuesta.statusCode, 409);
+    });
+
+    test('pagar "fuera de la caja" no toca la caja', () async {
+      final respuesta = await pagar({'usuarioId': usuarioId, 'montoCentavos': 80000, 'origen': 'fuera'});
+      expect(respuesta.statusCode, 201);
+      expect(await db.select(db.movimientosDeCaja).get(), isEmpty);
+    });
+
+    test('un monto en cero da 400', () async {
+      final respuesta = await pagar({'usuarioId': usuarioId, 'montoCentavos': 0, 'origen': 'fuera'});
+      expect(respuesta.statusCode, 400);
+    });
   });
 
   test('/gastos con un "medio" inválido da 400', () async {

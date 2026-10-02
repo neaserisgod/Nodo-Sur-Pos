@@ -159,10 +159,12 @@ class FilaLineaCarrito extends StatelessWidget {
             ),
             if (esPorUnidad) ...[
               IconButton(
+                tooltip: 'Quitar uno',
                 icon: const Icon(IconosPlazoleta.removeCircleOutline),
                 onPressed: () => _ajustar(-1),
               ),
               IconButton(
+                tooltip: 'Agregar uno',
                 icon: const Icon(IconosPlazoleta.addCircleOutline),
                 onPressed: () => _ajustar(1),
               ),
@@ -172,6 +174,7 @@ class FilaLineaCarrito extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             IconButton(
+              tooltip: 'Sacar del carrito',
               icon: Icon(IconosPlazoleta.deleteOutline, color: context.colores.textoSecundario),
               onPressed: onEliminar,
             ),

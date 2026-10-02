@@ -923,13 +923,46 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   @override
+  Future<Map<int, int>> saldosProveedores() async {
+    final r = await _client.get(conexion._url('/proveedores/saldos'), headers: _headers);
+    _revisar(r);
+    return {
+      for (final e in (jsonDecode(r.body) as Map<String, dynamic>).entries)
+        int.parse(e.key): (e.value as num).toInt(),
+    };
+  }
+
+  @override
+  Future<int> pagarProveedor({
+    required int proveedorId,
+    required int usuarioId,
+    required int montoCentavos,
+    required String origen,
+    int? sesionCajaId,
+    String? nota,
+  }) async {
+    final r = await _client.post(
+      conexion._url('/proveedores/$proveedorId/pagos'),
+      headers: _headers,
+      body: jsonEncode({
+        'usuarioId': usuarioId,
+        'montoCentavos': montoCentavos,
+        'origen': origen,
+        'sesionCajaId': ?sesionCajaId,
+        'nota': ?nota,
+      }),
+    );
+    _revisar(r);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;
+  }
+
+  @override
   Future<int> registrarGasto({
     required int sesionCajaId,
     required int usuarioId,
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
-    int? proveedorId,
   }) async {
     final r = await _client.post(
       conexion._url('/gastos'),
@@ -940,7 +973,6 @@ class ClienteCompanion implements ServicioCompanion {
         'montoCentavos': montoCentavos,
         'medio': medio.name,
         'motivo': ?motivo,
-        'proveedorId': ?proveedorId,
       }),
     );
     _revisar(r);

@@ -91,10 +91,10 @@ class EsqueletoLista extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.all(EspacioCompanion.lg),
+      padding: const EdgeInsets.all(Espaciado.lg),
       itemCount: filas,
       itemBuilder: (context, i) => Padding(
-        padding: const EdgeInsets.only(bottom: EspacioCompanion.sm),
+        padding: const EdgeInsets.only(bottom: Espaciado.sm),
         child: Superficie(
           child: Row(
             children: [
@@ -103,12 +103,12 @@ class EsqueletoLista extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     EsqueletoLinea(width: 160),
-                    SizedBox(height: EspacioCompanion.sm),
+                    SizedBox(height: Espaciado.sm),
                     EsqueletoLinea(width: 90, height: 11),
                   ],
                 ),
               ),
-              const SizedBox(width: EspacioCompanion.lg),
+              const SizedBox(width: Espaciado.lg),
               const EsqueletoLinea(width: 56, height: 20),
             ],
           ),

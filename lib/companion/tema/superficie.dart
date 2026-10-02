@@ -18,7 +18,7 @@ class Superficie extends StatelessWidget {
   const Superficie({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(EspacioCompanion.lg),
+    this.padding = const EdgeInsets.all(Espaciado.lg),
     this.relleno,
     this.degrade,
     this.colorTexto,

@@ -20,6 +20,7 @@ import 'debounce.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'tema/hoja_vidrio.dart';
+import 'tema/error_en_linea.dart';
 
 /// true si se confirmó — false si se canceló sin terminar (no debería
 /// pasar en el uso normal: el diálogo no tiene botón de cancelar a
@@ -210,7 +211,7 @@ class _DialogoArqueoIntermedioCompanionState
         ),
         if (_error != null) ...[
           const SizedBox(height: Espaciado.sm),
-          Text(_error!, style: TextStyle(color: context.colores.error)),
+          ErrorEnLinea(_error!),
         ],
       ],
     );
@@ -291,7 +292,7 @@ class _DialogoArqueoIntermedioCompanionState
           ],
           if (_error != null) ...[
             const SizedBox(height: Espaciado.md),
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
           ],
         ],
       ),

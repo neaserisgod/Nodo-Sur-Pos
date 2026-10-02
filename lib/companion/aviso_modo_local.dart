@@ -42,17 +42,17 @@ class AvisoModoLocal extends StatelessWidget {
     }
     final colores = context.colores;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(EspacioCompanion.lg, EspacioCompanion.lg, EspacioCompanion.lg, 0),
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.lg, Espaciado.lg, 0),
       child: Superficie(
         relleno: colores.textoTenue.withValues(alpha: 0.12),
         padding: const EdgeInsets.symmetric(
-          horizontal: EspacioCompanion.lg,
-          vertical: EspacioCompanion.md,
+          horizontal: Espaciado.lg,
+          vertical: Espaciado.md,
         ),
         child: Row(
           children: [
             Icon(IconosPlazoleta.cloudOff, size: 20, color: colores.textoSecundario),
-            const SizedBox(width: EspacioCompanion.sm),
+            const SizedBox(width: Espaciado.sm),
             Expanded(
               child: Text(
                 'La PC emparejada no contestó — vendiendo con la copia local, se sincroniza solo cuando vuelva a estar disponible.',

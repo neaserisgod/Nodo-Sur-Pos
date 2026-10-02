@@ -39,11 +39,13 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/chip_icono.dart';
-import 'tema/estado_vacio_companion.dart';
+import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
+import 'tema/error_en_linea.dart';
+import 'tema/esqueleto_companion.dart';
 
 enum _MedioHistorico { efectivo, virtual, mixto }
 
@@ -156,16 +158,13 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
       ),
       body: SafeArea(
         child: _cargando
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoLista()
             : _error != null
             ? Center(
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               )
             : _dias.isEmpty
-            ? const EstadoVacioCompanion(
+            ? const EstadoVacio(
                 mensaje: 'Todavía no cargaste ningún día — tocá "Nuevo día"',
                 icono: IconosPlazoleta.history,
               )
@@ -348,6 +347,7 @@ class _PantallaDetalleDiaHistoricoState
           title: Text(_formatearFecha(widget.fecha)),
           actions: [
             IconButton(
+              tooltip: 'Borrar el día',
               icon: const Icon(IconosPlazoleta.deleteOutline),
               onPressed: _borrarDia,
             ),
@@ -366,13 +366,10 @@ class _PantallaDetalleDiaHistoricoState
         ),
         body: SafeArea(
           child: _cargando
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoLista()
               : _error != null
               ? Center(
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: context.colores.error),
-                  ),
+                  child: ErrorEnLinea(_error!),
                 )
               : TabBarView(
                   children: [_pestanaResumen(context), _pestanaVentas(context)],
@@ -465,7 +462,7 @@ class _PantallaDetalleDiaHistoricoState
 
   Widget _pestanaVentas(BuildContext context) {
     if (_ventas.isEmpty) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'Sin ventas — "Agregar más" para cargar',
         icono: IconosPlazoleta.receiptLongOutlined,
       );
@@ -504,6 +501,7 @@ class _PantallaDetalleDiaHistoricoState
                 ),
                 Text(formatearARS(v.totalCentavos)),
                 IconButton(
+                  tooltip: 'Eliminar la venta',
                   icon: const Icon(IconosPlazoleta.deleteOutline),
                   onPressed: () => _eliminarVenta(v),
                 ),
@@ -760,6 +758,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
                   ),
                   subtitle: Text(_medioDeTexto(v.medio)),
                   trailing: IconButton(
+                    tooltip: 'Quitar la venta',
                     icon: const Icon(IconosPlazoleta.deleteOutline),
                     onPressed: () => _quitarVenta(i),
                   ),
@@ -830,10 +829,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(Espaciado.md),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: context.colores.error),
-                ),
+                child: ErrorEnLinea(_error!),
               ),
             Expanded(
               child: _ArmadorDeVenta(
@@ -1125,7 +1121,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
 
   Widget _listaResultados(BuildContext context) {
     if (_resultados.isEmpty && !_buscando) {
-      return const EstadoVacioCompanion(
+      return const EstadoVacio(
         mensaje: 'Sin resultados',
         icono: IconosPlazoleta.searchOff,
       );
@@ -1207,7 +1203,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: context.colores.error)),
+            ErrorEnLinea(_error!),
             const SizedBox(height: Espaciado.sm),
           ],
           SegmentedButton<_MedioHistorico>(

@@ -937,7 +937,7 @@ class _VistaLoVendido extends StatelessWidget {
         const SizedBox(height: Espaciado.md),
         Expanded(
           child: vendidos.isEmpty
-              ? EstadoVacio(mensaje: c.busqueda.isEmpty ? 'No hay ventas en este período' : 'Ningún proveedor coincide con "${c.busqueda}"')
+              ? EstadoVacio(mensaje: c.busqueda.isEmpty ? 'Sin ventas en este período' : 'Ningún proveedor coincide con "${c.busqueda}"')
               : GridView.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: _anchoMaximoTarjeta,

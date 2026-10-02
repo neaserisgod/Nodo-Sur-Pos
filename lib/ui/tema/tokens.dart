@@ -174,7 +174,7 @@ abstract final class Espaciado {
   static const double xxl = 32;
 
   /// Sumado en el remake de la estética (El dueño, 2026-09-19) para piezas
-  /// "hero" grandes — mismo valor que `EspacioCompanion.xxxl`.
+  /// "hero" grandes — mismo valor que `Espaciado.xxxl`.
   static const double xxxl = 48;
 }
 
