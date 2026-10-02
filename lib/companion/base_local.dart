@@ -10,6 +10,8 @@
 // `ServicioSincronizacion` para escribir lo que llega y leer lo que hay que
 // mandar de vuelta.
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../data/database.dart';
 
 AppDatabase? _instancia;
@@ -21,3 +23,7 @@ AppDatabase? _instancia;
 /// esté mostrando (mismo criterio de arranque que ya sigue el servidor
 /// companion del escritorio).
 AppDatabase baseLocalCompanion() => _instancia ??= AppDatabase();
+
+/// Solo para tests y capturas: reemplaza la base local por una en memoria.
+@visibleForTesting
+void usarBaseLocalDeTest(AppDatabase db) => _instancia = db;

@@ -1,28 +1,11 @@
-// Navbar flotante, ahora de vidrio de verdad (El dueño, 2026-09-18: "un poco de
-// glassmorfismo estilo Apple, pero reversionado para Android"). Apple usa el
-// vidrio esmerilado en elementos FLOTANTES — la barra de pestañas, el centro
-// de control, una hoja modal — nunca en el contenido en sí; el mismo
-// criterio se aplica acá: la navbar (lo único que flota sobre contenido de
-// verdad) se vuelve vidrio (`BackdropFilter`, desenfoca lo que pasa
-// scrolleando detrás), pero las tarjetas de "Inicio" siguen con el lenguaje
-// bold flat de color sólido — mezclar vidrio y color-blocking en todos
-// lados se pisaría, no se sumaría.
-//
-// La barra de antes iba pegada a los tres bordes de la pantalla, igual que
-// cualquier `BottomNavigationBar` de fábrica; sigue flotando con margen y
-// esquinas redondas del todo, con una sombra suave propia (la única
-// excepción a "sin sombra" de toda la companion, junto con el resplandor
-// del botón central: acá la sombra cumple un rol real —separar una pieza
-// flotante del contenido que tiene debajo—, no decoración). El botón
-// circular del medio (`BotonEscanerCompanion`) se sigue dibujando medio
-// afuera de la barra.
-
-import 'dart:ui';
+// Navbar inferior del rediseño "antigravity": barra plana de borde a borde,
+// fondo igual al de la pantalla y una línea fina arriba; el ítem activo se
+// marca con una píldora gris y el botón del medio (`BotonEscanerCompanion`)
+// es un círculo de tinta que sobresale de la barra.
 
 import 'package:flutter/material.dart';
 
 import '../ui/tema/tokens.dart';
-import 'tema/resplandor.dart';
 import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
 
@@ -44,10 +27,9 @@ class NavbarCompanion extends StatelessWidget {
   /// (`BotonEscanerCompanion`) — la navbar solo lo posiciona.
   final Widget botonCentral;
 
-  static const double _alturaBarra = 68;
+  static const double _alturaBarra = 64;
   static const double diametroBoton = 56;
-  static const double _margenLateral = 20;
-  static const double _margenInferior = 16;
+  static const double _margenInferior = 4;
 
   /// Cuánto padding inferior necesita el contenido de cada pestaña para no
   /// quedar tapado por la barra — El dueño, 2026-09-18: "la navbar no parece
@@ -69,105 +51,61 @@ class NavbarCompanion extends StatelessWidget {
     final inferior = MediaQuery.of(context).padding.bottom;
     final margenInferiorReal = _margenInferior + inferior;
     return SizedBox(
-      height: _alturaBarra + diametroBoton / 2 + margenInferiorReal,
+      height: _alturaBarra + margenInferiorReal + diametroBoton / 2,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // `RepaintBoundary` alrededor de TODA la píldora (El dueño,
-          // 2026-09-19: "revisa bien el tema rendimiento") — `BackdropFilter`
-          // repinta esta capa en cada frame mientras el contenido de atrás
-          // scrollea (tiene que volver a desenfocar lo que cambió); sin este
-          // límite explícito, ese repintado puede arrastrar de vuelta al
-          // resto del árbol (el botón central de al lado, con su propio
-          // spinner) en vez de quedar aislado en su propia capa compuesta.
+          // `RepaintBoundary` para que el repintado de la barra no arrastre al botón central.
           RepaintBoundary(
             child: Container(
-              height: _alturaBarra,
-              margin: EdgeInsets.fromLTRB(
-                _margenLateral,
-                0,
-                _margenLateral,
-                margenInferiorReal,
-              ),
+              height: _alturaBarra + margenInferiorReal,
+              padding: EdgeInsets.only(bottom: margenInferiorReal),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                // Borde de un solo píxel, más claro que el fondo — la señal de
-                // "esto es un borde de vidrio" cuando lo que hay detrás varía
-                // de color al scrollear (sin esto, un vidrio sobre un fondo
-                // parejo es indistinguible de una superficie sólida cualquiera).
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                color: colores.fondo,
+                border: Border(top: BorderSide(color: colores.borde)),
               ),
-              // `ClipRRect` recorta el blur a la forma de la píldora — sin
-              // esto, `BackdropFilter` desenfoca en un rectángulo entero,
-              // ignorando el radio del borde.
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: BackdropFilter(
-                  // Sigma 24 → 16 (El dueño, 2026-09-19, mismo pedido de
-                  // rendimiento): el costo de `BackdropFilter` escala con el
-                  // radio del desenfoque — 16 sigue leyéndose como vidrio
-                  // esmerilado real, con bastante menos trabajo por frame
-                  // mientras se scrollea detrás.
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    // El tinte semitransparente ES el vidrio — sin esto,
-                    // `BackdropFilter` solo desenfoca lo de atrás y no queda
-                    // ninguna superficie propia sobre la que dibujar los
-                    // íconos.
-                    color: colores.fondoBloque.withValues(alpha: 0.55),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _Item(
-                            icono: IconosPlazoleta.storefrontOutlined,
-                            etiqueta: 'Inicio',
-                            activo: indice == 0,
-                            onTap: () => onSeleccionar(0),
-                          ),
-                        ),
-                        Expanded(
-                          child: _Item(
-                            icono: IconosPlazoleta.inventory2Outlined,
-                            etiqueta: 'Productos',
-                            activo: indice == 1,
-                            onTap: () => onSeleccionar(1),
-                          ),
-                        ),
-                        // Hueco para el botón flotante.
-                        const SizedBox(width: diametroBoton),
-                        Expanded(
-                          child: _Item(
-                            icono: IconosPlazoleta.listAltOutlined,
-                            etiqueta: 'Historial',
-                            activo: indice == 2,
-                            onTap: () => onSeleccionar(2),
-                          ),
-                        ),
-                        Expanded(
-                          child: _Item(
-                            icono: IconosPlazoleta.settingsOutlined,
-                            etiqueta: 'Gestión',
-                            activo: indice == 3,
-                            onTap: () => onSeleccionar(3),
-                          ),
-                        ),
-                      ],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _Item(
+                      icono: IconosPlazoleta.storefrontOutlined,
+                      etiqueta: 'Inicio',
+                      activo: indice == 0,
+                      onTap: () => onSeleccionar(0),
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: _Item(
+                      icono: IconosPlazoleta.inventory2Outlined,
+                      etiqueta: 'Productos',
+                      activo: indice == 1,
+                      onTap: () => onSeleccionar(1),
+                    ),
+                  ),
+                  const SizedBox(width: diametroBoton + 12),
+                  Expanded(
+                    child: _Item(
+                      icono: IconosPlazoleta.listAltOutlined,
+                      etiqueta: 'Historial',
+                      activo: indice == 2,
+                      onTap: () => onSeleccionar(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: _Item(
+                      icono: IconosPlazoleta.settingsOutlined,
+                      etiqueta: 'Gestión',
+                      activo: indice == 3,
+                      onTap: () => onSeleccionar(3),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
           Positioned(
-            bottom: _alturaBarra / 2 + margenInferiorReal - diametroBoton / 2,
+            bottom: _alturaBarra / 2 + margenInferiorReal - diametroBoton / 2 + 6,
             child: RepaintBoundary(child: botonCentral),
           ),
         ],
@@ -192,7 +130,7 @@ class _Item extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final color = activo ? colores.acento : colores.textoSecundario;
+    final color = activo ? colores.textoPrimario : colores.textoTenue;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -201,31 +139,15 @@ class _Item extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedContainer(
-              // "Dark glass premium" (El dueño, rediseño 2026-09-25): antes sin
-              // curva explícita (default `Curves.linear`) — se le suma el
-              // snap de `curvaSpring`, mismo criterio que `NavbarSuperior`.
               duration: const Duration(milliseconds: 160),
               curve: Animaciones.curvaSpring,
               padding: const EdgeInsets.symmetric(
-                horizontal: EspacioCompanion.md,
+                horizontal: EspacioCompanion.lg,
                 vertical: 4,
               ),
               decoration: BoxDecoration(
-                color: activo
-                    ? colores.acento.withValues(alpha: 0.16)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(radioControlCompanion),
-                // Halo neón en la pestaña activa (El dueño, 2026-09-19:
-                // "cyberpunk me vuela la gorra") — sutil a propósito, es una
-                // pastilla chica que ya vive sobre vidrio esmerilado.
-                boxShadow: activo
-                    ? resplandorNeon(
-                        colores.acento,
-                        alpha: 0.4,
-                        radio: 10,
-                        offset: const Offset(0, 2),
-                      )
-                    : null,
+                color: activo ? colores.fondoBloque : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
               ),
               child: Icon(icono, color: color, size: 22),
             ),

@@ -12,7 +12,9 @@ import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'pantalla_elegir_usuario.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/superficie.dart';
+import 'tema/tema_companion.dart';
 
 class PantallaEmparejamiento extends StatefulWidget {
   const PantallaEmparejamiento({super.key});
@@ -93,54 +95,60 @@ class _PantallaEmparejamientoState extends State<PantallaEmparejamiento> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Emparejar con la PC')),
       body: SafeArea(
-        child: _manual ? _formularioManual(context) : _escaner(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            EncabezadoCompanion(
+              rotulo: 'Companion',
+              titulo: 'Emparejá con la PC',
+              bajada: _manual
+                  ? 'Cargá los datos que figuran en la PC.'
+                  : 'Escaneá el código de Configuración → "App companion" en la PC.',
+              particulas: true,
+              padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.lg),
+            ),
+            Expanded(child: _manual ? _formularioManual(context) : _escaner(context)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _escaner(BuildContext context) {
-    return Stack(
-      children: [
-        MobileScanner(onDetect: _alDetectar),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            color: Colors.black54,
-            padding: const EdgeInsets.all(Espaciado.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Escaneá el código de Configuración → "App companion" en la PC.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: Espaciado.sm),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
+    final colores = context.colores;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radioSuperficieCompanion + 8),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MobileScanner(onDetect: _alDetectar),
+                  if (_verificando) const ColoredBox(color: Colors.black45, child: Center(child: CircularProgressIndicator())),
                 ],
-                const SizedBox(height: Espaciado.md),
-                TextButton(
-                  onPressed: () => setState(() => _manual = true),
-                  child: const Text(
-                    'Ingresar los datos a mano',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-        if (_verificando) const Center(child: CircularProgressIndicator()),
-      ],
+          if (_error != null) ...[
+            const SizedBox(height: Espaciado.md),
+            Container(
+              padding: const EdgeInsets.all(Espaciado.lg),
+              decoration: BoxDecoration(color: colores.error.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(radioControlCompanion)),
+              child: Text(_error!, style: TextStyle(color: colores.error)),
+            ),
+          ],
+          const SizedBox(height: Espaciado.md),
+          OutlinedButton(
+            onPressed: () => setState(() => _manual = true),
+            child: const Text('Ingresar los datos a mano'),
+          ),
+        ],
+      ),
     );
   }
 

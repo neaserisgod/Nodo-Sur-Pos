@@ -5,10 +5,9 @@
 // El escritorio sigue usando `Bloque` tal cual; este widget no lo reemplaza
 // ahí, solo le da a la companion su propia unidad visual.
 //
-// "Dark glass premium" (El dueño, rediseño 2026-09-25): mismo tratamiento
-// shell+core que `lib/ui/tema/superficie.dart` (ver ahí el detalle
-// completo) — look de vidrio sin `BackdropFilter` real, reservado a
-// `hoja_vidrio.dart`/`navbar_companion.dart`.
+// Rediseño "antigravity": bloque plano gris muy claro (negro azulado en
+// oscuro), sin borde ni sombra y con esquinas de 28; lo más importante de
+// cada pantalla va en `BloqueHero` (`piezas_companion.dart`).
 
 import 'package:flutter/material.dart';
 

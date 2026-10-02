@@ -1,11 +1,8 @@
-// Hoja modal de vidrio — reemplazo de `AlertDialog` para lo que necesita más
-// que un par de líneas de confirmación (El dueño, 2026-09-18: "los modales no
-// me gustan, hay que desplazarse demasiado"). Una hoja que sube desde abajo
-// da más aire real sin depender de scroll interno, y es el mismo lugar
-// donde Apple aplica vidrio esmerilado en sus propias hojas — coherente con
-// la navbar (`navbar_companion.dart`), no un tercer lenguaje visual más.
-
-import 'dart:ui';
+// Hoja modal — reemplazo de `AlertDialog` para lo que necesita más que un par
+// de líneas de confirmación (El dueño, 2026-09-18: "los modales no me gustan,
+// hay que desplazarse demasiado"). Sube desde abajo, con fondo plano del
+// color de la pantalla, esquinas muy redondeadas y una sombra suave arriba
+// (rediseño "antigravity"; el nombre del archivo viene de la versión de vidrio).
 
 import 'package:flutter/material.dart';
 
@@ -83,56 +80,45 @@ Future<T?> mostrarHojaVidrio<T>(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(radioSuperficieCompanion),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: colores.fondo,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(radioSuperficieCompanion + 4),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 40,
+                  offset: const Offset(0, -8),
+                ),
+              ],
             ),
-            child: BackdropFilter(
-              // Sigma 24 → 16 (El dueño, 2026-09-19: "revisa bien el tema
-              // rendimiento") — mismo ajuste que la navbar: menos trabajo por
-              // frame para `BackdropFilter`, vidrio esmerilado igual de
-              // creíble. Acá el costo por sí solo es menor (lo de atrás queda
-              // fijo mientras la hoja está abierta, no scrollea detrás), pero
-              // mismo criterio para toda la app.
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: colores.fondoBloque.withValues(alpha: 0.88),
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.10),
+            padding: EdgeInsets.fromLTRB(
+              EspacioCompanion.xl,
+              EspacioCompanion.sm,
+              EspacioCompanion.xl,
+              EspacioCompanion.xl + MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (esDescartable)
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: EspacioCompanion.lg),
+                      decoration: BoxDecoration(
+                        color: colores.borde,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                padding: EdgeInsets.fromLTRB(
-                  EspacioCompanion.lg,
-                  EspacioCompanion.sm,
-                  EspacioCompanion.lg,
-                  EspacioCompanion.lg + MediaQuery.of(context).padding.bottom,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (esDescartable)
-                      Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          margin: const EdgeInsets.only(
-                            bottom: EspacioCompanion.md,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colores.borde,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                    Builder(builder: builder),
-                  ],
-                ),
-              ),
+                Builder(builder: builder),
+              ],
             ),
           ),
         ),

@@ -17,18 +17,73 @@
 
 import 'package:flutter/material.dart';
 
-import '../../ui/tema/acentos.dart' show acentosEscritorioClaro, acentosEscritorioOscuro;
-import '../../ui/tema/colores_escritorio.dart';
+import '../../ui/tema/acentos.dart';
+import '../../ui/tema/tokens.dart';
 
-// "Dark glass premium" (El dueño, rediseño 2026-09-25) — espejo exacto de
-// `coloresEscritorioOscuro` (`lib/ui/tema/colores_escritorio.dart`), mismo
-// motivo: negro más profundo, texto secundario/tenue con más margen de
-// contraste, acento sin cambios (ver ese archivo para el detalle de
-// contraste WCAG verificado).
-// Misma paleta que el escritorio ("Lenguaje de diseño", 2026-09-26): una
-// sola fuente de verdad para los colores de las dos apps.
-const coloresCompanionOscuro = coloresEscritorioOscuro;
-const coloresCompanionClaro = coloresEscritorioClaro;
+// Paleta del rediseño "antigravity" (misma que la web de Nodo Sur): blanco
+// puro de fondo, bloques gris muy claro, tinta casi negra como acento (los
+// botones principales son píldoras negras) y color solo donde significa algo
+// (los medios de pago, la ganancia, las alertas). En oscuro, negro puro.
+// Ya no es un espejo de la paleta del escritorio: la companion tiene la suya.
+const coloresCompanionClaro = ColoresPlazoleta(
+  fondo: Color(0xFFFFFFFF),
+  fondoBloque: Color(0xFFF3F4F7),
+  borde: Color(0xFFE2E4EA),
+  textoPrimario: Color(0xFF121317),
+  textoSecundario: Color(0xFF566070),
+  textoTenue: Color(0xFF7B8494),
+  acento: Color(0xFF121317),
+  acentoTexto: Color(0xFFFFFFFF),
+  error: Color(0xFFC5221F),
+  errorTexto: Color(0xFFFFFFFF),
+);
+
+const coloresCompanionOscuro = ColoresPlazoleta(
+  fondo: Color(0xFF000000),
+  fondoBloque: Color(0xFF14161C),
+  borde: Color(0xFF2A2D36),
+  textoPrimario: Color(0xFFF4F5F7),
+  textoSecundario: Color(0xFFA9B0BF),
+  textoTenue: Color(0xFF7D8597),
+  acento: Color(0xFFFFFFFF),
+  acentoTexto: Color(0xFF121317),
+  error: Color(0xFFFF8A80),
+  errorTexto: Color(0xFF3B0A08),
+);
+
+// Degradé de las piezas "hero" (el CTA de vender, el total a cobrar): negro
+// con un velo de color, como el bloque de cierre de la web.
+const _heroClaro = [Color(0xFF0A0B10), Color(0xFF1B1F3A)];
+const _heroOscuro = [Color(0xFF14161C), Color(0xFF232A55)];
+
+/// Acentos con significado propios de la companion (colores de la web).
+const acentosPlazoletaCompanionClaro = AcentosPlazoleta(
+  dinero: Color(0xFFB45309),
+  qr: Color(0xFF3B6CFF),
+  debito: Color(0xFF0E9F85),
+  mixto: Color(0xFF8A5CF6),
+  textoSobreColor: Color(0xFFFFFFFF),
+  gradienteAcento: _heroClaro,
+  gradienteDinero: _heroClaro,
+  ganancia: Color(0xFF0E7C5A),
+  gananciaSuave: Color(0xFFE3F6EF),
+  alerta: Color(0xFF9A4A06),
+  alertaSuave: Color(0xFFFFF1DC),
+);
+
+const acentosPlazoletaCompanionOscuro = AcentosPlazoleta(
+  dinero: Color(0xFFC26A12),
+  qr: Color(0xFF4F7CFF),
+  debito: Color(0xFF0E9F85),
+  mixto: Color(0xFF8A5CF6),
+  textoSobreColor: Color(0xFFFFFFFF),
+  gradienteAcento: _heroOscuro,
+  gradienteDinero: _heroOscuro,
+  ganancia: Color(0xFF6FE3B8),
+  gananciaSuave: Color(0xFF12332A),
+  alerta: Color(0xFFFFB878),
+  alertaSuave: Color(0xFF3A2410),
+);
 
 @immutable
 class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
@@ -94,23 +149,23 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
 // el porqué de cada color). Tipo propio a propósito — ver el comentario de
 // `AcentosPlazoleta` —, pero hoy los dos se leen del mismo lugar.
 final acentosCompanionOscuro = AcentosCompanion(
-  dinero: acentosEscritorioOscuro.dinero,
-  qr: acentosEscritorioOscuro.qr,
-  debito: acentosEscritorioOscuro.debito,
-  mixto: acentosEscritorioOscuro.mixto,
-  textoSobreColor: acentosEscritorioOscuro.textoSobreColor,
-  gradienteAcento: acentosEscritorioOscuro.gradienteAcento,
-  gradienteDinero: acentosEscritorioOscuro.gradienteDinero,
+  dinero: acentosPlazoletaCompanionOscuro.dinero,
+  qr: acentosPlazoletaCompanionOscuro.qr,
+  debito: acentosPlazoletaCompanionOscuro.debito,
+  mixto: acentosPlazoletaCompanionOscuro.mixto,
+  textoSobreColor: acentosPlazoletaCompanionOscuro.textoSobreColor,
+  gradienteAcento: acentosPlazoletaCompanionOscuro.gradienteAcento,
+  gradienteDinero: acentosPlazoletaCompanionOscuro.gradienteDinero,
 );
 
 final acentosCompanionClaro = AcentosCompanion(
-  dinero: acentosEscritorioClaro.dinero,
-  qr: acentosEscritorioClaro.qr,
-  debito: acentosEscritorioClaro.debito,
-  mixto: acentosEscritorioClaro.mixto,
-  textoSobreColor: acentosEscritorioClaro.textoSobreColor,
-  gradienteAcento: acentosEscritorioClaro.gradienteAcento,
-  gradienteDinero: acentosEscritorioClaro.gradienteDinero,
+  dinero: acentosPlazoletaCompanionClaro.dinero,
+  qr: acentosPlazoletaCompanionClaro.qr,
+  debito: acentosPlazoletaCompanionClaro.debito,
+  mixto: acentosPlazoletaCompanionClaro.mixto,
+  textoSobreColor: acentosPlazoletaCompanionClaro.textoSobreColor,
+  gradienteAcento: acentosPlazoletaCompanionClaro.gradienteAcento,
+  gradienteDinero: acentosPlazoletaCompanionClaro.gradienteDinero,
 );
 
 extension AcentosDelContexto on BuildContext {

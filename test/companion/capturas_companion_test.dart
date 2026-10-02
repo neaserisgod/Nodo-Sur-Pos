@@ -1,0 +1,197 @@
+// Capturas de la companion para revisar el diseño a ojo: dibujan las
+// pantallas con la base de test y guardan PNG en `capturas/companion/`
+// (carpeta ignorada por git). No comprueban pixeles: solo que cada pantalla
+// se dibuje sin excepciones, en claro y en oscuro.
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/base_local.dart';
+import 'package:la_plazoleta/companion/cliente_companion.dart';
+import 'package:la_plazoleta/companion/navbar_companion.dart';
+import 'package:la_plazoleta/companion/pantalla_inicio_companion.dart';
+import 'package:la_plazoleta/companion/tema/tema_companion.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:la_plazoleta/companion/pantalla_elegir_usuario.dart';
+import 'package:la_plazoleta/companion/pantalla_gestion_companion.dart';
+
+import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
+import 'package:la_plazoleta/companion/pantalla_consultar_precio.dart';
+import 'package:la_plazoleta/companion/pantalla_historial_ventas.dart';
+import 'package:la_plazoleta/companion/pantalla_movimiento_caja.dart';
+import 'package:la_plazoleta/companion/pantalla_precios.dart';
+import 'package:la_plazoleta/companion/pantalla_separaciones_companion.dart';
+
+import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
+import 'package:la_plazoleta/companion/puerto_local.dart';
+import 'package:la_plazoleta/domain/venta.dart';
+
+import '../helpers/base_para_tests.dart';
+
+final _clave = GlobalKey();
+
+/// flutter_test no carga las fuentes del pubspec: sin esto todo se dibuja con
+/// Ahem (cajas) y los textos desbordan por culpa del test, no de la app.
+Future<void> _cargarFigtree() async {
+  final cargador = FontLoader('Figtree');
+  for (final f in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+    cargador.addFont(rootBundle.load('fonts/Figtree-$f.ttf'));
+  }
+  await cargador.load();
+}
+
+Future<void> _capturar(WidgetTester tester, String nombre, Widget pantalla, {bool oscuro = false}) async {
+  tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+  tester.view.devicePixelRatio = 2;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    RepaintBoundary(
+      key: _clave,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: TemaCompanion.claro,
+        darkTheme: TemaCompanion.oscuro,
+        themeMode: oscuro ? ThemeMode.dark : ThemeMode.light,
+        home: pantalla,
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
+  await tester.pump(const Duration(milliseconds: 600));
+  await tester.runAsync(() async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final limite = _clave.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final imagen = await limite.toImage(pixelRatio: 2);
+    final bytes = await imagen.toByteData(format: ui.ImageByteFormat.png);
+    final archivo = File('capturas/companion/$nombre${oscuro ? '-oscuro' : ''}.png');
+    await archivo.create(recursive: true);
+    await archivo.writeAsBytes(bytes!.buffer.asUint8List());
+  });
+}
+
+Widget _inicio({required bool abierta}) => Scaffold(
+      body: PantallaInicioCompanion(
+        nombreUsuario: 'Bruno',
+        usuarioId: 1,
+        sesion: SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime.now()),
+        estadoCaja: null,
+        arqueoIntermedioVencido: true,
+        onHacerArqueoIntermedio: () {},
+        navegando: false,
+        irA: (_) async {},
+        onAbrirMovimientoCaja: (_) {},
+        onSincronizar: () async {},
+        carrito: const [],
+        onVender: () {},
+        servicio: null,
+        pcEmparejada: true,
+        actualizacionSinConexion: false,
+      ),
+      bottomNavigationBar: NavbarCompanion(
+        indice: 0,
+        onSeleccionar: (_) {},
+        botonCentral: Container(
+          width: NavbarCompanion.diametroBoton,
+          height: NavbarCompanion.diametroBoton,
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black),
+          child: const Icon(Icons.qr_code_scanner, color: Colors.white),
+        ),
+      ),
+    );
+
+Widget _gestion({required bool abierta}) => Scaffold(
+      body: PantallaGestionCompanion(
+        navegando: false,
+        irA: (_) async {},
+        sesion: SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime.now()),
+        onAbrirArqueo: () {},
+        onCerrarCaja: () {},
+        onCambiarUsuario: () {},
+        onDesconectar: () {},
+      ),
+      bottomNavigationBar: NavbarCompanion(
+        indice: 3,
+        onSeleccionar: (_) {},
+        botonCentral: const SizedBox(width: NavbarCompanion.diametroBoton, height: NavbarCompanion.diametroBoton),
+      ),
+    );
+
+void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({
+        // Usuario ya elegido, para que las pantallas no pidan elegirlo.
+        'companion_usuario_id': 1,
+        'companion_usuario_nombre': 'Dueño',
+      }));
+
+  Future<void> preparar(WidgetTester tester) async {
+    await _cargarFigtree();
+    final db = await tester.runAsync(() async => baseDeTest());
+    usarBaseLocalDeTest(db!);
+  }
+
+  for (final oscuro in [false, true]) {
+    final sufijo = oscuro ? ' (oscuro)' : '';
+    testWidgets('inicio con caja abierta$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'inicio-abierta', _inicio(abierta: true), oscuro: oscuro);
+    });
+    testWidgets('inicio con caja cerrada$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'inicio-cerrada', _inicio(abierta: false), oscuro: oscuro);
+    });
+    testWidgets('gestion$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'gestion-abierta', _gestion(abierta: true), oscuro: oscuro);
+      await _capturar(tester, 'gestion-cerrada', _gestion(abierta: false), oscuro: oscuro);
+    });
+    testWidgets('productos$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'productos', const Scaffold(body: PantallaPrecios()), oscuro: oscuro);
+    });
+    testWidgets('historial$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'historial', const Scaffold(body: PantallaHistorialVentas()), oscuro: oscuro);
+    });
+    testWidgets('separaciones$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'separaciones', PantallaSeparacionesCompanion(db: baseLocalCompanion(), usuarioId: 1), oscuro: oscuro);
+    });
+    testWidgets('consultar precio$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'consultar-precio', const PantallaConsultarPrecio(), oscuro: oscuro);
+    });
+    testWidgets('conteo de stock$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'conteo-stock', const PantallaConteoStock(), oscuro: oscuro);
+    });
+    testWidgets('movimiento de caja$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'movimiento-caja', const PantallaMovimientoCaja(), oscuro: oscuro);
+    });
+    testWidgets('carrito$sufijo', (tester) async {
+      await preparar(tester);
+      final carrito = <LineaVenta>[
+        const LineaVentaPorUnidad(productoId: 'a', nombreProducto: 'Cerveza lata 473 ml', proveedorId: null, cantidad: 2, precioUnitarioCentavos: 210000),
+        const LineaVentaPorUnidad(productoId: 'b', nombreProducto: 'Gaseosa cola 2,25 L', proveedorId: null, cantidad: 1, precioUnitarioCentavos: 290000),
+        const LineaVentaPesable(productoId: 'c', nombreProducto: 'Jamón cocido', proveedorId: null, gramos: 250, precioPorKiloCentavos: 1460000),
+      ];
+      final servicio = PuertoLocal(baseLocalCompanion());
+      await tester.runAsync(() => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 2000000));
+      await _capturar(
+        tester,
+        'carrito',
+        PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
+        oscuro: oscuro,
+      );
+    });
+    testWidgets('elegir usuario$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'elegir-usuario', const PantallaElegirUsuario(), oscuro: oscuro);
+    });
+  }
+}

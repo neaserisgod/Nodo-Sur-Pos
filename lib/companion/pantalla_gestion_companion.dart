@@ -25,6 +25,7 @@ import 'pantalla_carga_historica.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_conteo_stock.dart';
 import 'tema/colores_companion.dart';
+import 'tema/piezas_companion.dart';
 import 'tema/tarjeta_accion.dart';
 import '../ui/tema/iconos.dart';
 
@@ -56,77 +57,93 @@ class PantallaGestionCompanion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final abierta = sesion?.abierta ?? false;
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            Espaciado.lg,
-            Espaciado.lg,
-            Espaciado.lg,
-            Espaciado.lg + NavbarCompanion.espacioReservado,
-          ),
+          padding: const EdgeInsets.only(bottom: Espaciado.lg + NavbarCompanion.espacioReservado),
           children: [
-            Text('Gestión', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: Espaciado.xl),
-            GrillaAcciones(
-              tarjetas: [
-                TarjetaAccion(
-                  icono: IconosPlazoleta.inventory2Outlined,
-                  color: context.acentos.qr,
-                  titulo: 'Conteo de stock',
-                  subtitulo: 'Por proveedor',
-                  onTap: navegando ? null : () => irA((_) => const PantallaConteoStock()),
-                ),
-                TarjetaAccion(
-                  icono: IconosPlazoleta.history,
-                  color: context.acentos.debito,
-                  titulo: 'Carga histórica',
-                  subtitulo: 'Días anteriores',
-                  onTap: navegando
-                      ? null
-                      : () => irA((_) => const PantallaCargaHistorica()),
-                ),
-                TarjetaAccion(
-                  icono: IconosPlazoleta.pointOfSaleOutlined,
-                  color: context.colores.acento,
-                  titulo: 'Arqueo',
-                  subtitulo: abierta ? '¿Cómo vamos?' : 'Caja cerrada',
-                  onTap: abierta ? onAbrirArqueo : null,
-                ),
-                TarjetaAccion(
-                  icono: IconosPlazoleta.lockClockOutlined,
-                  color: context.acentos.dinero,
-                  titulo: 'Cerrar caja',
-                  subtitulo: abierta ? 'Contar y cerrar' : 'Caja cerrada',
-                  onTap: abierta ? onCerrarCaja : null,
-                ),
-                TarjetaAccion(
-                  icono: IconosPlazoleta.personOutline,
-                  color: context.acentos.mixto,
-                  titulo: 'Cambiar usuario',
-                  subtitulo: 'Elegir otra persona',
-                  onTap: onCambiarUsuario,
-                ),
-                TarjetaAccion(
-                  icono: IconosPlazoleta.settingsOutlined,
-                  color: context.colores.acento,
-                  titulo: 'Configuración',
-                  subtitulo: 'Reglas del negocio',
-                  onTap: navegando
-                      ? null
-                      : () => irA((_) => const PantallaConfiguracionCompanion()),
-                ),
-              ],
-            ),
-            const SizedBox(height: Espaciado.xl),
-            Center(
-              child: TextButton.icon(
-                onPressed: onDesconectar,
-                icon: Icon(IconosPlazoleta.linkOff, size: 18, color: context.colores.error),
-                label: Text(
-                  'Desconectar de esta PC',
-                  style: TextStyle(color: context.colores.error),
-                ),
+            const EncabezadoCompanion(rotulo: 'Cuenta y caja', titulo: 'Gestión'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (abierta)
+                    BloqueHero(
+                      onTap: onCerrarCaja,
+                      animar: false,
+                      minAlto: 132,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Cerrar caja', style: textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                                Text('Contar y cerrar el turno', style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
+                              ],
+                            ),
+                          ),
+                          const BotonFlecha(),
+                        ],
+                      ),
+                    ),
+                  if (abierta) const SizedBox(height: Espaciado.md),
+                  GrillaAcciones(
+                    tarjetas: [
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.inventory2Outlined,
+                        color: context.acentos.qr,
+                        titulo: 'Conteo de stock',
+                        subtitulo: 'Por proveedor',
+                        onTap: navegando ? null : () => irA((_) => const PantallaConteoStock()),
+                      ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.history,
+                        color: context.acentos.debito,
+                        titulo: 'Carga histórica',
+                        subtitulo: 'Días anteriores',
+                        onTap: navegando ? null : () => irA((_) => const PantallaCargaHistorica()),
+                      ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.pointOfSaleOutlined,
+                        color: context.colores.textoPrimario,
+                        titulo: 'Arqueo',
+                        subtitulo: abierta ? '¿Cómo vamos?' : 'Caja cerrada',
+                        onTap: abierta ? onAbrirArqueo : null,
+                      ),
+                      if (!abierta)
+                        TarjetaAccion(
+                          icono: IconosPlazoleta.lockClockOutlined,
+                          color: context.acentos.dinero,
+                          titulo: 'Cerrar caja',
+                          subtitulo: 'Caja cerrada',
+                          onTap: null,
+                        ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.personOutline,
+                        color: context.acentos.mixto,
+                        titulo: 'Cambiar usuario',
+                        subtitulo: 'Elegir otra persona',
+                        onTap: onCambiarUsuario,
+                      ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.settingsOutlined,
+                        color: context.colores.textoPrimario,
+                        titulo: 'Configuración',
+                        subtitulo: 'Reglas del negocio',
+                        onTap: navegando ? null : () => irA((_) => const PantallaConfiguracionCompanion()),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Espaciado.xl),
+                  OutlinedButton.icon(
+                    onPressed: onDesconectar,
+                    icon: Icon(IconosPlazoleta.linkOff, size: 18, color: context.colores.error),
+                    label: Text('Desconectar de esta PC', style: TextStyle(color: context.colores.error)),
+                  ),
+                ],
               ),
             ),
           ],

@@ -26,6 +26,10 @@ on:
         description: Qué cambió
         required: true
         default: Actualización de la companion
+      rollout:
+        description: "Porcentaje de celulares que la reciben (1-100). Conviene 10 y subirlo desde /admin → Versiones; 100 = a todos"
+        required: true
+        default: "100"
 
 concurrency:
   group: publicar
@@ -87,8 +91,9 @@ jobs:
         env:
           NOTAS: ${{ inputs.notas }}
           CANAL: ${{ inputs.canal }}
+          ROLLOUT: ${{ inputs.rollout }}
         run: |
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
           cp build/app/outputs/flutter-apk/app-release.apk "NodoSurPOS-Companion-${version}.apk"
           node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
-            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout 100
+            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"

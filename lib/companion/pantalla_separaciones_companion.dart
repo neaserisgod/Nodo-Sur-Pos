@@ -22,11 +22,12 @@ import '../domain/periodo.dart';
 import '../ui/comun/tarjetas.dart';
 import '../ui/separaciones/separaciones_controlador.dart';
 import '../ui/tema/acentos.dart';
-import '../ui/tema/presionable.dart';
-import '../ui/tema/superficie.dart';
 import '../ui/tema/tokens.dart';
 import '../ui/tema/iconos.dart';
 import 'cambios_companion.dart';
+import 'tema/piezas_companion.dart';
+import 'tema/presionable.dart';
+import 'tema/superficie.dart';
 
 class PantallaSeparacionesCompanion extends StatefulWidget {
   const PantallaSeparacionesCompanion({super.key, required this.db, required this.usuarioId});
@@ -156,8 +157,8 @@ class _Resumen extends StatelessWidget {
           ),
         );
 
-    return Superficie(
-      degrade: acentos.gradienteAcento,
+    return BloqueHero(
+      animar: false,
       padding: const EdgeInsets.all(Espaciado.xl - 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
