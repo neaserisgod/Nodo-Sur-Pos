@@ -25,6 +25,8 @@ import 'domain/modulos.dart';
 import 'servicios/modulos_activos.dart';
 import 'servicios/nube.dart';
 import 'servicios/marca_actual.dart';
+import 'servicios/migracion_carpeta_datos.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {
   // El dueño, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
@@ -50,6 +52,16 @@ Future<void> _main() async {
   if (Platform.isAndroid) {
     runApp(const CompanionApp());
     return;
+  }
+
+  // Antes de que algo lea preferencias o la cuenta vinculada: si el nombre del producto cambió entre
+  // versiones, la carpeta de datos de Windows cambió con él y hay que traer lo de la vieja.
+  if (Platform.isWindows) {
+    try {
+      await migrarCarpetaDatosVieja(nueva: await getApplicationSupportDirectory());
+    } catch (_) {
+      // Nunca frenar el arranque por esto: peor caso, hay que volver a vincular.
+    }
   }
 
   // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la

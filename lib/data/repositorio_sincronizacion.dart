@@ -167,6 +167,36 @@ Future<List<Map<String, dynamic>>> cambiosDesde(
   return [for (final fila in filas) fila.data];
 }
 
+/// La fila de [tabla] con ese [globalId], con la misma forma que las que
+/// devuelve [cambiosDesde] (incluye las columnas `*_gid`), o null si no
+/// existe. La usa la sync por la nube para saber cómo quedó una fila DESPUÉS
+/// de aplicarla, y así no volver a subirla como si fuera un cambio propio.
+Future<Map<String, dynamic>?> filaLocalPorGlobalId(
+  AppDatabase db, {
+  required String tabla,
+  required String globalId,
+}) async {
+  _tablaValida(tabla);
+  final referencias = _referenciasCruzadas[tabla];
+  final columnasExtra = referencias == null
+      ? ''
+      : referencias.keys
+          .map((c) => ', ${c}_ref.global_id AS ${_claveGlobalDe(c)}')
+          .join();
+  final joins = referencias == null
+      ? ''
+      : referencias.entries
+          .map((e) => ' LEFT JOIN ${e.value} AS ${e.key}_ref ON ${e.key}_ref.id = $tabla.${e.key}')
+          .join();
+  final fila = await db
+      .customSelect(
+        'SELECT $tabla.*$columnasExtra FROM $tabla$joins WHERE $tabla.global_id = ?',
+        variables: [Variable.withString(globalId)],
+      )
+      .getSingleOrNull();
+  return fila?.data;
+}
+
 /// El cursor más alto entre [filas] (lo que devolvió [cambiosDesde]) para
 /// [tabla] — lo que el que pidió el pull tiene que guardar como su próximo
 /// `desde`. 0 si [filas] está vacía (no avanza el cursor).
@@ -310,17 +340,30 @@ Future<void> _aplicarDeltaDeMovimientoStock(
 /// todavía no existe localmente) se separa y el resto sigue su curso. El
 /// llamador decide qué hacer con las devueltas — en
 /// `sincronizacion_supabase.dart`, reintentarlas en el próximo tick.
+///
+/// Con [ordenDeLlegada] (la sync por la nube) no se compara `actualizado_en`:
+/// quien aplica va recibiendo los lotes en el orden en que llegaron al
+/// servidor y el último pisa a los anteriores (El dueño, 2026-10-01: "porque
+/// no usamos el horario del server y que se vea qué elemento llegó último").
+/// Así el reloj de cada dispositivo deja de decidir quién gana un conflicto.
 Future<List<Map<String, dynamic>>> aplicarCambios(
   AppDatabase db, {
   required String tabla,
   required List<Map<String, dynamic>> filas,
+  bool ordenDeLlegada = false,
 }) async {
   final comparaActualizado = _tablaValida(tabla);
   final noAplicadas = <Map<String, dynamic>>[];
 
   for (final fila in filas) {
     try {
-      await _aplicarUnaFila(db, tabla: tabla, fila: fila, comparaActualizado: comparaActualizado);
+      await _aplicarUnaFila(
+        db,
+        tabla: tabla,
+        fila: fila,
+        comparaActualizado: comparaActualizado,
+        ordenDeLlegada: ordenDeLlegada,
+      );
     } catch (e) {
       // ignore: avoid_print
       print('aplicarCambios: $tabla (global_id=${fila['global_id']}) no se pudo aplicar: $e');
@@ -384,6 +427,7 @@ Future<void> _aplicarUnaFila(
   required String tabla,
   required Map<String, dynamic> fila,
   required bool comparaActualizado,
+  required bool ordenDeLlegada,
 }) async {
   final globalId = fila['global_id'] as String?;
   if (globalId == null) return; // no debería pasar, pero no explota
@@ -412,9 +456,11 @@ Future<void> _aplicarUnaFila(
 
   if (!comparaActualizado) return; // log inmutable: ya existe, no se toca
 
-  final actualizadoLocal = (existente.data['actualizado_en'] as num?)?.toInt() ?? 0;
-  final actualizadoEntrante = (fila['actualizado_en'] as num?)?.toInt() ?? 0;
-  if (actualizadoEntrante <= actualizadoLocal) return; // gana el más nuevo
+  if (!ordenDeLlegada) {
+    final actualizadoLocal = (existente.data['actualizado_en'] as num?)?.toInt() ?? 0;
+    final actualizadoEntrante = (fila['actualizado_en'] as num?)?.toInt() ?? 0;
+    if (actualizadoEntrante <= actualizadoLocal) return; // gana el más nuevo
+  }
 
   final columnasExcluidas = {
     'id',

@@ -519,8 +519,12 @@ es no poder descontar más de lo que vale la venta. Detalle técnico en
 ## 18. Multiusuario y cambio de turno
 
 La persona que atiende el fin de semana usa el sistema con el mismo acceso.
-No hay roles ni permisos, pero **cada venta, edición y arqueo registra quién lo hizo**,
+No hay roles ni permisos dentro del POS, pero **cada venta, edición y arqueo registra quién lo hizo**,
 con un selector de nombre al abrir la app. Sin contraseñas.
+
+> **En construcción (ver `DECISIONES.md`, "Negocio, sucursales y miembros"):** el nombre del selector va a salir de
+> la lista de miembros de la sucursal a la que está vinculada la PC (guardada en disco, funciona sin internet), con
+> PIN opcional que identifica pero no protege. Los roles (dueño, encargado, empleado) se manejan en el sitio, no acá.
 
 - **Un turno es una sesión de caja completa**, no un cambio de usuario a
   mitad de sesión. Su planilla de papel tiene una hoja por persona, no una

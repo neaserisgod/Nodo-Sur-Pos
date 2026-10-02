@@ -1423,6 +1423,84 @@ Decididas con el dueño antes de empezar (fase 1):
   para no dejar duplicados.
 - El nombre del local (encabezado del ticket) sigue siendo el del negocio, no el del programa.
 
+### Sync por la nube entre dispositivos, sin depender de la PC (2026-10-01)
+
+- **El pedido.** El dueño: si se apaga la PC el sistema tiene que seguir funcionando; "el dispositivo que manda es el
+  último que hizo una modificación y cada modificación lanza una sync"; el traspaso PC → nube es automático. La nube
+  (Worker + D1 de `NodoSurPage`, `POST/GET /api/sync`) es un buzón ordenado de lotes de cambios, no una copia maestra.
+- **Quién gana: el orden de llegada al servidor, no el reloj.** El dueño: "¿por qué no usamos el horario del server y que
+  se vea qué elemento llegó último?". Cada lote lleva un `seq` y la hora del servidor; quien aplica los recibe en orden y
+  el último pisa (`aplicarCambios(..., ordenDeLlegada: true)`). Los relojes de los dispositivos dejan de decidir. Stock
+  y caja siguen sumando movimientos (no se pisan). La sync directa por wifi todavía compara `actualizado_en`: pasa al
+  mismo criterio cuando el celular hable con la nube (fase 3).
+- **Caso aceptado**: un dispositivo que edita sin conexión y sincroniza horas después pisa lo que otro hizo mientras
+  tanto, porque su lote llega último. Mitigación mínima: cada vuelta BAJA primero y SUBE después.
+- **Sin eco.** Lo que un dispositivo recibe no se vuelve a subir como propio (llegaría después de lo que el otro editó
+  entretanto y lo pisaría con datos viejos). `data/registro_sync_nube.dart` guarda, por fila, valor de cursor y huella;
+  lo ya sincronizado no se sube. El stock de un producto queda fuera de la huella (lo mueven los movimientos).
+- **Cursores**: en las tablas por `actualizado_en` el cursor solo avanza con lo que este dispositivo subió (un reloj
+  adelantado de otro dejaría sin subir las ediciones propias siguientes); en los logs por `id` local avanza también
+  sobre lo recibido.
+- **Reintentos seguros**: el id del lote es el hash de su contenido; si se cortó la respuesta, el reintento no duplica.
+- **Sin secretos**: las tablas sincronizadas no tienen tokens (la configuración sensible vive en `configuracion_tabla`,
+  que no se sincroniza); hay un test que lo vigila. Los lotes además van cifrados en el servidor.
+- **Bajar solo cuando se detecta (2026-10-01).** El dueño: "que baje los cambios solo cuando los detecte, hay que
+  economizar lo más posible el uso de Cloudflare". Un sondeo cada 20 s se descartó. Un Durable Object por cuenta
+  (`SyncHub`, `NodoSurPage`) mantiene WebSockets que **hibernan** y avisa `{"seq":N}` a los demás dispositivos cuando
+  alguien sube un lote; recién ahí bajan. Costo según la documentación de Cloudflare: conectar es 1 pedido, un socket
+  quieto no consume cómputo, los avisos salientes y los pings del protocolo no se cobran, y está en el plan gratis
+  (solo con SQLite). Conectado y sin novedades: **cero pedidos**. Sin conexión de avisos (sin internet, o servidor sin
+  el Durable Object) se reintenta espaciando 5 s, 20 s, 1 min y 5 min, con una consulta por intento. Las subidas se
+  agrupan 1 s (una venta escribe varias tablas). Del lado del servidor también se recortó: las tablas se aseguran
+  una vez por instancia (antes 4 consultas en cada pedido), subir hace una escritura en vez de cuatro consultas y la
+  purga corre cada 25 lotes.
+- **Estado local** en `nodosur_sync.json` (junto al token de la cuenta, fuera de la base). Si el servidor ya no guarda
+  lo que faltaba (60 días de retención) avisa `SyncNubeExpirada` y hay que ponerse al día desde una copia.
+- **Pendiente**: tras restaurar una copia hay que llamar a `ServicioSyncNube.reiniciar()`; y desvincular debería borrar
+  el estado. Ninguno de los dos está conectado todavía.
+
+### Sync por la nube, fase 3: el celular pasa solo de la PC a la nube (2026-10-01)
+
+- **Una sola a la vez.** Con la PC conectada, el celular sincroniza con ella por wifi y la PC sube a la nube; la nube
+  del celular queda **en pausa** (ni conexión de avisos ni consultas). Si el celular también subiera, la nube
+  recibiría cada cambio dos veces y gastaría el doble. `lib/companion/conmutador_sync.dart` decide:
+  PC conectada → modo `pc`; PC caída → modo `nube` (si hay cuenta) pasados 10 s; sin PC emparejada ("solo
+  celular") → nube de una; sin cuenta → `local`. La espera de 10 s evita abrir una conexión por un corte de wifi de
+  un instante; la vuelta a la PC es inmediata.
+- **Las pantallas cambian de servicio al instante** (`_cambiarServicioPorConexion` del menú): PC caída → base local,
+  que la sync por wifi mantuvo al día; PC de vuelta → HTTP a la PC. Antes seguían hablándole a una PC muerta hasta
+  volver a entrar a la pantalla.
+- **Al pasar a la nube, primero baja y después sube** (igual que la PC). Lo que el celular recibió de la PC por wifi
+  no figura en su registro de la nube, así que ese tramo se vuelve a subir una vez al traspaso (inofensivo: es
+  idéntico a lo que la PC ya subió); el costo es un lote más grande por traspaso.
+- **Caso conocido**: si la PC se cae antes de subir su último cambio y el celular ya lo recibió por wifi, al pasar a
+  la nube el celular baja la versión anterior que sí estaba en la nube y la aplica encima. La ventana es de ~1 s (la
+  PC sube cada cambio al momento) y la PC lo vuelve a subir al volver.
+- **Primera vuelta con datos previos**: un celular que ya tenía datos y se vincula por primera vez adopta lo que hay
+  en la nube (gana la nube) y sube solo lo que la nube no tiene. Una edición local de la misma fila antes de vincular
+  se pierde; se acepta por rara.
+- **Vincular el celular** reusa el flujo de la PC (navegador + servidor en `127.0.0.1` + PKCE): Gestión → Cuenta.
+  Falta verificarlo en un Android real: si el sistema duerme la app mientras está el navegador al frente, la
+  vinculación puede no completarse; la alternativa es un código corto que se escribe en el celular.
+- **Lotes de hasta 2.000 filas** (antes 400): la primera subida de una base grande son 5 veces menos pedidos.
+
+### Sync por la nube, fase 4: elegir "PC y celular" o "solo celular" (2026-10-01)
+
+- **El pedido.** El dueño: que la app dé a elegir si se tiene una PC o si solo se usa el móvil como sistema; con ambos
+  se sigue con la conexión directa, y con solo el celular funciona en local y sincroniza con la nube como la PC.
+- **Una pregunta al primer arranque** (`pantalla_elegir_modo.dart`) y cambiable desde Gestión → "Modo: … · Cambiar".
+  Reemplaza al botón "Desconectar de esta PC", que en la práctica solo servía para volver a emparejar.
+- **El modo se guarda recién cuando corresponde**: "PC y celular" cuando el emparejamiento sale bien (si se vuelve
+  atrás sin emparejar, queda como estaba); "solo celular" al tocarlo, que además olvida la PC y avisa al conmutador
+  (`flujo_modo_uso.dart`). Tocar el modo que ya está en uso no hace nada.
+- **Instalaciones anteriores no vuelven a preguntar** (`resolverModoUso`): con PC emparejada → "PC y celular"; sin PC
+  pero con usuario elegido → "solo celular" (desde 2026-09-18 ya funcionaban así); instalación nueva → pregunta.
+- **"Solo celular" ofrece vincular la cuenta antes de entrar** (la pantalla Cuenta como paso del arranque, con
+  "Vincular más tarde"): sin cuenta el celular no sincroniza ni guarda copias. También es el camino para un celular
+  nuevo de un comercio que ya tiene cuenta: al vincular adopta lo que hay en la nube.
+- **Emparejar limpia la pila de pantallas** (`pushAndRemoveUntil`): ni el menú anterior ni la elección de modo tienen
+  sentido debajo de "¿Quién sos?" después de emparejar.
+
 ## Primitivas compartidas entre PC y celular (2026-10-02)
 
 - Antes había copias casi iguales de piezas visuales en `lib/ui/` y en `lib/companion/tema/`. Se
@@ -1457,3 +1535,45 @@ Decididas con el dueño antes de empezar (fase 1):
   (modo local) avisa, como el cobro con Point.
 - Un pago desde una caja valida que la sesión siga abierta (409 si ya se cerró),
   igual que `/gastos`.
+
+### Negocio, sucursales y miembros (2026-10-02)
+
+- **El pedido.** El dueño: usuarios que se registran con SU mail, con una cuenta madre (la dueña, la que paga) y
+  cuentas de empleado; y que sea multisucursal "de la forma más fácil".
+- **Negocio entre la persona y todo lo demás.** Hasta ahora la cuenta de Nodo Sur era una persona. Ahora hay un
+  **negocio** (el que paga) con **sucursales**, y personas que son **miembros** con rol: dueño (todo), encargado
+  (descarga, copias, opera) y empleado (solo opera, solo en su sucursal). Los permisos se afinan más adelante; viven
+  en un solo archivo del sitio (`permisos.js`). El servidor está en `NodoSurPage`.
+- **Paga el negocio entero**, una vez, con sucursales ilimitadas. Miembros ilimitados; si algún negocio llega a ~50 se
+  empieza a cobrar algo (un número configurable, sin hacerse cumplir todavía).
+- **Varios negocios por persona: sí.** La propiedad se puede **transferir** (dos pasos: la otra persona acepta). El
+  mail con el que se paga queda aparte del dueño (`billing_email`): tras transferir, la suscripción sigue a nombre de
+  quien pagó.
+- **Sucursal = etiqueta que organiza dispositivos y personas, no datos.** Cada PC se vincula a UNA sucursal y baja solo
+  los miembros de esa sucursal. Las ventas y la caja siguen siendo locales por PC (no cambia "no es un POS
+  multi-comercio en un servidor"): **no hay reportes consolidados entre sucursales** todavía; exigirían subir las
+  ventas a la nube y otro modelo de sincronización. `branch_id` en el dispositivo deja la puerta abierta.
+- **El POS no pide login con Google en cada turno.** Sigue funcionando sin internet: el dueño vincula la PC una vez y
+  el empleado se elige de la lista de miembros de su sucursal (guardada en disco), con PIN opcional. El PIN identifica,
+  no protege: un PIN corto con hash local se rompe con fuerza bruta; sirve para no vender a nombre de otro por
+  descuido, coherente con "sin contraseñas" (Regla 18).
+- **Quitar a un miembro lo deja inactivo, no lo borra**: las ventas viejas conservan su nombre.
+- **Panel de administrador y panel del negocio son distintos.** `/admin/` es de Nodo Sur; el dueño de un negocio no es
+  admin de la plataforma. La cuenta del dueño de Nodo Sur cumple las dos funciones, pero el código las trata separadas.
+- **Transferencia de propiedad (fase 5 del sitio).** En dos pasos: el dueño propone y la otra persona acepta; hasta
+  entonces no cambia nada. El dueño anterior queda de **encargado** y no se va: sus PC siguen funcionando (si el nuevo
+  dueño lo quita después, esas PC dejan de valer, y la pantalla lo avisa). Para el POS esto significa que **quien vinculó
+  la PC puede dejar de ser el dueño**: lo que vale es que siga siendo miembro activo del negocio.
+- **Cobro: nadie cancela la suscripción de otra persona.** Una suscripción puede cubrir más de un negocio de quien paga;
+  si el nuevo dueño pudiera cancelarla, dejaría sin acceso a un negocio ajeno. Cancela quien paga. El nuevo dueño, en
+  cambio, **pasa el cobro a su propia suscripción**. Ese pase solo acepta el mail verificado de quien lo pide (nunca uno
+  que venga en el pedido) y con una suscripción vigente: si no, cualquiera podría apuntar su negocio a la suscripción de
+  otro cliente y usar el sistema sin pagar. El administrador de la plataforma puede ajustar el mail de cobro (soporte).
+- **La sync por la nube (sección de arriba) es por SUCURSAL, no por persona** (se unió al modelo de negocios al mergear). La PC y
+  el celular de una misma sucursal se sincronizan entre sí; otra sucursal del mismo dueño, u otro negocio, no ven nada: cada
+  sucursal tiene su propia caja y su propio stock, y mezclarlos sería un error de plata. El alcance sale del dispositivo
+  autenticado (nunca del pedido). Para el POS no cambia el contrato (`/api/sync` sigue igual): lo que cambia es que **al
+  vincular el celular hay que elegir la misma sucursal que la PC**, o no se van a ver. Un dispositivo vinculado antes del
+  modelo de negocios sigue atado a la persona hasta que el sitio lo completa (`adoptarLegado`).
+- **Estado:** en construcción por fases (ver el README de `NodoSurPage`): hechas las del sitio (modelo, acceso, miembros,
+  pantallas, transferencia). Falta la del POS (lista de miembros cacheada + PIN). Esta entrada se actualiza al cerrar cada una.

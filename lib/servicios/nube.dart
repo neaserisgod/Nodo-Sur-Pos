@@ -13,9 +13,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/database.dart';
+import '../data/notificador_cambios.dart';
 import 'actualizaciones.dart';
 import 'copias_nube.dart';
 import 'cuenta_nube.dart';
+import 'sync_nube.dart';
 
 /// Todo lo de la cuenta de Nodo Sur que necesita una pantalla.
 class NubeApp {
@@ -23,6 +25,7 @@ class NubeApp {
     required this.almacen,
     required this.cliente,
     required this.copias,
+    this.sync,
     required this.idDispositivo,
     required this.nombreDispositivo,
     required this.abrirNavegador,
@@ -32,6 +35,9 @@ class NubeApp {
   final AlmacenCuenta almacen;
   final ClienteNube cliente;
   final ServicioCopiasNube copias;
+
+  /// Sincronización con los demás dispositivos de la cuenta, a través de la nube.
+  final ServicioSyncNube? sync;
   final Future<String> Function() idDispositivo;
   final String Function() nombreDispositivo;
   final Future<void> Function(Uri) abrirNavegador;
@@ -80,10 +86,21 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
     },
     guardarUltimaSubida: (d) async => (await SharedPreferences.getInstance()).setInt(_claveUltimaSubida, d.millisecondsSinceEpoch),
   );
+  // Cada cambio en la base sube solo; lo que llega de otro dispositivo se avisa a las pantallas con el mismo canal
+  // que usa el celular por wifi (`cambioDelCelular`), así que se refrescan igual.
+  final avisos = notificadorCambios ??= NotificadorCambios(db);
+  final sync = ServicioSyncNube(
+    db: db,
+    almacenCuenta: almacen,
+    cliente: cliente,
+    almacenEstado: AlmacenEstadoSyncEnArchivo(soporte.path),
+    alAplicarBajada: avisos.cambioDelCelular,
+  );
   final nube = NubeApp(
     almacen: almacen,
     cliente: cliente,
     copias: copias,
+    sync: sync,
     idDispositivo: idClienteActualizaciones,
     nombreDispositivo: () => Platform.localHostname,
     abrirNavegador: (url) async {
@@ -99,5 +116,6 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
       .avisarYRenovar(cid: await idClienteActualizaciones(), sistema: Platform.operatingSystem)
       .then((canal) => nube.canal = canal));
   copias.iniciarCopiaDiaria();
+  sync.iniciar(cambiosLocales: avisos.cambiosDeLaBase);
   return nube;
 }
