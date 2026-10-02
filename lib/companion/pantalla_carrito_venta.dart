@@ -36,14 +36,11 @@ import 'fila_linea_carrito.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'sesion_abierta_gate.dart';
-import 'tema/chip_icono.dart';
-import 'tema/colores_companion.dart';
 import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
-import 'tema/tema_companion.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 import 'tema/app_bar_companion.dart';
@@ -261,20 +258,6 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  /// Une elegir el medio y cobrar en un solo toque (El dueño, 2026-09-18:
-  /// "para seleccionar si es efectivo, qr o débito se hace al momento de
-  /// tocar y confirmar la venta") — antes eran dos pasos: tocar un medio
-  /// (solo calculaba el total) y recién ahí tocar "Cobrar" aparte. Ahora
-  /// cada botón de medio ES la acción de cobrar; `_elegirMedio` sigue
-  /// existiendo tal cual para cuando cambia el descuento con un medio ya
-  /// elegido (`_recalcularSiHayMedio`), que sí necesita recalcular sin
-  /// volver a cobrar.
-  Future<void> _elegirYCobrar(_MedioVenta medio) async {
-    await _elegirMedio(medio);
-    if (!mounted || _resultado == null) return;
-    await _confirmar();
-  }
-
   void _eliminarLinea(int index) => _actualizarLinea(index, null);
 
   /// `nueva` null = eliminar la línea (mismo criterio que el escritorio:
@@ -368,16 +351,6 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  /// Mantener presionado QR/Débito (El dueño, 2026-09-18: el paso previo de
-  /// "elegir y después Cobrar" que sostenía este atajo desapareció al
-  /// unificar los botones) llama directo a esto, sin pasar por
-  /// `_elegirMedio` — no hace falta calcular el total con Point de por
-  /// medio para algo que nunca lo va a tocar.
-  Future<void> _elegirYCobrarAMano(_MedioVenta medio) async {
-    setState(() => _medio = medio);
-    await _cobrarAMano();
-  }
-
   /// Salta la terminal Point directamente, sin intentar la orden primero
   /// (El dueño, 2026-09-07: "el cobro manual del qr/posnet, es para cargar
   /// las ventas de hoy y seguir cargando mientras tanto") — a diferencia
@@ -412,164 +385,211 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _ventaCobrada(int ventaId, int totalCentavos) async {
+    // Se arma el resumen ANTES de vaciar el carrito: cuántos productos fueron
+    // y cuánto se devuelve dependen de lo que había.
+    final medio = _medio ?? _MedioVenta.efectivo;
+    final productos = widget.carrito.length;
+    final vuelto = medio == _MedioVenta.efectivo
+        ? vueltoCentavos(pagaCentavos: _pagaEfectivoCentavos(totalCentavos), totalCentavos: totalCentavos)
+        : 0;
     widget.carrito.clear();
     _tipoDescuento = TipoDescuento.monto;
     _descuentoCtrl.clear();
     if (!mounted) return;
-    final imprimir = await mostrarHojaVidrio<bool>(
-      context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(IconosPlazoleta.checkCircle, color: context.colores.acento),
-              const SizedBox(width: Espaciado.sm),
-              Text('Venta cobrada', style: Theme.of(context).textTheme.titleLarge),
-            ],
-          ),
-          const SizedBox(height: Espaciado.sm),
-          Text(
-            'Venta #$ventaId — ${formatearARS(totalCentavos)}',
-            style: TextStyle(color: context.colores.textoSecundario),
-          ),
-          const SizedBox(height: Espaciado.lg),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cerrar'),
-                ),
-              ),
-              const SizedBox(width: Espaciado.sm),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Imprimir ticket'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-    if (imprimir == true) {
-      final cliente = widget.cliente;
-      if (cliente == null) {
+    setState(() {
+      _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
+      _paso = _Paso.cobrado;
+    });
+  }
+
+  Future<void> _imprimirTicket(int ventaId) async {
+    final cliente = widget.cliente;
+    if (cliente == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Para imprimir hace falta estar emparejado con la PC.')),
+      );
+      return;
+    }
+    try {
+      await cliente.imprimirTicket(ventaId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo imprimir: ${mensajeDeError(e)}')));
+      }
+    }
+  }
+
+  /// Con cuánto paga en efectivo para el total [total]: lo elegido, y si no
+  /// eligió nada, el primer atajo (el billete que alcanza); sin atajos, justo.
+  int _pagaEfectivoCentavos(int total) {
+    if (_pagaJusto) return total;
+    return _pagaCentavos ?? (atajosDeEfectivo(total).firstOrNull ?? total);
+  }
+
+  /// Pasa a "cómo paga": calcula el total con efectivo, que es lo que se
+  /// elige por defecto, y deja el vuelto sin elegir.
+  Future<void> _irACobro() async {
+    setState(() {
+      _paso = _Paso.cobro;
+      _pagaCentavos = null;
+      _pagaJusto = false;
+    });
+    await _elegirMedio(_MedioVenta.efectivo);
+  }
+
+  void _volverAlCarrito() => setState(() {
+    _paso = _Paso.carrito;
+    _error = null;
+  });
+
+  /// Escanea un código y suma el producto al carrito: el mismo camino que
+  /// tocar un resultado de la búsqueda (`_alTocarResultadoBusqueda`).
+  Future<void> _escanearYAgregar() async {
+    if (_escaneando) return;
+    final codigo = await escanearCodigo(context);
+    if (codigo == null || !mounted) return;
+    setState(() => _escaneando = true);
+    try {
+      final producto = await widget.servicio.porCodigoBarras(codigo);
+      if (!mounted) return;
+      if (producto == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay un producto con ese código.')));
+      } else {
+        _alTocarResultadoBusqueda(producto);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensajeDeError(e))));
+    } finally {
+      if (mounted) setState(() => _escaneando = false);
+    }
+  }
+
+  /// REGLAS-NEGOCIO §3: cuando el vuelto da $100 exactos se agrega el
+  /// producto de vuelto (el caramelo) en vez de dar el cambio. Es una venta
+  /// normal: entra como línea del carrito y el total se recalcula.
+  Future<void> _agregarCaramelo() async {
+    try {
+      final config = await widget.servicio.configuracionNegocio();
+      final id = config.productoVueltoId;
+      if (id == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Para imprimir hace falta estar emparejado con la PC.'),
-            ),
+            const SnackBar(content: Text('No hay un producto de vuelto configurado (Gestión → Configuración).')),
           );
         }
         return;
       }
-      try {
-        await cliente.imprimirTicket(ventaId);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('No se pudo imprimir: ${mensajeDeError(e)}'),
-            ),
-          );
-        }
+      final todos = await widget.servicio.productos();
+      final producto = todos.where((x) => x.id == id).firstOrNull;
+      if (!mounted) return;
+      if (producto == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se encontró el producto de vuelto.')));
+        return;
       }
+      _alTocarResultadoBusqueda(producto);
+      setState(() {
+        _pagaCentavos = null;
+        _pagaJusto = false;
+      });
+      await _elegirMedio(_MedioVenta.efectivo);
+    } catch (e) {
+      if (mounted) setState(() => _error = mensajeDeError(e));
     }
-    if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final buscando = _busquedaCtrl.text.trim().isNotEmpty;
-    return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Carrito', etiquetaSalida: 'Cerrar'),
-      body: SafeArea(
-        child: _sesionCajaId == null
-            ? SesionAbiertaGate(
-                cliente: widget.servicio,
-                usuarioId: widget.usuarioId,
-                onLista: (id) => setState(() => _sesionCajaId = id),
-              )
-            : Column(
-                children: [
-                  _campoBuscador(context),
-                  // Mientras se busca, el carrito queda oculto detrás de
-                  // los resultados (no entran los dos juntos en la
-                  // pantalla) — esta franja chica es la única señal de que
-                  // lo que ya se agregó sigue ahí, sin tener que borrar la
-                  // búsqueda para confirmarlo (El dueño, 2026-09-14: "no hay
-                  // espacio").
-                  if (buscando && widget.carrito.isNotEmpty)
-                    _resumenCarritoCompacto(context),
-                  Expanded(
-                    child: buscando
-                        ? _listaResultadosBusqueda(context)
-                        : _listaLineas(context),
+    return PopScope(
+      // En "cómo paga" volver es volver al carrito, no salir de la venta.
+      canPop: _paso != _Paso.cobro,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _volverAlCarrito();
+      },
+      child: Scaffold(
+        appBar: const AppBarCompanion(titulo: 'Carrito', etiquetaSalida: 'Cerrar'),
+        body: SafeArea(
+          child: _sesionCajaId == null
+              ? SesionAbiertaGate(
+                  cliente: widget.servicio,
+                  usuarioId: widget.usuarioId,
+                  onLista: (id) => setState(() => _sesionCajaId = id),
+                )
+              : switch (_paso) {
+                  _Paso.carrito => Column(
+                    children: [
+                      _campoBuscador(context),
+                      // Mientras se busca, el carrito queda oculto detrás de
+                      // los resultados (no entran los dos juntos en la
+                      // pantalla) — esta franja chica es la única señal de que
+                      // lo que ya se agregó sigue ahí, sin tener que borrar la
+                      // búsqueda para confirmarlo (El dueño, 2026-09-14: "no hay
+                      // espacio").
+                      if (buscando && widget.carrito.isNotEmpty) _resumenCarritoCompacto(context),
+                      Expanded(child: buscando ? _listaResultadosBusqueda(context) : _listaLineas(context)),
+                      if (!buscando) _panelTotal(context),
+                    ],
                   ),
-                  if (!buscando) _panelTotal(context),
-                ],
-              ),
+                  _Paso.cobro => _vistaCobro(context),
+                  _Paso.cobrado => _vistaCobrado(context),
+                },
+        ),
       ),
     );
   }
 
   Widget _campoBuscador(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.sm,
-      ),
-      child: TextField(
-        controller: _busquedaCtrl,
-        focusNode: _busquedaFocus,
-        // El dueño, 2026-09-19: "abre siempre el teclado automáticamente, cosa
-        // que solo debería pasar cuando se entra la primera vez" — "primera
-        // vez" es empezar una venta nueva (carrito vacío), no cada
-        // reingreso a esta pantalla con líneas ya cargadas.
-        autofocus: widget.carrito.isEmpty,
-        decoration: InputDecoration(
-          hintText: 'Agregar producto…',
-          prefixIcon: const Icon(IconosPlazoleta.search),
-          suffixIcon: _buscando
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : _busquedaCtrl.text.isNotEmpty
-              ? IconButton(
-                  tooltip: 'Borrar la búsqueda',
-                  icon: const Icon(IconosPlazoleta.clear),
-                  onPressed: () {
-                    _debouncerBusqueda.cancelar();
-                    _busquedaCtrl.clear();
-                    setState(() {
-                      _resultadosBusqueda = [];
-                      _gramosBusqueda = null;
-                    });
-                    _busquedaFocus.requestFocus();
-                  },
-                )
-              : null,
-        ),
-        onChanged: (texto) {
-          setState(() {}); // para que aparezca/desaparezca el ícono de limpiar
-          if (texto.trim().isEmpty) {
-            _debouncerBusqueda.cancelar();
-            _buscar(texto);
-          } else {
-            _debouncerBusqueda.ejecutar(() => _buscar(texto));
-          }
-        },
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _busquedaCtrl,
+              focusNode: _busquedaFocus,
+              // El dueño, 2026-09-19: "abre siempre el teclado automáticamente, cosa
+              // que solo debería pasar cuando se entra la primera vez" — "primera
+              // vez" es empezar una venta nueva (carrito vacío), no cada
+              // reingreso a esta pantalla con líneas ya cargadas.
+              autofocus: widget.carrito.isEmpty,
+              decoration: InputDecoration(
+                hintText: 'Agregar producto…',
+                prefixIcon: const Icon(IconosPlazoleta.search),
+                suffixIcon: _buscando
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : _busquedaCtrl.text.isNotEmpty
+                    ? IconButton(
+                        tooltip: 'Borrar la búsqueda',
+                        icon: const Icon(IconosPlazoleta.clear),
+                        onPressed: () {
+                          _debouncerBusqueda.cancelar();
+                          _busquedaCtrl.clear();
+                          setState(() {
+                            _resultadosBusqueda = [];
+                            _gramosBusqueda = null;
+                          });
+                          _busquedaFocus.requestFocus();
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (texto) {
+                setState(() {}); // para que aparezca/desaparezca el ícono de limpiar
+                if (texto.trim().isEmpty) {
+                  _debouncerBusqueda.cancelar();
+                  _buscar(texto);
+                } else {
+                  _debouncerBusqueda.ejecutar(() => _buscar(texto));
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: Espaciado.sm),
+          BotonEscanerCampo(onTap: _escanearYAgregar, cargando: _escaneando),
+        ],
       ),
     );
   }
@@ -683,208 +703,234 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
-  /// Reducido a fondo (El dueño, 2026-09-18: "el carrito ocupa demasiado
-  /// espacio con los botones y poco para los productos") — el descuento
-  /// pasó de ser una fila propia (botón de 56px + su separación) a un ícono
-  /// chico arriba a la derecha de la tarjeta del total; los botones de
-  /// medio de pago bajaron de 56 a 44px (son un selector, no el CTA
-  /// principal); los huecos entre secciones bajaron de `md` a `sm`. Solo
-  /// "Cobrar" conserva el alto completo — es la única acción que tiene que
-  /// pesar.
+  /// Abajo del carrito: el atajo de descuento y la cantidad de productos, y
+  /// la barra negra con el total y "Cobrar", que lleva a elegir cómo paga.
   Widget _panelTotal(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
     final subtotal = Venta(lineas: widget.carrito).subtotalCentavos;
-    final sinCarrito = widget.carrito.isEmpty || _calculando || _cobrando;
+    final vacio = widget.carrito.isEmpty || _calculando || _cobrando;
+    final n = widget.carrito.length;
     return Padding(
       padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_error != null) ...[
-            ErrorEnLinea(_error!),
-            const SizedBox(height: Espaciado.sm),
-          ],
-          // La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18:
-          // "no entendiste, quiero que el botón del precio sea COBRAR") —
-          // no una tarjeta con el total y, aparte, un botón separado abajo:
-          // tocar el precio directamente abre el menú de medios, y elegir
-          // uno ahí calcula y cobra. El único control que queda aparte
-          // adentro de la tarjeta es el ícono de descuento (tiene su propio
-          // toque, no dispara el menú de cobro).
-          _tarjetaCobrar(context, subtotal: subtotal, deshabilitado: sinCarrito),
+          Row(
+            children: [
+              ActionChip(
+                shape: _formaChip,
+                side: BorderSide.none,
+                backgroundColor: _fondoChip(context),
+                onPressed: widget.carrito.isEmpty ? null : _abrirHojaDescuento,
+                avatar: Icon(_valorDescuentoIngresado > 0 ? IconosPlazoleta.sellActivo : IconosPlazoleta.add, size: 18),
+                label: Text(_valorDescuentoIngresado > 0 ? 'Descuento aplicado' : 'Descuento'),
+              ),
+              const Spacer(),
+              Text(n == 1 ? '1 producto' : '$n productos', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
+            ],
+          ),
+          const SizedBox(height: Espaciado.sm),
+          BloqueHero(
+            animar: false,
+            padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.md, Espaciado.md, Espaciado.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Total', style: textTheme.labelLarge?.copyWith(color: Colors.white.withValues(alpha: 0.75), fontWeight: Pesos.fuerte)),
+                      Text(formatearARS(subtotal), style: textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                    ],
+                  ),
+                ),
+                FilledButton(
+                  // El tema estira los botones a todo el ancho: dentro de una fila hay que darle uno propio.
+                  style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF121317), minimumSize: const Size(128, 56)),
+                  onPressed: vacio ? null : _irACobro,
+                  child: const Text('Cobrar'),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  /// La tarjeta del precio ES el botón de cobrar (El dueño, 2026-09-18: "quiero
-  /// que el botón del precio sea COBRAR") — un solo elemento, no una
-  /// tarjeta con el total y un botón separado debajo. Tocarla abre una hoja
-  /// con Efectivo/QR/Débito (cada uno con su color propio) más, separado
-  /// por una línea, "cobrar a mano" para QR/Débito (saltar la terminal
-  /// Point directo). Elegir cualquier ítem calcula el total con ese medio y
-  /// cobra en el mismo gesto. El ícono de descuento sigue siendo un control
-  /// propio adentro, con su toque independiente del resto de la tarjeta.
-  ///
-  /// Antes esto abría un `PopupMenuButton` (el desplegable nativo de
-  /// Android) — El dueño, 2026-09-19: "está bug el dropdown del método de
-  /// pago". Ese widget está pensado para un ícono chico como disparador;
-  /// acá el disparador es la tarjeta entera (bien ancha, cerca del borde
-  /// inferior de la pantalla), y su cálculo de posición no está pensado
-  /// para eso — además quedaba como el único menú "de fábrica" en una app
-  /// que ya convirtió todo lo demás a hojas de vidrio. Una hoja
-  /// (`mostrarHojaVidrio`) es consistente con el resto Y no depende de la
-  /// geometría del botón que la abre.
-  Widget _tarjetaCobrar(BuildContext context, {required int subtotal, required bool deshabilitado}) {
-    final acentos = context.acentos;
-    final textoSobre = acentos.textoSobreColor;
-    final procesando = _calculando || _cobrando;
-    final resultado = _resultado;
-    final hayDesglose = resultado != null &&
-        (resultado.recargoCigarrillosCentavos > 0 ||
-            resultado.descuentoCentavos > 0 ||
-            resultado.redondeoCentavos > 0);
+  String _nombreMedio(_MedioVenta m) => switch (m) {
+    _MedioVenta.efectivo => 'Efectivo',
+    _MedioVenta.qr => 'QR de Mercado Pago',
+    _MedioVenta.debito => 'Tarjeta de débito',
+  };
 
-    return BloqueHero(
-      animar: false,
-      padding: EdgeInsets.zero,
-      child: Presionable(
-        radio: radioSuperficieCompanion,
-        onTap: deshabilitado ? null : () => _abrirHojaCobrar(context),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.md, Espaciado.sm, Espaciado.md),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      formatearARS(resultado?.totalCentavos ?? subtotal),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: textoSobre),
-                    ),
-                    Text(
-                      hayDesglose
-                          ? [
-                              if (resultado.recargoCigarrillosCentavos > 0)
-                                'Recargo ${formatearARS(resultado.recargoCigarrillosCentavos)}',
-                              if (resultado.descuentoCentavos > 0)
-                                'Desc. -${formatearARS(resultado.descuentoCentavos)}',
-                              if (resultado.redondeoCentavos > 0)
-                                'Redondeo ${formatearARS(resultado.redondeoCentavos)}',
-                            ].join(' · ')
-                          : 'Tocá para cobrar',
-                      style: TextStyle(
-                        color: textoSobre.withValues(alpha: 0.8),
-                        fontSize: 12,
-                        fontWeight: hayDesglose ? Pesos.regular : Pesos.medium,
-                      ),
-                    ),
-                  ],
-                ),
+  /// "¿Cómo paga?": el total ya calculado con el medio elegido, la lista de
+  /// medios (sin Mixto en el celular, decisión del dueño del 2026-09-07) y,
+  /// con efectivo, los atajos de con cuánto paga y el vuelto en vivo.
+  Widget _vistaCobro(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final resultado = _resultado;
+    final total = resultado?.totalCentavos;
+    final medio = _medio ?? _MedioVenta.efectivo;
+    final hayDesglose = resultado != null &&
+        (resultado.recargoCigarrillosCentavos > 0 || resultado.descuentoCentavos > 0 || resultado.redondeoCentavos > 0);
+    final puedeConfirmar = total != null && !_calculando && !_cobrando;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ActionChip(
+              shape: _formaChip,
+              side: BorderSide.none,
+              backgroundColor: _fondoChip(context),
+              onPressed: _cobrando ? null : _volverAlCarrito,
+              avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+              label: const Text('Volver'),
+            ),
+          ),
+          const SizedBox(height: Espaciado.md),
+          Text('Total a cobrar', style: textTheme.labelLarge?.copyWith(color: colores.textoSecundario, fontWeight: Pesos.fuerte)),
+          Text(total == null ? '…' : formatearARS(total), style: textTheme.displayMedium),
+          if (hayDesglose)
+            Text(
+              [
+                if (resultado.recargoCigarrillosCentavos > 0) 'Recargo ${formatearARS(resultado.recargoCigarrillosCentavos)}',
+                if (resultado.descuentoCentavos > 0) 'Desc. -${formatearARS(resultado.descuentoCentavos)}',
+                if (resultado.redondeoCentavos > 0) 'Redondeo ${formatearARS(resultado.redondeoCentavos)}',
+              ].join(' · '),
+              style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario),
+            ),
+          const SizedBox(height: Espaciado.lg),
+          Text('¿Cómo paga?', style: textTheme.titleMedium),
+          const SizedBox(height: Espaciado.sm),
+          for (final m in _MedioVenta.values)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Espaciado.sm),
+              child: _OpcionMedio(
+                texto: _nombreMedio(m),
+                elegido: medio == m,
+                onTap: _cobrando ? null : () => _elegirMedio(m),
               ),
-              _botonDescuento(context, deshabilitado: deshabilitado),
-              if (procesando)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm),
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: textoSobre),
+            ),
+          if (medio == _MedioVenta.efectivo && total != null) _bloqueEfectivo(context, total),
+          if (medio != _MedioVenta.efectivo)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _cobrando ? null : _cobrarAMano,
+                child: const Text('Cobrar a mano (sin terminal)'),
+              ),
+            ),
+          const Spacer(),
+          if (_error != null) ...[ErrorEnLinea(_error!), const SizedBox(height: Espaciado.sm)],
+          FilledButton(
+            onPressed: puedeConfirmar ? _confirmar : null,
+            child: _cobrando
+                ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colores.acentoTexto))
+                : const Text('Confirmar cobro'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Atajos de con cuánto paga y el vuelto: orientación para quien cobra, no
+  /// se registra (la caja cuenta lo cobrado). Con exactamente $100 de vuelto
+  /// ofrece el caramelo (REGLAS-NEGOCIO §3).
+  Widget _bloqueEfectivo(BuildContext context, int total) {
+    final colores = context.colores;
+    final paga = _pagaEfectivoCentavos(total);
+    final vuelto = vueltoCentavos(pagaCentavos: paga, totalCentavos: total);
+    final atajos = atajosDeEfectivo(total);
+    return Superficie(
+      padding: const EdgeInsets.all(Espaciado.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: Espaciado.sm,
+            runSpacing: Espaciado.sm,
+            children: [
+              ChoiceChip(
+                shape: _formaChip,
+                side: BorderSide.none,
+                showCheckmark: false,
+                backgroundColor: colores.fondo,
+                selectedColor: colores.acento,
+                labelStyle: TextStyle(fontWeight: Pesos.fuerte, color: _pagaJusto ? colores.acentoTexto : colores.textoPrimario),
+                label: const Text('Justo'),
+                selected: _pagaJusto,
+                onSelected: (_) => setState(() => _pagaJusto = true),
+              ),
+              for (final monto in atajos)
+                ChoiceChip(
+                  shape: _formaChip,
+                  side: BorderSide.none,
+                  showCheckmark: false,
+                  backgroundColor: colores.fondo,
+                  selectedColor: colores.acento,
+                  labelStyle: TextStyle(
+                    fontWeight: Pesos.fuerte,
+                    color: !_pagaJusto && paga == monto ? colores.acentoTexto : colores.textoPrimario,
                   ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(right: Espaciado.sm),
-                  child: Icon(IconosPlazoleta.arrowForwardIosRounded, size: 16, color: textoSobre.withValues(alpha: 0.85)),
+                  label: Text(formatearARS(monto)),
+                  selected: !_pagaJusto && paga == monto,
+                  onSelected: (_) => setState(() {
+                    _pagaJusto = false;
+                    _pagaCentavos = monto;
+                  }),
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _abrirHojaCobrar(BuildContext context) async {
-    final colores = context.colores;
-    final acentos = context.acentos;
-    await mostrarHojaVidrio<void>(
-      context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Cobrar', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: Espaciado.md),
-          _filaMedio(
-            context,
-            'Efectivo',
-            colores.acento,
-            IconosPlazoleta.paymentsOutlined,
-            () => _elegirYCobrar(_MedioVenta.efectivo),
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            vuelto < 0 ? 'Falta ${formatearARS(-vuelto)}' : 'Vuelto ${formatearARS(vuelto)}',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: vuelto < 0 ? colores.error : const Color(0xFF1B873F)),
           ),
-          _filaMedio(
-            context,
-            'QR',
-            acentos.qr,
-            IconosPlazoleta.qrCode,
-            () => _elegirYCobrar(_MedioVenta.qr),
-          ),
-          _filaMedio(
-            context,
-            'Débito',
-            acentos.debito,
-            IconosPlazoleta.creditCard,
-            () => _elegirYCobrar(_MedioVenta.debito),
-          ),
-          Divider(color: colores.borde, height: Espaciado.xl),
-          _filaMedioAMano(context, 'QR sin terminal', () => _elegirYCobrarAMano(_MedioVenta.qr)),
-          _filaMedioAMano(context, 'Débito sin terminal', () => _elegirYCobrarAMano(_MedioVenta.debito)),
+          if (vueltoEsCaramelo(vuelto))
+            TextButton(onPressed: _agregarCaramelo, child: const Text('Agregar caramelo en vez del vuelto')),
         ],
       ),
     );
   }
 
-  Widget _filaMedio(
-    BuildContext context,
-    String texto,
-    Color color,
-    IconData icono,
-    VoidCallback onTap,
-  ) {
-    return Presionable(
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-        child: Row(
-          children: [
-            ChipIcono(icono: icono, color: color),
-            const SizedBox(width: Espaciado.md),
-            Text(texto, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _filaMedioAMano(BuildContext context, String texto, VoidCallback onTap) {
+  /// La venta ya asentada: total, cómo se cobró y, en efectivo, el vuelto.
+  Widget _vistaCobrado(BuildContext context) {
     final colores = context.colores;
-    return Presionable(
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-        child: Row(
-          children: [
-            ChipIcono(icono: IconosPlazoleta.editNote, color: colores.textoTenue),
-            const SizedBox(width: Espaciado.md),
-            Text(texto, style: TextStyle(color: colores.textoSecundario)),
-          ],
-        ),
+    final textTheme = Theme.of(context).textTheme;
+    final c = _cobrado!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.xl, Espaciado.lg, Espaciado.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(color: colores.acento, shape: BoxShape.circle),
+            child: Icon(IconosPlazoleta.check, color: colores.acentoTexto, size: 36),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          Text('Venta cobrada', style: textTheme.displaySmall),
+          Text(formatearARS(c.totalCentavos), style: textTheme.displayMedium),
+          const SizedBox(height: Espaciado.sm),
+          Text(
+            '${_nombreMedio(c.medio) == 'Efectivo' ? 'Efectivo' : _nombreMedio(c.medio)} · ${c.productos == 1 ? '1 producto' : '${c.productos} productos'}',
+            style: textTheme.bodyLarge?.copyWith(color: colores.textoSecundario),
+          ),
+          if (c.medio == _MedioVenta.efectivo && c.vueltoCentavos > 0)
+            Text('Vuelto ${formatearARS(c.vueltoCentavos)}', style: textTheme.titleLarge?.copyWith(color: const Color(0xFF1B873F))),
+          const Spacer(),
+          OutlinedButton(onPressed: () => _imprimirTicket(c.ventaId), child: const Text('Imprimir ticket')),
+          const SizedBox(height: Espaciado.sm),
+          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Listo')),
+        ],
       ),
     );
   }
@@ -908,22 +954,6 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     return seleccionado
         ? FilledButton(onPressed: deshabilitado ? null : onPressed, child: Text(texto))
         : OutlinedButton(onPressed: deshabilitado ? null : onPressed, child: Text(texto));
-  }
-
-  /// Ícono chico con el valor cargado si ya hay uno — antes era un
-  /// `OutlinedButton.icon` de ancho completo en su propia fila (El dueño,
-  /// 2026-09-18: "el carrito ocupa demasiado espacio con los botones");
-  /// ahora vive adentro de la tarjeta del total, a la derecha del número.
-  Widget _botonDescuento(BuildContext context, {required bool deshabilitado}) {
-    final valor = _valorDescuentoIngresado;
-    return IconButton(
-      onPressed: deshabilitado ? null : _abrirHojaDescuento,
-      icon: Icon(
-        valor > 0 ? IconosPlazoleta.sellActivo : IconosPlazoleta.sellOutlined,
-        color: context.acentos.textoSobreColor,
-      ),
-      tooltip: 'Descuento',
-    );
   }
 
   /// El `setState` final es lo que hace que el botón (que vive en la
@@ -998,5 +1028,50 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       ),
     );
     if (mounted) setState(() {});
+  }
+}
+
+
+/// Estilo común de los chips de esta pantalla (mock completo): píldora gris
+/// sin borde y, la elegida, en tinta con letra clara.
+OutlinedBorder get _formaChip => const StadiumBorder();
+
+Color _fondoChip(BuildContext context) => context.colores.fondoBloque;
+
+/// Una fila de la lista "¿Cómo paga?": píldora gris con un círculo de
+/// selección; la elegida lleva borde de tinta.
+class _OpcionMedio extends StatelessWidget {
+  const _OpcionMedio({required this.texto, required this.elegido, required this.onTap});
+
+  final String texto;
+  final bool elegido;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Presionable(
+      radio: 999,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+        decoration: BoxDecoration(
+          color: colores.fondoBloque,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: elegido ? colores.acento : Colors.transparent, width: 2),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(texto, style: Theme.of(context).textTheme.titleMedium)),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: elegido ? colores.acento : colores.textoTenue, width: 2)),
+              child: elegido ? Center(child: Container(width: 12, height: 12, decoration: BoxDecoration(color: colores.acento, shape: BoxShape.circle))) : null,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
