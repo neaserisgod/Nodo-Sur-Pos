@@ -1675,3 +1675,16 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
 - **Volver atrás no existe en Android**: una versión más vieja no se instala encima de una más nueva. Si un APK sale mal, se publica el arreglo con un `build` MÁS ALTO, y la mala se bloquea o se baja de rollout desde `/admin → Versiones`.
 - **El celular no depende de la versión de la PC para actualizarse**: `revisarActualizacion` le pregunta al sitio con su propia versión (`consultarSitio`). Comparar contra la PC (`/companion/version`) es solo el plan B sin internet, y esa versión sale del `.apk` que sirve la PC por el script local, no de la app de escritorio.
 - Elegir el número: mayor que el último APK publicado (hoy 2118). Conviene un rango propio y claro (por ejemplo, seguir desde el último y subir de a uno).
+
+## Cobrar con la terminal por el servidor, con el Mercado Pago del negocio (2026-10-02)
+
+- **Qué**: el cobro QR/débito ya no depende de la PC ni del access token cargado en cada equipo. El negocio conecta SU Mercado Pago
+  una vez en horsepos.com/negocio (OAuth); el servidor guarda el token cifrado y hace de proxy de las órdenes Point.
+  El token **nunca baja a un dispositivo**: PC y celular piden al sitio crear/consultar/cancelar la orden con su token de dispositivo.
+- **Regla de elección** (`elegirPasarelaPoint`, `servicios/pasarela_point_nube.dart`): si el equipo tiene access token Y terminal
+  cargados, cobra directo como siempre (la PC que ya andaba no cambia ni un paso). Si no, y el dispositivo está vinculado y el negocio
+  conectó Mercado Pago con terminal elegida, cobra por el servidor. Si falta algo, el mensaje dice qué falta y quién lo arregla.
+  Consultar y cancelar una orden ya creada solo necesitan el token (`soloToken`), no la terminal.
+- **Celular sin PC**: `PuertoLocal` usa la misma elección; ya no hace falta estar en el wifi del local para cobrar con la terminal.
+- **Solo el dueño conecta**: el sitio lo exige; las apps muestran el estado (`EstadoMercadoPago`) y abren /negocio.
+- Misma regla de siempre: en la caja QR y débito siguen siendo UN medio (Mercado Pago); el canal es dato del pago.

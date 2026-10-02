@@ -12,6 +12,7 @@ import '../../servicios/cuenta_nube.dart';
 import '../../servicios/nube.dart';
 import '../../servicios/sync_nube.dart';
 import '../comun/botones.dart';
+import '../comun/estado_mercado_pago.dart';
 import '../comun/fechas.dart';
 import '../respaldo/dialogo_confirmar_restaurar.dart';
 import '../tema/iconos.dart';
@@ -222,6 +223,8 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
           Text('La última copia automática no se pudo guardar: ${ultimo.mensaje}', style: TextStyle(color: context.colores.error)),
         ],
         ...mensajes,
+        const SizedBox(height: Espaciado.lg),
+        EstadoMercadoPago(leer: () async => c.nube.cliente.estadoMp((await c.nube.almacen.leer())!.token)),
         const SizedBox(height: Espaciado.lg),
         Text('Copias en tu cuenta', style: textTheme.titleSmall),
         const SizedBox(height: Espaciado.sm),

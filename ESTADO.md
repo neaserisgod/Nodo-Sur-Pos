@@ -313,6 +313,9 @@ Aplicación a las pantallas:
 
 ### Fase 12 — cobro por terminal Point (cerrada)
 
+> 2026-10-02: además del access token local, se puede cobrar por el servidor con el Mercado Pago que el negocio conecta en
+> horsepos.com/negocio (PC sin token y celular sin PC). Ver `DECISIONES.md`.
+
 Cobrar una venta por QR o Débito manda la orden a la terminal Point del
 sistema (`configuracionTabla.mpTerminalCobroId`) en vez de tocar el monto a
 mano — dos posnets físicos separados, uno de cobro manual (ajeno a la app)

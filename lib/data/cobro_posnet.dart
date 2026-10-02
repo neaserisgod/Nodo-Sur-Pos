@@ -206,3 +206,52 @@ Map<String, dynamic>? _primerError(Map<String, dynamic>? cuerpo) {
   }
   return null;
 }
+
+/// Por dónde sale el cobro a la terminal: directo contra Mercado Pago con el access token cargado en la PC
+/// ([PasarelaPointDirecta], lo de siempre) o a través del servidor de Nodo Sur con la cuenta conectada del negocio
+/// (`servicios/pasarela_point_nube.dart`). Quien cobra (la pantalla de venta, el servidor del celular, el celular sin PC) no
+/// tiene que saber cuál es: pide una [PasarelaPoint] y usa estas tres operaciones.
+abstract class PasarelaPoint {
+  Future<OrdenCobroCreada> crear({
+    required String externalReference,
+    required String idempotencyKey,
+    required int montoCentavos,
+    required String canal,
+  });
+
+  /// El `status` actual de la orden (se clasifica con `clasificarEstadoOrden`).
+  Future<String> consultar(String ordenIdMp);
+
+  /// Lanza [CobroPosnetException] con el mensaje de negocio si la terminal ya recibió la orden.
+  Future<void> cancelar(String ordenIdMp);
+}
+
+/// El camino de siempre: access token y terminal cargados en la PC, llamando a Mercado Pago directamente.
+class PasarelaPointDirecta implements PasarelaPoint {
+  const PasarelaPointDirecta({required this.accessToken, required this.terminalId, this.client});
+  final String accessToken;
+  final String terminalId;
+  final http.Client? client;
+
+  @override
+  Future<OrdenCobroCreada> crear({
+    required String externalReference,
+    required String idempotencyKey,
+    required int montoCentavos,
+    required String canal,
+  }) => crearOrdenCobro(
+    accessToken: accessToken,
+    terminalId: terminalId,
+    externalReference: externalReference,
+    idempotencyKey: idempotencyKey,
+    montoCentavos: montoCentavos,
+    canal: canal,
+    client: client,
+  );
+
+  @override
+  Future<String> consultar(String ordenIdMp) => consultarOrden(accessToken: accessToken, ordenIdMp: ordenIdMp, client: client);
+
+  @override
+  Future<void> cancelar(String ordenIdMp) => cancelarOrdenCobro(accessToken: accessToken, ordenIdMp: ordenIdMp, client: client);
+}

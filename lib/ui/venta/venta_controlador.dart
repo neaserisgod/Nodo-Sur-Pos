@@ -12,6 +12,8 @@ import 'package:http/http.dart' as http;
 
 import '../../data/busqueda_productos.dart';
 import '../../data/cobro_posnet.dart';
+import '../../servicios/nube.dart' show nubeApp;
+import '../../servicios/pasarela_point_nube.dart';
 import '../../data/database.dart';
 import '../../data/normalizacion_texto.dart';
 import '../../data/repositorio_arqueo_intermedio.dart';
@@ -944,15 +946,19 @@ class VentaControlador extends ChangeNotifier {
   ///
   /// Tira `CobroPosnetException` si falta configurar la terminal de cobro,
   /// o si la API responde con un error — el diálogo decide qué mostrar.
+  Future<PasarelaPoint> _pasarelaPoint({bool soloToken = false}) => elegirPasarelaPoint(
+    soloToken: soloToken,
+    accessToken: configuracion?.mpAccessToken,
+    terminalId: configuracion?.mpTerminalCobroId,
+    almacen: nubeApp?.almacen,
+    cliente: nubeApp?.cliente,
+    directa: (token, terminal) => PasarelaPointDirecta(accessToken: token, terminalId: terminal, client: httpClientDePrueba),
+  );
+
   Future<({int ordenPendienteId, String ordenIdMp})>
   iniciarCobroPosnet() async {
-    final accessToken = configuracion?.mpAccessToken;
-    final terminalId = configuracion?.mpTerminalCobroId;
-    if (accessToken == null || terminalId == null) {
-      throw const CobroPosnetException(
-        'Configurá el access token y la terminal de cobro en Configuración → Impresión antes de cobrar por acá.',
-      );
-    }
+    // Directo con el access token de esta PC si está cargado (lo de siempre); si no, por el servidor con la cuenta conectada.
+    final pasarela = await _pasarelaPoint();
 
     final canal = canalElegido!;
     final monto = montoParaPosnet;
@@ -962,14 +968,11 @@ class VentaControlador extends ChangeNotifier {
       canal: canal,
       montoCentavos: monto,
     );
-    final creada = await crearOrdenCobro(
-      accessToken: accessToken,
-      terminalId: terminalId,
+    final creada = await pasarela.crear(
       externalReference: pendiente.externalReference,
       idempotencyKey: pendiente.idempotencyKey,
       montoCentavos: monto,
       canal: canal,
-      client: httpClientDePrueba,
     );
     await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
     return (ordenPendienteId: pendiente.id, ordenIdMp: creada.ordenIdMp);
@@ -979,11 +982,7 @@ class VentaControlador extends ChangeNotifier {
   /// clasifica (`lib/domain/cobro_posnet.dart`). El diálogo decide cuántas
   /// veces llamar a esto y cuándo darse por vencido (timeout de 60s).
   Future<ResultadoOrdenCobro> consultarEstadoPosnet(String ordenIdMp) async {
-    final estado = await consultarOrden(
-      accessToken: configuracion!.mpAccessToken!,
-      ordenIdMp: ordenIdMp,
-      client: httpClientDePrueba,
-    );
+    final estado = await (await _pasarelaPoint(soloToken: true)).consultar(ordenIdMp);
     return clasificarEstadoOrden(estado);
   }
 
@@ -1029,11 +1028,7 @@ class VentaControlador extends ChangeNotifier {
     String? ordenIdMp,
   }) async {
     if (ordenIdMp != null) {
-      await cancelarOrdenCobro(
-        accessToken: configuracion!.mpAccessToken!,
-        ordenIdMp: ordenIdMp,
-        client: httpClientDePrueba,
-      );
+      await (await _pasarelaPoint(soloToken: true)).cancelar(ordenIdMp);
     }
     await marcarOrdenResuelta(db, id: ordenPendienteId, estado: 'cancelada');
   }

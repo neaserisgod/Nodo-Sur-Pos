@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
+import '../ui/comun/estado_mercado_pago.dart';
 import '../ui/tema/iconos.dart';
 import '../ui/tema/tokens.dart';
 import 'conmutador_sync.dart';
@@ -192,6 +193,10 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
                       onPressed: _ocupado ? null : () => widget.alContinuar!(context),
                       child: Text(_cuenta == null ? 'Vincular más tarde' : 'Continuar'),
                     ),
+                  ],
+                  if (_cuenta case final cuenta?) ...[
+                    const SizedBox(height: Espaciado.lg),
+                    Superficie(child: EstadoMercadoPago(leer: () => _sync.cliente.estadoMp(cuenta.token))),
                   ],
                   const SizedBox(height: Espaciado.xl),
                   Text(
