@@ -50,7 +50,6 @@ import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'base_local.dart';
-import 'boton_escaner_companion.dart';
 import 'cliente_companion.dart';
 import 'dialogo_arqueo_intermedio_companion.dart';
 import 'dialogo_cierre_companion.dart';
@@ -120,11 +119,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   int? _usuarioId;
   final List<LineaVenta> _carrito = [];
 
-  /// Para el desplegable del escáner central (`BotonEscanerCompanion`) —
-  /// se piden una sola vez acá, no en cada escaneo, para no demorar el
-  /// flujo con un round-trip extra cada vez que se toca el botón.
-  List<ProveedorCompanion> _proveedores = [];
-  List<CategoriaCompanion> _categorias = [];
 
   /// true si pasaron 2hs desde el último arqueo — muestra el aviso (no
   /// bloqueante, el dueño 2026-09-15) en "Inicio", nunca abre nada solo.
@@ -155,8 +149,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _revisarSesion();
     _subCambiosSync = avisosCambiosCompanion.listen((_) {
       _revisarSesion();
-      final servicio = _servicio;
-      if (servicio != null) _cargarCatalogoParaEscaner(servicio);
     });
     // Aviso de arqueo cada 2hs (El dueño, 2026-09-13: "sincronizado con la app
     // desktop"; 2026-09-15: "que se cambie a una sugerencia únicamente" —
@@ -213,7 +205,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _pcEmparejada = conexion != null;
       _modoUso = modo;
     });
-    _cargarCatalogoParaEscaner(servicio);
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
@@ -253,26 +244,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     final ServicioCompanion servicio =
         conectada ? ClienteCompanion(conexion) : ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()));
     setState(() => _servicio = servicio);
-    _cargarCatalogoParaEscaner(servicio);
     _revisarSesion();
-  }
-
-  /// Silencioso si falla (sin diagnóstico visible, mismo criterio que
-  /// `_revisarActualizacion`) — sin proveedores/categorías el escáner
-  /// central sigue funcionando igual, el formulario los deja en "Sin
-  /// proveedor"/"Sin categoría".
-  Future<void> _cargarCatalogoParaEscaner(ServicioCompanion servicio) async {
-    try {
-      final resultados = await Future.wait([servicio.proveedores(), servicio.categorias()]);
-      if (mounted) {
-        setState(() {
-          _proveedores = resultados[0] as List<ProveedorCompanion>;
-          _categorias = resultados[1] as List<CategoriaCompanion>;
-        });
-      }
-    } catch (_) {
-      // ver comentario de arriba
-    }
   }
 
   /// Resuelve su propio [ServicioCompanion], igual que `_iniciarConexion`
@@ -436,8 +408,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     final servicio = await resolverServicioCompanion(conexion);
     if (mounted) {
       setState(() => _servicio = servicio);
-      _cargarCatalogoParaEscaner(servicio);
-    }
+      }
   }
 
   // El dueño, 2026-09-07: "necesito que saques la versión de abajo" — el
@@ -580,20 +551,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 onCambiarUsuario: _cambiarUsuario,
                 onCambiarModo: _cambiarModo,
                 modoUso: _modoUso,
+                usuarioId: _usuarioId,
               ),
             ),
           ],
         ),
-        bottomNavigationBar: NavbarCompanion(
-          indice: _indice,
-          onSeleccionar: _irAPagina,
-          botonCentral: BotonEscanerCompanion(
-            servicio: _servicio,
-            usuarioId: _usuarioId,
-            proveedores: _proveedores,
-            categorias: _categorias,
-          ),
-        ),
+        bottomNavigationBar: NavbarCompanion(indice: _indice, onSeleccionar: _irAPagina),
       ),
     );
   }

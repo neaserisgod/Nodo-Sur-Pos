@@ -19,7 +19,6 @@ import '../domain/ganancia.dart';
 import '../ui/comun/tarjetas.dart';
 
 import '../domain/dinero.dart';
-import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'aviso_modo_local.dart';
@@ -46,6 +45,8 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'boton_escaner_companion.dart';
+import 'escanear_codigo.dart';
 
 class PantallaPrecios extends StatefulWidget {
   const PantallaPrecios({super.key});
@@ -62,6 +63,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   List<CategoriaCompanion> _categorias = [];
 
   final _busquedaCtrl = TextEditingController();
+  bool _escaneando = false;
   final _debouncer = Debouncer();
   List<ProductoCompanion> _resultados = [];
   bool _buscando = false;
@@ -93,12 +95,49 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
   /// hace el botón de abajo con esa selección (`_etiquetaEdicionMasiva`/
   /// `_abrirEdicionMasiva`).
   final Set<int> _seleccionados = {};
-  bool get _enSeleccion => _seleccionados.isNotEmpty;
+  bool _modoSeleccion = false;
+  bool get _enSeleccion => _modoSeleccion || _seleccionados.isNotEmpty;
+
+  void _salirDeSeleccion() => setState(() {
+    _modoSeleccion = false;
+    _seleccionados.clear();
+  });
 
   void _alternarSeleccion(int id) {
     setState(() {
+      _modoSeleccion = true;
       if (!_seleccionados.remove(id)) _seleccionados.add(id);
     });
+  }
+
+  /// Escanea un código y abre directo a editar el producto (si existe) o a
+  /// darlo de alta con ese código (si no): el mismo camino que tenía el botón
+  /// central de la navbar, ahora al lado del buscador.
+  Future<void> _escanearYEditar() async {
+    final cliente = _cliente;
+    final usuarioId = _usuarioId;
+    if (cliente == null || usuarioId == null || _escaneando) return;
+    final codigo = await escanearCodigo(context);
+    if (codigo == null || !mounted) return;
+    setState(() => _escaneando = true);
+    try {
+      final producto = await cliente.porCodigoBarras(codigo);
+      if (!mounted) return;
+      await mostrarFormularioProducto(
+        context,
+        cliente: cliente,
+        usuarioId: usuarioId,
+        proveedores: _proveedores,
+        categorias: _categorias,
+        producto: producto,
+        codigoInicial: producto == null ? codigo : null,
+      );
+      if (mounted) await _buscar();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensajeDeError(e))));
+    } finally {
+      if (mounted) setState(() => _escaneando = false);
+    }
   }
 
   /// Cuál hoja abrir depende de POR QUÉ se está seleccionando (El dueño,
@@ -207,6 +246,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
         _proveedores = proveedores;
         _categorias = categorias;
       });
+      await _buscar();
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -223,10 +263,6 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     final texto = _busquedaCtrl.text.trim();
     final filtro = _filtro;
     final proveedorId = _proveedorFiltroId;
-    if (texto.isEmpty && filtro == _FiltroCatalogo.ninguno && proveedorId == null) {
-      setState(() => _resultados = []);
-      return;
-    }
     // Identifica esta búsqueda puntual para descartar una respuesta que ya
     // no corresponde al estado actual — el mismo criterio que antes
     // comparaba solo el texto, extendido para que un cambio de filtro en
@@ -266,30 +302,61 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     _buscar();
   }
 
-  /// Abre el elegidor de proveedor — cancelar (sin tocar nada) deja el
-  /// filtro como estaba, no lo "activa" a medias.
-  Future<void> _elegirPorProveedor(BuildContext context) async {
-    final elegido = await mostrarHojaVidrio<ProveedorCompanion>(
-      context,
-      builder: (_) => _HojaElegirProveedor(proveedores: _proveedores),
-    );
-    if (elegido == null) return;
+  /// Un proveedor es un filtro más: tocar su chip trae sus productos y
+  /// habilita la edición en lote "por proveedor".
+  void _elegirProveedor(ProveedorCompanion prov) {
     setState(() {
       _filtro = _FiltroCatalogo.ninguno;
-      _proveedorFiltroId = elegido.id;
-      _proveedorFiltroNombre = elegido.nombre;
+      _proveedorFiltroId = prov.id;
+      _proveedorFiltroNombre = prov.nombre;
       _seleccionados.clear();
     });
     _buscar();
   }
 
+  Widget _filaFiltros(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+        children: [
+          ChipSeleccionable(
+            texto: _tituloFiltro(_FiltroCatalogo.ninguno),
+            seleccionado: _proveedorFiltroId == null && _filtro == _FiltroCatalogo.ninguno,
+            onTap: () => _elegirFiltro(_FiltroCatalogo.ninguno),
+          ),
+          const SizedBox(width: Espaciado.sm),
+          for (final prov in _proveedores) ...[
+            ChipSeleccionable(
+              texto: prov.nombre,
+              seleccionado: _proveedorFiltroId == prov.id,
+              onTap: () => _elegirProveedor(prov),
+            ),
+            const SizedBox(width: Espaciado.sm),
+          ],
+          // Filtros de higiene del catálogo (sin proveedor, sin costo, …).
+          for (final filtro in _FiltroCatalogo.values.where((f) => f != _FiltroCatalogo.ninguno)) ...[
+            ChipSeleccionable(
+              texto: _tituloFiltro(filtro),
+              seleccionado: _proveedorFiltroId == null && _filtro == filtro,
+              onTap: () => _elegirFiltro(filtro),
+            ),
+            const SizedBox(width: Espaciado.sm),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Qué decir cuando la lista queda vacía, según qué la vació.
   String _mensajeVacio() {
     final hayTexto = _busquedaCtrl.text.trim().isNotEmpty;
     if (_proveedorFiltroId != null) {
       return hayTexto ? 'Sin resultados' : 'Este proveedor no tiene productos cargados';
     }
     if (!hayTexto && _filtro == _FiltroCatalogo.ninguno) {
-      return 'Escribí para buscar un producto';
+      return 'Todavía no hay productos cargados';
     }
     if (_filtro == _FiltroCatalogo.ninguno) return 'Sin resultados';
     final sinProblema = switch (_filtro) {
@@ -302,30 +369,6 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
     return hayTexto ? 'Sin resultados' : sinProblema;
   }
 
-  Widget _filaFiltros(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-        children: [
-          for (final filtro in _FiltroCatalogo.values) ...[
-            ChipSeleccionable(
-              texto: _tituloFiltro(filtro),
-              seleccionado: _proveedorFiltroId == null && _filtro == filtro,
-              onTap: () => _elegirFiltro(filtro),
-            ),
-            const SizedBox(width: Espaciado.sm),
-          ],
-          ChipSeleccionable(
-            texto: _proveedorFiltroNombre ?? 'Por proveedor',
-            seleccionado: _proveedorFiltroId != null,
-            onTap: () => _elegirPorProveedor(context),
-          ),
-        ],
-      ),
-    );
-  }
 
   String _tituloFiltro(_FiltroCatalogo filtro) => switch (filtro) {
     _FiltroCatalogo.ninguno => 'Todos',
@@ -355,7 +398,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
       children: [
         Presionable(
           etiqueta: 'Cancelar la selección',
-          onTap: () => setState(_seleccionados.clear),
+          onTap: _salirDeSeleccion,
           child: const Padding(
             padding: EdgeInsets.all(Espaciado.xs),
             child: Icon(IconosPlazoleta.close),
@@ -366,58 +409,6 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
           '${_seleccionados.length} seleccionado(s)',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
-      ],
-    );
-  }
-
-  /// Mock `MovilProveedores` ("Lenguaje de diseño", 2026-09-26): con nada
-  /// escrito, la pestaña arranca por los proveedores — tocar uno es el
-  /// mismo filtro "Por proveedor" de siempre.
-  Widget _listaProveedores(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg + NavbarCompanion.espacioReservado),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: Espaciado.sm),
-          child: Text('Proveedores', style: textTheme.bodySmall),
-        ),
-        for (final prov in _proveedores)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Espaciado.sm),
-            child: Superficie(
-              padding: EdgeInsets.zero,
-              child: Presionable(
-                onTap: () {
-                  setState(() {
-                    _filtro = _FiltroCatalogo.ninguno;
-                    _proveedorFiltroId = prov.id;
-                    _proveedorFiltroNombre = prov.nombre;
-                  });
-                  _buscar();
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(Espaciado.md),
-                  child: Row(
-                    children: [
-                      AvatarIniciales(texto: inicialesDe(prov.nombre)),
-                      const SizedBox(width: Espaciado.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(prov.nombre, style: textTheme.titleMedium),
-                            Text('Código ${prov.codigo}', style: textTheme.bodySmall),
-                          ],
-                        ),
-                      ),
-                      Icon(IconosPlazoleta.chevronRight, color: context.colores.textoTenue),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -440,21 +431,15 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
       // Padding inferior extra (Regla de esta pestaña ahora que es raíz del
       // `PageView`, `extendBody: true`): sin esto el FAB queda tapado por —
       // o superpuesto con — la navbar flotante, que ocupa esa misma franja.
-      floatingActionButton: _cliente == null
+      floatingActionButton: _cliente == null || _seleccionados.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.only(bottom: NavbarCompanion.espacioReservado),
-              child: _enSeleccion
-                  ? FloatingActionButton.extended(
-                      onPressed: () => _abrirEdicionMasiva(context),
-                      icon: const Icon(IconosPlazoleta.editOutlined),
-                      label: Text(_etiquetaEdicionMasiva),
-                    )
-                  : FloatingActionButton.extended(
-                      onPressed: () => _abrirFormulario(),
-                      icon: const Icon(IconosPlazoleta.add),
-                      label: const Text('Nuevo'),
-                    ),
+              child: FloatingActionButton.extended(
+                onPressed: () => _abrirEdicionMasiva(context),
+                icon: const Icon(IconosPlazoleta.editOutlined),
+                label: Text(_etiquetaEdicionMasiva),
+              ),
             ),
       body: SafeArea(
         child: _cargandoInicial
@@ -470,26 +455,41 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                     )
                   else
                     const EncabezadoCompanion(
-                      rotulo: 'Catálogo',
                       titulo: 'Productos',
                       padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, 0),
+                    ),
+                  if (!_enSeleccion)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.md, Espaciado.xl, 0),
+                      child: Row(
+                        children: [
+                          _PildoraEncabezado(texto: 'Seleccionar', onTap: () => setState(() => _modoSeleccion = true)),
+                          const SizedBox(width: Espaciado.sm),
+                          _PildoraEncabezado(texto: '+ Nuevo', oscura: true, onTap: _abrirFormulario),
+                        ],
+                      ),
                     ),
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
                   Padding(
                     padding: const EdgeInsets.all(Espaciado.lg),
-                    child: Superficie(
-                      child: CampoTexto(
-                        controller: _busquedaCtrl,
-                        etiqueta: 'Buscar producto por nombre',
+                    child: Row(
+                      children: [
+                        Expanded(
+                    child: TextField(
+                      controller: _busquedaCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar producto por nombre',
                         prefixIcon: const Icon(IconosPlazoleta.search),
                         suffixIcon: _buscando
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
+                            ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
                             : null,
-                        onChanged: (_) => _debouncer.ejecutar(_buscar),
                       ),
+                      onChanged: (_) => _debouncer.ejecutar(_buscar),
+                    ),
+                        ),
+                        const SizedBox(width: Espaciado.sm),
+                        BotonEscanerCampo(onTap: _usuarioId == null ? null : _escanearYEditar, cargando: _escaneando),
+                      ],
                     ),
                   ),
                   Padding(
@@ -524,13 +524,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _buscar,
-                      child: _resultados.isEmpty &&
-                              !_buscando &&
-                              _busquedaCtrl.text.trim().isEmpty &&
-                              _filtro == _FiltroCatalogo.ninguno &&
-                              _proveedorFiltroId == null
-                          ? _listaProveedores(context)
-                          : _resultados.isEmpty && !_buscando
+                      child: _resultados.isEmpty && !_buscando
                           ? ListView(
                               padding: const EdgeInsets.only(
                                 bottom: NavbarCompanion.espacioReservado,
@@ -563,6 +557,7 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
                                   padding: const EdgeInsets.only(bottom: Espaciado.sm),
                                   child: _TarjetaProducto(
                                     producto: p,
+                                    nombreProveedor: _proveedores.where((x) => x.id == p.proveedorId).firstOrNull?.nombre,
                                     enSeleccion: _enSeleccion,
                                     seleccionado: _seleccionados.contains(p.id),
                                     onTap: () => _enSeleccion ? _alternarSeleccion(p.id) : _abrirFormulario(producto: p),
@@ -586,53 +581,12 @@ class _PantallaPreciosState extends State<PantallaPrecios> {
 /// `data/repositorio_productos.dart` para qué mira cada uno.
 enum _FiltroCatalogo { ninguno, sinProveedor, sinCosto, sinCategoria, sinCodigoBarras }
 
-/// Lista simple de proveedores para elegir "Por proveedor" — cierra
-/// devolviendo el elegido, o `null` si se cancela (no hay forma de
-/// "confirmar sin elegir nada": tocar afuera o el gesto de descartar son la
-/// única salida sin resultado).
-class _HojaElegirProveedor extends StatelessWidget {
-  const _HojaElegirProveedor({required this.proveedores});
-
-  final List<ProveedorCompanion> proveedores;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Elegir proveedor', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: Espaciado.md),
-        if (proveedores.isEmpty)
-          Text('No hay proveedores cargados.', style: TextStyle(color: context.colores.textoSecundario))
-        else
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: proveedores.length,
-              itemBuilder: (context, i) {
-                final p = proveedores[i];
-                return Presionable(
-                  onTap: () => Navigator.of(context).pop(p),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-                    child: Text('${p.codigo} — ${p.nombre}', style: Theme.of(context).textTheme.titleMedium),
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Tarjeta de producto del mock `MovilProveedor`: nombre, precio con su
-/// margen, costo y stock.
+/// Fila de producto del mock completo: nombre y precio a la derecha; abajo
+/// "Proveedor · N en stock" y, si hay costo cargado, la ganancia.
 class _TarjetaProducto extends StatelessWidget {
   const _TarjetaProducto({
     required this.producto,
+    required this.nombreProveedor,
     required this.enSeleccion,
     required this.seleccionado,
     required this.onTap,
@@ -640,6 +594,7 @@ class _TarjetaProducto extends StatelessWidget {
   });
 
   final ProductoCompanion producto;
+  final String? nombreProveedor;
   final bool enSeleccion;
   final bool seleccionado;
   final VoidCallback onTap;
@@ -656,13 +611,15 @@ class _TarjetaProducto extends StatelessWidget {
     // Costo $0 = sin costo (Regla 4): sin margen que mostrar.
     final margen = precio == null || costo == null || costo <= 0 || precio <= 0 ? null : gananciaBpDesdeCostoYPrecio(costo, precio);
     final stock = p.esPesable ? p.stockGramos ?? 0 : p.stock;
+    final stockTexto = stock <= 0 ? 'Sin stock' : '$stock${p.esPesable ? ' g' : ''} en stock';
+    final detalle = [if (nombreProveedor != null) nombreProveedor!, stockTexto].join(' · ');
     return Superficie(
       padding: EdgeInsets.zero,
       child: Presionable(
         onTap: onTap,
         onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.all(Espaciado.lg),
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
           child: Row(
             children: [
               if (enSeleccion) ...[
@@ -676,42 +633,56 @@ class _TarjetaProducto extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.nombre, style: textTheme.titleMedium),
-                    const SizedBox(height: Espaciado.xs),
-                    Row(
-                      children: [
-                        Text(
-                          precio == null ? 'Sin precio' : '${formatearARS(precio)}$porKilo',
-                          style: textTheme.titleLarge?.tabular,
-                        ),
-                        if (margen != null) ...[
-                          const SizedBox(width: Espaciado.sm),
-                          Insignia(texto: '${(margen / 100).round()}% gan.', tono: Tono.ganancia),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: Espaciado.xs),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            costo == null || costo <= 0 ? 'Sin costo' : 'Costo ${formatearARS(costo)}',
-                            style: textTheme.bodySmall,
-                          ),
-                        ),
-                        Text(
-                          stock <= 0 ? 'Sin stock' : 'Stock $stock${p.esPesable ? ' g' : ''}',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: stock <= 0 ? colores.error : colores.textoSecundario,
-                            fontWeight: Pesos.fuerte,
-                          ),
-                        ),
-                      ],
+                    Text(p.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      detalle,
+                      style: textTheme.bodySmall?.copyWith(color: stock <= 0 ? colores.error : colores.textoSecundario),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: Espaciado.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(precio == null ? 'Sin precio' : '${formatearARS(precio)}$porKilo', style: textTheme.titleLarge?.tabular),
+                  if (margen != null) Insignia(texto: '${(margen / 100).round()}% gan.', tono: Tono.ganancia),
+                ],
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón-píldora del encabezado (Seleccionar, + Nuevo).
+class _PildoraEncabezado extends StatelessWidget {
+  const _PildoraEncabezado({required this.texto, required this.onTap, this.oscura = false});
+
+  final String texto;
+  final VoidCallback onTap;
+  final bool oscura;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Material(
+      color: oscura ? colores.acento : colores.fondoBloque,
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+          child: Text(
+            texto,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: Pesos.fuerte,
+              color: oscura ? colores.acentoTexto : colores.textoPrimario,
+            ),
           ),
         ),
       ),

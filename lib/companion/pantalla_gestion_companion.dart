@@ -26,6 +26,10 @@ import 'pantalla_configuracion_companion.dart';
 import 'pantalla_cuenta_companion.dart';
 import 'modo_uso.dart';
 import 'pantalla_conteo_stock.dart';
+import 'base_local.dart';
+import 'pantalla_cierres.dart';
+import 'pantalla_separaciones_companion.dart';
+import 'tema/app_bar_companion.dart';
 import 'tema/colores_companion.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/tarjeta_accion.dart';
@@ -42,6 +46,7 @@ class PantallaGestionCompanion extends StatelessWidget {
     required this.onCambiarUsuario,
     required this.onCambiarModo,
     required this.modoUso,
+    this.usuarioId,
   });
 
   final bool navegando;
@@ -59,6 +64,9 @@ class PantallaGestionCompanion extends StatelessWidget {
 
   /// El modo en uso, para mostrarlo en el botón de abajo.
   final ModoUso? modoUso;
+
+  /// Para abrir Separaciones, que atribuye lo que se tilda a quien lo hizo.
+  final int? usuarioId;
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +135,29 @@ class PantallaGestionCompanion extends StatelessWidget {
                           subtitulo: 'Caja cerrada',
                           onTap: null,
                         ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.callSplit,
+                        color: context.acentos.dinero,
+                        titulo: 'Separaciones',
+                        subtitulo: 'Qué separar hoy',
+                        onTap: navegando
+                            ? null
+                            : () => irA((_) => PantallaSeparacionesCompanion(db: baseLocalCompanion(), usuarioId: usuarioId ?? 0)),
+                      ),
+                      TarjetaAccion(
+                        icono: IconosPlazoleta.receiptLongOutlined,
+                        color: context.acentos.debito,
+                        titulo: 'Cierres anteriores',
+                        subtitulo: 'Cómo cerró cada día',
+                        onTap: navegando
+                            ? null
+                            : () => irA(
+                                (_) => const Scaffold(
+                                  appBar: AppBarCompanion(titulo: 'Cierres anteriores'),
+                                  body: SafeArea(child: PantallaCierres()),
+                                ),
+                              ),
+                      ),
                       TarjetaAccion(
                         icono: IconosPlazoleta.personOutline,
                         color: context.acentos.mixto,

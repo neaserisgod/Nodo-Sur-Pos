@@ -1,43 +1,40 @@
-// Conteo de stock, rediseñado (El dueño, 2026-09-07: "el conteo de stock es
-// muy nefasto"): mismo menú que la app de escritorio — listar proveedores,
-// al entrar listar los productos de ese proveedor con su stock real
-// (solo lectura) y un recuadro para el conteo. Vacío = el stock guardado
-// ya está bien, no se toca.
+// Conteo de stock (mock completo del celular, 2026-10-02): una sola pantalla
+// para recorrer la góndola. Arriba se elige el proveedor ("Todos juntos" o uno)
+// y, si hace falta, el filtro "Sin stock"; abajo, un producto por fila con su
+// stock del sistema y un campo numérico con −/+ para cargar lo contado.
 //
-// El buscador con precio (El dueño: "nada que ver con el tema de conteo")
-// vive en la pantalla principal del menú (`pantalla_menu_companion.dart`),
-// no acá — esta pantalla es solo el flujo proveedor → productos.
-//
-// "Sin stock" (El dueño, 2026-09-07: "yo debería poder revisar los productos
-// sin stock desde la app Android para ajustarlos") — un segundo punto de
-// entrada, arriba de la lista de proveedores, que salta directo a los
-// agotados de TODOS los proveedores juntos en vez de tener que entrar
-// proveedor por proveedor buscando ceros. Comparte la misma pantalla de
-// conteo (`PantallaConteoProductos`, extraída de acá) — la única
-// diferencia es de dónde sale la lista de productos.
+// Las reglas no cambiaron respecto de la versión anterior (El dueño,
+// 2026-09-07, "el conteo de stock es muy nefasto"):
+//  * Un campo vacío significa que el stock guardado está bien y NO se toca. El
+//    número del sistema se muestra apagado hasta que se carga algo propio.
+//  * Lo que se guarda es el valor contado (absoluto), no una diferencia, con el
+//    motivo "Conteo físico" para que el movimiento de stock deje rastro
+//    (Convención 6).
+//  * Cambiar de proveedor o de filtro no pierde lo ya cargado: lo contado vive
+//    por producto, no por lista. El botón de guardar dice cuántos hay cargados.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../ui/comun/estado_error.dart';
+import '../ui/comun/estado_vacio.dart';
+import '../ui/tema/iconos.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
 import 'base_local.dart';
-import 'cliente_companion.dart'
-    show ErrorCompanion, ProductoCompanion, ProveedorCompanion;
+import 'cliente_companion.dart' show ErrorCompanion, ProductoCompanion, ProveedorCompanion;
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'puerto_local.dart';
+import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
-import 'seleccion_servicio.dart';
-import 'tema/chip_icono.dart';
-import 'tema/esqueleto_companion.dart';
-import '../ui/comun/estado_error.dart';
-import '../ui/comun/estado_vacio.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
+import 'tema/app_bar_companion.dart';
+import 'tema/chip_seleccionable.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/esqueleto_companion.dart';
+import 'tema/superficie.dart';
 
 class PantallaConteoStock extends StatefulWidget {
   const PantallaConteoStock({super.key});
@@ -52,9 +49,30 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
   int? _usuarioId;
 
   List<ProveedorCompanion> _proveedores = [];
-  bool _cargandoProveedores = true;
+  List<ProductoCompanion> _productos = [];
 
+  /// Los que el sistema considera sin stock (`productosSinStock`): una sola
+  /// definición para las dos formas de verlos (Convención 3).
+  Set<int> _sinStockIds = {};
+
+  /// null = "Todos juntos".
+  int? _proveedorId;
+  bool _soloSinStock = false;
+
+  /// Un campo por producto, creado al cargar y conservado al cambiar de
+  /// proveedor o de filtro. Vacío = sin tocar.
+  final Map<int, TextEditingController> _controladores = {};
+
+  bool _cargando = true;
+  bool _guardando = false;
   String? _error;
+
+  /// Sin esto, el botón atrás del sistema salía directo perdiendo un conteo
+  /// físico a medio recorrer (hasta 30-80 campos) sin avisar nada.
+  bool get _hayDatosSinGuardar => _cantidadContados > 0;
+
+  /// Cuántos productos tienen un valor cargado, estén o no a la vista.
+  int get _cantidadContados => _controladores.values.where((c) => c.text.trim().isNotEmpty).length;
 
   @override
   void initState() {
@@ -62,14 +80,20 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
     _iniciar();
   }
 
+  @override
+  void dispose() {
+    for (final c in _controladores.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   /// Sin usuario elegido, error explícito con reintentar (no debería pasar
-  /// normalmente — se llega acá recién con usuario elegido). Sin PC
-  /// emparejada (El dueño, 2026-09-18: "no debería tener que escanear ya, es
-  /// innecesario") cae a la base local sincronizada por Supabase, no es un
-  /// error.
+  /// normalmente). Sin PC emparejada cae a la base local sincronizada, no es
+  /// un error (El dueño, 2026-09-18: "no debería tener que escanear ya").
   Future<void> _iniciar() async {
     setState(() {
-      _cargandoProveedores = true;
+      _cargando = true;
       _error = null;
     });
     try {
@@ -87,244 +111,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
         _pcEmparejada = conexion != null;
         _usuarioId = usuario.id;
       });
-      final proveedores = await cliente.proveedores();
-      if (mounted) setState(() => _proveedores = proveedores);
-    } catch (e) {
-      if (mounted) setState(() => _error = mensajeDeError(e));
-    } finally {
-      if (mounted) setState(() => _cargandoProveedores = false);
-    }
-  }
-
-  void _abrirProveedor(ProveedorCompanion proveedor) {
-    pushSinTeclado(
-      context,
-      (_) => PantallaConteoProductos(
-        cliente: _cliente!,
-        usuarioId: _usuarioId!,
-        titulo: proveedor.nombre,
-        cargarProductos: () => _cliente!.productos(proveedorId: proveedor.id),
-      ),
-    );
-  }
-
-  void _abrirSinStock() {
-    pushSinTeclado(
-      context,
-      (_) => PantallaConteoProductos(
-        cliente: _cliente!,
-        usuarioId: _usuarioId!,
-        titulo: 'Sin stock',
-        cargarProductos: () => _cliente!.productosSinStock(),
-        mostrarProveedor: true,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Conteo de stock')),
-      body: SafeArea(
-        child: _cargandoProveedores
-            ? const EsqueletoLista()
-            : _error != null
-            ? EstadoError(mensaje: _error!, onReintentar: _iniciar)
-            : Column(
-                children: [
-                  AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _iniciar,
-                      // `ListTile` crudo sin padding de pantalla ni `Bloque`
-                      // (El dueño, 2026-09-13: "se ve muy genérica") — el resto
-                      // de la companion usa tarjetas propias (`_TileCompacta`
-                      // en Gestión/Más) para cualquier lista de accesos;
-                      // esta pantalla se había quedado con el estilo
-                      // Material de fábrica desde antes de que existiera ese
-                      // patrón.
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(Espaciado.lg),
-                        itemCount: _proveedores.length + 1,
-                        itemBuilder: (context, i) {
-                          if (i == 0) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                              child: _TileProveedor(
-                                icono: IconosPlazoleta.productionQuantityLimits,
-                                iconoColor: context.colores.error,
-                                titulo: 'Sin stock',
-                                subtitulo: 'Todos los proveedores juntos',
-                                onTap: _abrirSinStock,
-                              ),
-                            );
-                          }
-                          final p = _proveedores[i - 1];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                            child: _TileProveedor(
-                              icono: IconosPlazoleta.storefrontOutlined,
-                              titulo: p.nombre,
-                              subtitulo: p.codigo,
-                              onTap: () => _abrirProveedor(p),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-/// Fila de acceso con el mismo lenguaje visual que el resto de la
-/// companion (`Bloque` + ícono + título/subtítulo + flecha) — se repite
-/// como widget propio en vez de compartirse (Regla 3 aplica a fórmulas de
-/// dominio, no a un widget visual de cuatro líneas como este).
-class _TileProveedor extends StatelessWidget {
-  const _TileProveedor({
-    required this.icono,
-    required this.titulo,
-    required this.subtitulo,
-    required this.onTap,
-    this.iconoColor,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String subtitulo;
-  final VoidCallback onTap;
-  final Color? iconoColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Superficie(
-      padding: EdgeInsets.zero,
-      child: Presionable(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Espaciado.lg,
-            vertical: Espaciado.md,
-          ),
-          child: Row(
-            children: [
-              ChipIcono(icono: icono, color: iconoColor ?? context.colores.textoSecundario),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(titulo, style: Theme.of(context).textTheme.titleMedium),
-                    Text(
-                      subtitulo,
-                      style: TextStyle(color: context.colores.textoSecundario),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(IconosPlazoleta.chevronRight, color: context.colores.textoTenue),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// El conteo en sí — lista de productos con el stock guardado (solo
-/// lectura) y un campo para el valor real. [cargarProductos] es lo único
-/// que cambia entre "por proveedor" y "sin stock, todos juntos"
-/// (Regla 3: una sola pantalla de conteo, no dos casi iguales).
-class PantallaConteoProductos extends StatefulWidget {
-  const PantallaConteoProductos({
-    super.key,
-    required this.cliente,
-    required this.usuarioId,
-    required this.titulo,
-    required this.cargarProductos,
-    this.mostrarProveedor = false,
-  });
-
-  final ServicioCompanion cliente;
-  final int usuarioId;
-  final String titulo;
-  final Future<List<ProductoCompanion>> Function() cargarProductos;
-
-  /// true en "Sin stock" (productos de proveedores distintos mezclados) —
-  /// agrega el proveedor como subtítulo para no perder ese contexto. Falso
-  /// en "por proveedor", donde ya es el título de la pantalla.
-  final bool mostrarProveedor;
-
-  @override
-  State<PantallaConteoProductos> createState() =>
-      _PantallaConteoProductosState();
-}
-
-class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
-  List<ProductoCompanion> _productos = [];
-  List<ProveedorCompanion> _proveedores = [];
-  final Map<int, TextEditingController> _controladores = {};
-  bool _cargando = true;
-  bool _guardando = false;
-  String? _error;
-
-  /// Sin esto, el botón atrás del sistema salía directo perdiendo un
-  /// conteo físico a medio recorrer (hasta 30-80 campos tipeados) sin
-  /// avisar nada.
-  bool get _hayDatosSinGuardar =>
-      _controladores.values.any((c) => c.text.trim().isNotEmpty);
-
-  /// Cuántos productos ya tienen un valor tipeado, de los que hay en
-  /// pantalla — se muestra en el botón de guardar para que recorrer la
-  /// góndola no sea "sin ningún indicio de cuánto falta".
-  int get _cantidadContados =>
-      _controladores.values.where((c) => c.text.trim().isNotEmpty).length;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargar();
-  }
-
-  @override
-  void dispose() {
-    for (final c in _controladores.values) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _cargar() async {
-    setState(() => _cargando = true);
-    try {
-      final resultados = await Future.wait([
-        widget.cargarProductos(),
-        widget.mostrarProveedor
-            ? widget.cliente.proveedores()
-            : Future.value(_proveedores),
-      ]);
-      final productos = resultados[0] as List<ProductoCompanion>;
-      for (final p in productos) {
-        // El listener alimenta `_cantidadContados` — sin él, tipear no
-        // reconstruye la pantalla y el contador del botón de guardar
-        // quedaría siempre en 0 (Regla de este archivo: en una lista de
-        // 30-80 productos hace falta saber a mitad de camino cuánto falta).
-        _controladores.putIfAbsent(p.id, () {
-          final c = TextEditingController();
-          c.addListener(() => setState(() {}));
-          return c;
-        });
-      }
-      if (mounted) {
-        setState(() {
-          _productos = productos;
-          _proveedores = resultados[1] as List<ProveedorCompanion>;
-        });
-      }
+      await _cargarCatalogo();
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -332,26 +119,51 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
     }
   }
 
-  String? _nombreProveedor(int? proveedorId) {
-    if (proveedorId == null) return null;
+  /// Trae proveedores, productos y cuáles están sin stock. Conserva lo ya
+  /// cargado en los campos: sirve tanto para el primer arranque como para
+  /// refrescar después de guardar.
+  Future<void> _cargarCatalogo() async {
+    final cliente = _cliente!;
+    final resultados = await Future.wait([cliente.proveedores(), cliente.productos(), cliente.productosSinStock()]);
+    final productos = resultados[1] as List<ProductoCompanion>;
+    for (final p in productos) {
+      // El listener alimenta el contador del botón de guardar: sin él, tipear
+      // no reconstruye la pantalla y quedaría siempre en 0.
+      _controladores.putIfAbsent(p.id, () {
+        final c = TextEditingController();
+        c.addListener(() {
+          if (mounted) setState(() {});
+        });
+        return c;
+      });
+    }
+    if (!mounted) return;
+    setState(() {
+      _proveedores = resultados[0] as List<ProveedorCompanion>;
+      _productos = productos;
+      _sinStockIds = {for (final p in resultados[2] as List<ProductoCompanion>) p.id};
+    });
+  }
+
+  List<ProductoCompanion> get _visibles => [
+    for (final p in _productos)
+      if ((_proveedorId == null || p.proveedorId == _proveedorId) && (!_soloSinStock || _sinStockIds.contains(p.id))) p,
+  ];
+
+  String? _nombreProveedor(int? id) {
+    if (id == null) return null;
     for (final p in _proveedores) {
-      if (p.id == proveedorId) return p.nombre;
+      if (p.id == id) return p.nombre;
     }
     return null;
   }
 
-  /// Guarda solo los productos con un valor tipeado — el resto se deja tal
-  /// cual está guardado (El dueño: "si no se pone nada se asume que el stock
-  /// guardado es correcto").
-  ///
-  /// Las requests salen todas juntas, no una detrás de la otra: un conteo
-  /// físico real recorre la góndola y puede terminar con 30-80 productos
-  /// tipeados de una — esperar cada `ajustarStock` en serie significaba esa
-  /// cantidad de round-trips WiFi seguidos, con el spinner de "guardando"
-  /// visible todo ese tiempo. Se validan y se lanzan todos los futures de
-  /// una (sin `await` inmediato: ya empiezan a viajar), y recién ahí se
-  /// esperan uno por uno para poder seguir atribuyendo cada error a SU
-  /// producto — igual que antes, solo que en paralelo.
+  /// Guarda solo los productos con un valor cargado: el resto queda como está
+  /// (El dueño: "si no se pone nada se asume que el stock guardado es
+  /// correcto"). Las requests salen todas juntas y se esperan una por una para
+  /// atribuir cada error a SU producto: un conteo real puede tener 30-80
+  /// productos y en serie serían otros tantos viajes de WiFi con el spinner
+  /// a la vista.
   Future<void> _guardar() async {
     setState(() {
       _guardando = true;
@@ -361,7 +173,7 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
     final errores = <String>[];
     final pendientes = <(ProductoCompanion, Future<void>)>[];
     for (final producto in _productos) {
-      final texto = _controladores[producto.id]!.text.trim();
+      final texto = _controladores[producto.id]?.text.trim() ?? '';
       if (texto.isEmpty) continue;
       final valor = int.tryParse(texto);
       if (valor == null || valor < 0) {
@@ -370,21 +182,21 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
       }
       pendientes.add((
         producto,
-        widget.cliente.ajustarStock(
+        _cliente!.ajustarStock(
           producto.id,
           stock: producto.esPesable ? producto.stock : valor,
           stockGramos: producto.esPesable ? valor : null,
           motivo: 'Conteo físico',
-          usuarioId: widget.usuarioId,
+          usuarioId: _usuarioId!,
         ),
       ));
     }
 
-    var guardados = 0;
+    final guardadosOk = <int>{};
     for (final (producto, future) in pendientes) {
       try {
         await future;
-        guardados++;
+        guardadosOk.add(producto.id);
       } catch (e) {
         errores.add('${producto.nombre}: ${mensajeDeError(e)}');
       }
@@ -392,214 +204,276 @@ class _PantallaConteoProductosState extends State<PantallaConteoProductos> {
 
     if (!mounted) return;
     setState(() => _guardando = false);
-    // `SnackBar`, no un texto fijo arriba de la lista: después de recorrer
-    // 30-80 productos la lista queda scrolleada a la mitad o al final, y
-    // un texto arriba del todo quedaba invisible fuera de pantalla sin
-    // ningún indicio de que había que volver a scrollear para verlo.
+    // `SnackBar` y no un texto arriba de la lista: tras recorrer 30-80
+    // productos la lista queda scrolleada y un aviso fijo arriba no se vería.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           errores.isEmpty
-              ? (guardados == 0
-                    ? 'No había nada para guardar'
-                    : 'Guardado — $guardados producto(s) actualizados')
-              : '$guardados guardado(s), con errores: ${errores.join('; ')}',
+              ? (guardadosOk.isEmpty ? 'No había nada para guardar' : 'Guardado — ${guardadosOk.length} producto(s) actualizados')
+              : '${guardadosOk.length} guardado(s), con errores: ${errores.join('; ')}',
         ),
       ),
     );
-    if (guardados > 0) {
-      for (final c in _controladores.values) {
-        c.clear();
+    if (guardadosOk.isNotEmpty) {
+      // Solo se limpian los que se guardaron: lo que dio error queda cargado
+      // para corregirlo o reintentarlo sin volver a tipearlo.
+      for (final id in guardadosOk) {
+        _controladores[id]?.clear();
       }
-      await _cargar(); // trae el stock ya actualizado para mostrarlo — en
-      // "Sin stock" esto también saca de la lista lo que ya se contó y
-      // dejó de estar en cero.
+      try {
+        await _cargarCatalogo();
+      } catch (e) {
+        if (mounted) setState(() => _error = mensajeDeError(e));
+      }
     }
+  }
+
+  Future<void> _volver() async {
+    if (!_hayDatosSinGuardar || await confirmarSalirSinGuardar(context)) {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  /// Un toque en − o + parte del valor del sistema si todavía no se cargó nada.
+  void _ajustar(ProductoCompanion p, int delta) {
+    final c = _controladores[p.id]!;
+    final base = int.tryParse(c.text.trim()) ?? p.stock;
+    final nuevo = base + delta;
+    c.text = '${nuevo < 0 ? 0 : nuevo}';
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // Siempre `false`: los controllers de conteo cambian sin pasar por
-      // `setState` (no hace falta rebuild por cada tecla en 30-80 campos),
-      // así que `_hayDatosSinGuardar` se evalúa fresco recién acá adentro,
-      // no en un `canPop` que podría quedar desactualizado.
+      // Siempre `false`: se decide fresco adentro del callback, no con un
+      // `canPop` calculado en un build anterior.
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        if (!_hayDatosSinGuardar || await confirmarSalirSinGuardar(context)) {
-          if (context.mounted) Navigator.of(context).pop();
-        }
+        await _volver();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(widget.titulo)),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _guardando ? null : _guardar,
-          icon: _guardando
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(IconosPlazoleta.saveOutlined),
-          label: Text(
-            _cantidadContados == 0
-                ? 'Guardar conteo'
-                : 'Guardar conteo ($_cantidadContados de ${_productos.length})',
-          ),
-        ),
+        appBar: const AppBarCompanion(titulo: 'Conteo de stock', etiquetaSalida: null),
         body: SafeArea(
           child: _cargando
               ? const EsqueletoLista()
+              : _cliente == null
+              ? EstadoError(mensaje: _error ?? 'No se pudo conectar.', onReintentar: _iniciar)
               : Column(
                   children: [
+                    AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
+                    _filtros(context),
                     if (_error != null)
                       Padding(
-                        padding: const EdgeInsets.all(Espaciado.md),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: ErrorEnLinea(_error!),
-                            ),
-                            TextButton(
-                              onPressed: _cargar,
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
-                        ),
+                        padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, 0),
+                        child: ErrorEnLinea(_error!),
                       ),
-                    if (!_cargando && _productos.isEmpty)
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _cargar,
-                          child: ListView(
-                            children: [
-                              SizedBox(
-                                height: 300,
-                                child: EstadoVacio(
-                                  mensaje: widget.mostrarProveedor
-                                      ? 'Nada sin stock — todo contado'
-                                      : 'Sin productos acá',
-                                  icono: widget.mostrarProveedor
-                                      ? IconosPlazoleta.checkCircleOutline
-                                      : IconosPlazoleta.inventory2Outlined,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _cargar,
-                          child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(
-                            Espaciado.lg,
-                            Espaciado.sm,
-                            Espaciado.lg,
-                            80, // lugar para el FloatingActionButton
-                          ),
-                          itemCount: _productos.length,
-                          itemBuilder: (context, i) {
-                            final p = _productos[i];
-                            final stockGuardado = p.esPesable
-                                ? '${p.stockGramos ?? 0} g'
-                                : '${p.stock} un.';
-                            final proveedor = widget.mostrarProveedor
-                                ? _nombreProveedor(p.proveedorId)
-                                : null;
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: Espaciado.xs,
-                              ),
-                              child: Superficie(
-                                // Antes usaba el padding parejo de `Bloque`
-                                // (16 arriba y abajo) — en una lista de
-                                // 30-80 productos (recorrer la góndola
-                                // entera) eso hacía que cada fila ocupara
-                                // demasiado espacio vertical (El dueño,
-                                // 2026-09-13). Menos padding vertical que
-                                // horizontal es suficiente acá: la fila ya
-                                // tiene su propio aire por el contenido.
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Espaciado.lg,
-                                  vertical: Espaciado.sm,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            p.nombre,
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.titleMedium,
-                                          ),
-                                          Text(
-                                            proveedor == null
-                                                ? 'Guardado: $stockGuardado'
-                                                : '$proveedor · Guardado: $stockGuardado',
-                                            style: TextStyle(
-                                              color: context
-                                                  .colores
-                                                  .textoSecundario,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: Espaciado.md),
-                                    Expanded(
-                                      flex: 2,
-                                      // `TextField` crudo a propósito acá, no
-                                      // `CampoTexto` del kit: este campo vive
-                                      // en una fila densa de una lista que
-                                      // puede tener decenas de productos (el
-                                      // conteo físico recorriendo la góndola)
-                                      // — necesita teclado numérico, texto
-                                      // centrado e `isDense`, que el kit no
-                                      // ofrece, y envolverlo en `Bloque` con
-                                      // etiqueta fija arriba le agregaría
-                                      // altura a cada fila sin necesidad.
-                                      // `hintText` (no `labelText`): un label
-                                      // flotante reserva espacio vertical
-                                      // fijo para el estado "con contenido"
-                                      // aunque el campo esté vacío — en una
-                                      // lista de 30-80 filas eso solo
-                                      // pesa (El dueño, 2026-09-13: "las cards
-                                      // ocupan demasiado espacio vertical").
-                                      child: TextField(
-                                        controller: _controladores[p.id],
-                                        keyboardType: TextInputType.number,
-                                        textAlign: TextAlign.center,
-                                        decoration: InputDecoration(
-                                          hintText: p.esPesable
-                                              ? 'Gramos'
-                                              : 'Unidades',
-                                          isDense: true,
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: Espaciado.sm,
-                                            vertical: Espaciado.sm,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                          ),
-                        ),
-                      ),
+                    Expanded(child: _lista(context)),
+                    _pie(context),
                   ],
                 ),
         ),
+      ),
+    );
+  }
+
+  Widget _etiqueta(String texto) => Padding(
+    padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.sm, Espaciado.xl, Espaciado.xs),
+    child: Text(
+      texto,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: context.colores.textoSecundario, fontWeight: Pesos.fuerte),
+    ),
+  );
+
+  Widget _filtros(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _etiqueta('Proveedor'),
+        // Todos a la vista, acomodados en varias líneas como en el mock: en una
+        // fila que se desliza los últimos proveedores quedaban escondidos. Con
+        // muchos proveedores la franja tiene tope y scrollea para no comerse la lista.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 132),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: Espaciado.sm,
+                runSpacing: Espaciado.sm,
+                children: [
+                  ChipSeleccionable(texto: 'Todos juntos', seleccionado: _proveedorId == null, onTap: () => setState(() => _proveedorId = null)),
+                  for (final p in _proveedores)
+                    ChipSeleccionable(texto: p.nombre, seleccionado: _proveedorId == p.id, onTap: () => setState(() => _proveedorId = p.id)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _etiqueta('Filtro'),
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+            children: [
+              ChipSeleccionable(texto: 'Todos', seleccionado: !_soloSinStock, onTap: () => setState(() => _soloSinStock = false)),
+              const SizedBox(width: Espaciado.sm),
+              ChipSeleccionable(texto: 'Sin stock', seleccionado: _soloSinStock, onTap: () => setState(() => _soloSinStock = true)),
+            ],
+          ),
+        ),
+        const SizedBox(height: Espaciado.sm),
+      ],
+    );
+  }
+
+  Widget _lista(BuildContext context) {
+    final visibles = _visibles;
+    if (visibles.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _cargarCatalogo,
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 280,
+              child: EstadoVacio(
+                mensaje: _soloSinStock ? 'Nada sin stock — todo contado' : 'Sin productos acá',
+                icono: _soloSinStock ? IconosPlazoleta.checkCircleOutline : IconosPlazoleta.inventory2Outlined,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _cargarCatalogo,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.md),
+        itemCount: visibles.length,
+        itemBuilder: (context, i) {
+          final p = visibles[i];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: Espaciado.xs),
+            child: _FilaConteo(
+              // La clave por producto evita que, al filtrar, el campo de una
+              // fila herede el texto de otra que ocupaba su lugar.
+              key: ValueKey(p.id),
+              producto: p,
+              controlador: _controladores[p.id]!,
+              proveedor: _proveedorId == null ? _nombreProveedor(p.proveedorId) : null,
+              onMenos: () => _ajustar(p, -1),
+              onMas: () => _ajustar(p, 1),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _pie(BuildContext context) {
+    final n = _cantidadContados;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton(
+            onPressed: _guardando || n == 0 ? null : _guardar,
+            child: _guardando
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(n == 0 ? 'Guardar conteo' : 'Guardar conteo ($n)'),
+          ),
+          const SizedBox(height: Espaciado.sm),
+          OutlinedButton(onPressed: _guardando ? null : _volver, child: const Text('Volver')),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un producto del conteo: nombre y stock del sistema a la izquierda; a la
+/// derecha el campo de lo contado (con −/+ por unidad; los pesables, que van en
+/// gramos, solo llevan el campo).
+class _FilaConteo extends StatelessWidget {
+  const _FilaConteo({
+    super.key,
+    required this.producto,
+    required this.controlador,
+    required this.proveedor,
+    required this.onMenos,
+    required this.onMas,
+  });
+
+  final ProductoCompanion producto;
+  final TextEditingController controlador;
+  final String? proveedor;
+  final VoidCallback onMenos;
+  final VoidCallback onMas;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = producto;
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final sistema = p.esPesable ? p.stockGramos ?? 0 : p.stock;
+    final unidad = p.esPesable ? 'g' : 'u.';
+    final cargado = controlador.text.trim().isNotEmpty;
+    return Superficie(
+      padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(p.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium),
+                Text(
+                  proveedor == null ? 'Sistema: $sistema $unidad' : '$proveedor · Sistema: $sistema $unidad',
+                  style: textTheme.bodySmall?.copyWith(color: sistema <= 0 ? colores.error : colores.textoSecundario),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Espaciado.sm),
+          DecoratedBox(
+            decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(999)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!p.esPesable)
+                  IconButton(tooltip: 'Uno menos', visualDensity: VisualDensity.compact, icon: const Icon(IconosPlazoleta.remove), onPressed: onMenos),
+                SizedBox(
+                  width: p.esPesable ? 96 : 56,
+                  child: TextField(
+                    controller: controlador,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    // Vacío se ve el número del sistema, apagado: es lo que se
+                    // asume si no se toca. Al cargar algo propio pasa a tinta.
+                    style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte, color: cargado ? colores.textoPrimario : colores.textoTenue),
+                    decoration: InputDecoration(
+                      hintText: '$sistema',
+                      hintStyle: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte, color: colores.textoTenue),
+                      suffixText: p.esPesable ? 'g' : null,
+                      isDense: true,
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
+                    ),
+                  ),
+                ),
+                if (!p.esPesable)
+                  IconButton(tooltip: 'Uno más', visualDensity: VisualDensity.compact, icon: const Icon(IconosPlazoleta.add), onPressed: onMas),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

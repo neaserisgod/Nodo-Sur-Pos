@@ -100,16 +100,7 @@ Widget _inicio({required bool abierta}) => Scaffold(
         pcEmparejada: true,
         actualizacionSinConexion: false,
       ),
-      bottomNavigationBar: NavbarCompanion(
-        indice: 0,
-        onSeleccionar: (_) {},
-        botonCentral: Container(
-          width: NavbarCompanion.diametroBoton,
-          height: NavbarCompanion.diametroBoton,
-          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black),
-          child: const Icon(Icons.qr_code_scanner, color: Colors.white),
-        ),
-      ),
+      bottomNavigationBar: NavbarCompanion(indice: 0, onSeleccionar: (_) {}),
     );
 
 Widget _gestion({required bool abierta}) => Scaffold(
@@ -123,11 +114,7 @@ Widget _gestion({required bool abierta}) => Scaffold(
         onCambiarModo: () {},
         modoUso: null,
       ),
-      bottomNavigationBar: NavbarCompanion(
-        indice: 3,
-        onSeleccionar: (_) {},
-        botonCentral: const SizedBox(width: NavbarCompanion.diametroBoton, height: NavbarCompanion.diametroBoton),
-      ),
+      bottomNavigationBar: NavbarCompanion(indice: 3, onSeleccionar: (_) {}),
     );
 
 void main() {

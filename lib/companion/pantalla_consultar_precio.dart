@@ -9,7 +9,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
-import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'aviso_modo_local.dart';
@@ -32,6 +31,8 @@ import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import 'tema/app_bar_companion.dart';
+import 'boton_escaner_companion.dart';
 
 class PantallaConsultarPrecio extends StatefulWidget {
   const PantallaConsultarPrecio({super.key});
@@ -65,7 +66,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
     super.initState();
     _iniciar();
     _subCambiosSync = avisosCambiosCompanion.listen((_) {
-      if (_busquedaCtrl.text.isNotEmpty) _buscar(_busquedaCtrl.text);
+      _buscar(_busquedaCtrl.text);
     });
   }
 
@@ -88,6 +89,8 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
           _cliente = servicio;
           _pcEmparejada = conexion != null;
         });
+        // El mock arranca con todos los productos a la vista, no con la lista vacía.
+        await _buscar('');
       }
     } catch (e) {
       if (mounted) setState(() => _errorInicial = mensajeDeError(e));
@@ -111,7 +114,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
       _buscando = true;
     });
     try {
-      final resultados = await _cliente!.productos(busqueda: texto);
+      final resultados = await _cliente!.productos(busqueda: texto.trim().isEmpty ? null : texto);
       // Descarta una respuesta que ya no corresponde al texto actual —
       // otra, más nueva, pudo llegar antes por el jitter normal de WiFi.
       if (mounted && _busquedaCtrl.text == texto) {
@@ -158,23 +161,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Consultar precio'),
-        actions: [
-          if (_cliente != null)
-            IconButton(
-              tooltip: 'Escanear código de barras',
-              icon: _escaneando
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(IconosPlazoleta.qrCodeScanner),
-              onPressed: _escaneando ? null : _escanear,
-            ),
-        ],
-      ),
+      appBar: const AppBarCompanion(titulo: 'Precio', etiquetaSalida: 'Cerrar'),
       body: SafeArea(
         child: _cargandoInicial
             ? const EsqueletoLista()
@@ -188,20 +175,24 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                   AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
                   Padding(
                     padding: const EdgeInsets.all(Espaciado.lg),
-                    child: Superficie(
-                      child: CampoTexto(
-                        controller: _busquedaCtrl,
-                        etiqueta: 'Escribí el nombre, o escaneá',
+                    child: Row(
+                      children: [
+                        Expanded(
+                    child: TextField(
+                      controller: _busquedaCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Escribí el nombre, o escaneá',
                         prefixIcon: const Icon(IconosPlazoleta.search),
                         suffixIcon: _buscando
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
+                            ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
                             : null,
-                        onChanged: (texto) =>
-                            _debouncer.ejecutar(() => _buscar(texto)),
                       ),
+                      onChanged: (texto) => _debouncer.ejecutar(() => _buscar(texto)),
+                    ),
+                        ),
+                        const SizedBox(width: Espaciado.sm),
+                        BotonEscanerCampo(onTap: _escanear, cargando: _escaneando),
+                      ],
                     ),
                   ),
                   if (_error != null)
@@ -216,7 +207,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                       child: _resultados.isEmpty && !_buscando
                           ? EstadoVacio(
                               mensaje: _busquedaCtrl.text.trim().isEmpty
-                                  ? 'Escribí para buscar, o escaneá'
+                                  ? 'No hay productos cargados'
                                   : 'Sin resultados',
                               icono: _busquedaCtrl.text.trim().isEmpty
                                   ? IconosPlazoleta.search
@@ -238,9 +229,17 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                                           horizontal: Espaciado.lg,
                                           vertical: Espaciado.md,
                                         ),
-                                        child: Text(
-                                          p.nombre,
-                                          style: Theme.of(context).textTheme.titleMedium,
+                                        child: Row(
+                                          children: [
+                                            Expanded(child: Text(p.nombre, style: Theme.of(context).textTheme.titleMedium)),
+                                            const SizedBox(width: Espaciado.md),
+                                            Text(
+                                              p.esPesable
+                                                  ? '${formatearARS(p.precioPorKiloCentavos ?? 0)}/kg'
+                                                  : formatearARS(p.precioCentavos ?? 0),
+                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),

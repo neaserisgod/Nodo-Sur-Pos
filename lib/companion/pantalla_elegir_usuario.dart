@@ -23,8 +23,6 @@ import 'mensaje_error.dart';
 import 'pantalla_menu_companion.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
-import '../domain/marca.dart';
-import '../servicios/marca_actual.dart';
 import 'tema/esqueleto_companion.dart';
 import 'tema/piezas_companion.dart';
 
@@ -92,15 +90,10 @@ class _PantallaElegirUsuarioState extends State<PantallaElegirUsuario> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ValueListenableBuilder<MarcaNegocio>(
-              valueListenable: marcaActual,
-              builder: (context, marca, _) => EncabezadoCompanion(
-                rotulo: marca.nombre,
-                titulo: '¿Quién sos?',
-                bajada: 'Elegí tu usuario para empezar.',
-                particulas: true,
-                padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.xl),
-              ),
+            const EncabezadoCompanion(
+              titulo: '¿Quién sos?',
+              bajada: 'Elegí tu usuario para empezar el turno.',
+              padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl + Espaciado.lg, Espaciado.xl, Espaciado.xl),
             ),
             Expanded(
               child: _error != null

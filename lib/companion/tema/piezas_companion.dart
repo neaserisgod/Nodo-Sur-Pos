@@ -274,8 +274,9 @@ class EncabezadoCompanion extends StatelessWidget {
   }
 }
 
-/// Fila de lista dentro de un bloque gris: círculo con inicial, título,
-/// subtítulo opcional y chevron. Para elegir un usuario, un proveedor, etc.
+/// Fila de lista en forma de píldora gris: avatar con la inicial sobre un
+/// degradé violeta-azul y el nombre. Para elegir un usuario (mock completo,
+/// "¿Quién sos?"): sin flecha, la fila entera es el botón.
 class FilaElegible extends StatelessWidget {
   const FilaElegible({super.key, required this.titulo, required this.onTap, this.subtitulo, this.inicial});
 
@@ -284,39 +285,41 @@ class FilaElegible extends StatelessWidget {
   final String? inicial;
   final VoidCallback? onTap;
 
+  static const _degradeAvatar = [Color(0xFF8B5CF6), Color(0xFF3B82F6)];
+
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
     final textTheme = Theme.of(context).textTheme;
+    final letra = (inicial ?? titulo).trim().isEmpty ? '?' : (inicial ?? titulo).trim().characters.first.toUpperCase();
     return Presionable(
-      radio: radioSuperficieCompanion,
+      radio: 999,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.lg),
-        decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(radioSuperficieCompanion)),
+        padding: const EdgeInsets.all(Espaciado.md),
+        decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: colores.fondo, shape: BoxShape.circle),
-              child: Text(
-                (inicial ?? titulo).trim().isEmpty ? '?' : (inicial ?? titulo).trim().characters.first.toUpperCase(),
-                style: textTheme.titleMedium,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: _degradeAvatar),
               ),
+              child: Text(letra, style: textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: Pesos.fuerte)),
             ),
             const SizedBox(width: Espaciado.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(titulo, style: textTheme.titleMedium),
+                  Text(titulo, style: textTheme.titleLarge),
                   if (subtitulo != null) Text(subtitulo!, style: textTheme.bodySmall),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_rounded, color: colores.textoTenue, size: 22),
           ],
         ),
       ),

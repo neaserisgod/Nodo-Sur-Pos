@@ -29,6 +29,7 @@ import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
 import 'tema/superficie.dart';
 import 'tema/esqueleto_companion.dart';
+import 'tema/app_bar_companion.dart';
 
 class PantallaSeparacionesCompanion extends StatefulWidget {
   const PantallaSeparacionesCompanion({super.key, required this.db, required this.usuarioId});
@@ -74,7 +75,7 @@ class _PantallaSeparacionesCompanionState extends State<PantallaSeparacionesComp
   Widget build(BuildContext context) {
     final c = _c;
     return Scaffold(
-      appBar: AppBar(title: const Text('Separaciones')),
+      appBar: const AppBarCompanion(titulo: 'Separaciones'),
       body: c == null
           ? const EsqueletoLista()
           : ChangeNotifierProvider<SeparacionesControlador>.value(
