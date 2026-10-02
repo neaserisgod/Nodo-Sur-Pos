@@ -103,6 +103,19 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     });
   }
 
+  Future<void> _volverABajarTodo() async {
+    setState(() {
+      _ocupado = true;
+      _mensaje = null;
+    });
+    final r = await _sync.servicio.volverABajarTodo();
+    if (!mounted) return;
+    setState(() {
+      _ocupado = false;
+      _mensaje = textoDeResultado(r);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +135,19 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
                     valueListenable: _sync.conmutador.modo,
                     builder: (context, modo, _) => _TarjetaModo(modo: modo, hayCuenta: _cuenta != null),
                   ),
+                  if (_cuenta != null)
+                    ValueListenableBuilder<int>(
+                      valueListenable: _sync.servicio.alCambiarEstado,
+                      builder: (context, _, _) {
+                        final vista = vistaDeSync(_sync.servicio.ultimo);
+                        // "Todavía no hubo una vuelta" no es una novedad para mostrar: se ve recién con un resultado.
+                        if (_sync.servicio.ultimo == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: Espaciado.md),
+                          child: _EstadoSync(vista: vista, ocupado: _ocupado, alVolverABajar: _volverABajarTodo),
+                        );
+                      },
+                    ),
                   const SizedBox(height: Espaciado.lg),
                   Superficie(
                     padding: EdgeInsets.zero,
@@ -185,9 +211,54 @@ String textoDeResultado(ResultadoSyncNube r) => switch (r) {
   SyncNubeOk(:final bajadas, :final subidas) =>
     bajadas == 0 && subidas == 0 ? 'Todo al día.' : 'Listo: recibió $bajadas y mandó $subidas cambios.',
   SyncNubeSinCuenta() => 'Primero vinculá el celular a tu cuenta.',
-  SyncNubeExpirada() => 'Pasó mucho tiempo sin sincronizar: hace falta restaurar una copia de seguridad.',
+  SyncNubeExpirada() => vistaDeSync(r).detalle,
   SyncNubeFallida(:final mensaje, :final sinRed) => sinRed ? 'Sin conexión a internet.' : mensaje,
 };
+
+/// Lo que está pasando con la sync, en una frase, y la salida cuando algo la traba (Regla: nunca un callejón sin salida).
+class _EstadoSync extends StatelessWidget {
+  const _EstadoSync({required this.vista, required this.ocupado, required this.alVolverABajar});
+
+  final VistaSync vista;
+  final bool ocupado;
+  final VoidCallback alVolverABajar;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final color = switch (vista.tono) {
+      TonoSync.bien => colores.acento,
+      TonoSync.espera => colores.textoSecundario,
+      TonoSync.atencion => colores.error,
+    };
+    return Superficie(
+      key: const Key('estado_sync'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.circle, size: 10, color: color),
+              const SizedBox(width: Espaciado.sm),
+              Expanded(child: Text(vista.titulo, style: textTheme.titleMedium)),
+            ],
+          ),
+          const SizedBox(height: Espaciado.xs),
+          Text(vista.detalle, style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
+          if (vista.puedeVolverABajar) ...[
+            const SizedBox(height: Espaciado.md),
+            OutlinedButton(
+              key: const Key('volver_a_bajar_todo'),
+              onPressed: ocupado ? null : alVolverABajar,
+              child: const Text('Volver a bajar todo'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _TarjetaModo extends StatelessWidget {
   const _TarjetaModo({required this.modo, required this.hayCuenta});

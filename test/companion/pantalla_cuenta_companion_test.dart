@@ -76,6 +76,17 @@ void main() {
     expect(find.text('Por internet'), findsOneWidget);
   });
 
+  testWidgets('si quedó atrás de la nube, lo dice y ofrece "Volver a bajar todo" en vez de mandar a restaurar', (tester) async {
+    final sync = await armar(vinculada: true);
+    await abrir(tester, sync);
+    expect(find.byKey(const Key('estado_sync')), findsNothing, reason: 'sin resultados todavía no hay novedad');
+    sync.servicio.ultimo = const SyncNubeExpirada();
+    await tester.pumpAndSettle();
+    expect(find.text('Quedó atrás de la nube'), findsOneWidget);
+    expect(find.byKey(const Key('volver_a_bajar_todo')), findsOneWidget);
+    expect(find.textContaining('restaurar'), findsNothing);
+  });
+
   testWidgets('desvincular pide confirmación y deja la cuenta sin vincular', (tester) async {
     final sync = await armar(vinculada: true);
     await abrir(tester, sync);
@@ -93,6 +104,6 @@ void main() {
     expect(textoDeResultado(const SyncNubeOk(bajadas: 2, subidas: 1)), contains('2'));
     expect(textoDeResultado(const SyncNubeSinCuenta()), contains('vinculá'));
     expect(textoDeResultado(const SyncNubeFallida('x', sinRed: true)), 'Sin conexión a internet.');
-    expect(textoDeResultado(const SyncNubeExpirada()), contains('copia'));
+    expect(textoDeResultado(const SyncNubeExpirada()), contains('bajar todo'));
   });
 }

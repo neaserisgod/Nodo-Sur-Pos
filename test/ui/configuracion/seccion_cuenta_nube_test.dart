@@ -10,6 +10,7 @@ import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/servicios/copias_nube.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/nube.dart';
+import 'package:la_plazoleta/servicios/sync_nube.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
@@ -48,12 +49,13 @@ void main() {
     await tmp.delete(recursive: true);
   });
 
-  NubeApp nubeCon(Future<http.Response> Function(http.Request) responde, {Future<void> Function(Uri)? abrir}) {
+  NubeApp nubeCon(Future<http.Response> Function(http.Request) responde, {Future<void> Function(Uri)? abrir, bool conSync = false}) {
     final cliente = ClienteNube(http: MockClient(responde));
     return NubeApp(
       almacen: almacen,
       cliente: cliente,
       copias: ServicioCopiasNube(db: db, almacen: almacen, cliente: cliente, carpetaTemporal: tmp, versionApp: () async => '1.0.0'),
+      sync: conSync ? ServicioSyncNube(db: db, almacenCuenta: almacen, cliente: cliente, almacenEstado: AlmacenEstadoSyncEnMemoria()) : null,
       idDispositivo: () async => 'dev-123',
       nombreDispositivo: () => 'Caja',
       abrirNavegador: abrir ?? (_) async {},
@@ -89,6 +91,21 @@ void main() {
     expect(find.textContaining('yo@gmail.com'), findsOneWidget);
     expect(find.byKey(const Key('nube_copia_7')), findsOneWidget);
     expect(tester.widget<OutlinedButton>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(OutlinedButton))).onPressed, isNotNull);
+  });
+
+  testWidgets('si la sync quedó atrás de la nube, lo dice y ofrece volver a bajar todo (sin mandar a restaurar)', (tester) async {
+    await almacen.guardar(_cuenta);
+    final nube = nubeCon((r) async => _json(_estado(copias: [_copia])), conSync: true);
+    await abrirSeccion(tester, nube);
+    expect(find.byKey(const Key('nube_estado_sync')), findsNothing, reason: 'sin resultados todavía no hay novedad');
+    nube.sync!.ultimo = const SyncNubeExpirada();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('nube_estado_sync')), findsOneWidget);
+    expect(find.text('Volver a bajar todo'), findsOneWidget);
+    nube.sync!.ultimo = const SyncNubeOk(bajadas: 0, subidas: 0);
+    await tester.pumpAndSettle();
+    expect(find.text('Volver a bajar todo'), findsNothing);
+    expect(find.textContaining('Al día'), findsOneWidget);
   });
 
   testWidgets('con una caja abierta no se puede restaurar y se explica por qué', (tester) async {
