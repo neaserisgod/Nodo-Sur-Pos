@@ -112,6 +112,7 @@ void main() {
               copiarArchivo: ({required rutaRespaldo, required rutaDestino}) async {
                 pasos.add('copiar');
               },
+              olvidarRegistroSync: () async => pasos.add('olvidar sync'),
               reiniciarApp: () => pasos.add('reiniciar'),
             ),
             child: const Text('Abrir'),
@@ -124,7 +125,8 @@ void main() {
       await tester.tap(find.text('Restaurar y reiniciar'));
       await tester.pumpAndSettle();
 
-      expect(pasos, ['resolver', 'copiar', 'reiniciar']);
+      // El registro de sync se olvida después de reemplazar la base y antes de reiniciar.
+      expect(pasos, ['resolver', 'copiar', 'olvidar sync', 'reiniciar']);
     });
   });
 }

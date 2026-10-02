@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_respaldo.dart';
+import '../../servicios/nube.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../tema/tokens.dart';
@@ -16,6 +17,7 @@ Future<void> mostrarDialogoConfirmarRestaurar(
   required ArchivoRespaldo archivo,
   required String fechaFormateada,
   VoidCallback reiniciarApp = reiniciarAppComoNueva,
+  Future<void> Function() olvidarRegistroSync = _olvidarRegistroSync,
   Future<String> Function() resolverRutaDestino = rutaArchivoBaseDeDatos,
   Future<void> Function({required String rutaRespaldo, required String rutaDestino}) copiarArchivo =
       restaurarDesdeArchivo,
@@ -55,5 +57,16 @@ Future<void> mostrarDialogoConfirmarRestaurar(
   final rutaDestino = await resolverRutaDestino();
   await db.close();
   await copiarArchivo(rutaRespaldo: archivo.ruta, rutaDestino: rutaDestino);
+  // El registro de sync dice "esto ya lo subí / hasta acá bajé" sobre la base que se acaba de reemplazar: dejarlo
+  // haría que la PC no baje lo que la copia no tiene o que suba como nuevo lo que ya estaba. Se baja todo de nuevo.
+  await olvidarRegistroSync();
   reiniciarApp();
+}
+
+Future<void> _olvidarRegistroSync() async {
+  try {
+    await nubeApp?.sync?.reiniciar();
+  } catch (_) {
+    // Sin registro que borrar no hay nada que arreglar; la restauración no puede fallar por esto.
+  }
 }

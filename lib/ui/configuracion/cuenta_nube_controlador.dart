@@ -78,6 +78,8 @@ class CuentaNubeControlador extends ChangeNotifier {
 
   Future<void> desvincular() async {
     await nube.almacen.borrar();
+    // Si después se vincula otra cuenta (o la misma), no tiene que heredar "hasta acá bajé" de la anterior.
+    await nube.sync?.reiniciar();
     nube.canal = null;
     nube.ultimoResultado = null;
     await cargar();
