@@ -888,6 +888,7 @@ class PuertoLocal implements ServicioCompanion {
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
+    int? proveedorId,
   }) {
     return repo_gastos.registrarGastoRapido(
       db,
@@ -896,6 +897,7 @@ class PuertoLocal implements ServicioCompanion {
       montoCentavos: montoCentavos,
       medio: _medioGastoDesde(medio),
       motivo: motivo,
+      proveedorId: proveedorId,
     );
   }
 

@@ -335,12 +335,15 @@ abstract class ServicioCompanion {
     required int fondoInicialCentavos,
   });
 
+  /// Con [proveedorId] el gasto es un pago a ese proveedor (sin deuda cargada
+  /// antes); queda anotado con el proveedor.
   Future<int> registrarGasto({
     required int sesionCajaId,
     required int usuarioId,
     required int montoCentavos,
     required MedioGastoCompanion medio,
     String? motivo,
+    int? proveedorId,
   });
 
   Future<int> registrarIngreso({

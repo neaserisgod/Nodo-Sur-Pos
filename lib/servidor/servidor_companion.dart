@@ -1009,6 +1009,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         montoCentavos: _intRequerido(body, 'montoCentavos'),
         medio: medio,
         motivo: body['motivo'] as String?,
+        proveedorId: body['proveedorId'] as int?,
       );
       return _json({'id': movimientoId}, status: 201);
     } on SesionCerradaException {

@@ -248,7 +248,7 @@ class _DialogoCuentaCorrienteState extends State<_DialogoCuentaCorriente> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         BotonSecundario(texto: 'Cargar deuda', onPressed: _cargarDeuda),
-        BotonPrimario(texto: 'Pagar', onPressed: debe ? _pagar : null),
+        BotonPrimario(texto: 'Pagar', onPressed: _pagar),
       ],
     );
   }
@@ -468,8 +468,10 @@ class _DialogoPagarDeuda extends StatefulWidget {
 }
 
 class _DialogoPagarDeudaState extends State<_DialogoPagarDeuda> {
+  // Con deuda cargada arranca en el saldo; sin deuda, vacío (se puede pagar
+  // igual: el pago se anota como un gasto con ese proveedor).
   late final _montoCtrl = TextEditingController(
-    text: formatearARS(widget.saldoCentavos).replaceAll('\$', ''),
+    text: widget.saldoCentavos > 0 ? formatearARS(widget.saldoCentavos).replaceAll('\$', '') : '',
   );
   final _notaCtrl = TextEditingController();
   late OrigenPagoDeuda _origen = widget.sesionCajaId == null
@@ -494,13 +496,6 @@ class _DialogoPagarDeudaState extends State<_DialogoPagarDeuda> {
     }
     if (monto <= 0) {
       setState(() => _error = 'El monto tiene que ser mayor a 0');
-      return;
-    }
-    if (monto > widget.saldoCentavos) {
-      setState(
-        () => _error =
-            'No puede ser mayor a la deuda (${formatearARS(widget.saldoCentavos)})',
-      );
       return;
     }
     try {
@@ -537,8 +532,9 @@ class _DialogoPagarDeudaState extends State<_DialogoPagarDeuda> {
 
     return Modal(
       titulo: 'Pagar',
-      subtitulo:
-          '${widget.proveedor.nombre} · debés ${formatearARS(widget.saldoCentavos)}',
+      subtitulo: widget.saldoCentavos > 0
+          ? '${widget.proveedor.nombre} · debés ${formatearARS(widget.saldoCentavos)}'
+          : '${widget.proveedor.nombre} · sin deuda cargada',
       ancho: 620,
       contenido: Column(
         mainAxisSize: MainAxisSize.min,
@@ -577,11 +573,15 @@ class _DialogoPagarDeudaState extends State<_DialogoPagarDeuda> {
           BloqueSuave(
             child: Text(
               [
-                monto > 0 && queda >= 0
-                    ? queda == 0
-                          ? 'Se paga toda la deuda.'
-                          : 'Después de este pago le seguís debiendo ${formatearARS(queda)}.'
-                    : 'Escribí cuánto pagás.',
+                monto <= 0
+                    ? 'Escribí cuánto pagás.'
+                    : widget.saldoCentavos <= 0
+                    ? 'No tiene deuda cargada: el pago se anota igual como un gasto con este proveedor.'
+                    : queda == 0
+                    ? 'Se paga toda la deuda.'
+                    : queda > 0
+                    ? 'Después de este pago le seguís debiendo ${formatearARS(queda)}.'
+                    : 'Se paga toda la deuda y ${formatearARS(-queda)} más se anotan como pago sin deuda previa.',
                 switch (_origen) {
                   OrigenPagoDeuda.fuera => 'No toca ninguna caja de la app.',
                   OrigenPagoDeuda.mp =>

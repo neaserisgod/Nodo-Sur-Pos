@@ -768,6 +768,28 @@ void main() {
     expect(movimientos.single.montoCentavos, 50000);
   });
 
+  test('/gastos con "proveedorId" es un pago a ese proveedor, sin deuda cargada', () async {
+    final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+    final proveedorId = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'PZ', nombre: 'Proveedor Z'));
+
+    final respuesta = await http.post(
+      url('/gastos'),
+      headers: headers(),
+      body: jsonEncode({
+        'sesionCajaId': sesionId,
+        'usuarioId': usuarioId,
+        'montoCentavos': 90000,
+        'medio': 'cajonNormal',
+        'proveedorId': proveedorId,
+      }),
+    );
+    expect(respuesta.statusCode, 201);
+
+    final movimiento = (await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get()).single;
+    expect(movimiento.tipo, 'PAGO_PROVEEDOR');
+    expect(movimiento.proveedorId, proveedorId);
+  });
+
   test('/gastos con un "medio" inválido da 400', () async {
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 

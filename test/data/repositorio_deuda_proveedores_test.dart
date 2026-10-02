@@ -34,13 +34,39 @@ void main() {
     expect((await saldosDeuda(db))[proveedorId], 350000);
   });
 
-  test('no se puede pagar más que la deuda ni cargar un monto no positivo', () async {
-    await cargar(100000);
+  test('no se puede pagar ni cargar un monto no positivo', () async {
     await expectLater(
-      pagarDeuda(db, proveedorId: proveedorId, montoCentavos: 100001, origen: OrigenPagoDeuda.fuera, usuarioId: usuarioId),
+      pagarDeuda(db, proveedorId: proveedorId, montoCentavos: 0, origen: OrigenPagoDeuda.fuera, usuarioId: usuarioId),
       throwsArgumentError,
     );
     await expectLater(cargarDeuda(db, proveedorId: proveedorId, montoCentavos: 0, fecha: DateTime.now(), usuarioId: usuarioId), throwsArgumentError);
+  });
+
+  test('se le puede pagar a un proveedor sin deuda cargada: el pago queda anotado y el saldo en cero', () async {
+    await pagarDeuda(
+      db,
+      proveedorId: proveedorId,
+      montoCentavos: 250000,
+      origen: OrigenPagoDeuda.cajon,
+      usuarioId: usuarioId,
+      sesionCajaId: sesionId,
+    );
+    expect(await saldoDeuda(db, proveedorId), 0);
+    final movs = await listarMovimientosDeuda(db, proveedorId);
+    expect(movs.map((m) => m.tipo).toSet(), {'CARGO', 'PAGO'});
+    expect(movs.firstWhere((m) => m.tipo == 'CARGO').montoCentavos, 250000);
+    // Y el gasto quedó en la caja, con el proveedor.
+    final caja = await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('PAGO_PROVEEDOR'))).get();
+    expect(caja.single.proveedorId, proveedorId);
+    expect(caja.single.montoCentavos, 250000);
+  });
+
+  test('un pago mayor a la deuda baja la deuda a cero y anota lo que no estaba cargado', () async {
+    await cargar(100000);
+    await pagarDeuda(db, proveedorId: proveedorId, montoCentavos: 130000, origen: OrigenPagoDeuda.fuera, usuarioId: usuarioId);
+    expect(await saldoDeuda(db, proveedorId), 0);
+    final cargos = (await listarMovimientosDeuda(db, proveedorId)).where((m) => m.tipo == 'CARGO').map((m) => m.montoCentavos).toList()..sort();
+    expect(cargos, [30000, 100000]);
   });
 
   test('pagar del cajón baja el efectivo esperado y deja el movimiento con dueño', () async {
