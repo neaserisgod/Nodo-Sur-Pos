@@ -341,7 +341,7 @@ class _PantallaFormularioProductoState
         children: [
           Text(
             esAlta ? 'Nuevo producto' : 'Editar producto',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: Espaciado.md),
           // Alto acotado + scroll propio adentro de la hoja — con seis
@@ -546,9 +546,18 @@ class _PantallaFormularioProductoState
                   )
                 : Text(esAlta ? 'Dar de alta' : 'Guardar cambios'),
           ),
+          const SizedBox(height: Espaciado.sm),
+          // Cancelar hace lo mismo que volver atrás: pregunta antes de tirar lo tipeado.
+          OutlinedButton(onPressed: _guardando ? null : _cancelar, child: const Text('Cancelar')),
         ],
       ),
     );
+  }
+
+  Future<void> _cancelar() async {
+    if (!_dirty || await confirmarSalirSinGuardar(context)) {
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 }
 

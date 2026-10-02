@@ -1577,3 +1577,47 @@ Decididas con el dueño antes de empezar (fase 1):
   modelo de negocios sigue atado a la persona hasta que el sitio lo completa (`adoptarLegado`).
 - **Estado:** en construcción por fases (ver el README de `NodoSurPage`): hechas las del sitio (modelo, acceso, miembros,
   pantallas, transferencia). Falta la del POS (lista de miembros cacheada + PIN). Esta entrada se actualiza al cerrar cada una.
+
+## Companion: mock completo del celular (2026-10-02)
+
+El dueño tiene un mock completo del celular y de la PC en el canvas "Mocks Nodo
+Sur" (`Movil.dc.html`, 31 pantallas). Reemplaza a los `Movil*.dc.html` sueltos de
+`Lenguaje de diseño/`, que cubrían solo seis pantallas. La app del celular se lleva
+a ese mock en **disposición y contenido**; el lenguaje visual (hero negro, píldoras,
+bloques grises) ya era el mismo desde el rediseño del 2026-10-02.
+
+**Se aplicó**
+- Barra inferior: píldora flotante de tinta, solo texto, cuatro pestañas y **sin botón
+  central**. El escaneo de códigos pasa a los buscadores (`BotonEscanerCampo`):
+  Productos (escanear abre a editar o dar de alta, igual que el botón central de antes),
+  Consultar precio y Carrito (suma el producto).
+- Pantallas secundarias con titular grande y una píldora para salir
+  (`AppBarCompanion`); Inicio con indicador de conexión y el hero que pasa a "Abrir
+  caja"; Elegir usuario con avatares de color; Gestión suma Separaciones y Cierres
+  anteriores.
+- Carrito: cobro en dos pasos — "¿Cómo paga?" y **Confirmar cobro** —, con atajos de
+  efectivo y vuelto en vivo (`domain/vuelto.dart`), y una pantalla de "Venta cobrada".
+  Revierte el gesto único de elegir y cobrar del 2026-09-18, porque el mock separa
+  elegir de confirmar.
+- Productos: lista de productos con chips por proveedor (más los filtros de higiene),
+  "Seleccionar" y "+ Nuevo" arriba. Historial: resumen del período, chips por medio y
+  el detalle desplegado en la misma fila con "Eliminar venta". Los cierres salen de
+  Historial y quedan en Gestión.
+
+**No se copió, a propósito**
+- **Pago mixto en el celular**: sigue sin existir (decisión del 2026-09-07).
+- **Arqueo con la "caja esperada" visible antes de contar**: rompe el conteo a ciegas
+  (`REGLAS-NEGOCIO.md`); el arqueo y el cierre siguen pidiendo contar primero.
+- **Lata de cigarrillos fuera de Movimiento de caja**: el mock ofrece solo Cajón y
+  Mercado Pago; se mantienen las tres cajas.
+- **Tarjeta y aviso de "Versión nueva"**: la actualización se ofrece sola, sin botón
+  (decisión previa); `docs/anotaciones-mocks.md` ya la lista como inexistente.
+- **"Reparaciones" en el tablero**: no es parte de este negocio.
+
+**Vuelto y caramelo**: el vuelto es solo orientación (no se registra). Con $100 exactos
+aparece "Agregar caramelo", que suma el producto de vuelto como una línea normal
+(`REGLAS-NEGOCIO.md` §3); el escritorio lo hace con Alt+C.
+
+**Pendiente del mock**: Conteo de stock en una sola pantalla con botones −/+,
+Configuración con campos editables y medios de pago, y el emparejamiento con el hero de
+escáner. Siguen con su diseño anterior.
