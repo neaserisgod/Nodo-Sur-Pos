@@ -1017,6 +1017,9 @@ class AppDatabase extends _$AppDatabase {
       // con 17 tablas relacionadas conviene que un dato huérfano falle
       // ahí mismo en vez de aparecer como un número raro en un reporte.
       await customStatement('PRAGMA foreign_keys = ON');
+      // Índices que se agregaron después de la migración v22→v23. `IF NOT EXISTS`: en una base que ya los tiene no hace nada, y
+      // en una existente se crean una sola vez sin tocar la versión del esquema.
+      await _crearIndicesAdicionales(this);
     },
   );
 }
@@ -1049,6 +1052,23 @@ Future<void> _crearIndicesDeConsultasCalientes(AppDatabase db) async {
     await db.customStatement(
       'CREATE INDEX IF NOT EXISTS $nombreIndice ON $tabla ($columna)',
     );
+  }
+}
+
+/// Índices sobre columnas de clave foránea que reciben WHERE/JOIN y que faltaban (2026-10-03, auditoría de rendimiento):
+///  * `lineas_de_venta.producto_id`: el ranking de "Más vendidos" agrupa TODAS las líneas por producto cada vez que se
+///    recarga la pantalla de venta; sin índice es un recorrido completo que crece con el historial.
+///  * `movimientos_de_stock` y `historial_de_precios` por producto: la ficha y el historial de un producto.
+///  * Con `PRAGMA foreign_keys = ON`, borrar o cambiar un producto revisa estas tablas hijas: sin índice, cada revisión las recorre.
+Future<void> _crearIndicesAdicionales(AppDatabase db) async {
+  const indices = [
+    ('idx_lineas_de_venta_producto_id', 'lineas_de_venta', 'producto_id'),
+    ('idx_movimientos_de_stock_producto_id', 'movimientos_de_stock', 'producto_id'),
+    ('idx_movimientos_de_stock_venta_id', 'movimientos_de_stock', 'venta_id'),
+    ('idx_historial_de_precios_producto_id', 'historial_de_precios', 'producto_id'),
+  ];
+  for (final (nombreIndice, tabla, columna) in indices) {
+    await db.customStatement('CREATE INDEX IF NOT EXISTS $nombreIndice ON $tabla ($columna)');
   }
 }
 
