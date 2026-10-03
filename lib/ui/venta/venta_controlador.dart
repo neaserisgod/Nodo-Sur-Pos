@@ -314,6 +314,10 @@ class VentaControlador extends ChangeNotifier {
     );
   }
 
+  DateTime? _masVendidosCalculadoEn;
+  bool _masVendidosViejo = false;
+  static const _vidaMasVendidos = Duration(minutes: 10);
+
   Future<void> cargarTodo() async {
     _catalogo = await db.select(db.productos).get();
     _componentesPromos = await componentesDePromos(db);
@@ -326,7 +330,14 @@ class VentaControlador extends ChangeNotifier {
     };
     _recalcularCatalogoVisible();
     categorias = await listarCategorias(db);
-    idsMasVendidos = await productosMasVendidosIds(db);
+    // El ranking agrupa todo el historial de ventas: se recalcula cada tanto (o tras vender acá), no en cada recarga de la
+    // pantalla (que pasa con cada cambio que llega del celular). Un top 10 que se actualiza en minutos no cambia nada al cobrar.
+    final ahora = DateTime.now();
+    if (_masVendidosCalculadoEn == null || _masVendidosViejo || ahora.difference(_masVendidosCalculadoEn!) > _vidaMasVendidos) {
+      idsMasVendidos = await productosMasVendidosIds(db);
+      _masVendidosCalculadoEn = ahora;
+      _masVendidosViejo = false;
+    }
     configuracion = await db.select(db.configuracionTabla).getSingle();
     configuracionNegocio = await configuracionNegocioActual(db);
     sesion = await sesionAbierta(db);
@@ -895,6 +906,7 @@ class VentaControlador extends ChangeNotifier {
       // Primero se espera el guardado en cola para conocer su id.
       await _colaGuardado;
       final pestanaCobrada = _pestanas[pestanaActiva];
+      _masVendidosViejo = true; // vender cambia el ranking: la próxima recarga lo recalcula
       final (ventaId, stockActualizado) = await registrarVenta(
         db,
         venta: Venta(lineas: carrito),
