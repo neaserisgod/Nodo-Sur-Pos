@@ -12,8 +12,10 @@ y el detalle en `DECISIONES.md`.
 
 ## Publicado (2026-10-03)
 
-- **Windows**: estable 1.0.0.2127 (la beta de `main` va en 1.0.0+2128).
-- **Android**: estable 1.0.0+2128.
+- **Windows**: estable 1.0.0.2129 (03/10, al 100 %).
+- **Android**: estable 1.0.0+2130 (03/10, al 100 %). **La 1.0.0+2129 de Android quedó rota**: una segunda
+  publicación con el mismo número pisó su archivo en R2 y el sitio conserva la firma del anterior. La 2130 la reemplaza
+  (los celulares toman la más nueva); conviene bloquear la 2129 desde `/admin/` → Versiones.
 - **Sitio** (`NodoSurPage`): en producción al mezclar a `main`.
 
 ## Métricas
