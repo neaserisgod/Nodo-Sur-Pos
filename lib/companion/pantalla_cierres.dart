@@ -27,6 +27,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 
 import '../data/pdf_dia_completo.dart';
+import '../data/repositorio_conciliacion_mp.dart';
+import '../domain/conciliacion_mp.dart';
+import '../servicios/conciliacion_mp_nube.dart';
+import '../ui/cierre/seccion_mp_real.dart';
+import 'sync_nube_companion.dart';
 import '../domain/dinero.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
@@ -338,6 +343,14 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
     return porFecha.isEmpty ? null : porFecha.first.id;
   }
 
+  /// Los cobros reales de Mercado Pago del día, con la cuenta de Nodo Sur del celular, contra la copia local del día.
+  Future<ConciliacionMp> _cargarMpReal() async {
+    final sesionId = await _sesionLocalId();
+    if (sesionId == null) throw 'este día todavía no llegó a tu celular; esperá a que sincronice';
+    final sync = await syncNubeDelCelular();
+    return conciliarMpDeSesion(baseLocalCompanion(), sesionId, leerCobrosMpDeCuenta(sync.almacen, sync.cliente));
+  }
+
   /// Arma el PDF del día completo y lo abre: desde el visor de Android se
   /// manda por WhatsApp, mail o Drive (El dueño, 2026-10-03).
   Future<void> _exportarDia() async {
@@ -410,6 +423,12 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
             if (_errorExportar != null) ErrorEnLinea(_errorExportar!),
             const SizedBox(height: Espaciado.sm),
           ],
+          SeccionMpReal(
+            cargar: _cargarMpReal,
+            mpEsperadoCentavos: c.mpEsperadoCentavos ?? 0,
+            mpContadoCentavos: c.mpContadoCentavos,
+          ),
+          const SizedBox(height: Espaciado.md),
           if (_resumen != null) ...[
             const Divider(),
             const SizedBox(height: Espaciado.sm),
