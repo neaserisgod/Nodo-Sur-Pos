@@ -187,6 +187,17 @@ void main() {
     );
 
     group('sin stock, no aparece en ventas (Dueño, 2026-09-06)', () {
+      test('con incluirSinStock el agotado aparece, pero detrás de los que sí tienen', () async {
+        await _crearProducto(db, nombre: 'Gaseosa agotada', stock: 0);
+        await _crearProducto(db, nombre: 'Gaseosa lima', stock: 5);
+        final catalogo = await db.select(db.productos).get();
+
+        final nombres = buscarProductos(catalogo: catalogo, textoBuscado: 'gaseosa', incluirSinStock: true)
+            .map((p) => p.nombre)
+            .toList();
+        expect(nombres, ['Gaseosa lima', 'Gaseosa agotada']);
+      });
+
       test(
         'por nombre: un producto con stock 0 no aparece en la búsqueda',
         () async {

@@ -641,7 +641,7 @@ void main() {
       );
 
       testWidgets(
-        'stock en 0: ya no aparece en la búsqueda por nombre (Dueño, 2026-09-06: "si no hay stock, no aparece en ventas")',
+        'stock en 0: aparece atenuado con "Sin stock" y no se puede agregar (Dueño, 2026-10-03: "atenuados mejor")',
         (tester) async {
           // Revierte a propósito la "corrección post-revisión" anterior
           // (Regla 8, "se vende igual, se marca en rojo en el carrito") — ver
@@ -663,11 +663,14 @@ void main() {
           await tester.enterText(find.byType(TextField).first, 'queso');
           await tester.pump();
 
-          expect(find.text('Queso cremoso'), findsNothing);
-          expect(
-            find.text('Sin coincidencias'),
-            findsOneWidget,
-          ); // no hay otro "queso" cargado
+          expect(find.text('Queso cremoso'), findsOneWidget);
+          expect(find.text('Sin stock'), findsOneWidget);
+          expect(find.text('Sin coincidencias'), findsNothing);
+
+          // Enter sobre el agotado avisa y no lo agrega.
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await tester.pump();
+          expect(find.text('Queso cremoso: sin stock, no se puede vender'), findsOneWidget);
         },
       );
 
@@ -693,7 +696,7 @@ void main() {
           await tester.pump();
 
           expect(find.text('Queso cremoso'), findsOneWidget);
-          expect(find.text('Sin stock — no se puede vender'), findsOneWidget);
+          expect(find.text('Sin stock'), findsOneWidget);
           expect(
             find.text('Sin coincidencias'),
             findsNothing,

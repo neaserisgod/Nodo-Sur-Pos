@@ -361,6 +361,7 @@ class VentaControlador extends ChangeNotifier {
     coincidencias = buscarProductos(
       catalogo: _catalogo,
       textoBuscado: campoTexto.text,
+      incluirSinStock: true,
       nombresNormalizados: _nombresNormalizados,
       codigosNormalizados: _codigosNormalizados,
     );
@@ -381,7 +382,18 @@ class VentaControlador extends ChangeNotifier {
 
   void agregarSeleccionActual() {
     if (coincidencias.isEmpty) return;
-    agregarProducto(coincidencias[indicePreseleccionado]);
+    agregarDesdeBusqueda(coincidencias[indicePreseleccionado]);
+  }
+
+  /// Agrega un resultado de la búsqueda. Los agotados se ven atenuados (El dueño, 2026-10-03) pero no se pueden
+  /// vender (2026-09-06): avisa en vez de agregar.
+  void agregarDesdeBusqueda(Producto producto) {
+    if (!tieneStock(producto)) {
+      avisoBusqueda = '${producto.nombre}: sin stock, no se puede vender';
+      notifyListeners();
+      return;
+    }
+    agregarProducto(producto);
   }
 
   /// Agrega [producto] al carrito. [montoVariosCentavos] es obligatorio (e

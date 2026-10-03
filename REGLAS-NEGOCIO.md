@@ -224,6 +224,9 @@ descuadre real.
   `TRAMPAS.md` ("sin stock, no aparece en ventas") para el detalle técnico
   y los casos borde que quedan pendientes (qué pasa al escanear el código
   de algo sin stock, accesos directos, etc.).
+- **Búsqueda de Venta (El dueño, 2026-10-03: "atenuados mejor"):** un producto sin stock **se ve** en la búsqueda,
+  atenuado y con "Sin stock" en lugar de la cantidad, detrás de los que sí tienen. Sigue sin poder venderse: tocarlo o
+  Enter avisa "sin stock, no se puede vender". La grilla de productos de Venta y el celular siguen ocultándolos.
 - No se cargan remitos de entrada por ahora, así que el stock **solo baja**.
   Puede quedar negativo igual (una venta ya cargada en el carrito antes de
   llegar a 0, o un ajuste manual) — sigue sin ser un error, pero ahora un
