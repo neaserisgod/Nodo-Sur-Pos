@@ -123,7 +123,7 @@ void main() {
 
     await t.tap(find.widgetWithText(ChipSeleccionable, r'$50'));
     await t.pump();
-    await t.tap(find.widgetWithText(OutlinedButton, 'Volver'));
+    await t.tap(find.text('Volver'));
     await t.pump(const Duration(milliseconds: 400));
 
     // Aparece la confirmación de salir sin guardar: la pantalla sigue ahí.

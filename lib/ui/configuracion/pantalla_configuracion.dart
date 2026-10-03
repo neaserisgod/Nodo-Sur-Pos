@@ -22,6 +22,7 @@ import '../tema/tokens.dart';
 import '../navegacion/busqueda_contextual.dart';
 import 'configuracion_controlador.dart';
 import '../tema/iconos.dart';
+import '../tema/presionable.dart';
 import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
@@ -52,19 +53,34 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
   /// Buscador de arriba (contextual, 2026-09-28): filtra las secciones.
   String _busqueda = '';
 
-  List<SeccionConfiguracion> get _seccionesVisibles => [
-    for (final s in SeccionConfiguracion.values)
-      if (_seccionDisponible(s) && coincideBusqueda('${_etiquetaSeccion(s)} ${_palabrasClave(s)}', _busqueda)) s,
+  /// Lo que se ve de cada grupo: lo que el módulo permite y lo que coincide con la búsqueda de arriba.
+  List<SeccionConfiguracion> _seccionesDe(GrupoConfiguracion g) => [
+    for (final s in g.secciones)
+      if (_seccionDisponible(s) && coincideBusqueda('${g.etiqueta} ${_etiquetaSeccion(s)} ${_palabrasClave(s)}', _busqueda)) s,
   ];
+
+  List<SeccionConfiguracion> get _seccionesVisibles => [for (final g in GrupoConfiguracion.values) ..._seccionesDe(g)];
+
+  List<GrupoConfiguracion> get _gruposVisibles => [for (final g in GrupoConfiguracion.values) if (_seccionesDe(g).isNotEmpty) g];
 
   /// La sección de recargo de cigarrillos es parte del módulo de caja aparte.
   bool _seccionDisponible(SeccionConfiguracion s) => s != SeccionConfiguracion.cigarrillos || moduloActivo(Modulo.cajaAparte);
 
   void _buscar(String texto) {
     setState(() => _busqueda = texto);
-    // Una sola sección coincide: se abre directo, sin tener que tocarla.
     final visibles = _seccionesVisibles;
-    if (visibles.length == 1 && _c.seccionActual != visibles.single) _c.irASeccion(visibles.single);
+    // Una sola sección coincide: se abre directo. Si lo abierto dejó de coincidir, se pasa a lo primero que sí.
+    if (visibles.length == 1 && _c.seccionActual != visibles.single) {
+      _c.irASeccion(visibles.single);
+    } else if (visibles.isNotEmpty && !visibles.contains(_c.seccionActual)) {
+      _c.irASeccion(visibles.first);
+    }
+  }
+
+  void _irAGrupo(GrupoConfiguracion g) {
+    if (g == _c.grupoActual) return;
+    final secciones = _seccionesDe(g);
+    if (secciones.isNotEmpty) _c.irASeccion(secciones.first);
   }
 
   @override
@@ -95,6 +111,9 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
       value: _c,
       child: Consumer<ConfiguracionControlador>(
         builder: (context, c, _) {
+          final grupo = c.grupoActual;
+          final secciones = _seccionesDe(grupo);
+          final textTheme = Theme.of(context).textTheme;
           return PantallaGestion(
             db: widget.db,
             claveActiva: 'configuracion',
@@ -107,52 +126,61 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ListaMaestra(
-                        mensajeVacio: 'Sin secciones',
+                        mensajeVacio: 'Ningún ajuste coincide',
                         items: [
-                          for (final seccion in _seccionesVisibles)
+                          for (final g in _gruposVisibles)
                             FilaLista(
-                              nombre: _etiquetaSeccion(seccion),
-                              seleccionada: c.seccionActual == seccion,
-                              onTap: () => c.irASeccion(seccion),
+                              key: Key('grupo_${g.name}'),
+                              nombre: g.etiqueta,
+                              seleccionada: grupo == g,
+                              onTap: () => _irAGrupo(g),
                             ),
                         ],
                       ),
-                      const SizedBox(width: Espaciado.md),
-                      // Respaldo e Impresión (antes apartados propios del
-                      // menú, 2026-09-26) traen sus propias superficies y
-                      // listas que llenan el alto — van sin el panel con
-                      // scroll del resto de las secciones.
-                      if (c.seccionActual == SeccionConfiguracion.respaldo)
-                        Expanded(
-                          child: ContenidoRespaldo(
-                            db: widget.db,
-                            usuarioId: widget.usuarioId,
-                          ),
-                        )
-                      else if (c.seccionActual ==
-                          SeccionConfiguracion.impresion)
-                        Expanded(
-                          child: ContenidoImpresion(
-                            db: widget.db,
-                            usuarioId: widget.usuarioId,
-                          ),
-                        )
-                      else
-                        Expanded(
-                          child: Superficie(
-                            // `Material(transparency)`: varias secciones de acá
-                            // usan `ListTile` (Usuarios, Medios de pago,
-                            // Secciones del menú) — sin esto, el `Bloque`
-                            // (un `Container` con color) tapa el ink del
-                            // `ListTile` y Flutter tira una excepción al tocar.
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: SingleChildScrollView(
-                                child: _contenido(c),
+                      const SizedBox(width: Espaciado.lg),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(grupo.etiqueta, style: textTheme.headlineSmall?.copyWith(fontWeight: Pesos.fuerte)),
+                            const SizedBox(height: Espaciado.xs),
+                            Text(grupo.descripcion, style: textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario)),
+                            if (secciones.length > 1) ...[
+                              const SizedBox(height: Espaciado.md),
+                              Wrap(
+                                spacing: Espaciado.xs,
+                                runSpacing: Espaciado.xs,
+                                children: [
+                                  for (final s in secciones)
+                                    _PastillaSeccion(
+                                      key: Key('pastilla_${s.name}'),
+                                      etiqueta: _etiquetaSeccion(s),
+                                      activa: s == c.seccionActual,
+                                      onTap: () => c.irASeccion(s),
+                                    ),
+                                ],
                               ),
+                            ],
+                            const SizedBox(height: Espaciado.md),
+                            // Respaldo e Impresión traen sus propias superficies y listas que llenan el alto: van sin el
+                            // panel con scroll del resto.
+                            Expanded(
+                              child: switch (c.seccionActual) {
+                                SeccionConfiguracion.respaldo => ContenidoRespaldo(db: widget.db, usuarioId: widget.usuarioId),
+                                SeccionConfiguracion.impresion => ContenidoImpresion(db: widget.db, usuarioId: widget.usuarioId),
+                                _ => Superficie(
+                                  // `Material(transparency)`: varias secciones usan `ListTile`; sin esto el `Bloque` tapa
+                                  // el ink y Flutter tira una excepción al tocar.
+                                  child: Material(
+                                    type: MaterialType.transparency,
+                                    child: SingleChildScrollView(child: _contenido(c)),
+                                  ),
+                                ),
+                              },
                             ),
-                          ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
           );
@@ -217,22 +245,50 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
 };
 
 String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
-  SeccionConfiguracion.comercio => 'Mi comercio',
+  SeccionConfiguracion.comercio => 'Comercio',
   SeccionConfiguracion.cuentaNube => 'Cuenta de Nodo Sur',
   SeccionConfiguracion.modulos => 'Módulos',
-  SeccionConfiguracion.cigarrillos => 'Recargo de cigarrillos',
+  SeccionConfiguracion.cigarrillos => 'Cigarrillos',
   SeccionConfiguracion.cajaYRedondeo => 'Caja y redondeo',
-  SeccionConfiguracion.vuelto => 'Botón de vuelto',
-  SeccionConfiguracion.categorias => 'Categorías (ganancia)',
+  SeccionConfiguracion.vuelto => 'Vuelto',
+  SeccionConfiguracion.categorias => 'Ganancia por categoría',
   SeccionConfiguracion.usuarios => 'Usuarios',
   SeccionConfiguracion.mediosPago => 'Medios de pago',
-  SeccionConfiguracion.menu => 'Secciones del menú',
-  SeccionConfiguracion.apariencia => 'Apariencia',
+  SeccionConfiguracion.menu => 'Menú',
+  SeccionConfiguracion.apariencia => 'Tema',
   SeccionConfiguracion.respaldo => 'Respaldo',
   SeccionConfiguracion.impresion => 'Impresión y posnet',
-  SeccionConfiguracion.companion => 'App companion (Android)',
-  SeccionConfiguracion.actualizaciones => 'Versión y actualizaciones',
+  SeccionConfiguracion.companion => 'Celular',
+  SeccionConfiguracion.actualizaciones => 'Versión',
 };
+
+class _PastillaSeccion extends StatelessWidget {
+  const _PastillaSeccion({super.key, required this.etiqueta, required this.activa, required this.onTap});
+
+  final String etiqueta;
+  final bool activa;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Presionable(
+      radio: 999,
+      onTap: onTap,
+      color: activa ? colores.textoPrimario : colores.fondoBloque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
+        child: Text(
+          etiqueta,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: activa ? Pesos.medium : FontWeight.w500,
+            color: activa ? colores.fondo : colores.textoPrimario,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _SeccionModulos extends StatelessWidget {
   const _SeccionModulos({required this.c});
@@ -247,10 +303,8 @@ class _SeccionModulos extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Módulos', style: textTheme.titleMedium),
-          const SizedBox(height: Espaciado.sm),
           Text(
-            'Apagá lo que tu comercio no usa: deja de aparecer en la app. No se borra nada, y al prenderlo vuelve todo como estaba. Vender, cobrar, el stock y el cierre de caja siempre están.',
+            'Apagá lo que no usás. No se borra nada: al prenderlo vuelve como estaba.',
             style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -306,10 +360,8 @@ class _SeccionComercioState extends State<_SeccionComercio> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Mi comercio', style: textTheme.titleMedium),
-          const SizedBox(height: Espaciado.sm),
           Text(
-            'El nombre se ve en la ventana, el menú y el celular. El encabezado es lo que sale arriba de cada ticket, una línea por renglón (nombre, dirección, ciudad…); si lo dejás vacío, el ticket lleva solo el nombre.',
+            'El encabezado sale arriba de cada ticket, una línea por renglón. Vacío, lleva solo el nombre.',
             style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -400,11 +452,6 @@ class _SeccionRecargoCigarrillosState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Recargo de cigarrillos (Regla 6)',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: Espaciado.lg),
           CampoPlata(
             key: const Key('campo_primer_atado'),
             controller: _primerAtadoCtrl,
@@ -454,11 +501,6 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Caja y redondeo',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: Espaciado.lg),
           CampoPlata(
             key: const Key('campo_fondo_fijo'),
             controller: _fondoFijoCtrl,
@@ -476,7 +518,7 @@ class _SeccionCajaYRedondeoState extends State<_SeccionCajaYRedondeo> {
           CampoPlata(
             key: const Key('campo_paso_redondeo'),
             controller: _redondeoCtrl,
-            etiqueta: 'Paso de redondeo en efectivo (Regla 2)',
+            etiqueta: 'Redondeo en efectivo',
             onSubmitted: (_) {
               try {
                 // Paso 0 o negativo rompería el redondeo de cada cobro en efectivo.
@@ -505,11 +547,7 @@ class _SeccionVuelto extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Botón de vuelto',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            'Botón fijo en la pantalla de venta (Alt+C) que agrega 1 unidad de este producto.',
+            'El botón de vuelto de la venta (Alt+C) agrega 1 de este producto.',
             style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -544,8 +582,8 @@ class _SeccionCategorias extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ganancia de referencia por categoría, sobre el precio (Regla 14, informativo)',
-            style: Theme.of(context).textTheme.titleMedium,
+            'Ganancia de referencia sobre el precio. Es solo una guía al cargar productos.',
+            style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
           for (final categoria in c.categorias)
@@ -612,11 +650,6 @@ class _SeccionUsuariosState extends State<_SeccionUsuarios> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Usuarios (Regla 18)',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: Espaciado.lg),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -736,11 +769,7 @@ class _SeccionMediosPago extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Medios de pago',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            'Solo se puede renombrar o desactivar los existentes.',
+            'Tocá uno para renombrarlo.',
             style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -776,8 +805,6 @@ class _SeccionApariencia extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Apariencia', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Espaciado.lg),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Tema automático según el horario del local'),
@@ -821,11 +848,7 @@ class _SeccionMenu extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Secciones del menú',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            '"Cerrar caja", "Imprimir ticket" y "Configuración" son fijos, no aparecen acá.',
+            'Qué secciones se ven arriba y en qué orden.',
             style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.md),
@@ -902,12 +925,7 @@ class _SeccionCompanion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'App companion (Android)',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            'Solo funciona con esta app abierta y el celular en la misma WiFi. '
-            'Escaneá este código una vez desde la app del celular para emparejarlo.',
+            'Para usar el celular por WiFi con esta PC: escaneá este código una vez desde la app del celular.',
             style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -960,10 +978,7 @@ class _SeccionCompanion extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
-              'Este QR es distinto al de arriba — es una URL, para escanear con la '
-              'cámara común del celular (no hace falta tener la app instalada '
-              'todavía). Abre el navegador y descarga el .apk directo; después de '
-              'instalarlo, escaneá el código de arriba para emparejarlo.',
+              'Escaneá este con la cámara del celular para bajar la app; después, el de arriba para emparejarlo.',
               style: TextStyle(color: context.colores.textoSecundario),
             ),
             const SizedBox(height: Espaciado.lg),
@@ -1048,11 +1063,6 @@ class _SeccionActualizacionesState extends State<_SeccionActualizaciones> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Versión y actualizaciones',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: Espaciado.sm),
           FutureBuilder<String>(
             future: _version,
             builder: (context, snapshot) => Text(
@@ -1062,8 +1072,7 @@ class _SeccionActualizacionesState extends State<_SeccionActualizaciones> {
           ),
           const SizedBox(height: Espaciado.sm),
           Text(
-            'Las actualizaciones no tocan la base de datos. Antes de instalar '
-            'una, se guarda una copia al lado de la base.',
+            'Actualizar no toca tus datos: antes se guarda una copia.',
             style: TextStyle(color: context.colores.textoSecundario),
           ),
           const SizedBox(height: Espaciado.lg),

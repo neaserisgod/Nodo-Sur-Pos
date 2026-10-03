@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart';
 import '../../data/repositorio_medios_pago.dart';
@@ -29,12 +28,42 @@ enum SeccionConfiguracion {
   actualizaciones,
 }
 
+/// Los cinco grupos en que se muestra Configuración (El dueño, 2026-10-03: "simplificá lo más posible"): cada
+/// sección de siempre sigue existiendo, pero se llega por uno de estos grupos en vez de una lista de quince.
+enum GrupoConfiguracion {
+  negocio('Negocio', 'Datos del comercio y usuarios', [SeccionConfiguracion.comercio, SeccionConfiguracion.usuarios]),
+  cajaYCobros('Caja y cobros', 'Redondeo, recargos, vuelto y medios de pago', [
+    SeccionConfiguracion.cajaYRedondeo,
+    SeccionConfiguracion.cigarrillos,
+    SeccionConfiguracion.vuelto,
+    SeccionConfiguracion.mediosPago,
+  ]),
+  productos('Productos', 'Ganancia por categoría', [SeccionConfiguracion.categorias]),
+  equiposYCuenta('Equipos y cuenta', 'Nodo Sur, impresión, celular y copias', [
+    SeccionConfiguracion.cuentaNube,
+    SeccionConfiguracion.impresion,
+    SeccionConfiguracion.companion,
+    SeccionConfiguracion.respaldo,
+    SeccionConfiguracion.actualizaciones,
+  ]),
+  apariencia('Apariencia', 'Tema, menú y módulos', [SeccionConfiguracion.apariencia, SeccionConfiguracion.menu, SeccionConfiguracion.modulos]);
+
+  const GrupoConfiguracion(this.etiqueta, this.descripcion, this.secciones);
+  final String etiqueta;
+  final String descripcion;
+  final List<SeccionConfiguracion> secciones;
+
+  static GrupoConfiguracion de(SeccionConfiguracion s) => values.firstWhere((g) => g.secciones.contains(s));
+}
+
 class ConfiguracionControlador extends ChangeNotifier {
   ConfiguracionControlador(this.db);
 
   final AppDatabase db;
 
-  SeccionConfiguracion seccionActual = moduloActivo(Modulo.cajaAparte) ? SeccionConfiguracion.cigarrillos : SeccionConfiguracion.comercio;
+  SeccionConfiguracion seccionActual = SeccionConfiguracion.comercio;
+
+  GrupoConfiguracion get grupoActual => GrupoConfiguracion.de(seccionActual);
 
   Configuracion? configuracion;
   ConfiguracionNegocio? configuracionNegocio;

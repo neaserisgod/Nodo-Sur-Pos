@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/marca.dart';
 import '../../servicios/marca_actual.dart';
+import '../tema/iconos.dart';
 import '../tema/presionable.dart';
 import '../tema/tokens.dart';
 
@@ -40,8 +41,14 @@ class NavbarSuperior extends StatelessWidget {
   final List<ItemNavbarSuperior> items;
   final ValueChanged<String> onSeleccionar;
 
+  /// Configuración no es una sección más del día a día: va como engranaje al final de la barra, no como pastilla
+  /// (El dueño, 2026-10-03: "simplificá lo más posible la navbar").
+  static const claveConfiguracion = 'configuracion';
+
   @override
   Widget build(BuildContext context) {
+    final secciones = [for (final i in items) if (i.clave != claveConfiguracion) i];
+    final hayConfiguracion = secciones.length != items.length;
     return Padding(
       padding: const EdgeInsets.only(top: Espaciado.md),
       child: SizedBox(
@@ -55,7 +62,7 @@ class NavbarSuperior extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final item in items)
+                    for (final item in secciones)
                       _Pastilla(
                         etiqueta: item.etiqueta,
                         activa: item.clave == claveActiva,
@@ -65,6 +72,11 @@ class NavbarSuperior extends StatelessWidget {
                 ),
               ),
             ),
+            if (hayConfiguracion)
+              _BotonConfiguracion(
+                activo: claveActiva == claveConfiguracion,
+                onTap: () => onSeleccionar(claveConfiguracion),
+              ),
           ],
         ),
       ),
@@ -146,6 +158,36 @@ class _Pastilla extends StatelessWidget {
               fontWeight: activa ? Pesos.medium : FontWeight.w500,
               color: activa ? colores.textoPrimario : colores.textoSecundario,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BotonConfiguracion extends StatelessWidget {
+  const _BotonConfiguracion({required this.activo, required this.onTap});
+
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Tooltip(
+      message: 'Configuración',
+      child: Semantics(
+        button: true,
+        label: 'Configuración',
+        child: Presionable(
+          key: const Key('nav_configuracion'),
+          radio: 999,
+          onTap: onTap,
+          color: activo ? colores.fondoBloque : null,
+          child: SizedBox(
+            width: 42,
+            height: 42,
+            child: Icon(IconosPlazoleta.settingsOutlined, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
           ),
         ),
       ),
