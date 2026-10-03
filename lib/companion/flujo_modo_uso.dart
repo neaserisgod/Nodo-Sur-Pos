@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'bienvenida/pantalla_bienvenida.dart';
 import 'emparejamiento.dart';
 import 'escucha_pc.dart';
 import 'modo_uso.dart';
@@ -21,7 +22,14 @@ Future<void> aplicarModoSoloCelular() async {
   syncNubeCompanion?.conmutador.definirPc(emparejada: false);
 }
 
-/// La pantalla que se muestra al arrancar sin modo elegido.
+/// Lo primero que ve una instalación nueva: la bienvenida, y al terminarla (o saltarla) elegir el modo.
+Widget pantallaDeBienvenidaInicial() => PantallaBienvenida(
+  alTerminar: (context) => Navigator.of(context).pushReplacement(
+    MaterialPageRoute<void>(builder: (_) => pantallaDeElegirModoInicial()),
+  ),
+);
+
+/// La pantalla de elegir el modo en el primer arranque (después de la bienvenida).
 Widget pantallaDeElegirModoInicial() => PantallaElegirModo(
   alElegir: (context, modo) => elegirModo(context, modo, actual: null),
 );

@@ -14,6 +14,7 @@ import '../domain/venta.dart';
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
+import 'configurar/pendientes_en_inicio.dart';
 import 'base_local.dart';
 import 'pantalla_separaciones_companion.dart';
 import 'tablero_companion.dart';
@@ -143,6 +144,8 @@ class PantallaInicioCompanion extends StatelessWidget {
               SliverToBoxAdapter(
                 child: AvisoModoLocal(servicio: servicio, pcEmparejada: pcEmparejada),
               ),
+              // Lo que le falta configurar a un negocio nuevo (`configurar/`): no ocupa lugar si no falta nada.
+              const SliverToBoxAdapter(child: PendientesEnInicio()),
               if (actualizacionSinConexion) SliverToBoxAdapter(child: _avisoActualizacionSinConexion(context)),
               SliverToBoxAdapter(child: _accesosDiarios(context)),
               SliverToBoxAdapter(

@@ -10,6 +10,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
+import 'package:la_plazoleta/companion/bienvenida/pantalla_bienvenida.dart';
+import 'package:la_plazoleta/companion/bienvenida/pantalla_listo.dart';
+import 'package:la_plazoleta/companion/bienvenida/vista_entrar_con_google.dart';
+import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/navbar_companion.dart';
 import 'package:la_plazoleta/companion/pantalla_inicio_companion.dart';
@@ -34,6 +38,7 @@ import 'package:la_plazoleta/companion/pantalla_separaciones_companion.dart';
 
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 import '../helpers/base_para_tests.dart';
@@ -182,6 +187,46 @@ void main() {
         PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
         oscuro: oscuro,
       );
+    });
+    // La bienvenida, en cada parada (lo que se ve al tocar Siguiente).
+    for (var paso = 0; paso < paradasBienvenida.length; paso++) {
+      testWidgets('bienvenida ${paso + 1}$sufijo', (tester) async {
+        await preparar(tester);
+        await _capturar(
+          tester,
+          'bienvenida-${paso + 1}',
+          PantallaBienvenida(alTerminar: (_) {}, pasoInicial: paso, segundoFijo: paradasBienvenida[paso]),
+          oscuro: oscuro,
+        );
+      });
+    }
+    testWidgets('entrar con google$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'entrar-google', VistaEntrarConGoogle(alEntrar: () {}), oscuro: oscuro);
+    });
+    for (final paso in PasoNegocio.values) {
+      testWidgets('configurar negocio ${paso.name}$sufijo', (tester) async {
+        await preparar(tester);
+        await _capturar(
+          tester,
+          'configurar-${paso.name}',
+          AsistenteNegocio(
+            pasoInicial: paso,
+            nombreInicial: 'Almacén Don Pepe',
+            rubroInicial: PlantillaRubro.almacen,
+            alGuardarNegocio: (_, _) async {},
+            alEscanear: (_) async => null,
+            alGuardarProducto: (_) async {},
+            alAbrirWeb: (_) {},
+            alTerminar: (_, _) {},
+          ),
+          oscuro: oscuro,
+        );
+      });
+    }
+    testWidgets('listo$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'listo', PantallaListo(nombre: 'Bruno', alSeguir: (_) {}), oscuro: oscuro);
     });
     testWidgets('elegir modo$sufijo', (tester) async {
       await preparar(tester);

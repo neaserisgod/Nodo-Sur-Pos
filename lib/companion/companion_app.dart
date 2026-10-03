@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
+import 'bienvenida/marca_nodo_sur.dart';
 import 'flujo_modo_uso.dart';
 import 'modo_uso.dart';
 import 'identidad_dispositivo.dart';
@@ -80,7 +81,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => modo == null
-            ? pantallaDeElegirModoInicial()
+            ? pantallaDeBienvenidaInicial()
             : usuario == null
             ? const PantallaEntrarConCuenta()
             : const PantallaMenuCompanion(),
@@ -88,7 +89,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     );
   }
 
+  // Leer lo guardado tarda un instante: se ve el logo, que es con lo que arranca la bienvenida.
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) => const Scaffold(body: Center(child: MarcaNodoSur(tamanio: 64)));
 }
