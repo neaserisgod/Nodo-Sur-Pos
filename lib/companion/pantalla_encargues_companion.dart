@@ -13,6 +13,7 @@ import 'navegacion.dart';
 import 'servicio_companion.dart';
 import 'tema/app_bar_companion.dart';
 import 'tema/superficie.dart';
+import 'tema/hoja_vidrio.dart';
 
 /// Lo que devuelve la pantalla al elegir "Entregar": el menú arma el carrito con esto.
 class EntregaEncargue {
@@ -64,18 +65,13 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   }
 
   Future<void> _cancelar(EncargueCompanion e) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('¿Cancelar el encargue de ${e.nombreCliente}?'),
-        content: const Text('Lo apartado vuelve al stock.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Volver')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Cancelar encargue')),
-        ],
-      ),
+    final confirmar = await confirmarAccionDestructiva(
+      context,
+      titulo: '¿Cancelar el encargue de ${e.nombreCliente}?',
+      contenido: 'Lo apartado vuelve al stock.',
+      textoConfirmar: 'Cancelar encargue',
     );
-    if (confirmar != true) return;
+    if (!confirmar) return;
     try {
       await widget.servicio.cancelarEncargue(e.id, usuarioId: widget.usuarioId);
       await _cargar();
@@ -209,19 +205,25 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
 
   Future<void> _elegir(ProductoCompanion p) async {
     final ctrl = TextEditingController(text: p.esPesable ? '' : '1');
-    final cantidad = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
+    final cantidad = await mostrarHojaVidrio<int>(
+      context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: Espaciado.md),
+          TextField(
+            controller: ctrl,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          FilledButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
         ],
       ),
     );
