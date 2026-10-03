@@ -456,6 +456,19 @@ Future<void> _aplicarUnaFila(
 
   if (!comparaActualizado) return; // log inmutable: ya existe, no se toca
 
+  // Una caja ya CERRADA no vuelve a ABIERTA por una fila vieja que llega tarde
+  // (un dispositivo que estuvo sin conexión y sube su copia de la apertura):
+  // con "gana el último en llegar" ese eco borraba el cierre entero (contado,
+  // esperado y diferencia en null) y la caja aparecía abierta otra vez.
+  // Reabrir de verdad (Regla 6) sí pasa: `reabrirSesion` pisa `actualizado_en`
+  // con una hora posterior a la del cierre.
+  if (tabla == 'sesiones_de_caja' &&
+      existente.data['estado'] == 'CERRADA' &&
+      fila['estado'] == 'ABIERTA' &&
+      ((fila['actualizado_en'] as num?)?.toInt() ?? 0) < ((existente.data['actualizado_en'] as num?)?.toInt() ?? 0)) {
+    return;
+  }
+
   if (!ordenDeLlegada) {
     final actualizadoLocal = (existente.data['actualizado_en'] as num?)?.toInt() ?? 0;
     final actualizadoEntrante = (fila['actualizado_en'] as num?)?.toInt() ?? 0;
