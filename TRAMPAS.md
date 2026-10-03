@@ -447,7 +447,7 @@ después de publicar la companion con `redondeoAcumuladoCentavos`/
 binarios separados que se actualizan en momentos distintos** — el celular
 se actualiza solo (`GET /companion/version` + descarga del `.apk`,
 `tool/publicar_actualizacion_companion.sh`), pero **el escritorio no
-tiene ese mecanismo todavía** (`ESTADO.md`, "Próximos pasos": "conviene un
+tiene ese mecanismo todavía** (`docs/ESTADO-ARCHIVO.md`, "Próximos pasos": "conviene un
 script que buildee y copie [el escritorio] en un paso" — no existe aún).
 Si se agrega un campo a la respuesta JSON del servidor
 (`servidor_companion.dart`) y se publica la companion actualizada ANTES

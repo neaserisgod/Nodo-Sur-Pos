@@ -146,8 +146,8 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
    unos días de uso del cobro por el servidor.
 4. Ofrecido y no pedido: hacer obligatorio el motivo de cada gasto.
 5. Limpieza: `.gitignore` no ignora `android/build` ni `android/app/build` (en una PC que compila el APK aparecen miles
-   de cambios); restos de Firestore/Supabase en `lib/data/transporte_firestore.dart` y `lib/firebase_*.dart`;
-   `ESTADO.md` es muy largo y convendría resumir lo viejo.
+   de cambios); restos de Firestore/Supabase en `lib/data/transporte_firestore.dart` y `lib/firebase_*.dart`.
+   (`ESTADO.md` ya se resumió el 2026-10-03; el detalle viejo está en `docs/ESTADO-ARCHIVO.md`.)
 
 ## 8. Datos útiles
 
