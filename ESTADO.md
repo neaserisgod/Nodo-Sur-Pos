@@ -11,7 +11,40 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
-## Android: entrar con Google y "Configurá tu negocio" (2026-10-03) — hecho, falta publicar
+## Lo último (2026-10-03) — publicado: Windows estable 1.0.0.2127 y Android estable 1.0.0+2128
+
+Resumen para retomar en `CONTEXTO.md`. Todo lo de esta sección está mezclado en `main` y publicado.
+
+- **Auditoría de la caja** (el dueño veía diferencias negativas): se revisó cómo se registra cada ingreso y egreso por
+  medio (efectivo, MP, lata) y cómo se calculan el esperado y el resumen. `test/data/conciliacion_caja_test.dart` arma
+  120 días al azar (ventas efectivo/QR, editar/anular, gastos, ingresos, pagos a proveedor por las tres vías, retiros) y
+  compara con un libro independiente: coincide siempre. Con el PDF de un día real se confirmó a mano que la app suma bien;
+  la diferencia era plata que salió sin anotarse (error humano). Arreglos que salieron de la revisión:
+  - Abrir caja desde el celular sin MP explícito arrastra el último MP **contado** (antes arrancaba en $0).
+  - La sync no reabre una caja ya `CERRADA` con una fila vieja de la apertura que llega tarde (borraba el arqueo);
+    reabrir de verdad sigue pasando (`repositorio_sincronizacion.dart`).
+  - Cerrar caja desde el aviso de "cerrar la app con la caja abierta" termina en "Cerrar el sistema" (antes "Volver a
+    la venta" dejaba la duda de si se había cerrado).
+- **Exportar el día completo** desde el celular (Gestión → Cierres → un día → PDF): arqueo de las tres cajas, ventas
+  con líneas y pagos (anuladas marcadas), movimientos de caja y arqueos intermedios (`lib/data/pdf_dia_completo.dart`).
+  Usa la base del celular; con la PC conectada busca el día por hora de apertura.
+- **Mercado Pago según Mercado Pago** en el cierre (PC, al revisar y ya cerrado; celular, en el detalle de cada cierre):
+  cobros reales del turno leídos con `GET /api/mp/cobros` del sitio (bruto, devoluciones, comisión, neto), lo
+  registrado como MP, diferencia de cobros, cobros sin venta y ventas sin cobro (emparejados por monto, el más cercano
+  en el tiempo) y el esperado con comisiones. Nunca frena el cierre. Piezas: `domain/conciliacion_mp.dart`,
+  `data/repositorio_conciliacion_mp.dart`, `ClienteNube.cobrosMp`, `servicios/conciliacion_mp_nube.dart`,
+  `ui/cierre/seccion_mp_real.dart`. No probado todavía contra la cuenta real en un cierre.
+- **Rediseño de navbar y Configuración** (PC y celular): Configuración pasó a un engranaje al final de la navbar; los 15
+  apartados de la PC quedaron en 5 grupos (`GrupoConfiguracion` en `configuracion_controlador.dart`) con pastillas por
+  sección y menos texto; el celular usa los mismos grupos, "Volver" arriba y solo "Guardar" abajo.
+- **Celular**: bienvenida al primer arranque y "Entrar con Google" + "Configurá tu negocio" (PR #46, de otra sesión).
+- Antes (02/10): cobro QR/débito por el servidor con el MP del negocio, interruptor "Cobrar e imprimir por Nodo Sur",
+  imprimir en la terminal por el servidor (`MODELO__SERIAL`), mensajes de cuenta para empleados, índices de la base y
+  "Más vendidos" memorizado, publicar solo con `release:`/`beta:` en el título.
+
+---
+
+## Android: entrar con Google y "Configurá tu negocio" (2026-10-03) — publicado (APK 1.0.0+2127)
 
 - "Entrá con tu cuenta" con un solo botón "Continuar con Google" (`bienvenida/vista_entrar_con_google.dart`).
 - El dueño de un negocio nuevo que usa solo el celular sigue, después de "Listo", a "Configurá tu negocio"
@@ -21,7 +54,7 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 - Tests: `test/companion/negocio_nuevo_test.dart` (18) y capturas de cada paso. `test/companion`: 180 verdes.
 - No probado en un celular real ni contra la nube real.
 
-## Android: bienvenida al primer arranque (2026-10-03) — hecho, falta publicar
+## Android: bienvenida al primer arranque (2026-10-03) — publicado (APK 1.0.0+2127)
 
 - Instalación nueva: logo → bienvenida de seis escenas con "Siguiente"/"Saltar" (`lib/companion/bienvenida/`) → elegir modo →
   entrar con la cuenta (o emparejar) → "Listo, {nombre}." → menú. Los celulares en uso no la ven. Detalle en `DECISIONES.md`.
@@ -29,7 +62,7 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
   `test/companion`: 154 verdes.
 - No probado en un celular real.
 
-## Android: accesos del Inicio y pagar proveedor (2026-10-02) — hecho, falta publicar
+## Android: accesos del Inicio y pagar proveedor (2026-10-02) — publicado
 
 - Inicio del celular: grilla de accesos con **Consultar precio**, **Movimiento de caja**,
   **Pagar proveedor** (nuevo) y **Hacer arqueo** (nuevo, solo con la caja abierta).
@@ -42,7 +75,7 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
-## Instalador y actualización automática (2026-09-30) — hecho, falta publicar la primera versión
+## Instalador y actualización automática (2026-09-30) — publicado y en uso
 
 La app ya se puede distribuir con instalador (Inno Setup) y actualizarse sola
 desde `horsepos.com`. Decisiones y motivos en `DECISIONES.md` ("Instalador y
@@ -217,7 +250,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
 
 ---
 
-## Para retomar (cierre de sesión 2026-09-28)
+## Para retomar (cierre de sesión 2026-09-28) — histórico; lo actual está en `CONTEXTO.md`
 
 - **Instalado en la PC del local** (2026-09-28 17:32): todo lo de abajo
   ("En curso: Lenguaje de diseño"), incluida la segunda tanda de mocks.
@@ -799,14 +832,14 @@ decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
 
 ## Métricas
 
-- **Tests**: 1214, todos verdes (`flutter test`, 2026-09-28) — la suite completa a veces
+- **Tests**: 1853, todos verdes (`flutter test`, 2026-10-03). Antes: 1214, todos verdes (`flutter test`, 2026-09-28) — la suite completa a veces
   muestra 1-3 fallos que cambian de nombre entre corridas, todos acotados a
   `test/ui/venta/` (hit-test warnings de Flutter contra widgets fuera de
   pantalla); en aislamiento esos mismos archivos pasan siempre. Flakiness
   preexistente del test runner, no relacionada con ningún cambio de código —
   queda pendiente de investigar si vuelve a aparecer.
 - **`flutter analyze`**: limpio en `lib/` y `test/`, salvo restos de Firestore sin el paquete (`lib/data/transporte_firestore.dart`, `lib/firebase_*.dart`, `integration_test/sincronizacion_firestore_test.dart`), que vienen de antes.
-- **`schemaVersion`** de la base: **39** (`lib/data/database.dart`) — v39
+- **`schemaVersion`** de la base: **47** al 2026-10-03 (`lib/data/database.dart`; las v40–v47 están comentadas en `onUpgrade`). v39
   saca del menú Reportes, Equilibrio, Respaldo, Impresión y Comparar precios
   (ver "Menú de secciones rehecho..." en `DECISIONES.md`). v38
   guarda la separación del día por proveedor (para destildar en

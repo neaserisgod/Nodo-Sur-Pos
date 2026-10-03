@@ -1,8 +1,9 @@
 # Nodo Sur POS
 
 Sistema de caja y gestión para comercios chicos (kioscos, almacenes, fiambrerías). App de escritorio en Flutter
-para Windows, con una app companion para Android que se sincroniza por el wifi del local — todo local, sin backend
-propio. Cada comercio pone su nombre y prende solo los módulos que usa (Configuración → Módulos). Nació para un
+para Windows, con una app companion para Android. Cada equipo tiene su base local y se sincronizan por la nube de
+Nodo Sur (horsepos.com, repo `neaserisgod/NodoSurPage`) o por el wifi del local. **Para retomar el trabajo, empezá por
+[`CONTEXTO.md`](./CONTEXTO.md).** Cada comercio pone su nombre y prende solo los módulos que usa (Configuración → Módulos). Nació para un
 almacén de barrio, La Plazoleta (ver [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md)): de ahí
 vienen el nombre interno del paquete (`la_plazoleta`) y algunos nombres internos del código.
 
@@ -22,6 +23,7 @@ Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor e
 
 | Documento | Es la fuente de verdad de... |
 |---|---|
+| [`CONTEXTO.md`](./CONTEXTO.md) | La puerta de entrada: el sistema completo (PC, celular y sitio), lo hecho hasta hoy, lo que quiere el dueño y cómo trabaja, cómo se publica y qué quedó pendiente. |
 | [`CLAUDE.md`](./CLAUDE.md) | Cómo está armado el código: stack, arquitectura de carpetas, convenciones que no se rompen, qué es cada fase del roadmap, el flujo de trabajo (plan antes de código, ambigüedades marcadas, tests primero), la restricción de hardware, y la especificación completa de la pantalla de venta. |
 | [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.), y qué módulo activa cada una. Si el código contradice esto, el código está mal. |
 | [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md) | El comercio de origen: cómo está configurado y qué nombres de archivo no se pueden cambiar. |
@@ -51,7 +53,7 @@ dart run build_runner build
 # Análisis estático — tiene que dar "No issues found!"
 flutter analyze
 
-# Toda la suite de tests (440 al día de este documento, ver ESTADO.md)
+# Toda la suite de tests (1853 al 2026-10-03, ver ESTADO.md)
 flutter test
 
 # Build de desarrollo — se abre con hot reload
