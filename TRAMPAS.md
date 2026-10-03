@@ -697,6 +697,8 @@ identidad; solo le pasaba a los comercios nuevos.
 
 Regla: **todo insert en una tabla de `tablasSincronizables` lleva `globalId`, `origenDispositivo` y `actualizadoEn`**.
 Si la fila la siembran varios equipos por su cuenta, el `global_id` es fijo (`globalIdUsuarioInicial`,
-`globalIdProductoVarios`, los medios de pago) para que converjan en una sola. Excepciones a propósito: las promos (sus
-artículos no viajan) y la fila de configuración del negocio (pendiente de tratarla como fila única, ver `ESTADO.md`).
+`globalIdProductoVarios`, `globalIdConfiguracionNegocio`, los medios de pago) para que converjan en una sola. Si
+además la tabla es de UNA fila por equipo (la configuración del negocio), la sync tiene que tratar una fila con otro id
+como la misma (`_aplicarUnaFila`): si no, inserta una segunda y `getSingle` explota. Excepción a propósito: las promos
+(sus artículos no viajan).
 `test/data/sync_instalacion_nueva_test.dart` lo cubre.

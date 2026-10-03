@@ -75,7 +75,8 @@ Future<void> prepararNegocioNuevo(AppDatabase db) async {
           recargoSueltoCentavos: const Value(0),
           pasoRedondeoCentavos: const Value(pasoRedondeoInicialCentavos),
           modulosDesactivados: Value(Modulo.compararPrecios.clave),
-          globalId: Value(generarGlobalId()),
+          // El mismo id fijo que siembra la PC: es la misma fila única en todos los equipos.
+          globalId: const Value(globalIdConfiguracionNegocio),
           origenDispositivo: Value(idDispositivoActual),
           actualizadoEn: Value(DateTime.now()),
         ),

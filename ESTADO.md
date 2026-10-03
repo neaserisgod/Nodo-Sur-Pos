@@ -18,12 +18,12 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 1971 verdes (`flutter test --exclude-tags bench`, 2026-10-03). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 1976 verdes (`flutter test --exclude-tags bench`, 2026-10-03). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze lib`**: sin errores; quedan avisos viejos de estilo (imports sin usar) que no tienen que subir. Los
   restos de Firestore que se listaban acá ya no existen.
-- **`schemaVersion`**: **49** (`lib/data/database.dart`; las v40–v49 están comentadas en `onUpgrade`).
+- **`schemaVersion`**: **50** (`lib/data/database.dart`; las v40–v50 están comentadas en `onUpgrade`).
 - Capturas para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y
   `test/companion/capturas_companion_test.dart` (PNG en `capturas/`, ignorada por git; no son golden tests).
 
@@ -83,7 +83,10 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
 - **Arreglos de la revisión (03/10)**: una PC instalada de cero sincroniza su usuario inicial, "Varios" y las categorías
   de la plantilla (antes nacían sin `global_id` y el celular rechazaba sus cajas; migración v49 para las ya instaladas);
   un mixto cuyo total baja después de cargar el efectivo ya no graba Mercado Pago negativo (y `registrarVenta` rechaza
-  pagos negativos); "con cuánto paga" del celular ya no repite $100.000.
+  pagos negativos); "con cuánto paga" del celular ya no repite $100.000. La configuración del negocio (recargos, redondeo,
+  módulos) es una sola fila por equipo también para la sync: nace con un id fijo, una que llega con otro id se toma como
+  la misma y gana la más reciente (antes una PC nueva no la mandaba nunca, y un equipo podía quedar con dos filas y sin
+  poder leerla); migración v50 deja una sola.
 
 ## Sin probar en real
 
@@ -108,10 +111,6 @@ obligatorio en cada gasto.
 
 - Fiado cobrado sin verificar estado ni transacción; separar/pagar proveedor sin transacción (de la revisión del
   2026-09-29, no tocado). Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).
-- **La fila de configuración del negocio no sincroniza en una PC instalada de cero** (recargos, redondeo, módulos): nace
-  sin `global_id` y nada se lo da. Darle uno al sembrarla no alcanza: si el celular ya creó la suya
-  (`prepararNegocioNuevo`) quedarían dos filas en cada equipo. Hace falta que la sync la trate como fila única (decisión
-  técnica, no tocado). Mientras tanto el celular usa los valores de fábrica.
 - Ventas abiertas: decidir si el fiado pasa a ser una venta abierta con nombre; refrescar precios de un borrador viejo.
 - Cuenta corriente: falta la deuda total en el Dashboard; el celular no tiene el apartado.
 - Promos: no se venden desde el celular; una venta ya cobrada se edita como líneas sueltas. Precio automático por proveedor:

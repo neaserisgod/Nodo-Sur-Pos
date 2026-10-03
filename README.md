@@ -58,7 +58,7 @@ dart run build_runner build
 # Análisis estático — sin errores; los avisos viejos de estilo no tienen que subir (igual que CI)
 flutter analyze lib
 
-# Toda la suite de tests (~1971 al 2026-10-03), sin los benchmarks de 60.000 ventas
+# Toda la suite de tests (~1976 al 2026-10-03), sin los benchmarks de 60.000 ventas
 flutter test --exclude-tags bench
 # Los benchmarks, aparte
 flutter test --tags bench
