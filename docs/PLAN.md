@@ -41,6 +41,14 @@ Cada una con su test. Estado real, incluyendo lo que **corregí de mi propio dia
 
 ## Fase 1 — Un solo sistema de diseño (base de todo lo visual)
 
+**Estado (2026-10-03):** ✅ fondo oscuro `#0E0F12`; ✅ `es_AR`; ✅ tests de accesibilidad (tamaño táctil, etiquetas, contraste) en Venta, Inicio, Historial,
+Proveedores, Separaciones, Configuración, Encargues, Cierre y 4 pantallas del celular, y lo que fallaba arreglado; ✅ `AlertDialog`/`ElevatedButton` crudos fuera
+del kit (queda a propósito el botón rojo de restaurar); ✅ esqueletos en 4 pantallas; ✅ deshacer en Venta (quitar línea, Esc, cerrar pestaña) y en el carrito
+del celular. **Falta:** pasar `companion/tema` a `ui/tema` (hoy `AcentosCompanion`, chip, `superficie` y `colores_companion` siguen separados — decidir cuál versión
+gana, cambia cómo se ve el celular); borrar los tokens legados `ColoresPlazoleta.claro/oscuro` y `Bloque`; esqueleto en Equilibrio, Respaldo, Comparar precios,
+Dashboard y Cierre; tests de accesibilidad de Equilibrio, Respaldo, Impresión, diálogos y el resto del celular; anillo de foco visible; tema oscuro "seguir al
+sistema" (pregunta 5 al dueño).
+
 - Unificar `companion/tema/*` dentro de `ui/tema/` (ver `docs/ESTANDARES-GOOGLE.md` §1).
 - Tokens: acento único, colores solo de estado, oscuro `#0E0F12`, borrar legados, cero `Color(0xFF…)` sueltos.
 - Kit completo y usado en todos lados: `Modal`, `HojaInferior` (celular), `BotonPrimario/Secundario`, `Campo*`, `EstadoVacio/Error`,
