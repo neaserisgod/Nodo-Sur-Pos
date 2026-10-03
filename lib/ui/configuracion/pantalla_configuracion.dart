@@ -166,7 +166,17 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
                             // Respaldo e Impresión traen sus propias superficies y listas que llenan el alto: van sin el
                             // panel con scroll del resto.
                             Expanded(
-                              child: switch (c.seccionActual) {
+                              // Cambiar de sección funde el contenido en vez de saltar.
+                              child: AnimatedSwitcher(
+                                duration: Animaciones.corta,
+                                switchInCurve: Animaciones.curva,
+                                layoutBuilder: (actual, anteriores) => Stack(
+                                  fit: StackFit.expand,
+                                  children: [...anteriores, ?actual],
+                                ),
+                                child: KeyedSubtree(
+                                  key: ValueKey(c.seccionActual),
+                                  child: switch (c.seccionActual) {
                                 SeccionConfiguracion.respaldo => ContenidoRespaldo(db: widget.db, usuarioId: widget.usuarioId),
                                 SeccionConfiguracion.impresion => ContenidoImpresion(db: widget.db, usuarioId: widget.usuarioId),
                                 _ => Superficie(
@@ -178,6 +188,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
                                   ),
                                 ),
                               },
+                                ),
+                              ),
                             ),
                           ],
                         ),

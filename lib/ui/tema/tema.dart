@@ -227,11 +227,17 @@ abstract final class TemaPlazoleta {
   }
 }
 
-/// Fade corto, sin desplazamiento — sin tocar en el remake (fase 13, ver
-/// `DISENO.md`: la companion desliza porque tiene jerarquía de pestañas,
-/// esta app no).
+/// Fundido corto con un acercamiento muy leve (98% → 100%) y la pantalla de abajo que se aleja un poco: se siente
+/// fluido sin "viajar" de costado (El dueño, 2026-10-03: "que se vea todo fluido"). Sin desplazamiento lateral: esta app
+/// no tiene jerarquía de pestañas como la companion. Al volver, la misma animación al revés.
 class _TransicionCorta extends PageTransitionsBuilder {
   const _TransicionCorta();
+
+  @override
+  Duration get transitionDuration => Animaciones.media;
+
+  @override
+  Duration get reverseTransitionDuration => Animaciones.corta;
 
   @override
   Widget buildTransitions<T>(
@@ -241,9 +247,17 @@ class _TransicionCorta extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    final entrada = CurvedAnimation(parent: animation, curve: Animaciones.curva, reverseCurve: Curves.easeInCubic);
+    final tapada = CurvedAnimation(parent: secondaryAnimation, curve: Animaciones.curva, reverseCurve: Curves.easeInCubic);
     return FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: Animaciones.curva),
-      child: child,
+      opacity: entrada,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.98, end: 1).animate(entrada),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 1, end: 0.99).animate(tapada),
+          child: child,
+        ),
+      ),
     );
   }
 }
