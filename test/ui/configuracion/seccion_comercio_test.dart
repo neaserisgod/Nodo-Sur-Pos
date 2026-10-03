@@ -18,11 +18,11 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
-  testWidgets('Mi comercio aparece en el menú de Configuración, con el nombre actual', (tester) async {
+  testWidgets('Comercio es lo primero de Configuración (grupo Negocio), con el nombre actual', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
-    await tester.tap(find.text('Mi comercio'));
+    await tester.tap(find.byKey(const Key('grupo_negocio')));
     await tester.pumpAndSettle();
 
     final nombre = tester.widget<TextField>(_campo('campo_nombre_comercio'));
@@ -34,7 +34,7 @@ void main() {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
-    await tester.tap(find.text('Mi comercio'));
+    await tester.tap(find.byKey(const Key('grupo_negocio')));
     await tester.pumpAndSettle();
 
     await tester.enterText(_campo('campo_nombre_comercio'), '  Kiosco Del Centro ');
@@ -51,7 +51,7 @@ void main() {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
-    await tester.tap(find.text('Mi comercio'));
+    await tester.tap(find.byKey(const Key('grupo_negocio')));
     await tester.pumpAndSettle();
     await tester.enterText(_campo('campo_nombre_comercio'), 'Almacén Norte');
     await tester.pumpAndSettle();
@@ -62,7 +62,7 @@ void main() {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
-    await tester.tap(find.text('Mi comercio'));
+    await tester.tap(find.byKey(const Key('grupo_negocio')));
     await tester.pumpAndSettle();
     await tester.enterText(_campo('campo_nombre_comercio'), '');
     await tester.tap(find.text('Guardar'));
@@ -74,7 +74,7 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     await _pump(tester, db);
-    await tester.tap(find.text('Mi comercio'));
+    await tester.tap(find.byKey(const Key('grupo_negocio')));
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(_campo('campo_nombre_comercio')).controller!.text, '');
     expect(tester.widget<TextField>(_campo('campo_encabezado_ticket')).controller!.text, '');

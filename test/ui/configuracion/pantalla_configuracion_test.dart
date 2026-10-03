@@ -24,11 +24,26 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
+  testWidgets('arranca en Negocio y muestra los cinco grupos', (tester) async {
+    final db = baseDeTest();
+    addTearDown(db.close);
+    await _pump(tester, db);
+    for (final g in ['negocio', 'cajaYCobros', 'productos', 'equiposYCuenta', 'apariencia']) {
+      expect(find.byKey(Key('grupo_$g')), findsOneWidget, reason: g);
+    }
+    expect(find.byKey(const Key('pastilla_comercio')), findsOneWidget);
+    expect(find.byKey(const Key('campo_nombre_comercio')), findsOneWidget);
+  });
+
   testWidgets('editar el recargo de cigarrillos persiste el cambio', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
 
     await _pump(tester, db);
+    await tester.tap(find.byKey(const Key('grupo_cajaYCobros')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pastilla_cigarrillos')));
+    await tester.pumpAndSettle();
     await tester.enterText(_campo('campo_primer_atado'), '500');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
@@ -56,7 +71,9 @@ void main() {
     addTearDown(db.close);
 
     await _pump(tester, db);
-    await tester.tap(find.text('Secciones del menú'));
+    await tester.tap(find.byKey(const Key('grupo_apariencia')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pastilla_menu')));
     await tester.pumpAndSettle();
 
     final switches = find.byType(Switch);
@@ -72,7 +89,9 @@ void main() {
     addTearDown(db.close);
 
     await _pump(tester, db);
-    await tester.tap(find.text('App companion (Android)'));
+    await tester.tap(find.byKey(const Key('grupo_equiposYCuenta')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pastilla_companion')));
     await tester.pumpAndSettle();
 
     // La IP de LAN se carga aparte (llamada real al sistema operativo, no

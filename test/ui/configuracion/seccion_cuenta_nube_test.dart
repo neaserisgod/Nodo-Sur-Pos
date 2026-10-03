@@ -70,7 +70,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: PantallaConfiguracion(db: db, usuarioId: 1, nube: nube)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Cuenta de Nodo Sur'));
+    await tester.tap(find.byKey(const Key('grupo_equiposYCuenta')));
     await tester.pumpAndSettle();
   }
 

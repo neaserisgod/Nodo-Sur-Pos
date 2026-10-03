@@ -119,13 +119,9 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Cuenta de Nodo Sur', style: textTheme.titleMedium),
-          const SizedBox(height: Espaciado.sm),
           Text(
-            'Vinculá esta PC a tu cuenta de Google para guardar copias de tu base en la nube. Si borrás el sistema y la base, '
-            'lo reinstalás, entrás con la misma cuenta y recuperás todo. Se guardan las últimas 5 copias, cifradas en el servidor. '
-            'No incluyen el token de Mercado Pago ni el del celular: después de restaurar se vuelven a cargar (Configuración → '
-            'Impresión, y emparejar el celular de nuevo).',
+            'Con tu cuenta de Google se guardan copias cifradas de tus datos (las últimas 5) y, si reinstalás, '
+            'entrás con la misma cuenta y recuperás todo.',
             style: secundario,
           ),
           const SizedBox(height: Espaciado.lg),

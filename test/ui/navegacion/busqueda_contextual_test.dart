@@ -68,8 +68,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final lista = find.byType(ListaMaestra);
-    expect(find.descendant(of: lista, matching: find.text('Caja y redondeo')), findsOneWidget);
-    expect(find.descendant(of: lista, matching: find.text('Usuarios')), findsNothing);
+    expect(find.descendant(of: lista, matching: find.text('Caja y cobros')), findsOneWidget);
+    expect(find.descendant(of: lista, matching: find.text('Negocio')), findsNothing);
     // Se abrió sola: se ve el campo de esa sección.
     expect(find.textContaining('Fondo fijo del cajón'), findsOneWidget);
   });

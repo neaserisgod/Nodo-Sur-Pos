@@ -15,7 +15,9 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: PantallaConfiguracion(db: db, usuarioId: 1)));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Módulos'));
+  await tester.tap(find.byKey(const Key('grupo_apariencia')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('pastilla_modulos')));
   await tester.pumpAndSettle();
 }
 
@@ -51,11 +53,13 @@ void main() {
     addTearDown(db.close);
     addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
     await _pump(tester, db);
-    expect(find.text('Recargo de cigarrillos'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('grupo_cajaYCobros')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('pastilla_cigarrillos')), findsOneWidget);
 
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
     await tester.pumpAndSettle();
-    expect(find.text('Recargo de cigarrillos'), findsNothing);
-    expect(find.text('Mi comercio'), findsOneWidget);
+    expect(find.byKey(const Key('pastilla_cigarrillos')), findsNothing);
+    expect(find.byKey(const Key('pastilla_cajaYRedondeo')), findsOneWidget);
   });
 }
