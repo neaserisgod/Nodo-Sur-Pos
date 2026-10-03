@@ -271,7 +271,31 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  void _eliminarLinea(int index) => _actualizarLinea(index, null);
+  void _eliminarLinea(int index) {
+    final quitada = widget.carrito[index];
+    _actualizarLinea(index, null);
+    // Sin confirmación previa: un toque saca la línea, así que se puede deshacer.
+    final mensajero = ScaffoldMessenger.of(context);
+    mensajero.clearSnackBars();
+    mensajero.showSnackBar(
+      SnackBar(
+        content: Text('Quitaste ${quitada.nombreProducto}'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () {
+            if (!mounted) return;
+            _claveCobroActual = null;
+            setState(() {
+              widget.carrito.insert(index.clamp(0, widget.carrito.length), quitada);
+              _medio = null;
+              _resultado = null;
+            });
+          },
+        ),
+      ),
+    );
+  }
 
   /// `nueva` null = eliminar la línea (mismo criterio que el escritorio:
   /// restar por debajo de 1 saca la línea entera, el dueño, 2026-09-07: "no
