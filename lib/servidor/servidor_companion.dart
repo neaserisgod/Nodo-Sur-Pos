@@ -42,6 +42,7 @@ import 'package:shelf_router/shelf_router.dart';
 import '../data/busqueda_productos.dart';
 import '../data/cobro_posnet.dart';
 import '../data/database.dart';
+import '../domain/codigo_emparejamiento.dart';
 import '../data/notificador_cambios.dart';
 import '../data/impresion_posnet.dart';
 import '../data/repositorio_arqueo_intermedio.dart';
@@ -115,6 +116,10 @@ Future<File> _archivoVersionCompanion() async {
 }
 
 const int puertoServidorCompanion = 8099;
+
+/// El código de emparejamiento vigente de esta PC (uno solo a la vez, en memoria: si la app se cierra, se pierde y se
+/// genera otro).
+final codigoEmparejamiento = GestorCodigoEmparejamiento();
 const String encabezadoToken = 'X-Companion-Token';
 
 /// Por dónde cobra la PC a la terminal: directo con el access token cargado en Configuración (lo de siempre), o por el
@@ -269,7 +274,8 @@ Middleware _autenticacion(AppDatabase db) {
       // sensible — es el mismo binario que cualquiera podría instalar
       // igual una vez emparejado — el token sigue protegiendo todo lo
       // demás (productos, ventas, gastos...).
-      if (request.url.path == 'ping' || request.url.path == 'companion/apk') {
+      // `/emparejar` también: es justamente cómo un celular nuevo consigue el token, con el código de 6 números.
+      if (request.url.path == 'ping' || request.url.path == 'companion/apk' || request.url.path == 'emparejar') {
         return innerHandler(request);
       }
 
@@ -288,6 +294,25 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
 
   router.get('/ping', (Request request) {
     return _json({'ok': true, 'app': 'la_plazoleta', 'mensaje': 'pong'});
+  });
+
+  // Emparejar con el código de 6 números que muestra Configuración → Celular (El dueño, 2026-10-03): el celular lo
+  // manda y, si es el vigente, recibe la llave de esta PC. De un solo uso, vence en 5 minutos y se anula a los 5
+  // intentos fallidos (`GestorCodigoEmparejamiento`).
+  router.post('/emparejar', (Request request) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final codigo = body['codigo'];
+    if (codigo is! String || !RegExp(r'^\d{6}$').hasMatch(codigo.trim())) return _error(400, 'El código tiene 6 números');
+    return switch (codigoEmparejamiento.canjear(codigo)) {
+      ResultadoCanje.ok => _json({
+        'token': await tokenCompanionActual(db) ?? await regenerarTokenCompanion(db),
+        'puerto': puertoServidorCompanion,
+      }),
+      ResultadoCanje.incorrecto => _error(401, 'Código incorrecto. Revisalo en la PC y probá de nuevo.'),
+      ResultadoCanje.vencido => _error(410, 'El código venció. Generá otro en la PC.'),
+      ResultadoCanje.anulado => _error(429, 'Demasiados intentos: el código se anuló. Generá otro en la PC.'),
+      ResultadoCanje.sinCodigo => _error(404, 'No hay un código activo. Generá uno en la PC (Configuración → Celular).'),
+    };
   });
 
   // Aviso instantáneo al celular (2026-09-28, "100% fluida la sync por

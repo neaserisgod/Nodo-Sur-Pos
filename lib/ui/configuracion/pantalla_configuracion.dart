@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +27,7 @@ import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
 import '../../servicios/nube.dart';
+import '../../servicios/pc_local_nube.dart';
 import 'seccion_cuenta_nube.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
@@ -897,27 +898,58 @@ class _SeccionMenu extends StatelessWidget {
   }
 }
 
-/// Emparejamiento de la companion app Android (spike 2026-09-07): un QR con
-/// `{ip, puerto, token}` para que el celular sepa a qué IP conectarse y con
-/// qué token — no es login de usuario (El dueño/su empleado eligen quién son
-/// desde el celular, como al abrir caja), es solo la llave que evita que
-/// cualquier otro dispositivo de la misma WiFi use la API.
-///
-/// Segundo QR, agregado 2026-09-07 (El dueño: "que en la app escaneando el QR
-/// lo ponga para descargar") — una URL lisa a `/companion/apk`, para la
-/// cámara común de un celular que todavía no tiene la app instalada (el QR
-/// de arriba es JSON, útil solo para el escáner de la propia companion).
-/// `/companion/apk` quedó sin token en `servidor_companion.dart` a
-/// propósito: un navegador abriendo un link no puede mandar el header, y
-/// el .apk en sí no es un dato sensible.
-class _SeccionCompanion extends StatelessWidget {
+/// Conectar un celular con esta PC (El dueño, 2026-10-03: "que empareje por un código numérico de una sola vez"). Si
+/// el celular está con la misma cuenta y sucursal de Nodo Sur se conecta solo (la PC avisa su dirección al sitio,
+/// `pc_local_nube.dart`); si no, el celular busca la PC en el wifi y pide este código de 6 números, que sirve una vez y
+/// dura 5 minutos (`codigoEmparejamiento`, `/emparejar` en `servidor_companion.dart`). Ya no hay QR con la llave.
+/// Sigue el QR para bajar la app: es una dirección para la cámara común de un celular que todavía no la tiene.
+class _SeccionCompanion extends StatefulWidget {
   const _SeccionCompanion({required this.c});
   final ConfiguracionControlador c;
 
   @override
+  State<_SeccionCompanion> createState() => _SeccionCompanionState();
+}
+
+class _SeccionCompanionState extends State<_SeccionCompanion> {
+  Timer? _reloj;
+
+  @override
+  void initState() {
+    super.initState();
+    // El código vence solo: la cuenta regresiva se repinta cada segundo mientras haya uno.
+    _reloj = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && codigoEmparejamiento.codigo != null) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _reloj?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _generarCodigo() async {
+    if (widget.c.configuracion!.companionToken == null) await widget.c.generarTokenCompanion();
+    setState(codigoEmparejamiento.generar);
+  }
+
+  Future<void> _desconectarCelulares() async {
+    codigoEmparejamiento.anular();
+    await widget.c.generarTokenCompanion();
+    final nube = nubeApp;
+    if (nube != null) unawaited(avisarPcLocal(widget.c.db, almacen: nube.almacen, cliente: nube.cliente));
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final token = c.configuracion!.companionToken;
-    final ip = c.companionIp;
+    final ip = widget.c.companionIp;
+    final textTheme = Theme.of(context).textTheme;
+    final secundario = TextStyle(color: context.colores.textoSecundario);
+    final codigo = codigoEmparejamiento.codigo;
+    final restante = codigoEmparejamiento.restante;
+    final mmss = '${restante.inMinutes}:${(restante.inSeconds % 60).toString().padLeft(2, '0')}';
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
@@ -925,71 +957,63 @@ class _SeccionCompanion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Para usar el celular por WiFi con esta PC: escaneá este código una vez desde la app del celular.',
-            style: TextStyle(color: context.colores.textoSecundario),
+            'En el celular tocá "Conectar con la PC". Si está con tu misma cuenta de Nodo Sur se conecta solo; si no, '
+            'te pide este código. El celular tiene que estar en el mismo wifi.',
+            style: secundario,
           ),
           const SizedBox(height: Espaciado.lg),
           if (ip == null)
             Text(
-              'No se encontró una red local conectada — conectá esta PC a la '
-              'WiFi del local antes de generar el código.',
+              'Esta PC no está conectada a una red local: conectala al wifi del local para emparejar un celular.',
               style: TextStyle(color: context.colores.error),
             )
-          else if (token == null)
-            BotonPrimario(
-              texto: 'Generar código',
-              onPressed: c.generarTokenCompanion,
-            )
           else ...[
-            Center(
-              child: Superficie(
-                relleno: context.colores.fondo,
-                child: QrImageView(
-                  data: jsonEncode({
-                    'ip': ip,
-                    'puerto': puertoServidorCompanion,
-                    'token': token,
-                  }),
-                  size: 220,
+            Superficie(
+              relleno: context.colores.fondo,
+              child: SizedBox(
+                width: double.infinity,
+                child: AnimatedSwitcher(
+                  duration: Animaciones.corta,
+                  child: codigo == null
+                      ? Column(
+                          key: const ValueKey('sin_codigo'),
+                          children: [
+                            Text('Código para un celular nuevo', style: textTheme.titleMedium),
+                            const SizedBox(height: Espaciado.md),
+                            BotonPrimario(texto: 'Generar código', onPressed: _generarCodigo),
+                          ],
+                        )
+                      : Column(
+                          key: ValueKey(codigo),
+                          children: [
+                            Text(
+                              '${codigo.substring(0, 3)} ${codigo.substring(3)}',
+                              key: const Key('codigo_emparejamiento'),
+                              style: textTheme.displayMedium?.copyWith(fontWeight: Pesos.fuerte, letterSpacing: 6),
+                            ),
+                            const SizedBox(height: Espaciado.xs),
+                            Text('Vence en $mmss · sirve una sola vez', style: secundario),
+                            const SizedBox(height: Espaciado.md),
+                            BotonSecundario(texto: 'Generar otro', onPressed: _generarCodigo),
+                          ],
+                        ),
                 ),
               ),
-            ),
-            const SizedBox(height: Espaciado.md),
-            Text(
-              'IP: $ip · Puerto: $puertoServidorCompanion',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: Espaciado.lg),
-            Text(
-              'Generar uno nuevo desconecta cualquier celular ya emparejado con '
-              'el código anterior.',
-              style: TextStyle(color: context.colores.textoSecundario),
             ),
             const SizedBox(height: Espaciado.sm),
-            BotonSecundario(
-              texto: 'Generar uno nuevo',
-              onPressed: c.generarTokenCompanion,
-            ),
+            Text('Esta PC en el wifi: $ip', style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario)),
+            const SizedBox(height: Espaciado.lg),
+            Text('¿Un celular que ya no usás?', style: textTheme.titleSmall),
+            Text('Desconectarlos obliga a todos los celulares emparejados a conectarse de nuevo.', style: secundario),
+            const SizedBox(height: Espaciado.sm),
+            BotonSecundario(texto: 'Desconectar los celulares', onPressed: _desconectarCelulares),
             const SizedBox(height: Espaciado.xl),
-            const Divider(),
-            const SizedBox(height: Espaciado.lg),
-            Text(
-              'Instalar en un celular nuevo',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              'Escaneá este con la cámara del celular para bajar la app; después, el de arriba para emparejarlo.',
-              style: TextStyle(color: context.colores.textoSecundario),
-            ),
-            const SizedBox(height: Espaciado.lg),
-            Center(
-              child: Superficie(
-                relleno: context.colores.fondo,
-                child: QrImageView(
-                  data: 'http://$ip:$puertoServidorCompanion/companion/apk',
-                  size: 220,
-                ),
-              ),
+            Text('Instalar la app en un celular', style: textTheme.titleSmall),
+            Text('Escaneá esto con la cámara del celular para bajar la app.', style: secundario),
+            const SizedBox(height: Espaciado.md),
+            Superficie(
+              relleno: context.colores.fondo,
+              child: QrImageView(data: 'http://$ip:$puertoServidorCompanion/companion/apk', size: 180),
             ),
           ],
         ],
@@ -998,9 +1022,6 @@ class _SeccionCompanion extends StatelessWidget {
   }
 }
 
-/// Mismo criterio que `dialogo_editar_producto.dart` (fondo `colores.fondo`,
-/// paso 1 del kit "qué es configurable y qué no"): el kit todavía no tiene
-/// una pieza de selección propia.
 class _Selector<T> extends StatelessWidget {
   const _Selector({
     required this.etiqueta,

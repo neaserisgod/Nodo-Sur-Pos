@@ -84,7 +84,7 @@ void main() {
     expect(secciones.first.visible, isFalse);
   });
 
-  testWidgets('navegar a App companion y generar el código muestra el QR', (tester) async {
+  testWidgets('en Celular, generar el código muestra 6 números de un solo uso y el QR para bajar la app', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
 
@@ -111,10 +111,11 @@ void main() {
     await tester.tap(generar);
     await tester.pumpAndSettle();
 
-    // Dos QR desde 2026-09-07: el de emparejamiento (JSON) y el de
-    // instalación para un celular nuevo (URL a /companion/apk, el dueño:
-    // "que en la app escaneando el QR lo ponga para descargar").
-    expect(find.byType(QrImageView), findsNWidgets(2));
+    // Desde 2026-10-03 se empareja con un código de 6 números (ya no con un QR con la llave); queda solo el QR
+    // para bajar la app con la cámara.
+    final codigo = tester.widget<Text>(find.byKey(const Key('codigo_emparejamiento'))).data!;
+    expect(codigo, matches(RegExp(r'^\d{3} \d{3}$')));
+    expect(find.byType(QrImageView), findsOneWidget);
 
     final config = await db.select(db.configuracionTabla).getSingle();
     expect(config.companionToken, isNotNull);
