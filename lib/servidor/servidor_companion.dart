@@ -72,6 +72,7 @@ import '../data/repositorio_ticket.dart';
 import '../servicios/actualizaciones.dart' show leerVersionApp;
 import '../data/repositorio_usuarios.dart';
 import '../data/repositorio_encargues.dart';
+import '../data/repositorio_pendientes.dart' show cobrarDeuda;
 import '../data/repositorio_ventas.dart';
 import '../servicios/nube.dart' show nubeApp;
 import '../servicios/pasarela_point_nube.dart';
@@ -426,6 +427,44 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
     return _json({'ok': true});
+  });
+
+  // Entregar y anotar deuda (2026-10-03: el fiado se unificó con los encargues) y cobrar esa deuda.
+  router.post('/encargues/<id>/deuda', (Request request, String id) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final total = await entregarEncargueADeuda(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
+    if (total == null) return _error(409, 'Ese encargue ya no está pendiente.');
+    return _json({'totalCentavos': total});
+  });
+
+  router.get('/deudas', (Request request) async {
+    final lista = await listarDeudas(db);
+    return _json([
+      for (final d in lista)
+        {
+          'id': d.id,
+          'nombreCliente': d.nombreCliente,
+          'detalle': d.detalle,
+          'montoCentavos': d.montoCentavos,
+          'desdeMs': d.desde.millisecondsSinceEpoch,
+        },
+    ]);
+  });
+
+  router.post('/deudas/<id>/cobrar', (Request request, String id) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    try {
+      final ventaId = await cobrarDeuda(
+        db,
+        pendienteId: int.parse(id),
+        sesionCajaId: _intRequerido(body, 'sesionCajaId'),
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        efectivo: body['efectivo'] as bool? ?? true,
+      );
+      return _json({'ventaId': ventaId});
+    } on SesionCerradaException {
+      return _error(409, 'La caja ya se cerró, este cobro no se guardó');
+    }
   });
 
   router.get('/encargues/<id>/lineas', (Request request, String id) async {

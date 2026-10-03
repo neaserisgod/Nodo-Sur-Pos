@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_encargues.dart';
-import '../../data/repositorio_pendientes.dart' show cobrarFiado;
+import '../../data/repositorio_pendientes.dart' show cobrarDeuda;
 import '../../domain/dinero.dart';
 import '../comun/armazon_gestion.dart';
 import '../comun/botones.dart';
@@ -136,15 +136,7 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       ),
     );
     if (efectivo == null) return;
-    final medio = await (widget.db.select(widget.db.mediosDePago)..where((m) => m.esEfectivo.equals(efectivo))).getSingle();
-    await cobrarFiado(
-      widget.db,
-      pendienteId: d.id,
-      sesionCajaId: sesionId,
-      usuarioId: widget.usuarioId,
-      medioPagoId: medio.id,
-      medioEsEfectivo: efectivo,
-    );
+    await cobrarDeuda(widget.db, pendienteId: d.id, sesionCajaId: sesionId, usuarioId: widget.usuarioId, efectivo: efectivo);
     await _cargar();
   }
 

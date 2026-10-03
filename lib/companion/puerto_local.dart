@@ -32,6 +32,7 @@ import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
+import '../data/repositorio_pendientes.dart' as repo_pendientes;
 import '../data/repositorio_ventas.dart' as repo_ventas;
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, clasificarEstadoOrden;
 import '../domain/caja.dart' show diferenciaArqueo;
@@ -198,6 +199,31 @@ class PuertoLocal implements ServicioCompanion {
 
   @override
   Future<List<LineaVenta>> lineasDeEncargue(int id) => repo_encargues.lineasParaEntregar(db, id);
+
+  @override
+  Future<int> entregarEncargueADeuda(int id, {required int usuarioId}) async {
+    final total = await repo_encargues.entregarEncargueADeuda(db, id, usuarioId: usuarioId);
+    if (total == null) throw ErrorCompanion(409, 'Ese encargue ya no está pendiente.');
+    return total;
+  }
+
+  @override
+  Future<List<DeudaCompanion>> deudas() async {
+    final lista = await repo_encargues.listarDeudas(db);
+    return [
+      for (final d in lista)
+        DeudaCompanion(id: d.id, nombreCliente: d.nombreCliente, detalle: d.detalle, montoCentavos: d.montoCentavos, desde: d.desde),
+    ];
+  }
+
+  @override
+  Future<void> cobrarDeuda(int id, {required int usuarioId, required int sesionCajaId, required bool efectivo}) async {
+    try {
+      await repo_pendientes.cobrarDeuda(db, pendienteId: id, sesionCajaId: sesionCajaId, usuarioId: usuarioId, efectivo: efectivo);
+    } on repo_ventas.SesionCerradaException {
+      throw ErrorCompanion(409, 'La caja ya se cerró, este cobro no se guardó');
+    }
+  }
 
   @override
   Future<List<ProveedorCompanion>> proveedores() async {

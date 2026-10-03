@@ -55,6 +55,16 @@ class ServicioCompanionOffline implements ServicioCompanion {
   Future<List<LineaVenta>> lineasDeEncargue(int id) => _local.lineasDeEncargue(id);
 
   @override
+  Future<int> entregarEncargueADeuda(int id, {required int usuarioId}) => _local.entregarEncargueADeuda(id, usuarioId: usuarioId);
+
+  @override
+  Future<List<DeudaCompanion>> deudas() => _local.deudas();
+
+  @override
+  Future<void> cobrarDeuda(int id, {required int usuarioId, required int sesionCajaId, required bool efectivo}) =>
+      _local.cobrarDeuda(id, usuarioId: usuarioId, sesionCajaId: sesionCajaId, efectivo: efectivo);
+
+  @override
   Future<List<ProveedorCompanion>> proveedores() => _local.proveedores();
 
   @override

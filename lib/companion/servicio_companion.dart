@@ -45,6 +45,15 @@ abstract class ServicioCompanion {
   /// Lo apartado como líneas de venta a los precios de hoy. Se cobra con `encargueId:` en cualquiera de los cobros.
   Future<List<LineaVenta>> lineasDeEncargue(int id);
 
+  /// Entrega lo apartado sin cobrar y anota la deuda (el fiado se unificó con los encargues, 2026-10-03). Devuelve lo adeudado.
+  Future<int> entregarEncargueADeuda(int id, {required int usuarioId});
+
+  /// Las deudas anotadas sin cobrar.
+  Future<List<DeudaCompanion>> deudas();
+
+  /// Cobra una deuda en efectivo o Mercado Pago; entra como venta del día de la caja [sesionCajaId].
+  Future<void> cobrarDeuda(int id, {required int usuarioId, required int sesionCajaId, required bool efectivo});
+
   /// Catálogo fijo de categorías (Regla 14) — para el desplegable del alta/
   /// edición completa de producto (`PantallaFormularioProducto`). Nunca
   /// crea una categoría nueva desde acá, solo elige entre las que ya hay,

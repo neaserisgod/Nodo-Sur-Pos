@@ -1244,6 +1244,45 @@ void main() {
       });
     });
 
+    group('deudas (encargue entregado sin cobrar)', () {
+      test('entregar y anotar deuda, listarla y cobrarla en efectivo como una venta', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final alta = await http.post(
+          url('/encargues'),
+          headers: headers(),
+          body: jsonEncode({
+            'nombreCliente': 'María',
+            'usuarioId': usuarioId,
+            'lineas': [
+              {'productoId': cocaId, 'cantidad': 3},
+            ],
+          }),
+        );
+        final id = (jsonDecode(alta.body) as Map)['id'] as int;
+
+        final entrega = await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}));
+        expect(entrega.statusCode, 200);
+        expect((jsonDecode(entrega.body) as Map)['totalCentavos'], 336000);
+        // Dos veces seguidas no duplica la deuda.
+        final otra = await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}));
+        expect(otra.statusCode, 409);
+
+        final deudas = jsonDecode((await http.get(url('/deudas'), headers: headers())).body) as List;
+        expect((deudas.single as Map)['nombreCliente'], 'María');
+        expect((deudas.single as Map)['montoCentavos'], 336000);
+
+        final cobro = await http.post(
+          url('/deudas/$id/cobrar'),
+          headers: headers(),
+          body: jsonEncode({'usuarioId': usuarioId, 'sesionCajaId': sesionId, 'efectivo': true}),
+        );
+        expect(cobro.statusCode, 200);
+        expect(jsonDecode((await http.get(url('/deudas'), headers: headers())).body), isEmpty);
+        expect(await db.select(db.ventas).get(), hasLength(1));
+      });
+    });
+
     group('/ventas/cobrar (efectivo, sin posnet)', () {
       test('registra la venta y descuenta el stock', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
