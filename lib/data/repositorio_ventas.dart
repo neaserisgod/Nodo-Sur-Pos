@@ -141,7 +141,7 @@ Future<int> abrirSesion(
   AppDatabase db, {
   required int usuarioId,
   required int fondoInicialCentavos,
-  int mpInicialCentavos = 0,
+  int? mpInicialCentavos,
   int? lataInicialCentavos,
 }) {
   // `db.transaction()` (mismo mecanismo que `registrarVenta`) serializa este
@@ -154,6 +154,7 @@ Future<int> abrirSesion(
     if (yaAbierta != null) throw SesionYaAbiertaException(yaAbierta);
 
     final ultimaCerrada = await ultimaSesionCerrada(db);
+    final mpInicial = mpInicialCentavos ?? ultimaCerrada?.mpContadoCentavos ?? 0;
     final lataInicial = lataInicialCentavos ?? (ultimaCerrada == null ? 0 : lataQueQuedo(ultimaCerrada));
 
     return db
@@ -163,7 +164,10 @@ Future<int> abrirSesion(
             usuarioAbrioId: usuarioId,
             fondoInicialCentavos: fondoInicialCentavos,
             lataInicialCentavos: Value(lataInicial),
-            saldoMpInicialCentavos: Value(mpInicialCentavos),
+            // Sin valor explícito (apertura desde el celular) se arrastra lo último CONTADO
+            // de MP, igual que la lata: con 0 el esperado de MP arrancaba sin el saldo real
+            // y los pagos por MP lo dejaban en negativo.
+            saldoMpInicialCentavos: Value(mpInicial),
             globalId: Value(generarGlobalId()),
             origenDispositivo: Value(idDispositivoActual),
             actualizadoEn: Value(DateTime.now()),
