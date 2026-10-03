@@ -28,7 +28,7 @@ Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor e
 | [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.), y qué módulo activa cada una. Si el código contradice esto, el código está mal. |
 | [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md) | El comercio de origen: cómo está configurado y qué nombres de archivo no se pueden cambiar. |
 | [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL, corto: qué está publicado, métricas, qué existe, qué no se probó en real y qué falta. Se actualiza al cerrar cada sesión. El detalle histórico (hasta 2026-10-03) está en [`docs/ESTADO-ARCHIVO.md`](./docs/ESTADO-ARCHIVO.md). |
-| [`docs/PLAN.md`](./docs/PLAN.md) | El plan vigente por fases (0 a 7), con las preguntas abiertas al dueño. |
+| [`docs/PLAN.md`](./docs/PLAN.md) | El plan vigente por fases (0 a 7) y, arriba, "Dónde quedamos": qué está hecho y qué sigue, para retomar con otra cuenta. |
 | [`docs/ESTANDARES-GOOGLE.md`](./docs/ESTANDARES-GOOGLE.md) | Estética horsepos/antigravity y estándar de diseño y funcionamiento de Google, medido contra el código. |
 | [`docs/REVISION-FRICCIONES.md`](./docs/REVISION-FRICCIONES.md) | Fricciones encontradas pantalla por pantalla (PC y celular). |
 | [`DECISIONES.md`](./DECISIONES.md) | El PORQUÉ de decisiones de dominio y de arquitectura que sin el motivo parecen arbitrarias (por qué los cigarrillos quedan fuera de la reposición, por qué el costo es nullable, por qué el redondeo va después del recargo, etc.). |

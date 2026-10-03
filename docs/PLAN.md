@@ -2,8 +2,24 @@
 
 Segunda versión, después de **leer el código** (ver "Qué leí" al final) y de pedir el dueño la estética de horsepos.com /
 antigravity.google y el estándar de diseño y funcionamiento de Google (`docs/ESTANDARES-GOOGLE.md`). Reemplaza al plan anterior.
-**Nada de esto está hecho todavía.** Cada fase son PR chicos con `flutter analyze` y `flutter test` en verde; no se publica nada
+Cada fase son PR chicos con `flutter analyze` y `flutter test` en verde; no se publica nada
 hasta que el dueño diga "lanzá"; lo que cambia una regla de negocio se pregunta antes (`CLAUDE.md`).
+
+## Dónde quedamos (2026-10-03) — leer esto primero para seguir con otra cuenta
+
+**Rama:** `claude/zealous-galileo-5dz6j6`, en los dos repos (`P41---POS-` es donde está todo el trabajo; `NodoSurPage` no se tocó). Último commit al cierre de esta nota: ver `git log`.
+**Cómo se verifica:** `flutter analyze lib` (28 avisos viejos de estilo, no deben subir) y `flutter test --exclude-tags bench` (~1964 tests, ~5 min, deben pasar todos). Los benchmarks con 60.000 ventas: `flutter test --tags bench`.
+**Cómo se trabaja:** un commit por tema (probar antes), tests con cada cambio, docs en el mismo commit, `CLAUDE.md` manda. Pie de commit: `Co-Authored-By` y `Claude-Session` del recordatorio de la sesión. Cuidado: `git checkout <archivo>` descarta trabajo sin commitear (me pasó una vez).
+
+**Hecho:** Fase 0 completa salvo 0.12 y 0.13; Fase 1 casi (ver su estado más abajo); Fase 3 completa en PC y celular; 0.11 número de venta global. Decisiones del dueño aplicadas: tema sigue al sistema, productos sin stock atenuados en la búsqueda de Venta (no se pueden agregar), número global, "Entregar y anotar deuda".
+
+**Lo que sigue, en orden:**
+1. Fase 1 restante: esqueleto de carga en Equilibrio, Respaldo, Comparar precios, Dashboard y Cierre (hoy `SizedBox.shrink()`); tests de accesibilidad (`test/accesibilidad/`) de Equilibrio, Respaldo, Impresión, los diálogos y el resto del celular; anillo de foco visible; borrar `ColoresPlazoleta.claro/oscuro` y `Bloque`; unificar `companion/tema` en `ui/tema` (el dueño dijo que le da igual: decisión técnica, hacerlo solo si se puede sin cambiar cómo se ve el celular).
+2. Fase 2 — fricciones por pantalla (lista abajo) y revisar los 37 `catch (_) {}` mudos de la PC.
+3. Fase 4 — avisos y paridad PC/celular. 4. Fase 6 — Mercado Pago. 5. Fase 5 — roles: **el dueño dijo "para después"**; no empezar sin su matriz de permisos.
+6. Pendientes de Fase 0: 0.12 (valores por defecto heredados: fondo $150.000, reserva $70.000, vuelto $100 — pregunta de negocio) y 0.13 (token por celular).
+
+**Deuda conocida:** al cobrar una deuda la línea es "Varios" sin costo, así que cuenta como ganancia completa (guardar el costo al anotar la deuda); la búsqueda de Venta del celular sigue ocultando los productos sin stock (la PC los atenúa); el texto "fiado" sigue en el cierre/PDF del día (la marca `FIADO` de la venta es el rastro y se mantiene); "DISENO 2.md" parece una copia vieja de `DISENO.md` (confirmar y borrar).
 
 ## Decisiones del dueño que ordenan el plan
 
@@ -115,11 +131,9 @@ intermitentes de `test/ui/venta/`.
 **0 → 1 → 2 → 3 → 4 → 5 → 6** (7 cuando se decida). La 0 va primero porque es plata y datos; la 1 antes que la 2 para no
 arreglar dos veces la misma pantalla; la 5 y la 6 son las grandes y conviene hacerlas con la app ordenada.
 
-## Preguntas abiertas al dueño
+## Preguntas al dueño
 
-1. ¿Hay fiados reales en la base? 2. ¿"Entregar y anotar deuda" entra en Encargues? 3. Qué puede hacer cada rol.
-4. ¿Los productos sin stock se muestran atenuados en la búsqueda o siguen ocultos? 5. ¿Tema oscuro "seguir al sistema" en vez
-de por horario? 6. ¿Número de venta global (con prefijo del equipo) en el ticket?
+Respondidas el 2026-10-03: tema oscuro sigue al sistema; hay 1 encargue y ningún fiado conocido en la base; "Entregar y anotar deuda" sí entra en Encargues; sin stock se ve atenuado; número global con prefijo del equipo sí. **Abierta:** qué puede hacer cada rol (después).
 
 ## Qué leí y qué no
 
