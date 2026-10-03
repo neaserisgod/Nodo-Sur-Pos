@@ -21,8 +21,12 @@
 
 import 'dart:async';
 
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/material.dart';
 
+import '../data/pdf_dia_completo.dart';
 import '../domain/dinero.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
@@ -317,6 +321,38 @@ class _DetalleCierreCompanion extends StatefulWidget {
 class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
   ResumenCierreCompanion? _resumen;
   String? _error;
+  bool _exportando = false;
+  String? _errorExportar;
+
+  /// El PDF se arma contra la base de este celular, así que solo hay botón
+  /// cuando el servicio es el local (sin PC): con la PC conectada por wifi el
+  /// celular no tiene los datos del día para volcarlos.
+  bool get _puedeExportar => widget.servicio is PuertoLocal;
+
+  /// Arma el PDF del día completo y lo abre: desde el visor de Android se
+  /// manda por WhatsApp, mail o Drive (El dueño, 2026-10-03).
+  Future<void> _exportarDia() async {
+    setState(() {
+      _exportando = true;
+      _errorExportar = null;
+    });
+    try {
+      final carpeta = await getTemporaryDirectory();
+      final ruta = await guardarPdfDiaCompleto(
+        baseLocalCompanion(),
+        sesionId: widget.cierre.sesionId,
+        carpetaDestino: carpeta.path,
+      );
+      final r = await OpenFilex.open(ruta);
+      if (r.type != ResultType.done && mounted) {
+        setState(() => _errorExportar = 'El PDF se armó pero no hay una app para abrirlo (${r.message}).');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _errorExportar = 'No se pudo exportar el día: ${mensajeDeError(e)}');
+    } finally {
+      if (mounted) setState(() => _exportando = false);
+    }
+  }
 
   @override
   void initState() {
@@ -350,6 +386,16 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
           _filaCaja(context, 'Mercado Pago', c.mpContadoCentavos, c.mpEsperadoCentavos, c.mpDiferenciaCentavos),
           _filaCaja(context, 'Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
           const SizedBox(height: Espaciado.lg),
+          if (_puedeExportar) ...[
+            OutlinedButton.icon(
+              key: const Key('exportar_dia'),
+              onPressed: _exportando ? null : _exportarDia,
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              label: Text(_exportando ? 'Armando el PDF…' : 'Exportar el día completo (PDF)'),
+            ),
+            if (_errorExportar != null) ErrorEnLinea(_errorExportar!),
+            const SizedBox(height: Espaciado.sm),
+          ],
           if (_resumen != null) ...[
             const Divider(),
             const SizedBox(height: Espaciado.sm),
