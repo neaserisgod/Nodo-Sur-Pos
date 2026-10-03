@@ -11,6 +11,8 @@ import '../../data/impresion_posnet.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
 import '../tema/tokens.dart';
+import '../comun/botones.dart';
+import '../comun/modal.dart';
 import '../../servicios/impresion_posnet_nube.dart';
 import '../../servicios/marca_actual.dart';
 import '../../servicios/nube.dart' show nubeApp;
@@ -108,23 +110,24 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
   @override
   Widget build(BuildContext context) {
     final listo = _config != null;
-    return AlertDialog(
-      title: Text('Imprimir ticket — venta #${widget.ventaId}'),
-      content: Column(
+    return Modal(
+      titulo: 'Imprimir ticket',
+      subtitulo: 'Venta #${widget.ventaId}',
+      contenido: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ElevatedButton(
+          BotonPrimario(
+            texto: 'Enviar a posnet',
             onPressed: listo && !_procesando ? _enviarAPosnet : null,
-            child: const Text('Enviar a posnet'),
           ),
-          const SizedBox(height: 8),
-          ElevatedButton(
+          const SizedBox(height: Espaciado.sm),
+          BotonSecundario(
+            texto: 'Guardar PDF',
             onPressed: listo && !_procesando ? _guardarPdf : null,
-            child: const Text('Guardar PDF'),
           ),
           if (_mensaje != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: Espaciado.md),
             Text(
               _mensaje!,
               style: TextStyle(
@@ -134,7 +137,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
           ],
         ],
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar'))],
+      botones: [BotonSecundario(texto: 'Cerrar', onPressed: () => Navigator.of(context).pop())],
     );
   }
 }

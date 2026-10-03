@@ -644,7 +644,7 @@ class _EstadoBloqueado extends StatelessWidget {
         children: [
           Text(mensaje),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onPressed, child: Text(etiquetaBoton)),
+          BotonPrimario(texto: etiquetaBoton, onPressed: onPressed),
         ],
       ),
     );
