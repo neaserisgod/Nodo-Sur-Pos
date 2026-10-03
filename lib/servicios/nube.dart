@@ -17,6 +17,7 @@ import '../data/notificador_cambios.dart';
 import 'actualizaciones.dart';
 import 'copias_nube.dart';
 import 'cuenta_nube.dart';
+import 'pc_local_nube.dart';
 import 'sync_nube.dart';
 
 /// Todo lo de la cuenta de Nodo Sur que necesita una pantalla.
@@ -115,6 +116,7 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
   unawaited(copias
       .avisarYRenovar(cid: await idClienteActualizaciones(), sistema: Platform.operatingSystem)
       .then((canal) => nube.canal = canal));
+  unawaited(avisarPcLocal(db, almacen: almacen, cliente: cliente));
   copias.iniciarCopiaDiaria();
   sync.iniciar(cambiosLocales: avisos.cambiosDeLaBase);
   return nube;

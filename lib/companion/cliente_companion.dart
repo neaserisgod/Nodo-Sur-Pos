@@ -367,6 +367,33 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   /// Sin token — solo confirma que hay algo escuchando en esa IP/puerto.
+  /// Canjea el código de 6 números que muestra la PC (Configuración → Celular) por la llave de su servidor.
+  static Future<DatosConexion> emparejarConCodigo(String ip, int puerto, String codigo, {http.Client? client}) async {
+    final c = client ?? http.Client();
+    final http.Response r;
+    try {
+      r = await c
+          .post(
+            Uri(scheme: 'http', host: ip, port: puerto, path: '/emparejar'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'codigo': codigo.replaceAll(' ', '')}),
+          )
+          .timeout(const Duration(seconds: 8));
+    } catch (_) {
+      throw const ErrorCompanion(0, 'No se pudo hablar con la PC. Revisá que siga prendida y en el mismo wifi.');
+    }
+    if (r.statusCode != 200) {
+      String mensaje = 'La PC rechazó el código.';
+      try {
+        final j = jsonDecode(r.body);
+        if (j is Map && j['error'] is String) mensaje = j['error'] as String;
+      } catch (_) {}
+      throw ErrorCompanion(r.statusCode, mensaje);
+    }
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return DatosConexion(ip: ip, puerto: (j['puerto'] as num?)?.toInt() ?? puerto, token: j['token'] as String);
+  }
+
   static Future<bool> ping(String ip, int puerto) async {
     try {
       final r = await http

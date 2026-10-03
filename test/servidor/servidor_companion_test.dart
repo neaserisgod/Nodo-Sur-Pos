@@ -95,6 +95,25 @@ void main() {
   });
   tearDown(() => db.close());
 
+  test('/emparejar: el código de la PC da la llave una sola vez, sin token; uno incorrecto o sin código, no', () async {
+    Future<http.Response> emparejar(String codigo) =>
+        http.post(url('/emparejar'), headers: headers(conToken: false), body: jsonEncode({'codigo': codigo}));
+    codigoEmparejamiento.anular();
+    expect((await emparejar('123456')).statusCode, 404, reason: 'sin código generado');
+    final codigo = codigoEmparejamiento.generar();
+    final malo = codigo == '000000' ? '111111' : '000000';
+    final rIncorrecto = await emparejar(malo);
+    expect(rIncorrecto.statusCode, 401);
+    expect((jsonDecode(rIncorrecto.body) as Map)['error'], contains('incorrecto'));
+    final r = await emparejar(codigo);
+    expect(r.statusCode, 200);
+    expect((jsonDecode(r.body) as Map)['token'], await tokenCompanionActual(db));
+    expect((await emparejar(codigo)).statusCode, 404, reason: 'de un solo uso');
+    expect((await emparejar('12')).statusCode, 400);
+    final datos = await ClienteCompanion.emparejarConCodigo('127.0.0.1', puerto, codigoEmparejamiento.generar());
+    expect(datos.token, await tokenCompanionActual(db));
+  });
+
   test('/ping responde sin necesitar token', () async {
     final respuesta = await http.get(url('/ping'));
     expect(respuesta.statusCode, 200);

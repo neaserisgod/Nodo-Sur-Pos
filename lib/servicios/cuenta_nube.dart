@@ -425,6 +425,26 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// La PC avisa dónde está en el wifi del local (y la llave de su servidor para celulares), para que un celular de la
+  /// misma sucursal se conecte con un toque.
+  Future<void> publicarPcLocal(String token, {required String ip, required int puerto, required String llave}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/device/pc-local'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'ip': ip, 'puerto': puerto, 'token': llave}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
+  /// La PC del local de la sucursal de este celular, o null si ninguna avisó todavía.
+  Future<({String ip, int puerto, String llave, String? nombre})?> pcLocal(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/device/pc-local'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode == 404) return null;
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (ip: j['ip'] as String, puerto: (j['puerto'] as num).toInt(), llave: j['token'] as String, nombre: j['nombre'] as String?);
+  });
+
   Future<RespuestaAviso> avisar(String token, {required String cid, required String version, required String sistema}) => _conRed(() async {
     final r = await http.post(
       _uri('/api/device/ping'),
