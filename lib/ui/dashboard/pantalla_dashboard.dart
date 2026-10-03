@@ -353,6 +353,7 @@ class _HeroVendido extends StatelessWidget {
           TemaInverso(
             activo: true,
             invertirAcento: true,
+            colorSobre: sobre,
             child: Builder(
               builder: (context) => DefaultTextStyle.merge(
                 style: TextStyle(color: context.colores.textoPrimario),

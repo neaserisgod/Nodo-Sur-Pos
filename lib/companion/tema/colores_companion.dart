@@ -31,7 +31,7 @@ const coloresCompanionClaro = ColoresPlazoleta(
   borde: Color(0xFFE2E4EA),
   textoPrimario: Color(0xFF121317),
   textoSecundario: Color(0xFF566070),
-  textoTenue: Color(0xFF7B8494),
+  textoTenue: Color(0xFF656D80),
   acento: Color(0xFF121317),
   acentoTexto: Color(0xFFFFFFFF),
   error: Color(0xFFC5221F),
