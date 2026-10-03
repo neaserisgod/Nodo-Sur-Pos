@@ -70,18 +70,18 @@ class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
     final ctrl = TextEditingController(text: p.esPesable ? '' : '1');
     return showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}'),
-        content: TextField(
+      builder: (context) => Modal(
+        titulo: p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}',
+        contenido: TextField(
           controller: ctrl,
           autofocus: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
+        botones: [
+          BotonSecundario(texto: 'Cancelar', onPressed: () => Navigator.of(context).pop()),
+          BotonPrimario(texto: 'Agregar', onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text))),
         ],
       ),
     ).then((v) => v == null || v <= 0 ? null : v);
