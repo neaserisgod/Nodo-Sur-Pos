@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_encargues.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
+import 'package:la_plazoleta/data/repositorio_ventas.dart' show abrirSesion;
 import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 
@@ -86,5 +87,42 @@ void main() {
 
     expect((await (db.select(db.productos)..where((p) => p.id.equals(galletitas))).getSingle()).stock, 10);
     expect(find.byKey(const Key('encargues_vacio')), findsOneWidget);
+  });
+
+  testWidgets('entregar y anotar deuda: pasa a Deudas y se cobra en efectivo como una venta del día', (tester) async {
+    final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+    final id = await crearEncargueApartando(
+      db,
+      nombreCliente: 'María',
+      lineas: [LineaEncargueNueva(productoId: galletitas, cantidad: 3)],
+      usuarioId: usuarioId,
+    );
+    tester.view.physicalSize = const Size(1366, 768);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      theme: TemaPlazoleta.oscuro,
+      home: PantallaEncargues(db: db, usuarioId: usuarioId, sesionCajaId: sesionId),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.descendant(of: find.byKey(Key('encargue_$id')), matching: find.text('Entregar y anotar deuda')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Entregar y anotar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('encargue_$id')), findsNothing);
+    expect(find.text('Deudas'), findsOneWidget);
+    expect(find.text('3 × Galletitas'), findsOneWidget);
+
+    await tester.tap(find.textContaining('Cobrar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Efectivo'));
+    await tester.pumpAndSettle();
+
+    expect(await listarDeudas(db), isEmpty);
+    expect(await db.select(db.ventas).get(), hasLength(1));
+    expect(find.text('Deudas'), findsNothing);
   });
 }

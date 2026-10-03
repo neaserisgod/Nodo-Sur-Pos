@@ -26,7 +26,7 @@ enum Modulo {
   /// Promos y combos.
   promos('promos'),
 
-  /// Fiado y cuenta corriente de clientes.
+  /// Encargues y deudas de clientes (el fiado se unificó con los encargues, 2026-10-03; la clave interna sigue siendo `fiado`).
   fiado('fiado'),
 
   /// Retiro de ganancias.
@@ -54,7 +54,7 @@ enum Modulo {
     cajaAparte => 'Caja aparte para un proveedor',
     pesables => 'Productos por peso',
     promos => 'Promos y combos',
-    fiado => 'Fiado y cuenta corriente',
+    fiado => 'Encargues y deudas',
     retiroGanancias => 'Retiro de ganancias',
     equilibrio => 'Gastos fijos y equilibrio',
     turnos => 'Varios usuarios y turnos',
@@ -67,7 +67,7 @@ enum Modulo {
     cajaAparte => 'Un proveedor que cobra solo en efectivo y lleva su propia caja (la lata).',
     pesables => 'Productos que se venden por gramos o kilos, como los fiambres.',
     promos => 'Armar promos y combos con varios productos.',
-    fiado => 'Tarjeta de fiados y encargues pendientes en el Inicio.',
+    fiado => 'Tarjeta de encargues y deudas pendientes en el Inicio.',
     retiroGanancias => 'Revisar, retener o retirar la ganancia de cada proveedor desde Separaciones.',
     equilibrio => 'La vista "Este mes" del Inicio: gastos fijos y cuánto hay que vender para cubrirlos.',
     turnos => 'Más de un usuario y cambio de turno.',

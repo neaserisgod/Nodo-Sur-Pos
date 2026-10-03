@@ -26,7 +26,7 @@ void main() {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
-    expect(find.text('Fiados y encargues'), findsOneWidget);
+    expect(find.text('Encargues y deudas'), findsOneWidget);
     expect(find.text('Este mes'), findsOneWidget);
   });
 
@@ -36,7 +36,7 @@ void main() {
     await _pump(tester, db);
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.fiado, activo: false);
     await tester.pumpAndSettle();
-    expect(find.text('Fiados y encargues'), findsNothing);
+    expect(find.text('Encargues y deudas'), findsNothing);
     expect(find.text('Stock bajo'), findsWidgets);
     expect(find.text('Este mes'), findsOneWidget);
   });
@@ -53,6 +53,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Este mes'), findsNothing);
     expect(find.textContaining('Este mes ·'), findsNothing);
-    expect(find.text('Fiados y encargues'), findsOneWidget);
+    expect(find.text('Encargues y deudas'), findsOneWidget);
   });
 }

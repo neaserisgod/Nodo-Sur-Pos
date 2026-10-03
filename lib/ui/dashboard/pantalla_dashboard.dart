@@ -535,15 +535,15 @@ class _Pendientes extends StatelessWidget {
     final lista = tablero.pendientes;
     final fiado = lista.where((p) => p.esFiado).fold(0, (a, p) => a + (p.montoCentavos ?? 0));
     return _TarjetaConLista(
-      titulo: 'Fiados y encargues',
+      titulo: 'Encargues y deudas',
       insignia: fiado > 0 ? Insignia(texto: 'Te deben ${_plata(fiado)}', tono: Tono.alerta) : null,
       cantidad: lista.length,
-      vacio: 'No hay fiados ni encargues pendientes.',
+      vacio: 'No hay encargues ni deudas pendientes.',
       item: (i) {
         final p = lista[i];
         return FilaSuave(
           titulo: p.quien,
-          subtitulo: [p.esFiado ? 'Fiado' : 'Encargue', ?p.detalle, 'desde el ${p.desde.day}/${p.desde.month}'].join(' · '),
+          subtitulo: [p.esFiado ? 'Deuda' : 'Encargue', ?p.detalle, 'desde el ${p.desde.day}/${p.desde.month}'].join(' · '),
           derecha: p.montoCentavos == null
               ? null
               : Text(_plata(p.montoCentavos!), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte).tabular),

@@ -75,6 +75,12 @@ Historial con **Ventas y Cierres**; "Anular" en vez de "Eliminar"; pestaña "Pro
 
 ## Fase 3 — Unificar fiado y encargue (Encargues)
 
+**Estado (2026-10-03), PC:** ✅ hay un solo nombre ("Encargues y deudas") en Inicio y en el módulo; ✅ "Entregar y anotar deuda" (el dueño dijo que sí):
+el encargue pasa a una deuda por el total a precios de hoy, sin mover el stock otra vez, y se cobra desde la sección "Deudas" de la pantalla Encargues
+(efectivo o Mercado Pago, entra como venta del día). Hay 1 encargue en la base real y ningún fiado (el dueño no recuerda fiados). **Falta:** el celular
+(mismas dos acciones, requiere endpoints en el servidor), el texto "fiado" en el cierre/PDF del día (la marca `FIADO` de la venta se mantiene: es el rastro)
+y un límite conocido: al cobrar la deuda la línea de venta es "Varios" sin costo, así que esa venta cuenta como ganancia completa.
+
 Una tarjeta en Inicio, una pantalla en PC y celular, un solo nombre. Se saca el módulo "Fiado" y sus textos (cierre, PDF,
 `modulos.dart`). **No se borra ninguna columna ni fila.**
 ❓ ¿Hay fiados cargados en la base real? (consulta de solo lectura, antes de empezar).

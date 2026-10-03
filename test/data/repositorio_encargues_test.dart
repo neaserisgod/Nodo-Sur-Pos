@@ -167,4 +167,43 @@ void main() {
     await cancelarEncargue(db, id, usuarioId: usuarioId);
     expect((await producto(galletitas)).stock, 7);
   });
+
+  group('entregar y anotar deuda (dueño, 2026-10-03)', () {
+    test('queda una deuda por el total a precios de hoy, el stock no se mueve de nuevo y ya no es un encargue', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: galletitas, cantidad: 3)],
+        usuarioId: usuarioId,
+      );
+      // El precio sube antes de entregar: la deuda es a precio de hoy (Regla 4).
+      await (db.update(db.productos)..where((p) => p.id.equals(galletitas))).write(const ProductosCompanion(precioCentavos: Value(200000)));
+
+      final total = await entregarEncargueADeuda(db, id, usuarioId: usuarioId);
+
+      expect(total, 600000);
+      expect((await producto(galletitas)).stock, 7); // ya estaba descontado al apartar
+      expect(await listarEnarguesPendientes(db), isEmpty);
+      final deudas = await listarDeudas(db);
+      expect(deudas.single.nombreCliente, 'María');
+      expect(deudas.single.montoCentavos, 600000);
+      expect(deudas.single.detalle, '3 × Galletitas');
+    });
+
+    test('hacerlo dos veces no duplica la deuda ni cancelar devuelve stock que ya se fue', () async {
+      final id = await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: galletitas, cantidad: 3)],
+        usuarioId: usuarioId,
+      );
+      await entregarEncargueADeuda(db, id, usuarioId: usuarioId);
+
+      expect(await entregarEncargueADeuda(db, id, usuarioId: usuarioId), isNull);
+      await cancelarEncargue(db, id, usuarioId: usuarioId);
+
+      expect(await listarDeudas(db), hasLength(1));
+      expect((await producto(galletitas)).stock, 7);
+    });
+  });
 }
