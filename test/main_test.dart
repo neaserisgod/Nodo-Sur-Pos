@@ -73,17 +73,15 @@ void main() {
   tearDown(() => db.close());
 
   testWidgets(
-    'sin sesión abierta: arranca directo en Inicio, sin diálogo forzado, con el resto navegable',
+    'sin sesión abierta: arranca directo en Venta con "Abrir caja", sin diálogo forzado, con el resto navegable',
     (tester) async {
       await _pump(tester, db);
 
       // Nada de diálogo modal sin salida tapando la pantalla.
       expect(find.byType(Dialog), findsNothing);
-      // Es Dashboard el que resuelve el estado sin sesión, con su propio
-      // mensaje (no el de Venta — "Abrir caja" es un botón de Venta, acá el
-      // botón manda a Venta en vez de duplicar esa lógica).
-      expect(find.textContaining('caja cerrada'), findsOneWidget);
-      expect(find.text('Ir a Venta'), findsOneWidget);
+      // Venta es la raíz (El dueño, 2026-10-03): sin sesión muestra su propio estado, con el botón para abrir.
+      expect(find.text('Caja cerrada.'), findsOneWidget);
+      expect(find.text('Abrir caja'), findsOneWidget);
       // El resto de la navegación (el dropdown de secciones de la navbar)
       // sigue disponible: se puede ir a Configuración sin haber abierto
       // caja. La navbar pasó a ser un solo botón que abre un menú (El dueño,
@@ -96,15 +94,15 @@ void main() {
   );
 
   testWidgets(
-    'sesión abierta hoy: arranca directo mostrando el resumen, sin pasar por "Caja cerrada"',
+    'sesión abierta hoy: arranca directo en Venta lista para vender, sin pasar por "Caja cerrada"',
     (tester) async {
       await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       await _pump(tester, db);
 
-      expect(find.textContaining('caja cerrada'), findsNothing);
+      expect(find.text('Caja cerrada.'), findsNothing);
       expect(find.byType(Dialog), findsNothing);
-      expect(find.text('Vendido hoy'), findsOneWidget);
+      expect(find.text('Vender'), findsOneWidget);
 
       await _desmontar(tester);
     },

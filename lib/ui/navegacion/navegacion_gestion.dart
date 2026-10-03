@@ -20,12 +20,27 @@ import '../../data/database.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import '../configuracion/pantalla_configuracion.dart';
+import '../dashboard/pantalla_dashboard.dart';
 import '../encargues/pantalla_encargues.dart';
 import '../historial/pantalla_historial.dart';
 import '../proveedores/pantalla_proveedores.dart';
 import '../separaciones/pantalla_separaciones.dart';
 import '../venta/pantalla_venta.dart';
 import 'navbar_superior.dart';
+
+/// Lo que hay que cargar en Venta al volver a ella. Venta es la raíz de la app (El dueño, 2026-10-03: "que se vuelva a
+/// la pantalla de venta"), así que no se crea de nuevo: se vuelve a ella y toma el pedido (`PantallaVenta.didPopNext`).
+class PedidoVenta {
+  const PedidoVenta({this.texto, this.encargueId});
+  final String? texto;
+  final int? encargueId;
+}
+
+final pedidoParaVenta = ValueNotifier<PedidoVenta?>(null);
+
+/// Hay una `PantallaVenta` en la base de la pila (la app real). En tests que montan otra pantalla sola, no: ahí "Venta"
+/// se abre encima como antes.
+final ventaEsRaiz = ValueNotifier<bool>(false);
 
 /// "Dashboard" (raíz de la app) + "Venta" — las dos fijas, en ese orden —
 /// más las secciones visibles de `secciones_menu` (fase 8) + "Configuración"
@@ -64,12 +79,19 @@ Future<void> navegarASeccionDeGestion(
   int? encarguePendienteId,
 }) async {
   final navigator = Navigator.of(context);
+  if (clave == 'venta' && ventaEsRaiz.value) {
+    if (textoBusquedaPendiente != null || encarguePendienteId != null) {
+      pedidoParaVenta.value = PedidoVenta(texto: textoBusquedaPendiente, encargueId: encarguePendienteId);
+    }
+    navigator.popUntil((route) => route.isFirst);
+    return;
+  }
   navigator.popUntil((route) => route.isFirst);
-  if (clave == 'dashboard') return; // ya es la raíz
 
   final sesionIdReal = sesionCajaId ?? (await sesionAbierta(db))?.id;
 
   final Widget? pantalla = switch (clave) {
+    'dashboard' => PantallaDashboard(db: db),
     'venta' => PantallaVenta(db: db, textoBusquedaPendiente: textoBusquedaPendiente, encarguePendienteId: encarguePendienteId),
     'proveedores' => PantallaProveedores(
       db: db,
