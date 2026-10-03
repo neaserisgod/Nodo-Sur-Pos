@@ -25,6 +25,7 @@ import 'pantalla_detalle_dia.dart';
 import 'tab_historial_movimientos.dart';
 import 'tab_historial_ventas.dart';
 import 'vista_cierres.dart';
+import '../tema/esqueleto.dart';
 
 enum _Vista { ventas, cierres, movimientos }
 
@@ -117,7 +118,7 @@ class _PantallaHistorialState extends State<PantallaHistorial> with RefrescoPorC
             child: switch (_vista) {
               _Vista.ventas => TabHistorialVentas(db: widget.db, usuarioId: widget.usuarioId, busqueda: _busqueda),
               _Vista.cierres =>
-                c.cargando ? const SizedBox.shrink() : VistaCierres(dias: c.dias, alAbrirDia: _irADetalle, busqueda: _busqueda),
+                c.cargando ? const EsqueletoLista() : VistaCierres(dias: c.dias, alAbrirDia: _irADetalle, busqueda: _busqueda),
               _Vista.movimientos => TabHistorialMovimientos(db: widget.db, busqueda: _busqueda),
             },
           );

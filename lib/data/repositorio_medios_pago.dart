@@ -24,13 +24,13 @@ Future<void> renombrarMedioDePago(AppDatabase db, int id, String nombreNuevo) as
     throw ArgumentError('Ya existe un medio de pago con ese nombre: "$nombreNuevo".');
   }
   await (db.update(db.mediosDePago)..where((m) => m.id.equals(id)))
-      .write(MediosDePagoCompanion(nombre: Value(nombreNuevo)));
+      .write(MediosDePagoCompanion(nombre: Value(nombreNuevo), actualizadoEn: Value(DateTime.now())));
 }
 
 Future<void> desactivarMedioDePago(AppDatabase db, int id) {
-  return (db.update(db.mediosDePago)..where((m) => m.id.equals(id))).write(const MediosDePagoCompanion(activo: Value(false)));
+  return (db.update(db.mediosDePago)..where((m) => m.id.equals(id))).write(MediosDePagoCompanion(activo: const Value(false), actualizadoEn: Value(DateTime.now())));
 }
 
 Future<void> activarMedioDePago(AppDatabase db, int id) {
-  return (db.update(db.mediosDePago)..where((m) => m.id.equals(id))).write(const MediosDePagoCompanion(activo: Value(true)));
+  return (db.update(db.mediosDePago)..where((m) => m.id.equals(id))).write(MediosDePagoCompanion(activo: const Value(true), actualizadoEn: Value(DateTime.now())));
 }

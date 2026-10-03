@@ -401,7 +401,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     try {
       entrega = await pushSinTeclado<EntregaEncargue>(
         context,
-        (_) => PantallaEncarguesCompanion(servicio: _servicio!, usuarioId: _usuarioId!, hayVentaArmada: _carrito.isNotEmpty),
+        (_) => PantallaEncarguesCompanion(
+          servicio: _servicio!,
+          usuarioId: _usuarioId!,
+          hayVentaArmada: _carrito.isNotEmpty,
+          sesionCajaId: _sesion?.id,
+        ),
       );
     } finally {
       if (mounted) setState(() => _navegando = false);

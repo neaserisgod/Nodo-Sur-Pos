@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/data/busqueda_productos.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_promos.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
@@ -56,7 +57,8 @@ void main() {
     expect(ye.stock, 2);
 
     c.campoTexto.text = 'merienda';
-    expect(c.coincidencias, isEmpty);
+    // Sigue en la búsqueda, pero agotada (se muestra atenuada y no se puede agregar).
+    expect(c.coincidencias.where(tieneStock), isEmpty);
     expect(c.catalogoVisible.any((p) => p.nombre == 'Merienda'), false);
     c.dispose();
   });

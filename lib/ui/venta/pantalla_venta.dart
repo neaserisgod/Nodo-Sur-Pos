@@ -36,6 +36,7 @@ import 'venta_en_curso.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
+import 'cancelar_venta_con_deshacer.dart';
 import '../comun/botones.dart';
 import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
@@ -287,7 +288,7 @@ class _PantallaVentaState extends State<PantallaVenta>
       return true;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      c.cancelarVenta();
+      cancelarVentaConDeshacer(context, c);
       return true;
     }
     return false;
@@ -644,7 +645,7 @@ class _EstadoBloqueado extends StatelessWidget {
         children: [
           Text(mensaje),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onPressed, child: Text(etiquetaBoton)),
+          BotonPrimario(texto: etiquetaBoton, onPressed: onPressed),
         ],
       ),
     );
@@ -753,18 +754,25 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
           children: [
             Tooltip(
               message: 'Notificaciones',
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(radioControlEscritorio),
-                child: InkWell(
+              child: Semantics(
+                button: true,
+                label: widget.hayArqueoVencido ? 'Notificaciones: hay un aviso pendiente' : 'Notificaciones',
+                excludeSemantics: true,
+                onTap: () => setState(() => _abierto = !_abierto),
+                child: Material(
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(radioControlEscritorio),
-                  onTap: () => setState(() => _abierto = !_abierto),
-                  child: Padding(
-                    padding: const EdgeInsets.all(Espaciado.sm),
-                    child: Icon(
-                      IconosPlazoleta.notificationsOutlined,
-                      size: 20,
-                      color: colores.textoSecundario,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(radioControlEscritorio),
+                    onTap: () => setState(() => _abierto = !_abierto),
+                    child: SizedBox(
+                      width: Medidas.alturaControl,
+                      height: Medidas.alturaControl,
+                      child: Icon(
+                        IconosPlazoleta.notificationsOutlined,
+                        size: 20,
+                        color: colores.textoSecundario,
+                      ),
                     ),
                   ),
                 ),
@@ -772,8 +780,8 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
             ),
             if (widget.hayArqueoVencido)
               Positioned(
-                top: 6,
-                right: 6,
+                top: 12,
+                right: 12,
                 child: Container(
                   width: 8,
                   height: 8,
@@ -857,15 +865,23 @@ class _BotonAccion extends StatelessWidget {
         : colores.textoSecundario;
     return Tooltip(
       message: etiqueta,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(radioControlEscritorio),
-        child: InkWell(
+      child: Semantics(
+        button: true,
+        enabled: onPressed != null,
+        label: etiqueta,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(radioControlEscritorio),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(Espaciado.sm),
-            child: Icon(icono, size: 20, color: color),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(radioControlEscritorio),
+            onTap: onPressed,
+            child: SizedBox(
+              width: Medidas.alturaControl,
+              height: Medidas.alturaControl,
+              child: Icon(icono, size: 20, color: color),
+            ),
           ),
         ),
       ),

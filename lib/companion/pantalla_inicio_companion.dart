@@ -424,7 +424,7 @@ class _EstadoConexion extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: conectada ? const Color(0xFF1B873F) : acentos.dinero, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: conectada ? acentos.ganancia : acentos.dinero, shape: BoxShape.circle),
         ),
         const SizedBox(width: Espaciado.sm),
         Text(

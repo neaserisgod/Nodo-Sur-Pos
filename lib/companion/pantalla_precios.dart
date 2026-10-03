@@ -675,8 +675,10 @@ class _PildoraEncabezado extends StatelessWidget {
       child: InkWell(
         customBorder: const StadiumBorder(),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: Medidas.alturaControl),
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+          alignment: Alignment.center,
           child: Text(
             texto,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(

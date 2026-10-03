@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
 
 import 'companion/companion_app.dart';
@@ -26,6 +27,7 @@ import 'servicios/modulos_activos.dart';
 import 'servicios/nube.dart';
 import 'servicios/preferencia_cobro_nube.dart';
 import 'servicios/marca_actual.dart';
+import 'servicios/registro_errores.dart';
 import 'servicios/migracion_carpeta_datos.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -39,12 +41,13 @@ Future<void> main() async {
   // es la red de seguridad general — que quede un rastro en la consola en
   // vez de una pantalla negra muda, sea cual sea la próxima causa.
   runZonedGuarded(_main, (error, stack) {
-    debugPrint('Error sin capturar en el arranque: $error\n$stack');
+    registrarError('Error sin capturar', error, stack);
   });
 }
 
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  instalarRegistroDeErrores();
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
   // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que
@@ -122,7 +125,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
   void _iniciarNube() {
     if (!widget.conVentanaPropia) return;
     iniciarNube(widget.db).then<void>((_) {}, onError: (Object error) {
-      debugPrint('Nube: no se pudo iniciar ($error)');
+      registrarError('Nube: no se pudo iniciar', error);
     });
   }
 
@@ -155,7 +158,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       if (!(await modulosNegocioActuales(widget.db)).estaActivo(Modulo.compararPrecios)) return;
       await actualizarComparacionPrecios(widget.db);
     } catch (error) {
-      debugPrint('Comparador de precios (SEPA): no se pudo actualizar ($error)');
+      registrarError('Comparador de precios (SEPA): no se pudo actualizar', error);
     }
   }
 
@@ -165,7 +168,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       if (!(await modulosNegocioActuales(widget.db)).estaActivo(Modulo.compararPrecios)) return;
       await actualizarComparacionPreciosTodoATuCasa(widget.db);
     } catch (error) {
-      debugPrint('Comparador de precios (Todo a tu Casa): no se pudo actualizar ($error)');
+      registrarError('Comparador de precios (Todo a tu Casa): no se pudo actualizar', error);
     }
   }
 
@@ -183,7 +186,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
     try {
       _servidorCompanion = await iniciarServidorCompanion(widget.db);
     } catch (error) {
-      debugPrint('Companion: no se pudo levantar el servidor local ($error)');
+      registrarError('Companion: no se pudo levantar el servidor local', error);
     }
   }
 
@@ -204,15 +207,19 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       stream: widget.db.select(widget.db.configuracionTabla).watchSingle(),
       builder: (context, snapshot) {
         final automatico = snapshot.data?.temaAutomatico ?? true;
-        final oscuro = automatico
-            ? oscuroPorHorarioDelLocal(DateTime.now())
-            : (snapshot.data?.temaOscuro ?? true);
+        // Automático = el tema del sistema (Windows), que el dueño ya maneja por horario o a mano.
+        final modo = automatico
+            ? ThemeMode.system
+            : ((snapshot.data?.temaOscuro ?? true) ? ThemeMode.dark : ThemeMode.light);
         return MaterialApp(
           onGenerateTitle: (_) => marcaActual.value.nombre,
           debugShowCheckedModeBanner: false,
+          locale: const Locale('es', 'AR'),
+          supportedLocales: const [Locale('es', 'AR'), Locale('es')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: TemaPlazoleta.claro,
           darkTheme: TemaPlazoleta.oscuro,
-          themeMode: oscuro ? ThemeMode.dark : ThemeMode.light,
+          themeMode: modo,
           navigatorKey: _navigatorKey,
           navigatorObservers: [routeObserver],
           builder: (context, child) {

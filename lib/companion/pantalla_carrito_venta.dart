@@ -20,6 +20,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../data/identidad_sync.dart' show generarGlobalId;
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/venta.dart';
@@ -44,6 +45,7 @@ import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 import 'tema/app_bar_companion.dart';
+import 'tema/colores_companion.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
 
@@ -130,6 +132,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   int? _gramosBusqueda;
   bool _buscando = false;
 
+  // Identifica este intento de cobro ante el servidor (ver `/ventas/cobrar`): se renueva cuando cambia lo que se cobra y al
+  // cobrar, así un reintento por mala señal no duplica la venta pero una venta igual a la anterior sí se graba.
+  String? _claveCobroActual;
+  String get _claveCobro => _claveCobroActual ??= generarGlobalId();
+
   int get _valorDescuentoIngresado {
     final texto = _descuentoCtrl.text.trim();
     if (texto.isEmpty) return 0;
@@ -200,6 +207,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       return;
     }
     final nueva = resultado.linea!;
+    _claveCobroActual = null;
     setState(() {
       final indiceExistente = widget.carrito.indexWhere(
         (l) => l.productoId == nueva.productoId,
@@ -241,6 +249,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _elegirMedio(_MedioVenta medio) async {
+    _claveCobroActual = null;
     setState(() {
       _medio = medio;
       _calculando = true;
@@ -262,13 +271,38 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  void _eliminarLinea(int index) => _actualizarLinea(index, null);
+  void _eliminarLinea(int index) {
+    final quitada = widget.carrito[index];
+    _actualizarLinea(index, null);
+    // Sin confirmación previa: un toque saca la línea, así que se puede deshacer.
+    final mensajero = ScaffoldMessenger.of(context);
+    mensajero.clearSnackBars();
+    mensajero.showSnackBar(
+      SnackBar(
+        content: Text('Quitaste ${quitada.nombreProducto}'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () {
+            if (!mounted) return;
+            _claveCobroActual = null;
+            setState(() {
+              widget.carrito.insert(index.clamp(0, widget.carrito.length), quitada);
+              _medio = null;
+              _resultado = null;
+            });
+          },
+        ),
+      ),
+    );
+  }
 
   /// `nueva` null = eliminar la línea (mismo criterio que el escritorio:
   /// restar por debajo de 1 saca la línea entera, el dueño, 2026-09-07: "no
   /// puedo agregar más de 1 unidad a la vez... misma funcionalidad que
   /// carrito").
   void _actualizarLinea(int index, LineaVenta? nueva) {
+    _claveCobroActual = null;
     setState(() {
       if (nueva == null) {
         widget.carrito.removeAt(index);
@@ -306,6 +340,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: widget.encargueId,
+        claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -382,6 +417,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: widget.encargueId,
+        claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -392,6 +428,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _ventaCobrada(int ventaId, int totalCentavos) async {
+    _claveCobroActual = null;
     // Se arma el resumen ANTES de vaciar el carrito: cuántos productos fueron
     // y cuánto se devuelve dependen de lo que había.
     final medio = _medio ?? _MedioVenta.efectivo;
@@ -897,7 +934,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           const SizedBox(height: Espaciado.sm),
           Text(
             vuelto < 0 ? 'Falta ${formatearARS(-vuelto)}' : 'Vuelto ${formatearARS(vuelto)}',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: vuelto < 0 ? colores.error : const Color(0xFF1B873F)),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: vuelto < 0 ? colores.error : context.acentos.ganancia),
           ),
           if (vueltoEsCaramelo(vuelto))
             TextButton(onPressed: _agregarCaramelo, child: const Text('Agregar caramelo en vez del vuelto')),
@@ -932,7 +969,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             style: textTheme.bodyLarge?.copyWith(color: colores.textoSecundario),
           ),
           if (c.medio == _MedioVenta.efectivo && c.vueltoCentavos > 0)
-            Text('Vuelto ${formatearARS(c.vueltoCentavos)}', style: textTheme.titleLarge?.copyWith(color: const Color(0xFF1B873F))),
+            Text('Vuelto ${formatearARS(c.vueltoCentavos)}', style: textTheme.titleLarge?.copyWith(color: context.acentos.ganancia)),
           const Spacer(),
           OutlinedButton(onPressed: () => _imprimirTicket(c.ventaId), child: const Text('Imprimir ticket')),
           const SizedBox(height: Espaciado.sm),

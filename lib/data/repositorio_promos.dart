@@ -191,7 +191,7 @@ Future<int> guardarPromo(
 
 /// Activa o desactiva una promo. No se borra: rompería el historial.
 Future<void> cambiarActivaPromo(AppDatabase db, {required int promoId, required bool activa}) {
-  return (db.update(db.productos)..where((p) => p.id.equals(promoId))).write(ProductosCompanion(activo: Value(activa)));
+  return (db.update(db.productos)..where((p) => p.id.equals(promoId))).write(ProductosCompanion(activo: Value(activa), actualizadoEn: Value(DateTime.now())));
 }
 
 /// Los artículos de cada promo (id de promo → artículos y cantidades). Lo usa

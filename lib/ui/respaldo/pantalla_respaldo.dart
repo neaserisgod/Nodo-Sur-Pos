@@ -17,6 +17,7 @@ import '../tema/iconos.dart';
 import '../tema/tokens.dart';
 import 'dialogo_confirmar_restaurar.dart';
 import 'respaldo_controlador.dart';
+import '../tema/esqueleto.dart';
 
 class ContenidoRespaldo extends StatefulWidget {
   const ContenidoRespaldo({super.key, required this.db, required this.usuarioId});
@@ -77,7 +78,7 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
       value: _c,
       child: Consumer<RespaldoControlador>(
         builder: (context, c, _) {
-          if (c.cargando) return const SizedBox.shrink();
+          if (c.cargando) return const EsqueletoLista();
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

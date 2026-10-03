@@ -76,6 +76,7 @@ List<Producto> buscarProductos({
   required String textoBuscado,
   int limite = 8,
   bool exigirStock = true,
+  bool incluirSinStock = false,
   Map<int, String>? nombresNormalizados,
   Map<int, String>? codigosNormalizados,
 }) {
@@ -83,7 +84,7 @@ List<Producto> buscarProductos({
   if (consulta.texto.isEmpty) return const [];
 
   final normalizado = normalizarTexto(consulta.texto);
-  bool tieneStockSiExigido(Producto p) => !exigirStock || tieneStock(p);
+  bool tieneStockSiExigido(Producto p) => !exigirStock || incluirSinStock || tieneStock(p);
   String codigoNormalizadoDe(Producto p) =>
       codigosNormalizados?[p.id] ?? normalizarTexto(p.codigoBarras ?? '');
   String nombreNormalizadoDe(Producto p) =>
@@ -108,5 +109,22 @@ List<Producto> buscarProductos({
     return nombreNormalizadoDe(p).contains(normalizado);
   }).toList();
 
-  return candidatos.take(limite).toList();
+  // "7 up" o "2 cocas" empiezan con un número pero no son gramos: si ningún pesable coincide, se busca el texto completo
+  // entre todos los productos (el número queda como parte del nombre). Esa línea se agrega por unidad, sin gramos.
+  if (candidatos.isEmpty && consulta.gramos != null) {
+    final completo = normalizarTexto(textoBuscado.trim());
+    final todos = catalogo
+        .where((p) => p.activo && tieneStockSiExigido(p) && nombreNormalizadoDe(p).contains(completo))
+        .toList();
+    return _conStockPrimero(todos, incluirSinStock).take(limite).toList();
+  }
+
+  return _conStockPrimero(candidatos, incluirSinStock).take(limite).toList();
+}
+
+/// Con `incluirSinStock` los productos agotados se muestran, atenuados, pero detrás de los que sí se pueden vender
+/// (orden estable: dentro de cada grupo se respeta el del catálogo).
+List<Producto> _conStockPrimero(List<Producto> lista, bool incluirSinStock) {
+  if (!incluirSinStock) return lista;
+  return [...lista.where(tieneStock), ...lista.where((p) => !tieneStock(p))];
 }

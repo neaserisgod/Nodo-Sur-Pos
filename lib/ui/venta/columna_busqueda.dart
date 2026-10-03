@@ -297,7 +297,7 @@ class _ResultadosBusqueda extends StatelessWidget {
               if (producto.esVarios) {
                 await agregarVarios(context, ctrl);
               } else {
-                ctrl.agregarProducto(producto);
+                ctrl.agregarDesdeBusqueda(producto);
                 ctrl.focoCampoPrincipal.requestFocus();
               }
             },
@@ -388,7 +388,11 @@ class _FilaResultado extends StatelessWidget {
       precioEsTarifa = false;
     }
 
-    return SuperficieTactil(
+    // Agotado: atenuado y con "Sin stock" en vez de la cantidad (El dueño, 2026-10-03).
+    final agotado = !tieneStock(producto);
+    return Opacity(
+      opacity: agotado ? 0.5 : 1,
+      child: SuperficieTactil(
       color: seleccionado ? colores.acento : Colors.transparent,
       borderRadius: BorderRadius.circular(TactoVenta.radio),
       onTap: onTap,
@@ -435,7 +439,7 @@ class _FilaResultado extends StatelessWidget {
                   SizedBox(
                     width: Medidas.anchoValorListaCompacto,
                     child: Text(
-                      stockTexto,
+                      agotado ? 'Sin stock' : stockTexto,
                       textAlign: TextAlign.right,
                       style: textTheme.bodyMedium
                           ?.copyWith(color: colores.textoSecundario)
@@ -462,6 +466,7 @@ class _FilaResultado extends StatelessWidget {
             );
           },
         ),
+      ),
       ),
     );
   }

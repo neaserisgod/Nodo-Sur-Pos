@@ -224,6 +224,9 @@ descuadre real.
   `TRAMPAS.md` ("sin stock, no aparece en ventas") para el detalle técnico
   y los casos borde que quedan pendientes (qué pasa al escanear el código
   de algo sin stock, accesos directos, etc.).
+- **Búsqueda de Venta (El dueño, 2026-10-03: "atenuados mejor"):** un producto sin stock **se ve** en la búsqueda,
+  atenuado y con "Sin stock" en lugar de la cantidad, detrás de los que sí tienen. Sigue sin poder venderse: tocarlo o
+  Enter avisa "sin stock, no se puede vender". La grilla de productos de Venta y el celular siguen ocultándolos.
 - No se cargan remitos de entrada por ahora, así que el stock **solo baja**.
   Puede quedar negativo igual (una venta ya cargada en el carrito antes de
   llegar a 0, o un ajuste manual) — sigue sin ser un error, pero ahora un
@@ -238,8 +241,10 @@ descuadre real.
 - La venta se carga por **escáner**, por **buscador de nombre** o por **peso más
   nombre del fiambre**.
 - Escanear el mismo producto dos veces **suma cantidad en la misma línea**.
-- Escanear un código desconocido abre **alta rápida**: nombre y precio, se vende y
-  queda cargado. El costo se completa después.
+- Escanear un código desconocido avisa **"Sin coincidencias"** y no carga nada:
+  un producto nuevo se da de alta siempre desde Proveedores (El dueño,
+  2026-09-16: se sacó la alta rápida de la pantalla de venta). Si se carga sin
+  costo, el costo se completa después (Regla 4, "completar no es reescribir").
 - **"Varios"** es un producto genérico de monto suelto para lo que no está cargado.
   No descuenta stock y queda marcado para revisar al cierre.
 - **Una venta cobrada se puede editar.** Al editarla, el stock y la caja se revierten
@@ -349,8 +354,14 @@ Reemplaza por completo al viejo "retiro semanal" (eliminado: la cuenta
 real de el dueño, textual: *"se abre caja, se vende, se cierra caja. Yo al día
 siguiente reviso ese cierre"*.
 
-- **Revisar y decidir ya no interrumpe nada — es la sección "Reportes"
-  de la barra lateral** (El dueño, 2026-09-06: *"en lugar de revisar
+- **Dónde vive hoy (2026-09-26, lo más reciente):** "Reportes" se sacó del
+  menú y se repartió entre Separaciones e Historial. La ganancia de cada
+  proveedor se revisa tocando su tarjeta en **Separaciones → "Lo vendido"**,
+  que abre "Retener como colchón" / "Retirar ganancia". Lo que sigue en este
+  punto es la historia de cómo se llegó ahí; las acciones y sus reglas no
+  cambiaron.
+- **Revisar y decidir ya no interrumpe nada** — de 2026-09-06 a 2026-09-26
+  fue la sección "Reportes" de la barra lateral (El dueño, 2026-09-06: *"en lugar de revisar
   ganancias, un apartado de reportes para poder ver detalladamente
   todo"*). Hasta esa fecha era una pantalla que se abría sola al abrir
   caja si había algo pendiente; ahora es una pantalla más, visitable
@@ -384,7 +395,7 @@ siguiente reviso ese cierre"*.
     prorrata) — no es una adivinanza para el dueño, ya viene calculado. Los
     dos montos quedan editables por si la sugerencia no es exacta (un
     mixto de varios productos no tiene atribución exacta por línea, ver
-    "Otros pendientes sueltos" en `ESTADO.md`) o porque el dueño decide otra
+    "Otros pendientes sueltos" en `docs/ESTADO-ARCHIVO.md` (y "Pendientes técnicos" en `ESTADO.md`)) o porque el dueño decide otra
     cosa. Lo que no se retira de los dos campos queda como colchón
     automáticamente — no hace falta confirmarlo aparte.
 - **Lo que se retira sale del negocio ese mismo día**: el efectivo va a su
@@ -582,8 +593,8 @@ proveedor, más salidas, apertura, cierre y retiro.
   línea** — mismo modelo que cualquier venta hecha con la app, sin tablas
   aparte para "lo histórico".
 - El costo por renglón es **opcional**: sin él, la línea entra como "vendido
-  sin costo" en la reposición, igual que un producto de alta rápida sin
-  completar (Regla 9). No se inventa un costo.
+  sin costo" en la reposición, igual que un producto cargado sin costo
+  (Regla 4). No se inventa un costo.
 - La carga reusa el mismo cálculo de cierre que un día real (arqueo,
   diferencia, separación de cigarrillos), pasándole la fecha histórica como
   fecha de cierre.
@@ -615,4 +626,6 @@ volver a descubrirlos:
    migraciones; actualizar una app con datos reales adentro sin migraciones es
    perder datos.
 7. **Animaciones de transición entre pantallas**: fueron un costo de rendimiento
-   real en hardware viejo. No incluirlas.
+   real en hardware viejo. Con la PC nueva (fase 13, `CLAUDE.md` "Hardware")
+   volvieron, cortas y solo para orientar una navegación real — nunca en medio
+   de un cobro. Hoy: un fundido corto entre pantallas (2026-10-03).

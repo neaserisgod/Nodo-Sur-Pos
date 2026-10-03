@@ -361,6 +361,7 @@ class VentaControlador extends ChangeNotifier {
     coincidencias = buscarProductos(
       catalogo: _catalogo,
       textoBuscado: campoTexto.text,
+      incluirSinStock: true,
       nombresNormalizados: _nombresNormalizados,
       codigosNormalizados: _codigosNormalizados,
     );
@@ -381,7 +382,18 @@ class VentaControlador extends ChangeNotifier {
 
   void agregarSeleccionActual() {
     if (coincidencias.isEmpty) return;
-    agregarProducto(coincidencias[indicePreseleccionado]);
+    agregarDesdeBusqueda(coincidencias[indicePreseleccionado]);
+  }
+
+  /// Agrega un resultado de la búsqueda. Los agotados se ven atenuados (El dueño, 2026-10-03) pero no se pueden
+  /// vender (2026-09-06): avisa en vez de agregar.
+  void agregarDesdeBusqueda(Producto producto) {
+    if (!tieneStock(producto)) {
+      avisoBusqueda = '${producto.nombre}: sin stock, no se puede vender';
+      notifyListeners();
+      return;
+    }
+    agregarProducto(producto);
   }
 
   /// Agrega [producto] al carrito. [montoVariosCentavos] es obligatorio (e
@@ -464,6 +476,15 @@ class VentaControlador extends ChangeNotifier {
     } else if (indiceUltimaLinea != null && index < indiceUltimaLinea!) {
       indiceUltimaLinea = indiceUltimaLinea! - 1;
     }
+    notifyListeners();
+  }
+
+  /// Deshace un `eliminarLinea` (snackbar "Deshacer" de la columna del
+  /// carrito): vuelve a poner la línea en su lugar y la resalta como última.
+  void restaurarLinea(int index, LineaVenta linea) {
+    final i = index.clamp(0, carrito.length);
+    carrito = [...carrito]..insert(i, linea);
+    indiceUltimaLinea = i;
     notifyListeners();
   }
 
@@ -731,6 +752,26 @@ class VentaControlador extends ChangeNotifier {
     focoCampoPrincipal.requestFocus();
   }
 
+  /// Foto de la venta activa para poder deshacer su cancelación. Sin id: si
+  /// se cerró la pestaña, su fila ya se borró y vuelve a guardarse como nueva.
+  BorradorVenta fotoDeLaVentaActiva() => _borradorActivo().conId(null);
+
+  /// Deshace `cancelarVenta`: si la pestaña activa está vacía la rellena, y si
+  /// no abre una pestaña nueva con la venta, para no pisar lo que se esté armando.
+  void reabrirVenta(BorradorVenta foto) {
+    if (cobrando || foto.estaVacio) return;
+    if (_borradorActivo().estaVacio) {
+      _pestanas[pestanaActiva].estado = foto;
+      _activar(pestanaActiva);
+    } else {
+      _pestanas[pestanaActiva].estado = _borradorActivo();
+      _pestanas.add(_Pestana(foto));
+      _activar(_pestanas.length - 1);
+    }
+    _programarGuardado();
+    focoCampoPrincipal.requestFocus();
+  }
+
   /// Esc: cancela la venta entera. Con más de una venta abierta, además
   /// cierra su pestaña y pasa a la vecina.
   void cancelarVenta() {
@@ -928,6 +969,10 @@ class VentaControlador extends ChangeNotifier {
       ultimoTotalCobradoCentavos = totalCentavos;
       cancelarVenta();
       return ventaId;
+    } on SesionCerradaException {
+      // La caja se cerró desde otro equipo con esta venta armada: el carrito queda como está y se avisa.
+      avisoCobro = 'La caja ya se cerró: la venta no se guardó. Abrí la caja de nuevo para cobrarla.';
+      return null;
     } finally {
       // `notifyListeners()` explícito acá (no solo el de `cancelarVenta()`):
       // también tiene que dispararse en el camino de excepción, donde

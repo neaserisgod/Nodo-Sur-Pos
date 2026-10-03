@@ -112,13 +112,19 @@ class ResumenReposicionProveedor {
 /// llame) — el corte se aplica después, por proveedor, en
 /// [_resumenVentasDesdeCache].
 Future<Map<int, List<(FilaLineaVenta linea, FilaVenta venta)>>>
-_lineasPorProveedorDesde(AppDatabase db, List<int> proveedorIds) async {
+_lineasPorProveedorDesde(AppDatabase db, List<int> proveedorIds, {DateTime? desde}) async {
   if (proveedorIds.isEmpty) return {};
   final query = db.select(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
   // Sin ventas anuladas (El dueño, 2026-09-26): una venta revertida no generó
   // nada que reponer, ni vendido, ni ganancia.
-  ])..where(db.lineasDeVenta.proveedorIdFoto.isIn(proveedorIds) & db.ventas.anuladaEn.isNull());
+  ])..where(
+    db.lineasDeVenta.proveedorIdFoto.isIn(proveedorIds) &
+        db.ventas.anuladaEn.isNull() &
+        // [desde] = el corte más viejo que va a mirar quien llama (null = desde siempre). Filtrar acá, en la base, evita traer
+        // años de ventas a memoria para después descartarlas: con el historial acumulado esto era lo que más tardaba.
+        (desde == null ? const Constant(true) : db.ventas.fecha.isBiggerThanValue(desde)),
+  );
   final filas = await query.get();
 
   final resultado = <int, List<(FilaLineaVenta, FilaVenta)>>{};
@@ -175,16 +181,24 @@ Future<Map<int, ParteMpDeLinea>> _parteMpDeLineasDesde(AppDatabase db, DateTime?
   final ventasFilas = await (db.select(db.ventas)
         ..where((v) => v.sesionCajaId.isIn(sesionIds) & v.anuladaEn.isNull()))
       .get();
-  final ventaIds = ventasFilas.map((v) => v.id).toList();
 
+  // Por JOIN con la sesión y no con `ventaId IN (...)`: SQLite acepta como máximo ~32.000 variables por consulta y con
+  // dos años de ventas la lista de ids las superaba (la pantalla de Proveedores directamente se rompía).
   final lineasPorVenta = <int, List<FilaLineaVenta>>{};
-  for (final l in await (db.select(db.lineasDeVenta)..where((l) => l.ventaId.isIn(ventaIds))).get()) {
+  final lineasQuery = db.select(db.lineasDeVenta).join([
+    innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
+  ])..where(db.ventas.sesionCajaId.isIn(sesionIds) & db.ventas.anuladaEn.isNull());
+  for (final fila in await lineasQuery.get()) {
+    final l = fila.readTable(db.lineasDeVenta);
     lineasPorVenta.putIfAbsent(l.ventaId, () => []).add(l);
   }
   final mp = await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle();
   final efectivoPorVenta = <int, int>{};
   final mpPorVenta = <int, int>{};
-  for (final p in await (db.select(db.pagos)..where((p) => p.ventaId.isIn(ventaIds))).get()) {
+  final pagosQuery = db.select(db.pagos).join([
+    innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId)),
+  ])..where(db.ventas.sesionCajaId.isIn(sesionIds) & db.ventas.anuladaEn.isNull());
+  for (final p in (await pagosQuery.get()).map((f) => f.readTable(db.pagos))) {
     final destino = p.medioPagoId == mp.id ? mpPorVenta : efectivoPorVenta;
     destino.update(p.ventaId, (a) => a + p.montoCentavos, ifAbsent: () => p.montoCentavos);
   }
@@ -218,10 +232,10 @@ LineaParaSeparacion _lineaParaSeparacion(FilaLineaVenta l, FilaVenta v) {
 
 /// El corte más viejo entre [proveedores] — desde ahí hace falta conocer la
 /// parte MP de las líneas. Null si alguno nunca cortó (desde siempre).
-DateTime? _corteMasViejo(Iterable<Proveedor> proveedores) {
+DateTime? _corteMasViejo(Iterable<Proveedor> proveedores, [DateTime? Function(Proveedor)? corteDe]) {
   DateTime? masViejo;
   for (final p in proveedores) {
-    final corte = p.corteReposicionFecha;
+    final corte = corteDe == null ? p.corteReposicionFecha : corteDe(p);
     if (corte == null) return null;
     if (masViejo == null || corte.isBefore(masViejo)) masViejo = corte;
   }
@@ -340,7 +354,7 @@ Future<List<SeparacionDelDia>> separacionesDelDia(AppDatabase db, {DateTime? aho
   final proveedores = await (db.select(
     db.proveedores,
   )..where((p) => p.activo.equals(true) & p.cajaAparte.equals(false))).get();
-  final filasPorProveedor = await _lineasPorProveedorDesde(db, proveedores.map((p) => p.id).toList());
+  final filasPorProveedor = await _lineasPorProveedorDesde(db, proveedores.map((p) => p.id).toList(), desde: antesDelInicio);
   final parteMp = await _parteMpDeLineasDesde(db, inicio);
 
   final resultado = <SeparacionDelDia>[];
@@ -561,8 +575,8 @@ Future<void> separarDelDia(
   final momento = ahora ?? DateTime.now();
   final inicio = _inicioDelDia(momento);
   final proveedor = await (db.select(db.proveedores)..where((p) => p.id.equals(proveedorId))).getSingle();
-  final filas = (await _lineasPorProveedorDesde(db, [proveedorId]))[proveedorId] ?? const [];
   final corte = proveedor.corteReposicionFecha;
+  final filas = (await _lineasPorProveedorDesde(db, [proveedorId], desde: corte))[proveedorId] ?? const [];
 
   var deHoy = 0, deAntes = 0;
   for (final (linea, venta) in _filasDesde(filas, corte)) {
@@ -682,7 +696,7 @@ Future<ResumenReposicionProveedor> resumenReposicionDeProveedor(
   AppDatabase db,
   Proveedor proveedor,
 ) async {
-  final filas = await _lineasPorProveedorDesde(db, [proveedor.id]);
+  final filas = await _lineasPorProveedorDesde(db, [proveedor.id], desde: proveedor.corteReposicionFecha);
   final parteMp = await _parteMpDeLineasDesde(db, proveedor.corteReposicionFecha);
   return _resumenDe(proveedor, filas[proveedor.id] ?? const [], parteMp);
 }
@@ -732,6 +746,7 @@ Future<List<ResumenReposicionProveedor>> reposicionActual(
   final filasPorProveedor = await _lineasPorProveedorDesde(
     db,
     proveedores.map((p) => p.id).toList(),
+    desde: _corteMasViejo(proveedores),
   );
   final parteMp = await _parteMpDeLineasDesde(db, _corteMasViejo(proveedores));
   return [
@@ -823,6 +838,7 @@ Future<List<GananciaPendienteProveedor>> gananciaPendienteDeProveedores(
   final filasPorProveedor = await _lineasPorProveedorDesde(
     db,
     proveedores.map((p) => p.id).toList(),
+    desde: _corteMasViejo(proveedores, (p) => p.gananciaRevisadaFecha),
   );
 
   final resultados = <GananciaPendienteProveedor>[];
@@ -1066,7 +1082,7 @@ Future<void> revisarGananciaProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(gananciaRevisadaFecha: Value(fecha ?? DateTime.now())),
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), gananciaRevisadaFecha: Value(fecha ?? DateTime.now())),
   );
 });
 
@@ -1113,7 +1129,7 @@ Future<void> separarProveedor(
   final proveedor = await (db.select(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).getSingle();
-  final filas = await _lineasPorProveedorDesde(db, [proveedorId]);
+  final filas = await _lineasPorProveedorDesde(db, [proveedorId], desde: proveedor.corteReposicionFecha);
   final parteMp = await _parteMpDeLineasDesde(db, proveedor.corteReposicionFecha);
   final resumen = _resumenDe(proveedor, filas[proveedorId] ?? const [], parteMp);
   final ahora = fecha ?? DateTime.now();
@@ -1121,7 +1137,7 @@ Future<void> separarProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       separadoCentavos: Value(
         proveedor.separadoCentavos + resumen.sugeridoASepararCentavos,
       ),
@@ -1184,7 +1200,7 @@ Future<void> pagarProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       separadoCentavos: const Value(0),
       separadoMpCentavos: const Value(0),
       separadoFecha: const Value(null),
@@ -1249,7 +1265,7 @@ Future<void> retenerGanancia(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       colchonReposicionCentavos: Value(
         proveedor.colchonReposicionCentavos + montoCentavos,
       ),
@@ -1324,7 +1340,7 @@ Future<void> actualizarProveedorNivel2(
   return (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       colchonReposicionCentavos: Value(colchonReposicionCentavos),
       medioPago: Value(medioPago),
     ),
@@ -1355,7 +1371,7 @@ Future<void> actualizarProveedorAvanzado(
   return (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       nombre: nombre == null ? const Value.absent() : Value(nombre),
       codigo: Value(codigo),
       diaPedido: Value(diaPedido),

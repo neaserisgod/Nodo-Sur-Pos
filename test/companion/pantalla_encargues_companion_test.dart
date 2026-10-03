@@ -1,7 +1,7 @@
 // Encargues del celular (2026-10-02): apartar saca el stock, cancelar lo devuelve, y "Entregar" le pasa el encargue al
 // menú. Se prueba contra una base real (el mismo camino que sin PC), no contra un doble.
 
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
@@ -42,7 +42,7 @@ void main() {
   Future<int> stock(WidgetTester t) async =>
       (await t.runAsync(() => (db.select(db.productos)..where((p) => p.id.equals(cerveza))).getSingle()))!.stock;
 
-  Future<void> abrir(WidgetTester t, {bool ventaArmada = false, void Function(EntregaEncargue?)? alVolver}) async {
+  Future<void> abrir(WidgetTester t, {bool ventaArmada = false, int? sesionCajaId, void Function(EntregaEncargue?)? alVolver}) async {
     await t.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
       home: Builder(
@@ -52,7 +52,7 @@ void main() {
               onPressed: () async {
                 // Ojo: `alVolver?.call(await ...)` no evaluaría el push si alVolver es null.
                 final entrega = await Navigator.of(context).push<EntregaEncargue>(MaterialPageRoute(
-                  builder: (_) => PantallaEncarguesCompanion(servicio: puerto, usuarioId: 1, hayVentaArmada: ventaArmada),
+                  builder: (_) => PantallaEncarguesCompanion(servicio: puerto, usuarioId: 1, hayVentaArmada: ventaArmada, sesionCajaId: sesionCajaId),
                 ));
                 alVolver?.call(entrega);
               },
@@ -145,5 +145,34 @@ void main() {
 
     expect(find.byKey(const Key('encargue_error')), findsOneWidget);
     expect(await stock(t), 12);
+  });
+
+  testWidgets('"Entregar y anotar deuda" pasa a Deudas y se cobra en efectivo como una venta del día', (t) async {
+    await preparar(t);
+    await t.runAsync(() => puerto.abrirSesion(usuarioId: 1, fondoInicialCentavos: 0));
+    // La deuda es a precio de hoy: el producto del test se creó sin precio.
+    await t.runAsync(() => (db.update(db.productos)..where((p) => p.id.equals(cerveza))).write(const ProductosCompanion(precioCentavos: Value(150000))));
+    final sesionId = (await t.runAsync(() => db.select(db.sesionesDeCaja).getSingle()))!.id;
+    final id = (await t.runAsync(() => puerto.crearEncargue(nombreCliente: 'María', lineas: [ApartadoCompanion(productoId: cerveza, cantidad: 3)], usuarioId: 1)))!;
+    await abrir(t, sesionCajaId: sesionId);
+
+    await t.tap(find.byKey(Key('encargue_deuda_$id')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Entregar y anotar'));
+    await _asentar(t);
+    await t.pumpAndSettle();
+
+    expect(find.byKey(Key('encargue_$id')), findsNothing);
+    expect(find.text('Deudas'), findsOneWidget);
+    expect(await stock(t), 9); // el stock ya estaba descontado al apartar
+
+    await t.tap(find.textContaining('Cobrar'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Efectivo'));
+    await _asentar(t);
+    await t.pumpAndSettle();
+
+    expect(find.text('Deudas'), findsNothing);
+    expect((await t.runAsync(() => db.select(db.ventas).get()))!, hasLength(1));
   });
 }

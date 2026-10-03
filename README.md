@@ -27,7 +27,10 @@ Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor e
 | [`CLAUDE.md`](./CLAUDE.md) | Cómo está armado el código: stack, arquitectura de carpetas, convenciones que no se rompen, qué es cada fase del roadmap, el flujo de trabajo (plan antes de código, ambigüedades marcadas, tests primero), la restricción de hardware, y la especificación completa de la pantalla de venta. |
 | [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.), y qué módulo activa cada una. Si el código contradice esto, el código está mal. |
 | [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md) | El comercio de origen: cómo está configurado y qué nombres de archivo no se pueden cambiar. |
-| [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL: qué fases están cerradas, qué falta, tests/`schemaVersion` de hoy, contexto del negocio en una línea, y los próximos pasos concretos. Es el documento que más cambia — se actualiza al cerrar cada fase. |
+| [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL, corto: qué está publicado, métricas, qué existe, qué no se probó en real y qué falta. Se actualiza al cerrar cada sesión. El detalle histórico (hasta 2026-10-03) está en [`docs/ESTADO-ARCHIVO.md`](./docs/ESTADO-ARCHIVO.md). |
+| [`docs/PLAN.md`](./docs/PLAN.md) | El plan vigente por fases (0 a 7) y, arriba, "Dónde quedamos": qué está hecho y qué sigue, para retomar con otra cuenta. |
+| [`docs/ESTANDARES-GOOGLE.md`](./docs/ESTANDARES-GOOGLE.md) | Estética horsepos/antigravity y estándar de diseño y funcionamiento de Google, medido contra el código. |
+| [`docs/REVISION-FRICCIONES.md`](./docs/REVISION-FRICCIONES.md) | Fricciones encontradas pantalla por pantalla (PC y celular). |
 | [`DECISIONES.md`](./DECISIONES.md) | El PORQUÉ de decisiones de dominio y de arquitectura que sin el motivo parecen arbitrarias (por qué los cigarrillos quedan fuera de la reposición, por qué el costo es nullable, por qué el redondeo va después del recargo, etc.). |
 | [`TRAMPAS.md`](./TRAMPAS.md) | Bugs y comportamientos inesperados ya encontrados y resueltos — para no volver a pisar el mismo palo (orden de `sesionCerradaAnterior`, el hang de `dart:io` en `testWidgets`, etc.). |
 | [`DISENO.md`](./DISENO.md) | El sistema de diseño completo: escalas de espaciado y tipografía, colores, el acento único y sus tres usos, reglas de alineación y simetría, y las restricciones visuales por hardware. |
@@ -36,7 +39,9 @@ Antes de hacer público el repositorio, `python3 tool/limpiar_datos_personales.p
 personales del comercio de origen por nombres genéricos (sin `--aplicar` solo muestra qué cambiaría).
 
 Regla general: si vas a agregar algo que ya tiene dueño en esta lista,
-agregalo en ese documento — no lo dupliques en otro.
+agregalo en ese documento — no lo dupliques en otro. Si dos documentos se
+contradicen, **vale lo más reciente** (la fecha escrita en el texto, o la del
+commit) y lo viejo se corrige en el mismo cambio.
 
 ## Cómo correrlo
 
@@ -50,11 +55,13 @@ flutter pub get
 # Regenerar código de drift después de tocar un esquema (lib/data/tables/*, database.dart)
 dart run build_runner build
 
-# Análisis estático — tiene que dar "No issues found!"
-flutter analyze
+# Análisis estático — sin errores; los avisos viejos de estilo no tienen que subir (igual que CI)
+flutter analyze lib
 
-# Toda la suite de tests (1853 al 2026-10-03, ver ESTADO.md)
-flutter test
+# Toda la suite de tests (~1964 al 2026-10-03), sin los benchmarks de 60.000 ventas
+flutter test --exclude-tags bench
+# Los benchmarks, aparte
+flutter test --tags bench
 
 # Build de desarrollo — se abre con hot reload
 flutter run -d windows

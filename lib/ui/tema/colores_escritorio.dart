@@ -18,7 +18,7 @@ const coloresEscritorioClaro = ColoresPlazoleta(
   borde: Color(0xFFD5D8DF),
   textoPrimario: Color(0xFF121317),
   textoSecundario: Color(0xFF566070),
-  textoTenue: Color(0xFF6B7385),
+  textoTenue: Color(0xFF656D80),
   acento: Color(0xFF121317),
   acentoTexto: Color(0xFFFFFFFF),
   error: Color(0xFFC5221F),
@@ -26,7 +26,7 @@ const coloresEscritorioClaro = ColoresPlazoleta(
 );
 
 const coloresEscritorioOscuro = ColoresPlazoleta(
-  fondo: Color(0xFF000000),
+  fondo: Color(0xFF0E0F12),
   fondoBloque: Color(0xFF14161C),
   borde: Color(0xFF2A2D36),
   textoPrimario: Color(0xFFF4F5F7),

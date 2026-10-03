@@ -179,17 +179,20 @@ class StockProveedorControlador extends ChangeNotifier {
     aplicando = true;
     notifyListeners();
     try {
-      for (final p in aAplicar) {
-        final valor = contados[p.id]!;
-        await ajustarStockRapido(
-          db,
-          productoId: p.id,
-          usuarioId: usuarioId,
-          stock: p.esPesable ? p.stock : valor,
-          stockGramos: p.esPesable ? valor : null,
-          motivo: motivo,
-        );
-      }
+      // Una sola transacción: si algo falla a mitad de camino no quedan unos productos ajustados y otros no.
+      await db.transaction(() async {
+        for (final p in aAplicar) {
+          final valor = contados[p.id]!;
+          await ajustarStockRapido(
+            db,
+            productoId: p.id,
+            usuarioId: usuarioId,
+            stock: p.esPesable ? p.stock : valor,
+            stockGramos: p.esPesable ? valor : null,
+            motivo: motivo,
+          );
+        }
+      });
       contados.clear();
       await _recargarLista();
     } finally {

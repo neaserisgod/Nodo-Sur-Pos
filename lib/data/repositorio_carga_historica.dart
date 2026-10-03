@@ -108,6 +108,7 @@ Future<int> cargarDiaHistoricoDesdeVentas(
         pagos: pendiente.pagos,
         fecha: fecha,
         afectaStock: false,
+        exigirSesionAbierta: false,
       );
     }
 
@@ -222,6 +223,7 @@ Future<void> agregarVentasADiaHistorico(
         pagos: pendiente.pagos,
         fecha: sesion.fechaApertura,
         afectaStock: false,
+        exigirSesionAbierta: false,
       );
     }
     await _recalcularResumenDiaHistorico(

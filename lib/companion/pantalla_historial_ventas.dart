@@ -213,7 +213,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '¿Eliminar la venta de ${formatearARS(v.totalCentavos)}?',
+            '¿Anular la venta de ${formatearARS(v.totalCentavos)}?',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: Espaciado.sm),
@@ -241,7 +241,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: context.colores.error),
                   onPressed: () => Navigator.of(context).pop(motivoCtrl.text.trim()),
-                  child: const Text('Eliminar'),
+                  child: const Text('Anular'),
                 ),
               ),
             ],
@@ -436,7 +436,7 @@ class _FilaVenta extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('#${v.ventaId}', style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
+                        Text(v.etiqueta, style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
                         Text(
                           v.anulada ? 'Anulada · ${v.medio.etiqueta}' : v.medio.etiqueta,
                           style: textTheme.bodySmall?.copyWith(color: v.anulada && !abierta ? colores.error : apagado),
@@ -506,7 +506,7 @@ class _FilaVenta extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: Espaciado.md),
               shape: const StadiumBorder(),
             ),
-            child: const Text('Eliminar venta'),
+            child: const Text('Anular venta'),
           ),
         ],
       ],

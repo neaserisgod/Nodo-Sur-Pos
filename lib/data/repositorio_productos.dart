@@ -568,7 +568,8 @@ Future<void> cambiarActivo(
   required bool activo,
 }) {
   return (db.update(db.productos)..where((p) => p.id.equals(id))).write(
-    ProductosCompanion(activo: Value(activo)),
+    // `actualizadoEn` es lo que hace que el cambio viaje al celular y a los otros equipos (sin esto no se sincroniza).
+    ProductosCompanion(activo: Value(activo), actualizadoEn: Value(DateTime.now())),
   );
 }
 

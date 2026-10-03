@@ -306,7 +306,7 @@ class GrupoPildoras<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final colores = context.colores;
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: colores.fondoBloque,
         borderRadius: BorderRadius.circular(999),
@@ -321,8 +321,11 @@ class GrupoPildoras<T> extends StatelessWidget {
                 radio: 999,
                 onTap: () => onElegir(valor),
                 color: valor == elegida ? colores.acento : Colors.transparent,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm + 2),
+                child: Container(
+                  // El objetivo táctil es la pastilla misma: 48 dp como mínimo.
+                  constraints: const BoxConstraints(minHeight: Medidas.alturaControl),
+                  padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+                  alignment: Alignment.center,
                   child: Text(
                     texto,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(

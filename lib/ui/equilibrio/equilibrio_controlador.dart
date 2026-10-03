@@ -181,7 +181,8 @@ class EquilibrioControlador extends ChangeNotifier {
     DateTime? fecha,
   }) async {
     final sesion = sesionCajaId;
-    if (sesion == null) return;
+    // Antes volvía en silencio y el diálogo se cerraba como si el pago estuviera guardado.
+    if (sesion == null) throw StateError('Hace falta una caja abierta para registrar el pago');
     await registrarPagoFijo(
       db,
       gastoFijoId: gastoFijoId,

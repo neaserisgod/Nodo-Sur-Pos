@@ -17,6 +17,7 @@ import 'tema/fila_dato_companion.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/superficie.dart';
 import 'tema/tema_companion.dart';
+import 'tema/hoja_vidrio.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
   const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar});
@@ -73,20 +74,13 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
   }
 
   Future<void> _desvincular() async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('¿Desvincular este celular?'),
-        content: const Text(
-          'Sin la cuenta no podrá sincronizar por internet. Lo que ya tiene guardado en el celular no se borra.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Desvincular')),
-        ],
-      ),
+    final confirmar = await confirmarAccionDestructiva(
+      context,
+      titulo: '¿Desvincular este celular?',
+      contenido: 'Sin la cuenta no podrá sincronizar por internet. Lo que ya tiene guardado en el celular no se borra.',
+      textoConfirmar: 'Desvincular',
     );
-    if (confirmar != true) return;
+    if (!confirmar) return;
     await _sync.desvincular();
     await _leerCuenta();
   }

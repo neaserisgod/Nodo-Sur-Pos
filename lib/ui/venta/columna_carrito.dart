@@ -22,6 +22,7 @@ import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'dialogo_editar_cantidad.dart';
 import 'tacto_venta.dart';
+import 'cancelar_venta_con_deshacer.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 
@@ -263,9 +264,32 @@ class ColumnaCarrito extends StatelessWidget {
                                     // (TRAMPAS.md/CLAUDE.md ya actualizados).
                                     _IconoAccion(
                                       icono: IconosPlazoleta.deleteOutline,
-                                      onTap: () => context
-                                          .read<VentaControlador>()
-                                          .eliminarLinea(index),
+                                      etiqueta: 'Quitar ${linea.nombreProducto}',
+                                      onTap: () {
+                                        final controlador = context.read<VentaControlador>();
+                                        controlador.eliminarLinea(index);
+                                        // Un toque saca la línea sin confirmar, así que se
+                                        // puede deshacer. El snackbar flota a la izquierda
+                                        // para no tapar el cobro (regla dura de Venta).
+                                        final mensajero = ScaffoldMessenger.of(context);
+                                        mensajero.clearSnackBars();
+                                        mensajero.showSnackBar(
+                                          SnackBar(
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.only(
+                                              left: Espaciado.lg,
+                                              right: Medidas.anchoPanelCobroVenta + Espaciado.lg,
+                                              bottom: Espaciado.lg,
+                                            ),
+                                            duration: const Duration(seconds: 5),
+                                            content: Text('Quitaste ${linea.nombreProducto}'),
+                                            action: SnackBarAction(
+                                              label: 'Deshacer',
+                                              onPressed: () => controlador.restaurarLinea(index, linea),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 );
@@ -345,13 +369,16 @@ class ColumnaCarrito extends StatelessWidget {
 /// de datos el ancho importa (ver `TRAMPAS.md`, "La fila del carrito
 /// necesita LayoutBuilder").
 class _IconoAccion extends StatelessWidget {
-  const _IconoAccion({required this.icono, required this.onTap});
+  const _IconoAccion({required this.icono, required this.etiqueta, required this.onTap});
   final IconData icono;
+  final String etiqueta;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return SuperficieTactil(
+      etiqueta: etiqueta,
+      tamanoMinimo: Medidas.alturaControl,
       borderRadius: BorderRadius.circular(TactoVenta.radio),
       onTap: onTap,
       child: Padding(
@@ -390,12 +417,12 @@ class _EscalonCantidad extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.colores.fondo,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: context.colores.borde),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _celda(context, IconosPlazoleta.remove, onMenos),
+          _celda(context, IconosPlazoleta.remove, 'Restar uno', onMenos),
           GestureDetector(
             onDoubleTap: onDobleTap,
             child: Padding(
@@ -406,14 +433,16 @@ class _EscalonCantidad extends StatelessWidget {
               ),
             ),
           ),
-          _celda(context, IconosPlazoleta.add, onMas),
+          _celda(context, IconosPlazoleta.add, 'Sumar uno', onMas),
         ],
       ),
     );
   }
 
-  Widget _celda(BuildContext context, IconData icono, VoidCallback onTap) {
+  Widget _celda(BuildContext context, IconData icono, String etiqueta, VoidCallback onTap) {
     return SuperficieTactil(
+      etiqueta: etiqueta,
+      tamanoMinimo: Medidas.alturaControl,
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,
       child: Padding(
@@ -514,7 +543,7 @@ class _BarraVentasAbiertas extends StatelessWidget {
                     seleccionada: i == c.pestanaActiva,
                     puedeCerrar: i == c.pestanaActiva && resumen.length > 1,
                     onTap: () => c.cambiarAPestana(i),
-                    onCerrar: c.cancelarVenta,
+                    onCerrar: () => cancelarVentaConDeshacer(context, c),
                   ),
                 ],
               ],
@@ -556,12 +585,13 @@ class _PildoraVenta extends StatelessWidget {
         ? colores.acentoTexto
         : colores.textoPrimario;
     return Container(
-      height: 44,
+      height: Medidas.alturaControl,
       decoration: BoxDecoration(
         color: seleccionada ? colores.acento : colores.fondoBloque,
         borderRadius: BorderRadius.circular(999),
       ),
       child: SuperficieTactil(
+        etiqueta: titulo,
         borderRadius: BorderRadius.circular(999),
         onTap: onTap,
         child: Padding(
@@ -594,10 +624,23 @@ class _PildoraVenta extends StatelessWidget {
               ],
               if (puedeCerrar) ...[
                 const SizedBox(width: Espaciado.sm),
-                InkResponse(
-                  onTap: onCerrar,
-                  radius: 14,
-                  child: Icon(Icons.close_rounded, size: 18, color: colorTexto),
+                Tooltip(
+                  message: 'Cerrar $titulo',
+                  child: Semantics(
+                    button: true,
+                    label: 'Cerrar $titulo',
+                    excludeSemantics: true,
+                    onTap: onCerrar,
+                    child: InkResponse(
+                      onTap: onCerrar,
+                      radius: 24,
+                      child: SizedBox(
+                        width: Medidas.alturaControl,
+                        height: Medidas.alturaControl,
+                        child: Icon(Icons.close_rounded, size: 18, color: colorTexto),
+                      ),
+                    ),
+                  ),
                 ),
               ] else
                 const SizedBox(width: Espaciado.xs),
@@ -619,13 +662,14 @@ class _BotonNuevaVenta extends StatelessWidget {
   Widget build(BuildContext context) {
     final colores = context.colores;
     return Container(
-      width: 44,
-      height: 44,
+      width: Medidas.alturaControl,
+      height: Medidas.alturaControl,
       decoration: BoxDecoration(
         color: colores.fondoBloque,
         shape: BoxShape.circle,
       ),
       child: SuperficieTactil(
+        etiqueta: 'Nueva venta',
         borderRadius: BorderRadius.circular(999),
         onTap: activo ? onTap : null,
         child: Center(

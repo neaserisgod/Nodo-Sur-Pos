@@ -48,12 +48,13 @@ Hay un tercer repo (`horsepospronative`) que no se tocó en estas sesiones.
                         │ token de dispositivo           │                          │ OAuth del negocio
                   PC (Windows)  ◄── wifi del local ──►  Celular (Android)     Mercado Pago (Point, pagos)
                   SQLite propia     (servidor HTTP       SQLite propia
-                  lib/servidor/      en la PC, QR)        lib/companion/
+                  lib/servidor/      en la PC)            lib/companion/
 ```
 
 - **Datos**: cada equipo tiene su base. Se sincronizan por la nube (`lib/servicios/sync_nube.dart` ↔ `/api/sync`,
   alcance = sucursal, "gana el último en llegar") o, si el celular está en el wifi de la PC, por HTTP directo
-  (`lib/servidor/servidor_companion.dart`, emparejado con un QR). Motor: `lib/data/repositorio_sincronizacion.dart`
+  (`lib/servidor/servidor_companion.dart`; se empareja con un código de 6 números que muestra la PC, o con un toque si
+  la PC y el celular son de la misma sucursal: la PC avisa su dirección del wifi al sitio, `/api/device/pc-local`). Motor: `lib/data/repositorio_sincronizacion.dart`
   (`global_id` + `actualizado_en`; logs de movimientos solo se insertan).
 - **Mercado Pago**: dos cosas separadas. (1) Las **suscripciones** de los clientes a Nodo Sur usan la cuenta de Nodo Sur
   (`MP_ACCESS_TOKEN` del sitio). (2) Los **cobros del negocio** usan la cuenta del comercio, conectada por OAuth en
@@ -88,8 +89,9 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 `lib/ui/tema/`). Mocks de referencia en `Lenguaje de diseño/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
 (`docs/anotaciones-mocks.md` lista lo que está en los mocks pero no en la app).
 
-- **PC**: arriba, marca + secciones como pastillas + **engranaje de Configuración** a la derecha (+ búsqueda; en Venta,
-  la campanita y "Cambiar de turno"/"Cerrar caja"). Configuración en **5 grupos** (Negocio, Caja y cobros, Productos,
+- **PC** (2026-10-03): Venta es la pantalla principal (la tecla Inicio vuelve ahí). Arriba, las secciones como
+  pastillas centradas (sin la marca), el **engranaje de Configuración** a la derecha y la búsqueda como lupa (Ctrl+F);
+  en Venta, la campanita y "Cambiar de turno"/"Cerrar caja", y la búsqueda es el campo único siempre a la vista. Configuración en **5 grupos** (Negocio, Caja y cobros, Productos,
   Equipos y cuenta, Apariencia) con pastillas por sección.
 - **Celular**: barra inferior flotante de tinta con 4 pestañas de texto (Inicio, Productos, Historial, Gestión);
   pantallas secundarias con título grande y "Volver" en pastilla arriba a la derecha.
@@ -108,7 +110,8 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 - Todos los workflows de publicación comparten el grupo de concurrencia `publicar`: van de a uno. **Nunca publicar dos
   veces la misma versión a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
-  `flutter pub get`, `flutter analyze --no-fatal-infos` y `flutter test` (~1850 tests, ~5 minutos).
+  `flutter pub get`, `flutter analyze lib` (sin errores; los avisos viejos no tienen que subir) y
+  `flutter test --exclude-tags bench` (~1964 tests, ~5 minutos).
 
 ## 6. Estado al 2026-10-03
 
@@ -146,8 +149,8 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
    unos días de uso del cobro por el servidor.
 4. Ofrecido y no pedido: hacer obligatorio el motivo de cada gasto.
 5. Limpieza: `.gitignore` no ignora `android/build` ni `android/app/build` (en una PC que compila el APK aparecen miles
-   de cambios); restos de Firestore/Supabase en `lib/data/transporte_firestore.dart` y `lib/firebase_*.dart`;
-   `ESTADO.md` es muy largo y convendría resumir lo viejo.
+   de cambios). (Los restos de Firestore/Supabase que se listaban acá ya no existen en el código.)
+   (`ESTADO.md` ya se resumió el 2026-10-03; el detalle viejo está en `docs/ESTADO-ARCHIVO.md`.)
 
 ## 8. Datos útiles
 

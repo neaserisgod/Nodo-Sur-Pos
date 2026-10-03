@@ -12,6 +12,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/equilibrio.dart';
 import 'database.dart';
+import 'repositorio_ventas.dart' show verificarSesionAbierta;
 import 'identidad_sync.dart';
 import 'linea_venta_reconstruccion.dart';
 
@@ -144,6 +145,7 @@ Future<void> registrarPagoFijo(
   bool pagadoConMp = false,
   DateTime? fecha,
 }) async {
+  await verificarSesionAbierta(db, sesionCajaId);
   final cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
   final medioPagoId = pagadoConMp
       ? (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id

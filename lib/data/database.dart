@@ -131,7 +131,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -996,6 +996,18 @@ class AppDatabase extends _$AppDatabase {
             SeccionesMenuCompanion.insert(clave: 'encargues', etiqueta: 'Encargues', orden: (ultimo.data['m'] as int) + 1),
           );
         }
+      }
+      // v47 → v48 (El dueño, 2026-10-03: número de venta global): `ventas.numero` y `configuracion.prefijo_ventas`.
+      // Aditiva, con chequeo de columna como v43→v44.
+      if (from < 48) {
+        final deVentas = (await customSelect("SELECT name FROM pragma_table_info('ventas')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!deVentas.contains('numero')) await m.addColumn(ventas, ventas.numero);
+        final deConfig = (await customSelect("SELECT name FROM pragma_table_info('configuracion_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!deConfig.contains('prefijo_ventas')) await m.addColumn(configuracionTabla, configuracionTabla.prefijoVentas);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

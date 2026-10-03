@@ -1,18 +1,21 @@
 // Encargues en el celular (El dueño, 2026-10-02): lo que un cliente pidió y ya está en el local, apartado hasta que lo
 // retire. Mismas reglas que la PC (`repositorio_encargues.dart`) a través del servicio, así que anda igual con la PC
 // por wifi que sin ella. Apartar saca el stock ya; "Entregar" vuelve al menú con lo apartado para abrir el carrito;
-// "Cancelar" lo devuelve al stock.
+// "Cancelar" lo devuelve al stock. "Entregar y anotar deuda" (2026-10-03, el fiado se unificó acá) deja una deuda que se cobra
+// desde la sección "Deudas" de esta misma pantalla.
 
 import 'package:flutter/material.dart';
 
+import '../domain/dinero.dart';
 import '../ui/comun/estado_vacio.dart';
 import '../ui/tema/tokens.dart';
-import 'cliente_companion.dart' show ApartadoCompanion, EncargueCompanion, ProductoCompanion;
+import 'cliente_companion.dart' show ApartadoCompanion, DeudaCompanion, EncargueCompanion, ProductoCompanion;
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'servicio_companion.dart';
 import 'tema/app_bar_companion.dart';
 import 'tema/superficie.dart';
+import 'tema/hoja_vidrio.dart';
 
 /// Lo que devuelve la pantalla al elegir "Entregar": el menú arma el carrito con esto.
 class EntregaEncargue {
@@ -21,7 +24,7 @@ class EntregaEncargue {
 }
 
 class PantallaEncarguesCompanion extends StatefulWidget {
-  const PantallaEncarguesCompanion({super.key, required this.servicio, required this.usuarioId, this.hayVentaArmada = false});
+  const PantallaEncarguesCompanion({super.key, required this.servicio, required this.usuarioId, this.hayVentaArmada = false, this.sesionCajaId});
 
   final ServicioCompanion servicio;
   final int usuarioId;
@@ -29,12 +32,16 @@ class PantallaEncarguesCompanion extends StatefulWidget {
   /// El celular tiene un solo carrito: con una venta armada no se puede abrir otra para entregar.
   final bool hayVentaArmada;
 
+  /// La caja abierta, para cobrar una deuda como venta del día. Null = sin caja abierta.
+  final int? sesionCajaId;
+
   @override
   State<PantallaEncarguesCompanion> createState() => _PantallaEncarguesCompanionState();
 }
 
 class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion> {
   List<EncargueCompanion> _encargues = const [];
+  List<DeudaCompanion> _deudas = const [];
   bool _cargando = true;
   String? _error;
 
@@ -47,7 +54,13 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   Future<void> _cargar() async {
     try {
       final lista = await widget.servicio.encargues();
-      if (mounted) setState(() => _encargues = lista);
+      final deudas = await widget.servicio.deudas();
+      if (mounted) {
+        setState(() {
+          _encargues = lista;
+          _deudas = deudas;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -64,20 +77,70 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   }
 
   Future<void> _cancelar(EncargueCompanion e) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('¿Cancelar el encargue de ${e.nombreCliente}?'),
-        content: const Text('Lo apartado vuelve al stock.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Volver')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Cancelar encargue')),
+    final confirmar = await confirmarAccionDestructiva(
+      context,
+      titulo: '¿Cancelar el encargue de ${e.nombreCliente}?',
+      contenido: 'Lo apartado vuelve al stock.',
+      textoConfirmar: 'Cancelar encargue',
+    );
+    if (!confirmar) return;
+    try {
+      await widget.servicio.cancelarEncargue(e.id, usuarioId: widget.usuarioId);
+      await _cargar();
+    } catch (err) {
+      if (mounted) setState(() => _error = mensajeDeError(err));
+    }
+  }
+
+  Future<void> _entregarADeuda(EncargueCompanion e) async {
+    final confirmar = await confirmarAccionDestructiva(
+      context,
+      titulo: '¿Entregar a ${e.nombreCliente} y anotar la deuda?',
+      contenido: 'Se lleva lo apartado sin pagar. Queda en Deudas, a los precios de hoy, para cobrarle después. El stock ya está descontado.',
+      textoConfirmar: 'Entregar y anotar',
+    );
+    if (!confirmar) return;
+    try {
+      await widget.servicio.entregarEncargueADeuda(e.id, usuarioId: widget.usuarioId);
+      await _cargar();
+    } catch (err) {
+      if (mounted) setState(() => _error = mensajeDeError(err));
+    }
+  }
+
+  Future<void> _cobrarDeuda(DeudaCompanion d) async {
+    final sesionId = widget.sesionCajaId;
+    if (sesionId == null) {
+      setState(() => _error = 'Para cobrar una deuda hay que abrir la caja: el cobro entra como una venta del día.');
+      return;
+    }
+    final efectivo = await mostrarHojaVidrio<bool>(
+      context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Cobrar a ${d.nombreCliente}', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: Espaciado.xs),
+          Text(formatearARS(d.montoCentavos), style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: Espaciado.lg),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Efectivo'),
+          ),
+          const SizedBox(height: Espaciado.sm),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Mercado Pago'),
+          ),
         ],
       ),
     );
-    if (confirmar != true) return;
+    if (efectivo == null) return;
     try {
-      await widget.servicio.cancelarEncargue(e.id, usuarioId: widget.usuarioId);
+      await widget.servicio.cobrarDeuda(d.id, usuarioId: widget.usuarioId, sesionCajaId: sesionId, efectivo: efectivo);
       await _cargar();
     } catch (err) {
       if (mounted) setState(() => _error = mensajeDeError(err));
@@ -116,7 +179,7 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
                       child: Text(_error!, key: const Key('encargues_error'), style: textTheme.bodyMedium?.copyWith(color: colores.error)),
                     ),
                   const SizedBox(height: Espaciado.lg),
-                  if (_encargues.isEmpty)
+                  if (_encargues.isEmpty && _deudas.isEmpty)
                     const SizedBox(height: 320, child: EstadoVacio(mensaje: 'No hay encargues pendientes.'))
                   else
                     for (final e in _encargues)
@@ -156,10 +219,51 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: Espaciado.sm),
+                              OutlinedButton(
+                                key: Key('encargue_deuda_${e.id}'),
+                                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                                onPressed: () => _entregarADeuda(e),
+                                child: const Text('Entregar y anotar deuda'),
+                              ),
                             ],
                           ),
                         ),
                       ),
+                  if (_deudas.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: Espaciado.md, bottom: Espaciado.md),
+                      child: Text('Deudas', style: textTheme.titleLarge),
+                    ),
+                    for (final d in _deudas)
+                      Padding(
+                        key: Key('deuda_${d.id}'),
+                        padding: const EdgeInsets.only(bottom: Espaciado.md),
+                        child: Superficie(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: Text(d.nombreCliente.isEmpty ? 'Deuda' : d.nombreCliente, style: textTheme.titleMedium)),
+                                  Text('desde el ${d.desde.day}/${d.desde.month}', style: textTheme.bodySmall),
+                                ],
+                              ),
+                              if (d.detalle.isNotEmpty) ...[
+                                const SizedBox(height: Espaciado.sm),
+                                Text(d.detalle, style: textTheme.bodyMedium),
+                              ],
+                              const SizedBox(height: Espaciado.md),
+                              FilledButton(
+                                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                                onPressed: () => _cobrarDeuda(d),
+                                child: Text('Cobrar ${formatearARS(d.montoCentavos)}'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ],
               ),
       ),
@@ -209,19 +313,25 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
 
   Future<void> _elegir(ProductoCompanion p) async {
     final ctrl = TextEditingController(text: p.esPesable ? '' : '1');
-    final cantidad = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
+    final cantidad = await mostrarHojaVidrio<int>(
+      context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: Espaciado.md),
+          TextField(
+            controller: ctrl,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          FilledButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
         ],
       ),
     );

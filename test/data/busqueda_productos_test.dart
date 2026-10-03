@@ -124,6 +124,16 @@ void main() {
       },
     );
 
+    test('"7 up": si ningún pesable coincide, el número es parte del nombre (Fase 0.8)', () async {
+      await _crearProducto(db, nombre: '7 Up 500ml');
+      await _crearProducto(db, nombre: 'Queso barra', esPesable: true);
+      final catalogo = await db.select(db.productos).get();
+
+      final r = buscarProductos(catalogo: catalogo, textoBuscado: '7 up');
+
+      expect(r.map((p) => p.nombre), ['7 Up 500ml']);
+    });
+
     test('productos inactivos no aparecen en la búsqueda', () async {
       await _crearProducto(db, nombre: 'Discontinuado', activo: false);
       final catalogo = await db.select(db.productos).get();
@@ -177,6 +187,17 @@ void main() {
     );
 
     group('sin stock, no aparece en ventas (Dueño, 2026-09-06)', () {
+      test('con incluirSinStock el agotado aparece, pero detrás de los que sí tienen', () async {
+        await _crearProducto(db, nombre: 'Gaseosa agotada', stock: 0);
+        await _crearProducto(db, nombre: 'Gaseosa lima', stock: 5);
+        final catalogo = await db.select(db.productos).get();
+
+        final nombres = buscarProductos(catalogo: catalogo, textoBuscado: 'gaseosa', incluirSinStock: true)
+            .map((p) => p.nombre)
+            .toList();
+        expect(nombres, ['Gaseosa lima', 'Gaseosa agotada']);
+      });
+
       test(
         'por nombre: un producto con stock 0 no aparece en la búsqueda',
         () async {

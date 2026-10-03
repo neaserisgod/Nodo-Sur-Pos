@@ -340,7 +340,7 @@ class _FilaVenta extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Venta #${v.ventaId}', style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte, color: apagado)),
+                  Text('Venta ${v.etiqueta}', style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte, color: apagado)),
                   Text(v.detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall),
                 ],
               ),
@@ -437,7 +437,7 @@ class _DetalleVentaState extends State<_DetalleVenta> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Venta #${v.ventaId}', style: textTheme.titleLarge),
+                    Text('Venta ${v.etiqueta}', style: textTheme.titleLarge),
                     Text(
                       '${fechaLarga(v.fecha)} · ${horaCorta(v.fecha)} · $articulos artículo${articulos == 1 ? '' : 's'}${fila.editadaEn != null ? ' · editada' : ''}',
                       style: textTheme.bodySmall,

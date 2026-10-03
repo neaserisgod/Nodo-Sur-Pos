@@ -204,7 +204,7 @@ class TableroCompanionState extends State<TableroCompanion> {
         if (t.pendientes.isNotEmpty) ...[
           const SizedBox(height: Espaciado.md),
           SeccionCompanion(
-            titulo: 'Fiados y encargues',
+            titulo: 'Encargues y deudas',
             child: Column(
               children: [
                 for (final p in t.pendientes)
@@ -212,7 +212,7 @@ class TableroCompanionState extends State<TableroCompanion> {
                     padding: const EdgeInsets.only(bottom: Espaciado.sm),
                     child: FilaSuave(
                       titulo: p.quien,
-                      subtitulo: [p.esFiado ? 'Fiado' : 'Encargue', ?p.detalle].join(' · '),
+                      subtitulo: [p.esFiado ? 'Deuda' : 'Encargue', ?p.detalle].join(' · '),
                       derecha: p.montoCentavos == null
                           ? null
                           : Text(formatearARS(p.montoCentavos!), style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte).tabular),

@@ -170,7 +170,7 @@ class _ColumnaConfig extends StatelessWidget {
             onSubmitted: c.guardarTerminalId,
           ),
           const SizedBox(height: Espaciado.xl),
-          Text('Terminal que cobra (fase 12)', style: Theme.of(context).textTheme.titleMedium),
+          Text('Terminal que cobra', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Espaciado.sm),
           Text(
             // El dueño tiene dos posnets físicos separados: uno de cobro

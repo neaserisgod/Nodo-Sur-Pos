@@ -17,6 +17,8 @@ import '../data/repositorio_sincronizacion.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 
+typedef PlanDeSubida = ({List<Map<String, dynamic>> aSubir, int cursor, Map<String, String> borde});
+
 String _claveCursor(String direccion, String tabla) =>
     'companion_sync_${direccion}_$tabla';
 
@@ -122,6 +124,7 @@ Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
       for (final tabla in tablas)
         cliente.cambiosDesde(tabla: tabla, desde: cursoresPull[tabla]!),
     ]);
+    final diferidas = <({String tabla, PlanDeSubida plan, List<Map<String, dynamic>> noAplicadas})>[];
     for (var i = 0; i < tablas.length; i++) {
       final tabla = tablas[i];
       final recibido = pulls[i];
@@ -136,25 +139,52 @@ Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
       if (plan.aSubir.isNotEmpty) {
         trajoAlgo = true;
         final noAplicadas = await aplicarCambios(db, tabla: tabla, filas: plan.aSubir);
-        await prefs.setInt(_claveCursor('pull', tabla), plan.cursor);
-        await _guardarBorde(prefs, 'pull', tabla, plan.borde);
-        // Lo que se acaba de bajar no es un cambio de este celular: se
-        // adelanta el cursor de push para no volver a subírselo a la PC en
-        // la próxima vuelta (el mismo "eco" que se evita con Supabase).
-        if (tablasSincronizables[tabla]!) {
-          final aplicadas = plan.aSubir.where((f) => !noAplicadas.contains(f));
-          if (aplicadas.isNotEmpty) {
-            final maxEntrante = aplicadas
-                .map((f) => (f['actualizado_en'] as num?)?.toInt() ?? 0)
-                .reduce((a, b) => a > b ? a : b);
-            final actual = await _leerCursor(prefs, 'push', tabla);
-            if (maxEntrante > actual) await prefs.setInt(_claveCursor('push', tabla), maxEntrante);
-          }
+        if (noAplicadas.isEmpty) {
+          await _guardarProgresoDeBajada(prefs, tabla, plan, noAplicadas);
+        } else {
+          diferidas.add((tabla: tabla, plan: plan, noAplicadas: noAplicadas));
         }
       }
     }
+
+    // Una fila que no se pudo aplicar casi siempre depende de otra que llega más abajo en el mismo ciclo (p. ej. la
+    // configuración, con el producto de vuelto, viene antes que los productos). Se reintenta ya, con todo bajado. Lo que
+    // siga sin aplicar NO se salta: el cursor se queda en la fila más vieja pendiente, así vuelve a llegar en la próxima
+    // vuelta en vez de perderse para siempre (antes el cursor avanzaba igual).
+    for (final d in diferidas) {
+      final siguen = await aplicarCambios(db, tabla: d.tabla, filas: d.noAplicadas);
+      await _guardarProgresoDeBajada(prefs, d.tabla, d.plan, siguen);
+    }
   }
   return trajoAlgo;
+}
+
+/// Guarda hasta dónde se bajó de [tabla]. Si quedaron filas sin aplicar ([noAplicadas]) el cursor no pasa de la más vieja
+/// de ellas y el borde se descarta, para que vuelvan a pedirse.
+Future<void> _guardarProgresoDeBajada(
+  SharedPreferences prefs,
+  String tabla,
+  PlanDeSubida plan,
+  List<Map<String, dynamic>> noAplicadas,
+) async {
+  if (noAplicadas.isEmpty) {
+    await prefs.setInt(_claveCursor('pull', tabla), plan.cursor);
+    await _guardarBorde(prefs, 'pull', tabla, plan.borde);
+  } else {
+    final masVieja = noAplicadas.map((f) => valorCursorDe(tabla, f)).reduce((a, b) => a < b ? a : b);
+    await prefs.setInt(_claveCursor('pull', tabla), masVieja);
+    await _guardarBorde(prefs, 'pull', tabla, const {});
+  }
+  // Lo que se acaba de bajar no es un cambio de este celular: se adelanta el cursor de push para no volver a subírselo
+  // a la PC en la próxima vuelta (el mismo "eco" que se evita con Supabase).
+  if (tablasSincronizables[tabla]!) {
+    final aplicadas = plan.aSubir.where((f) => !noAplicadas.contains(f));
+    if (aplicadas.isNotEmpty) {
+      final maxEntrante = aplicadas.map((f) => (f['actualizado_en'] as num?)?.toInt() ?? 0).reduce((a, b) => a > b ? a : b);
+      final actual = await _leerCursor(prefs, 'push', tabla);
+      if (maxEntrante > actual) await prefs.setInt(_claveCursor('push', tabla), maxEntrante);
+    }
+  }
 }
 
 Map<String, String> _leerBorde(SharedPreferences prefs, String direccion, String tabla) {

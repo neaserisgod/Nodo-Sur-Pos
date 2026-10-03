@@ -31,7 +31,7 @@ const coloresCompanionClaro = ColoresPlazoleta(
   borde: Color(0xFFE2E4EA),
   textoPrimario: Color(0xFF121317),
   textoSecundario: Color(0xFF566070),
-  textoTenue: Color(0xFF7B8494),
+  textoTenue: Color(0xFF656D80),
   acento: Color(0xFF121317),
   acentoTexto: Color(0xFFFFFFFF),
   error: Color(0xFFC5221F),
@@ -39,7 +39,7 @@ const coloresCompanionClaro = ColoresPlazoleta(
 );
 
 const coloresCompanionOscuro = ColoresPlazoleta(
-  fondo: Color(0xFF000000),
+  fondo: Color(0xFF0E0F12),
   fondoBloque: Color(0xFF14161C),
   borde: Color(0xFF2A2D36),
   textoPrimario: Color(0xFFF4F5F7),
@@ -95,6 +95,7 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
     required this.textoSobreColor,
     required this.gradienteAcento,
     required this.gradienteDinero,
+    required this.ganancia,
   });
 
   final Color dinero;
@@ -117,6 +118,9 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
   final List<Color> gradienteAcento;
   final List<Color> gradienteDinero;
 
+  /// Verde de "va bien" (vuelto, conectado): el mismo `ganancia` del escritorio.
+  final Color ganancia;
+
   @override
   AcentosCompanion copyWith({
     Color? dinero,
@@ -126,6 +130,7 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
     Color? textoSobreColor,
     List<Color>? gradienteAcento,
     List<Color>? gradienteDinero,
+    Color? ganancia,
   }) {
     return AcentosCompanion(
       dinero: dinero ?? this.dinero,
@@ -135,6 +140,7 @@ class AcentosCompanion extends ThemeExtension<AcentosCompanion> {
       textoSobreColor: textoSobreColor ?? this.textoSobreColor,
       gradienteAcento: gradienteAcento ?? this.gradienteAcento,
       gradienteDinero: gradienteDinero ?? this.gradienteDinero,
+      ganancia: ganancia ?? this.ganancia,
     );
   }
 
@@ -156,6 +162,7 @@ final acentosCompanionOscuro = AcentosCompanion(
   textoSobreColor: acentosPlazoletaCompanionOscuro.textoSobreColor,
   gradienteAcento: acentosPlazoletaCompanionOscuro.gradienteAcento,
   gradienteDinero: acentosPlazoletaCompanionOscuro.gradienteDinero,
+  ganancia: acentosPlazoletaCompanionOscuro.ganancia,
 );
 
 final acentosCompanionClaro = AcentosCompanion(
@@ -166,6 +173,7 @@ final acentosCompanionClaro = AcentosCompanion(
   textoSobreColor: acentosPlazoletaCompanionClaro.textoSobreColor,
   gradienteAcento: acentosPlazoletaCompanionClaro.gradienteAcento,
   gradienteDinero: acentosPlazoletaCompanionClaro.gradienteDinero,
+  ganancia: acentosPlazoletaCompanionClaro.ganancia,
 );
 
 extension AcentosDelContexto on BuildContext {

@@ -31,7 +31,8 @@ class ChipSeleccionable extends StatelessWidget {
           color: seleccionado ? colores.acento : colores.fondoBloque,
           borderRadius: BorderRadius.circular(999),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.md, vertical: Espaciado.sm),
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
+        constraints: const BoxConstraints(minHeight: Medidas.alturaControl),
         alignment: Alignment.center,
         child: Text(
           texto,

@@ -181,6 +181,24 @@ class EncargueCompanion {
   };
 }
 
+/// Una deuda anotada: un encargue que se entregó sin cobrar (`repositorio_encargues.dart`).
+class DeudaCompanion {
+  final int id;
+  final String nombreCliente;
+  final String detalle;
+  final int montoCentavos;
+  final DateTime desde;
+  const DeudaCompanion({required this.id, required this.nombreCliente, required this.detalle, required this.montoCentavos, required this.desde});
+
+  factory DeudaCompanion.desdeJson(Map<String, dynamic> j) => DeudaCompanion(
+    id: j['id'] as int,
+    nombreCliente: j['nombreCliente'] as String,
+    detalle: j['detalle'] as String? ?? '',
+    montoCentavos: (j['montoCentavos'] as num).toInt(),
+    desde: DateTime.fromMillisecondsSinceEpoch((j['desdeMs'] as num).toInt()),
+  );
+}
+
 /// Lo que se quiere apartar: unidades o, si es pesable, gramos (uno de los dos).
 class ApartadoCompanion {
   final int productoId;
@@ -445,6 +463,34 @@ class ClienteCompanion implements ServicioCompanion {
       conexion._url('/encargues/$id/cancelar'),
       headers: _headers,
       body: jsonEncode({'usuarioId': usuarioId}),
+    );
+    _revisar(r);
+  }
+
+  @override
+  Future<int> entregarEncargueADeuda(int id, {required int usuarioId}) async {
+    final r = await _client.post(
+      conexion._url('/encargues/$id/deuda'),
+      headers: _headers,
+      body: jsonEncode({'usuarioId': usuarioId}),
+    );
+    _revisar(r);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['totalCentavos'] as int;
+  }
+
+  @override
+  Future<List<DeudaCompanion>> deudas() async {
+    final r = await _client.get(conexion._url('/deudas'), headers: _headers);
+    _revisar(r);
+    return [for (final j in jsonDecode(r.body) as List) DeudaCompanion.desdeJson(Map<String, dynamic>.from(j as Map))];
+  }
+
+  @override
+  Future<void> cobrarDeuda(int id, {required int usuarioId, required int sesionCajaId, required bool efectivo}) async {
+    final r = await _client.post(
+      conexion._url('/deudas/$id/cobrar'),
+      headers: _headers,
+      body: jsonEncode({'usuarioId': usuarioId, 'sesionCajaId': sesionCajaId, 'efectivo': efectivo}),
     );
     _revisar(r);
   }
@@ -1188,6 +1234,7 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1199,6 +1246,7 @@ class ClienteCompanion implements ServicioCompanion {
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
+        'claveCobro': ?claveCobro,
       }),
     );
     _revisar(r);
@@ -1225,6 +1273,7 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1237,6 +1286,7 @@ class ClienteCompanion implements ServicioCompanion {
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
+        'claveCobro': ?claveCobro,
       }),
     );
     _revisar(r);
@@ -1612,6 +1662,9 @@ enum MedioVentaHistorialCompanion { efectivo, qr, debitCard, mixto }
 
 class VentaDelHistorialCompanion {
   final int ventaId;
+
+  /// Número de venta global; null en las ventas anteriores a la v48 o contra una PC que todavía no lo manda.
+  final String? numero;
   final DateTime fecha;
   final int totalCentavos;
   final MedioVentaHistorialCompanion medio;
@@ -1622,8 +1675,11 @@ class VentaDelHistorialCompanion {
   /// caja de esa venta siga abierta (El dueño, 2026-09-13).
   final bool sesionAbierta;
 
+  String get etiqueta => numero ?? '#$ventaId';
+
   const VentaDelHistorialCompanion({
     required this.ventaId,
+    this.numero,
     required this.fecha,
     required this.totalCentavos,
     required this.medio,
@@ -1643,6 +1699,7 @@ class VentaDelHistorialCompanion {
   factory VentaDelHistorialCompanion.desdeJson(Map<String, dynamic> j) =>
       VentaDelHistorialCompanion(
         ventaId: j['ventaId'] as int,
+        numero: j['numero'] as String?,
         fecha: DateTime.parse(j['fecha'] as String),
         totalCentavos: j['totalCentavos'] as int,
         medio: MedioVentaHistorialCompanion.values.byName(j['medio'] as String),

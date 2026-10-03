@@ -335,14 +335,16 @@ class _FilaProductoProveedor extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width: 32,
+              width: Medidas.alturaControl,
+              height: Medidas.alturaControl,
               // Casillero de edición masiva (El dueño, 2026-09-16: "subir el
               // precio de 3 productos... a la vez").
-              child: Checkbox(
-                value: seleccionado,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                onChanged: (_) => onToggleSeleccion(),
+              child: Semantics(
+                label: 'Seleccionar ${producto.nombre}',
+                child: Checkbox(
+                  value: seleccionado,
+                  onChanged: (_) => onToggleSeleccion(),
+                ),
               ),
             ),
             Expanded(

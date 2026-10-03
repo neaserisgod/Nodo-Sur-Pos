@@ -33,8 +33,18 @@ class _EsqueletoCajaState extends State<EsqueletoCaja> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _controlador = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))
-      ..repeat(reverse: true);
+    _controlador = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Con "reducir animaciones" activado en el sistema el esqueleto queda quieto.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controlador.stop();
+    } else if (!_controlador.isAnimating) {
+      _controlador.repeat(reverse: true);
+    }
   }
 
   @override

@@ -34,6 +34,7 @@ import '../tema/tokens.dart';
 import '../../data/repositorio_arqueo_intermedio.dart' show ArqueoDelTurno, arqueosDelTurno;
 import '../cierre/arqueos_del_turno.dart';
 import 'pantalla_editor_venta.dart';
+import '../tema/esqueleto.dart';
 
 class PantallaDetalleDia extends StatefulWidget {
   const PantallaDetalleDia({super.key, required this.db, required this.sesionId, required this.usuarioId});
@@ -141,7 +142,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
       usuarioId: widget.usuarioId,
       titulo: 'Historial',
       accion: BotonSecundario(texto: _generandoPdf ? 'Generando…' : 'Generar PDF', onPressed: _generandoPdf ? null : _generarPdf),
-      child: d == null ? const SizedBox.shrink() : _contenido(context, d),
+      child: d == null ? const EsqueletoLista() : _contenido(context, d),
     );
   }
 

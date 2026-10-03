@@ -1244,6 +1244,45 @@ void main() {
       });
     });
 
+    group('deudas (encargue entregado sin cobrar)', () {
+      test('entregar y anotar deuda, listarla y cobrarla en efectivo como una venta', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final alta = await http.post(
+          url('/encargues'),
+          headers: headers(),
+          body: jsonEncode({
+            'nombreCliente': 'María',
+            'usuarioId': usuarioId,
+            'lineas': [
+              {'productoId': cocaId, 'cantidad': 3},
+            ],
+          }),
+        );
+        final id = (jsonDecode(alta.body) as Map)['id'] as int;
+
+        final entrega = await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}));
+        expect(entrega.statusCode, 200);
+        expect((jsonDecode(entrega.body) as Map)['totalCentavos'], 336000);
+        // Dos veces seguidas no duplica la deuda.
+        final otra = await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}));
+        expect(otra.statusCode, 409);
+
+        final deudas = jsonDecode((await http.get(url('/deudas'), headers: headers())).body) as List;
+        expect((deudas.single as Map)['nombreCliente'], 'María');
+        expect((deudas.single as Map)['montoCentavos'], 336000);
+
+        final cobro = await http.post(
+          url('/deudas/$id/cobrar'),
+          headers: headers(),
+          body: jsonEncode({'usuarioId': usuarioId, 'sesionCajaId': sesionId, 'efectivo': true}),
+        );
+        expect(cobro.statusCode, 200);
+        expect(jsonDecode((await http.get(url('/deudas'), headers: headers())).body), isEmpty);
+        expect(await db.select(db.ventas).get(), hasLength(1));
+      });
+    });
+
     group('/ventas/cobrar (efectivo, sin posnet)', () {
       test('registra la venta y descuenta el stock', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
@@ -1268,6 +1307,49 @@ void main() {
 
         final producto = await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle();
         expect(producto.stock, 18); // 20 - 2
+      });
+
+      test('contra una caja ya cerrada responde 409 y no graba nada (Fase 0.1)', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        await (db.update(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId)))
+            .write(const SesionesDeCajaCompanion(estado: Value('CERRADA')));
+
+        final respuesta = await http.post(
+          url('/ventas/cobrar'),
+          headers: headers(),
+          body: jsonEncode({
+            'lineas': [lineaCoca(cocaId)],
+            'medio': 'efectivo',
+            'sesionCajaId': sesionId,
+            'usuarioId': usuarioId,
+          }),
+        );
+
+        expect(respuesta.statusCode, 409);
+        expect(await db.select(db.ventas).get(), isEmpty);
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 20);
+      });
+
+      test('el mismo cobro con la misma claveCobro devuelve la venta ya grabada, sin duplicar (Fase 0.2)', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final cuerpo = jsonEncode({
+          'lineas': [lineaCoca(cocaId)],
+          'medio': 'efectivo',
+          'sesionCajaId': sesionId,
+          'usuarioId': usuarioId,
+          'claveCobro': 'intento-1',
+        });
+
+        final primera = await http.post(url('/ventas/cobrar'), headers: headers(), body: cuerpo);
+        final repetida = await http.post(url('/ventas/cobrar'), headers: headers(), body: cuerpo);
+
+        expect(primera.statusCode, 201);
+        expect(repetida.statusCode, 200);
+        expect((jsonDecode(repetida.body) as Map)['ventaId'], (jsonDecode(primera.body) as Map)['ventaId']);
+        expect(await db.select(db.ventas).get(), hasLength(1));
+        expect((await (db.select(db.productos)..where((p) => p.id.equals(cocaId))).getSingle()).stock, 19);
       });
 
       test('el descuento se aplica al registrar la venta, no solo al calcular', () async {

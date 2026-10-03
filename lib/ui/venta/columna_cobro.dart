@@ -347,14 +347,12 @@ class _BotonDescuento extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Descuento',
-      child: IconButton(
-        onPressed: () => _abrirModalDescuento(context),
-        icon: Icon(
-          _hayDescuento ? IconosPlazoleta.sellActivo : IconosPlazoleta.sellOutlined,
-          color: colorIcono,
-        ),
+    return IconButton(
+      tooltip: 'Descuento',
+      onPressed: () => _abrirModalDescuento(context),
+      icon: Icon(
+        _hayDescuento ? IconosPlazoleta.sellActivo : IconosPlazoleta.sellOutlined,
+        color: colorIcono,
       ),
     );
   }

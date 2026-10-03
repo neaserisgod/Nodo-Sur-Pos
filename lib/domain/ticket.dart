@@ -40,6 +40,8 @@ class DesgloseTicket {
 }
 
 class Ticket {
+  /// Número de venta que se imprime (`prefijo-correlativo`); null en un ticket de ejemplo.
+  final String? numero;
   final DateTime fecha;
   final String vendedor;
   final List<LineaTicket> lineas;
@@ -47,6 +49,7 @@ class Ticket {
   final int totalCentavos;
 
   const Ticket({
+    this.numero,
     required this.fecha,
     required this.vendedor,
     required this.lineas,
@@ -61,6 +64,7 @@ class Ticket {
 /// convenciones) aplicada al comprobante — así el total impreso no se puede
 /// desalinear de lo que suman las líneas.
 Ticket construirTicket({
+  String? numero,
   required DateTime fecha,
   required String vendedor,
   required List<LineaTicket> lineas,
@@ -77,6 +81,7 @@ Ticket construirTicket({
       desglose.redondeoCentavos;
 
   return Ticket(
+    numero: numero,
     fecha: fecha,
     vendedor: vendedor,
     lineas: lineas,
@@ -124,6 +129,7 @@ String contenidoTicketPosnetMp(
 
   return '$lineasEncabezado'
       '{center}{s}${_formatearFechaHora(ticket.fecha)}{/s}{/center}{br}'
+      '${ticket.numero == null ? '' : '{center}{s}Venta ${ticket.numero}{/s}{/center}{br}'}'
       '--------------------------------{br}'
       '$lineasItems'
       '$lineaRecargo'

@@ -17,6 +17,7 @@ import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'editor_venta_controlador.dart';
 import '../tema/iconos.dart';
+import '../tema/esqueleto.dart';
 
 class PantallaEditorVenta extends StatefulWidget {
   const PantallaEditorVenta({super.key, required this.db, required this.ventaId, required this.usuarioId});
@@ -153,7 +154,7 @@ class _PantallaEditorVentaState extends State<PantallaEditorVenta> {
             claveActiva: 'historial',
             usuarioId: widget.usuarioId,
             titulo: 'Historial',
-            child: c.cargando ? const SizedBox.shrink() : _contenido(context, c),
+            child: c.cargando ? const EsqueletoLista() : _contenido(context, c),
           );
         },
       ),

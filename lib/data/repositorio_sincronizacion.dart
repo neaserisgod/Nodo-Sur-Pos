@@ -422,6 +422,28 @@ Future<Map<String, dynamic>> _resolverReferencias(
   return resuelta;
 }
 
+/// Los nombres de columna de cada tabla, leídos una vez del propio esquema. Un SQL armado con claves que vienen de un JSON
+/// remoto solo puede usar columnas que existan de verdad en esta base: una clave rara (o de una versión más nueva del
+/// esquema) se descarta en vez de inyectarse en el `INSERT`/`UPDATE`.
+final _columnasPorTabla = <String, Set<String>>{};
+
+Future<Map<String, dynamic>> _soloColumnasDeLaTabla(
+  AppDatabase db,
+  String tabla,
+  Map<String, dynamic> fila,
+) async {
+  var validas = _columnasPorTabla[tabla];
+  if (validas == null) {
+    final info = await db.customSelect('PRAGMA table_info($tabla)').get();
+    validas = {for (final c in info) c.data['name'] as String};
+    _columnasPorTabla[tabla] = validas;
+  }
+  return {
+    for (final e in fila.entries)
+      if (validas.contains(e.key)) e.key: e.value,
+  };
+}
+
 Future<void> _aplicarUnaFila(
   AppDatabase db, {
   required String tabla,
@@ -433,6 +455,7 @@ Future<void> _aplicarUnaFila(
   if (globalId == null) return; // no debería pasar, pero no explota
 
   fila = await _resolverReferencias(db, tabla: tabla, fila: fila);
+  fila = await _soloColumnasDeLaTabla(db, tabla, fila);
 
   final existente = await db
       .customSelect(

@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 
 import '../data/identidad_sync.dart';
@@ -27,6 +28,9 @@ class CompanionApp extends StatelessWidget {
     return MaterialApp(
       onGenerateTitle: (_) => '${marcaActual.value.nombre} — Companion',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es', 'AR'),
+      supportedLocales: const [Locale('es', 'AR'), Locale('es')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: TemaCompanion.claro,
       darkTheme: TemaCompanion.oscuro,
       // Íconos de la barra de estado claros u oscuros según el tema.

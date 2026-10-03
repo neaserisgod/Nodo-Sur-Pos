@@ -147,3 +147,22 @@ Future<void> resolverEncargue(AppDatabase db, int id) {
     ),
   );
 }
+
+/// Cobra una deuda en efectivo o Mercado Pago (el medio se busca acá para que PC, celular y servidor no lo repitan).
+Future<int> cobrarDeuda(
+  AppDatabase db, {
+  required int pendienteId,
+  required int sesionCajaId,
+  required int usuarioId,
+  required bool efectivo,
+}) async {
+  final medio = await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(efectivo))).getSingle();
+  return cobrarFiado(
+    db,
+    pendienteId: pendienteId,
+    sesionCajaId: sesionCajaId,
+    usuarioId: usuarioId,
+    medioPagoId: medio.id,
+    medioEsEfectivo: efectivo,
+  );
+}

@@ -93,7 +93,7 @@ void main() {
     await tester.tap(find.text('Desvincular'));
     await tester.pumpAndSettle();
     expect(find.text('¿Desvincular este celular?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Desvincular').last);
+    await tester.tap(find.widgetWithText(FilledButton, 'Desvincular').last);
     await tester.pumpAndSettle();
     expect(await sync.cuenta(), isNull);
     expect(find.text('Vincular con Nodo Sur'), findsOneWidget);

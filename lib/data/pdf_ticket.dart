@@ -16,9 +16,11 @@ import 'database.dart';
 
 const double _anchoTicket = 220;
 
-String nombreArchivoTicket({required int ventaId, required DateTime fecha}) {
+String nombreArchivoTicket({required int ventaId, String? numero, required DateTime fecha}) {
   String dos(int n) => n.toString().padLeft(2, '0');
-  return '${fecha.year}-${dos(fecha.month)}-${dos(fecha.day)}_venta-${ventaId.toString().padLeft(5, '0')}.pdf';
+  // Las ventas anteriores al número global llegan como "#id": ahí se sigue nombrando por el id local.
+  final nombre = numero != null && !numero.startsWith('#') ? numero : ventaId.toString().padLeft(5, '0');
+  return '${fecha.year}-${dos(fecha.month)}-${dos(fecha.day)}_venta-$nombre.pdf';
 }
 
 String _formatearFechaHora(DateTime fecha) {
@@ -71,6 +73,8 @@ Future<Uint8List> generarPdfTicket(
                 style: const pw.TextStyle(fontSize: 8),
               ),
             ),
+            if (ticket.numero != null)
+              pw.Center(child: pw.Text('Venta ${ticket.numero}', style: const pw.TextStyle(fontSize: 8))),
             pw.SizedBox(height: 4),
             pw.Divider(),
             for (final linea in ticket.lineas)
@@ -123,7 +127,7 @@ Future<String> guardarTicketPdf(
   await Directory(carpetaDestino).create(recursive: true);
   final ruta = p.join(
     carpetaDestino,
-    nombreArchivoTicket(ventaId: ventaId, fecha: ticket.fecha),
+    nombreArchivoTicket(ventaId: ventaId, numero: ticket.numero, fecha: ticket.fecha),
   );
   await File(ruta).writeAsBytes(bytes);
   return ruta;

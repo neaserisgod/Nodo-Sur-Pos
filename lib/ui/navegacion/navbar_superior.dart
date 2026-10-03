@@ -196,7 +196,7 @@ class _Pastilla extends StatelessWidget {
         child: AnimatedContainer(
           duration: Animaciones.corta,
           curve: Animaciones.curva,
-          height: 42,
+          height: Medidas.alturaControl,
           padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -240,8 +240,8 @@ class _BotonRedondo extends StatelessWidget {
           onTap: onTap,
           color: activo ? colores.fondoBloque : null,
           child: SizedBox(
-            width: 42,
-            height: 42,
+            width: Medidas.alturaControl,
+            height: Medidas.alturaControl,
             child: Icon(icono, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
           ),
         ),

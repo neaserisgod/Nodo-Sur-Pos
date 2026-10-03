@@ -7,6 +7,10 @@
 //    (`registrarVenta(encargueId:)`): la venta descuenta el stock de nuevo, así que sin devolver lo apartado se
 //    descontaría dos veces. Si el cobro no se completa, nada de esto pasa y el encargue sigue apartado.
 //
+//  * "Entregar y anotar deuda" (dueño, 2026-10-03: el fiado se unificó con los encargues): el cliente se lleva lo apartado
+//    sin pagar. El stock ya estaba descontado al apartar, así que no se mueve de nuevo; el encargue pasa a ser una deuda
+//    (`tipo` 'FIADO') por el total a los precios de HOY, que se cobra después con `cobrarFiado`.
+//
 // Se guarda en `pendientes` (tipo 'ENCARGUE', ya sincronizada) con las líneas en JSON por `global_id` del producto.
 
 import 'dart:convert';
@@ -184,7 +188,7 @@ Future<void> _devolverApartado(AppDatabase db, Pendiente pendiente, {required in
 Future<void> cancelarEncargue(AppDatabase db, int id, {required int usuarioId}) {
   return db.transaction(() async {
     final p = await (db.select(db.pendientes)..where((x) => x.id.equals(id))).getSingleOrNull();
-    if (p == null || p.estado != 'PENDIENTE') return;
+    if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE') return;
     await _devolverApartado(db, p, usuarioId: usuarioId, motivo: 'Encargue cancelado: ${p.nombreLibre}');
     await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(
       estado: const Value('CANCELADO'),
@@ -210,7 +214,7 @@ Future<List<LineaVenta>> lineasParaEntregar(AppDatabase db, int id) async {
 /// ella) y deja el encargue resuelto con la venta que lo saldó.
 Future<void> liberarEncargueEntregado(AppDatabase db, int id, {required int ventaId, required int usuarioId}) async {
   final p = await (db.select(db.pendientes)..where((x) => x.id.equals(id))).getSingleOrNull();
-  if (p == null || p.estado != 'PENDIENTE') return;
+  if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE') return;
   await _devolverApartado(db, p, usuarioId: usuarioId, motivo: 'Encargue entregado: ${p.nombreLibre}');
   await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(
     estado: const Value('RESUELTO'),
@@ -218,4 +222,52 @@ Future<void> liberarEncargueEntregado(AppDatabase db, int id, {required int vent
     fechaResuelta: Value(DateTime.now()),
     actualizadoEn: Value(DateTime.now()),
   ));
+}
+
+/// Entrega lo apartado sin cobrar y deja anotada la deuda; devuelve cuánto se debe (precios de hoy, Regla 4). Si el
+/// encargue ya no está pendiente no hace nada y devuelve null: anotar dos veces la misma deuda duplicaría lo adeudado.
+Future<int?> entregarEncargueADeuda(AppDatabase db, int id, {required int usuarioId}) {
+  return db.transaction(() async {
+    final p = await (db.select(db.pendientes)..where((x) => x.id.equals(id))).getSingleOrNull();
+    if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE' || p.lineasJson == null) return null;
+    final lineas = _leerLineas(p.lineasJson);
+    final total = Venta(lineas: await lineasParaEntregar(db, id)).subtotalCentavos;
+    await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(
+      tipo: const Value('FIADO'),
+      montoCentavos: Value(total),
+      descripcion: Value(lineas.map((l) => l.texto).join(', ')),
+      // Ya no hay nada apartado: sin las líneas, cancelar o entregar de nuevo no devolverían stock que ya se fue.
+      lineasJson: const Value(null),
+      actualizadoEn: Value(DateTime.now()),
+    ));
+    return total;
+  });
+}
+
+/// Una deuda anotada (fiado), lista para mostrar.
+class Deuda {
+  const Deuda({required this.id, required this.nombreCliente, required this.detalle, required this.montoCentavos, required this.desde});
+  final int id;
+  final String nombreCliente;
+  final String detalle;
+  final int montoCentavos;
+  final DateTime desde;
+}
+
+/// Las deudas sin cobrar, la más vieja primero.
+Future<List<Deuda>> listarDeudas(AppDatabase db) async {
+  final filas = await (db.select(db.pendientes)
+        ..where((p) => p.tipo.equals('FIADO') & p.estado.equals('PENDIENTE'))
+        ..orderBy([(p) => OrderingTerm.asc(p.fechaCreacion)]))
+      .get();
+  return [
+    for (final p in filas)
+      Deuda(
+        id: p.id,
+        nombreCliente: p.nombreLibre ?? '',
+        detalle: p.descripcion ?? '',
+        montoCentavos: p.montoCentavos ?? 0,
+        desde: p.fechaCreacion,
+      ),
+  ];
 }
