@@ -264,9 +264,31 @@ class ColumnaCarrito extends StatelessWidget {
                                     _IconoAccion(
                                       icono: IconosPlazoleta.deleteOutline,
                                       etiqueta: 'Quitar ${linea.nombreProducto}',
-                                      onTap: () => context
-                                          .read<VentaControlador>()
-                                          .eliminarLinea(index),
+                                      onTap: () {
+                                        final controlador = context.read<VentaControlador>();
+                                        controlador.eliminarLinea(index);
+                                        // Un toque saca la línea sin confirmar, así que se
+                                        // puede deshacer. El snackbar flota a la izquierda
+                                        // para no tapar el cobro (regla dura de Venta).
+                                        final mensajero = ScaffoldMessenger.of(context);
+                                        mensajero.clearSnackBars();
+                                        mensajero.showSnackBar(
+                                          SnackBar(
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.only(
+                                              left: Espaciado.lg,
+                                              right: Medidas.anchoPanelCobroVenta + Espaciado.lg,
+                                              bottom: Espaciado.lg,
+                                            ),
+                                            duration: const Duration(seconds: 5),
+                                            content: Text('Quitaste ${linea.nombreProducto}'),
+                                            action: SnackBarAction(
+                                              label: 'Deshacer',
+                                              onPressed: () => controlador.restaurarLinea(index, linea),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 );

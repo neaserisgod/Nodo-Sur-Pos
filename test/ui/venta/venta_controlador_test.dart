@@ -243,6 +243,16 @@ void main() {
         },
       );
 
+      test('restaurarLinea devuelve la línea quitada a su posición original', () {
+        c.agregarProducto(cocaCola);
+        c.agregarProducto(marlboroAtado);
+        final quitada = c.carrito[0];
+        c.eliminarLinea(0);
+        c.restaurarLinea(0, quitada);
+        expect(c.carrito.map((l) => l.nombreProducto), ['Coca-Cola 500ml', 'Marlboro']);
+        expect(c.indiceUltimaLinea, 0);
+      });
+
       test('eliminarLinea con un índice fuera de rango no rompe nada', () {
         c.agregarProducto(cocaCola);
         c.eliminarLinea(5);

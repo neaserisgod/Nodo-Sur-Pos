@@ -467,6 +467,15 @@ class VentaControlador extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Deshace un `eliminarLinea` (snackbar "Deshacer" de la columna del
+  /// carrito): vuelve a poner la línea en su lugar y la resalta como última.
+  void restaurarLinea(int index, LineaVenta linea) {
+    final i = index.clamp(0, carrito.length);
+    carrito = [...carrito]..insert(i, linea);
+    indiceUltimaLinea = i;
+    notifyListeners();
+  }
+
   void _reemplazarLinea(int index, LineaVenta nueva) {
     carrito = [...carrito];
     carrito[index] = nueva;
