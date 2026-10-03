@@ -69,9 +69,11 @@ Es el cambio más grande y toca modelo, UI y sitio. Por eso arranca con un docum
 - ❓ Hay que definir con vos qué puede y qué no puede un empleado y un encargado. Es la parte de negocio.
 - Se hace en orden: diseño aprobado → dominio y tests → modelo/migración → ocultar o bloquear en cada pantalla → sitio.
 
-**Fase F — Mercado Pago real** (el dueño la quiere mucho)
-Primero probar la conciliación contra la cuenta real en un cierre (hoy sin probar); después webhooks (venta confirmada y cobros
-sin venta), devoluciones al anular, saldo real en el cierre y QR en pantalla. Detalle en `CONTEXTO.md` §7.
+**Fase F — Mercado Pago: lo que falta** (el dueño dice que lo útil ya funciona)
+Corrección: antes decía "probar la conciliación contra la cuenta real". Eso salía de `ESTADO.md` y el dueño confirmó que lo
+útil de Mercado Pago anda, así que no es una fase de prueba. Queda solo lo nuevo que pidió (webhooks, devoluciones desde el POS
+al anular, saldo real en el cierre, QR en pantalla). **No revisé el código de Mercado Pago a fondo**, así que antes de
+planificarlo hay que leerlo. Detalle en `CONTEXTO.md` §7.
 
 **Fase G — Pedido a proveedores por WhatsApp** (si lo confirmás)
 Desde "Stock bajo" armar el pedido y mandarlo; usa el contacto y día de visita del proveedor.
@@ -82,7 +84,7 @@ deprecados, aprovechar el flujo de la suite para ver los fallos intermitentes de
 ## Orden recomendado
 
 A → B → C → D → E → F (G cuando lo decidas). A y B no tienen riesgo y dan el cambio visible rápido; E y F son los grandes y
-conviene hacerlos con la app ya ordenada. Antes de F, el dueño prueba en el local un día de cierre con la conciliación.
+conviene hacerlos con la app ya ordenada. 
 
 ## Qué sigue sin verificarse
 
