@@ -634,6 +634,21 @@ definición para las tres, no una por pantalla:
 
 ## Navegación: navbar superior (remake 2026-09-19)
 
+**Cómo es HOY (2026-10-03)** — lo de más abajo es la historia del remake y
+algunas partes ya no aplican (vidrio, compacta/expandida, íconos): la barra
+es la marca (insignia con iniciales + nombre del comercio), las secciones
+como **pastillas de texto** (la activa con fondo `fondoBloque`) y
+**Configuración como engranaje** al final de la fila (`_BotonConfiguracion`
+en `navbar_superior.dart`, `Key('nav_configuracion')`), no como pastilla.
+A la derecha, la búsqueda (o en Venta, campanita + "Cambiar de turno" /
+"Cerrar caja"). **Configuración** se muestra en 5 grupos
+(`GrupoConfiguracion`: Negocio, Caja y cobros, Productos, Equipos y cuenta,
+Apariencia): lista de grupos a la izquierda; a la derecha título grande,
+una línea de descripción y pastillas por sección (la activa en tinta).
+Sin títulos repetidos dentro de cada sección y sin referencias internas
+("Regla N") en la interfaz. El celular usa los mismos grupos en una sola
+página con "Guardar" abajo y "Volver" arriba (`AppBarCompanion`).
+
 **Reemplaza la barra lateral** (`lib/ui/navegacion/barra_lateral.dart`,
 `BarraLateral` — sigue en el árbol solo dentro de Venta hasta la Fase 5,
 se borra en la limpieza final). El dueño pidió el cambio de lugar como parte

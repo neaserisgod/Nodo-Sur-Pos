@@ -6,6 +6,9 @@ demasiado pesado para el hardware del local.
 
 ## Documentación del proyecto
 
+**Si es la primera vez que abrís el proyecto, empezá por `CONTEXTO.md`**: resume el sistema completo (PC, celular y
+sitio), qué se hizo, qué quiere el dueño, cómo trabaja y cómo se publica.
+
 Este archivo es la fuente de verdad de **cómo está armado el código**: stack,
 arquitectura, convenciones, fases, y la especificación de la pantalla de venta.
 Todo lo demás vive en un documento aparte — no se duplica acá. Mapa completo con
@@ -253,8 +256,9 @@ largos del carrito, el default de la grilla, los botones de cobro). La
 composición actual:
 
 **Franja superior** — navbar + búsqueda, comparten fila:
-- Izquierda: dropdown de secciones (un botón con la sección activa; toca
-  abrirlo para navegar a otra — no hay sidebar).
+- Izquierda: la marca y las secciones como pastillas (la activa con fondo),
+  y Configuración como engranaje al final de la fila (2026-10-03: ya no es
+  una pastilla más). No hay sidebar ni dropdown.
 - Centro: campo único de texto, **ancho fijo, centrado** (no se estira),
   con foco al arrancar. Todo entra por acá. Agregar un producto (tap,
   Alt+tecla o Enter) y cobrar devuelven el foco ahí solos — es la
