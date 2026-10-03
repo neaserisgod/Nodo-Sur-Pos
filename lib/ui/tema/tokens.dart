@@ -87,43 +87,6 @@ class ColoresPlazoleta extends ThemeExtension<ColoresPlazoleta> {
   Color get destacado =>
       Color.alphaBlend(acento.withValues(alpha: 0.16), fondoBloque);
 
-  static const claro = ColoresPlazoleta(
-    // Bajado de F4F4F2 a E4E4DF (revisión visual fase 13, el dueño: "la
-    // pantalla de venta parece una hoja en blanco con texto flotando"). La
-    // premisa de este archivo es que el color es la ÚNICA herramienta de
-    // jerarquía sin sombras — a 11 puntos de diferencia contra `fondoBloque`
-    // esa premisa no se cumplía: el ojo no distinguía dónde empieza un
-    // bloque en luz de local. En oscuro el mismo delta absoluto (8 puntos,
-    // 0D0F12 vs 15181C) sí alcanza porque a luminancia baja un salto chico
-    // es proporcionalmente grande — en claro, a luminancia alta, hace falta
-    // un salto mucho mayor para que el ojo lo note. Se eligió agrandar la
-    // diferencia de grises (no una sombra en `Bloque`) para no introducir
-    // una segunda herramienta de jerarquía en la misma pantalla.
-    fondo: Color(0xFFE4E4DF),
-    fondoBloque: Color(0xFFFFFFFF),
-    borde: Color(0xFFDEDEDA),
-    textoPrimario: Color(0xFF1B1B19),
-    textoSecundario: Color(0xFF5F5F5B),
-    textoTenue: Color(0xFF9B9B96),
-    acento: Color(0xFFB5791A),
-    acentoTexto: Color(0xFFFFFFFF),
-    error: Color(0xFFC0292E),
-    errorTexto: Color(0xFFFFFFFF),
-  );
-
-  static const oscuro = ColoresPlazoleta(
-    fondo: Color(0xFF0D0F12),
-    fondoBloque: Color(0xFF15181C),
-    borde: Color(0xFF2C2F33),
-    textoPrimario: Color(0xFFE8E8E6),
-    textoSecundario: Color(0xFFA6A6A3),
-    textoTenue: Color(0xFF6B6B68),
-    acento: Color(0xFFE2A344),
-    acentoTexto: Color(0xFF241505),
-    error: Color(0xFFE5484D),
-    errorTexto: Color(0xFFFFFFFF),
-  );
-
   @override
   ColoresPlazoleta copyWith({
     Color? fondo,

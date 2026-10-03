@@ -477,10 +477,9 @@ Vive en `lib/ui/venta/color_categoria.dart`:
   recorrida por posición (`categoriaId % 8`, `colorCategoria`) — mismo color
   siempre para la misma categoría, sin mantenimiento cuando el dueño crea una
   nueva. `null` (sin categoría cargada, o "Varios") no dibuja nada.
-- **El bloque del total suma un filete superior ámbar** (`Bloque.colorFilete`,
-  `lib/ui/tema/bloque.dart` — parámetro opcional, `null` en el resto de la
-  app): refuerza el mismo uso #1 del acento de arriba, no es un cuarto
-  significado.
+- (Histórico) El bloque del total sumaba un filete superior ámbar
+  (`Bloque.colorFilete`); `Bloque` se borró el 2026-10-03 y hoy el total es
+  una `Superficie`.
 
 **Alcance: solo venta, por ahora** — mismo ritual que el resto de la fase
 13 (`ESTADO.md`: "El dueño pidió ver tokens + la pantalla de venta... antes de
@@ -525,8 +524,7 @@ ninguna referencia.
 ### `Superficie`, no `Card`/`Bloque` (remake 2026-09-19)
 
 `lib/ui/tema/superficie.dart` define el widget `Superficie`, reemplazo de
-`Bloque` (`lib/ui/tema/bloque.dart`, sigue en el árbol mientras dura el
-rollout) — puerto de `lib/companion/tema/superficie.dart`: mismo
+`Bloque` (ya borrado, 2026-10-03) — puerto de `lib/companion/tema/superficie.dart`: mismo
 `Container` sin blur ni sombra por default, pero con dos modos nuevos que
 `Bloque` no tenía — `relleno`/`degrade` (color-blocking sólido o degradé,
 para la pieza "hero" de la pantalla) y `resplandor` (halo de color, solo
@@ -969,7 +967,7 @@ digno": acá el objetivo es "no romper" — la barra lateral se pliega sola
 y la pantalla de venta usa columnas angostas por debajo de
 `Medidas.anchoUmbralCompacto` (`lib/ui/navegacion/barra_lateral.dart`,
 `plegadaEfectiva`), sin pisar la preferencia guardada de la barra a los
-anchos normales. `Metrica` (`lib/ui/comun/metrica.dart`) achica la letra
+anchos normales. `Metrica` (borrada el 2026-10-03, sin uso) achicaba la letra
 de la cifra con `FittedBox` en vez de partirla en dos líneas o truncarla
 — una cifra de plata cortada con "..." podría leerse como un monto
 distinto. Verificado con capturas reales a 960×1080 de Venta, Proveedores

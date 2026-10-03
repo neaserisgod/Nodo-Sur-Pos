@@ -65,11 +65,11 @@ puede").
 - Prohibición de animaciones de transición entre pantallas — vuelven,
   pero cortas y solo cuando orientan una navegación real; nunca en la
   pantalla de venta en medio de un cobro. Ver `DISENO.md`.
-- Prohibición de `BoxShadow` en cualquier lado — los bloques (`Bloque`)
+- Prohibición de `BoxShadow` en cualquier lado — los bloques (`Superficie`, que reemplazó a `Bloque`)
   siguen sin sombra porque la jerarquía por diferencia de color ya
   funciona y es más simple, no porque no se pueda pagar una. Los diálogos
   sí pueden llevar una sombra suave para despegarse del fondo.
-- Prohibición de `Card` — `Bloque` sigue siendo la unidad visual única de
+- Prohibición de `Card` — `Superficie` sigue siendo la unidad visual única de
   la app por consistencia (un solo lenguaje visual, Regla de armonía), no
   porque `Card` traiga una elevación que ya no se puede pagar.
 - `NoSplash.splashFactory` / `highlightColor: transparent` a nivel de

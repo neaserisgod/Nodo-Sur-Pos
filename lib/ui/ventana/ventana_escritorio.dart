@@ -110,10 +110,11 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
             r.fecha.month == hoy.month &&
             r.fecha.day == hoy.day,
       );
-      if (mounted)
+      if (mounted) {
         setState(
           () => _ultimoRespaldo = deHoy.isEmpty ? null : deHoy.last.fecha,
         );
+      }
     } catch (_) {
       // Sin carpeta configurada o ilegible: simplemente no hay chip.
     }
@@ -145,13 +146,12 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
       return;
     }
     final contexto = widget.navigatorKey.currentContext;
-    if (contexto == null || !mounted) {
+    if (contexto == null || !mounted || !contexto.mounted) {
       await windowManager.destroy();
       return;
     }
     _preguntando = true;
     try {
-      // ignore: use_build_context_synchronously
       final decision = await showDialog<_DecisionCierre>(
         context: contexto,
         barrierColor: const Color(0x6B1F1F1F),
