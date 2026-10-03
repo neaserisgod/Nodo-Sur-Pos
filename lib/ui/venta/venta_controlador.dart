@@ -740,6 +740,26 @@ class VentaControlador extends ChangeNotifier {
     focoCampoPrincipal.requestFocus();
   }
 
+  /// Foto de la venta activa para poder deshacer su cancelación. Sin id: si
+  /// se cerró la pestaña, su fila ya se borró y vuelve a guardarse como nueva.
+  BorradorVenta fotoDeLaVentaActiva() => _borradorActivo().conId(null);
+
+  /// Deshace `cancelarVenta`: si la pestaña activa está vacía la rellena, y si
+  /// no abre una pestaña nueva con la venta, para no pisar lo que se esté armando.
+  void reabrirVenta(BorradorVenta foto) {
+    if (cobrando || foto.estaVacio) return;
+    if (_borradorActivo().estaVacio) {
+      _pestanas[pestanaActiva].estado = foto;
+      _activar(pestanaActiva);
+    } else {
+      _pestanas[pestanaActiva].estado = _borradorActivo();
+      _pestanas.add(_Pestana(foto));
+      _activar(_pestanas.length - 1);
+    }
+    _programarGuardado();
+    focoCampoPrincipal.requestFocus();
+  }
+
   /// Esc: cancela la venta entera. Con más de una venta abierta, además
   /// cierra su pestaña y pasa a la vecina.
   void cancelarVenta() {

@@ -36,6 +36,7 @@ import 'venta_en_curso.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
+import 'cancelar_venta_con_deshacer.dart';
 import '../comun/botones.dart';
 import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
@@ -287,7 +288,7 @@ class _PantallaVentaState extends State<PantallaVenta>
       return true;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      c.cancelarVenta();
+      cancelarVentaConDeshacer(context, c);
       return true;
     }
     return false;

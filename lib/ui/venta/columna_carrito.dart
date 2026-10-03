@@ -22,6 +22,7 @@ import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'dialogo_editar_cantidad.dart';
 import 'tacto_venta.dart';
+import 'cancelar_venta_con_deshacer.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 
@@ -542,7 +543,7 @@ class _BarraVentasAbiertas extends StatelessWidget {
                     seleccionada: i == c.pestanaActiva,
                     puedeCerrar: i == c.pestanaActiva && resumen.length > 1,
                     onTap: () => c.cambiarAPestana(i),
-                    onCerrar: c.cancelarVenta,
+                    onCerrar: () => cancelarVentaConDeshacer(context, c),
                   ),
                 ],
               ],

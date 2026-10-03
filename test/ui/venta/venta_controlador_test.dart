@@ -253,6 +253,26 @@ void main() {
         expect(c.indiceUltimaLinea, 0);
       });
 
+      test('reabrirVenta devuelve una venta cancelada, en la misma pestaña si estaba vacía', () {
+        c.agregarProducto(cocaCola);
+        final foto = c.fotoDeLaVentaActiva();
+        c.cancelarVenta();
+        expect(c.carrito, isEmpty);
+        c.reabrirVenta(foto);
+        expect(c.carrito.map((l) => l.nombreProducto), ['Coca-Cola 500ml']);
+        expect(c.cantidadPestanas, 1);
+      });
+
+      test('reabrirVenta abre una pestaña nueva si la activa ya tiene algo', () {
+        c.agregarProducto(cocaCola);
+        final foto = c.fotoDeLaVentaActiva();
+        c.cancelarVenta();
+        c.agregarProducto(marlboroAtado);
+        c.reabrirVenta(foto);
+        expect(c.cantidadPestanas, 2);
+        expect(c.carrito.single.nombreProducto, 'Coca-Cola 500ml');
+      });
+
       test('eliminarLinea con un índice fuera de rango no rompe nada', () {
         c.agregarProducto(cocaCola);
         c.eliminarLinea(5);
