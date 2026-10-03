@@ -31,7 +31,7 @@ Cada una con su test. Estado real, incluyendo lo que **corregí de mi propio dia
 | 0.8 | Búsqueda "7 up" / "2 cocas": si ningún pesable coincide, se busca el texto completo | ✅ hecho, con test |
 | 0.9 | Pago de fijo sin caja abierta ya no cierra el diálogo como si hubiera guardado | ✅ hecho |
 | 0.10 | Conteo de stock: los ajustes se aplican en una sola transacción | ✅ hecho |
-| 0.11 | Número de venta global y en el ticket | ⏸ espera la pregunta 6 del dueño |
+| 0.11 | Número de venta global y en el ticket | ✅ hecho (dueño dijo que sí, 2026-10-03): `ventas.numero` = `prefijo-correlativo` (ej. K7-0123), prefijo de dos letras por equipo (`configuracion_tabla.prefijo_ventas`, no se sincroniza), migración v48. Sale en el ticket de la terminal y el PDF. Las ventas viejas siguen con `#id`. **Falta** mostrarlo en las listas de historial y en el celular |
 | 0.12 | Valores heredados del local original (fondo $150.000, reserva $70.000, `vueltoEsCaramelo` = $100) | ⏸ es una decisión de negocio (qué valor por defecto tiene un comercio nuevo): se pregunta |
 | 0.13 | Token del celular = acceso total sobre el wifi | ⏸ pasa a "token por celular, revocable desde el sitio", fase aparte |
 | 0.14 | Escalabilidad con dos años de historial (60.000 ventas, medido con `test/bench`) | ✅ hecho: Inicio 8,3 s → 0,25 s; Separaciones 6 s → 0,13 s; lista de proveedores 6,5 s → 0,14 s; cierres anteriores 3,3 s → 0,1 s; el detalle de un proveedor se rompía por el límite de variables de SQLite y ahora tarda 16 ms |

@@ -299,4 +299,22 @@ void main() {
       });
     },
   );
+
+  test('el ticket imprime el número de venta global cuando lo tiene', () {
+    final ticket = construirTicket(
+      numero: 'K7-0123',
+      fecha: DateTime(2026, 10, 3, 18, 30),
+      vendedor: 'Dueño',
+      lineas: const [LineaTicket(nombreProducto: 'Coca', cantidad: 1, subtotalCentavos: 100000)],
+      desglose: const DesgloseTicket(),
+    );
+    expect(contenidoTicketPosnetMp(ticket, encabezadoNegocio: 'Kiosco'), contains('Venta K7-0123'));
+    final sinNumero = construirTicket(
+      fecha: DateTime(2026, 10, 3),
+      vendedor: 'Dueño',
+      lineas: const [],
+      desglose: const DesgloseTicket(),
+    );
+    expect(contenidoTicketPosnetMp(sinNumero, encabezadoNegocio: 'Kiosco'), isNot(contains('Venta ')));
+  });
 }

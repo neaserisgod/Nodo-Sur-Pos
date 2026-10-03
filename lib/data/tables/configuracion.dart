@@ -139,4 +139,8 @@ class ConfiguracionTabla extends Table {
   /// la primera vez, mismo comportamiento que hoy. Valores: `'desktop'` o el
   /// `dispositivoId` estable del celular emparejado (`emparejamiento.dart`).
   TextColumn get dispositivoAperturaDesignadoId => text().nullable()();
+
+  /// Prefijo de dos letras de este equipo para el número de venta (`ventas.numero`). Se genera solo la primera vez que
+  /// se cobra y no se sincroniza: cada dispositivo tiene el suyo, por eso dos dispositivos no repiten número.
+  TextColumn get prefijoVentas => text().nullable()();
 }

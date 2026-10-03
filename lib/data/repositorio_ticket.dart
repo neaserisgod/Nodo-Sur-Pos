@@ -37,6 +37,7 @@ Future<Ticket> ticketDeVenta(AppDatabase db, int ventaId) async {
   }).toList();
 
   return construirTicket(
+    numero: venta.numero ?? '#${venta.id}',
     fecha: venta.fecha,
     vendedor: usuario.nombre,
     lineas: lineasTicket,

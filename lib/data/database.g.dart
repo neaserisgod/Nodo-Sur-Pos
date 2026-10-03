@@ -7923,6 +7923,15 @@ class $VentasTable extends Ventas with TableInfo<$VentasTable, FilaVenta> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _numeroMeta = const VerificationMeta('numero');
+  @override
+  late final GeneratedColumn<String> numero = GeneratedColumn<String>(
+    'numero',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7945,6 +7954,7 @@ class $VentasTable extends Ventas with TableInfo<$VentasTable, FilaVenta> {
     globalId,
     origenDispositivo,
     actualizadoEn,
+    numero,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8119,6 +8129,12 @@ class $VentasTable extends Ventas with TableInfo<$VentasTable, FilaVenta> {
         ),
       );
     }
+    if (data.containsKey('numero')) {
+      context.handle(
+        _numeroMeta,
+        numero.isAcceptableOrUnknown(data['numero']!, _numeroMeta),
+      );
+    }
     return context;
   }
 
@@ -8208,6 +8224,10 @@ class $VentasTable extends Ventas with TableInfo<$VentasTable, FilaVenta> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}actualizado_en'],
       ),
+      numero: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero'],
+      ),
     );
   }
 
@@ -8259,6 +8279,11 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
   final String? globalId;
   final String? origenDispositivo;
   final DateTime? actualizadoEn;
+
+  /// Número de venta legible y único entre dispositivos (El dueño, 2026-10-03): `prefijo-correlativo`,
+  /// ej. "K7-0123". El `id` local es distinto en la PC y en cada celular, así que no sirve para nombrar un ticket.
+  /// Null en las ventas anteriores a la v48: ahí se sigue mostrando el `id`.
+  final String? numero;
   const FilaVenta({
     required this.id,
     required this.sesionCajaId,
@@ -8280,6 +8305,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
+    this.numero,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8326,6 +8352,9 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
     if (!nullToAbsent || actualizadoEn != null) {
       map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
     }
+    if (!nullToAbsent || numero != null) {
+      map['numero'] = Variable<String>(numero);
+    }
     return map;
   }
 
@@ -8371,6 +8400,9 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
       actualizadoEn: actualizadoEn == null && nullToAbsent
           ? const Value.absent()
           : Value(actualizadoEn),
+      numero: numero == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numero),
     );
   }
 
@@ -8404,6 +8436,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
         json['origenDispositivo'],
       ),
       actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
+      numero: serializer.fromJson<String?>(json['numero']),
     );
   }
   @override
@@ -8432,6 +8465,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
+      'numero': serializer.toJson<String?>(numero),
     };
   }
 
@@ -8456,6 +8490,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
+    Value<String?> numero = const Value.absent(),
   }) => FilaVenta(
     id: id ?? this.id,
     sesionCajaId: sesionCajaId ?? this.sesionCajaId,
@@ -8486,6 +8521,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
     actualizadoEn: actualizadoEn.present
         ? actualizadoEn.value
         : this.actualizadoEn,
+    numero: numero.present ? numero.value : this.numero,
   );
   FilaVenta copyWithCompanion(VentasCompanion data) {
     return FilaVenta(
@@ -8533,6 +8569,7 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
       actualizadoEn: data.actualizadoEn.present
           ? data.actualizadoEn.value
           : this.actualizadoEn,
+      numero: data.numero.present ? data.numero.value : this.numero,
     );
   }
 
@@ -8558,13 +8595,14 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
           ..write('motivoAnulacion: $motivoAnulacion, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
-          ..write('actualizadoEn: $actualizadoEn')
+          ..write('actualizadoEn: $actualizadoEn, ')
+          ..write('numero: $numero')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     sesionCajaId,
     clienteId,
@@ -8585,7 +8623,8 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
     globalId,
     origenDispositivo,
     actualizadoEn,
-  );
+    numero,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8609,7 +8648,8 @@ class FilaVenta extends DataClass implements Insertable<FilaVenta> {
           other.motivoAnulacion == this.motivoAnulacion &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
-          other.actualizadoEn == this.actualizadoEn);
+          other.actualizadoEn == this.actualizadoEn &&
+          other.numero == this.numero);
 }
 
 class VentasCompanion extends UpdateCompanion<FilaVenta> {
@@ -8633,6 +8673,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
+  final Value<String?> numero;
   const VentasCompanion({
     this.id = const Value.absent(),
     this.sesionCajaId = const Value.absent(),
@@ -8654,6 +8695,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
+    this.numero = const Value.absent(),
   });
   VentasCompanion.insert({
     this.id = const Value.absent(),
@@ -8676,6 +8718,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
+    this.numero = const Value.absent(),
   }) : sesionCajaId = Value(sesionCajaId),
        usuarioId = Value(usuarioId),
        subtotalCentavos = Value(subtotalCentavos),
@@ -8701,6 +8744,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
+    Expression<String>? numero,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -8724,6 +8768,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+      if (numero != null) 'numero': numero,
     });
   }
 
@@ -8748,6 +8793,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
+    Value<String?>? numero,
   }) {
     return VentasCompanion(
       id: id ?? this.id,
@@ -8771,6 +8817,7 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+      numero: numero ?? this.numero,
     );
   }
 
@@ -8839,6 +8886,9 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
     if (actualizadoEn.present) {
       map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
     }
+    if (numero.present) {
+      map['numero'] = Variable<String>(numero.value);
+    }
     return map;
   }
 
@@ -8864,7 +8914,8 @@ class VentasCompanion extends UpdateCompanion<FilaVenta> {
           ..write('motivoAnulacion: $motivoAnulacion, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
-          ..write('actualizadoEn: $actualizadoEn')
+          ..write('actualizadoEn: $actualizadoEn, ')
+          ..write('numero: $numero')
           ..write(')'))
         .toString();
   }
@@ -15278,6 +15329,17 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _prefijoVentasMeta = const VerificationMeta(
+    'prefijoVentas',
+  );
+  @override
+  late final GeneratedColumn<String> prefijoVentas = GeneratedColumn<String>(
+    'prefijo_ventas',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -15302,6 +15364,7 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     periodoResumen,
     companionToken,
     dispositivoAperturaDesignadoId,
+    prefijoVentas,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -15504,6 +15567,15 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         ),
       );
     }
+    if (data.containsKey('prefijo_ventas')) {
+      context.handle(
+        _prefijoVentasMeta,
+        prefijoVentas.isAcceptableOrUnknown(
+          data['prefijo_ventas']!,
+          _prefijoVentasMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -15600,6 +15672,10 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
       dispositivoAperturaDesignadoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}dispositivo_apertura_designado_id'],
+      ),
+      prefijoVentas: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prefijo_ventas'],
       ),
     );
   }
@@ -15727,6 +15803,10 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// la primera vez, mismo comportamiento que hoy. Valores: `'desktop'` o el
   /// `dispositivoId` estable del celular emparejado (`emparejamiento.dart`).
   final String? dispositivoAperturaDesignadoId;
+
+  /// Prefijo de dos letras de este equipo para el número de venta (`ventas.numero`). Se genera solo la primera vez que
+  /// se cobra y no se sincroniza: cada dispositivo tiene el suyo, por eso dos dispositivos no repiten número.
+  final String? prefijoVentas;
   const Configuracion({
     required this.id,
     required this.recargoPrimerAtadoCentavos,
@@ -15750,6 +15830,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     required this.periodoResumen,
     this.companionToken,
     this.dispositivoAperturaDesignadoId,
+    this.prefijoVentas,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15802,6 +15883,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         dispositivoAperturaDesignadoId,
       );
     }
+    if (!nullToAbsent || prefijoVentas != null) {
+      map['prefijo_ventas'] = Variable<String>(prefijoVentas);
+    }
     return map;
   }
 
@@ -15846,6 +15930,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           dispositivoAperturaDesignadoId == null && nullToAbsent
           ? const Value.absent()
           : Value(dispositivoAperturaDesignadoId),
+      prefijoVentas: prefijoVentas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prefijoVentas),
     );
   }
 
@@ -15901,6 +15988,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       dispositivoAperturaDesignadoId: serializer.fromJson<String?>(
         json['dispositivoAperturaDesignadoId'],
       ),
+      prefijoVentas: serializer.fromJson<String?>(json['prefijoVentas']),
     );
   }
   @override
@@ -15939,6 +16027,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       'dispositivoAperturaDesignadoId': serializer.toJson<String?>(
         dispositivoAperturaDesignadoId,
       ),
+      'prefijoVentas': serializer.toJson<String?>(prefijoVentas),
     };
   }
 
@@ -15965,6 +16054,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     String? periodoResumen,
     Value<String?> companionToken = const Value.absent(),
     Value<String?> dispositivoAperturaDesignadoId = const Value.absent(),
+    Value<String?> prefijoVentas = const Value.absent(),
   }) => Configuracion(
     id: id ?? this.id,
     recargoPrimerAtadoCentavos:
@@ -16007,6 +16097,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId.present
         ? dispositivoAperturaDesignadoId.value
         : this.dispositivoAperturaDesignadoId,
+    prefijoVentas: prefijoVentas.present
+        ? prefijoVentas.value
+        : this.prefijoVentas,
   );
   Configuracion copyWithCompanion(ConfiguracionTablaCompanion data) {
     return Configuracion(
@@ -16076,6 +16169,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           data.dispositivoAperturaDesignadoId.present
           ? data.dispositivoAperturaDesignadoId.value
           : this.dispositivoAperturaDesignadoId,
+      prefijoVentas: data.prefijoVentas.present
+          ? data.prefijoVentas.value
+          : this.prefijoVentas,
     );
   }
 
@@ -16108,8 +16204,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           ..write('periodoResumen: $periodoResumen, ')
           ..write('companionToken: $companionToken, ')
           ..write(
-            'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId',
+            'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
+          ..write('prefijoVentas: $prefijoVentas')
           ..write(')'))
         .toString();
   }
@@ -16138,6 +16235,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     periodoResumen,
     companionToken,
     dispositivoAperturaDesignadoId,
+    prefijoVentas,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -16167,7 +16265,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           other.periodoResumen == this.periodoResumen &&
           other.companionToken == this.companionToken &&
           other.dispositivoAperturaDesignadoId ==
-              this.dispositivoAperturaDesignadoId);
+              this.dispositivoAperturaDesignadoId &&
+          other.prefijoVentas == this.prefijoVentas);
 }
 
 class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
@@ -16193,6 +16292,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
   final Value<String> periodoResumen;
   final Value<String?> companionToken;
   final Value<String?> dispositivoAperturaDesignadoId;
+  final Value<String?> prefijoVentas;
   const ConfiguracionTablaCompanion({
     this.id = const Value.absent(),
     this.recargoPrimerAtadoCentavos = const Value.absent(),
@@ -16216,6 +16316,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.periodoResumen = const Value.absent(),
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
+    this.prefijoVentas = const Value.absent(),
   });
   ConfiguracionTablaCompanion.insert({
     this.id = const Value.absent(),
@@ -16240,6 +16341,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.periodoResumen = const Value.absent(),
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
+    this.prefijoVentas = const Value.absent(),
   });
   static Insertable<Configuracion> custom({
     Expression<int>? id,
@@ -16264,6 +16366,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Expression<String>? periodoResumen,
     Expression<String>? companionToken,
     Expression<String>? dispositivoAperturaDesignadoId,
+    Expression<String>? prefijoVentas,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -16299,6 +16402,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       if (companionToken != null) 'companion_token': companionToken,
       if (dispositivoAperturaDesignadoId != null)
         'dispositivo_apertura_designado_id': dispositivoAperturaDesignadoId,
+      if (prefijoVentas != null) 'prefijo_ventas': prefijoVentas,
     });
   }
 
@@ -16325,6 +16429,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Value<String>? periodoResumen,
     Value<String?>? companionToken,
     Value<String?>? dispositivoAperturaDesignadoId,
+    Value<String?>? prefijoVentas,
   }) {
     return ConfiguracionTablaCompanion(
       id: id ?? this.id,
@@ -16356,6 +16461,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       companionToken: companionToken ?? this.companionToken,
       dispositivoAperturaDesignadoId:
           dispositivoAperturaDesignadoId ?? this.dispositivoAperturaDesignadoId,
+      prefijoVentas: prefijoVentas ?? this.prefijoVentas,
     );
   }
 
@@ -16444,6 +16550,9 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
         dispositivoAperturaDesignadoId.value,
       );
     }
+    if (prefijoVentas.present) {
+      map['prefijo_ventas'] = Variable<String>(prefijoVentas.value);
+    }
     return map;
   }
 
@@ -16476,8 +16585,9 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
           ..write('periodoResumen: $periodoResumen, ')
           ..write('companionToken: $companionToken, ')
           ..write(
-            'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId',
+            'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
+          ..write('prefijoVentas: $prefijoVentas')
           ..write(')'))
         .toString();
   }
@@ -28993,6 +29103,7 @@ typedef $$VentasTableCreateCompanionBuilder =
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
+      Value<String?> numero,
     });
 typedef $$VentasTableUpdateCompanionBuilder =
     VentasCompanion Function({
@@ -29016,6 +29127,7 @@ typedef $$VentasTableUpdateCompanionBuilder =
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
+      Value<String?> numero,
     });
 
 final class $$VentasTableReferences
@@ -29312,6 +29424,11 @@ class $$VentasTableFilterComposer
 
   ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
     column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numero => $composableBuilder(
+    column: $table.numero,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29666,6 +29783,11 @@ class $$VentasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get numero => $composableBuilder(
+    column: $table.numero,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SesionesDeCajaTableOrderingComposer get sesionCajaId {
     final $$SesionesDeCajaTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -29853,6 +29975,9 @@ class $$VentasTableAnnotationComposer
     column: $table.actualizadoEn,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get numero =>
+      $composableBuilder(column: $table.numero, builder: (column) => column);
 
   $$SesionesDeCajaTableAnnotationComposer get sesionCajaId {
     final $$SesionesDeCajaTableAnnotationComposer composer = $composerBuilder(
@@ -30183,6 +30308,7 @@ class $$VentasTableTableManager
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
+                Value<String?> numero = const Value.absent(),
               }) => VentasCompanion(
                 id: id,
                 sesionCajaId: sesionCajaId,
@@ -30204,6 +30330,7 @@ class $$VentasTableTableManager
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
+                numero: numero,
               ),
           createCompanionCallback:
               ({
@@ -30227,6 +30354,7 @@ class $$VentasTableTableManager
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
+                Value<String?> numero = const Value.absent(),
               }) => VentasCompanion.insert(
                 id: id,
                 sesionCajaId: sesionCajaId,
@@ -30248,6 +30376,7 @@ class $$VentasTableTableManager
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
+                numero: numero,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -35734,6 +35863,7 @@ typedef $$ConfiguracionTablaTableCreateCompanionBuilder =
       Value<String> periodoResumen,
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
+      Value<String?> prefijoVentas,
     });
 typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
     ConfiguracionTablaCompanion Function({
@@ -35759,6 +35889,7 @@ typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
       Value<String> periodoResumen,
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
+      Value<String?> prefijoVentas,
     });
 
 class $$ConfiguracionTablaTableFilterComposer
@@ -35880,6 +36011,11 @@ class $$ConfiguracionTablaTableFilterComposer
         column: $table.dispositivoAperturaDesignadoId,
         builder: (column) => ColumnFilters(column),
       );
+
+  ColumnFilters<String> get prefijoVentas => $composableBuilder(
+    column: $table.prefijoVentas,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$ConfiguracionTablaTableOrderingComposer
@@ -36002,6 +36138,11 @@ class $$ConfiguracionTablaTableOrderingComposer
         column: $table.dispositivoAperturaDesignadoId,
         builder: (column) => ColumnOrderings(column),
       );
+
+  ColumnOrderings<String> get prefijoVentas => $composableBuilder(
+    column: $table.prefijoVentas,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ConfiguracionTablaTableAnnotationComposer
@@ -36122,6 +36263,11 @@ class $$ConfiguracionTablaTableAnnotationComposer
         column: $table.dispositivoAperturaDesignadoId,
         builder: (column) => column,
       );
+
+  GeneratedColumn<String> get prefijoVentas => $composableBuilder(
+    column: $table.prefijoVentas,
+    builder: (column) => column,
+  );
 }
 
 class $$ConfiguracionTablaTableTableManager
@@ -36188,6 +36334,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> companionToken = const Value.absent(),
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
+                Value<String?> prefijoVentas = const Value.absent(),
               }) => ConfiguracionTablaCompanion(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -36211,6 +36358,7 @@ class $$ConfiguracionTablaTableTableManager
                 periodoResumen: periodoResumen,
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
+                prefijoVentas: prefijoVentas,
               ),
           createCompanionCallback:
               ({
@@ -36238,6 +36386,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> companionToken = const Value.absent(),
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
+                Value<String?> prefijoVentas = const Value.absent(),
               }) => ConfiguracionTablaCompanion.insert(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -36261,6 +36410,7 @@ class $$ConfiguracionTablaTableTableManager
                 periodoResumen: periodoResumen,
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
+                prefijoVentas: prefijoVentas,
               ),
           withReferenceMapper: (p0) => p0
               .map(

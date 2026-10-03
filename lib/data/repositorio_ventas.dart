@@ -11,6 +11,7 @@ import '../domain/pesables.dart';
 import '../domain/promo.dart';
 import '../domain/recargo_cigarrillos.dart';
 import '../domain/venta.dart';
+import 'numero_venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
@@ -317,6 +318,7 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
             globalId: Value(generarGlobalId()),
             origenDispositivo: Value(idDispositivoActual),
             actualizadoEn: Value(DateTime.now()),
+            numero: Value(await siguienteNumeroDeVenta(db)),
           ),
         );
 

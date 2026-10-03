@@ -65,6 +65,11 @@ class Ventas extends Table {
   TextColumn get globalId => text().nullable()();
   TextColumn get origenDispositivo => text().nullable()();
   DateTimeColumn get actualizadoEn => dateTime().nullable()();
+
+  /// Número de venta legible y único entre dispositivos (El dueño, 2026-10-03): `prefijo-correlativo`,
+  /// ej. "K7-0123". El `id` local es distinto en la PC y en cada celular, así que no sirve para nombrar un ticket.
+  /// Null en las ventas anteriores a la v48: ahí se sigue mostrando el `id`.
+  TextColumn get numero => text().nullable()();
 }
 
 /// Una fila por línea de venta, unidad o pesable mezcladas con un
