@@ -11,7 +11,10 @@ import 'aparecer.dart';
 import 'marca_nodo_sur.dart';
 
 class PantallaListo extends StatefulWidget {
-  const PantallaListo({super.key, this.nombre, this.alSeguir});
+  const PantallaListo({super.key, this.nombre, this.alSeguir, this.textoBoton = 'Ir al inicio'});
+
+  /// "Configurar mi negocio" cuando lo que sigue es el asistente del dueño nuevo.
+  final String textoBoton;
 
   /// Solo para tests: el nombre a mostrar. En la app sale del perfil que se acaba de guardar.
   final String? nombre;
@@ -126,7 +129,7 @@ class _PantallaListoState extends State<PantallaListo> with SingleTickerProvider
                 child: SizedBox(
                   width: double.infinity,
                   height: alturaControlCompanion,
-                  child: FilledButton(key: const Key('listo-seguir'), onPressed: _seguir, child: const Text('Ir al inicio')),
+                  child: FilledButton(key: const Key('listo-seguir'), onPressed: _seguir, child: Text(widget.textoBoton)),
                 ),
               ),
             ],

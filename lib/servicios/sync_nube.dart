@@ -184,6 +184,10 @@ class ServicioSyncNube {
   bool escuchando = false;
 
   bool _enCurso = false;
+
+  /// Hay una vuelta corriendo. Quien necesita el resultado de una vuelta completa (decidir si un negocio es nuevo)
+  /// espera a que termine, porque [sincronizar] encima de otra devuelve al instante el resultado anterior.
+  bool get enCurso => _enCurso;
   bool _otraVez = false;
   bool _activa = false;
   int _generacion = 0;

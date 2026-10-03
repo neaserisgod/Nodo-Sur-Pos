@@ -7,10 +7,13 @@
 import 'package:flutter/material.dart';
 
 import '../servicios/cuenta_nube.dart';
-import '../ui/tema/tokens.dart';
 import 'base_local.dart';
-import 'bienvenida/aparecer.dart';
 import 'bienvenida/pantalla_listo.dart';
+import 'bienvenida/vista_entrar_con_google.dart';
+import 'configurar/asistente_negocio.dart';
+import 'configurar/flujo_negocio.dart';
+import 'configurar/negocio_nuevo.dart';
+import 'modo_uso.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'perfil_por_cuenta.dart';
@@ -19,7 +22,6 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'sync_nube_companion.dart';
-import 'tema/piezas_companion.dart';
 
 /// El servicio contra el que se busca o crea el perfil: la PC si está emparejada y contesta, si no la base local (que se
 /// sincroniza). Mismo criterio que el resto de la companion.
@@ -44,14 +46,18 @@ Future<void> reconciliarPerfilDeCuenta({SyncNubeCompanion? sync, Future<Servicio
 }
 
 class PantallaEntrarConCuenta extends StatefulWidget {
-  const PantallaEntrarConCuenta({super.key, this.sync, this.servicio, this.alEntrar});
+  const PantallaEntrarConCuenta({super.key, this.sync, this.servicio, this.alEntrar, this.esNegocioNuevo});
 
   /// Solo para tests: la sync del celular y el servicio. En la app real salen de `syncNubeDelCelular()` y de la conexión.
   final SyncNubeCompanion? sync;
   final Future<ServicioCompanion> Function()? servicio;
 
-  /// Qué hacer con el perfil ya resuelto; por defecto muestra "Listo", que después abre el menú.
+  /// Qué hacer con el perfil ya resuelto; por defecto muestra "Listo", que después abre el menú (o "Configurá tu
+  /// negocio", si es el dueño de un negocio nuevo).
   final void Function(BuildContext context)? alEntrar;
+
+  /// Solo para tests: si quien entró es el dueño de un negocio nuevo. En la app real, [_esNegocioNuevo].
+  final Future<bool> Function(PerfilDeCuenta perfil)? esNegocioNuevo;
 
   @override
   State<PantallaEntrarConCuenta> createState() => _PantallaEntrarConCuentaState();
@@ -113,9 +119,17 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       if (!mounted) return;
       if (widget.alEntrar != null) {
         widget.alEntrar!(context);
-      } else {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PantallaListo()));
+        return;
       }
+      final nuevo = await (widget.esNegocioNuevo ?? _esNegocioNuevo)(perfil);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => nuevo
+              ? PantallaListo(textoBoton: 'Configurar mi negocio', alSeguir: (context) => abrirAsistenteNegocio(context))
+              : const PantallaListo(),
+        ),
+      );
     } on PerfilDesactivado catch (e) {
       if (mounted) setState(() {
         _error = e.toString();
@@ -135,6 +149,18 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     }
   }
 
+  /// El dueño de un negocio que todavía no tiene nada, usando solo el celular: le toca "Configurá tu negocio". Con la
+  /// PC, la configuración vive allá; un empleado o encargado entra a un negocio que ya armó el dueño.
+  Future<bool> _esNegocioNuevo(PerfilDeCuenta perfil) async {
+    if (perfil.rol != rolDuenio) return false;
+    if (await leerModoUso() != ModoUso.soloCelular) return false;
+    final db = baseLocalCompanion();
+    if (!await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db)) return false;
+    await prepararNegocioNuevo(db);
+    await guardarPasosPendientes(PasoNegocio.values.toSet());
+    return true;
+  }
+
   Future<void> _reintentar() async {
     final cuenta = await _sync!.cuenta();
     if (cuenta == null) {
@@ -145,53 +171,11 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Aparecer(
-              orden: 0,
-              child: EncabezadoCompanion(
-                titulo: 'Entrá con tu cuenta',
-                bajada: 'Tu perfil sale de tu cuenta de Nodo Sur: lo que hagas desde este celular queda a tu nombre.',
-                padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl + Espaciado.lg, Espaciado.xl, Espaciado.xl),
-              ),
-            ),
-            Expanded(
-              child: _trabajando
-                  ? const Center(child: CircularProgressIndicator())
-                  : Aparecer(
-                      orden: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (_error != null) ...[
-                              Text(_error!, key: const Key('entrar_error'), style: textTheme.bodyMedium?.copyWith(color: context.colores.error)),
-                              const SizedBox(height: Espaciado.lg),
-                            ],
-                            // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
-                            if (_error != null && !_hayQueEntrarDeNuevo && _sync != null)
-                              OutlinedButton(key: const Key('entrar_reintentar'), onPressed: _reintentar, child: const Text('Reintentar')),
-                            if (_error != null && !_hayQueEntrarDeNuevo) const SizedBox(height: Espaciado.sm),
-                            FilledButton(key: const Key('entrar_con_cuenta'), onPressed: _entrar, child: const Text('Entrar con mi cuenta')),
-                            const SizedBox(height: Espaciado.md),
-                            Text(
-                              'Se abre el navegador para que ingreses con tu cuenta de Google, una sola vez. Después el celular sigue funcionando sin internet.',
-                              style: textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => VistaEntrarConGoogle(
+        alEntrar: _entrar,
+        trabajando: _trabajando,
+        error: _error,
+        // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
+        alReintentar: _error != null && !_hayQueEntrarDeNuevo && _sync != null ? _reintentar : null,
+      );
 }

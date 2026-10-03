@@ -11,6 +11,16 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
+## Android: entrar con Google y "Configurá tu negocio" (2026-10-03) — hecho, falta publicar
+
+- "Entrá con tu cuenta" con un solo botón "Continuar con Google" (`bienvenida/vista_entrar_con_google.dart`).
+- El dueño de un negocio nuevo que usa solo el celular sigue, después de "Listo", a "Configurá tu negocio"
+  (`configurar/`): nombre y rubro, un primer producto escaneado de práctica, y Mercado Pago y equipo (en la web). Deja la
+  base lista para vender (reglas del negocio y categorías del rubro, con `global_id`). Lo salteado queda como tarjeta en
+  Inicio. Motivos en `DECISIONES.md`.
+- Tests: `test/companion/negocio_nuevo_test.dart` (18) y capturas de cada paso. `test/companion`: 180 verdes.
+- No probado en un celular real ni contra la nube real.
+
 ## Android: bienvenida al primer arranque (2026-10-03) — hecho, falta publicar
 
 - Instalación nueva: logo → bienvenida de seis escenas con "Siguiente"/"Saltar" (`lib/companion/bienvenida/`) → elegir modo →

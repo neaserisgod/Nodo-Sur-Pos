@@ -1727,3 +1727,26 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
 - **Sin precios ni "probalo gratis"**: quien la ve ya tiene el sistema; los montos son de ejemplo y van en centavos.
 - **"Listo" después de entrar con la cuenta**: aparece cada vez que se entra con la cuenta (también al volver a entrar tras perder
   la sesión), porque es el único camino que llega ahí y es un momento corto con un botón.
+
+## Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)
+
+- **Problema**: en Android la base nace vacía a propósito (sin reglas del negocio, categorías ni "Varios"; ver arriba,
+  2026-09-18), porque esos datos llegan de la PC por sincronización. Un dueño que usa SOLO el celular y arranca de cero se
+  quedaba sin la fila de `configuracion_negocio_tabla` y sin categorías, y el celular no tiene cómo crearlas.
+- **Cuándo es un negocio nuevo** (`configurar/negocio_nuevo.dart`): quien entra es el dueño (`rol == 'owner'` en
+  `/api/device/me`), el celular está en "solo celular", y después de una vuelta COMPLETA de sincronización (se espera a la
+  que ya esté corriendo, `ServicioSyncNube.enCurso`) la base sigue sin reglas, categorías ni productos. Si la sincronización
+  falla (sin internet, sesión vencida) NO se decide que es nuevo: crear filas que después llegan de la nube es el choque
+  que motivó no sembrar en Android. Con la PC, la configuración vive allá; un empleado o encargado entra a un negocio armado.
+- **Qué se crea**: la fila de reglas con recargo de cigarrillos en $0 (El dueño: "recargo en $0", se cambia desde
+  Configuración), redondeo de $100 y el comparador de precios apagado (como en la PC); y, en el paso 1, el nombre del
+  comercio y las categorías de la plantilla del rubro. Todo con `global_id` propio (`crearCategoria`), porque en el celular
+  no hay una PC que lo suba después. Los gastos fijos de la plantilla no: esa tabla no sincroniza y en el celular no se usa.
+- **Pasos** (El dueño eligió): nombre y rubro; un primer producto escaneado como práctica de cómo se carga cualquiera (entra
+  por el `crearProducto` de siempre, sin proveedor, que no es obligatorio); Mercado Pago y equipo, que se hacen en
+  horsepos.com/negocio. Sin proveedores ni reglas de caja en el asistente.
+- **"Después"**: cada paso se puede dejar; lo que falta queda en preferencias (`companion_configuracion_pendiente`) y en
+  Inicio aparece "Te faltan N pasos" hasta completarlo. Cada paso se marca hecho en el momento, así cerrar la app a mitad
+  del asistente no pierde lo hecho.
+- **Entrar con Google**: la pantalla de entrar pasa a ser un solo botón "Continuar con Google"; la primera vez la cuenta se
+  crea sola en horsepos.com, así que no hay un "registrarse" aparte que haría lo mismo.
