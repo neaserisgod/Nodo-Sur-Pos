@@ -21,6 +21,9 @@ List<int> atajosDeEfectivo(int totalCentavos, {int cuantos = 2}) {
     if (atajos.length == cuantos) return atajos;
   }
   var siguiente = ((totalCentavos + _pasoSobreElMayorCentavos - 1) ~/ _pasoSobreElMayorCentavos) * _pasoSobreElMayorCentavos;
+  // Sin repetir un billete ya ofrecido: un total de $90.000 ofrecía $100.000 dos veces (revisión 2026-10-03), porque
+  // el primer múltiplo de $50.000 que lo cubre es justo el billete más grande.
+  if (atajos.isNotEmpty && siguiente <= atajos.last) siguiente = atajos.last + _pasoSobreElMayorCentavos;
   while (atajos.length < cuantos) {
     atajos.add(siguiente);
     siguiente += _pasoSobreElMayorCentavos;

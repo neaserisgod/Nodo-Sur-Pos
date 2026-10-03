@@ -690,8 +690,24 @@ class VentaControlador extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    _invalidarMixtoSiYaNoCierra();
     super.notifyListeners();
     _programarGuardado();
+  }
+
+  /// La parte en efectivo de un mixto se confirma contra el total de ESE
+  /// momento. Si después baja el total (se saca un producto, se pone un
+  /// descuento) y el efectivo ya lo cubre, la parte por Mercado Pago quedaría
+  /// en cero o negativa — bug real de la revisión 2026-10-03: "Cobrar a mano"
+  /// grababa un pago de MP negativo. Pasa por acá porque todo cambio del
+  /// carrito, del descuento o del medio termina en `notifyListeners`: se borra
+  /// el monto y hay que volver a cargarlo (Cobrar reabre el diálogo).
+  void _invalidarMixtoSiYaNoCierra() {
+    final efectivo = montoEfectivoMixtoCentavos;
+    if (medioElegido != ComposicionPago.mixto || efectivo == null || carrito.isEmpty) return;
+    if (efectivo < _calcularCon(ComposicionPago.mixto).totalCentavos) return;
+    montoEfectivoMixtoCentavos = null;
+    avisoCobro = 'El total cambió: volvé a cargar la parte en efectivo (Alt+X)';
   }
 
   /// Carga las ventas abiertas de la sesión, una sola vez por sesión: el
@@ -886,8 +902,10 @@ class VentaControlador extends ChangeNotifier {
           canal: canalElegido,
         ),
       ],
+      // Última defensa: un efectivo que ya cubre el total no deja parte por
+      // Mercado Pago (ver `_invalidarMixtoSiYaNoCierra`).
       ComposicionPago.mixto =>
-        montoEfectivoMixtoCentavos == null
+        montoEfectivoMixtoCentavos == null || montoEfectivoMixtoCentavos! >= total
             ? null
             : [
                 PagoARegistrar(
@@ -912,6 +930,7 @@ class VentaControlador extends ChangeNotifier {
   /// ampliación futura, no de esta fase).
   Future<int?> cobrarActual() async {
     if (sesion == null) return null;
+    final medio = medioElegido;
     final pagos = construirPagos();
     if (pagos == null) {
       // Bug real: Enter con el campo vacío y sin medio elegido no daba
@@ -920,7 +939,9 @@ class VentaControlador extends ChangeNotifier {
       // tiene sentido avisarlo si había algo para cobrar — con el carrito
       // vacío, apretar Enter sin querer cobrar nada no es un error.
       if (carrito.isNotEmpty) {
-        avisoCobro = 'Elegí un medio de pago (Alt+E / Alt+Q / Alt+X)';
+        avisoCobro = medio == ComposicionPago.mixto
+            ? 'Falta la parte en efectivo del mixto (Alt+X)'
+            : 'Elegí un medio de pago (Alt+E / Alt+Q / Alt+X)';
         notifyListeners();
       }
       return null;

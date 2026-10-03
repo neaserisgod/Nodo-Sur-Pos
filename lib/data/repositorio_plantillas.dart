@@ -14,6 +14,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/plantillas_rubro.dart';
 import 'database.dart';
+import 'identidad_sync.dart';
 
 class ResultadoPlantilla {
   const ResultadoPlantilla({required this.categoriasNuevas, required this.gastosFijosNuevos});
@@ -34,6 +35,11 @@ Future<ResultadoPlantilla> aplicarPlantillaRubro(AppDatabase db, PlantillaRubro 
             CategoriasCompanion.insert(
               nombre: categoria.nombre,
               markupDefaultBp: Value(categoria.markupDefaultBp),
+              // Sin `global_id` una categoría nunca sale por la sync (revisión 2026-10-03): los productos llegaban al
+              // celular sin su categoría. Mismo criterio que `crearCategoria` del celular.
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
+              actualizadoEn: Value(DateTime.now()),
             ),
           );
       categoriasNuevas++;
