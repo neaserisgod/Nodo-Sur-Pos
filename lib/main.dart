@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
 
 import 'companion/companion_app.dart';
@@ -212,6 +213,9 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
         return MaterialApp(
           onGenerateTitle: (_) => marcaActual.value.nombre,
           debugShowCheckedModeBanner: false,
+          locale: const Locale('es', 'AR'),
+          supportedLocales: const [Locale('es', 'AR'), Locale('es')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: TemaPlazoleta.claro,
           darkTheme: TemaPlazoleta.oscuro,
           themeMode: oscuro ? ThemeMode.dark : ThemeMode.light,

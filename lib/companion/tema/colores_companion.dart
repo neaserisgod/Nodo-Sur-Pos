@@ -39,7 +39,7 @@ const coloresCompanionClaro = ColoresPlazoleta(
 );
 
 const coloresCompanionOscuro = ColoresPlazoleta(
-  fondo: Color(0xFF000000),
+  fondo: Color(0xFF0E0F12),
   fondoBloque: Color(0xFF14161C),
   borde: Color(0xFF2A2D36),
   textoPrimario: Color(0xFFF4F5F7),

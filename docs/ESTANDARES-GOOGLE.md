@@ -19,7 +19,7 @@ Se corrige para ser un solo lenguaje:
   de la app. **No se cambia.** Lo que sí hace falta es que cada color tenga texto al lado (no depender solo del color).
 - **Cero colores sueltos.** 78 `Color(0xFF…)` en la PC y 86 en el celular fuera del tema (verde `0xFF1B873F`, blancos del hero,
   rojo del botón cerrar). Todo pasa a tokens.
-- **Tema oscuro:** negro puro `#000` de fondo; `CLAUDE.md` pide no usar blanco puro sobre negro puro. Bajar a `#0E0F12`.
+- **Tema oscuro:** fondo `#0E0F12` (antes `#000`; ✅ hecho 2026-10-03). Y `es_AR` con `flutter_localizations` en PC y celular (✅ hecho).
   El tema automático por horario (oscuro antes de las 10 y después de las 22) se reemplaza por "seguir al sistema".
 - **Tokens legados** `ColoresPlazoleta.claro/oscuro` (ámbar) y `Bloque`: borrar.
 - Nota de método: leí `antigravity.google` con una herramienta de resumen que devolvió poco (fondo oscuro, titulares grandes,
