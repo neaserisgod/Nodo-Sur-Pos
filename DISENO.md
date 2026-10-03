@@ -98,11 +98,10 @@ En concreto, en cada pantalla:
    y una sola escala de espaciado — ver "Filosofía" y "Colores" abajo.
    Bajar más el contraste no descansa la vista, la fuerza.
 
-El tema automático claro/oscuro por hora (fase 13, construido — ver
-`ESTADO.md`) es una medida de esta misma prioridad, no una comodidad: claro
-de 10 a 22 (horario del local), oscuro fuera de ese rango
-(`oscuroPorHorarioDelLocal`, `lib/ui/tema/tema.dart`). Prendido por default;
-tocar el switch manual de "Modo oscuro" en Configuración lo apaga.
+El tema automático sigue al sistema (decisión del dueño, 2026-10-03; antes era por
+horario del local, 10 a 22): usa el modo claro u oscuro que tenga Windows. Está prendido
+por default; tocar el switch manual de "Modo oscuro" en Configuración deja de seguir al
+sistema. Esto es una medida de la prioridad de ojos cansados, no una comodidad.
 
 **Primera aplicación — la pantalla de venta**: barra lateral plegable,
 productos en cards, "imprimir" solo al final del cobro, y la columna de

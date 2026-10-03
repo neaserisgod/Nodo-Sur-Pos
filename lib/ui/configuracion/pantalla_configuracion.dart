@@ -822,9 +822,9 @@ class _SeccionApariencia extends StatelessWidget {
         children: [
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Tema automático según el horario del local'),
+            title: const Text('Seguir el tema del sistema'),
             subtitle: const Text(
-              'Claro de 10 a 22 (local abierto), oscuro fuera de ese horario.',
+              'Usa el modo claro u oscuro que tenga Windows.',
             ),
             value: c.configuracion!.temaAutomatico,
             onChanged: c.guardarTemaAutomatico,
@@ -834,14 +834,14 @@ class _SeccionApariencia extends StatelessWidget {
             title: const Text('Modo oscuro'),
             subtitle: Text(
               c.configuracion!.temaAutomatico
-                  ? 'Elegir acá apaga el tema automático de arriba.'
+                  ? 'Elegir acá deja de seguir al sistema.'
                   : 'Recomendado para muchas horas de pantalla seguidas.',
             ),
             // Refleja el modo YA aplicado (el automático manda mientras esté
             // prendido) — tocarlo apaga el automático y deja este valor fijo,
             // no al revés (`configurarTemaOscuroManual`).
             value: c.configuracion!.temaAutomatico
-                ? oscuroPorHorarioDelLocal(DateTime.now())
+                ? MediaQuery.platformBrightnessOf(context) == Brightness.dark
                 : c.configuracion!.temaOscuro,
             onChanged: c.guardarTemaOscuro,
           ),

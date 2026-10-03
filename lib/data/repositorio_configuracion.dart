@@ -123,7 +123,7 @@ Future<void> configurarTemaOscuro(AppDatabase db, bool oscuro) {
 }
 
 /// Elegir un modo a mano mientras el automático está prendido no tiene
-/// efecto (`oscuroPorHorarioDelLocal` sigue mandando) — por eso tocar el
+/// efecto (el tema del sistema sigue mandando) — por eso tocar el
 /// switch de "Modo oscuro" lo apaga acá mismo, en la misma escritura: es
 /// más intuitivo que el dueño vea su elección aplicada al toque que forzarlo a
 /// primero ir a apagar el automático.

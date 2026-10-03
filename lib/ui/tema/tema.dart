@@ -28,12 +28,6 @@ const double radioSuperficieEscritorio = 28;
 /// pastilla (`StadiumBorder`).
 const double radioControlEscritorio = 16;
 
-/// Tema automático (revisión visual fase 13, sin tocar en el remake): claro
-/// en horario de local abierto (10 a 22), oscuro fuera de ese rango. Sigue
-/// el horario real del local (`REGLAS-NEGOCIO.md`), no un rango de luz
-/// solar genérico.
-bool oscuroPorHorarioDelLocal(DateTime ahora) => ahora.hour < 10 || ahora.hour >= 22;
-
 abstract final class TemaPlazoleta {
   static ThemeData get claro => _construir(coloresEscritorioClaro, acentosEscritorioClaro, Brightness.light);
   static ThemeData get oscuro => _construir(coloresEscritorioOscuro, acentosEscritorioOscuro, Brightness.dark);

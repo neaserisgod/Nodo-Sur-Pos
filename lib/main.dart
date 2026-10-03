@@ -207,9 +207,10 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
       stream: widget.db.select(widget.db.configuracionTabla).watchSingle(),
       builder: (context, snapshot) {
         final automatico = snapshot.data?.temaAutomatico ?? true;
-        final oscuro = automatico
-            ? oscuroPorHorarioDelLocal(DateTime.now())
-            : (snapshot.data?.temaOscuro ?? true);
+        // Automático = el tema del sistema (Windows), que el dueño ya maneja por horario o a mano.
+        final modo = automatico
+            ? ThemeMode.system
+            : ((snapshot.data?.temaOscuro ?? true) ? ThemeMode.dark : ThemeMode.light);
         return MaterialApp(
           onGenerateTitle: (_) => marcaActual.value.nombre,
           debugShowCheckedModeBanner: false,
@@ -218,7 +219,7 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: TemaPlazoleta.claro,
           darkTheme: TemaPlazoleta.oscuro,
-          themeMode: oscuro ? ThemeMode.dark : ThemeMode.light,
+          themeMode: modo,
           navigatorKey: _navigatorKey,
           navigatorObservers: [routeObserver],
           builder: (context, child) {

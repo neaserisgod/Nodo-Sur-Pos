@@ -85,12 +85,12 @@ class ConfiguracionTabla extends Table {
   // ─── Fase 11: sistema de diseño ─────────────────────────────────────────
 
   /// Modo oscuro elegido a mano. Solo se lee cuando [temaAutomatico] está
-  /// apagado — con el automático prendido, `oscuroPorHorarioDelLocal`
+  /// apagado — con el automático prendido, el tema del sistema
   /// decide, y esta columna sigue guardando el último valor manual para
   /// volver a él si el dueño apaga el automático.
   BoolColumn get temaOscuro => boolean().withDefault(const Constant(true))();
 
-  /// Tema automático según el horario del local (revisión visual fase 13):
+  /// Tema automático = seguir al sistema (dueño, 2026-10-03; antes era por horario del local):
   /// prendido por default — es el comportamiento esperado, no una opción que
   /// haya que activar. El switch de "Modo oscuro" pasa a ser de solo lectura
   /// mientras esto esté prendido (`_SeccionApariencia`).

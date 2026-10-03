@@ -48,8 +48,7 @@ criterios chocan, gana el que cansa menos la vista.
 6. **Lo que ya está bien no se toca.** El contraste está medido: nunca negro puro
    sobre blanco puro para texto de lectura (texto `#1F1F1F`, no `#000000`).
 
-Tema automático: claro de 10 a 22 (horario del local), oscuro fuera de ese
-rango (`oscuroPorHorarioDelLocal`). Prendido por defecto; el switch manual de
+Tema automático: sigue al sistema (dueño, 2026-10-03; antes era por horario del local). Prendido por defecto; el switch manual de
 Configuración lo apaga.
 
 ### 1.2 Tres niveles de información
