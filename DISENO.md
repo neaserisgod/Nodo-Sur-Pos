@@ -32,6 +32,19 @@ Es lo más reciente y lo que corre hoy (PR #24, #50 y `docs/ESTANDARES-GOOGLE.md
   la vista, y Ctrl+F lo enfoca. Cambios de pantalla con un fundido corto (98% → 100%), sin desplazamiento lateral.
 - Los números exactos (radios, espaciado) están en `lib/ui/tema/`: si este texto y el código difieren, gana el código.
 
+**Movimiento (2026-10-03) — vigente.** El dueño: "las animaciones son una miseria"; eligió animar todo, también la
+pantalla de venta, con animaciones cortas. Dos piezas en `lib/ui/tema/movimiento.dart`, todo dura menos de un quinto de
+segundo y respeta "reducir animaciones" del sistema (`MediaQuery.disableAnimations`):
+
+- `Entrada`: lo que aparece sube unos px y se funde, una vez; en listas, escalonado (`entradaEnLista`, solo las
+  primeras 12 filas: lo que aparece al scrollear no se demora).
+- `Pulso`: un latido mínimo cuando cambia un valor; el texto nuevo ya está desde el primer cuadro.
+- Dónde: cambio de pantalla (sube, crece y la de abajo se atenúa), diálogos del kit (`Modal`, zoom desde 0,96), lista
+  de la búsqueda de Venta (cae al abrirse), líneas del carrito (entran; laten al cambiar la cantidad), total (late) y
+  desglose (aparece suave), botón del medio de pago (el color llena con transición y late al elegirlo), venta cobrada
+  (tilde y zoom), tarjetas de Inicio y listas de Proveedores, Historial, cierres y Configuración (escalonadas).
+- Nunca: algo que demore el foco, lo que se tipea o el cobro.
+
 **"Lenguaje de diseño" (2026-09-26/28) — reemplazado en paleta y navegación por el bloque de arriba.** Se conserva
 por los mocks y las distribuciones, que siguen valiendo. El dueño dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
 escritorio y celular más un LEEME con tokens: son **medio inspiración, pero

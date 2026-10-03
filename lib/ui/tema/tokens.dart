@@ -340,10 +340,9 @@ extension ColoresDelContexto on BuildContext {
 
 /// Animaciones (fase 13, hardware): la prohibición de fase 11 se cayó junto
 /// con la PC de 2008 que la motivaba (`CLAUDE.md`, "Hardware — qué cambió y
-/// qué no") — vuelven, pero cortas y solo donde orientan una navegación
-/// real, nunca en la pantalla de venta en medio de un cobro (esa pantalla
-/// sigue sin ninguna de estas: la densidad y la velocidad de tecleo ganan
-/// ahí, no es un olvido). `corta` es para lo que cambia dentro de una misma
+/// qué no") — vuelven, cortas, y desde el 2026-10-03 en toda la app,
+/// también en Venta (el dueño eligió animar todo; ver `movimiento.dart`):
+/// nunca demoran lo que se tipea ni el cobro. `corta` es para lo que cambia dentro de una misma
 /// pantalla (plegar la barra lateral, resaltar la sección activa); `media`
 /// es para la transición entre pantallas.
 abstract final class Animaciones {

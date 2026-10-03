@@ -62,9 +62,11 @@ puede").
 
 **Se cae** (existía solo por el CPU/disco viejo):
 
-- Prohibición de animaciones de transición entre pantallas — vuelven,
-  pero cortas y solo cuando orientan una navegación real; nunca en la
-  pantalla de venta en medio de un cobro. Ver `DISENO.md`.
+- Prohibición de animaciones — vuelven, cortas (menos de un quinto de
+  segundo) y **en toda la app, también en la pantalla de venta** (El dueño,
+  2026-10-03: "las animaciones son una miseria", eligió animar todo): nunca
+  demoran lo que se tipea ni el cobro, y respetan "reducir animaciones" del
+  sistema. Piezas y lugares en `DISENO.md`, "Movimiento".
 - Prohibición de `BoxShadow` en cualquier lado — los bloques (`Superficie`, que reemplazó a `Bloque`)
   siguen sin sombra porque la jerarquía por diferencia de color ya
   funciona y es más simple, no porque no se pueda pagar una. Los diálogos
