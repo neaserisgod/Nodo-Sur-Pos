@@ -23,7 +23,10 @@
 // en el slot de acción; `BarraBusquedaVenta`, a diferencia de
 // `BarraBusquedaGlobal`, agrega directo al carrito).
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
 import '../tema/tokens.dart';
@@ -60,15 +63,66 @@ class EnvolturaConNavbarSuperior extends StatefulWidget {
 class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior> {
   List<ItemNavbarSuperior> _items = const [ItemNavbarSuperior(clave: 'venta', etiqueta: 'Venta')];
 
+  /// Búsqueda de la navbar: cerrada es una lupa; abierta, el campo ocupa la barra.
+  bool _buscando = false;
+  final _focoBusqueda = FocusNode();
+
+  /// Cambia al cerrar: el campo vuelve a nacer vacío (y sin resultados colgando) la próxima vez.
+  int _vueltaBusqueda = 0;
+
   @override
   void initState() {
     super.initState();
     _cargar();
+    HardwareKeyboard.instance.addHandler(_tecla);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_tecla);
+    _focoBusqueda.dispose();
+    super.dispose();
   }
 
   Future<void> _cargar() async {
     final items = await itemsNavGestion(widget.db);
     if (mounted) setState(() => _items = items);
+  }
+
+  /// Ctrl+F abre la búsqueda; la tecla Inicio lleva a Venta (El dueño, 2026-10-03), salvo escribiendo en un campo, donde
+  /// sigue moviendo el cursor al principio.
+  bool _tecla(KeyEvent event) {
+    if (event is! KeyDownEvent || !mounted) return false;
+    if (ModalRoute.of(context)?.isCurrent == false) return false;
+    final teclado = HardwareKeyboard.instance;
+    if (event.logicalKey == LogicalKeyboardKey.keyF && teclado.isControlPressed && !teclado.isAltPressed) {
+      _abrirBusqueda();
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.home && !teclado.isControlPressed && !teclado.isAltPressed && !teclado.isShiftPressed) {
+      final enCampo = FocusManager.instance.primaryFocus?.context?.findAncestorStateOfType<EditableTextState>() != null;
+      if (enCampo) return false;
+      unawaited(_seleccionar('venta'));
+      return true;
+    }
+    return false;
+  }
+
+  void _abrirBusqueda() {
+    setState(() => _buscando = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focoBusqueda.requestFocus();
+    });
+  }
+
+  void _cerrarBusqueda() {
+    if (!_buscando) return;
+    _focoBusqueda.unfocus();
+    widget.busqueda?.alCambiar('');
+    setState(() {
+      _buscando = false;
+      _vueltaBusqueda++;
+    });
   }
 
   Future<void> _seleccionar(String clave) async {
@@ -83,6 +137,7 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
   }
 
   Future<void> _irAVentaConTexto(String texto) {
+    _cerrarBusqueda();
     return navegarASeccionDeGestion(
       context,
       'venta',
@@ -95,37 +150,36 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
 
   @override
   Widget build(BuildContext context) {
-    final navbar = NavbarSuperior(
-      claveActiva: widget.claveActiva,
-      items: _items,
-      onSeleccionar: _seleccionar,
-    );
+    final anchoAbierta = MediaQuery.sizeOf(context).width * NavbarSuperior.fraccionBusquedaAbierta;
+    final campo = widget.busqueda == null
+        ? BarraBusquedaGlobal(
+            key: ValueKey('busqueda_global_$_vueltaBusqueda'),
+            db: widget.db,
+            anchoDropdown: anchoAbierta,
+            onElegir: _irAVentaConTexto,
+            foco: _focoBusqueda,
+            alSalir: _cerrarBusqueda,
+          )
+        : CampoBusquedaContextual(
+            key: ValueKey('busqueda_contextual_$_vueltaBusqueda'),
+            busqueda: widget.busqueda!,
+            foco: _focoBusqueda,
+            alSalir: _cerrarBusqueda,
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: navbar),
-              const SizedBox(width: Espaciado.lg),
-              Padding(
-                padding: const EdgeInsets.only(top: Espaciado.md),
-                child: SizedBox(
-                  width: Medidas.anchoBarraBusquedaGestion,
-                  height: altoNavbarSuperior,
-                  child: widget.busqueda == null
-                      ? BarraBusquedaGlobal(
-                          db: widget.db,
-                          anchoDropdown: Medidas.anchoBarraBusquedaGestion,
-                          onElegir: _irAVentaConTexto,
-                        )
-                      : CampoBusquedaContextual(busqueda: widget.busqueda!),
-                ),
-              ),
-            ],
+          child: NavbarSuperior(
+            claveActiva: widget.claveActiva,
+            items: _items,
+            onSeleccionar: _seleccionar,
+            busqueda: campo,
+            buscando: _buscando,
+            onAbrirBusqueda: _abrirBusqueda,
+            onCerrarBusqueda: _cerrarBusqueda,
           ),
         ),
         Expanded(child: widget.child),

@@ -43,6 +43,7 @@ import '../configuracion/pantalla_configuracion.dart';
 import '../historial/pantalla_historial.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
 import '../navegacion/navbar_superior.dart';
+import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
 import '../proveedores/pantalla_proveedores.dart';
 import '../separaciones/pantalla_separaciones.dart';
@@ -124,13 +125,27 @@ class _PantallaVentaState extends State<PantallaVenta>
     if (mounted) setState(() => _seccionesVisibles = secciones);
   }
 
+  bool _soyRaiz = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    routeObserver.subscribe(
-      this,
-      ModalRoute.of(context)! as PageRoute<dynamic>,
-    );
+    final ruta = ModalRoute.of(context)!;
+    routeObserver.subscribe(this, ruta as PageRoute<dynamic>);
+    if (ruta.isFirst && !_soyRaiz) {
+      _soyRaiz = true;
+      ventaEsRaiz.value = true;
+    }
+  }
+
+  /// Lo que otra pantalla mandó a cargar al volver a Venta (texto de la búsqueda global o un encargue a entregar).
+  void _tomarPedido() {
+    final pedido = pedidoParaVenta.value;
+    if (pedido == null) return;
+    pedidoParaVenta.value = null;
+    if (pedido.encargueId != null) unawaited(_controlador.cargarEncargue(pedido.encargueId!));
+    final texto = pedido.texto;
+    if (texto != null && texto.isNotEmpty) _controlador.campoTexto.text = texto;
   }
 
   void _publicarVentaEnCurso() =>
@@ -140,6 +155,7 @@ class _PantallaVentaState extends State<PantallaVenta>
   void dispose() {
     routeObserver.unsubscribe(this);
     HardwareKeyboard.instance.removeHandler(_manejarTeclaGlobal);
+    if (_soyRaiz) ventaEsRaiz.value = false;
     _controlador.removeListener(_publicarVentaEnCurso);
     _controlador.dispose();
     super.dispose();
@@ -153,7 +169,9 @@ class _PantallaVentaState extends State<PantallaVenta>
   /// cambiado productos, proveedores, stock o configuración.
   @override
   void didPopNext() {
-    _controlador.cargarTodo();
+    _controlador.cargarTodo().then((_) {
+      if (mounted) _tomarPedido();
+    });
     _controlador.focoCampoPrincipal.requestFocus();
   }
 
@@ -195,6 +213,14 @@ class _PantallaVentaState extends State<PantallaVenta>
     // Mismo bloqueo si la sesión abierta es de un día anterior (Regla 5): no
     // se puede vender bajo ella aunque siga técnicamente "abierta".
     if (c.sesion == null || c.sesionVencida) return false;
+
+    // Ctrl+F: el atajo de buscar de toda la app (El dueño, 2026-10-03). En Venta el campo ya está a la vista: lo enfoca.
+    if (event.logicalKey == LogicalKeyboardKey.keyF &&
+        HardwareKeyboard.instance.isControlPressed &&
+        !HardwareKeyboard.instance.isAltPressed) {
+      c.focoCampoPrincipal.requestFocus();
+      return true;
+    }
 
     // `!isControlPressed`: en Windows, AltGr (tecla de la derecha en un
     // teclado latinoamericano/español — necesaria para escribir '@', '#',
@@ -371,46 +397,6 @@ class _PantallaVentaState extends State<PantallaVenta>
     await _controlador.cargarTodo();
   }
 
-  Future<void> _irAProveedores() async {
-    final sesion = _controlador.sesion;
-    if (sesion == null) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PantallaProveedores(
-          db: widget.db,
-          usuarioId: sesion.usuarioAbrioId,
-          sesionCajaId: sesion.id,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _irASeparaciones() async {
-    final sesion = _controlador.sesion;
-    if (sesion == null) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PantallaSeparaciones(
-          db: widget.db,
-          usuarioId: sesion.usuarioAbrioId,
-          sesionCajaId: sesion.id,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _irAHistorial() async {
-    final sesion = _controlador.sesion;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PantallaHistorial(
-          db: widget.db,
-          usuarioId: sesion?.usuarioAbrioId ?? 0,
-        ),
-      ),
-    );
-  }
-
   Future<void> _imprimirUltimoTicket() async {
     final ventaId = _controlador.ultimaVentaId;
     if (ventaId == null) return;
@@ -421,41 +407,6 @@ class _PantallaVentaState extends State<PantallaVenta>
     );
   }
 
-  Future<void> _irAConfiguracion() async {
-    final sesion = _controlador.sesion;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PantallaConfiguracion(
-          db: widget.db,
-          usuarioId: sesion?.usuarioAbrioId ?? 0,
-        ),
-      ),
-    );
-    // El orden/visibilidad de secciones pudo haber cambiado — esto es
-    // propio de esta pantalla, `didPopNext()` no lo sabe (no es parte de
-    // `VentaControlador`).
-    await _cargarSecciones();
-  }
-
-  /// Dashboard es la raíz de la app (`main.dart`) desde que dejó de serlo
-  /// Venta (El dueño, 2026-09-14) — Venta quedó pusheada encima, así que
-  /// volver a Dashboard es simplemente volver a la raíz de la pila, igual
-  /// que hacía "Venta" antes de serlo.
-  void _irADashboard() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  /// Mapea la clave estable de cada sección (`secciones_menu`) a la acción de
-  /// navegación real — un solo lugar donde agregar una pantalla nueva al
-  /// menú configurable (Regla 3).
-  VoidCallback? _accionDeClave(String clave) => switch (clave) {
-    'dashboard' => _irADashboard,
-    'proveedores' => _irAProveedores,
-    'separaciones' => _irASeparaciones,
-    'historial' => _irAHistorial,
-    'configuracion' => _irAConfiguracion,
-    _ => null,
-  };
 
   /// "Dashboard" (la raíz, un clic para volver) + "Venta" (la pantalla en
   /// la que ya se está) + las secciones configurables visibles +
@@ -469,9 +420,19 @@ class _PantallaVentaState extends State<PantallaVenta>
     const ItemNavbarSuperior(clave: 'configuracion', etiqueta: 'Configuración'),
   ];
 
-  void _onSeleccionarSeccion(String clave) {
+  /// Venta es la raíz de la app (El dueño, 2026-10-03): cada sección se abre encima con la misma navegación que el
+  /// resto de las pantallas, y al volver se recargan las secciones (pudieron cambiar en Configuración).
+  Future<void> _onSeleccionarSeccion(String clave) async {
     if (clave == 'venta') return; // ya estamos acá
-    _accionDeClave(clave)?.call();
+    final sesion = _controlador.sesion;
+    await navegarASeccionDeGestion(
+      context,
+      clave,
+      db: widget.db,
+      usuarioId: sesion?.usuarioAbrioId ?? 0,
+      sesionCajaId: sesion?.id,
+    );
+    await _cargarSecciones();
   }
 
   @override
@@ -488,11 +449,6 @@ class _PantallaVentaState extends State<PantallaVenta>
               // mismo criterio que el arranque de `main.dart`.
               if (c.cargando) return const SizedBox.shrink();
 
-              final navbar = NavbarSuperior(
-                claveActiva: 'venta',
-                items: _itemsNav,
-                onSeleccionar: _onSeleccionarSeccion,
-              );
               final accionesPie = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -529,29 +485,17 @@ class _PantallaVentaState extends State<PantallaVenta>
                   // las secciones en pastillas y las acciones de caja; la
                   // búsqueda baja a la columna de productos, debajo del
                   // título "Vender" (igual que el mock).
-                  if (hayVenta)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Espaciado.lg,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: navbar),
-                          Padding(
-                            padding: const EdgeInsets.only(top: Espaciado.md),
-                            child: accionesPie,
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Espaciado.lg,
-                      ),
-                      child: navbar,
+                  // La búsqueda de Venta no se esconde detrás de la lupa: es el campo único (y el lector de códigos escribe
+                  // ahí), siempre visible en la columna de productos (CLAUDE.md, "Pantalla de venta"). Ctrl+F lo enfoca.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+                    child: NavbarSuperior(
+                      claveActiva: 'venta',
+                      items: _itemsNav,
+                      onSeleccionar: _onSeleccionarSeccion,
+                      acciones: hayVenta ? accionesPie : null,
                     ),
+                  ),
                   Expanded(
                     child: c.sesion == null
                         ? _EstadoBloqueado(

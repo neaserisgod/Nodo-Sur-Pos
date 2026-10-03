@@ -15,6 +15,7 @@
 // compartir el widget en sí porque resuelven cosas distintas.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/busqueda_productos.dart';
 import '../../data/database.dart';
@@ -29,7 +30,15 @@ class BarraBusquedaGlobal extends StatefulWidget {
     required this.db,
     required this.anchoDropdown,
     required this.onElegir,
+    this.foco,
+    this.alSalir,
   });
+
+  /// De quien la abre (la navbar), para darle el foco al abrir la búsqueda.
+  final FocusNode? foco;
+
+  /// Esc con el campo vacío: cerrar la búsqueda.
+  final VoidCallback? alSalir;
 
   final AppDatabase db;
   final double anchoDropdown;
@@ -45,7 +54,7 @@ class BarraBusquedaGlobal extends StatefulWidget {
 
 class _BarraBusquedaGlobalState extends State<BarraBusquedaGlobal> {
   final _controladorTexto = TextEditingController();
-  final _foco = FocusNode();
+  late final FocusNode _foco = widget.foco ?? FocusNode();
   final _link = LayerLink();
   final _overlayController = OverlayPortalController();
   List<Producto> _catalogo = [];
@@ -72,7 +81,7 @@ class _BarraBusquedaGlobalState extends State<BarraBusquedaGlobal> {
   @override
   void dispose() {
     _controladorTexto.dispose();
-    _foco.dispose();
+    if (widget.foco == null) _foco.dispose();
     super.dispose();
   }
 
@@ -125,7 +134,17 @@ class _BarraBusquedaGlobalState extends State<BarraBusquedaGlobal> {
       },
       child: CompositedTransformTarget(
         link: _link,
-        child: TextField(
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): () {
+              if (_controladorTexto.text.isEmpty) {
+                widget.alSalir?.call();
+              } else {
+                _controladorTexto.clear();
+              }
+            },
+          },
+          child: TextField(
           controller: _controladorTexto,
           focusNode: _foco,
           // Mismo aspecto que el buscador contextual (`busqueda_contextual.dart`).
@@ -134,6 +153,7 @@ class _BarraBusquedaGlobalState extends State<BarraBusquedaGlobal> {
             if (texto.trim().isEmpty) return;
             _elegir(texto.trim());
           },
+        ),
         ),
       ),
     );

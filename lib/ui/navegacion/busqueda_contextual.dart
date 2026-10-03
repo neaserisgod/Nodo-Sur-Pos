@@ -53,9 +53,15 @@ InputDecoration decoracionBuscadorNavbar(BuildContext context, {required String 
 }
 
 class CampoBusquedaContextual extends StatefulWidget {
-  const CampoBusquedaContextual({super.key, required this.busqueda});
+  const CampoBusquedaContextual({super.key, required this.busqueda, this.foco, this.alSalir});
 
   final BusquedaContextual busqueda;
+
+  /// De quien la abre (la navbar), para darle el foco al abrir la búsqueda.
+  final FocusNode? foco;
+
+  /// Esc con el campo vacío: cerrar la búsqueda.
+  final VoidCallback? alSalir;
 
   @override
   State<CampoBusquedaContextual> createState() => _CampoBusquedaContextualState();
@@ -84,10 +90,13 @@ class _CampoBusquedaContextualState extends State<CampoBusquedaContextual> {
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       // Esc borra el filtro, como en cualquier buscador.
-      bindings: {const SingleActivator(LogicalKeyboardKey.escape): _limpiar},
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () => _texto.text.isEmpty && widget.alSalir != null ? widget.alSalir!() : _limpiar(),
+      },
       child: TextField(
         key: const Key('busqueda_contextual'),
         controller: _texto,
+        focusNode: widget.foco,
         onChanged: _cambio,
         decoration: decoracionBuscadorNavbar(
           context,

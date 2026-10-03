@@ -13,7 +13,7 @@ import 'servicios/actualizaciones.dart';
 import 'servicios/actualizador_nativo.dart';
 import 'servicios/comparador_precios_todoatucasa.dart';
 import 'servidor/servidor_companion.dart';
-import 'ui/dashboard/pantalla_dashboard.dart';
+import 'ui/venta/pantalla_venta.dart';
 import 'ui/navegacion/route_observer.dart';
 import 'ui/tema/simulador_resolucion.dart';
 import 'ui/tema/tema.dart';
@@ -220,17 +220,11 @@ class _LaPlazoletaAppState extends State<LaPlazoletaApp> {
             if (!widget.conVentanaPropia) return app;
             return MarcoVentana(db: widget.db, navigatorKey: _navigatorKey, child: app);
           },
-          // Dashboard es la raíz de la app (El dueño, 2026-09-14: "es la
-          // pantalla principal, totalmente aparte") — Venta pasa a ser una
-          // sección fija más, alcanzable con un clic desde acá (o desde
-          // cualquier otra pantalla, `navegacion_gestion.dart`). Antes
-          // Venta era la raíz porque resolvía sola los tres estados
-          // posibles al arrancar (sin sesión, sesión de un día anterior sin
-          // cerrar, sesión normal) sin bloquear el resto de la app (El dueño,
-          // 2026-09-06: "que no salga obligatoriamente al abrir" — sigue
-          // igual, `VentaControlador.sesionVencida` sigue bloqueando solo
-          // la venta cuando corresponde, no la app entera).
-          home: PantallaDashboard(db: widget.db),
+          // Venta es la raíz de la app (El dueño, 2026-10-03: "que se vuelva a la pantalla de venta, mas no inicio"):
+          // arranca ahí y la tecla Inicio vuelve ahí. El tablero ("Inicio") es una sección más de la navbar. Venta
+          // resuelve sola los tres estados posibles al arrancar (sin sesión, sesión de un día anterior sin cerrar,
+          // sesión normal) sin bloquear el resto de la app.
+          home: PantallaVenta(db: widget.db),
         );
       },
     );
