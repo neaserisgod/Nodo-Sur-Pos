@@ -34,7 +34,7 @@ Cada una con su test. Estado real, incluyendo lo que **corregí de mi propio dia
 | 0.11 | Número de venta global y en el ticket | ⏸ espera la pregunta 6 del dueño |
 | 0.12 | Valores heredados del local original (fondo $150.000, reserva $70.000, `vueltoEsCaramelo` = $100) | ⏸ es una decisión de negocio (qué valor por defecto tiene un comercio nuevo): se pregunta |
 | 0.13 | Token del celular = acceso total sobre el wifi | ⏸ pasa a "token por celular, revocable desde el sitio", fase aparte |
-| 0.14 | Escalabilidad de consultas que leen todo el historial | ⏸ pendiente: es el más grande de la fase |
+| 0.14 | Escalabilidad con dos años de historial (60.000 ventas, medido con `test/bench`) | ✅ hecho: Inicio 8,3 s → 0,25 s; Separaciones 6 s → 0,13 s; lista de proveedores 6,5 s → 0,14 s; cierres anteriores 3,3 s → 0,1 s; el detalle de un proveedor se rompía por el límite de variables de SQLite y ahora tarda 16 ms |
 | 0.15 | Log a archivo (`<datos>/logs/errores.log`, rotado a 512 KB) y los tres puntos por donde se escapa un error en Flutter | ✅ hecho, con test. Los 37 `catch (_) {}` mudos se revisan pantalla por pantalla en la Fase 2 |
 
 **Sin probar:** el cambio de cursor de sincronización (0.5) pasa los tests existentes pero no tiene uno propio; las correcciones de `actualizadoEn` (0.6) tampoco.

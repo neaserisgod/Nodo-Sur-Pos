@@ -13,10 +13,10 @@ Se corrige para ser un solo lenguaje:
 - **Un solo sistema de diseño.** Hoy hay dos: `lib/ui/tema/*` (PC) y `lib/companion/tema/*` (celular: `presionable`, `superficie`,
   `chip_icono`, `esqueleto_companion`, `piezas_companion`, `hoja_vidrio`, `tarjeta_accion`, `campo_particulas`, `resplandor`).
   Pasa todo a `lib/ui/tema/` y el celular lo importa. Una pieza, un lugar (Regla 3 del proyecto, aplicada a UI).
-- **Un solo acento.** Hoy hay además ámbar (efectivo), azul (QR), verde-azulado (débito), violeta (mixto) y un degradé azul noche en
-  las piezas destacadas. Propuesta: la pieza destacada es un bloque de **tinta sólida** (sin degradé); el medio de pago se distingue
-  con un **punto de color chico + texto**, nunca con rellenos de color; el color fuera de la tinta queda solo para estados
-  (ganancia = verde, atención = ámbar, error = rojo).
+- **La paleta ya es la de horsepos.com (corrección mía).** Había propuesto sacar los colores por medio de pago y el degradé azul
+  noche. Comparé con el CSS real del sitio (`NodoSurPage/theme.css`, `home.css`): usa blanco, `#F3F4F7`, tinta `#121317`, y su degradé
+  de marca va del azul `#3B6CFF` al violeta `#8A5CF6` y al verde-azulado `#18C3A4`. Son exactamente el QR, el mixto y el débito
+  de la app. **No se cambia.** Lo que sí hace falta es que cada color tenga texto al lado (no depender solo del color).
 - **Cero colores sueltos.** 78 `Color(0xFF…)` en la PC y 86 en el celular fuera del tema (verde `0xFF1B873F`, blancos del hero,
   rojo del botón cerrar). Todo pasa a tokens.
 - **Tema oscuro:** negro puro `#000` de fondo; `CLAUDE.md` pide no usar blanco puro sobre negro puro. Bajar a `#0E0F12`.

@@ -26,57 +26,6 @@ class ResumenDia {
   });
 }
 
-Future<ResumenDia> _resumenDe(AppDatabase db, SesionCaja sesion) async {
-  // Quién trabajó ese turno (El dueño, sesión del 31/08/2026: un turno es una
-  // sesión completa) — sin esto, dos hojas del mismo día se ven idénticas
-  // en la lista, que es justo lo que los turnos quieren distinguir.
-  final usuario =
-      await (db.select(db.usuarios)..where((u) => u.id.equals(sesion.usuarioAbrioId))).getSingle();
-  final ventas = await (db.select(db.ventas)..where((v) => v.sesionCajaId.equals(sesion.id))).get();
-  final totalVendido = ventas.fold<int>(0, (acc, v) => acc + v.totalCentavos);
-
-  final filasPagos = await (db.select(db.pagos).join([
-    innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId)),
-    innerJoin(db.mediosDePago, db.mediosDePago.id.equalsExp(db.pagos.medioPagoId)),
-  ])
-        ..where(db.ventas.sesionCajaId.equals(sesion.id)))
-      .get();
-
-  var efectivo = 0;
-  var mp = 0;
-  for (final fila in filasPagos) {
-    final pago = fila.readTable(db.pagos);
-    final medio = fila.readTable(db.mediosDePago);
-    if (medio.esEfectivo) {
-      efectivo += pago.montoCentavos;
-    } else {
-      mp += pago.montoCentavos;
-    }
-  }
-
-  final filasCigarrillos = await (db.select(db.lineasDeVenta).join([
-    innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
-  ])
-        ..where(
-          db.ventas.sesionCajaId.equals(sesion.id) & db.lineasDeVenta.tipoCigarrillo.isNotValue('ninguno'),
-        ))
-      .get();
-  final cigarrillos = filasCigarrillos.fold<int>(0, (acc, fila) {
-    final linea = fila.readTable(db.lineasDeVenta);
-    return acc + linea.precioUnitarioCentavos * (linea.cantidad ?? 1);
-  });
-
-  return ResumenDia(
-    sesion: sesion,
-    nombreEmpleado: usuario.nombre,
-    totalVendidoCentavos: totalVendido,
-    efectivoCentavos: efectivo,
-    mpCentavos: mp,
-    cigarrillosCentavos: cigarrillos,
-    diferenciaCentavos: sesion.diferenciaCentavos ?? 0,
-  );
-}
-
 /// Todos los días cerrados, del más reciente al más viejo, con lo esencial
 /// de cada uno para poder ver de un vistazo cuál dio mal.
 Future<List<ResumenDia>> listarDias(AppDatabase db) async {
@@ -84,12 +33,50 @@ Future<List<ResumenDia>> listarDias(AppDatabase db) async {
         ..where((s) => s.estado.equals('CERRADA'))
         ..orderBy([(s) => OrderingTerm.desc(s.fechaApertura)]))
       .get();
+  if (sesiones.isEmpty) return const [];
 
-  final resultado = <ResumenDia>[];
-  for (final sesion in sesiones) {
-    resultado.add(await _resumenDe(db, sesion));
+  // Tres consultas agrupadas por sesión en vez de cuatro por cada día cerrado: con dos años de historial eran ~2.400 idas a la
+  // base (3 s) para armar una lista que solo muestra el total de cada día.
+  final usuarios = {for (final u in await db.select(db.usuarios).get()) u.id: u.nombre};
+  final vendido = <int, int>{};
+  for (final f in await db
+      .customSelect('SELECT sesion_caja_id AS s, SUM(total_centavos) AS t FROM ventas GROUP BY sesion_caja_id')
+      .get()) {
+    vendido[f.read<int>('s')] = f.read<int>('t');
   }
-  return resultado;
+  final efectivo = <int, int>{};
+  final mp = <int, int>{};
+  for (final f in await db
+      .customSelect(
+        'SELECT v.sesion_caja_id AS s, m.es_efectivo AS ef, SUM(p.monto_centavos) AS t FROM pagos p '
+        'JOIN ventas v ON v.id = p.venta_id JOIN medios_de_pago m ON m.id = p.medio_pago_id '
+        'GROUP BY v.sesion_caja_id, m.es_efectivo',
+      )
+      .get()) {
+    (f.read<int>('ef') == 1 ? efectivo : mp)[f.read<int>('s')] = f.read<int>('t');
+  }
+  final cigarrillos = <int, int>{};
+  for (final f in await db
+      .customSelect(
+        'SELECT v.sesion_caja_id AS s, SUM(l.precio_unitario_centavos * COALESCE(l.cantidad, 1)) AS t FROM lineas_de_venta l '
+        "JOIN ventas v ON v.id = l.venta_id WHERE l.tipo_cigarrillo <> 'ninguno' GROUP BY v.sesion_caja_id",
+      )
+      .get()) {
+    cigarrillos[f.read<int>('s')] = f.read<int>('t');
+  }
+
+  return [
+    for (final sesion in sesiones)
+      ResumenDia(
+        sesion: sesion,
+        nombreEmpleado: usuarios[sesion.usuarioAbrioId] ?? '',
+        totalVendidoCentavos: vendido[sesion.id] ?? 0,
+        efectivoCentavos: efectivo[sesion.id] ?? 0,
+        mpCentavos: mp[sesion.id] ?? 0,
+        cigarrillosCentavos: cigarrillos[sesion.id] ?? 0,
+        diferenciaCentavos: sesion.diferenciaCentavos ?? 0,
+      ),
+  ];
 }
 
 Future<List<FilaVenta>> ventasDelDia(AppDatabase db, int sesionId) {
