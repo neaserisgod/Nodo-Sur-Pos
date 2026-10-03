@@ -163,14 +163,25 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
         case _DecisionCierre.irACerrar:
           final ctx = widget.navigatorKey.currentContext;
           if (ctx != null && ctx.mounted) {
+            // Cerrar la caja desde acá era un callejón: el botón final decía
+            // "Volver a la venta" y la ventana seguía abierta, sin dejar claro
+            // si se había cerrado o no. Ahora, con la caja cerrada, el botón
+            // cierra el sistema (El dueño, 2026-10-03).
+            var cajaCerrada = false;
             await mostrarModal<void>(
               ctx,
               builder: (_) => PantallaCierre(
                 db: widget.db,
                 sesionId: sesion.id,
                 usuarioId: sesion.usuarioAbrioId,
+                textoBotonFinal: 'Cerrar el sistema',
+                onFinalizado: () {
+                  cajaCerrada = true;
+                  Navigator.of(ctx).pop();
+                },
               ),
             );
+            if (cajaCerrada) await windowManager.destroy();
           }
         case _DecisionCierre.seguir || null:
           break;

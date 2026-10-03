@@ -591,4 +591,37 @@ void main() {
       expect(await tick(), isEmpty);
     });
   });
+
+  group('una caja cerrada no se reabre por un eco viejo', () {
+    Future<Map<String, dynamic>> filaSesion(AppDatabase db) async =>
+        (await cambiosDesde(db, tabla: 'sesiones_de_caja', desde: 0)).single;
+
+    test('la apertura vieja que llega tarde no pisa el cierre', () async {
+      await pc.customStatement(
+          "INSERT INTO sesiones_de_caja (usuario_abrio_id, fondo_inicial_centavos, estado, global_id, actualizado_en) "
+          "VALUES ($usuarioId, 100000, 'ABIERTA', 'sesion-1', 1000)");
+      final apertura = await filaSesion(pc);
+      await pc.customStatement(
+          "UPDATE sesiones_de_caja SET estado = 'CERRADA', efectivo_contado_centavos = 555, actualizado_en = 2000 WHERE global_id = 'sesion-1'");
+
+      final noAplicadas = await aplicarCambios(pc, tabla: 'sesiones_de_caja', filas: [apertura], ordenDeLlegada: true);
+      expect(noAplicadas, isEmpty);
+
+      final s = await (pc.select(pc.sesionesDeCaja)..where((x) => x.globalId.equals('sesion-1'))).getSingle();
+      expect(s.estado, 'CERRADA');
+      expect(s.efectivoContadoCentavos, 555);
+    });
+
+    test('reabrir de verdad (fila posterior) sí se aplica', () async {
+      await pc.customStatement(
+          "INSERT INTO sesiones_de_caja (usuario_abrio_id, fondo_inicial_centavos, estado, global_id, actualizado_en) "
+          "VALUES ($usuarioId, 100000, 'CERRADA', 'sesion-2', 2000)");
+      final reabierta = {...await filaSesion(pc), 'estado': 'ABIERTA', 'actualizado_en': 3000};
+
+      await aplicarCambios(pc, tabla: 'sesiones_de_caja', filas: [reabierta], ordenDeLlegada: true);
+
+      final s = await (pc.select(pc.sesionesDeCaja)..where((x) => x.globalId.equals('sesion-2'))).getSingle();
+      expect(s.estado, 'ABIERTA');
+    });
+  });
 }
