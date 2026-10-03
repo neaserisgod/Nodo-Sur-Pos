@@ -289,8 +289,10 @@ class _PastillaSeccion extends StatelessWidget {
       radio: 999,
       onTap: onTap,
       color: activa ? colores.textoPrimario : colores.fondoBloque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: Medidas.alturaControl),
+        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+        alignment: Alignment.center,
         child: Text(
           etiqueta,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(

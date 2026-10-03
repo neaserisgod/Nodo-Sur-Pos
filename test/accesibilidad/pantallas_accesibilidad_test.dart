@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
+import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
+import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
@@ -21,6 +24,9 @@ final _pantallas = <String, _Armar>{
   'Historial': (db, u, s) => PantallaHistorial(db: db, usuarioId: u),
   'Proveedores': (db, u, s) => PantallaProveedores(db: db, usuarioId: u, sesionCajaId: s),
   'Separaciones': (db, u, s) => PantallaSeparaciones(db: db, usuarioId: u, sesionCajaId: s),
+  'Configuración': (db, u, s) => PantallaConfiguracion(db: db, usuarioId: u),
+  'Encargues': (db, u, s) => PantallaEncargues(db: db, usuarioId: u, sesionCajaId: s),
+  'Cierre': (db, u, s) => PantallaCierre(db: db, sesionId: s, usuarioId: u),
 };
 
 Future<void> _mostrar(WidgetTester tester, Brightness brillo, _Armar armar) async {

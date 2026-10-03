@@ -30,7 +30,7 @@ Se corrige para ser un solo lenguaje:
 
 | Estándar | Hoy | Meta |
 |---|---|---|
-| Objetivos táctiles ≥ 48 dp | ✅ Venta, Inicio, Historial, Proveedores y Separaciones (PC) cumplen `androidTapTargetGuideline`, `labeledTapTargetGuideline` y `textContrastGuideline` en claro y oscuro (`test/accesibilidad`); faltan las demás pantallas de la PC y el celular | 48 dp en celular y táctil; en mouse ≥ 40 con área de clic de 48 |
+| Objetivos táctiles ≥ 48 dp | ✅ Venta, Inicio, Historial, Proveedores, Separaciones, Configuración, Encargues y Cierre (PC) cumplen `androidTapTargetGuideline`, `labeledTapTargetGuideline` y `textContrastGuideline` en claro y oscuro (`test/accesibilidad`); faltan Equilibrio, Respaldo, Impresión, los diálogos y el celular | 48 dp en celular y táctil; en mouse ≥ 40 con área de clic de 48 |
 | Texto en botones de acción | "Cambiar de turno", "Cerrar caja" y campanita son solo ícono con tooltip | ícono + texto cuando hay ancho |
 | Deshacer en vez de preguntar | ✅ Venta (PC): quitar línea, Esc y cerrar pestaña tienen "Deshacer" 5 s; celular: quitar línea. Falta: otras acciones destructivas | quitar/cancelar → snackbar "Deshacer" 5 s; confirmar solo lo irreversible |
 | Estados de carga | ✅ historial, detalle del día, editor de venta y stock por proveedor con esqueleto (quieto con "reducir animaciones"); faltan Equilibrio, Respaldo, Comparar precios, Dashboard, Cierre | esqueleto en toda carga > 150 ms |
