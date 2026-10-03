@@ -32,7 +32,7 @@ import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'base_local.dart';
 import 'cache_cierres.dart';
-import 'cliente_companion.dart' show ResumenCierreCompanion, SesionCerradaCompanion;
+import 'cliente_companion.dart' show ClienteCompanion, ResumenCierreCompanion, SesionCerradaCompanion;
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navbar_companion.dart';
@@ -324,10 +324,19 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
   bool _exportando = false;
   String? _errorExportar;
 
-  /// El PDF se arma contra la base de este celular, así que solo hay botón
-  /// cuando el servicio es el local (sin PC): con la PC conectada por wifi el
-  /// celular no tiene los datos del día para volcarlos.
-  bool get _puedeExportar => widget.servicio is PuertoLocal;
+  /// El PDF se arma contra la base de este celular, que siempre tiene una copia
+  /// sincronizada (con o sin la PC a la vista). Sin PC el id del día es el
+  /// local; con la PC conectada es el de la PC, y se busca el mismo día en la
+  /// copia del celular por su hora de apertura.
+  Future<int?> _sesionLocalId() async {
+    final db = baseLocalCompanion();
+    final porId = await (db.select(db.sesionesDeCaja)..where((x) => x.id.equals(widget.cierre.sesionId))).getSingleOrNull();
+    if (widget.servicio is! ClienteCompanion && porId != null) return porId.id;
+    final porFecha = await (db.select(db.sesionesDeCaja)
+          ..where((x) => x.fechaApertura.equals(widget.cierre.fechaApertura)))
+        .get();
+    return porFecha.isEmpty ? null : porFecha.first.id;
+  }
 
   /// Arma el PDF del día completo y lo abre: desde el visor de Android se
   /// manda por WhatsApp, mail o Drive (El dueño, 2026-10-03).
@@ -337,10 +346,15 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
       _errorExportar = null;
     });
     try {
+      final sesionId = await _sesionLocalId();
+      if (sesionId == null) {
+        setState(() => _errorExportar = 'Este día todavía no llegó a tu celular: esperá a que sincronice y probá de nuevo.');
+        return;
+      }
       final carpeta = await getTemporaryDirectory();
       final ruta = await guardarPdfDiaCompleto(
         baseLocalCompanion(),
-        sesionId: widget.cierre.sesionId,
+        sesionId: sesionId,
         carpetaDestino: carpeta.path,
       );
       final r = await OpenFilex.open(ruta);
@@ -386,7 +400,7 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
           _filaCaja(context, 'Mercado Pago', c.mpContadoCentavos, c.mpEsperadoCentavos, c.mpDiferenciaCentavos),
           _filaCaja(context, 'Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
           const SizedBox(height: Espaciado.lg),
-          if (_puedeExportar) ...[
+          ...[
             OutlinedButton.icon(
               key: const Key('exportar_dia'),
               onPressed: _exportando ? null : _exportarDia,
