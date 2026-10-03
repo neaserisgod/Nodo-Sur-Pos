@@ -25,6 +25,7 @@ import '../tema/iconos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 import 'stock_proveedor_controlador.dart';
+import '../tema/esqueleto.dart';
 
 class PantallaStockProveedor extends StatefulWidget {
   const PantallaStockProveedor({super.key, required this.db, required this.usuarioId});
@@ -82,7 +83,7 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
           usuarioId: widget.usuarioId,
           titulo: 'Conteo de stock',
           busqueda: BusquedaContextual(pista: 'Buscar o escanear producto', alCambiar: c.buscar),
-          child: c.cargando ? const SizedBox.shrink() : _contenido(context, c),
+          child: c.cargando ? const EsqueletoLista() : _contenido(context, c),
         ),
       ),
     );
