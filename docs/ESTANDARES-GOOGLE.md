@@ -39,7 +39,7 @@ Se corrige para ser un solo lenguaje:
 | Idioma del sistema | sin `localizationsDelegates`/`es_AR`: selector de fecha, menús contextuales y "Cut/Copy/Paste" salen en inglés | `flutter_localizations` + `es_AR` |
 | Accesibilidad (lector de pantalla) | 6 `Semantics` en toda la PC | `Semantics`/`tooltip` en todo control sin texto; orden de foco lógico |
 | Foco y teclado | Venta tiene atajos; el resto de la PC no muestra el foco | anillo de foco visible, Tab/Enter/Esc consistentes en cada modal |
-| Contraste (WCAG AA 4.5:1) | medido solo en tokens principales | test automático de contraste sobre cada par de tokens (claro y oscuro) |
+| Contraste | medido solo en tokens principales | tests de la API de accesibilidad de Flutter (`textContrastGuideline`: 3:1 en texto grande; para texto normal el criterio es WCAG AA 4.5:1, que Flutter remite a verificar aparte) sobre las pantallas principales, y un test propio de pares de tokens |
 | Movimiento con propósito | `disableAnimations` solo en bienvenida | respetar "reducir animaciones" en todo; solo transiciones que orientan |
 | Una forma de hacer cada cosa | botones fuera del kit: `AlertDialog`/`ElevatedButton` crudos en imprimir ticket, nuevo encargue (PC y celular), estado bloqueado de Venta, restaurar | todo por `Modal`/`BotonPrimario`/`BotonSecundario` |
 | Guardado | Configuración guarda solo con Enter, sin aviso, y descarta montos inválidos en silencio | guardar al salir del campo + "Guardado" + error en el campo |
@@ -57,3 +57,18 @@ Se corrige para ser un solo lenguaje:
 4. Cada acción destructiva: deshacer si se puede; si no, confirmación que dice qué pasa.
 5. Cada monto: `tabular`, alineado a la derecha, `formatearARS`; nunca texto armado a mano.
 6. Cada pantalla se prueba en 1366×768, 1920×1080, escala 125 % y 150 % (PC) y en 360 dp de ancho (celular).
+
+## 4. Fuentes de Google que leí (2026-10-03)
+
+Leídas de verdad, no de memoria. Lo que **no** pude leer: las páginas de Material Design 3 (`m3.material.io`) devolvieron solo el
+título, así que los números de Material (48 dp, contraste) salen de la documentación de Flutter y Android de abajo y no de M3.
+
+| Fuente | Qué dice y cómo se aplica acá |
+|---|---|
+| [Flutter: pruebas de accesibilidad](https://docs.flutter.dev/ui/accessibility/accessibility-testing) | Objetivo táctil mínimo 48×48 (Android) / 44×44 (iOS); todo control con tap debe tener etiqueta; contraste 3:1 en texto grande; hay pruebas automáticas (`androidTapTargetGuideline`, `labeledTapTargetGuideline`, `textContrastGuideline`). **Se usan en la Fase 1 como tests de widget.** |
+| [Android: principios de accesibilidad](https://developer.android.com/guide/topics/ui/accessibility/principles) | Etiquetar cada elemento interactivo, no depender solo del color (forma, texto, patrón), que todo flujo se pueda completar con servicios de accesibilidad. Aplica a los puntos de color de medio de pago y a los íconos sin texto. |
+| [Guía de revisión de código: estándar](https://google.github.io/eng-practices/review/reviewer/standard.html) | Aprobar un cambio cuando mejora la salud del código aunque no sea perfecto; los hechos y datos pesan más que la opinión; "Nit:" para lo opcional. |
+| [Cambios chicos](https://google.github.io/eng-practices/review/developer/small-cls.html) | Un cambio = una sola cosa, con sus tests; ~100 líneas razonable, ~1000 demasiado; los refactors van aparte de las funciones y los arreglos. **Cambia cómo entrego las fases: un commit por tema (ver Plan).** |
+| [Buenas prácticas de documentación](https://google.github.io/styleguide/docguide/best_practices.html) | Pocos documentos pero frescos; actualizar la documentación en el mismo cambio que el código; borrar lo obsoleto; no duplicar. **Por eso los docs del plan se consolidan al cerrar cada fase.** |
+| [Guía de estilo para documentación](https://developers.google.com/style/highlights) | Voz activa, segunda persona, condición primero, títulos en minúscula (sentence case). Aplica a los textos de la app. |
+| [Effective Dart](https://dart.dev/effective-dart) | `dart format`, llaves en todo `if`, comentarios `///`, preferir lo privado. El análisis ya marca 28 avisos de estilo y de imports sin usar en `lib/`. |
