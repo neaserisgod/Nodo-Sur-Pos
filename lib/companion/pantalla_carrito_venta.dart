@@ -45,6 +45,7 @@ import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 import 'tema/app_bar_companion.dart';
+import 'tema/colores_companion.dart';
 
 enum _MedioVenta { efectivo, qr, debito }
 
@@ -909,7 +910,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           const SizedBox(height: Espaciado.sm),
           Text(
             vuelto < 0 ? 'Falta ${formatearARS(-vuelto)}' : 'Vuelto ${formatearARS(vuelto)}',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: vuelto < 0 ? colores.error : const Color(0xFF1B873F)),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: vuelto < 0 ? colores.error : context.acentos.ganancia),
           ),
           if (vueltoEsCaramelo(vuelto))
             TextButton(onPressed: _agregarCaramelo, child: const Text('Agregar caramelo en vez del vuelto')),
@@ -944,7 +945,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             style: textTheme.bodyLarge?.copyWith(color: colores.textoSecundario),
           ),
           if (c.medio == _MedioVenta.efectivo && c.vueltoCentavos > 0)
-            Text('Vuelto ${formatearARS(c.vueltoCentavos)}', style: textTheme.titleLarge?.copyWith(color: const Color(0xFF1B873F))),
+            Text('Vuelto ${formatearARS(c.vueltoCentavos)}', style: textTheme.titleLarge?.copyWith(color: context.acentos.ganancia)),
           const Spacer(),
           OutlinedButton(onPressed: () => _imprimirTicket(c.ventaId), child: const Text('Imprimir ticket')),
           const SizedBox(height: Espaciado.sm),
