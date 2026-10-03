@@ -255,12 +255,16 @@ esa versión (notificaciones, la búsqueda en el resto de la app, nombres
 largos del carrito, el default de la grilla, los botones de cobro). La
 composición actual:
 
-**Franja superior** — navbar + búsqueda, comparten fila:
+**Franja superior** — navbar y acciones de caja, en una fila:
 - Izquierda: la marca y las secciones como pastillas (la activa con fondo),
   y Configuración como engranaje al final de la fila (2026-10-03: ya no es
   una pastilla más). No hay sidebar ni dropdown.
-- Centro: campo único de texto, **ancho fijo, centrado** (no se estira),
-  con foco al arrancar. Todo entra por acá. Agregar un producto (tap,
+- Derecha: campanita y "Cambiar de turno" / "Cerrar caja" (detalle abajo).
+
+**Búsqueda** — rediseño "antigravity": ya no comparte fila con la navbar.
+Vive en la columna de productos, debajo del título "Vender" y arriba de la
+grilla (`BarraBusquedaVenta` en `pantalla_venta.dart`):
+- Campo único de texto, con foco al arrancar. Todo entra por acá. Agregar un producto (tap,
   Alt+tecla o Enter) y cobrar devuelven el foco ahí solos — es la
   continuación natural de seguir vendiendo; un diálogo secundario (Mixto,
   Varios, gasto/ingreso rápido, arqueo intermedio, editar un acceso
@@ -280,8 +284,7 @@ composición actual:
     barra de busqueda este en todos lados". Ahí no agrega nada al
     carrito (esas pantallas no tienen uno): elegir un resultado navega a
     Venta con el texto ya cargado, y desde ahí sigue el camino de siempre.
-- Derecha: campanita de notificaciones (ver más abajo), después "Cambiar
-  de turno" / "Cerrar caja".
+
 
 **Notificaciones** — tercera pasada (El dueño: *"NO QUIERO QUE APAREZCA EL
 COSO DEL ARQUEO OCUPANDO TODO... UN APARTADO NOTIFICACIONES"*): el aviso
