@@ -2,7 +2,7 @@
 
 Pedido del dueño: *"la app debe ser en esencia como si la hubiese creado Google bajo sus estándares de diseño y funcionamiento"*,
 con la estética de **horsepos.com** y **antigravity.google**. Este documento fija qué significa eso, medido contra el código de hoy.
-`DISENO.md` sigue siendo el dueño de los tokens; acá se agrega lo que falta. **Nada de esto está hecho todavía.**
+`DISENO.md` sigue siendo el dueño de los tokens; acá se agrega lo que falta. **Cada fila de la tabla de §2 marca ✅ lo que ya se hizo.**
 
 ## 1. Estética: lo que ya está y lo que sobra
 
@@ -30,18 +30,18 @@ Se corrige para ser un solo lenguaje:
 
 | Estándar | Hoy | Meta |
 |---|---|---|
-| Objetivos táctiles ≥ 48 dp | `−`/`+` del carrito ~28 px, tacho y cerrar pestaña chicos, flechas de reordenar menú 16 px, íconos de "Cambiar de turno"/"Cerrar caja" 36 px | 48 dp en celular y táctil; en mouse ≥ 40 con área de clic de 48 |
+| Objetivos táctiles ≥ 48 dp | ✅ Venta (PC) cumple `androidTapTargetGuideline` y `labeledTapTargetGuideline` en claro y oscuro (`test/accesibilidad`); faltan las demás pantallas y el celular | 48 dp en celular y táctil; en mouse ≥ 40 con área de clic de 48 |
 | Texto en botones de acción | "Cambiar de turno", "Cerrar caja" y campanita son solo ícono con tooltip | ícono + texto cuando hay ancho |
-| Deshacer en vez de preguntar | 0 `SnackBarAction`; quitar línea, cerrar pestaña, Esc (cancela la venta entera) sin confirmar ni deshacer | quitar/cancelar → snackbar "Deshacer" 5 s; confirmar solo lo irreversible |
-| Estados de carga | casi todo `SizedBox.shrink()` (pantalla en blanco) aunque existe `EsqueletoLista` | esqueleto en toda carga > 150 ms |
+| Deshacer en vez de preguntar | ✅ Venta (PC): quitar línea, Esc y cerrar pestaña tienen "Deshacer" 5 s; celular: quitar línea. Falta: otras acciones destructivas | quitar/cancelar → snackbar "Deshacer" 5 s; confirmar solo lo irreversible |
+| Estados de carga | ✅ historial, detalle del día, editor de venta y stock por proveedor con esqueleto (quieto con "reducir animaciones"); faltan Equilibrio, Respaldo, Comparar precios, Dashboard, Cierre | esqueleto en toda carga > 150 ms |
 | Estados de error | existe `EstadoError`, casi nadie lo usa; 37 `catch (_) {}` mudos en la PC | error visible con "Reintentar" y registro a archivo |
 | Estados vacíos | bien resueltos en varias pantallas | mantener; sumar acción ("Cargar el primero") |
-| Idioma del sistema | sin `localizationsDelegates`/`es_AR`: selector de fecha, menús contextuales y "Cut/Copy/Paste" salen en inglés | `flutter_localizations` + `es_AR` |
+| Idioma del sistema | ✅ `es_AR` con `flutter_localizations` en PC y celular | `flutter_localizations` + `es_AR` |
 | Accesibilidad (lector de pantalla) | 6 `Semantics` en toda la PC | `Semantics`/`tooltip` en todo control sin texto; orden de foco lógico |
 | Foco y teclado | Venta tiene atajos; el resto de la PC no muestra el foco | anillo de foco visible, Tab/Enter/Esc consistentes en cada modal |
 | Contraste | medido solo en tokens principales | tests de la API de accesibilidad de Flutter (`textContrastGuideline`: 3:1 en texto grande; para texto normal el criterio es WCAG AA 4.5:1, que Flutter remite a verificar aparte) sobre las pantallas principales, y un test propio de pares de tokens |
 | Movimiento con propósito | `disableAnimations` solo en bienvenida | respetar "reducir animaciones" en todo; solo transiciones que orientan |
-| Una forma de hacer cada cosa | botones fuera del kit: `AlertDialog`/`ElevatedButton` crudos en imprimir ticket, nuevo encargue (PC y celular), estado bloqueado de Venta, restaurar | todo por `Modal`/`BotonPrimario`/`BotonSecundario` |
+| Una forma de hacer cada cosa | ✅ imprimir ticket, nuevo encargue (PC y celular), cuenta y Venta bloqueada pasaron al kit; queda a propósito el botón rojo de restaurar respaldo | todo por `Modal`/`BotonPrimario`/`BotonSecundario` |
 | Guardado | Configuración guarda solo con Enter, sin aviso, y descarta montos inválidos en silencio | guardar al salir del campo + "Guardado" + error en el campo |
 | Formularios | PC sin aviso de "salir sin guardar" (el celular sí lo tiene) | mismo `confirmarSalirSinGuardar` en ambos |
 | Fechas | texto `DD/MM/AAAA` que acepta 31/02 | selector de fecha del sistema |
