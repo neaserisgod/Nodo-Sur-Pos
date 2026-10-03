@@ -730,6 +730,7 @@ class PuertoLocal implements ServicioCompanion {
       for (final v in ventas)
         VentaDelHistorialCompanion(
           ventaId: v.ventaId,
+          numero: v.numero,
           fecha: v.fecha,
           totalCentavos: v.totalCentavos,
           medio: MedioVentaHistorialCompanion.values.firstWhere((m) => m.name == v.medio.name),

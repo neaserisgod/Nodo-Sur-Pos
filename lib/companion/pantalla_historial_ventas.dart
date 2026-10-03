@@ -436,7 +436,7 @@ class _FilaVenta extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('#${v.ventaId}', style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
+                        Text(v.etiqueta, style: textTheme.titleMedium?.copyWith(color: texto, decoration: tachado)),
                         Text(
                           v.anulada ? 'Anulada · ${v.medio.etiqueta}' : v.medio.etiqueta,
                           style: textTheme.bodySmall?.copyWith(color: v.anulada && !abierta ? colores.error : apagado),

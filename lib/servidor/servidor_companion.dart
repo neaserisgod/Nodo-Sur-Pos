@@ -713,6 +713,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'detalle': v.detalle,
           'anulada': v.anulada,
           'sesionAbierta': v.sesionAbierta,
+          'numero': v.numero,
         },
     ]);
   });

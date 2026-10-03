@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/impresion_posnet.dart';
+import '../../data/numero_venta.dart';
 import '../../data/pdf_ticket.dart';
 import '../../data/repositorio_ticket.dart';
 import '../tema/tokens.dart';
@@ -43,10 +44,14 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
   Configuracion? _config;
   bool _procesando = false;
   String? _mensaje;
+  String? _numero;
 
   @override
   void initState() {
     super.initState();
+    (widget.db.select(widget.db.ventas)..where((v) => v.id.equals(widget.ventaId))).getSingleOrNull().then((venta) {
+      if (mounted && venta != null) setState(() => _numero = etiquetaDeVenta(id: venta.id, numero: venta.numero));
+    });
     widget.db.select(widget.db.configuracionTabla).getSingle().then((config) {
       if (mounted) setState(() => _config = config);
     });
@@ -112,7 +117,7 @@ class _DialogoImprimirTicketState extends State<_DialogoImprimirTicket> {
     final listo = _config != null;
     return Modal(
       titulo: 'Imprimir ticket',
-      subtitulo: 'Venta #${widget.ventaId}',
+      subtitulo: 'Venta ${_numero ?? '#${widget.ventaId}'}',
       contenido: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

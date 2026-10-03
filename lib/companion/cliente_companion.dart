@@ -1662,6 +1662,9 @@ enum MedioVentaHistorialCompanion { efectivo, qr, debitCard, mixto }
 
 class VentaDelHistorialCompanion {
   final int ventaId;
+
+  /// Número de venta global; null en las ventas anteriores a la v48 o contra una PC que todavía no lo manda.
+  final String? numero;
   final DateTime fecha;
   final int totalCentavos;
   final MedioVentaHistorialCompanion medio;
@@ -1672,8 +1675,11 @@ class VentaDelHistorialCompanion {
   /// caja de esa venta siga abierta (El dueño, 2026-09-13).
   final bool sesionAbierta;
 
+  String get etiqueta => numero ?? '#$ventaId';
+
   const VentaDelHistorialCompanion({
     required this.ventaId,
+    this.numero,
     required this.fecha,
     required this.totalCentavos,
     required this.medio,
@@ -1693,6 +1699,7 @@ class VentaDelHistorialCompanion {
   factory VentaDelHistorialCompanion.desdeJson(Map<String, dynamic> j) =>
       VentaDelHistorialCompanion(
         ventaId: j['ventaId'] as int,
+        numero: j['numero'] as String?,
         fecha: DateTime.parse(j['fecha'] as String),
         totalCentavos: j['totalCentavos'] as int,
         medio: MedioVentaHistorialCompanion.values.byName(j['medio'] as String),

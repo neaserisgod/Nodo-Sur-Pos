@@ -9,6 +9,7 @@
 
 import 'package:drift/drift.dart';
 
+import 'numero_venta.dart';
 import 'database.dart';
 
 /// 'efectivo' | 'qr' | 'debitCard' | 'mixto' — más granular que el
@@ -18,6 +19,9 @@ enum MedioVentaHistorial { efectivo, qr, debitCard, mixto }
 
 class VentaDelHistorial {
   final int ventaId;
+
+  /// Número de venta global (`ventas.numero`); null en las ventas anteriores a la v48.
+  final String? numero;
   final DateTime fecha;
   final int totalCentavos;
   final MedioVentaHistorial medio;
@@ -34,8 +38,12 @@ class VentaDelHistorial {
   /// que el celular no necesite una segunda consulta solo para esto.
   final bool sesionAbierta;
 
+  /// Cómo se nombra en pantalla: el número global o, en las viejas, el id local.
+  String get etiqueta => etiquetaDeVenta(id: ventaId, numero: numero);
+
   const VentaDelHistorial({
     required this.ventaId,
+    this.numero,
     required this.fecha,
     required this.totalCentavos,
     required this.medio,
@@ -92,6 +100,7 @@ Future<List<VentaDelHistorial>> historialDeVentas(
     resultado.add(
       VentaDelHistorial(
         ventaId: v.id,
+        numero: v.numero,
         fecha: v.fecha,
         totalCentavos: v.totalCentavos,
         medio: medio,
