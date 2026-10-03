@@ -39,6 +39,7 @@ import '../tema/tema_inverso.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 import '../tema/iconos.dart';
+import '../tema/esqueleto.dart';
 
 class PantallaCompararPrecios extends StatefulWidget {
   const PantallaCompararPrecios({super.key, required this.db, required this.usuarioId, this.sesionCajaId});
@@ -107,7 +108,7 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
   // distribución, no ese modelo.
   @override
   Widget build(BuildContext context) {
-    if (_cargando) return const SizedBox.shrink();
+    if (_cargando) return const EsqueletoLista();
     final visibles = [
       for (final c in _comparaciones)
         if (coincideBusqueda(c.nombre, _busqueda)) c,
