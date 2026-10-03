@@ -1,7 +1,9 @@
 # Compila el instalador de Windows, lo firma para el actualizador y lo publica en el canal BETA de horsepos.com:
 # desde ahí la bajan las cuentas de administrador en horsepos.com/descargar/ y la reciben por actualización automática.
-# Se dispara a mano (Actions → "publicar-beta" → Run workflow). Por defecto publica en beta (solo administradores).
-# Con canal = stable le llega a los clientes: es una decisión tuya, siempre a mano, nunca automática.
+# Se publica SOLO cuando se pide (2026-10-03: "no quiero más despliegues por publicar una cosa chica"):
+#   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable);
+#   * o al mergear con un título que empieza con "release:" (estable) o "beta:" (beta).
+# Un merge común a main NO publica nada: se acumulan los cambios y se publican juntos cuando vos decidís.
 #
 # Secretos que tiene que tener el repositorio (Settings → Secrets and variables → Actions):
 #   RELEASE_TOKEN          el mismo valor que el secreto del Worker (registra la versión en el sitio)
@@ -14,9 +16,9 @@
 name: publicar-beta
 
 on:
-  # Cada merge a main publica una BETA (solo la ven los administradores). Si el título del PR empieza con "release:"
-  # (el commit del merge lo conserva), ese merge publica ESTABLE: le llega a los clientes. También se puede correr a mano
-  # eligiendo canal. Los commits de este workflow llevan [skip ci] y no lo vuelven a disparar.
+  # Un merge a main solo publica si el título del PR empieza con "release:" (ESTABLE: le llega a los clientes) o con "beta:"
+  # (BETA: solo administradores); el commit del merge conserva el título. Cualquier otro merge no hace nada (la corrida
+  # figura como omitida). También se puede correr a mano eligiendo canal. Los commits de este workflow llevan [skip ci].
   push:
     branches: [main]
     paths-ignore:
@@ -51,6 +53,8 @@ permissions:
 
 jobs:
   beta:
+    # Sin esto, cada merge compilaba y publicaba una versión nueva (6 minutos de máquina y un instalador de 13 MB más en el sitio).
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.event.head_commit.message, 'beta:')
     runs-on: windows-latest
     timeout-minutes: 60
     env:
@@ -60,7 +64,7 @@ jobs:
       DSA_PRIVATE_KEY: ${{ secrets.DSA_PRIVATE_KEY }}
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
       SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
-      # Al disparar por merge no hay inputs: canal según el título (release: → stable, si no beta), al 100 %, y el título como nota.
+      # Al disparar por merge no hay inputs: canal según el título (release: → stable, beta: → beta), al 100 %, y el título como nota.
       NOTAS: ${{ inputs.notas || github.event.head_commit.message || 'Versión de prueba' }}
       CANAL: ${{ inputs.canal || (startsWith(github.event.head_commit.message, 'release:') && 'stable') || 'beta' }}
       ROLLOUT: ${{ inputs.rollout || '100' }}

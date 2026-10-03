@@ -1701,3 +1701,12 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
   falta en vez de fallar mudo. El contenido del ticket lo sigue armando la app (`contenidoTicketPosnetMp`).
 - **Camino a "definitiva"**: con esto probado, el camino directo (token local) queda como respaldo avanzado y después se puede quitar.
   Las suscripciones del sitio NO cambian: usan otra credencial.
+
+## Se publica solo cuando se pide (2026-10-03)
+
+- **Antes:** cada merge a `main` compilaba y publicaba una beta de Windows (~6 min de máquina, un instalador de ~13 MB más en el sitio) aunque el
+  cambio fuera una cosa chica.
+- **Ahora:** un merge común no publica nada. Se publica (a) a mano desde Actions → `publicar-beta` (beta o stable), o (b) al mergear con un título
+  que empiece con `release:` (estable) o `beta:` (beta). El APK ya era siempre a mano (`publicar-apk`).
+- **Para qué:** juntar varios cambios en una sola versión, y no llenar el sitio ni los equipos de versiones casi iguales (el sitio igual conserva solo
+  las 2 últimas por plataforma y canal).
