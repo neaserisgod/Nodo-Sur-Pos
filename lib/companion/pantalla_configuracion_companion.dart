@@ -265,7 +265,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         await _volver();
       },
       child: Scaffold(
-        appBar: const AppBarCompanion(titulo: 'Configuración', etiquetaSalida: null),
+        appBar: const AppBarCompanion(titulo: 'Configuración'),
         body: SafeArea(
           child: _cargando && _config == null
               ? const EsqueletoLista()
@@ -295,8 +295,6 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Text('Guardar'),
           ),
-          const SizedBox(height: Espaciado.sm),
-          OutlinedButton(onPressed: _guardando ? null : _volver, child: const Text('Volver')),
         ],
       ),
     );
@@ -320,11 +318,23 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg),
         children: [
           AvisoModoLocal(servicio: _servicio, pcEmparejada: _pcEmparejada),
-          _seccion('Caja'),
-          Padding(
-            padding: const EdgeInsets.only(left: Espaciado.xs, bottom: Espaciado.sm),
-            child: Text('Redondeo en efectivo', style: textTheme.titleMedium),
+          // Mismos grupos que Configuración en la PC (El dueño, 2026-10-03: "simplificá lo más posible").
+          _seccion('Negocio'),
+          _subtitulo(textTheme, 'Usuarios'),
+          for (final u in _usuarios)
+            _FilaInterruptor(
+              titulo: u.nombre,
+              estado: _usuarioActivo(u) ? 'Activo' : 'Inactivo',
+              valor: _usuarioActivo(u),
+              onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v),
+              onTituloTap: () => _renombrarUsuario(u),
+            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(onPressed: _agregarUsuario, icon: const Icon(IconosPlazoleta.add), label: const Text('Agregar usuario')),
           ),
+          _seccion('Caja y cobros'),
+          _subtitulo(textTheme, 'Redondeo en efectivo'),
           Wrap(
             spacing: Espaciado.sm,
             runSpacing: Espaciado.sm,
@@ -338,13 +348,13 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               ChipSeleccionable(texto: 'Otro…', seleccionado: false, onTap: _otroRedondeo),
             ],
           ),
-          _seccion('Recargo de cigarrillos'),
+          _subtitulo(textTheme, 'Recargo de cigarrillos'),
           _campoMonto(_primerAtadoCtrl, 'Primer atado'),
           _campoMonto(_atadoAdicionalCtrl, 'Atado adicional'),
           _campoMonto(_sueltoCtrl, 'Cigarrillo suelto'),
-          _seccion('Producto de vuelto'),
+          _subtitulo(textTheme, 'Producto de vuelto'),
           _filaVuelto(context),
-          _seccion('Medios de pago'),
+          _subtitulo(textTheme, 'Medios de pago'),
           for (final m in _mediosPago)
             _FilaInterruptor(
               titulo: m.nombre,
@@ -353,7 +363,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               onCambio: (v) => setState(() => v == m.activo ? _mediosPendientes.remove(m.id) : _mediosPendientes[m.id] = v),
               onTituloTap: () => _renombrarMedio(m),
             ),
-          _seccion('Categorías (ganancia de referencia sobre el precio)'),
+          _seccion('Productos'),
+          _subtitulo(textTheme, 'Ganancia por categoría'),
           for (final c in _categorias)
             _FilaPorcentaje(
               nombre: c.nombre,
@@ -361,17 +372,6 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               onMenos: () => _cambiarMarkup(c, -5),
               onMas: () => _cambiarMarkup(c, 5),
             ),
-          _seccion('Usuarios'),
-          for (final u in _usuarios)
-            _FilaInterruptor(
-              titulo: u.nombre,
-              estado: _usuarioActivo(u) ? 'Activo' : 'Inactivo',
-              valor: _usuarioActivo(u),
-              onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v),
-              onTituloTap: () => _renombrarUsuario(u),
-            ),
-          const SizedBox(height: Espaciado.sm),
-          OutlinedButton.icon(onPressed: _agregarUsuario, icon: const Icon(IconosPlazoleta.add), label: const Text('Agregar usuario')),
         ],
       ),
     );
@@ -379,13 +379,28 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
 
   /// Un monto en pesos con su etiqueta, alineado a la izquierda como en el
   /// mock; se interpreta con `parsearARS` al guardar (acepta "1.200" y "1200,50").
+  // La etiqueta va arriba y fija (no la flotante de Material, que se encimaba con el campo relleno).
   Widget _campoMonto(TextEditingController ctrl, String etiqueta) => Padding(
-    padding: const EdgeInsets.only(bottom: Espaciado.sm),
-    child: TextField(
-      controller: ctrl,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(labelText: etiqueta, prefixText: r'$ '),
+    padding: const EdgeInsets.only(bottom: Espaciado.md),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: Espaciado.xs, bottom: Espaciado.xs),
+          child: Text(etiqueta, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario)),
+        ),
+        TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(hintText: etiqueta, prefixText: r'$ '),
+        ),
+      ],
     ),
+  );
+
+  Widget _subtitulo(TextTheme textTheme, String texto) => Padding(
+    padding: const EdgeInsets.only(left: Espaciado.xs, top: Espaciado.md, bottom: Espaciado.sm),
+    child: Text(texto, style: textTheme.titleMedium),
   );
 
   Widget _filaVuelto(BuildContext context) {
@@ -552,7 +567,6 @@ class _FilaPorcentaje extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(nombre, style: textTheme.titleMedium),
-                  Text('Ganancia de referencia', style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario)),
                 ],
               ),
             ),

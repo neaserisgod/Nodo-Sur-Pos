@@ -111,7 +111,6 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final secundario = TextStyle(color: context.colores.textoSecundario);
     final c = _c;
     return ConstrainedBox(
