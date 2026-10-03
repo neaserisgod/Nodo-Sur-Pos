@@ -1066,7 +1066,7 @@ Future<void> revisarGananciaProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(gananciaRevisadaFecha: Value(fecha ?? DateTime.now())),
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), gananciaRevisadaFecha: Value(fecha ?? DateTime.now())),
   );
 });
 
@@ -1121,7 +1121,7 @@ Future<void> separarProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       separadoCentavos: Value(
         proveedor.separadoCentavos + resumen.sugeridoASepararCentavos,
       ),
@@ -1184,7 +1184,7 @@ Future<void> pagarProveedor(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       separadoCentavos: const Value(0),
       separadoMpCentavos: const Value(0),
       separadoFecha: const Value(null),
@@ -1249,7 +1249,7 @@ Future<void> retenerGanancia(
   await (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       colchonReposicionCentavos: Value(
         proveedor.colchonReposicionCentavos + montoCentavos,
       ),
@@ -1324,7 +1324,7 @@ Future<void> actualizarProveedorNivel2(
   return (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       colchonReposicionCentavos: Value(colchonReposicionCentavos),
       medioPago: Value(medioPago),
     ),
@@ -1355,7 +1355,7 @@ Future<void> actualizarProveedorAvanzado(
   return (db.update(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).write(
-    ProveedoresCompanion(
+    ProveedoresCompanion(actualizadoEn: Value(DateTime.now()), 
       nombre: nombre == null ? const Value.absent() : Value(nombre),
       codigo: Value(codigo),
       diaPedido: Value(diaPedido),

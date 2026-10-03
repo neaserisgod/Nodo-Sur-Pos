@@ -307,6 +307,7 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   });
 
   /// Crea la orden en la terminal Point — `canal`: `'qr'` | `'debit_card'`.
@@ -403,5 +404,6 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   });
 }

@@ -928,6 +928,10 @@ class VentaControlador extends ChangeNotifier {
       ultimoTotalCobradoCentavos = totalCentavos;
       cancelarVenta();
       return ventaId;
+    } on SesionCerradaException {
+      // La caja se cerró desde otro equipo con esta venta armada: el carrito queda como está y se avisa.
+      avisoCobro = 'La caja ya se cerró: la venta no se guardó. Abrí la caja de nuevo para cobrarla.';
+      return null;
     } finally {
       // `notifyListeners()` explícito acá (no solo el de `cancelarVenta()`):
       // también tiene que dispararse en el camino de excepción, donde

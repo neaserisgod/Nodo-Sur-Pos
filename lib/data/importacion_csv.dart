@@ -95,7 +95,10 @@ Future<ResultadoImportacionCsv> importarProductosDesdeCsv(
   }
 
   String? campo(List<dynamic> fila, String columna) {
-    final valor = fila[indice[columna]!].toString().trim();
+    final posicion = indice[columna]!;
+    // Una fila más corta que el encabezado (planilla con celdas finales vacías) no es un error: esa celda está en blanco.
+    if (posicion >= fila.length) return null;
+    final valor = fila[posicion].toString().trim();
     return valor.isEmpty ? null : valor;
   }
 
@@ -110,6 +113,8 @@ Future<ResultadoImportacionCsv> importarProductosDesdeCsv(
     for (final c in await db.select(db.categorias).get()) c.nombre: c,
   };
 
+  // Todo o nada: si algo inesperado corta la importación a la mitad, no queda una lista de precios a medio actualizar.
+  await db.transaction(() async {
   for (var i = 1; i < filas.length; i++) {
     final numeroFila = i + 1;
     final fila = filas[i];
@@ -212,12 +217,19 @@ Future<ResultadoImportacionCsv> importarProductosDesdeCsv(
         actualizadoEn: Value(DateTime.now()),
       );
 
-      // Matchea por código de barras si lo trae; si no, por nombre exacto.
-      final existente = codigoBarras != null
-          ? await (db.select(db.productos)..where((p) => p.codigoBarras.equals(codigoBarras)))
-              .getSingleOrNull()
-          : await (db.select(db.productos)..where((p) => p.nombre.equals(nombre)))
-              .getSingleOrNull();
+      // Matchea por código de barras si lo trae; si no, por nombre exacto. Si hay más de uno no se adivina cuál.
+      final coincidentes = codigoBarras != null
+          ? await (db.select(db.productos)..where((p) => p.codigoBarras.equals(codigoBarras))).get()
+          : await (db.select(db.productos)..where((p) => p.nombre.equals(nombre))).get();
+      if (coincidentes.length > 1) {
+        errores.add(ErrorImportacionCsv(
+          fila: numeroFila,
+          mensaje: 'Hay ${coincidentes.length} productos con ${codigoBarras != null ? 'ese código de barras' : 'ese nombre'}: '
+              'no se sabe cuál actualizar (corregilo en Proveedores)',
+        ));
+        continue;
+      }
+      final existente = coincidentes.firstOrNull;
 
       if (existente == null) {
         // `globalId`/`origenDispositivo` solo en el alta — no en `companion`
@@ -241,8 +253,20 @@ Future<ResultadoImportacionCsv> importarProductosDesdeCsv(
         );
         insertados++;
       } else {
+        // Reimportar una lista de precios no puede dejar el stock en 0: solo se toca si la planilla trae el dato, y
+        // entonces queda en el registro de movimientos como cualquier ajuste (Regla 6).
         await (db.update(db.productos)..where((p) => p.id.equals(existente.id)))
-            .write(companion);
+            .write(companion.copyWith(stock: const Value.absent(), stockGramos: const Value.absent()));
+        if (esPesable ? stockGramosTexto != null : stockTexto != null) {
+          await ajustarStockRapido(
+            db,
+            productoId: existente.id,
+            usuarioId: usuarioId,
+            stock: esPesable ? existente.stock : stock,
+            stockGramos: esPesable ? stockGramos : null,
+            motivo: 'Importación CSV',
+          );
+        }
 
         await registrarCambioDePrecio(
           db,
@@ -264,8 +288,11 @@ Future<ResultadoImportacionCsv> importarProductosDesdeCsv(
       }
     } on FormatException catch (e) {
       errores.add(ErrorImportacionCsv(fila: numeroFila, mensaje: e.message));
+    } on ArgumentError catch (e) {
+      errores.add(ErrorImportacionCsv(fila: numeroFila, mensaje: '${e.message}'));
     }
   }
+  });
 
   return ResultadoImportacionCsv(
     insertados: insertados,

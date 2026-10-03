@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/importacion_csv.dart';
@@ -197,6 +198,46 @@ void main() {
           await (db.select(db.productos)..where((p) => p.esVarios.equals(false))).get();
       expect(productos, hasLength(1));
       expect(productos.single.precioPorKiloCentavos, 320000);
+    });
+  });
+
+  group('robustez (Fase 0.7)', () {
+    test('una fila más corta que el encabezado no corta la importación', () async {
+      final csv = '$_encabezado\n'
+          '7790001,Coca-Cola 500ml,C,Bebidas,false,1120\n'
+          '7790002,Sprite 500ml,C,Bebidas,false,1000,700,,,5,\n';
+
+      final r = await importarProductosDesdeCsv(db, csv, usuarioId: usuarioId);
+
+      expect(r.errores, isEmpty);
+      expect(r.insertados, 2);
+    });
+
+    test('dos productos con el mismo nombre: error de esa fila, las demás siguen', () async {
+      for (final codigo in ['1', '2']) {
+        await db.into(db.productos).insert(
+              ProductosCompanion.insert(nombre: 'Repetido', codigoBarras: Value(codigo)),
+            );
+      }
+      final csv = '$_encabezado\n'
+          ',Repetido,C,Bebidas,false,1000,,,,,\n'
+          ',Otro,C,Bebidas,false,500,,,,,\n';
+
+      final r = await importarProductosDesdeCsv(db, csv, usuarioId: usuarioId);
+
+      expect(r.errores, hasLength(1));
+      expect(r.errores.single.fila, 2);
+      expect(r.insertados, 1);
+    });
+
+    test('reimportar sin la columna stock no deja el stock en cero', () async {
+      await importarProductosDesdeCsv(db, '$_encabezado\n7790001,Coca,C,Bebidas,false,1120,800,,,20,\n', usuarioId: usuarioId);
+
+      await importarProductosDesdeCsv(db, '$_encabezado\n7790001,Coca,C,Bebidas,false,1300,800,,,,\n', usuarioId: usuarioId);
+
+      final p = await (db.select(db.productos)..where((x) => x.codigoBarras.equals('7790001'))).getSingle();
+      expect(p.precioCentavos, 130000);
+      expect(p.stock, 20);
     });
   });
 }

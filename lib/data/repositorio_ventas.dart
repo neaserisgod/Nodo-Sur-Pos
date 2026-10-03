@@ -288,8 +288,14 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`): se libera en la MISMA transacción,
   // porque la venta descuenta el stock y lo apartado ya estaba descontado.
   int? encargueId,
+  // Cargar un día histórico escribe ventas en una sesión que nace cerrada (`repositorio_carga_historica.dart`): es la única
+  // excepción a "no se cobra contra una caja cerrada". Todo lo demás (PC, celular, posnet) tiene que dejarla en `true`.
+  bool exigirSesionAbierta = true,
 }) {
   return db.transaction(() async {
+    // Dentro de la transacción, igual que gastos e ingresos: si el cierre llega justo antes, la venta se rechaza en vez de
+    // grabarse contra una sesión cerrada (cambiaría los totales de un cierre ya hecho).
+    if (exigirSesionAbierta) await verificarSesionAbierta(db, sesionCajaId);
     if (ventaAbiertaId != null) {
       await (db.delete(db.ventasAbiertas)..where((v) => v.id.equals(ventaAbiertaId))).go();
     }

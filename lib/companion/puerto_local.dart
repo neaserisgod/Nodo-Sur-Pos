@@ -1031,6 +1031,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
       db,
@@ -1053,6 +1054,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
       db,

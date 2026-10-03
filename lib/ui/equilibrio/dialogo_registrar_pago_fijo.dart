@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
+import '../../data/repositorio_ventas.dart' show SesionCerradaException;
 import '../../domain/dinero.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
@@ -63,12 +64,20 @@ class _DialogoRegistrarPagoFijoState extends State<_DialogoRegistrarPagoFijo> {
       return;
     }
 
-    await widget.controlador.registrarPago(
-      gastoFijoId: widget.concepto.id,
-      montoCentavos: monto,
-      pagadoConMp: _pagadoConMp,
-      fecha: fecha,
-    );
+    try {
+      await widget.controlador.registrarPago(
+        gastoFijoId: widget.concepto.id,
+        montoCentavos: monto,
+        pagadoConMp: _pagadoConMp,
+        fecha: fecha,
+      );
+    } on StateError catch (e) {
+      setState(() => _error = e.message);
+      return;
+    } on SesionCerradaException {
+      setState(() => _error = 'La caja ya se cerró: el pago no se guardó');
+      return;
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

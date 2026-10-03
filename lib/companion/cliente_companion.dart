@@ -1188,6 +1188,7 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1199,6 +1200,7 @@ class ClienteCompanion implements ServicioCompanion {
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
+        'claveCobro': ?claveCobro,
       }),
     );
     _revisar(r);
@@ -1225,6 +1227,7 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1237,6 +1240,7 @@ class ClienteCompanion implements ServicioCompanion {
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
+        'claveCobro': ?claveCobro,
       }),
     );
     _revisar(r);

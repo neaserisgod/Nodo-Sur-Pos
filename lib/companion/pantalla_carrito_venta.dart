@@ -20,6 +20,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../data/identidad_sync.dart' show generarGlobalId;
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/venta.dart';
@@ -130,6 +131,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   int? _gramosBusqueda;
   bool _buscando = false;
 
+  // Identifica este intento de cobro ante el servidor (ver `/ventas/cobrar`): se renueva cuando cambia lo que se cobra y al
+  // cobrar, así un reintento por mala señal no duplica la venta pero una venta igual a la anterior sí se graba.
+  String? _claveCobroActual;
+  String get _claveCobro => _claveCobroActual ??= generarGlobalId();
+
   int get _valorDescuentoIngresado {
     final texto = _descuentoCtrl.text.trim();
     if (texto.isEmpty) return 0;
@@ -200,6 +206,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       return;
     }
     final nueva = resultado.linea!;
+    _claveCobroActual = null;
     setState(() {
       final indiceExistente = widget.carrito.indexWhere(
         (l) => l.productoId == nueva.productoId,
@@ -241,6 +248,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _elegirMedio(_MedioVenta medio) async {
+    _claveCobroActual = null;
     setState(() {
       _medio = medio;
       _calculando = true;
@@ -269,6 +277,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// puedo agregar más de 1 unidad a la vez... misma funcionalidad que
   /// carrito").
   void _actualizarLinea(int index, LineaVenta? nueva) {
+    _claveCobroActual = null;
     setState(() {
       if (nueva == null) {
         widget.carrito.removeAt(index);
@@ -306,6 +315,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: widget.encargueId,
+        claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -382,6 +392,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: widget.encargueId,
+        claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -392,6 +403,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _ventaCobrada(int ventaId, int totalCentavos) async {
+    _claveCobroActual = null;
     // Se arma el resumen ANTES de vaciar el carrito: cuántos productos fueron
     // y cuánto se devuelve dependen de lo que había.
     final medio = _medio ?? _MedioVenta.efectivo;

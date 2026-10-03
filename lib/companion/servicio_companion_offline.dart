@@ -390,6 +390,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) => _local.cobrarVirtualAMano(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
@@ -527,6 +528,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    String? claveCobro,
   }) => _local.cobrarEfectivo(
     lineas: lineas,
     sesionCajaId: sesionCajaId,

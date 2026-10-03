@@ -624,4 +624,26 @@ void main() {
       expect(s.estado, 'ABIERTA');
     });
   });
+
+  test('aplicarCambios descarta claves que no son columnas (no se arma SQL con nombres remotos) — Fase 0.4', () async {
+    final noAplicadas = await aplicarCambios(
+      celular,
+      tabla: 'categorias',
+      filas: [
+        {
+          'global_id': 'cat-rara',
+          'nombre': 'Categoría rara',
+          'actualizado_en': 5,
+          // Intento de inyección y una columna de un esquema más nuevo: ninguna existe acá.
+          'x) VALUES (1); DROP TABLE usuarios; --': 'boom',
+          'columna_del_futuro': 7,
+        },
+      ],
+    );
+
+    expect(noAplicadas, isEmpty);
+    final fila = await (celular.select(celular.categorias)..where((c) => c.globalId.equals('cat-rara'))).getSingle();
+    expect(fila.nombre, 'Categoría rara');
+    expect(await celular.select(celular.usuarios).get(), isNotEmpty);
+  });
 }

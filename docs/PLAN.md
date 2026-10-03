@@ -15,27 +15,29 @@ hasta que el dueño diga "lanzá"; lo que cambia una regla de negocio se pregunt
 5. Mercado Pago: lo útil ya anda; solo falta lo nuevo (webhooks, devoluciones desde el POS, saldo real, QR en pantalla).
 6. **Estética horsepos/antigravity y estándar Google en toda la app.**
 
-## Fase 0 — Correcciones antes de tocar nada (riesgo real, sin decisión de negocio)
+## Fase 0 — Correcciones antes de tocar nada (en curso, 2026-10-03)
 
-Se hacen primero porque pueden dañar plata o datos. Cada una con su test que falla antes.
+Cada una con su test. Estado real, incluyendo lo que **corregí de mi propio diagnóstico** después de mirar el código de nuevo.
 
-| # | Qué | Dónde | Por qué importa |
-|---|---|---|---|
-| 0.1 | **Cobrar contra una caja ya cerrada** no se verifica | `servidor_companion` (`/ventas/cobrar`, `/ventas/posnet/confirmar`), `VentaControlador.cobrar` | una venta entra en un cierre ya hecho y lo desarma. Verificar en `registrarVenta`, un solo lugar |
-| 0.2 | `/ventas/cobrar` sin clave de idempotencia | servidor + cliente celular | reintento por mala señal duplica la venta |
-| 0.3 | **Tokens de terceros hardcodeados** en el repo | `servicios/comparador_precios_todoatucasa.dart` | secreto filtrado: sacarlo, rotarlo y moverlo a configuración |
-| 0.4 | SQL armado con nombres de columna que vienen del JSON remoto | `repositorio_sincronizacion.aplicarCambios` | lista blanca de columnas por tabla |
-| 0.5 | El cursor de sincronización avanza aunque `aplicarCambios` haya dejado filas sin aplicar (p. ej. configuración antes que productos → se pierde el producto de vuelto) | `companion/servicio_sincronizacion.dart` | ordenar por dependencias y no avanzar el cursor con pendientes |
-| 0.6 | Cambios que **no se sincronizan** porque no actualizan `actualizadoEn`: activar/desactivar productos y en lote, promos, medios de pago, y en proveedores pagar/separar/retener/revisar ganancia/nivel 2 y avanzado | repositorios de productos, promos, reposición | el celular muestra datos viejos |
-| 0.7 | Importar CSV: fila corta → `RangeError`; nombre duplicado → `StateError`; sin transacción deja la importación a medias | `data/importacion_csv.dart` | todo o nada + error por fila |
-| 0.8 | Búsqueda "7 up", "2 cocas" se toma como gramos y no encuentra nada | `data/busqueda_productos.dart` | solo tratar como gramos si el producto es pesable |
-| 0.9 | Registrar pago de un fijo sin caja abierta cierra el diálogo como si hubiera guardado | `equilibrio_controlador.registrarPago` | avisar y no cerrar |
-| 0.10 | Ajustes de conteo de stock se aplican de a uno (corte parcial) | `stock_proveedor_controlador.aplicarAjustes` | una transacción |
-| 0.11 | El número de venta es el id local (distinto en PC y celular) y el ticket no tiene número | varios | número de venta global y visible en ticket (decisión en Fase 3) |
-| 0.12 | `vueltoEsCaramelo` con $100 fijo; valores heredados del local original (fondo $150.000, reserva $70.000, "Distribuidora de Cigarrillos", "Bariloche") | dominio, configuración, PDF, mails | pasar a configuración / vacío |
-| 0.13 | Token del celular = administrador sobre HTTP sin cifrar en el wifi | `servidor_companion` | se resuelve en Fase 5 (roles); mientras, documentar el riesgo |
-| 0.14 | Escalabilidad: reposición/proveedores/ganancia leen todas las líneas de todas las ventas; `listarDias` e `historialDeVentas` hacen una consulta por fila | `data/` | consultas acotadas por fecha + índices; Separaciones deja de recargar todo cada 15 s |
-| 0.15 | Errores mudos: 37 `catch (_) {}` en la PC (16 en el celular) y sin log a archivo | todo | log a archivo + aviso al usuario donde el fallo cambie el resultado |
+| # | Qué | Estado |
+|---|---|---|
+| 0.1 | Cobrar contra una caja ya cerrada: `registrarVenta` ahora lo rechaza (`SesionCerradaException`, dentro de la transacción). La carga histórica es la única excepción. PC avisa en pantalla; el servidor del celular responde 409 (y si el pago por terminal ya se aprobó, deja la orden sin resolver para que el cierre avise). Registrar el pago de un fijo también lo verifica | ✅ hecho, con test (repositorio y servidor) |
+| 0.2 | Reintento duplicado desde el celular: el celular manda una `claveCobro` por intento y el servidor devuelve la misma venta si se repite (10 min, en memoria) | ✅ hecho, con test contra el servidor real |
+| 0.3 | "Tokens hardcodeados" en `comparador_precios_todoatucasa.dart` | ❌ **diagnóstico mío incorrecto**: son las credenciales de invitado que el propio sitio le manda a cualquier visitante y el dueño ya tiene la autorización de Todo a tu Casa documentada en el archivo. No se toca. Lo que sí queda anotado: ese comparador está atado a comercios de Bariloche |
+| 0.4 | SQL de sincronización con nombres de columna remotos | ✅ hecho: solo se escriben columnas que existen en la tabla local (también tolera columnas de versiones más nuevas), con test |
+| 0.5 | El cursor de sincronización LAN avanzaba aunque quedaran filas sin aplicar | ✅ hecho: las no aplicadas se reintentan al final del ciclo y, si siguen sin aplicar, el cursor no pasa de la más vieja. ⚠️ El ejemplo que di (configuración antes que productos) **estaba mal**: la lista ya baja productos primero. No pude armar un test del caso con dos bases independientes |
+| 0.6 | Cambios que no se sincronizaban: activar/desactivar producto (y en lote), activar/desactivar promo, medios de pago, y 6 escrituras de proveedores (pagar, revisar ganancia, colchón, etc.) ahora actualizan `actualizadoEn`. Separar/desmarcar **ya lo hacían** | ✅ hecho (sin test propio) |
+| 0.7 | Importar CSV: fila corta, nombre o código duplicado, todo en una transacción, y **reimportar ya no deja el stock en 0** (descubierto al probar; antes pisaba el stock de todos los productos sin dato). Si la planilla trae stock, queda en el registro de movimientos | ✅ hecho, con 3 tests |
+| 0.8 | Búsqueda "7 up" / "2 cocas": si ningún pesable coincide, se busca el texto completo | ✅ hecho, con test |
+| 0.9 | Pago de fijo sin caja abierta ya no cierra el diálogo como si hubiera guardado | ✅ hecho |
+| 0.10 | Conteo de stock: los ajustes se aplican en una sola transacción | ✅ hecho |
+| 0.11 | Número de venta global y en el ticket | ⏸ espera la pregunta 6 del dueño |
+| 0.12 | Valores heredados del local original (fondo $150.000, reserva $70.000, `vueltoEsCaramelo` = $100) | ⏸ es una decisión de negocio (qué valor por defecto tiene un comercio nuevo): se pregunta |
+| 0.13 | Token del celular = acceso total sobre el wifi | ⏸ pasa a "token por celular, revocable desde el sitio", fase aparte |
+| 0.14 | Escalabilidad de consultas que leen todo el historial | ⏸ pendiente: es el más grande de la fase |
+| 0.15 | Log a archivo (`<datos>/logs/errores.log`, rotado a 512 KB) y los tres puntos por donde se escapa un error en Flutter | ✅ hecho, con test. Los 37 `catch (_) {}` mudos se revisan pantalla por pantalla en la Fase 2 |
+
+**Sin probar:** el cambio de cursor de sincronización (0.5) pasa los tests existentes pero no tiene uno propio; las correcciones de `actualizadoEn` (0.6) tampoco.
 
 ## Fase 1 — Un solo sistema de diseño (base de todo lo visual)
 
@@ -81,7 +83,7 @@ entregar. Deuda con proveedores en ambos; Consultar precio en la PC (extender Ct
   usa, y el token del celular es administrador total.
 - Propuesta: `domain/permisos.dart` con `puede(rol, capacidad)` (un solo lugar); capacidades: ver costos y ganancia, anular y
   editar ventas, ver/cerrar cierres, retirar ganancia, configuración, pagar proveedores, editar precios/importar, gestionar
-  usuarios. **El servidor de la PC aplica los permisos** (no solo se oculta el botón); el celular manda el usuario con PIN.
+  usuarios. **Los permisos los aplica la app** (se oculta y se bloquea la acción según rol y PIN; decisión del dueño 2026-10-03: no se valida en la nube, cada equipo tiene su base completa, así que protege del error pero no de un ataque técnico).
   Rol por cuenta cuando el equipo está vinculado y PIN por usuario cuando se usa solo local (migración: `rol`, `pin_hash`).
   El sitio suma el rol por usuario del POS y su sincronización.
 - ❓ Hay que definir con el dueño qué puede y qué no puede un empleado y un encargado.

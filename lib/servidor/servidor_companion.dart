@@ -1242,17 +1242,29 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     final (tipoDescuento, valorDescuento) = _descuentoDesdeBody(body);
-    final resultado = await registrarVentaSegunMedio(
-      db,
-      lineas: _lineasDesdeBody(body),
-      medio: composicionPagoDesdeTexto(_textoRequerido(body, 'medio')),
-      canal: body['canal'] as String?,
-      sesionCajaId: _intRequerido(body, 'sesionCajaId'),
-      usuarioId: _intRequerido(body, 'usuarioId'),
-      tipoDescuento: tipoDescuento,
-      valorDescuento: valorDescuento,
-      encargueId: body['encargueId'] as int?,
-    );
+    // Si el celular no recibió la respuesta y vuelve a mandar el mismo cobro (misma clave), se devuelve la venta ya grabada.
+    final clave = body['claveCobro'] as String?;
+    final yaCobrada = clave == null ? null : _cobrosRecientes.buscar(clave);
+    if (yaCobrada != null) {
+      return _json({'ventaId': yaCobrada.ventaId, 'totalCentavos': yaCobrada.totalCentavos});
+    }
+    final ({int ventaId, int totalCentavos}) resultado;
+    try {
+      resultado = await registrarVentaSegunMedio(
+        db,
+        lineas: _lineasDesdeBody(body),
+        medio: composicionPagoDesdeTexto(_textoRequerido(body, 'medio')),
+        canal: body['canal'] as String?,
+        sesionCajaId: _intRequerido(body, 'sesionCajaId'),
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        tipoDescuento: tipoDescuento,
+        valorDescuento: valorDescuento,
+        encargueId: body['encargueId'] as int?,
+      );
+    } on SesionCerradaException {
+      return _error(409, 'La caja ya se cerró, esta venta no se guardó');
+    }
+    if (clave != null) _cobrosRecientes.guardar(clave, resultado);
     return _json({
       'ventaId': resultado.ventaId,
       'totalCentavos': resultado.totalCentavos,
@@ -1329,17 +1341,24 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     // se usó en `/ventas/posnet/iniciar` — esta ruta recalcula el total
     // desde cero (`registrarVentaSegunMedio`), no reusa el de la orden.
     final (tipoDescuento, valorDescuento) = _descuentoDesdeBody(body);
-    final resultado = await registrarVentaSegunMedio(
-      db,
-      lineas: _lineasDesdeBody(body),
-      medio: ComposicionPago.virtual,
-      canal: _textoRequerido(body, 'canal'),
-      sesionCajaId: _intRequerido(body, 'sesionCajaId'),
-      usuarioId: _intRequerido(body, 'usuarioId'),
-      tipoDescuento: tipoDescuento,
-      valorDescuento: valorDescuento,
-      encargueId: body['encargueId'] as int?,
-    );
+    final ({int ventaId, int totalCentavos}) resultado;
+    try {
+      resultado = await registrarVentaSegunMedio(
+        db,
+        lineas: _lineasDesdeBody(body),
+        medio: ComposicionPago.virtual,
+        canal: _textoRequerido(body, 'canal'),
+        sesionCajaId: _intRequerido(body, 'sesionCajaId'),
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        tipoDescuento: tipoDescuento,
+        valorDescuento: valorDescuento,
+        encargueId: body['encargueId'] as int?,
+      );
+    } on SesionCerradaException {
+      // El pago ya se cobró en la terminal: la orden queda SIN resolver a propósito, así el cierre avisa que hay un cobro
+      // por QR/Débito sin venta y se revisa a mano (`ordenesSinResolverDeSesion`).
+      return _error(409, 'El pago se aprobó pero la caja ya estaba cerrada: la venta no se guardó. Revisalo en Mercado Pago');
+    }
     await marcarOrdenResuelta(
       db,
       id: _intRequerido(body, 'ordenPendienteId'),
@@ -1786,4 +1805,30 @@ Future<List<String>> direccionesIpLocales() async {
     for (final interfaz in interfaces)
       for (final direccion in interfaz.addresses) direccion.address,
   ];
+}
+
+
+/// Los últimos cobros por clave de intento (`claveCobro`): vive en memoria porque solo sirve para el reintento inmediato
+/// de un celular que no recibió la respuesta; pasados unos minutos una clave repetida ya no es un reintento.
+final _cobrosRecientes = _CobrosRecientes();
+
+class _CobrosRecientes {
+  static const _vida = Duration(minutes: 10);
+  static const _maximo = 200;
+  final _datos = <String, ({int ventaId, int totalCentavos, DateTime en})>{};
+
+  ({int ventaId, int totalCentavos})? buscar(String clave) {
+    final d = _datos[clave];
+    if (d == null) return null;
+    if (DateTime.now().difference(d.en) > _vida) {
+      _datos.remove(clave);
+      return null;
+    }
+    return (ventaId: d.ventaId, totalCentavos: d.totalCentavos);
+  }
+
+  void guardar(String clave, ({int ventaId, int totalCentavos}) r) {
+    if (_datos.length >= _maximo) _datos.remove(_datos.keys.first);
+    _datos[clave] = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, en: DateTime.now());
+  }
 }

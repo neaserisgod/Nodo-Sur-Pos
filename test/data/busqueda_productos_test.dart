@@ -124,6 +124,16 @@ void main() {
       },
     );
 
+    test('"7 up": si ningún pesable coincide, el número es parte del nombre (Fase 0.8)', () async {
+      await _crearProducto(db, nombre: '7 Up 500ml');
+      await _crearProducto(db, nombre: 'Queso barra', esPesable: true);
+      final catalogo = await db.select(db.productos).get();
+
+      final r = buscarProductos(catalogo: catalogo, textoBuscado: '7 up');
+
+      expect(r.map((p) => p.nombre), ['7 Up 500ml']);
+    });
+
     test('productos inactivos no aparecen en la búsqueda', () async {
       await _crearProducto(db, nombre: 'Discontinuado', activo: false);
       final catalogo = await db.select(db.productos).get();

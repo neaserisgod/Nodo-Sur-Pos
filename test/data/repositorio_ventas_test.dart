@@ -742,4 +742,44 @@ void main() {
       expect(ids, hasLength(2));
     });
   });
+
+  group('registrarVenta contra una caja ya cerrada (Fase 0.1)', () {
+    test('tira SesionCerradaException y no graba venta, líneas ni caja', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      final medio = await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle();
+      await (db.update(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId)))
+          .write(const SesionesDeCajaCompanion(estado: Value('CERRADA')));
+
+      final venta = Venta(lineas: [
+        LineaVentaPorUnidad(
+          productoId: '1',
+          nombreProducto: 'Algo',
+          proveedorId: null,
+          cantidad: 1,
+          precioUnitarioCentavos: 100000,
+          costoUnitarioCentavos: null,
+        ),
+      ]);
+      final resultado = calcularTotalVenta(
+        venta: venta,
+        composicionPago: ComposicionPago.efectivo,
+        configRecargoCigarrillos: const ConfigRecargoCigarrillos(primerAtadoCentavos: 0, atadoAdicionalCentavos: 0),
+        pasoRedondeoCentavos: 10000,
+      );
+
+      await expectLater(
+        registrarVenta(
+          db,
+          venta: venta,
+          resultado: resultado,
+          sesionCajaId: sesionId,
+          usuarioId: usuarioId,
+          pagos: [PagoARegistrar(medioPagoId: medio.id, montoCentavos: resultado.totalCentavos, esEfectivo: true)],
+        ),
+        throwsA(isA<SesionCerradaException>()),
+      );
+      expect(await db.select(db.ventas).get(), isEmpty);
+      expect(await db.select(db.movimientosDeCaja).get(), isEmpty);
+    });
+  });
 }

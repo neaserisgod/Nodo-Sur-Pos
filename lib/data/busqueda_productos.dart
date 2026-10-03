@@ -108,5 +108,15 @@ List<Producto> buscarProductos({
     return nombreNormalizadoDe(p).contains(normalizado);
   }).toList();
 
+  // "7 up" o "2 cocas" empiezan con un número pero no son gramos: si ningún pesable coincide, se busca el texto completo
+  // entre todos los productos (el número queda como parte del nombre). Esa línea se agrega por unidad, sin gramos.
+  if (candidatos.isEmpty && consulta.gramos != null) {
+    final completo = normalizarTexto(textoBuscado.trim());
+    return catalogo
+        .where((p) => p.activo && tieneStockSiExigido(p) && nombreNormalizadoDe(p).contains(completo))
+        .take(limite)
+        .toList();
+  }
+
   return candidatos.take(limite).toList();
 }
