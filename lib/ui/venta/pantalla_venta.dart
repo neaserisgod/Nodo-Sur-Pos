@@ -753,18 +753,25 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
           children: [
             Tooltip(
               message: 'Notificaciones',
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(radioControlEscritorio),
-                child: InkWell(
+              child: Semantics(
+                button: true,
+                label: widget.hayArqueoVencido ? 'Notificaciones: hay un aviso pendiente' : 'Notificaciones',
+                excludeSemantics: true,
+                onTap: () => setState(() => _abierto = !_abierto),
+                child: Material(
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(radioControlEscritorio),
-                  onTap: () => setState(() => _abierto = !_abierto),
-                  child: Padding(
-                    padding: const EdgeInsets.all(Espaciado.sm),
-                    child: Icon(
-                      IconosPlazoleta.notificationsOutlined,
-                      size: 20,
-                      color: colores.textoSecundario,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(radioControlEscritorio),
+                    onTap: () => setState(() => _abierto = !_abierto),
+                    child: SizedBox(
+                      width: Medidas.alturaControl,
+                      height: Medidas.alturaControl,
+                      child: Icon(
+                        IconosPlazoleta.notificationsOutlined,
+                        size: 20,
+                        color: colores.textoSecundario,
+                      ),
                     ),
                   ),
                 ),
@@ -772,8 +779,8 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
             ),
             if (widget.hayArqueoVencido)
               Positioned(
-                top: 6,
-                right: 6,
+                top: 12,
+                right: 12,
                 child: Container(
                   width: 8,
                   height: 8,
@@ -857,15 +864,23 @@ class _BotonAccion extends StatelessWidget {
         : colores.textoSecundario;
     return Tooltip(
       message: etiqueta,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(radioControlEscritorio),
-        child: InkWell(
+      child: Semantics(
+        button: true,
+        enabled: onPressed != null,
+        label: etiqueta,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(radioControlEscritorio),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(Espaciado.sm),
-            child: Icon(icono, size: 20, color: color),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(radioControlEscritorio),
+            onTap: onPressed,
+            child: SizedBox(
+              width: Medidas.alturaControl,
+              height: Medidas.alturaControl,
+              child: Icon(icono, size: 20, color: color),
+            ),
           ),
         ),
       ),

@@ -68,9 +68,17 @@ class SuperficieTactil extends StatefulWidget {
     this.onLongPress,
     this.color = Colors.transparent,
     this.borderRadius,
+    this.etiqueta,
+    this.tamanoMinimo,
   });
 
   final Widget child;
+
+  /// Lo que lee un lector de pantalla. Obligatoria en todo control sin texto propio (ícono suelto).
+  final String? etiqueta;
+
+  /// Alto y ancho mínimos del área tocable (48 en los controles sueltos: `Medidas.alturaControl`).
+  final double? tamanoMinimo;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final Color color;
@@ -90,7 +98,7 @@ class _SuperficieTactilState extends State<SuperficieTactil> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
+    final boton = AnimatedScale(
       scale: _presionado ? 0.96 : 1.0,
       duration: Animaciones.corta,
       curve: Animaciones.curva,
@@ -106,10 +114,18 @@ class _SuperficieTactilState extends State<SuperficieTactil> {
           onTapUp: (_) => _fijar(false),
           child: TemaInverso(
             activo: widget.color == context.colores.acento,
-            child: widget.child,
+            child: widget.tamanoMinimo == null
+                ? widget.child
+                : ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: widget.tamanoMinimo!, minHeight: widget.tamanoMinimo!),
+                    child: Center(child: widget.child),
+                  ),
           ),
         ),
       ),
     );
+    final nombre = widget.etiqueta;
+    if (nombre == null) return boton;
+    return Semantics(button: true, enabled: widget.onTap != null, label: nombre, excludeSemantics: true, onTap: widget.onTap, child: boton);
   }
 }
