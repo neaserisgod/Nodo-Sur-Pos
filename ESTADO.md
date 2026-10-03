@@ -11,6 +11,14 @@ del negocio, `REGLAS-NEGOCIO.md`. Para el sistema de diseño, `DISENO.md`.
 
 ---
 
+## Android: bienvenida al primer arranque (2026-10-03) — hecho, falta publicar
+
+- Instalación nueva: logo → bienvenida de seis escenas con "Siguiente"/"Saltar" (`lib/companion/bienvenida/`) → elegir modo →
+  entrar con la cuenta (o emparejar) → "Listo, {nombre}." → menú. Los celulares en uso no la ven. Detalle en `DECISIONES.md`.
+- Tests: `test/companion/bienvenida_test.dart` (7) y capturas de cada escena y de "Listo" en `capturas_companion_test.dart`.
+  `test/companion`: 154 verdes.
+- No probado en un celular real.
+
 ## Android: accesos del Inicio y pagar proveedor (2026-10-02) — hecho, falta publicar
 
 - Inicio del celular: grilla de accesos con **Consultar precio**, **Movimiento de caja**,

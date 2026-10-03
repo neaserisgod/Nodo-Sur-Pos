@@ -9,9 +9,10 @@ import 'package:flutter/material.dart';
 import '../servicios/cuenta_nube.dart';
 import '../ui/tema/tokens.dart';
 import 'base_local.dart';
+import 'bienvenida/aparecer.dart';
+import 'bienvenida/pantalla_listo.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
-import 'pantalla_menu_companion.dart';
 import 'perfil_por_cuenta.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
@@ -49,7 +50,7 @@ class PantallaEntrarConCuenta extends StatefulWidget {
   final SyncNubeCompanion? sync;
   final Future<ServicioCompanion> Function()? servicio;
 
-  /// Qué hacer con el perfil ya resuelto; por defecto abre el menú.
+  /// Qué hacer con el perfil ya resuelto; por defecto muestra "Listo", que después abre el menú.
   final void Function(BuildContext context)? alEntrar;
 
   @override
@@ -113,7 +114,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       if (widget.alEntrar != null) {
         widget.alEntrar!(context);
       } else {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PantallaMenuCompanion()));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PantallaListo()));
       }
     } on PerfilDesactivado catch (e) {
       if (mounted) setState(() {
@@ -151,34 +152,40 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const EncabezadoCompanion(
-              titulo: 'Entrá con tu cuenta',
-              bajada: 'Tu perfil sale de tu cuenta de Nodo Sur: lo que hagas desde este celular queda a tu nombre.',
-              padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl + Espaciado.lg, Espaciado.xl, Espaciado.xl),
+            const Aparecer(
+              orden: 0,
+              child: EncabezadoCompanion(
+                titulo: 'Entrá con tu cuenta',
+                bajada: 'Tu perfil sale de tu cuenta de Nodo Sur: lo que hagas desde este celular queda a tu nombre.',
+                padding: EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl + Espaciado.lg, Espaciado.xl, Espaciado.xl),
+              ),
             ),
             Expanded(
               child: _trabajando
                   ? const Center(child: CircularProgressIndicator())
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_error != null) ...[
-                            Text(_error!, key: const Key('entrar_error'), style: textTheme.bodyMedium?.copyWith(color: context.colores.error)),
-                            const SizedBox(height: Espaciado.lg),
+                  : Aparecer(
+                      orden: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_error != null) ...[
+                              Text(_error!, key: const Key('entrar_error'), style: textTheme.bodyMedium?.copyWith(color: context.colores.error)),
+                              const SizedBox(height: Espaciado.lg),
+                            ],
+                            // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
+                            if (_error != null && !_hayQueEntrarDeNuevo && _sync != null)
+                              OutlinedButton(key: const Key('entrar_reintentar'), onPressed: _reintentar, child: const Text('Reintentar')),
+                            if (_error != null && !_hayQueEntrarDeNuevo) const SizedBox(height: Espaciado.sm),
+                            FilledButton(key: const Key('entrar_con_cuenta'), onPressed: _entrar, child: const Text('Entrar con mi cuenta')),
+                            const SizedBox(height: Espaciado.md),
+                            Text(
+                              'Se abre el navegador para que ingreses con tu cuenta de Google, una sola vez. Después el celular sigue funcionando sin internet.',
+                              style: textTheme.bodySmall,
+                            ),
                           ],
-                          // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
-                          if (_error != null && !_hayQueEntrarDeNuevo && _sync != null)
-                            OutlinedButton(key: const Key('entrar_reintentar'), onPressed: _reintentar, child: const Text('Reintentar')),
-                          if (_error != null && !_hayQueEntrarDeNuevo) const SizedBox(height: Espaciado.sm),
-                          FilledButton(key: const Key('entrar_con_cuenta'), onPressed: _entrar, child: const Text('Entrar con mi cuenta')),
-                          const SizedBox(height: Espaciado.md),
-                          Text(
-                            'Se abre el navegador para que ingreses con tu cuenta de Google, una sola vez. Después el celular sigue funcionando sin internet.',
-                            style: textTheme.bodySmall,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
             ),

@@ -10,6 +10,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
+import 'package:la_plazoleta/companion/bienvenida/pantalla_bienvenida.dart';
+import 'package:la_plazoleta/companion/bienvenida/pantalla_listo.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/navbar_companion.dart';
 import 'package:la_plazoleta/companion/pantalla_inicio_companion.dart';
@@ -182,6 +184,22 @@ void main() {
         PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
         oscuro: oscuro,
       );
+    });
+    // La bienvenida, en cada parada (lo que se ve al tocar Siguiente).
+    for (var paso = 0; paso < paradasBienvenida.length; paso++) {
+      testWidgets('bienvenida ${paso + 1}$sufijo', (tester) async {
+        await preparar(tester);
+        await _capturar(
+          tester,
+          'bienvenida-${paso + 1}',
+          PantallaBienvenida(alTerminar: (_) {}, pasoInicial: paso, segundoFijo: paradasBienvenida[paso]),
+          oscuro: oscuro,
+        );
+      });
+    }
+    testWidgets('listo$sufijo', (tester) async {
+      await preparar(tester);
+      await _capturar(tester, 'listo', PantallaListo(nombre: 'Bruno', alSeguir: (_) {}), oscuro: oscuro);
     });
     testWidgets('elegir modo$sufijo', (tester) async {
       await preparar(tester);

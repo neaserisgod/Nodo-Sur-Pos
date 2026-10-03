@@ -1710,3 +1710,20 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
   que empiece con `release:` (estable) o `beta:` (beta). El APK ya era siempre a mano (`publicar-apk`).
 - **Para qué:** juntar varios cambios en una sola versión, y no llenar el sitio ni los equipos de versiones casi iguales (el sitio igual conserva solo
   las 2 últimas por plataforma y canal).
+
+## Bienvenida del celular al primer arranque (2026-10-03)
+
+- **Qué**: una instalación nueva del APK ya no arranca en "¿Cómo vas a usar el sistema?". Primero ve una bienvenida de seis escenas
+  (`lib/companion/bienvenida/`) con el lenguaje de la historia de Instagram de Nodo Sur (fondo blanco, títulos livianos con el degradé,
+  partículas, transiciones que encadenan una escena con la siguiente), después elegir el modo y entrar (con una entrada escalonada
+  igual a la de la bienvenida) y al final "Listo, {nombre}." antes del menú.
+- **Funciones que muestra** (El dueño eligió "las del celular"): cuánto separar para cada proveedor, cierre a ciegas, vender sin
+  internet y contar el stock con la cámara. Comparar proveedores, que abre la historia, existe solo en la PC: por eso la frase de
+  apertura pasa de "Tu almacén, en orden." a "Tu plata, en orden." y no a la comparación.
+- **Quién la ve**: toda instalación nueva (dueño o empleado), con "Saltar". Se decide con lo mismo que ya decidía el modo de uso
+  (`resolverModoUso` en null): los celulares en uso no la ven y no hace falta guardar nada nuevo.
+- **Avance con "Siguiente"** (El dueño, en vez de que se reproduzca sola): cada toque corre la línea de tiempo hasta la próxima
+  parada (`paradasBienvenida`). Con "reducir animaciones" salta directo a la parada.
+- **Sin precios ni "probalo gratis"**: quien la ve ya tiene el sistema; los montos son de ejemplo y van en centavos.
+- **"Listo" después de entrar con la cuenta**: aparece cada vez que se entra con la cuenta (también al volver a entrar tras perder
+  la sesión), porque es el único camino que llega ahí y es un momento corto con un botón.

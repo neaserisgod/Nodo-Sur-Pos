@@ -8,6 +8,7 @@ import '../domain/marca.dart';
 import '../servicios/marca_actual.dart';
 import '../ui/tema/iconos.dart';
 import '../ui/tema/tokens.dart';
+import 'bienvenida/aparecer.dart';
 import 'modo_uso.dart';
 import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
@@ -38,14 +39,17 @@ class PantallaElegirModo extends StatelessWidget {
                 bajada: 'Cambiá cómo se usa este celular.',
               )
             else
-              ValueListenableBuilder<MarcaNegocio>(
-                valueListenable: marcaActual,
-                builder: (context, marca, _) => EncabezadoCompanion(
-                  rotulo: marca.nombre,
-                  titulo: '¿Cómo vas a usar el sistema?',
-                  bajada: 'Elegí una opción para empezar.',
-                  particulas: true,
-                  padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.xl),
+              Aparecer(
+                orden: 0,
+                child: ValueListenableBuilder<MarcaNegocio>(
+                  valueListenable: marcaActual,
+                  builder: (context, marca, _) => EncabezadoCompanion(
+                    rotulo: marca.nombre,
+                    titulo: '¿Cómo vas a usar el sistema?',
+                    bajada: 'Elegí una opción para empezar.',
+                    particulas: true,
+                    padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.xl),
+                  ),
                 ),
               ),
             Padding(
@@ -53,30 +57,39 @@ class PantallaElegirModo extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _OpcionModo(
-                    clave: const Key('modo-pc-y-celular'),
-                    icono: IconosPlazoleta.computer,
-                    titulo: 'Tengo PC y celular',
-                    detalle:
-                        'El celular se conecta a la PC. Si la PC se apaga o queda fuera del wifi, sigue funcionando por internet.',
-                    marcado: actual == ModoUso.pcYCelular,
-                    onTap: () => alElegir(context, ModoUso.pcYCelular),
+                  Aparecer(
+                    orden: 1,
+                    child: _OpcionModo(
+                      clave: const Key('modo-pc-y-celular'),
+                      icono: IconosPlazoleta.computer,
+                      titulo: 'Tengo PC y celular',
+                      detalle:
+                          'El celular se conecta a la PC. Si la PC se apaga o queda fuera del wifi, sigue funcionando por internet.',
+                      marcado: actual == ModoUso.pcYCelular,
+                      onTap: () => alElegir(context, ModoUso.pcYCelular),
+                    ),
                   ),
                   const SizedBox(height: Espaciado.md),
-                  _OpcionModo(
-                    clave: const Key('modo-solo-celular'),
-                    icono: IconosPlazoleta.smartphone,
-                    titulo: 'Solo uso el celular',
-                    detalle:
-                        'El celular es el sistema. Podés guardar y sincronizar tus datos con tu cuenta de Nodo Sur.',
-                    marcado: actual == ModoUso.soloCelular,
-                    onTap: () => alElegir(context, ModoUso.soloCelular),
+                  Aparecer(
+                    orden: 2,
+                    child: _OpcionModo(
+                      clave: const Key('modo-solo-celular'),
+                      icono: IconosPlazoleta.smartphone,
+                      titulo: 'Solo uso el celular',
+                      detalle:
+                          'El celular es el sistema. Podés guardar y sincronizar tus datos con tu cuenta de Nodo Sur.',
+                      marcado: actual == ModoUso.soloCelular,
+                      onTap: () => alElegir(context, ModoUso.soloCelular),
+                    ),
                   ),
                   const SizedBox(height: Espaciado.xl),
-                  Text(
-                    'Lo podés cambiar después, desde Gestión.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Aparecer(
+                    orden: 3,
+                    child: Text(
+                      'Lo podés cambiar después, desde Gestión.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),
