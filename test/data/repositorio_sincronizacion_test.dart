@@ -137,8 +137,10 @@ void main() {
       expect(noAplicadas.length, 1);
       expect(noAplicadas.single['global_id'], 'falta-categoria');
 
-      final productos =
-          await (celular.select(celular.productos)..where((p) => p.globalId.isNotNull())).get();
+      // Sin "Varios": nace con su `global_id` fijo (`globalIdProductoVarios`), no llegó por esta tanda.
+      final productos = (await (celular.select(celular.productos)..where((p) => p.globalId.isNotNull())).get())
+          .where((p) => !p.esVarios)
+          .toList();
       expect(productos.length, 1);
       expect(productos.single.nombre, 'Producto normal');
     },

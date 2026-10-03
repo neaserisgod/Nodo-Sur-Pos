@@ -51,6 +51,16 @@ part 'database.g.dart';
 const _globalIdMedioPagoEfectivo = 'medio-pago-efectivo';
 const _globalIdMedioPagoVirtual = 'medio-pago-virtual';
 
+/// `global_id` fijo para las dos filas que siembra una PC nueva: el usuario
+/// inicial y "Varios" (revisión 2026-10-03). Nacían sin `global_id` y nada se
+/// los daba después, así que nunca salían por la sync: el celular recibía
+/// sesiones y ventas atadas a un usuario que no tenía, y las rechazaba. Fijo
+/// y no al azar por el mismo motivo que los medios de pago: si dos PC de la
+/// misma sucursal siembran cada una el suyo, convergen en una sola fila en
+/// vez de terminar con dos "Varios" (`repositorio_pendientes.dart` espera uno).
+const globalIdUsuarioInicial = 'usuario-inicial';
+const globalIdProductoVarios = 'producto-varios';
+
 const proveedoresNuevosV10 = [
   ('SC', 'Distribuidora de Cigarrillos'),
   ('A', 'Arcor'),
@@ -131,7 +141,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 49;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1009,6 +1019,37 @@ class AppDatabase extends _$AppDatabase {
             .toSet();
         if (!deConfig.contains('prefijo_ventas')) await m.addColumn(configuracionTabla, configuracionTabla.prefijoVentas);
       }
+      // v48 → v49 (revisión 2026-10-03): una PC instalada de cero dejaba sin
+      // `global_id` el usuario inicial, "Varios" y las categorías de la
+      // plantilla de rubro, y por eso nunca sincronizaban (ver
+      // `globalIdUsuarioInicial`). Se completa lo que falta: el primer usuario
+      // y el primer "Varios" sin identidad toman el id fijo (si nadie lo tiene
+      // ya); el resto, uno al azar. Las promos quedan sin identidad a
+      // propósito: sus artículos (`promo_componentes`) no viajan, y en otro
+      // equipo se romperían al venderlas. Solo en la PC: una base de celular
+      // vieja puede tener filas sembradas de antes, que no deben subir.
+      if (from < 49 && !Platform.isAndroid) {
+        Future<void> completar(String tabla, String idFijo, String filtro) async {
+          await customStatement(
+            "UPDATE $tabla SET global_id = '$idFijo', origen_dispositivo = 'desktop', "
+            'actualizado_en = COALESCE(actualizado_en, 0) '
+            'WHERE id = (SELECT MIN(id) FROM $tabla WHERE global_id IS NULL$filtro) '
+            "AND NOT EXISTS (SELECT 1 FROM $tabla WHERE global_id = '$idFijo')",
+          );
+          await customStatement(
+            "UPDATE $tabla SET global_id = lower(hex(randomblob(16))), origen_dispositivo = 'desktop', "
+            'actualizado_en = COALESCE(actualizado_en, 0) '
+            'WHERE global_id IS NULL$filtro',
+          );
+        }
+
+        await completar('usuarios', globalIdUsuarioInicial, '');
+        await completar('productos', globalIdProductoVarios, ' AND es_varios = 1');
+        await customStatement(
+          "UPDATE categorias SET global_id = lower(hex(randomblob(16))), origen_dispositivo = 'desktop', "
+          'actualizado_en = COALESCE(actualizado_en, 0) WHERE global_id IS NULL',
+        );
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1168,14 +1209,25 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
     // Un único usuario inicial con nombre neutro: hace falta al menos uno (la
     // sesión de caja y las ventas se atan a un usuario). El comercio lo
     // renombra, o agrega los suyos, desde Configuración.
-    await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Administrador'));
+    // `actualizado_en` en la época 0: cualquier cambio real (renombrarlo) le gana.
+    await db.into(db.usuarios).insert(
+      UsuariosCompanion.insert(
+        nombre: 'Administrador',
+        globalId: const Value(globalIdUsuarioInicial),
+        origenDispositivo: Value(idDispositivoActual),
+        actualizadoEn: Value(DateTime.fromMillisecondsSinceEpoch(0)),
+      ),
+    );
 
     // Solo el escritorio siembra esto — mismo motivo que usuarios/categorías/
     // proveedores arriba: una companion que sembrara su propia fila con otro
     // `global_id` terminaría con dos filas cuando llegue la real por sync.
-    // Sin `global_id`/`actualizadoEn` a propósito (mismo criterio que
-    // categorías/proveedores acá abajo): recién sincroniza cuando se edite
-    // de verdad por primera vez.
+    // Sin `global_id` a propósito, pero OJO (revisión 2026-10-03): editarla
+    // tampoco se lo da, así que en una PC instalada de cero esta fila no
+    // sincroniza nunca y el celular usa los valores de fábrica. Darle uno al
+    // sembrarla no alcanza: si el celular ya creó la suya (`prepararNegocioNuevo`)
+    // quedarían dos filas en cada equipo. Falta que la sync la trate como
+    // fila única (pendiente, `ESTADO.md`).
     // El comparador de precios está armado para el comercio de origen (supermercados de una ciudad y una tienda
     // online puntual): un comercio nuevo lo arranca apagado y lo prende desde Configuración → Módulos.
     await db.into(db.configuracionNegocioTabla).insert(
@@ -1239,9 +1291,12 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
     await db
         .into(db.productos)
         .insert(
-          const ProductosCompanion(
-            nombre: Value('Varios'),
-            esVarios: Value(true),
+          ProductosCompanion(
+            nombre: const Value('Varios'),
+            esVarios: const Value(true),
+            globalId: const Value(globalIdProductoVarios),
+            origenDispositivo: Value(idDispositivoActual),
+            actualizadoEn: Value(DateTime.fromMillisecondsSinceEpoch(0)),
           ),
         );
   }

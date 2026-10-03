@@ -18,12 +18,12 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 1853 verdes (`flutter test`, 2026-10-03). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 1971 verdes (`flutter test --exclude-tags bench`, 2026-10-03). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
-- **`flutter analyze`**: limpio en `lib/` y `test/`, salvo restos de Firestore sin su paquete
-  (`lib/data/transporte_firestore.dart`, `lib/firebase_*.dart`, `integration_test/sincronizacion_firestore_test.dart`).
-- **`schemaVersion`**: **47** (`lib/data/database.dart`; las v40–v47 están comentadas en `onUpgrade`).
+- **`flutter analyze lib`**: sin errores; quedan avisos viejos de estilo (imports sin usar) que no tienen que subir. Los
+  restos de Firestore que se listaban acá ya no existen.
+- **`schemaVersion`**: **49** (`lib/data/database.dart`; las v40–v49 están comentadas en `onUpgrade`).
 - Capturas para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y
   `test/companion/capturas_companion_test.dart` (PNG en `capturas/`, ignorada por git; no son golden tests).
 
@@ -36,7 +36,7 @@ Qué es cada una: `CLAUDE.md`, sección "Fases".
 | 1–10 | Dominio, base, venta, cierre, productos, reposición, rentabilidad, configuración, historial, impresión y respaldo | **Cerradas** |
 | 11 | Sistema de diseño | Aplicado a toda la app (ver `DISENO.md`) |
 | 12 | Cobro por terminal Point (QR/débito) | **Cerrada** (ver abajo, Mercado Pago) |
-| 13 | Pulido visual tras el cambio de hardware | **Cerrada en lo hecho**; solo queda abierta la pregunta del tema claro/oscuro automático por hora |
+| 13 | Pulido visual tras el cambio de hardware | **Cerrada** (el tema automático sigue al del sistema, decisión del dueño 2026-10-03) |
 | 14 | Remake de estética basado en la companion (navbar superior, `Superficie`) | **Hecho** en todas las pantallas; luego se pasó al lenguaje "antigravity" (`DISENO.md`) |
 | — | Generalización a Nodo Sur POS (módulos, rubros, marca configurable) | **Completa** (fases 1–5 y 8–9; 6 y 7 descartadas) |
 | — | Nube: cuenta, copias, sync por sucursal, actualizaciones | **Hecha**; probar con equipos y cuentas reales sigue siendo lo que más falta |
@@ -80,6 +80,11 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
 - **Rendimiento**: índices en la base, "Más vendidos" memorizado; en el sitio, caché de 2 min del estado de pago y caché
   larga de estáticos.
 
+- **Arreglos de la revisión (03/10)**: una PC instalada de cero sincroniza su usuario inicial, "Varios" y las categorías
+  de la plantilla (antes nacían sin `global_id` y el celular rechazaba sus cajas; migración v49 para las ya instaladas);
+  un mixto cuyo total baja después de cargar el efectivo ya no graba Mercado Pago negativo (y `registrarVenta` rechaza
+  pagos negativos); "con cuánto paga" del celular ya no repite $100.000.
+
 ## Sin probar en real
 
 - Conciliación de Mercado Pago contra la cuenta real en un cierre.
@@ -101,8 +106,12 @@ obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
 
-- Fiado cobrado sin verificar estado ni transacción; separar/pagar proveedor sin transacción; búsquedas tipo "7 Up" leídas
-  como gramos (de la revisión del 2026-09-29, no tocado).
+- Fiado cobrado sin verificar estado ni transacción; separar/pagar proveedor sin transacción (de la revisión del
+  2026-09-29, no tocado). Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).
+- **La fila de configuración del negocio no sincroniza en una PC instalada de cero** (recargos, redondeo, módulos): nace
+  sin `global_id` y nada se lo da. Darle uno al sembrarla no alcanza: si el celular ya creó la suya
+  (`prepararNegocioNuevo`) quedarían dos filas en cada equipo. Hace falta que la sync la trate como fila única (decisión
+  técnica, no tocado). Mientras tanto el celular usa los valores de fábrica.
 - Ventas abiertas: decidir si el fiado pasa a ser una venta abierta con nombre; refrescar precios de un borrador viejo.
 - Cuenta corriente: falta la deuda total en el Dashboard; el celular no tiene el apartado.
 - Promos: no se venden desde el celular; una venta ya cobrada se edita como líneas sueltas. Precio automático por proveedor:
@@ -112,10 +121,7 @@ obligatorio en cada gasto.
   pago por línea). Los montos y el arqueo salen bien; arreglarlo es un cambio de modelo, y el dueño dejó que quede así
   (`lib/data/planilla_dia.dart`).
 - Carga histórica: sigue producto por producto (el mock proponía totales del día con costo estimado; el dueño decidió no).
-- Tema claro/oscuro automático por hora: falta definir el rango, si el interruptor manual queda como override y qué pasa
-  con la hora mal puesta.
-- Limpieza: `.gitignore` no ignora `android/build` ni `android/app/build`; restos de Firestore (ver Métricas);
-  `Bloque` y tokens deprecados.
+- Limpieza: `.gitignore` no ignora `android/build` ni `android/app/build`; `Bloque` y tokens deprecados.
 - Clave privada DSA (`Documents\la_plazoleta_claves\dsa_priv.pem`): respaldarla (USB + otro lugar). Si se pierde, ninguna PC
   instalada recibe más actualizaciones. Firma de código real: sin certificado todavía (SmartScreen avisa).
 

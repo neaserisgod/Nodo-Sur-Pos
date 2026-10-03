@@ -684,3 +684,19 @@ found"). Los helpers se llaman distinto (`base_para_tests.dart`,
 > '$.config.point.terminal_id' does not match pattern` con el serial pelado). `imprimirEnPosnet` usa el id de cobro cuando es LA
 > MISMA terminal en formato completo (`terminalParaImprimir`), así que alcanza con tener bien cargado el de cobro. Los errores de
 > MP con `errors[]` se muestran con código, mensaje y detalle.
+
+---
+
+## Una fila de una tabla sincronizada sin `global_id` no viaja nunca (2026-10-03)
+
+`cambiosDesde` filtra `global_id IS NOT NULL`, y editar una fila no le da uno. Una PC instalada de cero sembraba el
+usuario inicial y "Varios" sin identidad, y `aplicarPlantillaRubro` creaba las categorías igual: nada de eso llegaba
+al celular, que además rechazaba las sesiones y ventas atadas a ese usuario (la columna `*_gid` viajaba en null y el id
+crudo no existía del otro lado). La base de La Plazoleta no lo mostraba porque la migración v31 le completó la
+identidad; solo le pasaba a los comercios nuevos.
+
+Regla: **todo insert en una tabla de `tablasSincronizables` lleva `globalId`, `origenDispositivo` y `actualizadoEn`**.
+Si la fila la siembran varios equipos por su cuenta, el `global_id` es fijo (`globalIdUsuarioInicial`,
+`globalIdProductoVarios`, los medios de pago) para que converjan en una sola. Excepciones a propósito: las promos (sus
+artículos no viajan) y la fila de configuración del negocio (pendiente de tratarla como fila única, ver `ESTADO.md`).
+`test/data/sync_instalacion_nueva_test.dart` lo cubre.

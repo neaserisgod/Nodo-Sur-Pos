@@ -248,6 +248,32 @@ void main() {
       )..where((p) => p.id.equals(id))).getSingle();
     });
 
+    test('un pago negativo se rechaza y no graba nada (revisión 2026-10-03)', () async {
+      final venta = Venta(lineas: [lineaDesdeProducto(cocaCola)]);
+      final resultado = calcularTotalVenta(
+        venta: venta,
+        composicionPago: ComposicionPago.mixto,
+        configRecargoCigarrillos: const ConfigRecargoCigarrillos(primerAtadoCentavos: 30000, atadoAdicionalCentavos: 10000),
+        pasoRedondeoCentavos: 10000,
+      );
+      await expectLater(
+        registrarVenta(
+          db,
+          venta: venta,
+          resultado: resultado,
+          sesionCajaId: sesionId,
+          usuarioId: usuarioId,
+          pagos: [
+            PagoARegistrar(medioPagoId: medioEfectivoId, montoCentavos: resultado.totalCentavos + 30000, esEfectivo: true),
+            PagoARegistrar(medioPagoId: medioVirtualId, montoCentavos: -30000, esEfectivo: false),
+          ],
+        ),
+        throwsArgumentError,
+      );
+      expect(await db.select(db.ventas).get(), isEmpty);
+      expect(await db.select(db.pagos).get(), isEmpty);
+    });
+
     test(
       'venta simple en efectivo: descuenta stock y genera un movimiento de caja normal',
       () async {

@@ -22,6 +22,13 @@ void main() {
       expect(atajosDeEfectivo(13000000), [15000000, 20000000]);
     });
 
+    test('entre el billete más grande y el anterior no repite el de \$100.000', () {
+      // Bug real (revisión 2026-10-03): \$90.000 ofrecía [\$100.000, \$100.000].
+      expect(atajosDeEfectivo(9000000), [10000000, 15000000]);
+      expect(atajosDeEfectivo(10000000), [10000000, 15000000]);
+      expect(atajosDeEfectivo(5000001), [10000000, 15000000]);
+    });
+
     test('total cero no ofrece nada', () {
       expect(atajosDeEfectivo(0), isEmpty);
     });

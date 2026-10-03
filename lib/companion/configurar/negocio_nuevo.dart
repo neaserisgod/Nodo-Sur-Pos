@@ -83,8 +83,8 @@ Future<void> prepararNegocioNuevo(AppDatabase db) async {
 }
 
 /// Paso 1: el nombre del comercio y las categorías de la plantilla del rubro. Las categorías que ya existan (mismo
-/// nombre, sin importar mayúsculas) no se repiten. A diferencia de `aplicarPlantillaRubro` del escritorio, cada
-/// categoría nace con `global_id` (`crearCategoria`), porque en el celular no hay una PC que las suba después.
+/// nombre, sin importar mayúsculas) no se repiten. Cada categoría nace con `global_id`
+/// (`crearCategoria`), igual que en `aplicarPlantillaRubro` del escritorio: sin eso no sale por la sync.
 Future<void> guardarNegocio(AppDatabase db, {required String nombre, required PlantillaRubro rubro}) async {
   await prepararNegocioNuevo(db);
   await db.transaction(() async {

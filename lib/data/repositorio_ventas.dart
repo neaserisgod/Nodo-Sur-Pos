@@ -294,6 +294,11 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   bool exigirSesionAbierta = true,
 }) {
   return db.transaction(() async {
+    // Un pago negativo no es plata que entró: restaría del esperado de su caja (revisión 2026-10-03: un mixto cuyo
+    // total bajó después de cargar el efectivo grababa Mercado Pago en negativo).
+    if (pagos.any((p) => p.montoCentavos < 0)) {
+      throw ArgumentError('Un pago no puede ser negativo');
+    }
     // Dentro de la transacción, igual que gastos e ingresos: si el cierre llega justo antes, la venta se rechaza en vez de
     // grabarse contra una sesión cerrada (cambiaría los totales de un cierre ya hecho).
     if (exigirSesionAbierta) await verificarSesionAbierta(db, sesionCajaId);

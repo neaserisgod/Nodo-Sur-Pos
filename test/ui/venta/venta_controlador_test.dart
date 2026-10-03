@@ -589,6 +589,36 @@ void main() {
       expect(pagos.first.montoCentavos, 50000);
     });
 
+    // Bug real (revisión 2026-10-03): el efectivo del mixto quedaba fijo aunque bajara el total, y la parte por
+    // Mercado Pago (total − efectivo) quedaba negativa; "Cobrar a mano" la grababa así.
+    test('si el total baja y el efectivo ya lo cubre, el monto se borra y no cobra con MP negativo', () async {
+      c.agregarProducto(cocaCola);
+      c.agregarProducto(cocaCola); // 2 × $1.120
+      c.confirmarMixto(150000);
+      expect(c.medioElegido, ComposicionPago.mixto);
+      expect(c.construirPagos(), isNotNull);
+
+      c.ajustarCantidad(0, -1); // queda 1 × $1.120: el efectivo cargado ($1.500) ya cubre todo
+      expect(c.montoEfectivoMixtoCentavos, isNull);
+      expect(c.construirPagos(), isNull);
+      expect(c.avisoCobro, contains('parte en efectivo'));
+
+      expect(await c.cobrarActual(), isNull);
+      expect(await db.select(db.pagos).get(), isEmpty);
+      expect(c.avisoCobro, 'Falta la parte en efectivo del mixto (Alt+X)');
+    });
+
+    test('si el total baja pero el efectivo no lo cubre, el mixto sigue y los pagos suman el total nuevo', () {
+      c.agregarProducto(cocaCola);
+      c.agregarProducto(cocaCola);
+      c.confirmarMixto(50000);
+      c.ajustarCantidad(0, -1);
+      expect(c.montoEfectivoMixtoCentavos, 50000);
+      final pagos = c.construirPagos()!;
+      expect(pagos.every((p) => p.montoCentavos > 0), isTrue);
+      expect(pagos.fold<int>(0, (a, p) => a + p.montoCentavos), c.resultado!.totalCentavos);
+    });
+
     test(
       'cambiar de mixto a otro medio olvida el monto en efectivo cargado',
       () {
