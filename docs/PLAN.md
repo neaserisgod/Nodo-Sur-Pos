@@ -19,7 +19,7 @@ hasta que el dueño diga "lanzá"; lo que cambia una regla de negocio se pregunt
 3. Fase 4 — avisos y paridad PC/celular. 4. Fase 6 — Mercado Pago. 5. Fase 5 — roles: **el dueño dijo "para después"**; no empezar sin su matriz de permisos.
 6. Pendientes de Fase 0: 0.12 (valores por defecto heredados: fondo $150.000, reserva $70.000, vuelto $100 — pregunta de negocio) y 0.13 (token por celular).
 
-**Deuda conocida:** al cobrar una deuda la línea es "Varios" sin costo, así que cuenta como ganancia completa (guardar el costo al anotar la deuda); la búsqueda de Venta del celular sigue ocultando los productos sin stock (la PC los atenúa); el texto "fiado" sigue en el cierre/PDF del día (la marca `FIADO` de la venta es el rastro y se mantiene); "DISENO 2.md" parece una copia vieja de `DISENO.md` (confirmar y borrar).
+**Deuda conocida:** al cobrar una deuda la línea es "Varios" sin costo, así que cuenta como ganancia completa (guardar el costo al anotar la deuda); la búsqueda de Venta del celular sigue ocultando los productos sin stock (la PC los atenúa); el texto "fiado" sigue en el cierre/PDF del día (la marca `FIADO` de la venta es el rastro y se mantiene); se borró `DISENO 2.md` (variante vieja de `DISENO.md` que nadie referenciaba; sigue en el historial de git).
 
 ## Decisiones del dueño que ordenan el plan
 
