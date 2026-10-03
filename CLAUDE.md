@@ -24,6 +24,11 @@ el dueño de cada uno en `README.md`; los más relevantes para escribir código:
 - **`DISENO.md`** — el sistema de diseño completo (tokens, escalas, reglas de
   alineación). La sección de la fase 11 acá abajo es solo un resumen.
 
+**Si dos documentos (o dos partes del mismo) se contradicen, vale lo más
+reciente** (El dueño, 2026-10-03): la fecha escrita en el texto ("El dueño,
+2026-09-16"), o la del commit si no tiene. Lo viejo se corrige en el mismo
+cambio en que se detecta, para que no vuelva a confundir.
+
 ## Cómo se trabaja acá
 
 1. **Leé `REGLAS-NEGOCIO.md` antes de escribir código de dominio.** Es la fuente
@@ -255,11 +260,15 @@ esa versión (notificaciones, la búsqueda en el resto de la app, nombres
 largos del carrito, el default de la grilla, los botones de cobro). La
 composición actual:
 
-**Franja superior** — navbar y acciones de caja, en una fila:
-- Izquierda: la marca y las secciones como pastillas (la activa con fondo),
-  y Configuración como engranaje al final de la fila (2026-10-03: ya no es
-  una pastilla más). No hay sidebar ni dropdown.
-- Derecha: campanita y "Cambiar de turno" / "Cerrar caja" (detalle abajo).
+**Venta es la pantalla principal** (El dueño, 2026-10-03): la app arranca
+acá y la tecla Inicio vuelve acá; el tablero ("Inicio") es una sección más.
+
+**Franja superior** — navbar y acciones de caja, en una fila (2026-10-03):
+- Centro: las secciones como pastillas (la activa con fondo), centradas en
+  la ventana y sin la marca (el nombre del comercio ya está en la barra de
+  la ventana). No hay sidebar ni dropdown.
+- Derecha: Configuración como engranaje, y en Venta la campanita y
+  "Cambiar de turno" / "Cerrar caja" (detalle abajo).
 
 **Búsqueda** — rediseño "antigravity": ya no comparte fila con la navbar.
 Vive en la columna de productos, debajo del título "Vender" y arriba de la
@@ -278,12 +287,13 @@ grilla (`BarraBusquedaVenta` en `pantalla_venta.dart`):
     y nada más — dar de alta un producto nuevo es siempre desde
     Proveedores, nunca desde acá (El dueño, 2026-09-16: se sacó la alta
     rápida de esta pantalla).
-  - Este mismo campo (versión liviana, `BarraBusquedaGlobal`) vive también
-    en la franja superior de TODAS las demás pantallas de gestión
-    (`EnvolturaConNavbarSuperior`) — El dueño, tercera pasada: "quiero que la
-    barra de busqueda este en todos lados". Ahí no agrega nada al
-    carrito (esas pantallas no tienen uno): elegir un resultado navega a
-    Venta con el texto ya cargado, y desde ahí sigue el camino de siempre.
+  - En TODAS las demás pantallas de gestión la búsqueda (versión liviana,
+    `BarraBusquedaGlobal`) es una **lupa** en la navbar (2026-10-03): Ctrl+F
+    la abre y el campo se expande hasta tapar las pastillas; al cerrarla
+    vuelve vacío. Ahí no agrega nada al carrito (esas pantallas no tienen
+    uno): elegir un resultado vuelve a Venta con el texto ya cargado, y
+    desde ahí sigue el camino de siempre. En Venta, Ctrl+F enfoca el campo
+    único (que nunca se esconde detrás de la lupa).
 
 
 **Notificaciones** — tercera pasada (El dueño: *"NO QUIERO QUE APAREZCA EL
@@ -329,7 +339,8 @@ Derecha (ancho fijo) — panel de carrito + cobro apilados:
      un tirón (anda para las dos formas de línea).
    - Última línea agregada resaltada.
    - Nombre en rojo si el stock quedó en 0 o negativo (se vende igual) —
-     caso cada vez más raro desde que sin stock no aparece en la búsqueda
+     caso cada vez más raro desde que sin stock no se puede agregar (en la
+     búsqueda aparece atenuado, 2026-10-03)
      (`REGLAS-NEGOCIO.md` §8): pasa si se agregó al carrito antes de
      llegar a 0, o con stock ya negativo de antes.
 
@@ -374,7 +385,9 @@ La búsqueda **ignora mayúsculas y acentos**.
 ### Atajos
 
 Todos con **`Alt`**, para que nunca choquen con la escritura. Impresos en cada
-botón, en tamaño chico.
+botón, en tamaño chico. Las dos excepciones (2026-10-03) son de toda la app,
+no de cobrar: `Ctrl+F` busca (en Venta enfoca el campo único) y la tecla
+`Inicio` vuelve a Venta (salvo escribiendo en un campo, donde mueve el cursor).
 
 - `Alt+E` efectivo · `Alt+Q` QR · `Alt+D` débito · `Alt+X` mixto · `Alt+M`
   cobro manual
@@ -413,5 +426,5 @@ categorías, medios de pago, gastos fijos.
 **Fijo en el código:** encabezado del ticket · atajos de teclado · y todas las
 reglas de negocio del documento de dominio (reposición igual al costo real,
 efectivo redondea y virtual no, recargo completo en mixtos, cigarrillos a la lata
-a precio de lista, arqueo obligatorio, sin stock no aparece en ventas — ver
+a precio de lista, arqueo obligatorio, sin stock no se vende — ver
 `REGLAS-NEGOCIO.md` §8).

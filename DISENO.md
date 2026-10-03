@@ -16,8 +16,24 @@ el mismo cambio.
 Para saber qué pantallas ya tienen esto aplicado y cuáles no, ver
 `ESTADO.md` — ese dato cambia seguido y no se duplica acá.
 
-**"Lenguaje de diseño" (2026-09-26/28) — vigente, manda sobre lo de abajo.**
-El dueño dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
+**Estética horsepos.com / antigravity (2026-10-02/03) — vigente, manda sobre todo lo de abajo.**
+Es lo más reciente y lo que corre hoy (PR #24, #50 y `docs/ESTANDARES-GOOGLE.md`):
+
+- **Paleta** (`colores_escritorio.dart`, la misma en el celular): fondo blanco `#FFFFFF`, bloques `#F3F4F7` sin
+  sombra, borde `#D5D8DF`, tinta `#121317` como texto y como **único acento** (botón principal, pastilla activa),
+  error `#C5221F`. Oscuro: fondo `#0E0F12`, bloques `#14161C`, acento blanco.
+- **Colores con significado** (`acentos.dart`): efectivo `#B45309`, QR `#3B6CFF`, Débito `#0E9F85`, Mixto
+  `#8A5CF6`, ganancia `#0E7C5A`, alerta `#9A4A06` sobre `#FFF1DC`. Fuera de eso, nada de color.
+- **Figtree**, títulos grandes y livianos, poco texto; botones y selectores en pastilla.
+- **Navegación (PC, 2026-10-03):** Venta es la pantalla principal (arranca ahí; la tecla Inicio vuelve ahí; el
+  tablero "Inicio" es una sección más). Navbar sin marca, con las secciones como pastillas **centradas en la
+  ventana**, Configuración como engranaje a la derecha y la búsqueda como **lupa** (Ctrl+F): al abrirse, el campo
+  tapa las pastillas; al cerrarse vuelve vacío. En Venta la búsqueda no va en la lupa: es el campo único, siempre a
+  la vista, y Ctrl+F lo enfoca. Cambios de pantalla con un fundido corto (98% → 100%), sin desplazamiento lateral.
+- Los números exactos (radios, espaciado) están en `lib/ui/tema/`: si este texto y el código difieren, gana el código.
+
+**"Lenguaje de diseño" (2026-09-26/28) — reemplazado en paleta y navegación por el bloque de arriba.** Se conserva
+por los mocks y las distribuciones, que siguen valiendo. El dueño dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
 escritorio y celular más un LEEME con tokens: son **medio inspiración, pero
 la distribución de cada pantalla es la idea**. Lo que cambió respecto de las
 secciones de más abajo (que describen el remake del 2026-09-19 y todavía no

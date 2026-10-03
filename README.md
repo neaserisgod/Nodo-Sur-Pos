@@ -39,7 +39,9 @@ Antes de hacer público el repositorio, `python3 tool/limpiar_datos_personales.p
 personales del comercio de origen por nombres genéricos (sin `--aplicar` solo muestra qué cambiaría).
 
 Regla general: si vas a agregar algo que ya tiene dueño en esta lista,
-agregalo en ese documento — no lo dupliques en otro.
+agregalo en ese documento — no lo dupliques en otro. Si dos documentos se
+contradicen, **vale lo más reciente** (la fecha escrita en el texto, o la del
+commit) y lo viejo se corrige en el mismo cambio.
 
 ## Cómo correrlo
 
@@ -53,11 +55,13 @@ flutter pub get
 # Regenerar código de drift después de tocar un esquema (lib/data/tables/*, database.dart)
 dart run build_runner build
 
-# Análisis estático — tiene que dar "No issues found!"
-flutter analyze
+# Análisis estático — sin errores; los avisos viejos de estilo no tienen que subir (igual que CI)
+flutter analyze lib
 
-# Toda la suite de tests (1853 al 2026-10-03, ver ESTADO.md)
-flutter test
+# Toda la suite de tests (~1964 al 2026-10-03), sin los benchmarks de 60.000 ventas
+flutter test --exclude-tags bench
+# Los benchmarks, aparte
+flutter test --tags bench
 
 # Build de desarrollo — se abre con hot reload
 flutter run -d windows
