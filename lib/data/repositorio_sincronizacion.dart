@@ -457,12 +457,20 @@ Future<void> _aplicarUnaFila(
   fila = await _resolverReferencias(db, tabla: tabla, fila: fila);
   fila = await _soloColumnasDeLaTabla(db, tabla, fila);
 
-  final existente = await db
+  var existente = await db
       .customSelect(
         'SELECT * FROM $tabla WHERE global_id = ?',
         variables: [Variable.withString(globalId)],
       )
       .getSingleOrNull();
+
+  // La configuración del negocio es UNA fila por equipo (todo el código la lee con `getSingle`). Si cada equipo creó
+  // la suya con otro `global_id` (la PC al instalarse, el celular en "Configurá tu negocio", o versiones viejas con un
+  // id al azar), la que llega es la misma fila: se compara contra la local en vez de insertar una segunda, que dejaba
+  // al equipo sin poder leer su configuración (revisión 2026-10-03).
+  if (existente == null && tabla == 'configuracion_negocio_tabla') {
+    existente = await db.customSelect('SELECT * FROM $tabla ORDER BY id LIMIT 1').getSingleOrNull();
+  }
 
   if (existente == null) {
     final columnas = fila.keys.where((k) => k != 'id').toList();
@@ -504,12 +512,13 @@ Future<void> _aplicarUnaFila(
     if (tabla == 'productos') ..._columnasStockDeProductos,
   };
   final columnas = fila.keys.where((k) => !columnasExcluidas.contains(k)).toList();
+  // Por `id` local: la fila de configuración puede tener otro `global_id` que la que llega (ver arriba).
   await db.customUpdate(
     'UPDATE $tabla SET ${columnas.map((c) => '$c = ?').join(', ')} '
-    'WHERE global_id = ?',
+    'WHERE id = ?',
     variables: [
       for (final c in columnas) _variableDesde(fila[c]),
-      Variable.withString(globalId),
+      Variable.withInt((existente.data['id'] as num).toInt()),
     ],
   );
 }

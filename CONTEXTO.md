@@ -69,7 +69,7 @@ Hay un tercer repo (`horsepospronative`) que no se tocó en estas sesiones.
 
 ```
 lib/domain/     funciones puras (dinero, caja, recargo, redondeo, separación, conciliación MP...). Tests exhaustivos.
-lib/data/       esquema drift (schemaVersion 49), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
+lib/data/       esquema drift (schemaVersion 50), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
 lib/ui/         pantallas de la PC (venta, cierre, proveedores, separaciones, historial, configuración...).
 lib/companion/  la app del celular entera.
 lib/servicios/  cuenta y sync de Nodo Sur, Mercado Pago por el servidor, actualizaciones, módulos activos.
@@ -111,7 +111,7 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
   veces la misma versión a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
   `flutter pub get`, `flutter analyze lib` (sin errores; los avisos viejos no tienen que subir) y
-  `flutter test --exclude-tags bench` (~1971 tests, ~5 minutos).
+  `flutter test --exclude-tags bench` (~1976 tests, ~5 minutos).
 
 ## 6. Estado al 2026-10-03
 

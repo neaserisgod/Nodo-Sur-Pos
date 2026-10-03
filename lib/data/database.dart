@@ -61,6 +61,11 @@ const _globalIdMedioPagoVirtual = 'medio-pago-virtual';
 const globalIdUsuarioInicial = 'usuario-inicial';
 const globalIdProductoVarios = 'producto-varios';
 
+/// `global_id` fijo de la fila única de `configuracion_negocio_tabla` (revisión 2026-10-03): la siembra la PC al
+/// instalarse y el celular en "Configurá tu negocio", así que tienen que converger a la misma. La sync además trata
+/// como la misma fila a una que llegue con otro id (versiones viejas), ver `_aplicarUnaFila`.
+const globalIdConfiguracionNegocio = 'configuracion-negocio';
+
 const proveedoresNuevosV10 = [
   ('SC', 'Distribuidora de Cigarrillos'),
   ('A', 'Arcor'),
@@ -141,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 49;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1050,6 +1055,21 @@ class AppDatabase extends _$AppDatabase {
           'actualizado_en = COALESCE(actualizado_en, 0) WHERE global_id IS NULL',
         );
       }
+      // v49 → v50 (revisión 2026-10-03): la fila única de configuración del
+      // negocio. Si un equipo ya quedó con dos (la suya y otra que llegó por la
+      // sync con otro id), queda la más reciente; y la que no tiene identidad
+      // (PC instalada de cero) toma el id fijo. En PC y celular: es una sola
+      // fila, no hay nada sembrado de más que pueda subir.
+      if (from < 50) {
+        await customStatement(
+          'DELETE FROM configuracion_negocio_tabla WHERE id NOT IN ('
+          'SELECT id FROM configuracion_negocio_tabla ORDER BY COALESCE(actualizado_en, 0) DESC, id DESC LIMIT 1)',
+        );
+        await customStatement(
+          "UPDATE configuracion_negocio_tabla SET global_id = '$globalIdConfiguracionNegocio', "
+          'actualizado_en = COALESCE(actualizado_en, 0) WHERE global_id IS NULL',
+        );
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1222,16 +1242,19 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
     // Solo el escritorio siembra esto — mismo motivo que usuarios/categorías/
     // proveedores arriba: una companion que sembrara su propia fila con otro
     // `global_id` terminaría con dos filas cuando llegue la real por sync.
-    // Sin `global_id` a propósito, pero OJO (revisión 2026-10-03): editarla
-    // tampoco se lo da, así que en una PC instalada de cero esta fila no
-    // sincroniza nunca y el celular usa los valores de fábrica. Darle uno al
-    // sembrarla no alcanza: si el celular ya creó la suya (`prepararNegocioNuevo`)
-    // quedarían dos filas en cada equipo. Falta que la sync la trate como
-    // fila única (pendiente, `ESTADO.md`).
+    // Con el `global_id` fijo de la fila única y `actualizado_en` en la época 0:
+    // sincroniza, y cualquier configuración real (de esta PC o la que ya hizo
+    // el celular en "Configurá tu negocio") le gana. Antes nacía sin identidad
+    // y nunca llegaba al celular (revisión 2026-10-03).
     // El comparador de precios está armado para el comercio de origen (supermercados de una ciudad y una tienda
     // online puntual): un comercio nuevo lo arranca apagado y lo prende desde Configuración → Módulos.
     await db.into(db.configuracionNegocioTabla).insert(
-      ConfiguracionNegocioTablaCompanion(modulosDesactivados: Value(Modulo.compararPrecios.clave)),
+      ConfiguracionNegocioTablaCompanion(
+        modulosDesactivados: Value(Modulo.compararPrecios.clave),
+        globalId: const Value(globalIdConfiguracionNegocio),
+        origenDispositivo: Value(idDispositivoActual),
+        actualizadoEn: Value(DateTime.fromMillisecondsSinceEpoch(0)),
+      ),
     );
   }
 

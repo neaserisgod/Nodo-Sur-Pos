@@ -489,9 +489,8 @@ void main() {
       );
       expect(noAplicadas, isEmpty);
 
-      final filaEnCelular = await (celular.select(
-        celular.configuracionNegocioTabla,
-      )..where((c) => c.globalId.equals('config-negocio-1'))).getSingle();
+      // La fila única del celular (aunque tenga otro `global_id`, es la misma fila: ver `_aplicarUnaFila`).
+      final filaEnCelular = await celular.select(celular.configuracionNegocioTabla).getSingle();
       // Traducido al id local del celular — nunca el id crudo de la PC.
       expect(filaEnCelular.productoVueltoId, productoIdCelular);
     },
