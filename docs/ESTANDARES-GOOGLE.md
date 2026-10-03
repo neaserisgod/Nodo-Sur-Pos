@@ -45,7 +45,7 @@ Se corrige para ser un solo lenguaje:
 | Guardado | Configuración guarda solo con Enter, sin aviso, y descarta montos inválidos en silencio | guardar al salir del campo + "Guardado" + error en el campo |
 | Formularios | PC sin aviso de "salir sin guardar" (el celular sí lo tiene) | mismo `confirmarSalirSinGuardar` en ambos |
 | Fechas | texto `DD/MM/AAAA` que acepta 31/02 | selector de fecha del sistema |
-| Vocabulario | "Anular" (PC) vs "Eliminar" (celular); "Precios" (pestaña) vs "Productos" (título); jerga "fase 12", "colchón", "retener" sin explicación | un glosario único y textos revisados |
+| Vocabulario | ✅ "Anular" unificado en PC y celular (historial); "Terminal que cobra" sin "fase 12"; la pestaña ya se llama "Productos". Queda "colchón" (explicarlo en Separaciones) | un glosario único y textos revisados |
 | Rendimiento | Separaciones recarga todo cada 15 s; consultas leen todo el historial | índices/consultas acotadas por fecha (ver Plan, Fase 1) |
 | Errores y registro | `main.dart` solo `debugPrint`; sin archivo de log en la PC | log a archivo rotado + pantalla "Algo salió mal" con copiar detalle |
 
