@@ -248,11 +248,28 @@ Future<List<ResumenProveedorNivel1>> resumenProveedoresNivel1(
       : inicioDePeriodo(periodo, ahora);
 
   final idsProveedores = proveedores.map((p) => p.id).toList();
+  DateTime? inicioMasViejo = inicioComun;
+  if (periodo == PeriodoResumen.desdeUltimoPago) {
+    inicioMasViejo = null;
+    for (final p in proveedores) {
+      final inicioDeP = inicioDePeriodo(periodo, ahora, ultimoPago: p.ultimoPagoFecha);
+      if (inicioDeP == null) {
+        inicioMasViejo = null;
+        break;
+      }
+      if (inicioMasViejo == null || inicioDeP.isBefore(inicioMasViejo)) inicioMasViejo = inicioDeP;
+    }
+  }
   final filasPorProveedor = <int, List<(FilaLineaVenta linea, FilaVenta venta)>>{};
   if (idsProveedores.isNotEmpty) {
     final query = db.select(db.lineasDeVenta).join([
       innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
-    ])..where(db.lineasDeVenta.proveedorIdFoto.isIn(idsProveedores) & db.ventas.anuladaEn.isNull());
+    ])..where(
+        db.lineasDeVenta.proveedorIdFoto.isIn(idsProveedores) &
+            db.ventas.anuladaEn.isNull() &
+            // Solo lo que alguna fila va a usar: el inicio más viejo entre los proveedores (null = alguno cuenta desde siempre).
+            (inicioMasViejo == null ? const Constant(true) : db.ventas.fecha.isBiggerOrEqualValue(inicioMasViejo)),
+      );
     final filas = await query.get();
     for (final fila in filas) {
       final linea = fila.readTable(db.lineasDeVenta);
