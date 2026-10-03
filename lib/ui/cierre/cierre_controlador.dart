@@ -15,6 +15,9 @@ import '../../data/pdf_planilla.dart';
 import '../../data/repositorio_carga_historica.dart' show ResumenDiaHistorico, resumenDiaHistorico;
 import '../../data/repositorio_arqueo_intermedio.dart' show ArqueoDelTurno, arqueosDelTurno;
 import '../../data/repositorio_cierre.dart';
+import '../../data/repositorio_conciliacion_mp.dart';
+import '../../domain/conciliacion_mp.dart';
+import '../../servicios/conciliacion_mp_nube.dart';
 import '../../data/repositorio_cobro.dart';
 import '../../data/repositorio_respaldo.dart';
 import '../../data/repositorio_ventas_abiertas.dart';
@@ -23,7 +26,8 @@ import '../../domain/dinero.dart';
 enum FaseCierre { conteo, revisado, cerrado }
 
 class CierreControlador extends ChangeNotifier {
-  CierreControlador(this.db, {required this.sesionId}) {
+  CierreControlador(this.db, {required this.sesionId, LeerCobrosMp? leerCobrosMp})
+      : leerCobrosMp = leerCobrosMp ?? (nubeApp == null ? null : leerCobrosMpDeCuenta(nubeApp!.almacen, nubeApp!.cliente)) {
     // Mientras ya se reveló el resultado, corregir el conteo recalcula en
     // vivo (El dueño: "cuento hasta que dé" no debería volver a tapar nada —
     // ocultar es para no sesgar el primer conteo, no para trabar la
@@ -35,6 +39,15 @@ class CierreControlador extends ChangeNotifier {
 
   final AppDatabase db;
   final int sesionId;
+
+  /// Cómo leer los cobros reales de Mercado Pago para "Mercado Pago según Mercado Pago". Null si esta PC no tiene cuenta
+  /// de Nodo Sur vinculada: la sección lo dice, el cierre sigue igual.
+  final LeerCobrosMp? leerCobrosMp;
+
+  Future<ConciliacionMp> Function()? get cargarMpReal {
+    final leer = leerCobrosMp;
+    return leer == null ? null : () => conciliarMpDeSesion(db, sesionId, leer);
+  }
 
   final TextEditingController efectivoContadoCtrl = TextEditingController();
   final TextEditingController mpContadoCtrl = TextEditingController();

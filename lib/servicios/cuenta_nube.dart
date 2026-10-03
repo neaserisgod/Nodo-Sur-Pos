@@ -8,8 +8,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as h;
+
 import 'package:path/path.dart' as p;
 
+import '../domain/conciliacion_mp.dart';
 import '../domain/vinculacion.dart';
 
 /// Lo que guarda la PC después de vincularse.
@@ -369,6 +371,39 @@ class ClienteNube {
     final estado = (jsonDecode(r.body) as Map<String, dynamic>)['status']?.toString();
     if (estado == null) throw const ErrorNube('respuesta_invalida', 'Mercado Pago respondió sin el estado de la orden.');
     return estado;
+  });
+
+  /// Los cobros que Mercado Pago dice que entraron a la cuenta del negocio entre [desde] y [hasta] (para el cierre).
+  Future<({List<CobroMp> cobros, bool truncado})> cobrosMp(String token, {required DateTime desde, required DateTime hasta}) => _conRed(() async {
+    final r = await http.get(
+      _uri('/api/mp/cobros', {'desde': '${desde.millisecondsSinceEpoch ~/ 1000}', 'hasta': '${hasta.millisecondsSinceEpoch ~/ 1000}'}),
+      headers: _auth(token),
+    ).timeout(_limite);
+    if (r.statusCode != 200) {
+      if (r.statusCode == 502 && !r.body.contains('"mensaje":"')) {
+        throw ErrorNube('mp_error', 'Mercado Pago no respondió con los cobros. Probá de nuevo en un rato.', estado: r.statusCode);
+      }
+      _falla(r.statusCode, r.body);
+    }
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    DateTime? fecha(Object? s) => s is num ? DateTime.fromMillisecondsSinceEpoch(s.toInt() * 1000) : null;
+    int n(Object? x) => (x as num?)?.toInt() ?? 0;
+    final cobros = [
+      for (final c in (j['cobros'] as List? ?? const []).cast<Map<String, dynamic>>())
+        CobroMp(
+          id: '${c['id']}',
+          estado: c['estado'] as String?,
+          fecha: fecha(c['fecha']),
+          montoCentavos: n(c['montoCentavos']),
+          devueltoCentavos: n(c['devueltoCentavos']),
+          comisionCentavos: n(c['comisionCentavos']),
+          netoCentavos: n(c['netoCentavos']),
+          medio: c['medio'] as String?,
+          metodo: c['metodo'] as String?,
+          referencia: c['referencia'] as String?,
+        ),
+    ];
+    return (cobros: cobros, truncado: j['truncado'] == true);
   });
 
   /// Manda un ticket a la terminal de la sucursal por el servidor (el token de Mercado Pago no sale de ahí).

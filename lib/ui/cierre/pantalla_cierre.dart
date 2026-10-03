@@ -25,6 +25,7 @@ import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_carga_historica.dart' show ResumenDiaHistorico;
 import '../../data/repositorio_cierre.dart' show ResumenCierre;
+import '../../data/repositorio_conciliacion_mp.dart' show LeerCobrosMp;
 import '../../domain/dinero.dart';
 import '../tema/acentos.dart';
 import '../comun/fechas.dart';
@@ -39,6 +40,7 @@ import '../tema/tokens.dart';
 import 'arqueos_del_turno.dart';
 import 'cierre_controlador.dart';
 import 'dialogo_reabrir_sesion.dart';
+import 'seccion_mp_real.dart';
 
 class PantallaCierre extends StatefulWidget {
   const PantallaCierre({
@@ -48,7 +50,11 @@ class PantallaCierre extends StatefulWidget {
     required this.usuarioId,
     this.onFinalizado,
     this.textoBotonFinal = 'Volver a la venta',
+    this.leerCobrosMp,
   });
+
+  /// Solo para tests: de dónde salen los cobros reales de Mercado Pago (por defecto, la cuenta de Nodo Sur de la PC).
+  final LeerCobrosMp? leerCobrosMp;
 
   final AppDatabase db;
   final int sesionId;
@@ -76,7 +82,7 @@ class _PantallaCierreState extends State<PantallaCierre> {
   @override
   void initState() {
     super.initState();
-    _c = CierreControlador(widget.db, sesionId: widget.sesionId);
+    _c = CierreControlador(widget.db, sesionId: widget.sesionId, leerCobrosMp: widget.leerCobrosMp);
     _c.cargar();
   }
 
@@ -266,6 +272,14 @@ class _ContenidoRevisado extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
+          ),
+          const SizedBox(height: Espaciado.lg),
+          Superficie(
+            child: SeccionMpReal(
+              cargar: c.cargarMpReal,
+              mpEsperadoCentavos: r.mpEsperadoCentavos,
+              mpContadoCentavos: r.mpDiferenciaCentavos == null ? null : r.mpEsperadoCentavos + r.mpDiferenciaCentavos!,
             ),
           ),
           const SizedBox(height: Espaciado.lg),
@@ -711,6 +725,14 @@ class _ContenidoCerrado extends StatelessWidget {
             valor: formatearARS(mpDiferencia),
             color: mpDiferencia == 0 ? null : context.colores.error,
           ),
+        const SizedBox(height: Espaciado.md),
+        Superficie(
+          child: SeccionMpReal(
+            cargar: c.cargarMpReal,
+            mpEsperadoCentavos: r.mpEsperadoCentavos,
+            mpContadoCentavos: r.mpDiferenciaCentavos == null ? null : r.mpEsperadoCentavos + r.mpDiferenciaCentavos!,
+          ),
+        ),
         if (c.ultimoRespaldoError != null) ...[
           const SizedBox(height: Espaciado.md),
           Text(
