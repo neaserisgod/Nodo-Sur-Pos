@@ -104,7 +104,8 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 - **Windows**: el merge a `main` publica **solo si el título del commit empieza con `release:`** (estable) o `beta:`
   (beta). Cualquier otro merge no compila nada. También se puede disparar a mano (`publicar-beta.yml`). El número de
   compilación lo sube el propio workflow.
-- **Android**: a mano, `publicar-apk.yml` con `canal`, `notas` y **`build` mayor que el último APK publicado**
+- **Android**: a mano, `publicar-apk.yml` con `canal`, `notas` y **`build` mayor que el último APK publicado — mirarlo en
+  el sitio, no en estos docs** (el 03/10 los docs decían 2128 y ya existía la 2129: se pisó el archivo)
   (consultarlo en `/admin/` → Versiones del sitio, o en la tabla `releases`). Sin `build` usa el de `pubspec.yaml`, que
   puede chocar con uno ya publicado (error "exists").
 - Todos los workflows de publicación comparten el grupo de concurrencia `publicar`: van de a uno. **Nunca publicar dos
@@ -115,8 +116,8 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 
 ## 6. Estado al 2026-10-03
 
-- **Publicado**: Windows estable **1.0.0.2127** y Android estable **1.0.0+2128** (03/10). Incluyen todo lo de la lista
-  de abajo.
+- **Publicado**: Windows estable **1.0.0.2129** y Android estable **1.0.0+2130** (03/10, noche). Incluyen todo lo de la
+  lista de abajo, el plan v2 (`docs/PLAN.md`) y los arreglos de la revisión (`ESTADO.md`).
 - Lo hecho entre el 02 y el 03/10 (detalle en `ESTADO.md` y en cada PR):
   - Mercado Pago por negocio: cobro QR/débito por el servidor (PC sin token y celular sin PC), interruptor para usarlo
     aunque haya token local, imprimir en la terminal por el servidor, registro de actividad en `/negocio`.
