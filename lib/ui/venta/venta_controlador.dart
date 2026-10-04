@@ -6,6 +6,7 @@
 
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
@@ -226,7 +227,7 @@ class VentaControlador extends ChangeNotifier {
   bool get arqueoIntermedioVencido {
     if (sesion == null || sesionVencida) return false;
     final desde = _ultimoArqueoIntermedio ?? sesion!.fechaApertura;
-    return necesitaArqueoIntermedio(desde: desde, ahora: DateTime.now());
+    return necesitaArqueoIntermedio(desde: desde, ahora: clock.now());
   }
 
   bool get hayTexto => campoTexto.text.trim().isNotEmpty;
