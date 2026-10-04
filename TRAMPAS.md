@@ -702,3 +702,14 @@ además la tabla es de UNA fila por equipo (la configuración del negocio), la s
 como la misma (`_aplicarUnaFila`): si no, inserta una segunda y `getSingle` explota. Excepción a propósito: las promos
 (sus artículos no viajan).
 `test/data/sync_instalacion_nueva_test.dart` lo cubre.
+
+## "Hace 3 horas" a la 1 de la mañana es ayer (2026-10-04)
+
+Los dos tests del aviso de arqueo abrían la sesión con `DateTime.now() - 3h` y pasaban todo el día... salvo entre las 0
+y las 3, donde esa sesión es de ayer y la pantalla muestra el bloqueo de "sesión de otro día" en vez del aviso. Lo
+destapó una corrida de CI a la 1:39 (UTC).
+
+Regla: **el "ahora" de la caja (`esDeOtroDia`, `arqueoIntermedioVencido`) se lee con `clock.now()`**
+(`package:clock`), no con `DateTime.now()`, para que un test lo fije con `withClock`. Un test que arma fechas
+relativas a la hora real tiene que pensar qué pasa cerca de la medianoche.
+`test/ui/venta/pantalla_venta_arqueo_intermedio_test.dart` lo cubre.

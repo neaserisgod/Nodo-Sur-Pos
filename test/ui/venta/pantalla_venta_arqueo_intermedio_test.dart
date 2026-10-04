@@ -2,6 +2,7 @@
 // El dueño 2026-09-15): un aviso dentro de la misma sesión, sin cortarla ni
 // impedir seguir vendiendo — distinto de "Cerrar caja"/"Cambiar de turno".
 
+import 'package:clock/clock.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,15 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// La hora del test: la real, salvo entre las 0 y las 3, donde se fija a las 3. Una sesión abierta "hace 3 horas" a la
+/// 1:40 es de ayer, y eso es otro caso (la sesión vencida que bloquea), no el aviso de arqueo: el test fallaba solo de
+/// madrugada. A las 3 todavía cae en el mismo día, y el arqueo que el test guarda con la hora real queda dentro de las
+/// 2 horas.
+DateTime _ahoraDelTest() {
+  final ahora = DateTime.now();
+  return ahora.hour < 3 ? DateTime(ahora.year, ahora.month, ahora.day, 3) : ahora;
 }
 
 void main() {
@@ -61,104 +71,110 @@ void main() {
   testWidgets(
     'pasadas las 2hs de la apertura, avisa sin bloquear la venta',
     (tester) async {
-      await db
-          .into(db.sesionesDeCaja)
-          .insert(
-            SesionesDeCajaCompanion.insert(
-              usuarioAbrioId: usuarioId,
-              fondoInicialCentavos: 0,
-              fechaApertura: Value(
-                DateTime.now().subtract(const Duration(hours: 3)),
+      final ahora = _ahoraDelTest();
+      await withClock(Clock.fixed(ahora), () async {
+        await db
+            .into(db.sesionesDeCaja)
+            .insert(
+              SesionesDeCajaCompanion.insert(
+                usuarioAbrioId: usuarioId,
+                fondoInicialCentavos: 0,
+                fechaApertura: Value(
+                  ahora.subtract(const Duration(hours: 3)),
+                ),
               ),
-            ),
-          );
+            );
 
-      await _pump(tester, db);
+        await _pump(tester, db);
 
-      // El aviso ya no es un banner siempre visible (El dueño, tercera pasada
-      // de venta: "UN APARTADO NOTIFICACIONES") — vive detrás de la
-      // campanita de la franja superior, hay que abrirla primero.
-      await tester.tap(find.byTooltip('Notificaciones'));
-      await tester.pump();
+        // El aviso ya no es un banner siempre visible (El dueño, tercera pasada
+        // de venta: "UN APARTADO NOTIFICACIONES") — vive detrás de la
+        // campanita de la franja superior, hay que abrirla primero.
+        await tester.tap(find.byTooltip('Notificaciones'));
+        await tester.pump();
 
-      expect(find.textContaining('Pasaron 2 horas'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Hacer arqueo'), findsOneWidget);
-      // A diferencia de los otros dos bloqueos de esta pantalla (sin sesión
-      // / sesión de otro día), esto es solo un aviso: se sigue vendiendo con
-      // el campo de búsqueda visible al mismo tiempo.
-      expect(find.byType(NavbarSuperior), findsOneWidget);
-      expect(find.byType(TextField), findsWidgets);
+        expect(find.textContaining('Pasaron 2 horas'), findsOneWidget);
+        expect(find.widgetWithText(OutlinedButton, 'Hacer arqueo'), findsOneWidget);
+        // A diferencia de los otros dos bloqueos de esta pantalla (sin sesión
+        // / sesión de otro día), esto es solo un aviso: se sigue vendiendo con
+        // el campo de búsqueda visible al mismo tiempo.
+        expect(find.byType(NavbarSuperior), findsOneWidget);
+        expect(find.byType(TextField), findsWidgets);
+      });
     },
   );
 
   testWidgets(
     'completar el arqueo hace desaparecer el aviso sin cortar ni cerrar la sesión',
     (tester) async {
-      final sesionId = await db
-          .into(db.sesionesDeCaja)
-          .insert(
-            SesionesDeCajaCompanion.insert(
-              usuarioAbrioId: usuarioId,
-              fondoInicialCentavos: 500000,
-              fechaApertura: Value(
-                DateTime.now().subtract(const Duration(hours: 3)),
+      final ahora = _ahoraDelTest();
+      await withClock(Clock.fixed(ahora), () async {
+        final sesionId = await db
+            .into(db.sesionesDeCaja)
+            .insert(
+              SesionesDeCajaCompanion.insert(
+                usuarioAbrioId: usuarioId,
+                fondoInicialCentavos: 500000,
+                fechaApertura: Value(
+                  ahora.subtract(const Duration(hours: 3)),
+                ),
               ),
-            ),
-          );
+            );
 
-      await _pump(tester, db);
+        await _pump(tester, db);
 
-      // Mismo motivo que el test anterior: el aviso vive detrás de la
-      // campanita, hay que abrirla antes de poder tocar "Hacer arqueo".
-      await tester.tap(find.byTooltip('Notificaciones'));
-      await tester.pump();
+        // Mismo motivo que el test anterior: el aviso vive detrás de la
+        // campanita, hay que abrirla antes de poder tocar "Hacer arqueo".
+        await tester.tap(find.byTooltip('Notificaciones'));
+        await tester.pump();
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Hacer arqueo'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Hacer arqueo'));
+        await tester.pumpAndSettle();
 
-      // Por key, no `.first`: a diferencia de cuando esto bloqueaba, ahora
-      // el campo único de búsqueda sigue en pantalla detrás del modal, así
-      // que también hay un `TextField` fuera del diálogo.
-      await tester.enterText(
-        find.descendant(
-          of: find.byKey(const Key('campo_efectivo_contado_intermedio')),
-          matching: find.byType(TextField),
-        ),
-        '5.000',
-      );
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
+        // Por key, no `.first`: a diferencia de cuando esto bloqueaba, ahora
+        // el campo único de búsqueda sigue en pantalla detrás del modal, así
+        // que también hay un `TextField` fuera del diálogo.
+        await tester.enterText(
+          find.descendant(
+            of: find.byKey(const Key('campo_efectivo_contado_intermedio')),
+            matching: find.byType(TextField),
+          ),
+          '5.000',
+        );
+        await tester.tap(find.text('Confirmar conteo'));
+        await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.descendant(
-          of: find.byKey(const Key('campo_mp_contado_intermedio')),
-          matching: find.byType(TextField),
-        ),
-        '0',
-      );
-      await tester.enterText(
-        find.descendant(
-          of: find.byKey(const Key('campo_lata_contada_intermedio')),
-          matching: find.byType(TextField),
-        ),
-        '0',
-      );
-      await tester.tap(find.text('Confirmar arqueo'));
-      await tester.pumpAndSettle();
+        await tester.enterText(
+          find.descendant(
+            of: find.byKey(const Key('campo_mp_contado_intermedio')),
+            matching: find.byType(TextField),
+          ),
+          '0',
+        );
+        await tester.enterText(
+          find.descendant(
+            of: find.byKey(const Key('campo_lata_contada_intermedio')),
+            matching: find.byType(TextField),
+          ),
+          '0',
+        );
+        await tester.tap(find.text('Confirmar arqueo'));
+        await tester.pumpAndSettle();
 
-      // El aviso desaparece — la venta nunca dejó de estar disponible.
-      expect(find.textContaining('Pasaron 2 horas'), findsNothing);
+        // El aviso desaparece — la venta nunca dejó de estar disponible.
+        expect(find.textContaining('Pasaron 2 horas'), findsNothing);
 
-      // La sesión sigue siendo la misma sesión abierta — nada se cortó.
-      final sesion = await (db.select(
-        db.sesionesDeCaja,
-      )..where((s) => s.id.equals(sesionId))).getSingle();
-      expect(sesion.estado, 'ABIERTA');
+        // La sesión sigue siendo la misma sesión abierta — nada se cortó.
+        final sesion = await (db.select(
+          db.sesionesDeCaja,
+        )..where((s) => s.id.equals(sesionId))).getSingle();
+        expect(sesion.estado, 'ABIERTA');
 
-      final arqueos = await db.select(db.arqueosIntermedios).get();
-      expect(arqueos, hasLength(1));
-      expect(arqueos.single.sesionCajaId, sesionId);
-      expect(arqueos.single.efectivoContadoCentavos, 500000);
+        final arqueos = await db.select(db.arqueosIntermedios).get();
+        expect(arqueos, hasLength(1));
+        expect(arqueos.single.sesionCajaId, sesionId);
+        expect(arqueos.single.efectivoContadoCentavos, 500000);
+      });
     },
   );
 }

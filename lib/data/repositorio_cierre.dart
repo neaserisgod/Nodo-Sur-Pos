@@ -3,6 +3,7 @@
 // (lib/domain/caja.dart, reposicion.dart) — acá no vive ninguna fórmula de
 // negocio nueva, solo las consultas que las alimentan.
 
+import 'package:clock/clock.dart';
 import 'package:drift/drift.dart';
 
 import '../domain/caja.dart';
@@ -294,7 +295,7 @@ Future<bool> esUltimaSesion(AppDatabase db, int sesionId) async {
 /// forzar el cierre de una sesión que quedó abierta de un día anterior
 /// (Regla 5) antes de dejar abrir el día de hoy.
 bool esDeOtroDia(DateTime fecha) {
-  final ahora = DateTime.now();
+  final ahora = clock.now();
   return fecha.year != ahora.year || fecha.month != ahora.month || fecha.day != ahora.day;
 }
 
