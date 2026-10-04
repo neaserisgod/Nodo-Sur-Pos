@@ -11,7 +11,9 @@ import 'package:flutter/services.dart';
 
 import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
+import 'app_ns.dart';
 import 'bienvenida/marca_nodo_sur.dart';
+import 'kit/kit_ns.dart';
 import 'flujo_modo_uso.dart';
 import 'modo_uso.dart';
 import 'identidad_dispositivo.dart';
@@ -25,20 +27,43 @@ class CompanionApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      onGenerateTitle: (_) => '${marcaActual.value.nombre} — Companion',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('es', 'AR'),
-      supportedLocales: const [Locale('es', 'AR'), Locale('es')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: TemaCompanion.claro,
-      darkTheme: TemaCompanion.oscuro,
-      // Íconos de la barra de estado claros u oscuros según el tema.
-      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-        child: child!,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: modoTemaNs,
+      builder: (context, modo, _) => MaterialApp(
+        onGenerateTitle: (_) => '${marcaActual.value.nombre} — Companion',
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('es', 'AR'),
+        supportedLocales: const [Locale('es', 'AR'), Locale('es')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: TemaCompanion.claro,
+        darkTheme: TemaCompanion.oscuro,
+        themeMode: modo,
+        // Íconos de la barra de estado claros u oscuros según el tema, y el cartel
+        // "Sin conexión con la PC" arriba de todas las pantallas (docs/01 §6.15):
+        // mientras se ve, todo baja 34 px.
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: sinConexionGlobalNs,
+            builder: (context, sinConexion, _) {
+              if (!sinConexion) return child!;
+              final arriba = MediaQuery.paddingOf(context).top;
+              return Column(
+                children: [
+                  Container(
+                    color: context.ns.wbg,
+                    height: CartelSinConexionNs.alto + arriba,
+                    padding: EdgeInsets.only(top: arriba),
+                    child: const CartelSinConexionNs(),
+                  ),
+                  Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: child!)),
+                ],
+              );
+            },
+          ),
+        ),
+        home: const _PantallaInicial(),
       ),
-      home: const _PantallaInicial(),
     );
   }
 }
@@ -54,6 +79,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
   @override
   void initState() {
     super.initState();
+    cargarModoTemaNs();
     _decidir();
   }
 

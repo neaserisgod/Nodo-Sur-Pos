@@ -39,9 +39,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/caja.dart' show necesitaArqueoIntermedio;
 import '../domain/venta.dart';
-import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
 import 'flujo_modo_uso.dart';
@@ -49,13 +49,17 @@ import 'modo_uso.dart';
 import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
+import 'app_ns.dart';
+import 'funciones_ns.dart';
+import 'kit/kit_ns.dart';
+import 'pantallas/hoja_abrir_caja_ns.dart';
+import 'pantallas/pantalla_inicio_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'dialogo_arqueo_intermedio_companion.dart';
 import 'dialogo_cierre_companion.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
-import 'navbar_companion.dart';
 import 'navegacion.dart';
 import 'pantalla_arqueo.dart';
 import 'pantalla_carrito_venta.dart';
@@ -63,7 +67,12 @@ import 'pantalla_encargues_companion.dart';
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_gestion_companion.dart';
 import 'pantalla_historial_ventas.dart';
-import 'pantalla_inicio_companion.dart';
+import 'pantalla_carga_historica.dart';
+import 'pantalla_cierres.dart';
+import 'pantalla_configuracion_companion.dart';
+import 'pantalla_consultar_precio.dart';
+import 'pantalla_conteo_stock.dart';
+import 'pantalla_entrar_con_cuenta.dart';
 import 'pantalla_precios.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
@@ -79,10 +88,25 @@ class PantallaMenuCompanion extends StatefulWidget {
 }
 
 class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
-    with WidgetsBindingObserver {
-  /// 0 Inicio, 1 Gestión, 2 Historial, 3 Más.
-  int _indice = 0;
-  final _paginaController = PageController();
+    with WidgetsBindingObserver
+    implements ControladorAppNs {
+  PestaniaNs _pestania = PestaniaNs.inicio;
+  int _version = 0;
+
+  @override
+  final ValueNotifier<PendientesNs> pendientes = ValueNotifier(const PendientesNs());
+  @override
+  final ValueNotifier<DatosDiaNs> datosDia = ValueNotifier(const DatosDiaNs());
+  @override
+  final ValueNotifier<int> segmentoCaja = ValueNotifier(0);
+  @override
+  final ValueNotifier<bool> productosEnConteo = ValueNotifier(false);
+  @override
+  final ValueNotifier<bool> ocultarBarra = ValueNotifier(false);
+
+  /// Hay una versión nueva publicada (con su oferta del sitio, si vino de ahí).
+  bool _hayActualizacion = false;
+  OfertaSitio? _ofertaActualizacion;
 
   String? _nombreUsuario;
 
@@ -206,6 +230,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _pcEmparejada = conexion != null;
       _modoUso = modo;
     });
+    sinConexionGlobalNs.value = sinConexion;
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
@@ -245,6 +270,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     final ServicioCompanion servicio =
         conectada ? ClienteCompanion(conexion) : ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()));
     setState(() => _servicio = servicio);
+    sinConexionGlobalNs.value = sinConexion;
     _revisarSesion();
   }
 
@@ -271,6 +297,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       }
       if (!sesion.abierta) {
         if (mounted) setState(() => _estadoCaja = null);
+        await _cargarDia();
         return;
       }
       final estado = await servicio.estadoCaja();
@@ -278,6 +305,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     } catch (_) {
       // Sin diagnóstico visible, mismo criterio que `_revisarActualizacion`.
     }
+    await _cargarDia();
   }
 
   /// Mismo cálculo que `VentaControlador.arqueoIntermedioVencido` en el
@@ -348,20 +376,204 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     WidgetsBinding.instance.removeObserver(this);
     _tickArqueoIntermedio.cancel();
     _subCambiosSync?.cancel();
-    _paginaController.dispose();
+    sinConexionGlobalNs.value = false;
+    pendientes.dispose();
+    datosDia.dispose();
+    segmentoCaja.dispose();
+    productosEnConteo.dispose();
+    ocultarBarra.dispose();
     super.dispose();
   }
 
-  /// Cambia de pestaña deslizando el `PageView` (Alt+tab de la navbar o
-  /// vuelta a "Inicio" con el back del sistema) — el propio arrastre del
-  /// usuario no pasa por acá, dispara `onPageChanged` directamente.
-  void _irAPagina(int i) {
-    setState(() => _indice = i);
-    _paginaController.animateToPage(
-      i,
-      duration: Animaciones.media,
-      curve: Animaciones.curva,
+  // ───────────── ControladorAppNs: lo que leen las pantallas del mock ─────────────
+
+  @override
+  ServicioCompanion? get servicio => _servicio;
+  @override
+  ClienteCompanion? get cliente => _cliente;
+  @override
+  int? get usuarioId => _usuarioId;
+  @override
+  String? get nombreUsuario => _nombreUsuario;
+  @override
+  SesionCompanion? get sesion => _sesion;
+  @override
+  EstadoCajaCompanion? get estadoCaja => _estadoCaja;
+  @override
+  List<LineaVenta> get carrito => _carrito;
+  @override
+  ModoUso? get modoUso => _modoUso;
+  @override
+  bool get pcEmparejada => _pcEmparejada;
+  @override
+  bool get sinConexion => _pcEmparejada && _servicio is ServicioCompanionOffline;
+  @override
+  bool get cajaAbierta => _sesion?.abierta ?? false;
+  @override
+  PestaniaNs get pestania => _pestania;
+
+  @override
+  void irAPestania(PestaniaNs p) {
+    if (!mounted) return;
+    setState(() {
+      _pestania = p;
+      if (p != PestaniaNs.vender) ocultarBarra.value = false;
+    });
+  }
+
+  @override
+  Future<T?> irA<T>(WidgetBuilder builder) async {
+    if (_navegando) return null;
+    setState(() => _navegando = true);
+    try {
+      return await pushSinTeclado<T>(context, builder);
+    } finally {
+      if (mounted) setState(() => _navegando = false);
+    }
+  }
+
+  @override
+  Future<void> refrescar() => _revisarSesion();
+
+  @override
+  Future<void> sincronizar() async {
+    await _sincronizar();
+    await _revisarSesion();
+  }
+
+  @override
+  Future<void> abrirCaja() async {
+    final servicio = _servicio;
+    final usuario = _usuarioId;
+    if (servicio == null || usuario == null) return;
+    await mostrarHojaAbrirCaja(context, servicio: servicio, usuarioId: usuario);
+    await _revisarSesion();
+  }
+
+  @override
+  Future<void> abrirActualizacion() async {
+    await mostrarHojaNs<void>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Hay una versión nueva',
+        texto: _ofertaActualizacion == null
+            ? 'Ya hay una versión nueva publicada: mejoras en el cobro y en el historial.'
+            : 'La ${_ofertaActualizacion!.version} ya está lista.',
+        bloques: const [InfoNs('Al instalar, la app se cierra y se vuelve a abrir.')],
+        botones: [
+          BotonNs.primario(ctx, 'Descargar', () {
+            Navigator.of(ctx).pop();
+            _actualizar(_ofertaActualizacion);
+          }),
+          BotonNs.secundario(ctx, 'Después', () => Navigator.of(ctx).pop()),
+        ],
+      ),
     );
+  }
+
+  @override
+  Future<void> cambiarUsuario() async {
+    // El perfil sale de la cuenta con que se entró (El dueño, 2026-10-02): cambiar
+    // de persona es entrar con otra cuenta.
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaEntrarConCuenta()));
+  }
+
+  @override
+  Future<void> cambiarModo() async => _cambiarModo();
+
+  @override
+  Future<void> abrirConteo({bool soloSinStock = false}) async {
+    await irA((_) => const PantallaConteoStock());
+  }
+
+  @override
+  Future<void> ejecutarFuncion(AccionFuncion accion) async {
+    switch (accion) {
+      case AccionFuncion.irAVender:
+        irAPestania(PestaniaNs.vender);
+      case AccionFuncion.consultarPrecio:
+        await irA((_) => const PantallaConsultarPrecio());
+      case AccionFuncion.productosCatalogo:
+        productosEnConteo.value = false;
+        irAPestania(PestaniaNs.productos);
+      case AccionFuncion.productoNuevo:
+      case AccionFuncion.productosEnLote:
+        productosEnConteo.value = false;
+        irAPestania(PestaniaNs.productos);
+      case AccionFuncion.controlarStock:
+        productosEnConteo.value = true;
+        irAPestania(PestaniaNs.productos);
+      case AccionFuncion.productosSinStock:
+        await abrirConteo(soloSinStock: true);
+      case AccionFuncion.cerrarCaja:
+        if (cajaAbierta) {
+          await _cerrarCaja();
+        } else {
+          irAPestania(PestaniaNs.caja);
+        }
+      case AccionFuncion.abrirCaja:
+        irAPestania(PestaniaNs.caja);
+        if (!cajaAbierta) await abrirCaja();
+      case AccionFuncion.contarCaja:
+        irAPestania(PestaniaNs.caja);
+        await _hacerArqueoIntermedio();
+      case AccionFuncion.gastoIngreso:
+        await _abrirMovimientoCaja(TipoMovimientoCaja.gasto);
+      case AccionFuncion.cajaSeparar:
+        segmentoCaja.value = 1;
+        irAPestania(PestaniaNs.caja);
+      case AccionFuncion.cajaVentas:
+        segmentoCaja.value = 2;
+        irAPestania(PestaniaNs.caja);
+      case AccionFuncion.cierresAnteriores:
+        await irA((_) => const PantallaCierres());
+      case AccionFuncion.configuracion:
+        await irA((_) => const PantallaConfiguracionCompanion());
+      case AccionFuncion.diasAnteriores:
+        await irA((_) => const PantallaCargaHistorica());
+      case AccionFuncion.cambiarUsuario:
+        await cambiarUsuario();
+      case AccionFuncion.irAMas:
+        irAPestania(PestaniaNs.mas);
+      case AccionFuncion.actualizar:
+        irAPestania(PestaniaNs.mas);
+        if (_hayActualizacion) await abrirActualizacion();
+      case AccionFuncion.desconectar:
+        _cambiarModo();
+    }
+  }
+
+  /// Cifras del día y pendientes, calculados de la base local (que la sync
+  /// mantiene al día). Se vuelve a pedir con cada aviso de cambios.
+  Future<void> _cargarDia() async {
+    try {
+      final t = await tableroDelDia(baseLocalCompanion());
+      var sinStock = 0;
+      try {
+        sinStock = (await _servicio?.productosSinStock())?.length ?? 0;
+      } catch (_) {
+        // Sin lista de productos todavía: no se marca nada.
+      }
+      if (!mounted) return;
+      datosDia.value = DatosDiaNs(
+        vendidoCentavos: t.vendidoCentavos,
+        gananciaCentavos: t.gananciaCentavos,
+        efectivoCentavos: t.efectivoCentavos,
+        mpCentavos: t.mpCentavos,
+        ventas: t.tickets,
+      );
+      pendientes.value = PendientesNs(
+        faltaSepararCentavos: t.faltaSepararCentavos,
+        proveedoresPendientes: t.proveedoresPendientes,
+        proveedoresTotal: t.proveedoresConAlgoQueSeparar,
+        sinStock: sinStock,
+        hayActualizacion: _hayActualizacion,
+        arqueoVencido: _arqueoIntermedioVencido,
+      );
+      setState(() => _version++);
+    } catch (_) {
+      // Sin diagnóstico visible: si la base todavía no tiene nada, no hay qué mostrar.
+    }
   }
 
   /// "Vender" en Inicio (El dueño, 2026-09-17: el carrito dejó de ser el botón
@@ -447,36 +659,15 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     final servicio = await resolverServicioCompanion(conexion);
     if (mounted) {
       setState(() => _servicio = servicio);
-      }
+      sinConexionGlobalNs.value = sinConexion;
+    }
   }
 
   // El dueño, 2026-09-07: "necesito que saques la versión de abajo" — el
-  // diagnóstico visible (Celular X · PC Y, o el error) que antes vivía al
-  // pie de esta pantalla se sacó. El chequeo en sí sigue: sin él, la
-  // banda de "Hay una versión distinta" tampoco podría aparecer.
-  //
-  // El dueño, 2026-09-18: "que directamente descargue en automático" — el
-  // banner con botón "Actualizar" se sacó (era el ejemplo #1 de "esto
-  // parece pegote"). Ahora, detectar una versión distinta dispara la
-  // descarga sola; Android igual pide confirmación para instalar (nunca
-  // deja hacerlo en silencio, `actualizacion.dart`), así que no se pierde
-  // el control, solo se salta el paso intermedio de nuestro propio botón.
-  // `_actualizacionYaOfrecida` evita volver a abrir el instalador solo
-  // porque el chequeo periódico (cada vez que la app vuelve de segundo
-  // plano) sigue viendo la misma versión distinta mientras la persona
-  // todavía no completó la instalación anterior.
-  bool _actualizacionYaOfrecida = false;
-
-  /// El dueño, 2026-09-19: "no me salió la actualización" — causa real: la
-  /// IP/token guardados en el celular habían quedado viejos (cambio de
-  /// máquina de fase 13), y este chequeo específico es el único que NO
-  /// cae al fallback offline del resto de la companion (fase 4) — habla
-  /// SIEMPRE directo con `ClienteCompanion(conexion)`, así que fallaba en
-  /// silencio sin ninguna pista de por qué. Este flag no reabre el
-  /// diagnóstico general que el dueño pidió sacar (2026-09-07/18) — es un
-  /// aviso puntual, solo para ESTE chequeo, solo cuando SÍ hay una PC
-  /// emparejada y no se la pudo alcanzar para buscar una actualización.
-  bool _actualizacionSinConexion = false;
+  // diagnóstico visible (Celular X · PC Y, o el error) se sacó. El chequeo en
+  // sí sigue: sin él, la campana tampoco podría avisar "Hay una versión nueva".
+  // Con el mock (2026-10-04) la persona elige cuándo descargar: detectar una
+  // versión nueva solo prende el aviso y el punto de "Más".
 
   Future<void> _revisarActualizacion() async {
     // Sin PC emparejada igual se mira el sitio: ahí vive el APK publicado.
@@ -485,14 +676,24 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       final estado = await revisarActualizacion(
         conexion == null ? null : ClienteCompanion(conexion),
       );
-      if (mounted) setState(() => _actualizacionSinConexion = false);
-      if (estado.hayActualizacion && !_actualizacionYaOfrecida) {
-        _actualizacionYaOfrecida = true;
-        await _actualizar(estado.oferta);
+      if (mounted) {
+        setState(() {
+          _hayActualizacion = estado.hayActualizacion;
+          _ofertaActualizacion = estado.oferta;
+        });
+        // Aparece en la campana y en el punto de "Más": la persona elige cuándo instalar.
+        final p = pendientes.value;
+        pendientes.value = PendientesNs(
+          faltaSepararCentavos: p.faltaSepararCentavos,
+          proveedoresPendientes: p.proveedoresPendientes,
+          proveedoresTotal: p.proveedoresTotal,
+          sinStock: p.sinStock,
+          hayActualizacion: _hayActualizacion,
+          arqueoVencido: p.arqueoVencido,
+        );
       }
     } catch (_) {
       // Sin PC emparejada y sin sitio no hay a quién culpar: no se avisa.
-      if (mounted) setState(() => _actualizacionSinConexion = conexion != null);
     }
   }
 
@@ -530,53 +731,30 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      // Con el back del sistema (o el gesto) en una pestaña que no es
-      // "Inicio", volvemos a "Inicio" en vez de salir de la app de una —
-      // mismo criterio que cualquier app con navbar de pestañas.
-      canPop: _indice == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _irAPagina(0);
-      },
-      child: Scaffold(
-        // El `PageView` pasa por debajo de la navbar de verdad (El dueño,
-        // 2026-09-18) — sin esto, `Scaffold` reserva su propio espacio para
-        // `bottomNavigationBar` con el fondo de pantalla detrás, y la barra
-        // "flotante" en realidad flota sobre una franja vacía del mismo
-        // color, no sobre contenido — se ve como un recuadro sólido, no
-        // como algo suspendido en el aire (y el vidrio de la barra no tiene
-        // nada real que desenfocar). Cada pestaña agrega
-        // `NavbarCompanion.espacioReservado` de padding inferior para que
-        // su último elemento no quede oculto detrás de la barra.
-        extendBody: true,
-        body: PageView(
-          controller: _paginaController,
-          onPageChanged: (i) => setState(() => _indice = i),
-          children: [
-            _PaginaSiempreViva(
-              child: PantallaInicioCompanion(
-                nombreUsuario: _nombreUsuario,
-                usuarioId: _usuarioId,
-                sesion: _sesion,
-                estadoCaja: _estadoCaja,
-                arqueoIntermedioVencido: _arqueoIntermedioVencido,
-                onHacerArqueoIntermedio: _hacerArqueoIntermedio,
-                navegando: _navegando,
-                irA: _irA,
-                onAbrirMovimientoCaja: _abrirMovimientoCaja,
-                onSincronizar: _sincronizar,
-                carrito: _carrito,
-                onVender: _abrirCarritoDesdeInicio,
-                servicio: _servicio,
-                pcEmparejada: _pcEmparejada,
-                actualizacionSinConexion: _actualizacionSinConexion,
-              ),
-            ),
-            const _PaginaSiempreViva(child: PantallaPrecios()),
-            const _PaginaSiempreViva(child: PantallaHistorialVentas()),
-            _PaginaSiempreViva(
-              child: PantallaGestionCompanion(
+    final ns = context.ns;
+    return AppNs(
+      controlador: this,
+      version: _version,
+      child: PopScope(
+        // Con el back del sistema en una pestaña que no es "Inicio" se vuelve a
+        // "Inicio" en vez de salir de la app de una.
+        canPop: _pestania == PestaniaNs.inicio,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          irAPestania(PestaniaNs.inicio);
+        },
+        child: Scaffold(
+          backgroundColor: ns.paper,
+          // El contenido pasa por debajo de la barra flotante: cada pestaña suma
+          // `BarraInferiorNs.espacioReservado` de aire abajo.
+          extendBody: true,
+          body: IndexedStack(
+            index: _pestania.index,
+            children: [
+              const PantallaInicioNs(),
+              const PantallaPrecios(),
+              _TemporalVender(onVender: _abrirCarritoDesdeInicio),
+              PantallaGestionCompanion(
                 navegando: _navegando,
                 irA: _irA,
                 sesion: _sesion,
@@ -587,36 +765,27 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 usuarioId: _usuarioId,
                 onAbrirEncargues: _abrirEncargues,
               ),
-            ),
-          ],
+              const PantallaHistorialVentas(),
+            ],
+          ),
+          bottomNavigationBar: ValueListenableBuilder<bool>(
+            valueListenable: ocultarBarra,
+            builder: (context, oculta, _) => oculta
+                ? const SizedBox.shrink()
+                : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+          ),
         ),
-        bottomNavigationBar: NavbarCompanion(indice: _indice, onSeleccionar: _irAPagina),
       ),
     );
   }
 }
 
-/// Mantiene viva una pestaña del `PageView` aunque quede lejos de la
-/// visible — sin esto, deslizar de "Inicio" a "Más" (dos pestañas) podía
-/// reconstruir "Gestión" al pasar por el medio y perder su estado, algo
-/// que el `IndexedStack` anterior no dejaba pasar nunca.
-class _PaginaSiempreViva extends StatefulWidget {
-  const _PaginaSiempreViva({required this.child});
-
-  final Widget child;
+/// Pestaña "Vender" provisoria: abre el carrito de siempre hasta que la
+/// pantalla de venta del mock la reemplace.
+class _TemporalVender extends StatelessWidget {
+  const _TemporalVender({required this.onVender});
+  final VoidCallback onVender;
 
   @override
-  State<_PaginaSiempreViva> createState() => _PaginaSiempreVivaState();
-}
-
-class _PaginaSiempreVivaState extends State<_PaginaSiempreViva>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
-  }
+  Widget build(BuildContext context) => Center(child: FilledButton(onPressed: onVender, child: const Text('Nueva venta')));
 }

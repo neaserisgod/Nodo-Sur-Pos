@@ -20,69 +20,70 @@ import 'package:flutter/material.dart';
 import '../../ui/tema/acentos.dart';
 import '../../ui/tema/tokens.dart';
 
-// Paleta del rediseño "antigravity" (misma que la web de Nodo Sur): blanco
-// puro de fondo, bloques gris muy claro, tinta casi negra como acento (los
-// botones principales son píldoras negras) y color solo donde significa algo
-// (los medios de pago, la ganancia, las alertas). En oscuro, negro puro.
-// Ya no es un espejo de la paleta del escritorio: la companion tiene la suya.
+// Paleta del mock "Nodo Sur · App del celular" (docs/01 §2): blanco de fondo,
+// superficies gris claro, tinta como acción primaria y un solo azul de marca.
+// En oscuro el primario pasa a ser el azul. Los valores salen de `TokensNs`
+// (`lib/companion/kit/tokens_ns.dart`), que es la fuente de verdad del mock;
+// esto solo los traduce al tipo que usa el kit compartido (`ColoresPlazoleta`).
 const coloresCompanionClaro = ColoresPlazoleta(
   fondo: Color(0xFFFFFFFF),
   fondoBloque: Color(0xFFF3F4F7),
-  borde: Color(0xFFE2E4EA),
+  borde: Color(0xFFE1E4EA),
   textoPrimario: Color(0xFF121317),
   textoSecundario: Color(0xFF566070),
-  textoTenue: Color(0xFF656D80),
+  textoTenue: Color(0xFF566070),
   acento: Color(0xFF121317),
   acentoTexto: Color(0xFFFFFFFF),
-  error: Color(0xFFC5221F),
+  error: Color(0xFFA4231B),
   errorTexto: Color(0xFFFFFFFF),
 );
 
 const coloresCompanionOscuro = ColoresPlazoleta(
-  fondo: Color(0xFF0E0F12),
-  fondoBloque: Color(0xFF14161C),
-  borde: Color(0xFF2A2D36),
-  textoPrimario: Color(0xFFF4F5F7),
-  textoSecundario: Color(0xFFA9B0BF),
-  textoTenue: Color(0xFF7D8597),
-  acento: Color(0xFFFFFFFF),
-  acentoTexto: Color(0xFF121317),
-  error: Color(0xFFFF8A80),
-  errorTexto: Color(0xFF3B0A08),
+  fondo: Color(0xFF0E0F13),
+  fondoBloque: Color(0xFF1A1D24),
+  borde: Color(0xFF2A2E38),
+  textoPrimario: Color(0xFFEEF0F4),
+  textoSecundario: Color(0xFFA0A8B6),
+  textoTenue: Color(0xFFA0A8B6),
+  acento: Color(0xFF2F5BE8),
+  acentoTexto: Color(0xFFFFFFFF),
+  error: Color(0xFFFF918A),
+  errorTexto: Color(0xFF3A1613),
 );
 
-// Degradé de las piezas "hero" (el CTA de vender, el total a cobrar): negro
-// con un velo de color, como el bloque de cierre de la web.
-const _heroClaro = [Color(0xFF0A0B10), Color(0xFF1B1F3A)];
-const _heroOscuro = [Color(0xFF14161C), Color(0xFF232A55)];
+// El mock no usa degradés: las piezas "hero" son un color plano (`--hero`).
+const _heroClaro = [Color(0xFF121317), Color(0xFF121317)];
+const _heroOscuro = [Color(0xFF1C2231), Color(0xFF1C2231)];
 
-/// Acentos con significado propios de la companion (colores de la web).
+/// Colores con significado de la companion: un color por medio de pago
+/// (efectivo verde, Mercado Pago azul de marca, débito gris, mixto ámbar),
+/// la ganancia en verde y las alertas en ámbar.
 const acentosPlazoletaCompanionClaro = AcentosPlazoleta(
-  dinero: Color(0xFFB45309),
-  qr: Color(0xFF3B6CFF),
-  debito: Color(0xFF0E9F85),
-  mixto: Color(0xFF8A5CF6),
+  dinero: Color(0xFF0B7A5E),
+  qr: Color(0xFF2F5BE8),
+  debito: Color(0xFF4B5563),
+  mixto: Color(0xFFB45309),
   textoSobreColor: Color(0xFFFFFFFF),
   gradienteAcento: _heroClaro,
   gradienteDinero: _heroClaro,
-  ganancia: Color(0xFF0E7C5A),
+  ganancia: Color(0xFF0B6A52),
   gananciaSuave: Color(0xFFE3F6EF),
-  alerta: Color(0xFF9A4A06),
-  alertaSuave: Color(0xFFFFF1DC),
+  alerta: Color(0xFF7D3B03),
+  alertaSuave: Color(0xFFFDECD6),
 );
 
 const acentosPlazoletaCompanionOscuro = AcentosPlazoleta(
-  dinero: Color(0xFFC26A12),
-  qr: Color(0xFF4F7CFF),
-  debito: Color(0xFF0E9F85),
-  mixto: Color(0xFF8A5CF6),
+  dinero: Color(0xFF0B7A5E),
+  qr: Color(0xFF2F5BE8),
+  debito: Color(0xFF4B5563),
+  mixto: Color(0xFFB45309),
   textoSobreColor: Color(0xFFFFFFFF),
   gradienteAcento: _heroOscuro,
   gradienteDinero: _heroOscuro,
-  ganancia: Color(0xFF6FE3B8),
-  gananciaSuave: Color(0xFF12332A),
-  alerta: Color(0xFFFFB878),
-  alertaSuave: Color(0xFF3A2410),
+  ganancia: Color(0xFF63D9B0),
+  gananciaSuave: Color(0xFF10342A),
+  alerta: Color(0xFFF5B56C),
+  alertaSuave: Color(0xFF392510),
 );
 
 @immutable
