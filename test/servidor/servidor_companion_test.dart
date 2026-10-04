@@ -1543,6 +1543,21 @@ void main() {
         },
       );
 
+      test('/ventas/<id>/cobro-point dice con qué orden de la Point se cobró (etapa B), o null', () async {
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final ventaId = await db.into(db.ventas).insert(
+          VentasCompanion.insert(sesionCajaId: sesionId, usuarioId: usuarioId, subtotalCentavos: 112000, totalCentavos: 112000),
+        );
+        final sin = await http.get(url('/ventas/$ventaId/cobro-point'), headers: headers());
+        expect(jsonDecode(sin.body), {'cobro': null});
+        final pendiente = await crearOrdenPendiente(db, sesionCajaId: sesionId, canal: 'qr', montoCentavos: 112000);
+        await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: 'orden-mp-9');
+        await marcarOrdenResuelta(db, id: pendiente.id, estado: 'aprobada', ventaId: ventaId);
+        final con = jsonDecode((await http.get(url('/ventas/$ventaId/cobro-point'), headers: headers())).body) as Map;
+        expect((con['cobro'] as Map)['ordenIdMp'], 'orden-mp-9');
+        expect((con['cobro'] as Map)['montoCentavos'], 112000);
+      });
+
       test('ciclo completo aprobado: iniciar, consultar estado y confirmar graban la venta', () async {
         await configurarMpAccessToken(db, 'TOKEN123');
         await configurarMpTerminalCobroId(db, 'N950NCC503383252');

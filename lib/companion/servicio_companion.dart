@@ -26,6 +26,7 @@ import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
 import 'cliente_companion.dart';
+import '../servicios/devolucion_mp.dart' show CobroPoint;
 
 abstract class ServicioCompanion {
   Future<List<UsuarioCompanion>> usuarios();
@@ -264,6 +265,10 @@ abstract class ServicioCompanion {
     required int usuarioId,
     required String motivo,
   });
+
+  /// Con qué orden de la Point se cobró la venta, o null (a mano, efectivo, o una PC vieja que no lo sabe contestar). Para
+  /// ofrecer la devolución por Mercado Pago al anularla (etapa B): la devolución la hace el celular con SU cuenta.
+  Future<CobroPoint?> cobroPointDeVenta(int ventaId);
 
   Future<DetalleVentaCompanion> detalleVenta(int ventaId);
 

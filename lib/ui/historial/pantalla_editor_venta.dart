@@ -18,6 +18,7 @@ import '../tema/tokens.dart';
 import 'editor_venta_controlador.dart';
 import '../tema/iconos.dart';
 import '../tema/esqueleto.dart';
+import 'devolucion_mp_dialogo.dart';
 
 class PantallaEditorVenta extends StatefulWidget {
   const PantallaEditorVenta({super.key, required this.db, required this.ventaId, required this.usuarioId});
@@ -131,6 +132,7 @@ class _PantallaEditorVentaState extends State<PantallaEditorVenta> {
     if (motivo == null || motivo.isEmpty) return;
     try {
       await _c.anular(motivo: motivo);
+      if (mounted) await ofrecerDevolucionMp(context, widget.db, widget.ventaId);
       if (mounted) Navigator.of(context).pop();
     } on ArgumentError catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message.toString())));

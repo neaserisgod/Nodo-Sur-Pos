@@ -83,3 +83,21 @@ Future<List<OrdenCobroPendiente>> ordenesSinResolverDeSesion(AppDatabase db, int
         ..where((o) => o.sesionCajaId.equals(sesionCajaId) & o.estado.equals('pendiente') & o.ventaId.isNull()))
       .get();
 }
+
+/// La orden de la Point con la que se cobró [ventaId], si se cobró así (etapa B: para ofrecer la devolución al anularla). Una
+/// venta cobrada a mano o en efectivo no tiene orden: esa plata se devuelve desde la app de Mercado Pago.
+Future<OrdenCobroPendiente?> ordenCobradaDeVenta(AppDatabase db, int ventaId) {
+  return (db.select(db.ordenesCobroPendientes)
+        ..where((o) => o.ventaId.equals(ventaId) & o.ordenIdMp.isNotNull() & o.estado.isIn(const ['aprobada', 'devuelta']))
+        ..orderBy([(o) => OrderingTerm.desc(o.id)])
+        ..limit(1))
+      .getSingleOrNull();
+}
+
+/// La plata de esa orden ya se le devolvió al cliente por Mercado Pago.
+Future<void> marcarOrdenDevuelta(AppDatabase db, int id) {
+  return (db.update(db.ordenesCobroPendientes)..where((o) => o.id.equals(id))).write(
+    const OrdenesCobroPendientesCompanion(estado: Value('devuelta')),
+  );
+}
+

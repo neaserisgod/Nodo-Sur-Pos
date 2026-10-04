@@ -40,6 +40,7 @@ import 'pantalla_editor_venta.dart';
 import 'periodo_historial.dart';
 import '../tema/esqueleto.dart';
 import '../tema/movimiento.dart';
+import 'devolucion_mp_dialogo.dart';
 
 extension on MedioVentaHistorial {
   String get etiqueta => switch (this) {
@@ -154,6 +155,7 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
     try {
       await anularVenta(widget.db, ventaId: v.ventaId, usuarioId: widget.usuarioId, motivo: motivo);
       _cargar();
+      if (mounted) await ofrecerDevolucionMp(context, widget.db, v.ventaId);
     } on ArgumentError catch (e) {
       // "sesión ya cerrada" / "ya está anulada" — un límite de negocio, no
       // un bug.

@@ -35,6 +35,7 @@ import '../../data/repositorio_arqueo_intermedio.dart' show ArqueoDelTurno, arqu
 import '../cierre/arqueos_del_turno.dart';
 import 'pantalla_editor_venta.dart';
 import '../tema/esqueleto.dart';
+import 'devolucion_mp_dialogo.dart';
 
 class PantallaDetalleDia extends StatefulWidget {
   const PantallaDetalleDia({super.key, required this.db, required this.sesionId, required this.usuarioId});
@@ -103,6 +104,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
     try {
       await anularVenta(widget.db, ventaId: venta.id, usuarioId: widget.usuarioId, motivo: motivo);
       await _cargar();
+      if (mounted) await ofrecerDevolucionMp(context, widget.db, venta.id);
     } on ArgumentError catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message.toString())));
     }

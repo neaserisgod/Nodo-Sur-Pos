@@ -36,7 +36,7 @@ class OrdenesCobroPendientes extends Table {
   /// la orden — recién ahí hay algo que consultar con `GET /v1/orders/{id}`.
   TextColumn get ordenIdMp => text().nullable()();
 
-  /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' |
+  /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' | 'devuelta' (se le devolvió al cliente, etapa B) |
   /// 'rechazada' | 'cancelada' (El dueño la canceló desde el diálogo).
   TextColumn get estado => text().withDefault(const Constant('pendiente'))();
 

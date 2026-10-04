@@ -17,6 +17,7 @@ import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
 import 'cliente_companion.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
+import '../servicios/devolucion_mp.dart' show CobroPoint;
 
 const mensajeSinAperturaOffline = ErrorCompanion(
   0,
@@ -348,6 +349,9 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int usuarioId,
     required String motivo,
   }) => _local.anularVenta(ventaId: ventaId, usuarioId: usuarioId, motivo: motivo);
+
+  @override
+  Future<CobroPoint?> cobroPointDeVenta(int ventaId) => _local.cobroPointDeVenta(ventaId);
 
   @override
   Future<DetalleVentaCompanion> detalleVenta(int ventaId) => _local.detalleVenta(ventaId);
