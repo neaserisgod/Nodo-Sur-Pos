@@ -1750,3 +1750,41 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
   del asistente no pierde lo hecho.
 - **Entrar con Google**: la pantalla de entrar pasa a ser un solo botón "Continuar con Google"; la primera vez la cuenta se
   crea sola en horsepos.com, así que no hay un "registrarse" aparte que haría lo mismo.
+
+## Integración de la Point con Mercado Pago: qué se puede y qué eligió el dueño (2026-10-04)
+
+Investigación completa (documentación oficial de Mercado Pago + pruebas con la cuenta real del local desde
+`/api/admin/mp-saldo` y `/api/admin/mp-reporte` del sitio). Ninguna de estas etapas está empezada; el dueño eligió el orden
+y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada una.**
+
+- **Saldo real de la cuenta**:
+  - El saldo directo (`/users/{id}/mercadopago_account/balance`) da **403** con la cuenta del local: camino cerrado.
+  - El **reporte de Liquidaciones** (`/v1/account/release_report`) sí se puede pedir con la conexión de horsepos.com
+    (listar dio 200; faltaba la configuración, que se crea una vez). Trae el saldo disponible y sus movimientos
+    (cobros, retiros, comisiones, retenciones, devoluciones, reclamos, rendimientos). Es asíncrono (unos minutos),
+    hasta 60 días por reporte, vacío con cuentas de prueba.
+  - La cuenta del local **acredita al instante**, así que el saldo disponible del reporte es el saldo real.
+  - **Sin verificar**: si los pagos y transferencias que hace el dueño desde MP (ej. "Pago Facturas AVC" o la
+    transferencia a otra cuenta del 03/10) aparecen como línea propia; la documentación no lo dice. Se comprueba con el
+    reporte del 03/10.
+  - **Idea del dueño**: el reporte sirve también para anotar los egresos que se olvide de cargar en la app — lo que
+    salió de MP sin pasar por la app aparece en el cierre para registrarlo.
+- **Etapas, en este orden (elegido por el dueño)**:
+  - **A**: avisos en vivo del cobro (webhook "Order" de Mercado Pago al sitio, reenviado por la conexión de sync),
+    vencimiento de la orden (`expiration_time`, de 30 s a 3 h) y "confirmá en la terminal" (`action_required`).
+  - **B**: devoluciones desde la app (`POST /v1/orders/{id}/refund`, total o parcial). **Al anular una venta cobrada por
+    la Point, se pregunta cada vez** "¿Devolver $X al cliente por Mercado Pago?". Lo cobrado a mano no tiene orden: se
+    devuelve desde la app de MP.
+  - **C**: tarjeta, ticket y modo de la terminal.
+    - **Crédito dentro del mismo botón que débito** ("Tarjeta"): el cliente elige débito o crédito en la terminal.
+      **Solo en 1 pago** (sin cuotas) y **sin recargo** para el crédito. Pendiente técnico: la API restringe las cuotas
+      solo con `default_type=credit_card`; con débito y crédito en el mismo botón hay que verificar cómo limitar a 1 pago.
+    - **Ticket**: la Point imprime **el ticket de la app** (no el de Mercado Pago) apenas se aprueba el cobro, con un
+      **interruptor en Configuración**.
+    - Modo de la terminal: PDV / autónomo.
+  - **D**: avisos de cobros que entraron sin venta, contracargos y reclamos.
+  - **E**: QR en pantalla sin terminal (Orders API `type: "qr"`, `config.qr.mode: "dynamic"`; hace falta crear una
+    sucursal y una caja en MP) y el saldo real en el cierre con el reporte de Liquidaciones.
+- **No se puede por API**: la pantalla y configuración del aparato, el cierre de lote, las promociones de los bancos.
+- **Después del posnet**: revisar los errores que todavía se tapan en silencio. La clave propia del APK queda para más
+  adelante.
