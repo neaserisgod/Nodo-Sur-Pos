@@ -10,6 +10,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/respaldo.dart' show versionDeEsquemaDeArchivo;
 import 'package:la_plazoleta/servicios/copias_nube.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/servicios/registro_errores.dart';
 import '../helpers/base_para_tests.dart';
 
 const _cuenta = CuentaVinculada(token: 't1', email: 'a@b.com', idDispositivo: 'dev-123', nombreDispositivo: 'Caja', vence: 99);
@@ -184,6 +185,25 @@ void main() {
       final s = servicio(MockClient((r) async => throw const SocketException('x')));
       expect(await s.avisarYRenovar(cid: 'cid-12345678', sistema: 'Windows'), isNull);
       expect((await almacen.leer())!.token, 't1');
+    });
+
+    test('un fallo que no es de red queda en el log de errores; sin internet no', () async {
+      final carpeta = Directory.systemTemp.createTempSync('log_avisar');
+      carpetaDeLogsParaPruebas = carpeta;
+      addTearDown(() {
+        carpetaDeLogsParaPruebas = null;
+        carpeta.deleteSync(recursive: true);
+      });
+      await almacen.guardar(_cuenta);
+      final sinRed = servicio(MockClient((r) async => throw const SocketException('x')));
+      expect(await sinRed.avisarYRenovar(cid: 'cid-12345678', sistema: 'Windows'), isNull);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(File('${carpeta.path}/errores.log').existsSync(), isFalse);
+
+      final rechazado = servicio(MockClient((r) async => http.Response('{"error":"unauthorized"}', 401)));
+      expect(await rechazado.avisarYRenovar(cid: 'cid-12345678', sistema: 'Windows'), isNull);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(File('${carpeta.path}/errores.log').readAsStringSync(), contains('Avisar a Nodo Sur y renovar el token'));
     });
   });
 

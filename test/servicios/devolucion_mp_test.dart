@@ -1,3 +1,4 @@
+import 'dart:io';
 // Etapa B (2026-10-04): al anular una venta cobrada con la Point se ofrece devolverle la plata al cliente por Mercado Pago.
 // Siempre por el sitio con la cuenta vinculada (el sitio decide si es dueño o encargado), nunca dos veces.
 
@@ -10,6 +11,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_cobro.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/servicios/registro_errores.dart';
 import 'package:la_plazoleta/servicios/devolucion_mp.dart';
 import '../helpers/base_para_tests.dart';
 
@@ -81,6 +83,26 @@ void main() {
       expect(await puedeOfrecerDevolucion(null, almacen: await vinculada(), cliente: sitio()), isFalse, reason: 'a mano o en efectivo');
       final caido = ClienteNube(http: MockClient((_) async => http.Response('', 500)));
       expect(await puedeOfrecerDevolucion(c, almacen: await vinculada(), cliente: caido), isFalse, reason: 'ante la duda, no');
+    });
+
+    test('si falla, no ofrece; sin internet no se anota, pero un error del sitio sí', () async {
+      final carpeta = Directory.systemTemp.createTempSync('log_devolucion');
+      carpetaDeLogsParaPruebas = carpeta;
+      addTearDown(() {
+        carpetaDeLogsParaPruebas = null;
+        carpeta.deleteSync(recursive: true);
+      });
+      final archivo = File('${carpeta.path}/errores.log');
+      final c = await cobroPointDeVenta(db, ventaId);
+      final sinRed = ClienteNube(http: MockClient((_) async => throw const SocketException('sin internet')));
+      expect(await puedeOfrecerDevolucion(c, almacen: await vinculada(), cliente: sinRed), isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(archivo.existsSync(), isFalse);
+
+      final caido = ClienteNube(http: MockClient((_) async => http.Response('', 500)));
+      expect(await puedeOfrecerDevolucion(c, almacen: await vinculada(), cliente: caido), isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(archivo.readAsStringSync(), contains('Consultar si se puede devolver por Mercado Pago'));
     });
   });
 

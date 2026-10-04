@@ -6,9 +6,12 @@
 // Sirve igual en la PC (la orden está en su base) y en el celular (la orden está en la base de la PC o en la suya, según el
 // modo): quien llama trae el [CobroPoint] de la venta.
 
+import 'dart:async';
+
 import '../data/database.dart';
 import '../data/repositorio_cobro.dart';
 import 'cuenta_nube.dart';
+import 'registro_errores.dart';
 
 /// Con qué orden de la Point se cobró una venta.
 class CobroPoint {
@@ -68,7 +71,9 @@ Future<bool> puedeOfrecerDevolucion(CobroPoint? cobro, {required AlmacenCuenta? 
     if (cuenta == null) return false;
     final estado = await cliente.estadoMp(cuenta.token);
     return estado.conectado && estado.puedeDevolver;
-  } catch (_) {
+  } catch (e, st) {
+    // Sin dato no se ofrece devolver (mejor no ofrecer que ofrecer de más), pero si no es solo falta de internet queda anotado.
+    unawaited(registrarSiNoEsDeRed('Consultar si se puede devolver por Mercado Pago', e, st));
     return false;
   }
 }
