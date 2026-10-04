@@ -13,6 +13,7 @@ import 'package:path/path.dart' as p;
 
 import '../domain/avisos_mp.dart';
 import '../domain/conciliacion_mp.dart';
+import '../domain/saldo_mp.dart';
 import '../domain/vinculacion.dart';
 import 'avisos_cobro_mp.dart';
 import 'registro_errores.dart';
@@ -438,6 +439,38 @@ class ClienteNube {
     return avisos;
   });
 
+  /// Pide el reporte de Liquidaciones de Mercado Pago desde [desde] hasta ahora (etapa E, saldo real del cierre). Tarda unos
+  /// minutos: devuelve el id del pedido para preguntar con [estadoSaldoMp]. Pedirlo dos veces seguidas devuelve el mismo.
+  Future<int> pedirSaldoMp(String token, {required DateTime desde}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/saldo'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'desde': desde.millisecondsSinceEpoch ~/ 1000}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) {
+      if (r.statusCode == 502) throw ErrorNube('mp_error', 'Mercado Pago no aceptó el pedido del saldo. Probá de nuevo en un rato.', estado: r.statusCode);
+      _falla(r.statusCode, r.body);
+    }
+    final id = (jsonDecode(r.body) as Map<String, dynamic>)['id'];
+    if (id is! num) throw const ErrorNube('respuesta_invalida', 'El sitio respondió sin el número del pedido.');
+    return id.toInt();
+  });
+
+  /// Cómo va el pedido del saldo: todavía se arma, falló, o está listo.
+  Future<EstadoSaldoMp> estadoSaldoMp(String token, int id) => _conRed(() async {
+    final r = await http.get(_uri('/api/mp/saldo', {'id': '$id'}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) {
+      if (r.statusCode == 502) throw ErrorNube('mp_error', 'Mercado Pago no respondió con el saldo. Probá de nuevo en un rato.', estado: r.statusCode);
+      _falla(r.statusCode, r.body);
+    }
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return switch (j['estado']) {
+      'listo' => EstadoSaldoMp.listo(_saldoDesdeJson(j)),
+      'error' => EstadoSaldoMp.fallo(j['motivo'] as String?),
+      _ => const EstadoSaldoMp.pendiente(),
+    };
+  });
+
   /// Manda un ticket a la terminal de la sucursal por el servidor (el token de Mercado Pago no sale de ahí).
   Future<void> imprimirTicketPoint(String token, {required String externalReference, required String idempotencyKey, required String contenido}) => _conRed(() async {
     final r = await http.post(
@@ -701,5 +734,43 @@ AvisoMp? avisoMpDesdeJson(Map<String, dynamic> j) {
     detalle: j['detalle'] as String?,
     fecha: fecha(j['fecha']),
     creado: fecha(j['creado']) ?? DateTime.now(),
+  );
+}
+
+/// Cómo va un pedido de saldo (etapa E).
+class EstadoSaldoMp {
+  const EstadoSaldoMp.pendiente() : saldo = null, motivo = null, _tipo = 0;
+  const EstadoSaldoMp.listo(SaldoMp this.saldo) : motivo = null, _tipo = 1;
+  const EstadoSaldoMp.fallo(this.motivo) : saldo = null, _tipo = 2;
+
+  final SaldoMp? saldo;
+  final String? motivo;
+  final int _tipo;
+
+  bool get pendiente => _tipo == 0;
+  bool get listo => _tipo == 1;
+  bool get fallo => _tipo == 2;
+}
+
+SaldoMp _saldoDesdeJson(Map<String, dynamic> j) {
+  DateTime? fecha(Object? s) => s is num ? DateTime.fromMillisecondsSinceEpoch(s.toInt() * 1000) : null;
+  int n(Object? x) => (x as num?)?.toInt() ?? 0;
+  return SaldoMp(
+    disponibleCentavos: n(j['saldoDisponibleCentavos']),
+    aLiberarCentavos: (j['aLiberarCentavos'] as num?)?.toInt(),
+    hasta: fecha(j['hasta']),
+    truncado: j['truncado'] == true,
+    movimientos: [
+      for (final m in (j['movimientos'] as List? ?? const []).whereType<Map>())
+        MovimientoSaldoMp(
+          fecha: fecha(m['fecha']),
+          tipo: '${m['tipo'] ?? ''}',
+          descripcion: '${m['descripcion'] ?? ''}',
+          creditoCentavos: n(m['creditoCentavos']),
+          debitoCentavos: n(m['debitoCentavos']),
+          referencia: m['referencia'] as String?,
+          origen: m['origen'] as String?,
+        ),
+    ],
   );
 }

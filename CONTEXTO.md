@@ -130,6 +130,8 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
     Google y "Configurá tu negocio".
   - Cierre de caja: **"Mercado Pago según Mercado Pago"** (cobros reales, comisiones, neto, diferencia de cobros, cobros
     sin venta y ventas sin cobro) en la PC y en el detalle de cada cierre del celular.
+  - Cierre de caja en la PC: botón **"Traer saldo de Mercado Pago"** (reporte de Liquidaciones): llena el "MP contado" y
+    ofrece cargar con un toque lo que no está en la app (etapa E del posnet).
   - Rediseño de la navbar (engranaje) y de Configuración (grupos) en PC y celular.
   - Rendimiento: índices en la base, "Más vendidos" memorizado; en el sitio, caché de 2 minutos del estado de pago y
     caché larga de `.js`/`.css` con huella.

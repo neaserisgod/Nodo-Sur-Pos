@@ -17,6 +17,11 @@ import '../../data/repositorio_arqueo_intermedio.dart' show ArqueoDelTurno, arqu
 import '../../data/repositorio_cierre.dart';
 import '../../data/repositorio_conciliacion_mp.dart';
 import '../../domain/conciliacion_mp.dart';
+import '../../domain/saldo_mp.dart';
+import '../../servicios/saldo_mp_nube.dart';
+import '../../data/repositorio_gastos.dart' show MedioGasto, registrarGastoRapido;
+import '../../data/repositorio_ingresos.dart' show registrarIngresoRapido;
+import '../../data/repositorio_saldo_mp.dart';
 import '../../servicios/conciliacion_mp_nube.dart';
 import '../../data/repositorio_cobro.dart';
 import '../../data/repositorio_respaldo.dart';
@@ -26,8 +31,9 @@ import '../../domain/dinero.dart';
 enum FaseCierre { conteo, revisado, cerrado }
 
 class CierreControlador extends ChangeNotifier {
-  CierreControlador(this.db, {required this.sesionId, LeerCobrosMp? leerCobrosMp})
-      : leerCobrosMp = leerCobrosMp ?? (nubeApp == null ? null : leerCobrosMpDeCuenta(nubeApp!.almacen, nubeApp!.cliente)) {
+  CierreControlador(this.db, {required this.sesionId, LeerCobrosMp? leerCobrosMp, TraerSaldoMp? traerSaldoMp})
+      : leerCobrosMp = leerCobrosMp ?? (nubeApp == null ? null : leerCobrosMpDeCuenta(nubeApp!.almacen, nubeApp!.cliente)),
+        traerSaldoMp = traerSaldoMp ?? (nubeApp == null ? null : traerSaldoMpDeCuenta(nubeApp!.almacen, nubeApp!.cliente)) {
     // Mientras ya se reveló el resultado, corregir el conteo recalcula en
     // vivo (El dueño: "cuento hasta que dé" no debería volver a tapar nada —
     // ocultar es para no sesgar el primer conteo, no para trabar la
@@ -46,7 +52,131 @@ class CierreControlador extends ChangeNotifier {
 
   Future<ConciliacionMp> Function()? get cargarMpReal {
     final leer = leerCobrosMp;
-    return leer == null ? null : () => conciliarMpDeSesion(db, sesionId, leer);
+    return leer == null
+        ? null
+        : () async {
+            final c = await conciliarMpDeSesion(db, sesionId, leer);
+            _ultimaConciliacion = c;
+            return c;
+          };
+  }
+
+  ConciliacionMp? _ultimaConciliacion;
+
+  // --- Saldo real de Mercado Pago (etapa E, El dueño 2026-10-04): se pide con un botón; al llegar llena el "MP contado" y queda
+  // editable; las diferencias se avisan y se cargan con un toque como gasto o ingreso por MP.
+
+  /// Cómo traer el saldo real. Null si esta PC no tiene cuenta de Nodo Sur vinculada: el botón no aparece.
+  final TraerSaldoMp? traerSaldoMp;
+  SaldoMp? saldoMp;
+  bool pidiendoSaldo = false;
+  String? errorSaldo;
+
+  /// Lo que no cierra entre el reporte de Mercado Pago y la app. Null hasta tener el saldo y haber revelado el cierre.
+  DiferenciasSaldoMp? diferenciasSaldo;
+  final Set<int> _ventasSinCobroCargadas = {};
+
+  /// Pide el saldo, lo pone en el "MP contado" (en pesos enteros, como todo contado) y deja los números para editar.
+  Future<void> traerSaldo() async {
+    final traer = traerSaldoMp;
+    if (traer == null || pidiendoSaldo || sesion == null) return;
+    pidiendoSaldo = true;
+    errorSaldo = null;
+    notifyListeners();
+    try {
+      final saldo = await traer(sesion!.fechaApertura);
+      saldoMp = saldo;
+      mpPrecargado = false;
+      mpContadoCtrl.text = formatearARS(((saldo.contadoSugeridoCentavos / centavosPorPeso).round()) * centavosPorPeso, conSigno: false);
+      await recalcularDiferenciasSaldo();
+    } catch (e) {
+      errorSaldo = '$e';
+    } finally {
+      pidiendoSaldo = false;
+      notifyListeners();
+    }
+  }
+
+  /// Cruza los movimientos del reporte con lo que la app anotó por MP en el turno y con las ventas marcadas MP que no entraron.
+  /// Solo con el cierre ya revelado (primero se cuenta, después se compara).
+  Future<void> recalcularDiferenciasSaldo() async {
+    final saldo = saldoMp;
+    if (saldo == null || fase != FaseCierre.revisado) return;
+    final locales = await movimientosMpDelTurno(db, sesionId);
+    var conciliacion = _ultimaConciliacion;
+    final cargar = cargarMpReal;
+    if (conciliacion == null && cargar != null) {
+      try {
+        conciliacion = await cargar();
+      } catch (_) {
+        // sin los cobros no se pueden listar las ventas sin cobro, pero lo demás se muestra igual
+      }
+    }
+    diferenciasSaldo = compararSaldoMp(
+      movimientos: saldo.movimientos,
+      enApp: locales.enApp,
+      anuladasEnApp: locales.anuladas,
+      ventasSinCobro: [
+        for (final v in conciliacion?.ventasSinCobro ?? const <PagoMpRegistrado>[])
+          if (!_ventasSinCobroCargadas.contains(v.ventaId)) v,
+      ],
+    );
+    notifyListeners();
+  }
+
+  String _cuando(DateTime? f) => f == null ? '' : ' (${f.day.toString().padLeft(2, '0')}/${f.month.toString().padLeft(2, '0')} ${f.hour.toString().padLeft(2, '0')}:${f.minute.toString().padLeft(2, '0')})';
+
+  /// Un toque: lo que salió de Mercado Pago y la app no tiene, como gasto por MP.
+  Future<void> cargarEgresoSinRegistrar(MovimientoSaldoMp m) => _cargarMovimiento(
+    () => registrarGastoRapido(
+      db,
+      sesionCajaId: sesionId,
+      usuarioId: sesion!.usuarioAbrioId,
+      montoCentavos: m.debitoCentavos,
+      medio: MedioGasto.mercadoPago,
+      motivo: 'Movimiento en MP que no estaba en la app: ${m.descripcion.isEmpty ? m.tipo : m.descripcion}${_cuando(m.fecha)}',
+    ),
+  );
+
+  /// Un toque: lo que entró a Mercado Pago sin ser un cobro y la app no tiene, como ingreso por MP.
+  Future<void> cargarIngresoSinRegistrar(MovimientoSaldoMp m) => _cargarMovimiento(
+    () => registrarIngresoRapido(
+      db,
+      sesionCajaId: sesionId,
+      usuarioId: sesion!.usuarioAbrioId,
+      montoCentavos: m.creditoCentavos,
+      medio: MedioGasto.mercadoPago,
+      motivo: 'Movimiento en MP que no estaba en la app: ${m.descripcion.isEmpty ? m.tipo : m.descripcion}${_cuando(m.fecha)}',
+    ),
+  );
+
+  /// Un toque: una venta marcada como cobrada por MP que nunca entró, como gasto por MP (para que la caja de MP cuadre).
+  Future<void> cargarVentaSinCobroComoGasto(PagoMpRegistrado v) => _cargarMovimiento(() async {
+    final id = await registrarGastoRapido(
+      db,
+      sesionCajaId: sesionId,
+      usuarioId: sesion!.usuarioAbrioId,
+      montoCentavos: v.montoCentavos,
+      medio: MedioGasto.mercadoPago,
+      motivo: 'Cobro marcado MP que no entró (venta #${v.ventaId})',
+    );
+    _ventasSinCobroCargadas.add(v.ventaId);
+    return id;
+  });
+
+  Future<void> _cargarMovimiento(Future<int> Function() cargar) async {
+    if (sesion == null || fase != FaseCierre.revisado) return;
+    try {
+      await cargar();
+      errorSaldo = null;
+    } catch (e) {
+      errorSaldo = 'No se pudo cargar: $e';
+      notifyListeners();
+      return;
+    }
+    final efectivo = _parsear(efectivoContadoCtrl.text);
+    if (efectivo != null) await _recalcular(efectivo);
+    await recalcularDiferenciasSaldo();
   }
 
   final TextEditingController efectivoContadoCtrl = TextEditingController();
@@ -185,6 +315,7 @@ class CierreControlador extends ChangeNotifier {
     error = null;
     fase = FaseCierre.revisado;
     await _recalcular(monto);
+    await recalcularDiferenciasSaldo();
   }
 
   void _alCambiarConteo() {
@@ -327,6 +458,11 @@ class CierreControlador extends ChangeNotifier {
     precargadoDe = null;
     efectivoPrecargado = false;
     mpPrecargado = false;
+    saldoMp = null;
+    diferenciasSaldo = null;
+    errorSaldo = null;
+    _ventasSinCobroCargadas.clear();
+    _ultimaConciliacion = null;
     await cargar();
     return true;
   }
