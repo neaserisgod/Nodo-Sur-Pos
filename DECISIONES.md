@@ -1844,8 +1844,28 @@ Investigación completa (documentación oficial de Mercado Pago + pruebas con la
     - **Falta activarlo** en el panel de MP: además de "Order", tildar Pagos, Contracargos y Reclamos (README del sitio). Los
       nombres exactos de los campos de contracargos y reclamos salen de la documentación, no se probaron con uno real: se
       leen sin romper si falta alguno.
-  - **E**: QR en pantalla sin terminal (Orders API `type: "qr"`, `config.qr.mode: "dynamic"`; hace falta crear una
-    sucursal y una caja en MP) y el saldo real en el cierre con el reporte de Liquidaciones.
+  - **E — saldo real en el cierre, hecho (2026-10-04, solo PC)**: con el reporte de Liquidaciones.
+    - Decisiones del dueño: se pide con un **botón** (no al abrir el cierre); al llegar **llena el "MP contado"** y queda
+      **editable**; las diferencias se **avisan** y se cargan con **un toque** como gasto o ingreso por MP ("cobro marcado MP
+      que no entró", "movimiento en MP que no está en la app").
+    - Cómo: `POST /api/mp/saldo {desde}` pide el reporte (desde que se abrió la caja hasta ahora; crea la configuración la
+      primera vez) y `GET /api/mp/saldo?id=` contesta pendiente / error / listo (`servicios/saldo_mp_nube.dart` pregunta cada 4 s,
+      hasta 5 min; tres consultas fallidas seguidas cortan la espera). El token no sale del sitio.
+    - El saldo es la **última fila real** del reporte (sin los pares `reserve_for_*` ni el saldo inicial); sin columna de saldo se
+      calcula desde el inicial. **Se le suma lo cobrado y todavía no liberado** (`money_release_date` a futuro, de los pagos de
+      los últimos 30 días), que no está en el reporte: el **MP contado sugerido es el total** (disponible + por liberar), en
+      pesos enteros, y la pantalla muestra las dos partes.
+    - Diferencias (`domain/saldo_mp.dart`): un egreso de la cuenta sin gasto o pago por MP del mismo monto en la app; un ingreso
+      que no sea un cobro sin ingreso por MP; una devolución sin venta anulada que la cubra; y las ventas marcadas MP que no
+      entraron (las del cierre). Cada gasto o ingreso de la app cubre un solo movimiento (mismo monto, el más cercano en el
+      tiempo). Los **cobros** (crédito `payment`) no se comparan acá: ya los concilia "Mercado Pago según Mercado Pago".
+      "Cargar" anota el gasto o ingreso por MP en el turno (nota "Movimiento en MP que no estaba en la app" / "Cobro marcado
+      MP que no entró (venta #N)") y recalcula el cierre. Solo con el cierre ya revelado (primero se cuenta).
+    - **Sin verificar con un reporte de hoy**: que la lista de reportes (`/v1/account/release_report/list`) traiga el `id` o el
+      rango de cada uno (se reconoce por cualquiera de los dos), y los valores de `DESCRIPTION` más allá de `payment` y `payout`.
+      Todo lo desconocido que salga de la cuenta se avisa como egreso sin registrar (se puede descartar no cargándolo).
+    - Falta en el celular (su cierre no lo tiene) y el QR en pantalla sin terminal (Orders API `type: "qr"`), que quedó afuera.
+      Los endpoints de prueba de administradores (`/api/admin/mp-saldo`, `/api/admin/mp-reporte`) siguen en el sitio.
 - **No se puede por API**: la pantalla y configuración del aparato, el cierre de lote, las promociones de los bancos.
 - **Después del posnet**: revisar los errores que todavía se tapan en silencio. La clave propia del APK queda para más
   adelante.

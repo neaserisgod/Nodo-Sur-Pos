@@ -300,6 +300,9 @@ descuadre real.
   regla que el efectivo: oculto hasta confirmar. La diferencia casi nunca da
   cero — es la comisión que Mercado Pago descuenta, no un descuadre (ver
   Regla 12).
+  Con el botón "Traer saldo de Mercado Pago" (2026-10-04) el "MP contado" se llena
+  solo con el saldo real de la cuenta (disponible + cobrado por liberar) y queda
+  editable; lo que no cierra con la app se avisa y se carga con un toque.
 
 ## 11. Gastos
 

@@ -39,6 +39,7 @@ import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'arqueos_del_turno.dart';
 import 'cierre_controlador.dart';
+import 'saldo_mp_vista.dart';
 import 'dialogo_reabrir_sesion.dart';
 import 'seccion_mp_real.dart';
 
@@ -285,6 +286,10 @@ class _ContenidoRevisado extends StatelessWidget {
               mpContadoCentavos: r.mpDiferenciaCentavos == null ? null : r.mpEsperadoCentavos + r.mpDiferenciaCentavos!,
             ),
           ),
+          if (c.diferenciasSaldo?.hayDiferencias ?? false) ...[
+            const SizedBox(height: Espaciado.lg),
+            Superficie(child: DiferenciasSaldoMpVista(c: c)),
+          ],
           const SizedBox(height: Espaciado.lg),
           _ResumenDelDia(c: c, r: r),
           if (c.arqueos.isNotEmpty) ...[
@@ -479,6 +484,9 @@ class _BloqueMercadoPago extends StatelessWidget {
           etiqueta: 'MP contado (según la app de Mercado Pago)',
           sobreElFondo: true,
         ),
+        // Saldo real desde Mercado Pago (etapa E): llena el campo de arriba y queda editable.
+        const SizedBox(height: Espaciado.xs),
+        BotonSaldoMp(c: c),
         // Mismo criterio que el efectivo (El dueño, 2026-10-04): lo del arqueo intermedio se precarga solo si MP no se
         // movió desde entonces.
         if (c.arqueos.isNotEmpty) ...[
