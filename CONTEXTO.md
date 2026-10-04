@@ -143,6 +143,9 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
    MP, **saldo real automático** en el cierre (reporte de liquidaciones; hay que verificar que se pueda), cobrar con
    **QR en pantalla** sin terminal, y crédito/cuotas por la Point. El MCP de Mercado Pago solo sirve para documentación,
    webhooks de la app, usuarios de prueba y homologación: no lee la cuenta real.
+   **Investigado y ordenado el 2026-10-04** (etapas A a E, decisiones del dueño y lo probado con la cuenta real en
+   `DECISIONES.md`, "Integración de la Point con Mercado Pago"): el saldo directo está negado y el saldo real sale del
+   reporte de Liquidaciones. Confirmar antes de arrancar cada etapa.
 2. **Pagar a un proveedor con Mercado Pago desde el celular**: lo factible es copiar alias/CVU y abrir la app de MP, y
    al volver preguntar "¿se hizo la transferencia?" para registrarla. MP no devuelve solo a la app; detectar la
    transferencia por API está sin verificar. Se le propuso; no lo pidió todavía.
