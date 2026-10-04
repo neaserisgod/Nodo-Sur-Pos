@@ -89,6 +89,7 @@ import '../domain/venta.dart';
 import '../domain/venta_json.dart';
 import '../servicios/marca_actual.dart';
 import '../servicios/devolucion_mp.dart' show cobroPointDeVenta;
+import '../servicios/ticket_al_cobrar.dart';
 
 /// Dónde vive el .apk que se ofrece para actualizar la companion app — al
 /// lado de la base real (misma carpeta `Documents`, `driftDatabase`), NO
@@ -723,7 +724,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'ventaId': v.ventaId,
           'fecha': v.fecha.toIso8601String(),
           'totalCentavos': v.totalCentavos,
-          'medio': v.medio.name,
+          // Un celular viejo no conoce "creditCard" (se rompería): crédito viaja como débito + `tarjeta: credito`.
+          'medio': v.medio == MedioVentaHistorial.creditCard ? MedioVentaHistorial.debitCard.name : v.medio.name,
+          if (v.medio == MedioVentaHistorial.creditCard) 'tarjeta': 'credito',
           'detalle': v.detalle,
           'anulada': v.anulada,
           'sesionAbierta': v.sesionAbierta,
@@ -1431,6 +1434,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       // por QR/Débito sin venta y se revisa a mano (`ordenesSinResolverDeSesion`).
       return _error(409, 'El pago se aprobó pero la caja ya estaba cerrada: la venta no se guardó. Revisalo en Mercado Pago');
     }
+    // Etapa C: el ticket en la terminal también para lo que cobra el celular por esta PC (el interruptor es de la PC). En
+    // segundo plano y sin tocar la venta si falla.
+    unawaited(imprimirTicketAlCobrar(db, resultado.ventaId, client: httpClientDePrueba));
     await marcarOrdenResuelta(
       db,
       id: _intRequerido(body, 'ordenPendienteId'),

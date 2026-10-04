@@ -15,7 +15,7 @@ import 'database.dart';
 /// 'efectivo' | 'qr' | 'debitCard' | 'mixto' — más granular que el
 /// `medioResumen` de la carga histórica porque acá interesa poder filtrar
 /// QR y Débito por separado (El dueño: "tipo mercado pago").
-enum MedioVentaHistorial { efectivo, qr, debitCard, mixto }
+enum MedioVentaHistorial { efectivo, qr, debitCard, mixto, creditCard }
 
 class VentaDelHistorial {
   final int ventaId;
@@ -87,7 +87,11 @@ Future<List<VentaDelHistorial>> historialDeVentas(
     } else if (pagos.isEmpty || esEfectivo(pagos.single.medioPagoId)) {
       medio = MedioVentaHistorial.efectivo;
     } else {
-      medio = pagos.single.canal == 'debit_card' ? MedioVentaHistorial.debitCard : MedioVentaHistorial.qr;
+      medio = switch (pagos.single.canal) {
+        'debit_card' => MedioVentaHistorial.debitCard,
+        'credit_card' => MedioVentaHistorial.creditCard,
+        _ => MedioVentaHistorial.qr,
+      };
     }
 
     if (filtroMedio != null && medio != filtroMedio) continue;

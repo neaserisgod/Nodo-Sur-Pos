@@ -47,6 +47,7 @@ extension on MedioVentaHistorial {
     MedioVentaHistorial.efectivo => 'Efectivo',
     MedioVentaHistorial.qr => 'QR',
     MedioVentaHistorial.debitCard => 'Débito',
+    MedioVentaHistorial.creditCard => 'Crédito',
     MedioVentaHistorial.mixto => 'Mixto',
   };
 
@@ -55,7 +56,7 @@ extension on MedioVentaHistorial {
     return switch (this) {
       MedioVentaHistorial.efectivo => a.dinero,
       MedioVentaHistorial.qr => a.qr,
-      MedioVentaHistorial.debitCard => a.debito,
+      MedioVentaHistorial.debitCard || MedioVentaHistorial.creditCard => a.debito,
       MedioVentaHistorial.mixto => a.mixto,
     };
   }

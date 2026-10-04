@@ -72,4 +72,26 @@ void main() {
       expect(resultadoDesdeRespuesta(null), ResultadoOrdenCobro.pendiente);
     });
   });
+
+  group('canales y crédito en 1 pago (etapa C)', () {
+    test('crédito va siempre en 1 pago: la terminal no muestra cuotas', () {
+      expect(medioDePagoOrden(canalCredito), {'default_type': 'credit_card', 'default_installments': 1});
+      expect(medioDePagoOrden(canalDebito), {'default_type': 'debit_card'});
+      expect(medioDePagoOrden(canalQr), {'default_type': 'qr'});
+    });
+
+    test('débito y crédito son "tarjeta"; QR no', () {
+      expect(esCanalTarjeta(canalDebito), isTrue);
+      expect(esCanalTarjeta(canalCredito), isTrue);
+      expect(esCanalTarjeta(canalQr), isFalse);
+      expect(esCanalTarjeta(null), isFalse);
+    });
+
+    test('nombres para mostrar', () {
+      expect(nombreCanal(canalCredito), 'Crédito');
+      expect(nombreCanal(canalDebito), 'Débito');
+      expect(nombreCanal(canalQr), 'QR');
+      expect(nombreCanal(null), 'Mercado Pago');
+    });
+  });
 }

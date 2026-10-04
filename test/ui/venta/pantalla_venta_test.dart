@@ -193,7 +193,7 @@ void main() {
         },
       );
 
-      testWidgets('Alt+D hace lo mismo para Débito', (tester) async {
+      testWidgets('Alt+D abre la pregunta de Tarjeta y D elige Débito (etapa C, 2026-10-04)', (tester) async {
         final db = await _crearBaseConSesion();
         addTearDown(db.close);
         await _pump(tester, db);
@@ -204,9 +204,13 @@ void main() {
         await tester.pump();
 
         await _presionarAlt(tester, LogicalKeyboardKey.keyD);
-        await tester.pump();
+        await tester.pumpAndSettle();
 
+        expect(find.text('Cobrar con tarjeta'), findsOneWidget);
         expect(find.text('Cobrar por Débito'), findsNothing);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+        await tester.pumpAndSettle();
+
         expect(_controladorDe(tester).canalElegido, 'debit_card');
       });
 

@@ -1754,8 +1754,7 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
 ## Integración de la Point con Mercado Pago: qué se puede y qué eligió el dueño (2026-10-04)
 
 Investigación completa (documentación oficial de Mercado Pago + pruebas con la cuenta real del local desde
-`/api/admin/mp-saldo` y `/api/admin/mp-reporte` del sitio). Ninguna de estas etapas está empezada; el dueño eligió el orden
-y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada una.**
+`/api/admin/mp-saldo` y `/api/admin/mp-reporte` del sitio). Estado de cada etapa abajo; el dueño eligió el orden y pidió **confirmar los detalles de negocio antes de empezar cada una.**
 
 - **Saldo real de la cuenta**:
   - El saldo directo (`/users/{id}/mercadopago_account/balance`) da **403** con la cuenta del local: camino cerrado.
@@ -1811,10 +1810,18 @@ y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada u
       sitio contesta `ya_devuelta`. La orden queda `'devuelta'` en `ordenes_cobro_pendientes` y no se vuelve a ofrecer.
     - En el celular conectado a la PC, la orden vive en la base de la PC: el celular la pide (`GET
       /ventas/<id>/cobro-point`, solo lectura) y devuelve con SU cuenta. Una PC vieja sin esa ruta da 404: no se ofrece.
-  - **C**: tarjeta, ticket y modo de la terminal.
-    - **Crédito dentro del mismo botón que débito** ("Tarjeta"): el cliente elige débito o crédito en la terminal.
-      **Solo en 1 pago** (sin cuotas) y **sin recargo** para el crédito. Pendiente técnico: la API restringe las cuotas
-      solo con `default_type=credit_card`; con débito y crédito en el mismo botón hay que verificar cómo limitar a 1 pago.
+  - **C — hecha (2026-10-04)**: tarjeta, ticket y modo de la terminal.
+    - Hecho así: el botón "Débito" pasó a **"Tarjeta"**, que pregunta Débito o Crédito (teclas D/C; `elegir_tarjeta.dart`);
+      crédito va con `default_installments: 1` (`medioDePagoOrden`, app y sitio). En el celular, crédito es una opción más de
+      su lista de medios. En el Historial aparece "Crédito"; a un celular viejo le llega como débito + `tarjeta: credito`
+      (con un nombre nuevo se rompía). El chip de filtro "Crédito" no está en el celular: una PC vieja no lo entiende. El
+      Mixto sigue con QR/Débito para la parte no efectivo.
+    - Ticket: interruptor "Imprimir el ticket en la terminal al cobrar con ella" en Configuración → Impresión, de este
+      equipo y **apagado de fábrica** (`PreferenciaTicketPoint`). Al aprobarse un cobro por la Point (también el que el
+      celular hace por esta PC) se imprime en segundo plano (`imprimirTicketAlCobrar`); si falla, la venta queda igual y se
+      avisa. El celular sin PC no lo tiene todavía.
+    - Modo: en horsepos.com/negocio, "Pasar a modo autónomo" / "Volver a cobrar desde el sistema" (solo el dueño), con la
+      etiqueta "Autónoma" mientras dure.
     - **Ticket**: la Point imprime **el ticket de la app** (no el de Mercado Pago) apenas se aprueba el cobro, con un
       **interruptor en Configuración**.
     - Modo de la terminal: PDV / autónomo.

@@ -214,6 +214,27 @@ class _ColumnaConfig extends StatelessWidget {
               Switch(key: const Key('switch_usar_nodo_sur'), value: c.usarNodoSur, onChanged: c.cambiarUsarNodoSur),
             ],
           ),
+          const SizedBox(height: Espaciado.md),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Imprimir el ticket en la terminal al cobrar con ella', style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: Espaciado.xs),
+                    Text(
+                      'Apenas se aprueba un cobro por QR o tarjeta, la terminal imprime el ticket de la venta (el mismo de '
+                      '"Imprimir ticket"). También para lo que cobra el celular por esta PC. Si no sale, la venta igual queda cobrada.',
+                      style: TextStyle(color: context.colores.textoSecundario, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              Switch(key: const Key('switch_ticket_al_cobrar'), value: c.ticketAlCobrar, onChanged: c.cambiarTicketAlCobrar),
+            ],
+          ),
           const SizedBox(height: Espaciado.xl),
           Text('Carpeta de tickets (PDF)', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Espaciado.md),

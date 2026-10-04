@@ -18,6 +18,29 @@ bool sigueEsperando(ResultadoOrdenCobro r) => r == ResultadoOrdenCobro.pendiente
 /// para "cada cuánto" y "hasta cuándo", no una copia por pantalla).
 const intervaloPollingCobroPosnet = Duration(seconds: 2);
 
+/// Canales de cobro por la Point. En la caja los tres son el mismo medio, "Mercado Pago"; el canal es solo dato del pago.
+/// Crédito (etapa C, el dueño 2026-10-04): un botón "Tarjeta" que pregunta Débito o Crédito, y crédito siempre en 1 pago y sin
+/// recargo — Mercado Pago solo deja limitar las cuotas si la orden es de crédito (`default_installments`), por eso no hay una
+/// opción "tarjeta libre" donde el cliente elija.
+const canalQr = 'qr';
+const canalDebito = 'debit_card';
+const canalCredito = 'credit_card';
+const canalesPoint = {canalQr, canalDebito, canalCredito};
+
+bool esCanalTarjeta(String? canal) => canal == canalDebito || canal == canalCredito;
+
+String nombreCanal(String? canal) => switch (canal) {
+  canalQr => 'QR',
+  canalDebito => 'Débito',
+  canalCredito => 'Crédito',
+  _ => 'Mercado Pago',
+};
+
+/// `config.payment_method` de la orden. Crédito va siempre en 1 pago: con `default_installments: 1` la terminal no muestra la
+/// pantalla de cuotas (y con 1 cuota no hace falta `installments_cost`). Misma regla en el sitio (`medioDePagoOrden`).
+Map<String, Object> medioDePagoOrden(String canal) =>
+    canal == canalCredito ? {'default_type': canalCredito, 'default_installments': 1} : {'default_type': canal};
+
 /// Cuánto vive una orden si nadie la paga (Orders API, `expiration_time`; etapa A, 2026-10-04). Pasado esto Mercado Pago la
 /// vence sola: la terminal deja de esperar y la orden queda `expired` (rechazada acá). El sitio usa la misma duración
 /// (`VENCIMIENTO_ORDEN`, `functions/_lib/mp_conexion.js`).

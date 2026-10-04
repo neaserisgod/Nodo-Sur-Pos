@@ -13,6 +13,7 @@ import '../../servicios/impresion_posnet_nube.dart';
 import '../../servicios/marca_actual.dart';
 import '../../servicios/nube.dart' show nubeApp;
 import '../../servicios/preferencia_cobro_nube.dart';
+import '../../servicios/ticket_al_cobrar.dart' show PreferenciaTicketPoint;
 
 class ImpresionControlador extends ChangeNotifier {
   ImpresionControlador(this.db, {this.httpClientDePrueba});
@@ -30,6 +31,9 @@ class ImpresionControlador extends ChangeNotifier {
   /// Interruptor de prueba (de este equipo): cobrar e imprimir por la integración Nodo Sur aunque haya un access token cargado.
   bool usarNodoSur = false;
 
+  /// Etapa C (de este equipo): imprimir el ticket de la app en la terminal apenas se aprueba un cobro con ella.
+  bool ticketAlCobrar = false;
+
   List<FilaVenta> resultados = [];
   String? mensaje;
   bool procesando = false;
@@ -44,8 +48,15 @@ class ImpresionControlador extends ChangeNotifier {
     mpTerminalCobroId = config.mpTerminalCobroId;
     carpetaTickets = config.rutaTicketsCarpeta;
     usarNodoSur = PreferenciaCobroNube.activo;
+    ticketAlCobrar = PreferenciaTicketPoint.activo;
     resultados = await buscarVentasParaReimprimir(db);
     cargando = false;
+    notifyListeners();
+  }
+
+  Future<void> cambiarTicketAlCobrar(bool valor) async {
+    await PreferenciaTicketPoint.guardar(valor);
+    ticketAlCobrar = valor;
     notifyListeners();
   }
 

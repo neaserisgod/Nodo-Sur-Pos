@@ -2276,6 +2276,19 @@ void main() {
         expect(ventas.single['detalle'], 'Coca-Cola 500ml x1');
       });
 
+      test('crédito (etapa C) viaja como débito + tarjeta: credito, para no romper un celular viejo', () async {
+        final medioMpId = (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id;
+        final ventaId = await crearVenta(fecha: DateTime(2026, 8, 15), totalCentavos: 30000, medioPagoId: medioMpId);
+        await (db.update(db.pagos)..where((p) => p.ventaId.equals(ventaId))).write(const PagosCompanion(canal: Value('credit_card')));
+        final respuesta = await http.get(
+          url('/historial/ventas?desde=2026-08-15T00:00:00&hasta=2026-08-16T00:00:00'),
+          headers: headers(),
+        );
+        final venta = (jsonDecode(respuesta.body) as List).cast<Map<String, dynamic>>().single;
+        expect(venta['medio'], 'debitCard');
+        expect(venta['tarjeta'], 'credito');
+      });
+
       test('sin "desde"/"hasta" da 400', () async {
         final respuesta = await http.get(url('/historial/ventas'), headers: headers());
         expect(respuesta.statusCode, 400);

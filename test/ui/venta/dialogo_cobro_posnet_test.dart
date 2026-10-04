@@ -16,10 +16,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ticket.dart'
-    show configurarMpAccessToken, configurarMpTerminalCobroId;
+    show configurarMpAccessToken, configurarMpTerminalCobroId, configurarMpTerminalId;
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/cobro_posnet.dart';
 import 'package:la_plazoleta/servicios/avisos_cobro_mp.dart';
+import 'package:la_plazoleta/servicios/ticket_al_cobrar.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/dialogo_cobro_posnet.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
@@ -378,6 +379,68 @@ void main() {
     await tester.pump();
     expect(consultas, 1);
     expect(find.textContaining('Pago aprobado'), findsOneWidget);
+    controlador.dispose();
+  });
+
+  testWidgets('crédito (etapa C): la orden pide 1 pago y el diálogo dice "Crédito"', (tester) async {
+    Map<String, dynamic>? cuerpo;
+    final client = MockClient((request) async {
+      if (request.method == 'POST') {
+        cuerpo = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      }
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    controlador.elegirCanalDirecto(canalCredito);
+    await _abrir(tester, controlador);
+    expect((cuerpo?['config'] as Map)['payment_method'], {'default_type': 'credit_card', 'default_installments': 1});
+    expect(find.text('Cobrar por Crédito'), findsOneWidget);
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    final pago = await db.select(db.pagos).getSingle();
+    expect(pago.canal, canalCredito, reason: 'en la caja sigue siendo Mercado Pago; el canal queda como dato del pago');
+    controlador.dispose();
+  });
+
+  testWidgets('ticket al cobrar (etapa C): con el interruptor prendido, al aprobarse sale el ticket en la terminal', (tester) async {
+    final acciones = <String>[];
+    final client = MockClient((request) async {
+      if (request.url.path.contains('/terminals/v1/actions')) {
+        acciones.add(request.body);
+        return http.Response(jsonEncode({'id': 'accion-1', 'status': 'created'}), 201);
+      }
+      if (request.method == 'POST') return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    await configurarMpTerminalId(db, 'NEWLAND_N950__N950NCC503383252');
+    PreferenciaTicketPoint.fijarParaTest(true);
+    addTearDown(() => PreferenciaTicketPoint.fijarParaTest(false));
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+    expect(find.textContaining('Pago aprobado'), findsOneWidget);
+    expect(acciones, hasLength(1), reason: 'el ticket de la venta se mandó a la terminal');
+    expect(acciones.single, contains('"type":"print"'));
+    controlador.dispose();
+  });
+
+  testWidgets('ticket al cobrar apagado (el de fábrica): no se imprime nada', (tester) async {
+    final acciones = <String>[];
+    final client = MockClient((request) async {
+      if (request.url.path.contains('/terminals/v1/actions')) acciones.add(request.body);
+      if (request.method == 'POST') return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    expect(find.textContaining('Pago aprobado'), findsOneWidget);
+    expect(acciones, isEmpty);
     controlador.dispose();
   });
 }
