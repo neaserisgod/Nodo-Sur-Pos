@@ -714,12 +714,16 @@ Regla: **el "ahora" de la caja (`esDeOtroDia`, `arqueoIntermedioVencido`) se lee
 relativas a la hora real tiene que pensar qué pasa cerca de la medianoche.
 `test/ui/venta/pantalla_venta_arqueo_intermedio_test.dart` lo cubre.
 
-## El esperado de Mercado Pago es un saldo, y la app no ve todo lo que sale de la cuenta (2026-10-04)
+## El MP contado del cierre viene precargado del último arqueo intermedio (2026-10-04)
 
-`MP esperado = saldo al abrir + cobrado por MP − gastos y pagos con MP + ingresos` (REGLAS §10). El saldo al abrir
-se precarga con lo último **contado**, sin importar el día. Lo que sale de la cuenta de Mercado Pago sin pasar por la
-app no se resta: una transferencia del dueño a su cuenta entre turnos, o un proveedor con medio "Transferencia" que se
-paga desde MP (`pagarProveedor` no graba nada para transferencia). En esos casos el esperado queda inflado justo por
-ese monto, aunque cada venta esté bien registrada. Pasó el 03/10: esperado $222.373 contra $134.913 cobrados según
-Mercado Pago. Por eso el cierre muestra el esperado renglón por renglón (`ResumenCierre.desgloseMp`): si el
-"Cobrado por MP" cuadra con Mercado Pago, la diferencia está en el saldo al abrir.
+El cierre del 03/10 dio MP esperado $222.373 contra $111.475 contado, y parecía que la app registraba mal. No: el
+esperado cuadraba exacto (inicial $286.149 + cobrado por MP $137.240 − "Pago Facturas AVC" por MP $201.016), y el
+arqueo intermedio de las 19:20 había dado −$258 (la comisión). Los $111.475 del cierre eran **los mismos** de las 19:20:
+lo contado en un arqueo intermedio queda precargado en el cierre, y después entraron $110.640 más por MP que nadie
+volvió a contar. Se comparó un saldo de las 19:20 contra un esperado de las 23:14.
+
+Además, "Mercado Pago según Mercado Pago" son los **cobros** del día, no el saldo: se compara con "Cobrado por MP",
+no con el esperado (que es saldo: inicial + cobros − gastos + ingresos, REGLAS §10). Por eso el cierre muestra el
+esperado renglón por renglón (`ResumenCierre.desgloseMp`), con la cantidad de ventas por MP al lado de los cobros que
+informa Mercado Pago. Lo que sale de la cuenta sin pasar por la app (una transferencia a la cuenta propia, un
+proveedor con medio "Transferencia" pagado desde MP) tampoco se resta: también infla el esperado.
