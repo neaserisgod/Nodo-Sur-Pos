@@ -713,3 +713,20 @@ Regla: **el "ahora" de la caja (`esDeOtroDia`, `arqueoIntermedioVencido`) se lee
 (`package:clock`), no con `DateTime.now()`, para que un test lo fije con `withClock`. Un test que arma fechas
 relativas a la hora real tiene que pensar qué pasa cerca de la medianoche.
 `test/ui/venta/pantalla_venta_arqueo_intermedio_test.dart` lo cubre.
+
+## El MP contado del cierre viene precargado del último arqueo intermedio (2026-10-04)
+
+El cierre del 03/10 dio MP esperado $222.373 contra $111.475 contado, y parecía que la app registraba mal. No: el
+esperado cuadraba exacto (inicial $286.149 + cobrado por MP $137.240 − "Pago Facturas AVC" por MP $201.016), y el
+arqueo intermedio de las 19:20 había dado −$258 (la comisión). Los $111.475 del cierre eran **los mismos** de las 19:20:
+lo contado en un arqueo intermedio queda precargado en el cierre, y después entraron $110.640 más por MP que nadie
+volvió a contar. Se comparó un saldo de las 19:20 contra un esperado de las 23:14.
+
+Además, "Mercado Pago según Mercado Pago" son los **cobros** del día, no el saldo: se compara con "Cobrado por MP",
+no con el esperado (que es saldo: inicial + cobros − gastos + ingresos, REGLAS §10). Por eso el cierre muestra el
+esperado renglón por renglón (`ResumenCierre.desgloseMp`), con la cantidad de ventas por MP al lado de los cobros que
+informa Mercado Pago. Lo que sale de la cuenta sin pasar por la app (una transferencia a la cuenta propia, un
+proveedor con medio "Transferencia" pagado desde MP) tampoco se resta: también infla el esperado.
+
+Arreglo (elegido por el dueño): el cierre precarga lo del último arqueo **solo en la caja que no se movió** desde
+entonces (`cajasMovidasDesde`, en la PC y en el `GET /sesion` del celular); si se movió, el campo arranca vacío.

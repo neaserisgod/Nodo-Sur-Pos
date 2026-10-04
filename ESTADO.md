@@ -20,7 +20,7 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 1981 verdes (`flutter test --exclude-tags bench`, 2026-10-03). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 1990 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
@@ -61,7 +61,9 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
 - **Mercado Pago**: cobro QR/débito por la Orders API de la Point (`MODELO__SERIAL` como terminal; cancelar por API solo
   funciona mientras la orden está en `created`), con token local o por el servidor de Nodo Sur (MP del negocio conectado
   en `/negocio`). En la caja QR y Débito son un solo medio, "Mercado Pago"; el canal se guarda por pago. El cierre muestra
-  "Mercado Pago según Mercado Pago" (cobros reales, comisiones, diferencias; nunca frena el cierre).
+  "Mercado Pago según Mercado Pago" (cobros reales, comisiones, diferencias; nunca frena el cierre). El bloque "Mercado Pago"
+  del cierre desglosa su esperado: saldo al abrir, cobrado por MP (con cuántas ventas, para compararlo con los cobros
+  de MP), gastos e ingresos por MP (2026-10-04).
 - **Distribución**: instalador Inno Setup + WinSparkle (firma DSA, `dsa_pub.pem` en el repo, la privada fuera). Publicar:
   título del commit con `release:` o `beta:`; Android a mano con `publicar-apk.yml` y un `build` mayor al último publicado.
   Detalle en `CONTEXTO.md` §5 y `docs/PRIMERA-VERSION.md`.

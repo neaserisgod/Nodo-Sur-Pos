@@ -568,6 +568,13 @@ con un selector de nombre al abrir la app. Sin contraseñas.
     siguen apareciendo recién después de confirmar. La lata **no** se
     precarga — el arqueo del turno la cuenta antes de separar los
     cigarrillos del día y el cierre después, son dos montos distintos.
+  - **Solo se precarga la caja que no se movió desde ese arqueo** (El dueño,
+    2026-10-04, elegido tras el cierre del 03/10, que arrastró el MP contado
+    a las 19:20 cuando después habían entrado $110.640 por MP): si después
+    del arqueo entró o salió plata del cajón (venta en efectivo, gasto,
+    ingreso, anulación), el efectivo arranca vacío; lo mismo con Mercado
+    Pago (venta por MP, anulación, gasto o ingreso por MP). Vale en la PC y
+    en el celular.
   - Todos los arqueos del turno se ven como registro (hora, quién contó,
     contado y diferencia de cada caja) en el resumen del cierre y en
     Historial → detalle del día.

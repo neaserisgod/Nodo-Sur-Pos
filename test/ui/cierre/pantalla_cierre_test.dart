@@ -195,6 +195,33 @@ void main() {
     });
   });
 
+  group('desglose de Mercado Pago (El dueño, 2026-10-04)', () {
+    testWidgets('el bloque de MP muestra el saldo al abrir y lo cobrado, con la cantidad de ventas', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0, mpInicialCentavos: 8746000);
+      final medioMpId = (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id;
+      final ventaId = await db.into(db.ventas).insert(
+        VentasCompanion.insert(sesionCajaId: sesionId, usuarioId: usuarioId, subtotalCentavos: 1000000, totalCentavos: 1000000),
+      );
+      await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: ventaId, medioPagoId: medioMpId, montoCentavos: 1000000));
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await tester.enterText(find.byType(TextField).first, '0');
+      await tester.tap(find.text('Confirmar conteo'));
+      await tester.pumpAndSettle();
+
+      final inicial = find.byKey(const Key('mp_desglose_inicial'));
+      await tester.ensureVisible(inicial);
+      expect(find.descendant(of: inicial, matching: find.text(r'$87.460')), findsOneWidget);
+      final cobros = find.byKey(const Key('mp_desglose_cobros'));
+      expect(find.descendant(of: cobros, matching: find.text('+ Cobrado por MP (1 venta)')), findsOneWidget);
+      expect(find.descendant(of: cobros, matching: find.text(r'$10.000')), findsOneWidget);
+      expect(find.textContaining('Lo que salió de Mercado Pago sin pasar por la app'), findsOneWidget);
+    });
+  });
+
   group('sin el módulo de caja aparte', () {
     testWidgets('no hay lata en el cierre y se cierra sin contarla', (tester) async {
       final db = baseDeTest();

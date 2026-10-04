@@ -472,6 +472,25 @@ void main() {
 
       final conArqueo = await http.get(url('/sesion'), headers: headers());
       expect(jsonDecode(conArqueo.body), contains('fechaUltimoArqueoIntermedio'));
+
+      // Lo contado precarga el cierre del celular solo en la caja que no se movió desde el arqueo (El dueño,
+      // 2026-10-04). Una venta por MP después: MP deja de venir, el efectivo sigue.
+      expect(jsonDecode(conArqueo.body), containsPair('ultimoArqueoMpCentavos', 0));
+      final arqueo = (await db.select(db.arqueosIntermedios).get()).single;
+      final medioMpId = (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id;
+      final ventaId = await db.into(db.ventas).insert(
+        VentasCompanion.insert(
+          sesionCajaId: sesionId,
+          usuarioId: usuarioId,
+          subtotalCentavos: 500000,
+          totalCentavos: 500000,
+          fecha: Value(arqueo.fecha.add(const Duration(minutes: 30))),
+        ),
+      );
+      await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: ventaId, medioPagoId: medioMpId, montoCentavos: 500000));
+      final conVentaMp = jsonDecode((await http.get(url('/sesion'), headers: headers())).body) as Map;
+      expect(conVentaMp, isNot(contains('ultimoArqueoMpCentavos')));
+      expect(conVentaMp, containsPair('ultimoArqueoEfectivoCentavos', 0));
     },
   );
 

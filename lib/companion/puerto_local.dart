@@ -519,13 +519,14 @@ class PuertoLocal implements ServicioCompanion {
     }
     final ultimoArqueo = await repo_arqueo.fechaUltimoArqueoIntermedio(db, sesion.id);
     final ultimo = (await repo_arqueo.arqueosDelTurno(db, sesion.id)).lastOrNull;
+    final movidas = ultimo == null ? null : await repo_cierre.cajasMovidasDesde(db, sesion.id, ultimo.fecha);
     return SesionCompanion(
       abierta: true,
       id: sesion.id,
       fechaApertura: sesion.fechaApertura,
       fechaUltimoArqueoIntermedio: ultimoArqueo,
-      ultimoArqueoEfectivoCentavos: ultimo?.efectivoContadoCentavos,
-      ultimoArqueoMpCentavos: ultimo?.mpContadoCentavos,
+      ultimoArqueoEfectivoCentavos: movidas?.efectivo ?? true ? null : ultimo?.efectivoContadoCentavos,
+      ultimoArqueoMpCentavos: movidas?.mp ?? true ? null : ultimo?.mpContadoCentavos,
     );
   }
 
