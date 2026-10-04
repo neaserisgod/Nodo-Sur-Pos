@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import '../../data/cobro_posnet.dart';
 import '../../domain/cobro_posnet.dart';
 import '../../domain/dinero.dart';
+import '../../servicios/avisos_cobro_mp.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../tema/tokens.dart';
@@ -65,6 +66,14 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
   int? _ordenPendienteId;
   String? _ordenIdMp;
   bool _cancelado = false;
+
+  /// La Point le pidió algo al cliente (`action_required`): se avisa en pantalla, el cobro sigue esperando.
+  bool _enTerminal = false;
+
+  /// Consultas seguidas que fallaron (sin red un momento). Recién después de [_maxFallasSeguidas] se muestra el error: una
+  /// falla suelta con la orden viva en la terminal no puede cortar el cobro.
+  int _fallasSeguidas = 0;
+  static const _maxFallasSeguidas = 3;
 
   /// Distingue el error de cancelar (solo queda "Cerrar" — no hay nada que
   /// reintentar, la venta no se hizo) del error de crear/consultar la
@@ -131,13 +140,15 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
     final intentos =
         timeoutPollingCobroPosnet.inMilliseconds ~/ intervaloPollingCobroPosnet.inMilliseconds;
     for (var i = 0; i < intentos && mounted && !_cancelado; i++) {
-      await Future.delayed(intervaloPollingCobroPosnet);
+      // Con aviso en vivo de Mercado Pago se consulta al instante; sin aviso, la pausa de siempre.
+      await esperarAvisoOrden(_ordenIdMp!, intervaloPollingCobroPosnet);
       if (!mounted || _cancelado) return;
 
       final ResultadoOrdenCobro resultado;
       try {
         resultado = await widget.controlador.consultarEstadoPosnet(_ordenIdMp!);
       } on CobroPosnetException catch (e) {
+        if (++_fallasSeguidas < _maxFallasSeguidas) continue;
         if (!mounted) return;
         setState(() {
           _fase = _Fase.error;
@@ -146,6 +157,9 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
         return;
       }
       if (!mounted || _cancelado) return;
+      _fallasSeguidas = 0;
+      final enTerminal = resultado == ResultadoOrdenCobro.confirmarEnTerminal;
+      if (enTerminal != _enTerminal) setState(() => _enTerminal = enTerminal);
 
       if (resultado == ResultadoOrdenCobro.aprobada) {
         await widget.controlador.confirmarCobroPosnetAprobado(
@@ -244,7 +258,9 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
       _Fase.creando => _filaCargando(
         'Enviando la orden a la terminal — $monto',
       ),
-      _Fase.esperando => _filaCargando('Esperando el pago por $canal — $monto'),
+      _Fase.esperando => _filaCargando(
+        _enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago por $canal — $monto',
+      ),
       _Fase.cancelando => _filaCargando('Cancelando en la terminal...'),
       _Fase.aprobado => Text('Pago aprobado — $monto'),
       _Fase.rechazado => const Text('El pago no se aprobó en la terminal.'),

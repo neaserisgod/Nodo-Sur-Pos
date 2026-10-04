@@ -17,6 +17,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
+import '../domain/cobro_posnet.dart' show duracionIso8601, vencimientoOrdenCobroPosnet;
 import '../domain/dinero.dart';
 
 class CobroPosnetException implements Exception {
@@ -54,6 +55,8 @@ Future<OrdenCobroCreada> crearOrdenCobro({
       body: jsonEncode({
         'type': 'point',
         'external_reference': externalReference,
+        // Vence sola si nadie la paga (etapa A): la terminal deja de esperar y la app ve `expired` en vez de quedarse sin saber.
+        'expiration_time': duracionIso8601(vencimientoOrdenCobroPosnet),
         'transactions': {
           'payments': [
             {'amount': formatearParaMercadoPago(montoCentavos)},

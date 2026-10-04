@@ -13,6 +13,7 @@ import 'package:path/path.dart' as p;
 
 import '../domain/conciliacion_mp.dart';
 import '../domain/vinculacion.dart';
+import 'avisos_cobro_mp.dart';
 import 'registro_errores.dart';
 
 /// Lo que guarda la PC después de vincularse.
@@ -516,17 +517,35 @@ class ClienteNube {
 
   /// Se conecta a los avisos de la cuenta: cada elemento del stream es "otro dispositivo subió algo, andá a bajar".
   /// El stream termina cuando se corta la conexión. Lanza [ErrorNube] si no se pudo conectar.
+  ///
+  /// Por la misma conexión llegan los avisos de Mercado Pago sobre una orden de cobro (`{"mp":{"orden":…}}`, etapa A): esos
+  /// no son "bajá datos", van a [avisarOrdenMp] para despertar al diálogo de cobro.
   Future<Stream<void>> escuchar(String token) async {
     try {
       final uri = Uri(scheme: esquema == 'https' ? 'wss' : 'ws', host: host, port: puerto, path: '/api/sync/escuchar');
       final mensajes = await _abrirEscucha(uri, _auth(token));
-      return mensajes.where((m) => m is String).map((_) {});
+      return mensajes.where((m) => m is String && !_esAvisoOrdenMp(m)).map((_) {});
     } on TimeoutException {
       throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
     } on SocketException {
       throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
     } on WebSocketException catch (e) {
       throw ErrorNube('sin_escucha', 'No se pudo abrir el aviso en vivo: ${e.message}');
+    }
+  }
+
+  /// Un aviso de orden de Mercado Pago se entrega a [avisarOrdenMp] y no cuenta como cambio de datos. Cualquier otra cosa (o
+  /// algo que no se entiende) sigue siendo "bajá": ante la duda, sincronizar de más no rompe nada.
+  static bool _esAvisoOrdenMp(String mensaje) {
+    if (!mensaje.contains('"mp"')) return false;
+    try {
+      final j = jsonDecode(mensaje);
+      final mp = j is Map ? j['mp'] : null;
+      if (mp is! Map || mp['orden'] is! String) return false;
+      avisarOrdenMp(mp['orden'] as String);
+      return true;
+    } on FormatException {
+      return false;
     }
   }
 

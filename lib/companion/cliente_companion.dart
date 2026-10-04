@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
+import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, resultadoDesdeRespuesta;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
@@ -1335,9 +1335,8 @@ class ClienteCompanion implements ServicioCompanion {
       headers: _headers,
     );
     _revisar(r);
-    final estado =
-        (jsonDecode(r.body) as Map<String, dynamic>)['estado'] as String;
-    return ResultadoOrdenCobro.values.byName(estado);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return resultadoDesdeRespuesta(j['estado'] as String?, enTerminal: j['enTerminal'] == true);
   }
 
   /// El pago se aprobó: recién acá se graba la venta real (mismo criterio

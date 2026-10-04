@@ -20,7 +20,7 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 1990 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 2004 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
