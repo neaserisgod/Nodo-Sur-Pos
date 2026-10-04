@@ -1754,8 +1754,7 @@ El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de W
 ## Integración de la Point con Mercado Pago: qué se puede y qué eligió el dueño (2026-10-04)
 
 Investigación completa (documentación oficial de Mercado Pago + pruebas con la cuenta real del local desde
-`/api/admin/mp-saldo` y `/api/admin/mp-reporte` del sitio). Ninguna de estas etapas está empezada; el dueño eligió el orden
-y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada una.**
+`/api/admin/mp-saldo` y `/api/admin/mp-reporte` del sitio). Estado de cada etapa abajo; el dueño eligió el orden y pidió **confirmar los detalles de negocio antes de empezar cada una.**
 
 - **Saldo real de la cuenta**:
   - El saldo directo (`/users/{id}/mercadopago_account/balance`) da **403** con la cuenta del local: camino cerrado.
@@ -1823,9 +1822,6 @@ y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada u
       avisa. El celular sin PC no lo tiene todavía.
     - Modo: en horsepos.com/negocio, "Pasar a modo autónomo" / "Volver a cobrar desde el sistema" (solo el dueño), con la
       etiqueta "Autónoma" mientras dure.
-    - **Crédito dentro del mismo botón que débito** ("Tarjeta"): el cliente elige débito o crédito en la terminal.
-      **Solo en 1 pago** (sin cuotas) y **sin recargo** para el crédito. Pendiente técnico: la API restringe las cuotas
-      solo con `default_type=credit_card`; con débito y crédito en el mismo botón hay que verificar cómo limitar a 1 pago.
     - **Ticket**: la Point imprime **el ticket de la app** (no el de Mercado Pago) apenas se aprueba el cobro, con un
       **interruptor en Configuración**.
     - Modo de la terminal: PDV / autónomo.
