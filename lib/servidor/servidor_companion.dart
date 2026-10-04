@@ -49,6 +49,7 @@ import '../data/repositorio_arqueo_intermedio.dart';
 import '../data/repositorio_carga_historica.dart';
 import '../data/repositorio_cierre.dart'
     show
+        cajasMovidasDesde,
         cantidadVentasDelDia,
         calcularResumenCierre,
         cerrarSesion,
@@ -948,10 +949,13 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final ultimoArqueo = await futuroUltimoArqueo;
     final usuario = await futuroUsuario;
     final ultimo = (await futuroArqueos).lastOrNull;
+    // Lo del último arqueo precarga el cierre del celular solo en la caja que no se movió desde entonces (El dueño,
+    // 2026-10-04 — mismo criterio que el cierre de la PC, ver `cajasMovidasDesde`).
+    final movidas = ultimo == null ? null : await cajasMovidasDesde(db, sesion.id, ultimo.fecha);
     return _json({
       'abierta': true,
-      'ultimoArqueoEfectivoCentavos': ?ultimo?.efectivoContadoCentavos,
-      'ultimoArqueoMpCentavos': ?ultimo?.mpContadoCentavos,
+      'ultimoArqueoEfectivoCentavos': ?(movidas?.efectivo ?? true ? null : ultimo?.efectivoContadoCentavos),
+      'ultimoArqueoMpCentavos': ?(movidas?.mp ?? true ? null : ultimo?.mpContadoCentavos),
       'id': sesion.id,
       'fechaApertura': sesion.fechaApertura.toIso8601String(),
       'usuarioAbrioId': sesion.usuarioAbrioId,

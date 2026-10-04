@@ -58,7 +58,7 @@ dart run build_runner build
 # Análisis estático — tiene que dar "No issues found!" (CI lo exige)
 flutter analyze
 
-# Toda la suite de tests (~1984 al 2026-10-04), sin los benchmarks de 60.000 ventas
+# Toda la suite de tests (~1990 al 2026-10-04), sin los benchmarks de 60.000 ventas
 flutter test --exclude-tags bench
 # Los benchmarks, aparte
 flutter test --tags bench

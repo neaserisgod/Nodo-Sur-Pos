@@ -218,6 +218,43 @@ Future<int> pagosNoEfectivoDelDia(
   return fila.read(db.pagos.montoCentavos.sum()) ?? 0;
 }
 
+/// Si entró o salió plata del cajón y de Mercado Pago después de [desde] (la hora de un arqueo intermedio). El cierre
+/// precarga lo contado en el último arqueo solo en la caja que no se movió desde entonces (El dueño, 2026-10-04: el
+/// cierre del 03/10 arrastró el MP contado de las 19:20 y después habían entrado $110.640 por MP — se comparó un saldo
+/// viejo contra el esperado de la noche).
+///
+/// Cajón: cualquier movimiento de la caja normal que no sea por MP (ventas en efectivo, gastos, ingresos, la
+/// reversión de una anulación). MP: una venta cobrada por MP, o anulada, después de esa hora, o un gasto o ingreso
+/// por MP.
+Future<({bool efectivo, bool mp})> cajasMovidasDesde(AppDatabase db, int sesionId, DateTime desde) async {
+  final cajaYMedio = await Future.wait([_cajaNormal(db), _medioMercadoPago(db)]);
+  final cajaNormal = cajaYMedio[0] as Caja;
+  final mp = cajaYMedio[1] as MedioDePago;
+  final m = db.movimientosDeCaja;
+
+  Future<bool> hayMovimiento(Expression<bool> porMedio) async {
+    final fila = await (db.select(m)
+          ..where((x) => x.sesionCajaId.equals(sesionId) & x.cajaId.equals(cajaNormal.id) & x.fecha.isBiggerThanValue(desde) & porMedio)
+          ..limit(1))
+        .getSingleOrNull();
+    return fila != null;
+  }
+
+  final efectivo = await hayMovimiento(m.medioPagoId.isNull() | m.medioPagoId.equals(mp.id).not());
+  final porMovimientoMp = await hayMovimiento(m.medioPagoId.equals(mp.id));
+  final ventaMp = await (db.selectOnly(db.pagos)
+        ..addColumns([db.pagos.id])
+        ..join([innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId))])
+        ..where(
+          db.ventas.sesionCajaId.equals(sesionId) &
+              db.pagos.medioPagoId.equals(mp.id) &
+              (db.ventas.fecha.isBiggerThanValue(desde) | db.ventas.anuladaEn.isBiggerThanValue(desde)),
+        )
+        ..limit(1))
+      .getSingleOrNull();
+  return (efectivo: efectivo, mp: porMovimientoMp || ventaMp != null);
+}
+
 /// Cuántas ventas de la sesión se cobraron (todo o en parte) por Mercado Pago, con el mismo filtro que
 /// [pagosNoEfectivoDelDia]. Para el desglose del cierre: se compara a ojo con la cantidad de cobros que informa
 /// Mercado Pago ("Mercado Pago según Mercado Pago"), y si no coinciden, ahí está la diferencia.

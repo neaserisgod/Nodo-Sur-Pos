@@ -727,3 +727,6 @@ no con el esperado (que es saldo: inicial + cobros − gastos + ingresos, REGLAS
 esperado renglón por renglón (`ResumenCierre.desgloseMp`), con la cantidad de ventas por MP al lado de los cobros que
 informa Mercado Pago. Lo que sale de la cuenta sin pasar por la app (una transferencia a la cuenta propia, un
 proveedor con medio "Transferencia" pagado desde MP) tampoco se resta: también infla el esperado.
+
+Arreglo (elegido por el dueño): el cierre precarga lo del último arqueo **solo en la caja que no se movió** desde
+entonces (`cajasMovidasDesde`, en la PC y en el `GET /sesion` del celular); si se movió, el campo arranca vacío.

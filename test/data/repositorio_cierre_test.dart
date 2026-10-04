@@ -278,6 +278,57 @@ void main() {
     );
   });
 
+  group('cajasMovidasDesde — qué caja se movió después de un arqueo (El dueño, 2026-10-04)', () {
+    // Todo lo de abajo se graba con la hora real: "hace una hora" es antes de todo, "en una hora" es después.
+    final haceUnaHora = DateTime.now().subtract(const Duration(hours: 1));
+    final enUnaHora = DateTime.now().add(const Duration(hours: 1));
+
+    test('sin nada después del arqueo, ninguna se movió', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearVenta(sesionId, totalCentavos: 1000);
+      await crearVentaMp(sesionId, totalCentavos: 2000);
+      expect(await cajasMovidasDesde(db, sesionId, enUnaHora), (efectivo: false, mp: false));
+    });
+
+    test('una venta en efectivo mueve el cajón, no MP', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearVenta(sesionId, totalCentavos: 1000);
+      expect(await cajasMovidasDesde(db, sesionId, haceUnaHora), (efectivo: true, mp: false));
+    });
+
+    test('una venta por MP mueve MP, no el cajón (el caso del 03/10)', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearVentaMp(sesionId, totalCentavos: 8194000);
+      expect(await cajasMovidasDesde(db, sesionId, haceUnaHora), (efectivo: false, mp: true));
+    });
+
+    test('un gasto pagado con MP mueve MP; uno en efectivo, el cajón', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearGasto(sesionId, montoCentavos: 5000, deLata: false, medioPagoId: medioMpId);
+      expect(await cajasMovidasDesde(db, sesionId, haceUnaHora), (efectivo: false, mp: true));
+      await crearGasto(sesionId, montoCentavos: 5000, deLata: false);
+      expect(await cajasMovidasDesde(db, sesionId, haceUnaHora), (efectivo: true, mp: true));
+    });
+
+    test('anular después una venta por MP de antes también mueve MP', () async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      final ventaId = await db.into(db.ventas).insert(
+        VentasCompanion.insert(
+          sesionCajaId: sesionId,
+          usuarioId: usuarioId,
+          subtotalCentavos: 3000,
+          totalCentavos: 3000,
+          fecha: Value(DateTime.now().subtract(const Duration(hours: 2))),
+        ),
+      );
+      await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: ventaId, medioPagoId: medioMpId, montoCentavos: 3000));
+      expect(await cajasMovidasDesde(db, sesionId, haceUnaHora), (efectivo: false, mp: false));
+
+      await anularVenta(db, ventaId: ventaId, usuarioId: usuarioId, motivo: 'Prueba');
+      expect((await cajasMovidasDesde(db, sesionId, haceUnaHora)).mp, isTrue);
+    });
+  });
+
   group('PAGO_PROVEEDOR entra en los agregados de egreso (bug: solo se filtraba GASTO)', () {
     late int proveedorId;
 

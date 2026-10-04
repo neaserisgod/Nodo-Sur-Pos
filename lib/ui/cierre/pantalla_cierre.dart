@@ -193,11 +193,14 @@ class _ContenidoConteo extends StatelessWidget {
           etiqueta: 'Efectivo contado',
           onSubmitted: (_) => c.confirmarConteo(),
         ),
-        if (c.precargadoDe case final a?) ...[
+        if (c.arqueos.isNotEmpty) ...[
           const SizedBox(height: Espaciado.sm),
           Text(
-            'Precargado con el arqueo de las ${horaCorta(a.fecha)} (${a.usuario}). '
-            'Si vendiste o sacaste plata después, corregilo antes de confirmar.',
+            c.efectivoPrecargado
+                ? 'Precargado con el arqueo de las ${horaCorta(c.arqueos.last.fecha)} (${c.arqueos.last.usuario}): '
+                    'desde entonces no entró ni salió plata del cajón.'
+                : 'Después del arqueo de las ${horaCorta(c.arqueos.last.fecha)} se movió plata del cajón: '
+                    'contalo de nuevo.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
           ),
         ],
@@ -476,6 +479,18 @@ class _BloqueMercadoPago extends StatelessWidget {
           etiqueta: 'MP contado (según la app de Mercado Pago)',
           sobreElFondo: true,
         ),
+        // Mismo criterio que el efectivo (El dueño, 2026-10-04): lo del arqueo intermedio se precarga solo si MP no se
+        // movió desde entonces.
+        if (c.arqueos.isNotEmpty) ...[
+          const SizedBox(height: Espaciado.xs),
+          Text(
+            c.mpPrecargado
+                ? 'Precargado con el arqueo de las ${horaCorta(c.arqueos.last.fecha)}: desde entonces no se movió.'
+                : 'Después del arqueo de las ${horaCorta(c.arqueos.last.fecha)} entró o salió plata por Mercado Pago: '
+                    'mirá el saldo de nuevo.',
+            style: textTheme.bodySmall,
+          ),
+        ],
         // Oculta hasta escribir lo contado, igual que el efectivo.
         if (mpDiferencia != null) ...[
           const SizedBox(height: Espaciado.sm),

@@ -84,6 +84,11 @@ class CierreControlador extends ChangeNotifier {
   /// corregir en vez de tipear todo de nuevo.
   ArqueoDelTurno? precargadoDe;
 
+  /// Qué campo se precargó de [precargadoDe]: solo el de la caja que no se movió desde ese arqueo
+  /// (`cajasMovidasDesde`). Si se movió, el campo arranca vacío y hay que contar de nuevo.
+  bool efectivoPrecargado = false;
+  bool mpPrecargado = false;
+
   /// Null si el respaldo automático salió bien o no hay carpeta configurada
   /// (en ese caso no se avisa nada, silencioso a propósito: configurar el
   /// respaldo es de la pantalla de Respaldo, no algo que este cierre exija).
@@ -121,7 +126,7 @@ class CierreControlador extends ChangeNotifier {
     ordenesCobroSinResolver = await ordenesSinResolverDeSesion(db, sesionId);
     arqueos = await arqueosDelTurno(db, sesionId);
     ventasAbiertas = await cantidadVentasAbiertasConLineas(db, sesionId);
-    _precargarDelUltimoArqueo();
+    await _precargarDelUltimoArqueo();
 
     if (sesion!.estado == 'CERRADA') {
       fase = FaseCierre.cerrado;
@@ -151,13 +156,21 @@ class CierreControlador extends ChangeNotifier {
   /// (`lataEsperadaIntermedia`), y la del cierre es después de separarlos —
   /// son dos montos distintos a propósito, precargar uno con el otro
   /// sembraría una diferencia falsa.
-  void _precargarDelUltimoArqueo() {
+  ///
+  /// Y solo en la caja que no se movió después de ese arqueo (El dueño, 2026-10-04): si entró o salió plata, lo
+  /// contado ya no es lo que hay, y precargarlo invita a cerrar con un saldo viejo.
+  Future<void> _precargarDelUltimoArqueo() async {
     if (fase != FaseCierre.conteo || arqueos.isEmpty) return;
     if (efectivoContadoCtrl.text.isNotEmpty || mpContadoCtrl.text.isNotEmpty) return;
     final ultimo = arqueos.last;
-    efectivoContadoCtrl.text = formatearARS(ultimo.efectivoContadoCentavos, conSigno: false);
-    mpContadoCtrl.text = formatearARS(ultimo.mpContadoCentavos, conSigno: false);
-    precargadoDe = ultimo;
+    final movidas = await cajasMovidasDesde(db, sesionId, ultimo.fecha);
+    efectivoPrecargado = !movidas.efectivo;
+    mpPrecargado = !movidas.mp;
+    if (efectivoPrecargado) {
+      efectivoContadoCtrl.text = formatearARS(ultimo.efectivoContadoCentavos, conSigno: false);
+    }
+    if (mpPrecargado) mpContadoCtrl.text = formatearARS(ultimo.mpContadoCentavos, conSigno: false);
+    precargadoDe = efectivoPrecargado || mpPrecargado ? ultimo : null;
   }
 
   /// Primera confirmación: recién acá se calcula y se revela todo junto
@@ -312,6 +325,8 @@ class CierreControlador extends ChangeNotifier {
     lataContadoCtrl.clear();
     notaCtrl.clear();
     precargadoDe = null;
+    efectivoPrecargado = false;
+    mpPrecargado = false;
     await cargar();
     return true;
   }

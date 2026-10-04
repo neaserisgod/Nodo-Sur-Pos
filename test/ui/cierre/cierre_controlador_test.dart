@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -298,5 +299,33 @@ void main() {
       expect(c.fase, FaseCierre.conteo);
       expect(c.resumen, isNull);
     });
+
+    test(
+      'si después del arqueo entró plata por MP, MP arranca vacío y el efectivo se precarga igual (El dueño, '
+      '2026-10-04: el cierre arrastró el MP de las 19:20)',
+      () async {
+        await registrarArqueoIntermedio(db, sesionId: sesionId, usuarioId: usuarioId, efectivoContadoCentavos: 320000, mpContadoCentavos: 45000, lataContadoCentavos: 0);
+        final arqueo = (await arqueosDelTurno(db, sesionId)).single;
+        final medioMpId = (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id;
+        final ventaId = await db.into(db.ventas).insert(
+          VentasCompanion.insert(
+            sesionCajaId: sesionId,
+            usuarioId: usuarioId,
+            subtotalCentavos: 8194000,
+            totalCentavos: 8194000,
+            fecha: Value(arqueo.fecha.add(const Duration(minutes: 80))),
+          ),
+        );
+        await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: ventaId, medioPagoId: medioMpId, montoCentavos: 8194000));
+
+        final c = CierreControlador(db, sesionId: sesionId);
+        await c.cargar();
+
+        expect(c.efectivoContadoCtrl.text, '3.200');
+        expect(c.efectivoPrecargado, isTrue);
+        expect(c.mpContadoCtrl.text, isEmpty);
+        expect(c.mpPrecargado, isFalse);
+      },
+    );
   });
 }
