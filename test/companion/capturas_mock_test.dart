@@ -18,6 +18,9 @@ import 'package:la_plazoleta/companion/pantalla_movimiento_caja.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_buscador_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_caja_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_cierre_ns.dart';
+import 'package:la_plazoleta/companion/pantallas/pantalla_productos_ns.dart';
+import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
+import 'package:la_plazoleta/companion/pantalla_formulario_producto.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_inicio_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_notificaciones_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -211,5 +214,59 @@ void main() {
   testWidgets('33-cerrar-caja-paso1', (t) async {
     final servicio = await servicioConCaja(t);
     await capturarNs(t, '33-cerrar-caja-paso1', PantallaCierreNs(servicio: servicio, usuarioId: 1));
+  });
+
+  // ───────── Productos ─────────
+  Future<PuertoLocal> conCatalogo(WidgetTester t) async {
+    final servicio = await servicioConCaja(t);
+    final provs = (await t.runAsync(() => servicio.proveedores()))!;
+    Future<void> crear(String nombre, int precio, int stock, {bool peso = false, int prov = 0}) => servicio.crearProducto(
+          nombre: nombre,
+          esPesable: peso,
+          precioCentavos: peso ? null : precio * 100,
+          precioPorKiloCentavos: peso ? precio * 100 : null,
+          stock: peso ? 0 : stock,
+          stockGramos: peso ? stock : null,
+          proveedorId: provs[prov].id,
+          usuarioId: 1,
+        );
+    await t.runAsync(() async {
+      await crear('Cerveza lata 473 ml', 2100, 48);
+      await crear('Gaseosa cola 2,25 L', 2900, 4);
+      await crear('Agua mineral 1,5 L', 1200, 30);
+      await crear('Alfajor triple', 1200, 0);
+      await crear('Pan lactal grande', 2800, 14, prov: 1);
+      await crear('Jamón cocido', 14600, 3200, peso: true, prov: 1);
+    });
+    return servicio;
+  }
+
+  testWidgets('19-productos', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '19-productos', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: PestaniaNs.productos, antes: (t) async {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+      await t.pump(const Duration(milliseconds: 800));
+    });
+  });
+  testWidgets('23-controlar-stock', (t) async {
+    final servicio = await conCatalogo(t);
+    final c = ControladorConServicio(servicio)..productosEnConteo.value = true;
+    await capturarNs(t, '23-controlar-stock', const PantallaProductosNs(), controlador: c, barra: PestaniaNs.productos, antes: (t) async {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+      await t.pump(const Duration(milliseconds: 800));
+    });
+  });
+  testWidgets('24-conteo-por-proveedor', (t) async {
+    await conCatalogo(t);
+    await capturarNs(t, '24-conteo-por-proveedor', const PantallaConteoStock(), antes: (t) async {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+      await t.pump(const Duration(milliseconds: 800));
+    });
+  });
+  testWidgets('28-producto-nuevo', (t) async {
+    final servicio = await conCatalogo(t);
+    final provs = (await t.runAsync(() => servicio.proveedores()))!;
+    final cats = (await t.runAsync(() => servicio.categorias()))!;
+    await capturarNs(t, '28-producto-nuevo', PantallaFormularioProducto(cliente: servicio, usuarioId: 1, proveedores: provs, categorias: cats));
   });
 }

@@ -459,7 +459,8 @@ class BuscadorNs extends StatelessWidget {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+                // El campo ocupa todo el alto de la píldora: todo el campo se puede tocar (>= 44 px).
+                contentPadding: EdgeInsets.symmetric(vertical: (alto - tamanioTexto * 1.3) / 2),
                 hintText: placeholder,
                 hintStyle: estiloNs(tamanioTexto, peso: FontWeight.w500, color: ns.mute),
               ),

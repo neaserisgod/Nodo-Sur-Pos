@@ -57,24 +57,22 @@ import 'pantallas/hoja_contar_caja_ns.dart';
 import 'pantallas/pantalla_cierre_ns.dart';
 import 'pantallas/pantalla_caja_ns.dart';
 import 'pantallas/pantalla_inicio_ns.dart';
+import 'pantallas/pantalla_mas_ns.dart';
+import 'pantallas/pantalla_productos_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
-import 'pantalla_arqueo.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
 import 'pantalla_movimiento_caja.dart';
-import 'pantalla_gestion_companion.dart';
-import 'pantalla_historial_ventas.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_cierres.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_consultar_precio.dart';
 import 'pantalla_conteo_stock.dart';
 import 'pantalla_entrar_con_cuenta.dart';
-import 'pantalla_precios.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
@@ -331,11 +329,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     await _revisarSesion();
   }
 
-  Future<void> _abrirArqueo() async {
-    if (_servicio == null) return;
-    await _irA((_) => PantallaArqueo(servicio: _servicio!));
-  }
-
   /// Cerrar caja de verdad desde el celular (El dueño, 2026-09-19: "que deje
   /// cerrar caja desde el celular") — mismo criterio que
   /// `_hacerArqueoIntermedio`: el diálogo hace todo, acá solo se vuelve a
@@ -524,7 +517,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         segmentoCaja.value = 2;
         irAPestania(PestaniaNs.caja);
       case AccionFuncion.cierresAnteriores:
-        await irA((_) => const PantallaCierres());
+        await irA((_) => const PaginaCierresAnteriores());
       case AccionFuncion.configuracion:
         await irA((_) => const PantallaConfiguracionCompanion());
       case AccionFuncion.diasAnteriores:
@@ -740,7 +733,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             index: _pestania.index,
             children: [
               const PantallaInicioNs(),
-              const PantallaPrecios(),
+              const PantallaProductosNs(),
               _servicio == null || _usuarioId == null
                   ? const SizedBox.shrink()
                   : PantallaCarritoVenta(
@@ -751,17 +744,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                       encargueId: _encargueId,
                     ),
               const PantallaCajaNs(),
-              PantallaGestionCompanion(
-                navegando: _navegando,
-                irA: _irA,
-                sesion: _sesion,
-                onAbrirArqueo: _abrirArqueo,
-                onCerrarCaja: _cerrarCaja,
-                onCambiarModo: _cambiarModo,
-                modoUso: _modoUso,
-                usuarioId: _usuarioId,
-                onAbrirEncargues: _abrirEncargues,
-              ),
+              PantallaMasNs(alAbrirEncargues: _abrirEncargues),
             ],
           ),
           bottomNavigationBar: ValueListenableBuilder<bool>(

@@ -29,6 +29,7 @@ import '../ui/tema/tokens.dart';
 import 'base_local.dart';
 import 'carrito_venta.dart';
 import 'cliente_companion.dart';
+import 'kit/kit_ns.dart';
 import 'debounce.dart';
 import 'emparejamiento.dart';
 import 'fila_linea_carrito.dart';
@@ -38,7 +39,6 @@ import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
-import 'tema/chip_icono.dart';
 import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
@@ -148,74 +148,52 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
     await _cargarDias();
   }
 
+  /// "Días anteriores", tal cual el mock (docs/03 D3): el aviso, una fila por día
+  /// y "Cargar un día" abajo.
   @override
   Widget build(BuildContext context) {
+    final ns = context.ns;
     return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Días históricos'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _cliente == null ? null : _nuevoDia,
-        icon: const Icon(IconosPlazoleta.add),
-        label: const Text('Nuevo día'),
-      ),
+      backgroundColor: ns.paper,
+      appBar: const AppBarCompanion(titulo: 'Días anteriores'),
       body: SafeArea(
-        child: _cargando
-            ? const EsqueletoLista()
-            : _error != null
-            ? Center(
-                child: ErrorEnLinea(_error!),
-              )
-            : _dias.isEmpty
-            ? const EstadoVacio(
-                mensaje: 'Todavía no cargaste ningún día — tocá "Nuevo día"',
-                icono: IconosPlazoleta.history,
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(Espaciado.lg),
-                itemCount: _dias.length,
-                itemBuilder: (context, i) {
-                  final d = _dias[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                    child: Superficie(
-                      padding: EdgeInsets.zero,
-                      child: Presionable(
-                        onTap: () => _abrirDia(d),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Espaciado.lg,
-                            vertical: Espaciado.md,
-                          ),
-                          child: Row(
-                            children: [
-                              ChipIcono(icono: IconosPlazoleta.eventOutlined, color: context.colores.acento),
-                              const SizedBox(width: Espaciado.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _formatearFecha(d.fecha),
-                                      style: Theme.of(context).textTheme.titleMedium,
-                                    ),
-                                    Text(
-                                      '${d.cantidadVentas} venta(s)',
-                                      style: TextStyle(color: context.colores.textoSecundario),
-                                    ),
-                                  ],
-                                ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _cargando
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    : _error != null
+                    ? InfoNs(_error!, tono: TonoNs.bad)
+                    : ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          const InfoNs('Cargá ventas de días que no registraste para tener los números completos.'),
+                          const SizedBox(height: 10),
+                          if (_dias.isEmpty)
+                            Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Todavía no cargaste ningún día. Tocá "Cargar un día".', style: estiloNs(16, color: ns.mute)))
+                          else
+                            for (final d in _dias) ...[
+                              TarjetaFilaNs(
+                                titulo: _formatearFecha(d.fecha),
+                                subtitulo: '${d.cantidadVentas} ${d.cantidadVentas == 1 ? 'venta' : 'ventas'}',
+                                derecha: Text(plataNs(d.totalCentavos), style: estiloNs(19, peso: FontWeight.w500, track: -0.03, color: ns.ink, tabular: true)),
+                                chevron: false,
+                                padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
+                                onTap: () => _abrirDia(d),
                               ),
-                              Text(
-                                formatearARS(d.totalCentavos),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
+                              const SizedBox(height: 8),
                             ],
-                          ),
-                        ),
+                        ],
                       ),
-                    ),
-                  );
-                },
               ),
+              const SizedBox(height: 14),
+              BotonNs.primario(context, 'Cargar un día', _cliente == null ? null : _nuevoDia, habilitado: _cliente != null),
+            ],
+          ),
+        ),
       ),
     );
   }

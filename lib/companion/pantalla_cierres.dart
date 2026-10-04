@@ -37,21 +37,20 @@ import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'base_local.dart';
 import 'cache_cierres.dart';
+import 'kit/kit_ns.dart';
 import 'cliente_companion.dart' show ClienteCompanion, ResumenCierreCompanion, SesionCerradaCompanion;
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
-import 'navbar_companion.dart';
 import 'puerto_local.dart';
 import 'seccion_extra_cierre_companion.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
+import 'tema/app_bar_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
 import '../ui/comun/estado_error.dart';
 import '../ui/comun/estado_vacio.dart';
 import 'tema/hoja_vidrio.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 
@@ -194,7 +193,7 @@ class _PantallaCierresState extends State<PantallaCierres> {
         Espaciado.lg,
         Espaciado.lg,
         Espaciado.lg,
-        Espaciado.lg + NavbarCompanion.espacioReservado,
+        Espaciado.lg + 16,
       ),
       itemCount: _cierres.length,
       itemBuilder: (context, i) {
@@ -235,76 +234,47 @@ class _FilaCierreState extends State<_FilaCierre> {
     );
   }
 
+  /// Una fila como en el mock (docs/03 D2): "Ayer · cerró Ana", el detalle de cada caja
+  /// y a la derecha el resultado ("Cuadró", "Faltan $ 400", "Sobran $ 150").
   @override
   Widget build(BuildContext context) {
     final c = widget.cierre;
-    final colores = context.colores;
-    return Superficie(
-      padding: EdgeInsets.zero,
-      child: Presionable(
-        onTap: _abrirDetalle,
-        child: Padding(
-          padding: const EdgeInsets.all(Bento.paddingBloque),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _fecha(c.fechaCierre ?? c.fechaApertura),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      c.nombreEmpleado,
-                      style: TextStyle(color: colores.textoSecundario),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+    final ns = context.ns;
+    final dif = [c.diferenciaCentavos, c.mpDiferenciaCentavos, c.lataDiferenciaCentavos].whereType<int>();
+    final peor = dif.isEmpty ? 0 : dif.reduce((a, b) => a.abs() > b.abs() ? a : b);
+    final resultado = dif.isEmpty ? '' : (peor == 0 ? 'Cuadró' : (peor < 0 ? 'Faltan ${plataNs(-peor)}' : 'Sobran ${plataNs(peor)}'));
+    final detalle = [
+      'Efectivo ${plataNs(c.efectivoContadoCentavos ?? c.efectivoEsperadoCentavos ?? 0)}',
+      'Mercado Pago ${plataNs(c.mpContadoCentavos ?? c.mpEsperadoCentavos ?? 0)}',
+      'Lata ${plataNs(c.lataContadoCentavos ?? c.lataFinalCentavos ?? 0)}',
+    ].join(' · ');
+    return PresionNs(
+      onTap: _abrirDetalle,
+      etiqueta: 'Cierre de ${_fecha(c.fechaCierre ?? c.fechaApertura)}',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    formatearARS(c.totalVendidoCentavos),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  _chipDiferencia(context, c),
+                  Text('${_fecha(c.fechaCierre ?? c.fechaApertura)} · cerró ${c.nombreEmpleado}', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                  const SizedBox(height: 2),
+                  Text(detalle, style: estiloNs(14, altura: 1.3, color: ns.mute, tabular: true)),
                 ],
               ),
-              Icon(IconosPlazoleta.chevronRight, color: colores.textoSecundario),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Text(resultado, style: estiloNs(15, peso: FontWeight.w600, color: peor == 0 ? ns.g : ns.b, tabular: true)),
+          ],
         ),
       ),
     );
   }
 
-  /// Suma máxima diferencia en valor absoluto entre las tres cajas, para un
-  /// solo indicador rápido en la fila colapsada (el desglose completo por
-  /// caja aparece recién al expandir).
-  Widget _chipDiferencia(BuildContext context, SesionCerradaCompanion c) {
-    final diferencias = [
-      c.diferenciaCentavos,
-      c.mpDiferenciaCentavos,
-      c.lataDiferenciaCentavos,
-    ].whereType<int>();
-    if (diferencias.isEmpty) return const SizedBox.shrink();
-    final peor = diferencias.reduce((a, b) => a.abs() > b.abs() ? a : b);
-    if (peor == 0) {
-      return Text(
-        'Cuadró',
-        style: TextStyle(
-          color: context.colores.textoSecundario,
-          fontSize: TamanioTexto.etiqueta,
-        ),
-      );
-    }
-    return Text(
-      peor > 0 ? '+${formatearARS(peor)}' : '-${formatearARS(-peor)}',
-      style: TextStyle(color: context.colores.error, fontSize: TamanioTexto.etiqueta),
-    );
-  }
 }
 
 /// Detalle completo de un cierre, en una hoja de vidrio (El dueño, 2026-09-19:
@@ -505,3 +475,15 @@ String _fecha(DateTime f) {
 }
 
 String _fechaHora(DateTime f) => _fecha(f);
+
+/// "Cierres anteriores" como página completa (docs/03 D2).
+class PaginaCierresAnteriores extends StatelessWidget {
+  const PaginaCierresAnteriores({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: context.ns.paper,
+    appBar: const AppBarCompanion(titulo: 'Cierres anteriores'),
+    body: const SafeArea(child: PantallaCierres()),
+  );
+}

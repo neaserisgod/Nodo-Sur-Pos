@@ -26,6 +26,7 @@ import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
+import 'kit/kit_ns.dart';
 import 'debounce.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
@@ -34,16 +35,9 @@ import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
-import 'tema/esqueleto_companion.dart';
-import '../ui/comun/estado_error.dart';
-import 'tema/chip_seleccionable.dart';
 import 'tema/hoja_vidrio.dart';
-import 'tema/piezas_companion.dart';
 import 'tema/presionable.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
-import 'tema/app_bar_companion.dart';
 
 class PantallaConfiguracionCompanion extends StatefulWidget {
   const PantallaConfiguracionCompanion({super.key});
@@ -258,6 +252,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
 
   @override
   Widget build(BuildContext context) {
+    final ns = context.ns;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -265,48 +260,54 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         await _volver();
       },
       child: Scaffold(
-        appBar: const AppBarCompanion(titulo: 'Configuración'),
+        backgroundColor: ns.paper,
         body: SafeArea(
-          child: _cargando && _config == null
-              ? const EsqueletoLista()
-              : _error != null && _config == null
-              ? EstadoError(mensaje: _error!, onReintentar: _cargar)
-              : Column(
-                  children: [
-                    Expanded(child: _contenido(context)),
-                    _pie(context),
-                  ],
-                ),
+          child: PantallaEntradaNs(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CabeceraSubNs(titulo: 'Configuración', tamanio: 32, onVolver: _volver),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: _cargando && _config == null
+                        ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                        : _error != null && _config == null
+                        ? Column(children: [InfoNs(_error!, tono: TonoNs.bad), const SizedBox(height: 10), BotonNs.secundario(context, 'Reintentar', _cargar)])
+                        : _contenido(context),
+                  ),
+                  const SizedBox(height: 14),
+                  if (_error != null && _config != null) ...[InfoNs(_error!, tono: TonoNs.bad), const SizedBox(height: 10)],
+                  _pie(context),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
+  /// "Guardar configuración" (60): apagado hasta que haya algo para guardar.
   Widget _pie(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.sm, Espaciado.lg, Espaciado.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_error != null) ...[ErrorEnLinea(_error!), const SizedBox(height: Espaciado.sm)],
-          FilledButton(
-            onPressed: _guardando || !_hayCambios ? null : _guardar,
-            child: _guardando
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Guardar'),
-          ),
-        ],
-      ),
+    final ns = context.ns;
+    final activo = _hayCambios && !_guardando;
+    return BotonNs(
+      texto: _guardando ? 'Guardando…' : 'Guardar configuración',
+      onTap: activo ? _guardar : null,
+      alto: 60,
+      tamanio: 17,
+      fondo: activo ? ns.prim : ns.s,
+      color: activo ? TokensNs.blanco : ns.mute,
+      habilitado: activo,
     );
   }
 
-  Widget _seccion(String texto) => Padding(
-    padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xl, Espaciado.xl, Espaciado.sm),
-    child: EtiquetaSeccion(texto.toUpperCase()),
-  );
+  Widget _seccion(String texto) => Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(texto));
 
   Widget _contenido(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final ns = context.ns;
     final paso = _paso;
     // Un paso que no es de los tres habituales (ej. $200) se muestra como una
     // opción más, elegida, para no esconder lo que ya hay configurado.
@@ -314,121 +315,110 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     final opcionesPaso = [...pasosHabituales, if (!pasosHabituales.contains(paso)) paso]..sort();
     return RefreshIndicator(
       onRefresh: _cargar,
+      color: ns.ink,
+      backgroundColor: ns.paper,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg),
+        padding: EdgeInsets.zero,
         children: [
           AvisoModoLocal(servicio: _servicio, pcEmparejada: _pcEmparejada),
-          // Mismos grupos que Configuración en la PC (El dueño, 2026-10-03: "simplificá lo más posible").
-          _seccion('Negocio'),
-          _subtitulo(textTheme, 'Usuarios'),
-          for (final u in _usuarios)
-            _FilaInterruptor(
-              titulo: u.nombre,
-              estado: _usuarioActivo(u) ? 'Activo' : 'Inactivo',
-              valor: _usuarioActivo(u),
-              onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v),
-              onTituloTap: () => _renombrarUsuario(u),
-            ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(onPressed: _agregarUsuario, icon: const Icon(IconosPlazoleta.add), label: const Text('Agregar usuario')),
-          ),
-          _seccion('Caja y cobros'),
-          _subtitulo(textTheme, 'Redondeo en efectivo'),
-          Wrap(
-            spacing: Espaciado.sm,
-            runSpacing: Espaciado.sm,
-            children: [
-              for (final o in opcionesPaso)
-                ChipSeleccionable(
-                  texto: o == 0 ? 'Sin redondeo' : formatearARS(o),
-                  seleccionado: paso == o,
-                  onTap: () => setState(() => _pasoPendiente = o),
+          // Las secciones del mock (docs/03 D5).
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SeccionNs('Cobro'),
+                const SizedBox(height: 10),
+                Text('Redondear el efectivo', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final o in opcionesPaso) ChipNs(texto: o == 0 ? 'Sin redondeo' : plataNs(o), activo: paso == o, onTap: () => setState(() => _pasoPendiente = o)),
+                    ChipNs(texto: 'Otro…', activo: false, onTap: _otroRedondeo),
+                  ],
                 ),
-              ChipSeleccionable(texto: 'Otro…', seleccionado: false, onTap: _otroRedondeo),
-            ],
+              ],
+            ),
           ),
-          _subtitulo(textTheme, 'Recargo de cigarrillos'),
+          _seccion('Recargo de cigarrillos'),
           _campoMonto(_primerAtadoCtrl, 'Primer atado'),
           _campoMonto(_atadoAdicionalCtrl, 'Atado adicional'),
           _campoMonto(_sueltoCtrl, 'Cigarrillo suelto'),
-          _subtitulo(textTheme, 'Producto de vuelto'),
+          _seccion('Producto para dar de vuelto'),
           _filaVuelto(context),
-          _subtitulo(textTheme, 'Medios de pago'),
+          _seccion('Formas de cobro que aceptás'),
           for (final m in _mediosPago)
-            _FilaInterruptor(
-              titulo: m.nombre,
-              estado: _medioActivo(m) ? 'Activo' : 'Inactivo',
-              valor: _medioActivo(m),
-              onCambio: (v) => setState(() => v == m.activo ? _mediosPendientes.remove(m.id) : _mediosPendientes[m.id] = v),
-              onTituloTap: () => _renombrarMedio(m),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onLongPress: () => _renombrarMedio(m),
+                child: InterruptorNs(etiqueta: m.nombre, descripcion: _medioActivo(m) ? 'Activo' : 'Inactivo', encendido: _medioActivo(m), onCambio: (v) => setState(() => v == m.activo ? _mediosPendientes.remove(m.id) : _mediosPendientes[m.id] = v)),
+              ),
             ),
-          _seccion('Productos'),
-          _subtitulo(textTheme, 'Ganancia por categoría'),
+          _seccion('Ganancia que esperás por categoría'),
+          Text('Sobre el precio de venta', style: estiloNs(14, color: ns.mute)),
+          const SizedBox(height: 10),
           for (final c in _categorias)
-            _FilaPorcentaje(
-              nombre: c.nombre,
-              porcentaje: _markup(c),
-              onMenos: () => _cambiarMarkup(c, -5),
-              onMas: () => _cambiarMarkup(c, 5),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _FilaPorcentaje(nombre: c.nombre, porcentaje: _markup(c), onMenos: () => _cambiarMarkup(c, -5), onMas: () => _cambiarMarkup(c, 5)),
             ),
+          _seccion('Quiénes usan la app'),
+          for (final u in _usuarios)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onLongPress: () => _renombrarUsuario(u),
+                child: InterruptorNs(etiqueta: u.nombre, descripcion: _usuarioActivo(u) ? 'Activo' : 'Inactivo', encendido: _usuarioActivo(u), onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v)),
+              ),
+            ),
+          const SizedBox(height: 2),
+          BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  /// Un monto en pesos con su etiqueta, alineado a la izquierda como en el
-  /// mock; se interpreta con `parsearARS` al guardar (acepta "1.200" y "1200,50").
-  // La etiqueta va arriba y fija (no la flotante de Material, que se encimaba con el campo relleno).
+  /// Un monto en pesos con su etiqueta; se interpreta con `parsearARS` al guardar (acepta "1.200" y "1200,50").
   Widget _campoMonto(TextEditingController ctrl, String etiqueta) => Padding(
-    padding: const EdgeInsets.only(bottom: Espaciado.md),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: Espaciado.xs, bottom: Espaciado.xs),
-          child: Text(etiqueta, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario)),
-        ),
-        TextField(
-          controller: ctrl,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(hintText: etiqueta, prefixText: r'$ '),
-        ),
-      ],
-    ),
+    padding: const EdgeInsets.only(bottom: 10),
+    child: CampoNs(etiqueta: etiqueta, controller: ctrl, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() {})),
   );
 
-  Widget _subtitulo(TextTheme textTheme, String texto) => Padding(
-    padding: const EdgeInsets.only(left: Espaciado.xs, top: Espaciado.md, bottom: Espaciado.sm),
-    child: Text(texto, style: textTheme.titleMedium),
-  );
-
+  /// "Producto para dar de vuelto": nombre, "Se usa cuando falta cambio" y Quitar/Elegir.
   Widget _filaVuelto(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colores = context.colores;
+    final ns = context.ns;
     final pend = _vueltoPendiente;
     final id = pend != null ? pend.id : _config!.productoVueltoId;
     final nombre = pend != null ? pend.nombre : _nombreVueltoGuardado;
     final configurado = id != null;
-    return Superficie(
-      padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.fromLTRB(22, 10, 12, 10),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
       child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(configurado ? (nombre ?? 'Producto configurado') : 'Sin configurar', style: textTheme.titleMedium),
-                Text(
-                  configurado ? 'Se usa cuando falta cambio' : 'Elegí un producto',
-                  style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
-                ),
+                Text(configurado ? (nombre ?? 'Producto configurado') : 'Sin configurar', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                Text(configurado ? 'Se usa cuando falta cambio' : 'Elegí un producto', style: estiloNs(14, color: ns.mute)),
               ],
             ),
           ),
-          TextButton(
-            onPressed: configurado ? () => setState(() => _vueltoPendiente = (id: null, nombre: null)) : _elegirProductoVuelto,
-            child: Text(configurado ? 'Quitar' : 'Elegir', style: const TextStyle(fontWeight: Pesos.fuerte)),
+          BotonNs(
+            texto: configurado ? 'Quitar' : 'Elegir',
+            onTap: configurado ? () => setState(() => _vueltoPendiente = (id: null, nombre: null)) : _elegirProductoVuelto,
+            alto: 44,
+            tamanio: 14,
+            fondo: ns.paper,
+            color: ns.ink,
+            rellenar: false,
+            paddingH: 18,
           ),
         ],
       ),
@@ -500,50 +490,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   }
 }
 
-/// Una fila con interruptor: el nombre (tocarlo abre el renombrado), su
-/// estado y el interruptor, como en el mock.
-class _FilaInterruptor extends StatelessWidget {
-  const _FilaInterruptor({required this.titulo, required this.estado, required this.valor, required this.onCambio, required this.onTituloTap});
-
-  final String titulo;
-  final String estado;
-  final bool valor;
-  final ValueChanged<bool> onCambio;
-  final VoidCallback onTituloTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaciado.sm),
-      child: Superficie(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
-        child: Row(
-          children: [
-            Expanded(
-              child: Presionable(
-                onTap: onTituloTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Espaciado.xs),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(titulo, style: textTheme.titleMedium),
-                      Text(estado, style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Switch(value: valor, onChanged: onCambio),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Una categoría con su ganancia de referencia y botones −/+ de a 5 puntos.
+/// Una categoría con su ganancia de referencia y un stepper de a 5 puntos (docs/03 D5).
 class _FilaPorcentaje extends StatelessWidget {
   const _FilaPorcentaje({required this.nombre, required this.porcentaje, required this.onMenos, required this.onMas});
 
@@ -554,35 +501,15 @@ class _FilaPorcentaje extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaciado.sm),
-      child: Superficie(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(nombre, style: textTheme.titleMedium),
-                ],
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(999)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(tooltip: 'Bajar 5 puntos', visualDensity: VisualDensity.compact, icon: const Icon(IconosPlazoleta.remove), onPressed: onMenos),
-                  SizedBox(width: 52, child: Text('$porcentaje %', textAlign: TextAlign.center, style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte))),
-                  IconButton(tooltip: 'Subir 5 puntos', visualDensity: VisualDensity.compact, icon: const Icon(IconosPlazoleta.add), onPressed: onMas),
-                ],
-              ),
-            ),
-          ],
-        ),
+    final ns = context.ns;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 12, 10),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+      child: Row(
+        children: [
+          Expanded(child: Text(nombre, style: estiloNs(16, peso: FontWeight.w500, track: -0.02, color: ns.ink))),
+          StepperNs(cantidad: '$porcentaje %', onMenos: onMenos, onMas: onMas, anchoCantidad: 52, tamanioCantidad: 14),
+        ],
       ),
     );
   }

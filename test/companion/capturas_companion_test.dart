@@ -15,13 +15,9 @@ import 'package:la_plazoleta/companion/bienvenida/pantalla_bienvenida.dart';
 import 'package:la_plazoleta/companion/bienvenida/pantalla_listo.dart';
 import 'package:la_plazoleta/companion/bienvenida/vista_entrar_con_google.dart';
 import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
-import 'package:la_plazoleta/companion/cliente_companion.dart';
-import 'package:la_plazoleta/companion/navbar_companion.dart';
-import 'package:la_plazoleta/companion/pantalla_inicio_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:la_plazoleta/companion/pantalla_gestion_companion.dart';
 import 'package:la_plazoleta/companion/conmutador_sync.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/pantalla_cuenta_companion.dart';
@@ -34,7 +30,6 @@ import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
 import 'package:la_plazoleta/companion/pantalla_consultar_precio.dart';
 import 'package:la_plazoleta/companion/pantalla_historial_ventas.dart';
 import 'package:la_plazoleta/companion/pantalla_movimiento_caja.dart';
-import 'package:la_plazoleta/companion/pantalla_precios.dart';
 import 'package:la_plazoleta/companion/pantalla_separaciones_companion.dart';
 
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
@@ -88,40 +83,6 @@ Future<void> _capturar(WidgetTester tester, String nombre, Widget pantalla, {boo
   });
 }
 
-Widget _inicio({required bool abierta}) => Scaffold(
-      body: PantallaInicioCompanion(
-        nombreUsuario: 'Bruno',
-        usuarioId: 1,
-        sesion: SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime.now()),
-        estadoCaja: null,
-        arqueoIntermedioVencido: true,
-        onHacerArqueoIntermedio: () {},
-        navegando: false,
-        irA: (_) async {},
-        onAbrirMovimientoCaja: (_) {},
-        onSincronizar: () async {},
-        carrito: const [],
-        onVender: () {},
-        servicio: null,
-        pcEmparejada: true,
-        actualizacionSinConexion: false,
-      ),
-      bottomNavigationBar: NavbarCompanion(indice: 0, onSeleccionar: (_) {}),
-    );
-
-Widget _gestion({required bool abierta}) => Scaffold(
-      body: PantallaGestionCompanion(
-        navegando: false,
-        irA: (_) async {},
-        sesion: SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime.now()),
-        onAbrirArqueo: () {},
-        onCerrarCaja: () {},
-        onCambiarModo: () {},
-        modoUso: null,
-      ),
-      bottomNavigationBar: NavbarCompanion(indice: 3, onSeleccionar: (_) {}),
-    );
-
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({
         // Usuario ya elegido, para que las pantallas no pidan elegirlo.
@@ -137,23 +98,6 @@ void main() {
 
   for (final oscuro in [false, true]) {
     final sufijo = oscuro ? ' (oscuro)' : '';
-    testWidgets('inicio con caja abierta$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'inicio-abierta', _inicio(abierta: true), oscuro: oscuro);
-    });
-    testWidgets('inicio con caja cerrada$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'inicio-cerrada', _inicio(abierta: false), oscuro: oscuro);
-    });
-    testWidgets('gestion$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'gestion-abierta', _gestion(abierta: true), oscuro: oscuro);
-      await _capturar(tester, 'gestion-cerrada', _gestion(abierta: false), oscuro: oscuro);
-    });
-    testWidgets('productos$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'productos', const Scaffold(body: PantallaPrecios()), oscuro: oscuro);
-    });
     testWidgets('historial$sufijo', (tester) async {
       await preparar(tester);
       await _capturar(tester, 'historial', const Scaffold(body: PantallaHistorialVentas()), oscuro: oscuro);

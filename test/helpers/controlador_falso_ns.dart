@@ -101,3 +101,12 @@ class ControladorFalsoNs implements ControladorAppNs {
   @override
   Future<void> ejecutarFuncion(AccionFuncion accion) async => llamadas.add('funcion:${accion.name}');
 }
+
+/// El controlador de mentira, pero con un servicio real (base de test) para las pantallas que lo usan.
+class ControladorConServicio extends ControladorFalsoNs {
+  ControladorConServicio(this._servicio);
+  final ServicioCompanion _servicio;
+
+  @override
+  ServicioCompanion? get servicio => _servicio;
+}

@@ -1,4 +1,4 @@
-// Configuración del celular (mock completo, 2026-10-02): se edita en la misma
+// Configuración del celular (mock del 2026-10-04): se edita en la misma
 // página y un solo "Guardar" aplica lo cambiado. Lo que no se puede romper es
 // que NADA se escribe hasta tocarlo, que solo se guarda lo que cambió y que cada
 // valor termina en su lugar (redondeo, recargo, producto de vuelto, ganancia de
@@ -9,8 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_configuracion_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
-import 'package:la_plazoleta/companion/tema/chip_seleccionable.dart';
-import 'package:la_plazoleta/companion/tema/superficie.dart';
+import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -41,9 +40,15 @@ Future<void> _abrir(WidgetTester t) async {
   await _asentar(t);
 }
 
-Finder get _guardar => find.widgetWithText(FilledButton, 'Guardar');
+/// El botón "Guardar configuración" y si está habilitado (un `PresionNs` sin `onTap` está apagado).
+Finder get _guardar => find.widgetWithText(PresionNs, 'Guardar configuración');
 
-Finder _fila(String nombre) => find.ancestor(of: find.text(nombre), matching: find.byType(Superficie)).first;
+bool _guardarActivo(WidgetTester t) => t.widget<PresionNs>(_guardar).onTap != null;
+
+/// La fila (renglón) de [nombre]: el primer `Row` que lo contiene.
+Finder _fila(String nombre) => find.ancestor(of: find.text(nombre), matching: find.byType(Row)).first;
+
+Finder _chip(String texto) => find.widgetWithText(ChipNs, texto);
 
 Future<void> _tocarGuardar(WidgetTester t) async {
   await t.tap(_guardar);
@@ -55,7 +60,7 @@ void main() {
     await _preparar(t);
     await _abrir(t);
 
-    expect(t.widget<FilledButton>(_guardar).onPressed, isNull);
+    expect(_guardarActivo(t), isFalse);
   });
 
   testWidgets('elegir otro redondeo no escribe nada hasta tocar Guardar, y después queda guardado', (t) async {
@@ -65,10 +70,10 @@ void main() {
     final elegido = antes == 5000 ? 10000 : 5000;
     await _abrir(t);
 
-    await t.tap(find.widgetWithText(ChipSeleccionable, elegido == 5000 ? r'$50' : r'$100'));
+    await t.tap(_chip(elegido == 5000 ? '\$\u00A050' : '\$\u00A0100'));
     await t.pump();
     expect((await t.runAsync(() => puerto.configuracionNegocio()))!.pasoRedondeoCentavos, antes, reason: 'sin Guardar no se escribió nada');
-    expect(t.widget<FilledButton>(_guardar).onPressed, isNotNull);
+    expect(_guardarActivo(t), isTrue);
 
     await _tocarGuardar(t);
     expect((await t.runAsync(() => puerto.configuracionNegocio()))!.pasoRedondeoCentavos, elegido);
@@ -78,7 +83,7 @@ void main() {
     final puerto = await _preparar(t);
     await _abrir(t);
 
-    await t.enterText(find.widgetWithText(TextField, 'Primer atado'), '777');
+    await t.enterText(find.descendant(of: find.widgetWithText(CampoNs, 'Primer atado'), matching: find.byType(TextField)), '777');
     await t.pump();
     await _tocarGuardar(t);
 
@@ -93,7 +98,7 @@ void main() {
     final partida = cat.markupDefaultBp ~/ 100;
     await _abrir(t);
 
-    final mas = find.descendant(of: _fila(cat.nombre), matching: find.byTooltip('Subir 5 puntos'));
+    final mas = find.descendant(of: _fila(cat.nombre), matching: find.byType(PresionNs)).last;
     await t.tap(mas);
     await t.pump();
     await _tocarGuardar(t);
@@ -107,7 +112,7 @@ void main() {
     final ana = (await t.runAsync(() => puerto.crearUsuarioNuevo('Ana')))!;
     await _abrir(t);
 
-    await t.tap(find.descendant(of: _fila('Ana'), matching: find.byType(Switch)));
+    await t.tap(find.widgetWithText(InterruptorNs, 'Ana'));
     await t.pump();
     expect((await t.runAsync(() => puerto.usuarios()))!.firstWhere((u) => u.id == ana).activo, isTrue, reason: 'sin Guardar sigue activo');
     await _tocarGuardar(t);
@@ -121,9 +126,9 @@ void main() {
     await _preparar(t);
     await _abrir(t);
 
-    await t.tap(find.widgetWithText(ChipSeleccionable, r'$50'));
+    await t.tap(_chip('\$\u00A050'));
     await t.pump();
-    await t.tap(find.text('Volver'));
+    await t.tap(find.byType(BotonCircularNs).first);
     await t.pump(const Duration(milliseconds: 400));
 
     // Aparece la confirmación de salir sin guardar: la pantalla sigue ahí.

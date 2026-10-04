@@ -23,7 +23,6 @@ import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
-import 'navbar_companion.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
@@ -399,7 +398,7 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
       grupos.putIfAbsent(_tituloDia(v.fecha), () => []).add(v);
     }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg + NavbarCompanion.espacioReservado),
+      padding: const EdgeInsets.fromLTRB(Espaciado.lg, 0, Espaciado.lg, Espaciado.lg + 16),
       children: [
         for (final entrada in grupos.entries) ...[
           Padding(

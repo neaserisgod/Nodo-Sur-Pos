@@ -8,17 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
-import '../../domain/dinero.dart';
 import '../../ui/historial/devolucion_mp_dialogo.dart' show ofrecerDevolucionDeCobro;
 import '../../ui/separaciones/separaciones_controlador.dart';
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../cliente_companion.dart';
-import '../funciones_ns.dart' show AccionFuncion;
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
+import '../pantalla_separaciones_companion.dart';
 import '../pantalla_movimiento_caja.dart';
 import '../sync_nube_companion.dart' show syncNubeCompanion;
 import 'hoja_abrir_caja_ns.dart';
@@ -181,7 +180,7 @@ class _ResumenState extends State<_Resumen> {
             ]),
             const SizedBox(height: 14),
             PresionNs(
-              onTap: () => app.irA((_) => const PantallaCierres()),
+              onTap: () => app.irA((_) => const PaginaCierresAnteriores()),
               etiqueta: 'Ver cierres anteriores',
               child: Container(
                 constraints: const BoxConstraints(minHeight: 60),
@@ -353,7 +352,6 @@ class _SepararState extends State<_Separar> {
       child: Consumer<SeparacionesControlador>(
         builder: (context, c, _) {
           final tarjetas = c.tarjetas;
-          final totalPorSeparar = tarjetas.where((t) => !t.separada).fold<int>(0, (a, t) => a + t.totalCentavos);
           final ef = c.separarEfectivoCentavos;
           final mp = c.separarMpCentavos;
           return ListView(
@@ -391,7 +389,22 @@ class _SepararState extends State<_Separar> {
                   ),
                   const SizedBox(height: 8),
                 ],
-              if (totalPorSeparar == 0 && tarjetas.isNotEmpty) const SizedBox.shrink(),
+              const SizedBox(height: 6),
+              PresionNs(
+                onTap: () => AppNs.of(context).irA((_) => PantallaSeparacionesCompanion(db: baseLocalCompanion(), usuarioId: AppNs.of(context).usuarioId ?? 0)),
+                etiqueta: 'Ver lo vendido por proveedor',
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 60),
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: TokensNs.contorno, width: 1.5)),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text('Ver lo vendido por proveedor', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink))),
+                      IconoNsWidget(IconoNs.chevron, tamanio: 18, color: ns.mute, grosor: 2.2),
+                    ],
+                  ),
+                ),
+              ),
             ],
           );
         },

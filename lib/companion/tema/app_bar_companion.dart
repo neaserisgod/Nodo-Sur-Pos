@@ -1,12 +1,12 @@
 // Encabezado de las pantallas secundarias (las que se abren encima de una
-// pestaña): titular grande y liviano a la izquierda y una píldora gris para
-// salir a la derecha, como en el mock completo del celular. Reemplaza al
-// `AppBar` de Material, que dejaba el título chico y sin forma de salir que
-// no fuera la flecha de arriba.
+// pestaña), tal cual el mock (docs/01 §6.3): botón circular de volver (44, fondo
+// `s`, flecha ‹) a la izquierda y el título liviano (32/450) a su derecha. Las
+// pantallas viejas de la companion que todavía arman un `Scaffold` con
+// `appBar:` lo toman de acá y quedan con el mismo aspecto que las del mock.
 
 import 'package:flutter/material.dart';
 
-import '../../ui/tema/tokens.dart';
+import '../kit/kit_ns.dart';
 
 class AppBarCompanion extends StatelessWidget implements PreferredSizeWidget {
   const AppBarCompanion({
@@ -18,74 +18,33 @@ class AppBarCompanion extends StatelessWidget implements PreferredSizeWidget {
 
   final String titulo;
 
-  /// Texto de la píldora de salida; null no la dibuja (pantallas que no se
-  /// pueden abandonar sin terminar algo).
+  /// Null no dibuja el botón de volver (pantallas que no se pueden abandonar sin terminar algo).
   final String? etiquetaSalida;
 
-  /// Botones sueltos (actualizar, escanear) que van a la izquierda de la píldora.
+  /// Botones sueltos (actualizar, escanear) que van a la derecha del título.
   final List<Widget> acciones;
 
-  // Un título largo ("Movimiento de caja") baja a dos renglones al lado de la píldora.
-  static const _largoDeUnRenglon = 15;
-
   @override
-  Size get preferredSize => Size.fromHeight(titulo.length > _largoDeUnRenglon ? 124 : 92);
+  Size get preferredSize => Size.fromHeight(titulo.length > 22 ? 118 : 86);
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final ns = context.ns;
     return Material(
-      color: colores.fondo,
+      color: ns.paper,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.md, Espaciado.xl, Espaciado.sm),
+          padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 14),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(titulo, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.headlineLarge),
-              ),
-              ...acciones,
               if (etiquetaSalida != null) ...[
-                const SizedBox(width: Espaciado.sm),
-                _PildoraSalida(etiqueta: etiquetaSalida!),
+                BotonCircularNs(icono: IconoNs.volver, onTap: () => Navigator.of(context).maybePop(), etiqueta: 'Volver', tamanioIcono: 18, grosor: 2.4),
+                const SizedBox(width: 12),
               ],
+              Expanded(child: Text(titulo, maxLines: 2, overflow: TextOverflow.ellipsis, style: tituloNs(32, track: -0.05, altura: 1.02, color: ns.ink))),
+              ...acciones,
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PildoraSalida extends StatelessWidget {
-  const _PildoraSalida({required this.etiqueta});
-
-  final String etiqueta;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    return Material(
-      color: colores.fondoBloque,
-      shape: const StadiumBorder(),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: () => Navigator.of(context).maybePop(),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-            child: Center(
-              widthFactor: 1,
-              heightFactor: 1,
-              child: Text(
-                etiqueta,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: Pesos.fuerte, color: colores.textoPrimario),
-              ),
-            ),
           ),
         ),
       ),

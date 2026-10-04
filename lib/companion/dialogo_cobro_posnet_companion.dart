@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
-import '../domain/dinero.dart';
 import '../domain/venta.dart';
 import '../servicios/avisos_cobro_mp.dart';
 import 'cliente_companion.dart' show ErrorCompanion;
