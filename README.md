@@ -38,6 +38,10 @@ Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor e
 Antes de hacer público el repositorio, `python3 tool/limpiar_datos_personales.py --aplicar` reemplaza los datos
 personales del comercio de origen por nombres genéricos (sin `--aplicar` solo muestra qué cambiaría).
 
+Para revisar lo visual: `python tool/capturar_app.py --hoja` (en Windows, con la app abierta; necesita `pip install pywinauto pillow`)
+navega los apartados con clics y guarda una captura WebP liviana de cada uno, más una hoja con todas juntas. Solo navega: no
+cobra ni carga nada. `--descubrir` lista los nombres que ve el script, para ajustar los pasos.
+
 Regla general: si vas a agregar algo que ya tiene dueño en esta lista,
 agregalo en ese documento — no lo dupliques en otro. Si dos documentos se
 contradicen, **vale lo más reciente** (la fecha escrita en el texto, o la del
