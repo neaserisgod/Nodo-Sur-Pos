@@ -88,6 +88,7 @@ import '../domain/medio_pago.dart';
 import '../domain/venta.dart';
 import '../domain/venta_json.dart';
 import '../servicios/marca_actual.dart';
+import '../servicios/devolucion_mp.dart' show cobroPointDeVenta;
 
 /// Dónde vive el .apk que se ofrece para actualizar la companion app — al
 /// lado de la base real (misma carpeta `Documents`, `driftDatabase`), NO
@@ -769,6 +770,15 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // desde el celular) — solo mientras la sesión de caja de esa venta siga
   // abierta (`anularVenta` tira `ArgumentError` si no, que
   // `_conManejoDeErrores` ya convierte en 400 con el mensaje tal cual).
+  // Con qué orden de la Point se cobró una venta (etapa B): el celular la pide al anular para ofrecer la devolución, que hace
+  // con SU cuenta de Nodo Sur (el sitio controla que sea dueño o encargado). Solo lectura: no devuelve nada desde acá.
+  router.get('/ventas/<ventaId>/cobro-point', (Request request, String ventaId) async {
+    final id = int.tryParse(ventaId);
+    if (id == null) return _error(400, 'Id de venta inválido');
+    final cobro = await cobroPointDeVenta(db, id);
+    return _json({'cobro': cobro?.toJson()});
+  });
+
   router.post('/ventas/<ventaId>/anular', (Request request, String ventaId) async {
     final id = int.tryParse(ventaId);
     if (id == null) return _error(400, 'Id de venta inválido');

@@ -38,6 +38,8 @@ import 'tema/chip_seleccionable.dart';
 import 'tema/presionable.dart';
 import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
+import '../ui/historial/devolucion_mp_dialogo.dart' show ofrecerDevolucionDeCobro;
+import 'sync_nube_companion.dart' show syncNubeCompanion;
 
 enum _Periodo { hoy, ayer, ultimaSemana, esteMes }
 
@@ -197,6 +199,30 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
     _cargar();
   }
 
+  Future<bool?> _preguntarDevolucion(BuildContext context, String monto) => mostrarHojaVidrio<bool>(
+    context,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('¿Devolver $monto por Mercado Pago?', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: Espaciado.sm),
+        Text(
+          'Esta venta se cobró con la terminal. La plata vuelve al cliente por Mercado Pago.',
+          style: TextStyle(color: context.colores.textoSecundario),
+        ),
+        const SizedBox(height: Espaciado.lg),
+        Row(
+          children: [
+            Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('No'))),
+            const SizedBox(width: Espaciado.sm),
+            Expanded(child: FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Sí, devolver'))),
+          ],
+        ),
+      ],
+    ),
+  );
+
   Future<void> _confirmarYAnular(VentaDelHistorialCompanion v) async {
     final motivoCtrl = TextEditingController();
     final motivo = await mostrarHojaVidrio<String>(
@@ -253,6 +279,17 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
         motivo: motivo,
       );
       _cargar();
+      // Etapa B: si se cobró con la Point y quien vinculó ESTE celular puede devolver (dueño o encargado), se ofrece.
+      final cobro = await _cliente!.cobroPointDeVenta(v.ventaId);
+      if (mounted) {
+        await ofrecerDevolucionDeCobro(
+          context,
+          cobro,
+          almacen: syncNubeCompanion?.almacen,
+          cliente: syncNubeCompanion?.cliente,
+          preguntar: _preguntarDevolucion,
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

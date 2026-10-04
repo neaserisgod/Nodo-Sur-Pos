@@ -1797,9 +1797,20 @@ y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada u
       pendiente (`resultadoDesdeRespuesta`).
     - Blindaje extra: una consulta que falla mientras se espera ya no corta el cobro; recién tres seguidas muestran el
       error (antes una sola, con la orden viva en la terminal).
-  - **B**: devoluciones desde la app (`POST /v1/orders/{id}/refund`, total o parcial). **Al anular una venta cobrada por
-    la Point, se pregunta cada vez** "¿Devolver $X al cliente por Mercado Pago?". Lo cobrado a mano no tiene orden: se
-    devuelve desde la app de MP.
+  - **B — hecha (2026-10-04)**: devoluciones desde la app.
+    - **Al anular una venta cobrada por la Point se pregunta cada vez** "¿Devolver $X al cliente por Mercado Pago?" (PC:
+      Historial, detalle del día y editor; celular: su Historial). Solo al anular la venta entera: **editarla no toca
+      nada de Mercado Pago** (el dueño: los cobros en efectivo son propensos a errar, una edición no tiene que mover
+      plata). Lo cobrado a mano no tiene orden: se devuelve desde la app de MP.
+    - **Devuelven el dueño y el encargado** (permiso `devolver` del sitio). La app no tiene roles propios, así que la
+      devolución va **siempre por el sitio** con la cuenta vinculada al equipo (`servicios/devolucion_mp.dart`), y el
+      sitio decide; a quien no puede ni se le pregunta (`canRefund` de `/api/mp/estado`). **Hueco conocido**: la PC la
+      vincula el dueño, así que quien esté sentado en la PC puede devolver; se cierra con la matriz de roles pendiente.
+    - Total (el monto lo pone Mercado Pago: no se puede devolver de más), con clave de idempotencia fija por orden
+      (`devolver-<externalReference>`, la misma desde la PC o el celular): un reintento nunca devuelve dos veces, y el
+      sitio contesta `ya_devuelta`. La orden queda `'devuelta'` en `ordenes_cobro_pendientes` y no se vuelve a ofrecer.
+    - En el celular conectado a la PC, la orden vive en la base de la PC: el celular la pide (`GET
+      /ventas/<id>/cobro-point`, solo lectura) y devuelve con SU cuenta. Una PC vieja sin esa ruta da 404: no se ofrece.
   - **C**: tarjeta, ticket y modo de la terminal.
     - **Crédito dentro del mismo botón que débito** ("Tarjeta"): el cliente elige débito o crédito en la terminal.
       **Solo en 1 pago** (sin cuotas) y **sin recargo** para el crédito. Pendiente técnico: la API restringe las cuotas

@@ -46,6 +46,8 @@ import '../servicios/pasarela_point_nube.dart';
 import 'cliente_companion.dart';
 import 'servicio_companion.dart';
 import 'sync_nube_companion.dart';
+import '../servicios/devolucion_mp.dart' as devolucion show cobroPointDeVenta;
+import '../servicios/devolucion_mp.dart' show CobroPoint;
 
 /// Convierte una fila de drift en el mismo DTO que hoy arma
 /// `ProductoCompanion.desdeJson` a partir de la respuesta HTTP — un solo
@@ -753,6 +755,9 @@ class PuertoLocal implements ServicioCompanion {
     usuarioId: usuarioId,
     motivo: motivo,
   );
+
+  @override
+  Future<CobroPoint?> cobroPointDeVenta(int ventaId) => devolucion.cobroPointDeVenta(db, ventaId);
 
   /// Mismo criterio que `GET /ventas/<id>/detalle` del servidor —
   /// `ticketDeVenta` es el mismo `Ticket` de dominio que arma la impresión

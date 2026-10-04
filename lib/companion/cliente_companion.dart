@@ -14,6 +14,7 @@ import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
 import '../domain/venta_json.dart' show lineaVentaAJson, lineaVentaDesdeJson;
 import 'servicio_companion.dart';
+import '../servicios/devolucion_mp.dart' show CobroPoint;
 
 class DatosConexion {
   final String ip;
@@ -1609,6 +1610,19 @@ class ClienteCompanion implements ServicioCompanion {
       body: jsonEncode({'usuarioId': usuarioId, 'motivo': motivo}),
     );
     _revisar(r);
+  }
+
+  /// Una PC vieja no tiene esta ruta (404): ahí no se ofrece la devolución, y se hace desde la app de Mercado Pago.
+  @override
+  Future<CobroPoint?> cobroPointDeVenta(int ventaId) async {
+    try {
+      final r = await _client.get(conexion._url('/ventas/$ventaId/cobro-point'), headers: _headers);
+      if (r.statusCode != 200) return null;
+      final j = jsonDecode(r.body);
+      return j is Map<String, dynamic> && j['cobro'] is Map<String, dynamic> ? CobroPoint.desdeJson(j['cobro'] as Map<String, dynamic>) : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ─── Sincronización (fase 2, "companion sin depender del escritorio") ──

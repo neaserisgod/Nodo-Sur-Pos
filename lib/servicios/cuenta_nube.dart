@@ -159,15 +159,22 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'mp_no_configurado' => 'La conexión con Mercado Pago todavía no está lista en el servidor. Probá más tarde.',
   'sin_negocio' => 'Este dispositivo no pertenece a ningún negocio: volvé a vincularlo con tu cuenta.',
   'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
+  'sin_permiso_devolver' => 'Devolver por Mercado Pago lo pueden hacer el dueño o el encargado.',
+  'ya_devuelta' => 'Ese cobro ya estaba devuelto.',
+  'no_cobrada' => 'Ese cobro no figura como cobrado en Mercado Pago: no hay nada para devolver.',
   _ => 'El servicio respondió con un error ($codigo).',
 };
 
 /// Lo que el servidor dice sobre cobrar con la terminal desde este dispositivo.
 class EstadoMp {
-  const EstadoMp({required this.conectado, required this.necesitaReconectar, required this.terminalElegida});
+  const EstadoMp({required this.conectado, required this.necesitaReconectar, required this.terminalElegida, this.puedeDevolver = false});
   final bool conectado;
   final bool necesitaReconectar;
   final bool terminalElegida;
+
+  /// Si la persona que vinculó este equipo puede devolver por Mercado Pago (dueño y encargado, etapa B). Solo sirve para
+  /// ofrecer o no la devolución: quien decide es el sitio al devolver.
+  final bool puedeDevolver;
 
   bool get puedeCobrar => conectado && terminalElegida;
 }
@@ -346,7 +353,12 @@ class ClienteNube {
     final r = await http.get(_uri('/api/mp/estado'), headers: _auth(token)).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
-    return EstadoMp(conectado: j['connected'] == true, necesitaReconectar: j['needsReconnect'] == true, terminalElegida: j['terminalConfigured'] == true);
+    return EstadoMp(
+      conectado: j['connected'] == true,
+      necesitaReconectar: j['needsReconnect'] == true,
+      terminalElegida: j['terminalConfigured'] == true,
+      puedeDevolver: j['canRefund'] == true,
+    );
   });
 
   /// Crea la orden en la terminal. [idempotencyKey] repetida no duplica el cobro (mismo criterio que el cobro directo).
@@ -419,6 +431,18 @@ class ClienteNube {
       body: jsonEncode({'externalReference': externalReference, 'idempotencyKey': idempotencyKey, 'contenido': contenido}),
     ).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
+  /// Devuelve al cliente lo cobrado por una orden (etapa B). Total: el monto lo sabe Mercado Pago. [idempotencyKey] es fija por
+  /// venta, así reintentar nunca devuelve dos veces. Lanza [ErrorNube] con `sin_permiso_devolver`, `ya_devuelta` o `no_cobrada`.
+  Future<String?> devolverOrdenPoint(String token, String ordenIdMp, {required String idempotencyKey}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/orden/devolver'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'id': ordenIdMp, 'idempotencyKey': idempotencyKey}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['status'] as String?;
   });
 
   Future<void> cancelarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
