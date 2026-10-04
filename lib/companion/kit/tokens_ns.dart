@@ -170,5 +170,10 @@ class TokensNs extends ThemeExtension<TokensNs> {
 }
 
 extension TokensNsDelContexto on BuildContext {
-  TokensNs get ns => Theme.of(this).extension<TokensNs>()!;
+  /// Los tokens del tema; si el árbol no tiene el tema del celular (una pantalla
+  /// armada con el tema del escritorio), se toman los del brillo que tenga.
+  TokensNs get ns {
+    final tema = Theme.of(this);
+    return tema.extension<TokensNs>() ?? (tema.brightness == Brightness.dark ? TokensNs.oscuroTokens : TokensNs.claro);
+  }
 }

@@ -49,7 +49,7 @@ class ControladorFalsoNs implements ControladorAppNs {
   @override
   int? get usuarioId => 1;
   @override
-  SesionCompanion? get sesion => null;
+  SesionCompanion? get sesion => SesionCompanion(abierta: abierta, id: abierta ? 1 : null, fechaApertura: DateTime(2026, 10, 4, 9));
   @override
   EstadoCajaCompanion? get estadoCaja => EstadoCajaCompanion(
         sesionId: 1,

@@ -17,12 +17,11 @@ import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/venta.dart';
-import '../ui/tema/tokens.dart';
 import '../servicios/avisos_cobro_mp.dart';
 import 'cliente_companion.dart' show ErrorCompanion;
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
-import 'tema/hoja_vidrio.dart';
+import 'kit/kit_ns.dart';
 
 /// Devuelve `(ventaId, totalCentavos)` si se aprobó y se grabó la venta,
 /// `null` en cualquier otro cierre (cancelado, rechazado sin reintentar).
@@ -42,9 +41,9 @@ Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
   int valorDescuento = 0,
   int? encargueId,
 }) {
-  return mostrarHojaVidrio<({int ventaId, int totalCentavos})?>(
+  return mostrarHojaNs<({int ventaId, int totalCentavos})?>(
     context,
-    esDescartable: false,
+    descartable: false,
     builder: (context) => _DialogoCobroPosnetCompanion(
       cliente: cliente,
       usuarioId: usuarioId,
@@ -325,101 +324,79 @@ class _DialogoCobroPosnetCompanionState
 
   void _cerrar() => Navigator.of(context).pop(_resultadoAprobado);
 
+  /// Hoja de la terminal del mock (docs/03 H3): mientras espera, "Cobrando en la
+  /// terminal" con el total en una tarjeta oscura; si no se aprobó, "El pago no
+  /// se aprobó" con sus salidas. No se cierra tocando afuera.
   @override
   Widget build(BuildContext context) {
+    final fallo = switch (_fase) {
+      _Fase.rechazado || _Fase.expirado || _Fase.error => true,
+      _ => false,
+    };
+    final monto = plataNs(widget.montoCentavos);
+    final hero = HeroNs(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Total a cobrar', style: estiloNs(14, peso: FontWeight.w600, color: const Color(0xC7FFFFFF))),
+          const SizedBox(height: 6),
+          Text(monto, style: tituloNs(44, track: -0.058, altura: 1.02, color: TokensNs.blanco)),
+          const SizedBox(height: 6),
+          Text(_subtituloHero(), style: estiloNs(14, altura: 1.4, color: const Color(0xCCFFFFFF))),
+        ],
+      ),
+    );
     return PopScope(
       canPop: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Cobrar por ${nombreCanal(widget.canal)}',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: Espaciado.lg),
-          _contenido(),
-          const SizedBox(height: Espaciado.lg),
-          _filaBotones(),
+      child: HojaNs(
+        titulo: switch (_fase) {
+          _Fase.aprobado => 'Pago aprobado',
+          _ when fallo => 'El pago no se aprobó',
+          _ => 'Cobrando en la terminal',
+        },
+        texto: switch (_fase) {
+          _Fase.aprobado => null,
+          _ when fallo => 'Si la terminal sigue esperando el pago, cancelalo a mano ahí.',
+          _ => 'Pedile al cliente que acerque la tarjeta o escanee el QR. Esperando la confirmación de Mercado Pago…',
+        },
+        bloques: [
+          if (fallo) InfoNs(_mensajeFallo(), tono: TonoNs.warn) else hero,
         ],
+        botones: _botones(),
       ),
     );
   }
 
-  /// `_botones()` puede devolver 0, 1 o 2 botones según la fase — con dos,
-  /// van lado a lado (mismo ancho cada uno); con uno, ocupa todo el ancho.
-  Widget _filaBotones() {
-    final botones = _botones();
-    if (botones.isEmpty) return const SizedBox.shrink();
-    if (botones.length == 1) return botones.first;
-    return Row(
-      children: [
-        for (var i = 0; i < botones.length; i++) ...[
-          if (i > 0) const SizedBox(width: Espaciado.sm),
-          Expanded(child: botones[i]),
-        ],
-      ],
-    );
-  }
+  String _subtituloHero() => switch (_fase) {
+    _Fase.creando => 'Enviando la orden a la terminal',
+    _Fase.esperando => _enTerminal ? 'El cliente tiene que confirmar en la terminal' : 'Esperando el pago',
+    _Fase.cancelando => 'Cancelando en la terminal…',
+    _Fase.cobrandoAMano || _Fase.guardandoVenta => 'Grabando la venta',
+    _Fase.aprobado => 'Ya está cobrado',
+    _ => '',
+  };
 
-  Widget _contenido() {
-    final monto = formatearARS(widget.montoCentavos);
-    return switch (_fase) {
-      _Fase.creando => _filaCargando(
-        'Enviando la orden a la terminal — $monto',
-      ),
-      _Fase.esperando => _filaCargando(
-        _enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto',
-      ),
-      _Fase.cancelando => _filaCargando('Cancelando en la terminal...'),
-      _Fase.cobrandoAMano || _Fase.guardandoVenta => _filaCargando('Grabando la venta — $monto'),
-      _Fase.aprobado => Text('Pago aprobado — $monto'),
-      _Fase.rechazado => const Text('El pago no se aprobó en la terminal.'),
-      _Fase.expirado => const Text(
-        'No se pudo confirmar el pago a tiempo. Revisá la terminal.',
-      ),
-      _Fase.error => Text(_error ?? 'No se pudo conectar con Mercado Pago.'),
-    };
-  }
-
-  Widget _filaCargando(String texto) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        const SizedBox(width: 16),
-        Flexible(child: Text(texto)),
-      ],
-    );
-  }
+  String _mensajeFallo() => switch (_fase) {
+    _Fase.rechazado => 'Todavía no se cobró nada. El pago no se aprobó en la terminal.',
+    _Fase.expirado => 'No se pudo confirmar el pago a tiempo. Revisá la terminal.',
+    _ => _error ?? 'No se pudo conectar con Mercado Pago.',
+  };
 
   List<Widget> _botones() {
     return switch (_fase) {
-      _Fase.creando || _Fase.esperando => [
-        TextButton(onPressed: _cancelar, child: const Text('Cancelar')),
-      ],
+      _Fase.creando || _Fase.esperando => [BotonNs.secundario(context, 'Cancelar cobro', _cancelar)],
       _Fase.cancelando || _Fase.cobrandoAMano || _Fase.guardandoVenta => [],
-      _Fase.aprobado => [
-        FilledButton(onPressed: _cerrar, child: const Text('Listo')),
-      ],
-      _Fase.error when _errorAlCancelar => [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cerrar'),
-        ),
-      ],
+      _Fase.aprobado => [BotonNs.primario(context, 'Listo', _cerrar)],
+      _Fase.error when _errorAlCancelar => [BotonNs.primario(context, 'Cerrar', () => Navigator.of(context).pop())],
       // Pago ya aprobado: solo se puede volver a guardar ESTA venta (o cerrar y revisarla en el cierre: la orden queda "sin resolver").
       _Fase.error when _pagoAprobado => [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar')),
-        FilledButton(onPressed: _guardarVentaAprobada, child: const Text('Reintentar')),
+        BotonNs.primario(context, 'Reintentar', _guardarVentaAprobada),
+        BotonNs.secundario(context, 'Cerrar', () => Navigator.of(context).pop()),
       ],
       _Fase.rechazado || _Fase.expirado || _Fase.error => [
-        TextButton(onPressed: _cobrarAMano, child: const Text('Cobrar a mano')),
-        FilledButton(onPressed: _reintentar, child: const Text('Reintentar')),
+        BotonNs.primario(context, 'Reintentar', _reintentar),
+        BotonNs.secundario(context, 'Cobrar a mano', _cobrarAMano),
+        BotonNs.secundario(context, 'Cancelar', () => Navigator.of(context).pop()),
       ],
     };
   }

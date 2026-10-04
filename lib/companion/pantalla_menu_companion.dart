@@ -53,11 +53,12 @@ import 'app_ns.dart';
 import 'funciones_ns.dart';
 import 'kit/kit_ns.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
+import 'pantallas/hoja_contar_caja_ns.dart';
+import 'pantallas/pantalla_cierre_ns.dart';
+import 'pantallas/pantalla_caja_ns.dart';
 import 'pantallas/pantalla_inicio_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
-import 'dialogo_arqueo_intermedio_companion.dart';
-import 'dialogo_cierre_companion.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
@@ -326,11 +327,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// nueva y el aviso desaparece sin hacer nada más acá.
   Future<void> _hacerArqueoIntermedio() async {
     if (_servicio == null || _usuarioId == null) return;
-    await mostrarDialogoArqueoIntermedioCompanion(
-      context,
-      servicio: _servicio!,
-      usuarioId: _usuarioId!,
-    );
+    await mostrarHojaContarCaja(context, servicio: _servicio!, usuarioId: _usuarioId!);
     await _revisarSesion();
   }
 
@@ -346,13 +343,14 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// la caja como abierta sin tener que salir y volver a entrar.
   Future<void> _cerrarCaja() async {
     if (_servicio == null || _usuarioId == null) return;
-    await mostrarDialogoCierreCompanion(
-      context,
-      servicio: _servicio!,
-      usuarioId: _usuarioId!,
-      precargaEfectivoCentavos: _sesion?.ultimoArqueoEfectivoCentavos,
-      precargaMpCentavos: _sesion?.ultimoArqueoMpCentavos,
-      horaPrecarga: _sesion?.fechaUltimoArqueoIntermedio,
+    await irA<bool>(
+      (_) => PantallaCierreNs(
+        servicio: _servicio!,
+        usuarioId: _usuarioId!,
+        precargaEfectivoCentavos: _sesion?.ultimoArqueoEfectivoCentavos,
+        precargaMpCentavos: _sesion?.ultimoArqueoMpCentavos,
+        horaPrecarga: _sesion?.fechaUltimoArqueoIntermedio,
+      ),
     );
     await _revisarSesion();
   }
@@ -586,19 +584,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// imprimir, y `PantallaCarritoVenta` ya lo tolera en null (avisa en vez
   /// de tirar). Vender de verdad corre entero contra `_servicio`.
   Future<void> _abrirCarritoDesdeInicio() async {
-    if (_servicio == null || _usuarioId == null) return;
-    await _irA(
-      (_) => PantallaCarritoVenta(
-        cliente: _cliente,
-        servicio: _servicio!,
-        usuarioId: _usuarioId!,
-        carrito: _carrito,
-        encargueId: _encargueId,
-      ),
-    );
-    // Cobrada o vaciada: ya no entrega ese encargue (si quedó con líneas, sigue siendo la misma venta).
-    if (_carrito.isEmpty) _encargueId = null;
-    _revisarSesion();
+    irAPestania(PestaniaNs.vender);
   }
 
   /// El encargue por apartado que el carrito está entregando (null en una venta común).
@@ -741,6 +727,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         canPop: _pestania == PestaniaNs.inicio,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
+          // En el cobro de Vender el "volver" es de esa pantalla, no de la barra.
+          if (ocultarBarra.value) return;
           irAPestania(PestaniaNs.inicio);
         },
         child: Scaffold(
@@ -753,7 +741,16 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             children: [
               const PantallaInicioNs(),
               const PantallaPrecios(),
-              _TemporalVender(onVender: _abrirCarritoDesdeInicio),
+              _servicio == null || _usuarioId == null
+                  ? const SizedBox.shrink()
+                  : PantallaCarritoVenta(
+                      cliente: _cliente,
+                      servicio: _servicio!,
+                      usuarioId: _usuarioId!,
+                      carrito: _carrito,
+                      encargueId: _encargueId,
+                    ),
+              const PantallaCajaNs(),
               PantallaGestionCompanion(
                 navegando: _navegando,
                 irA: _irA,
@@ -765,7 +762,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                 usuarioId: _usuarioId,
                 onAbrirEncargues: _abrirEncargues,
               ),
-              const PantallaHistorialVentas(),
             ],
           ),
           bottomNavigationBar: ValueListenableBuilder<bool>(
@@ -778,14 +774,4 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       ),
     );
   }
-}
-
-/// Pestaña "Vender" provisoria: abre el carrito de siempre hasta que la
-/// pantalla de venta del mock la reemplace.
-class _TemporalVender extends StatelessWidget {
-  const _TemporalVender({required this.onVender});
-  final VoidCallback onVender;
-
-  @override
-  Widget build(BuildContext context) => Center(child: FilledButton(onPressed: onVender, child: const Text('Nueva venta')));
 }

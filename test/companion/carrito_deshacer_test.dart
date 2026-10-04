@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
@@ -8,6 +9,7 @@ import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 import '../helpers/base_para_tests.dart';
+import '../helpers/controlador_falso_ns.dart';
 
 void main() {
   testWidgets('quitar una línea del carrito se puede deshacer', (tester) async {
@@ -31,12 +33,16 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: TemaCompanion.claro,
-        home: PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
+        home: AppNs(
+          controlador: ControladorFalsoNs(),
+          version: 0,
+          child: Scaffold(body: PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito)),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 600));
 
-    await tester.tap(find.text('Quitar').first);
+    await tester.tap(find.text('Quitar del carrito').first);
     await tester.pump();
     expect(carrito.map((l) => l.nombreProducto), ['Gaseosa cola']);
     expect(find.text('Quitaste Cerveza lata'), findsOneWidget);

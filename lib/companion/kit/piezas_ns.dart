@@ -337,7 +337,11 @@ class CampoNs extends StatelessWidget {
     this.habilitado = true,
     this.alineadoDerecha = false,
     this.onSubmit,
+    this.estiloGrande,
   });
+
+  /// Tamaño del valor cuando se quiere otro "grande" que el de 40 (p. ej. 46 en Monto).
+  final double? estiloGrande;
 
   final String etiqueta;
   final TextEditingController? controller;
@@ -367,7 +371,7 @@ class CampoNs extends StatelessWidget {
           Text(etiqueta, style: estiloNs(13, peso: FontWeight.w600, color: ns.mute)),
           const SizedBox(height: 4),
           SizedBox(
-            height: grande ? 54 : null,
+            height: (grande || estiloGrande != null) ? (estiloGrande != null ? 56 : 54) : null,
             child: TextField(
               controller: controller,
               focusNode: foco,
@@ -380,7 +384,7 @@ class CampoNs extends StatelessWidget {
               onSubmitted: onSubmit,
               textAlign: alineadoDerecha ? TextAlign.right : TextAlign.left,
               cursorColor: ns.ink,
-              style: grande ? tituloNs(40, track: -0.05, color: ns.ink) : estiloNs(20, peso: FontWeight.w500, color: ns.ink, tabular: true),
+              style: estiloGrande != null ? tituloNs(estiloGrande!, track: -0.05, color: ns.ink) : (grande ? tituloNs(40, track: -0.05, color: ns.ink) : estiloNs(20, peso: FontWeight.w500, color: ns.ink, tabular: true)),
               decoration: InputDecoration(
                 isDense: true,
                 filled: false,
@@ -390,7 +394,7 @@ class CampoNs extends StatelessWidget {
                 disabledBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
                 hintText: placeholder,
-                hintStyle: (grande ? tituloNs(40, track: -0.05) : estiloNs(20, peso: FontWeight.w500)).copyWith(color: ns.mute, fontWeight: FontWeight.w500),
+                hintStyle: (estiloGrande != null ? tituloNs(estiloGrande!, track: -0.05) : (grande ? tituloNs(40, track: -0.05) : estiloNs(20, peso: FontWeight.w500))).copyWith(color: ns.mute, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -547,10 +551,12 @@ class StepperNs extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           BotonCircularNs(icono: IconoNs.menos, onTap: onMenos, etiqueta: 'Menos', tamanioIcono: 14, grosor: 2.6, colorIcono: ns.ink),
+          const SizedBox(width: 3),
           SizedBox(
             width: anchoCantidad,
             child: Text(cantidad, textAlign: TextAlign.center, maxLines: 1, style: estiloNs(tamanioCantidad, peso: FontWeight.w700, tabular: true, color: ns.ink)),
           ),
+          const SizedBox(width: 3),
           BotonCircularNs(icono: IconoNs.masMas, onTap: onMas, etiqueta: 'Más', tamanioIcono: 14, grosor: 2.6, colorIcono: ns.ink),
         ],
       ),
@@ -816,4 +822,96 @@ class EtiquetaStockNs extends StatelessWidget {
 String plataNs(int centavos) {
   final texto = formatearARS(centavos.abs(), conSigno: false);
   return '${centavos < 0 ? '-' : ''}\$\u00A0$texto';
+}
+
+// ───────────────────────── Tilde animado ─────────────────────────
+
+/// Círculo con tilde que "florece" (`.bloom`, 0,6 s: escala .6→1 con fade) y
+/// cuyo trazo se dibuja (`.tick`, 0,6 s con 0,25 s de retraso). Se usa en
+/// "Venta cobrada" y en los estados "todo contado".
+class CirculoTildeNs extends StatefulWidget {
+  const CirculoTildeNs({super.key, required this.tamanio, required this.fondo, required this.color, this.tamanioTilde});
+
+  final double tamanio;
+  final Color fondo;
+  final Color color;
+  final double? tamanioTilde;
+
+  @override
+  State<CirculoTildeNs> createState() => _CirculoTildeNsState();
+}
+
+class _CirculoTildeNsState extends State<CirculoTildeNs> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 850));
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    if (sinMovimiento(context)) {
+      _c.value = 1;
+    } else {
+      _c.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lado = widget.tamanioTilde ?? widget.tamanio * 0.5;
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        // 0–0,6 s el círculo; 0,25–0,85 s el trazo.
+        final flor = curvaNs.transform((_c.value * 850 / 600).clamp(0.0, 1.0));
+        final trazo = curvaNs.transform(((_c.value * 850 - 250) / 600).clamp(0.0, 1.0));
+        return Opacity(
+          opacity: flor,
+          child: Transform.scale(
+            scale: 0.6 + 0.4 * flor,
+            child: Container(
+              width: widget.tamanio,
+              height: widget.tamanio,
+              decoration: BoxDecoration(color: widget.fondo, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: SizedBox(width: lado, height: lado, child: CustomPaint(painter: _PintorTilde(widget.color, trazo))),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PintorTilde extends CustomPainter {
+  _PintorTilde(this.color, this.avance);
+  final Color color;
+  final double avance;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = pathDeSvg(IconoNs.tilde.trazo);
+    final metrica = path.computeMetrics().first;
+    final parcial = metrica.extractPath(0, metrica.length * avance);
+    canvas.scale(size.width / 24, size.height / 24);
+    canvas.drawPath(
+      parcial,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 2.6
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PintorTilde old) => old.avance != avance || old.color != color;
 }

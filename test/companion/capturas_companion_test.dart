@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/bienvenida/pantalla_bienvenida.dart';
 import 'package:la_plazoleta/companion/bienvenida/pantalla_listo.dart';
@@ -42,6 +43,7 @@ import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 import '../helpers/base_para_tests.dart';
+import '../helpers/controlador_falso_ns.dart';
 import '../helpers/servidor_sync_falso.dart';
 
 final _clave = GlobalKey();
@@ -170,7 +172,7 @@ void main() {
     });
     testWidgets('movimiento de caja$sufijo', (tester) async {
       await preparar(tester);
-      await _capturar(tester, 'movimiento-caja', const PantallaMovimientoCaja(), oscuro: oscuro);
+      await _capturar(tester, 'movimiento-caja', AppNs(controlador: ControladorFalsoNs(), version: 0, child: const PantallaMovimientoCaja()), oscuro: oscuro);
     });
     testWidgets('carrito$sufijo', (tester) async {
       await preparar(tester);
@@ -184,7 +186,7 @@ void main() {
       await _capturar(
         tester,
         'carrito',
-        PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito),
+        AppNs(controlador: ControladorFalsoNs(), version: 0, child: Scaffold(body: PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito))),
         oscuro: oscuro,
       );
     });
