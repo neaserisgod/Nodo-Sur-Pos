@@ -29,7 +29,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../navegacion/refresco_por_celular.dart';
+import '../../domain/avisos_mp.dart';
 import '../../domain/modulos.dart';
+import '../../servicios/avisos_mp_servicio.dart';
+import '../../servicios/nube.dart' show nubeApp;
 import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import 'venta_en_curso.dart';
@@ -450,13 +453,11 @@ class _PantallaVentaState extends State<PantallaVenta>
               final accionesPie = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // El arqueo sugerido cada 2 horas es parte de los turnos.
-                  SiModulo(
-                    Modulo.turnos,
-                    hijo: _BotonNotificaciones(
-                      hayArqueoVencido: c.arqueoIntermedioVencido,
-                      onHacerArqueo: _hacerArqueoIntermedio,
-                    ),
+                  // El arqueo sugerido cada 2 horas es parte de los turnos; los avisos de Mercado Pago (etapa D) no, así que la
+                  // campanita está siempre y cada parte decide si se muestra.
+                  _BotonNotificaciones(
+                    hayArqueoVencido: c.arqueoIntermedioVencido,
+                    onHacerArqueo: _hacerArqueoIntermedio,
                   ),
                   _AccionesPie(
                     puedeCerrarCaja: c.sesion != null,
@@ -684,6 +685,10 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
   final _overlayController = OverlayPortalController();
   bool _abierto = false;
 
+  // Avisos de Mercado Pago (etapa D, El dueño 2026-10-04): cobro que entró sin venta, contracargos y reclamos. Solo avisan, y
+  // solo en la PC (en los tests y en el celular no hay servicio y la lista queda vacía).
+  static final _sinAvisos = ValueNotifier<List<AvisoParaMostrar>>(const []);
+
   @override
   void initState() {
     super.initState();
@@ -693,6 +698,15 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
+    final servicio = nubeApp?.avisosMp;
+    return ValueListenableBuilder<List<AvisoParaMostrar>>(
+      valueListenable: servicio?.pendientes ?? _sinAvisos,
+      builder: (context, avisos, _) => _construir(context, colores, avisos, servicio),
+    );
+  }
+
+  Widget _construir(BuildContext context, ColoresPlazoleta colores, List<AvisoParaMostrar> avisos, ServicioAvisosMp? servicio) {
+    final hayPendiente = widget.hayArqueoVencido || avisos.isNotEmpty;
 
     return OverlayPortal(
       controller: _overlayController,
@@ -713,31 +727,51 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
                 // durante el turno dejen de ser obligatorios"): el botón está
                 // siempre, y a las 2hs solo se prende el punto — el aviso
                 // suave que eligió, sin panel ni banner que insista.
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.hayArqueoVencido
-                          ? 'Pasaron 2 horas desde el último arqueo.'
-                          : 'Sin novedades por ahora.',
-                      style: Theme.of(context).textTheme.titleMedium,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 420),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final a in avisos) ...[
+                          _AvisoMpEnPanel(aviso: a, onVisto: servicio == null ? null : () => servicio.marcarVisto(a.aviso)),
+                          const SizedBox(height: Espaciado.md),
+                        ],
+                        SiModulo(
+                          Modulo.turnos,
+                          hijo: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.hayArqueoVencido
+                                    ? 'Pasaron 2 horas desde el último arqueo.'
+                                    : (avisos.isEmpty ? 'Sin novedades por ahora.' : 'Arqueo'),
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: Espaciado.xs),
+                              Text(
+                                'Contar la caja es opcional. Lo que cuentes queda '
+                                'precargado en el cierre.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: Espaciado.md),
+                              BotonSecundario(
+                                texto: 'Hacer arqueo',
+                                onPressed: () {
+                                  setState(() => _abierto = false);
+                                  widget.onHacerArqueo();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (avisos.isEmpty && !modulosActuales.value.estaActivo(Modulo.turnos))
+                          Text('Sin novedades por ahora.', style: Theme.of(context).textTheme.titleMedium),
+                      ],
                     ),
-                    const SizedBox(height: Espaciado.xs),
-                    Text(
-                      'Contar la caja es opcional. Lo que cuentes queda '
-                      'precargado en el cierre.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: Espaciado.md),
-                    BotonSecundario(
-                      texto: 'Hacer arqueo',
-                      onPressed: () {
-                        setState(() => _abierto = false);
-                        widget.onHacerArqueo();
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -753,7 +787,7 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
               message: 'Notificaciones',
               child: Semantics(
                 button: true,
-                label: widget.hayArqueoVencido ? 'Notificaciones: hay un aviso pendiente' : 'Notificaciones',
+                label: hayPendiente ? 'Notificaciones: hay un aviso pendiente' : 'Notificaciones',
                 excludeSemantics: true,
                 onTap: () => setState(() => _abierto = !_abierto),
                 child: Material(
@@ -775,7 +809,7 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
                 ),
               ),
             ),
-            if (widget.hayArqueoVencido)
+            if (hayPendiente)
               Positioned(
                 top: 12,
                 right: 12,
@@ -791,6 +825,29 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Un aviso de Mercado Pago dentro del panel de la campanita: qué pasó, con qué venta se cruzó y "Visto" para sacarlo.
+class _AvisoMpEnPanel extends StatelessWidget {
+  const _AvisoMpEnPanel({required this.aviso, required this.onVisto});
+
+  final AvisoParaMostrar aviso;
+  final VoidCallback? onVisto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: ValueKey('aviso_mp_${aviso.aviso.idServidor}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(aviso.titulo, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: Espaciado.xs),
+        Text(aviso.texto, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: Espaciado.sm),
+        BotonSecundario(texto: 'Visto', onPressed: onVisto),
+      ],
     );
   }
 }

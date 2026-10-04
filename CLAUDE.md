@@ -306,6 +306,15 @@ algo pendiente. Al tocarla, un panel chico con el aviso y el botón "Hacer
 arqueo", o "Sin novedades por ahora" si no hay nada. Único lugar de avisos
 que no son parte del flujo de vender.
 
+La campanita también trae **los avisos de Mercado Pago** (etapa D, El dueño,
+2026-10-04), solo en la PC: un cobro que entró a la cuenta y no tiene venta
+en la app, un contracargo, un reclamo — estos dos con la venta cruzada
+cuando se puede. **Solo avisan**: no tocan la caja ni el stock. Cada uno
+tiene "Visto" y desaparece; un contracargo que cambia de estado vuelve. Un
+cobro espera 5 minutos antes de avisar (la venta se graba al terminar de
+cobrar). Siguen existiendo aunque el módulo de turnos esté apagado (ese solo
+esconde la parte del arqueo).
+
 **Cuerpo, dos zonas**
 
 Izquierda (`Expanded`): pills de categoría + grilla de productos navegable

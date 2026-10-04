@@ -11955,7 +11955,7 @@ class Pago extends DataClass implements Insertable<Pago> {
   final int medioPagoId;
   final int montoCentavos;
 
-  /// 'qr' | 'debit_card' | null (Fase 12). QR y Débito siguen siendo el
+  /// 'qr' | 'debit_card' | 'credit_card' | null (Fase 12; crédito desde la etapa C). QR y Débito siguen siendo el
   /// mismo `medioPagoId` de siempre ("Mercado Pago") — este es solo el
   /// dato de qué canal de la terminal Point se usó, o null si el pago no
   /// pasó por ahí (efectivo, o Mercado Pago cobrado a mano como hasta
@@ -18696,7 +18696,7 @@ class OrdenCobroPendiente extends DataClass
   /// orden en vez de crear una nueva.
   final String idempotencyKey;
 
-  /// 'qr' | 'debit_card'.
+  /// 'qr' | 'debit_card' | 'credit_card' (etapa C, siempre en 1 pago).
   final String canal;
   final int montoCentavos;
   final int sesionCajaId;
@@ -18705,7 +18705,7 @@ class OrdenCobroPendiente extends DataClass
   /// la orden — recién ahí hay algo que consultar con `GET /v1/orders/{id}`.
   final String? ordenIdMp;
 
-  /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' |
+  /// 'pendiente' (recién creada, o la respuesta se perdió) | 'aprobada' | 'devuelta' (se le devolvió al cliente, etapa B) |
   /// 'rechazada' | 'cancelada' (El dueño la canceló desde el diálogo).
   final String estado;
   final DateTime creadaEn;
@@ -21363,6 +21363,709 @@ class PromoComponentesCompanion extends UpdateCompanion<ComponentePromo> {
   }
 }
 
+class $AvisosMpTable extends AvisosMp
+    with TableInfo<$AvisosMpTable, AvisoMpFila> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AvisosMpTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _idServidorMeta = const VerificationMeta(
+    'idServidor',
+  );
+  @override
+  late final GeneratedColumn<int> idServidor = GeneratedColumn<int>(
+    'id_servidor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mpIdMeta = const VerificationMeta('mpId');
+  @override
+  late final GeneratedColumn<String> mpId = GeneratedColumn<String>(
+    'mp_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pagoIdMeta = const VerificationMeta('pagoId');
+  @override
+  late final GeneratedColumn<String> pagoId = GeneratedColumn<String>(
+    'pago_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _montoCentavosMeta = const VerificationMeta(
+    'montoCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> montoCentavos = GeneratedColumn<int>(
+    'monto_centavos',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _referenciaMeta = const VerificationMeta(
+    'referencia',
+  );
+  @override
+  late final GeneratedColumn<String> referencia = GeneratedColumn<String>(
+    'referencia',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _estadoMeta = const VerificationMeta('estado');
+  @override
+  late final GeneratedColumn<String> estado = GeneratedColumn<String>(
+    'estado',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _detalleMeta = const VerificationMeta(
+    'detalle',
+  );
+  @override
+  late final GeneratedColumn<String> detalle = GeneratedColumn<String>(
+    'detalle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fechaMeta = const VerificationMeta('fecha');
+  @override
+  late final GeneratedColumn<DateTime> fecha = GeneratedColumn<DateTime>(
+    'fecha',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creadoMeta = const VerificationMeta('creado');
+  @override
+  late final GeneratedColumn<DateTime> creado = GeneratedColumn<DateTime>(
+    'creado',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vistoMeta = const VerificationMeta('visto');
+  @override
+  late final GeneratedColumn<bool> visto = GeneratedColumn<bool>(
+    'visto',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("visto" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    idServidor,
+    tipo,
+    mpId,
+    pagoId,
+    montoCentavos,
+    referencia,
+    estado,
+    detalle,
+    fecha,
+    creado,
+    visto,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'avisos_mp';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AvisoMpFila> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('id_servidor')) {
+      context.handle(
+        _idServidorMeta,
+        idServidor.isAcceptableOrUnknown(data['id_servidor']!, _idServidorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_idServidorMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('mp_id')) {
+      context.handle(
+        _mpIdMeta,
+        mpId.isAcceptableOrUnknown(data['mp_id']!, _mpIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mpIdMeta);
+    }
+    if (data.containsKey('pago_id')) {
+      context.handle(
+        _pagoIdMeta,
+        pagoId.isAcceptableOrUnknown(data['pago_id']!, _pagoIdMeta),
+      );
+    }
+    if (data.containsKey('monto_centavos')) {
+      context.handle(
+        _montoCentavosMeta,
+        montoCentavos.isAcceptableOrUnknown(
+          data['monto_centavos']!,
+          _montoCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('referencia')) {
+      context.handle(
+        _referenciaMeta,
+        referencia.isAcceptableOrUnknown(data['referencia']!, _referenciaMeta),
+      );
+    }
+    if (data.containsKey('estado')) {
+      context.handle(
+        _estadoMeta,
+        estado.isAcceptableOrUnknown(data['estado']!, _estadoMeta),
+      );
+    }
+    if (data.containsKey('detalle')) {
+      context.handle(
+        _detalleMeta,
+        detalle.isAcceptableOrUnknown(data['detalle']!, _detalleMeta),
+      );
+    }
+    if (data.containsKey('fecha')) {
+      context.handle(
+        _fechaMeta,
+        fecha.isAcceptableOrUnknown(data['fecha']!, _fechaMeta),
+      );
+    }
+    if (data.containsKey('creado')) {
+      context.handle(
+        _creadoMeta,
+        creado.isAcceptableOrUnknown(data['creado']!, _creadoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_creadoMeta);
+    }
+    if (data.containsKey('visto')) {
+      context.handle(
+        _vistoMeta,
+        visto.isAcceptableOrUnknown(data['visto']!, _vistoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AvisoMpFila map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AvisoMpFila(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      idServidor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id_servidor'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      mpId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mp_id'],
+      )!,
+      pagoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pago_id'],
+      ),
+      montoCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}monto_centavos'],
+      ),
+      referencia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}referencia'],
+      ),
+      estado: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}estado'],
+      ),
+      detalle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}detalle'],
+      ),
+      fecha: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha'],
+      ),
+      creado: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creado'],
+      )!,
+      visto: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}visto'],
+      )!,
+    );
+  }
+
+  @override
+  $AvisosMpTable createAlias(String alias) {
+    return $AvisosMpTable(attachedDatabase, alias);
+  }
+}
+
+class AvisoMpFila extends DataClass implements Insertable<AvisoMpFila> {
+  final int id;
+
+  /// El id del sitio. Único: un aviso que llega por el aire y otra vez por la consulta se guarda una sola vez.
+  final int idServidor;
+
+  /// 'cobro' | 'contracargo' | 'reclamo'.
+  final String tipo;
+  final String mpId;
+  final String? pagoId;
+  final int? montoCentavos;
+  final String? referencia;
+  final String? estado;
+  final String? detalle;
+  final DateTime? fecha;
+  final DateTime creado;
+  final bool visto;
+  const AvisoMpFila({
+    required this.id,
+    required this.idServidor,
+    required this.tipo,
+    required this.mpId,
+    this.pagoId,
+    this.montoCentavos,
+    this.referencia,
+    this.estado,
+    this.detalle,
+    this.fecha,
+    required this.creado,
+    required this.visto,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['id_servidor'] = Variable<int>(idServidor);
+    map['tipo'] = Variable<String>(tipo);
+    map['mp_id'] = Variable<String>(mpId);
+    if (!nullToAbsent || pagoId != null) {
+      map['pago_id'] = Variable<String>(pagoId);
+    }
+    if (!nullToAbsent || montoCentavos != null) {
+      map['monto_centavos'] = Variable<int>(montoCentavos);
+    }
+    if (!nullToAbsent || referencia != null) {
+      map['referencia'] = Variable<String>(referencia);
+    }
+    if (!nullToAbsent || estado != null) {
+      map['estado'] = Variable<String>(estado);
+    }
+    if (!nullToAbsent || detalle != null) {
+      map['detalle'] = Variable<String>(detalle);
+    }
+    if (!nullToAbsent || fecha != null) {
+      map['fecha'] = Variable<DateTime>(fecha);
+    }
+    map['creado'] = Variable<DateTime>(creado);
+    map['visto'] = Variable<bool>(visto);
+    return map;
+  }
+
+  AvisosMpCompanion toCompanion(bool nullToAbsent) {
+    return AvisosMpCompanion(
+      id: Value(id),
+      idServidor: Value(idServidor),
+      tipo: Value(tipo),
+      mpId: Value(mpId),
+      pagoId: pagoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pagoId),
+      montoCentavos: montoCentavos == null && nullToAbsent
+          ? const Value.absent()
+          : Value(montoCentavos),
+      referencia: referencia == null && nullToAbsent
+          ? const Value.absent()
+          : Value(referencia),
+      estado: estado == null && nullToAbsent
+          ? const Value.absent()
+          : Value(estado),
+      detalle: detalle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(detalle),
+      fecha: fecha == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fecha),
+      creado: Value(creado),
+      visto: Value(visto),
+    );
+  }
+
+  factory AvisoMpFila.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AvisoMpFila(
+      id: serializer.fromJson<int>(json['id']),
+      idServidor: serializer.fromJson<int>(json['idServidor']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      mpId: serializer.fromJson<String>(json['mpId']),
+      pagoId: serializer.fromJson<String?>(json['pagoId']),
+      montoCentavos: serializer.fromJson<int?>(json['montoCentavos']),
+      referencia: serializer.fromJson<String?>(json['referencia']),
+      estado: serializer.fromJson<String?>(json['estado']),
+      detalle: serializer.fromJson<String?>(json['detalle']),
+      fecha: serializer.fromJson<DateTime?>(json['fecha']),
+      creado: serializer.fromJson<DateTime>(json['creado']),
+      visto: serializer.fromJson<bool>(json['visto']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'idServidor': serializer.toJson<int>(idServidor),
+      'tipo': serializer.toJson<String>(tipo),
+      'mpId': serializer.toJson<String>(mpId),
+      'pagoId': serializer.toJson<String?>(pagoId),
+      'montoCentavos': serializer.toJson<int?>(montoCentavos),
+      'referencia': serializer.toJson<String?>(referencia),
+      'estado': serializer.toJson<String?>(estado),
+      'detalle': serializer.toJson<String?>(detalle),
+      'fecha': serializer.toJson<DateTime?>(fecha),
+      'creado': serializer.toJson<DateTime>(creado),
+      'visto': serializer.toJson<bool>(visto),
+    };
+  }
+
+  AvisoMpFila copyWith({
+    int? id,
+    int? idServidor,
+    String? tipo,
+    String? mpId,
+    Value<String?> pagoId = const Value.absent(),
+    Value<int?> montoCentavos = const Value.absent(),
+    Value<String?> referencia = const Value.absent(),
+    Value<String?> estado = const Value.absent(),
+    Value<String?> detalle = const Value.absent(),
+    Value<DateTime?> fecha = const Value.absent(),
+    DateTime? creado,
+    bool? visto,
+  }) => AvisoMpFila(
+    id: id ?? this.id,
+    idServidor: idServidor ?? this.idServidor,
+    tipo: tipo ?? this.tipo,
+    mpId: mpId ?? this.mpId,
+    pagoId: pagoId.present ? pagoId.value : this.pagoId,
+    montoCentavos: montoCentavos.present
+        ? montoCentavos.value
+        : this.montoCentavos,
+    referencia: referencia.present ? referencia.value : this.referencia,
+    estado: estado.present ? estado.value : this.estado,
+    detalle: detalle.present ? detalle.value : this.detalle,
+    fecha: fecha.present ? fecha.value : this.fecha,
+    creado: creado ?? this.creado,
+    visto: visto ?? this.visto,
+  );
+  AvisoMpFila copyWithCompanion(AvisosMpCompanion data) {
+    return AvisoMpFila(
+      id: data.id.present ? data.id.value : this.id,
+      idServidor: data.idServidor.present
+          ? data.idServidor.value
+          : this.idServidor,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      mpId: data.mpId.present ? data.mpId.value : this.mpId,
+      pagoId: data.pagoId.present ? data.pagoId.value : this.pagoId,
+      montoCentavos: data.montoCentavos.present
+          ? data.montoCentavos.value
+          : this.montoCentavos,
+      referencia: data.referencia.present
+          ? data.referencia.value
+          : this.referencia,
+      estado: data.estado.present ? data.estado.value : this.estado,
+      detalle: data.detalle.present ? data.detalle.value : this.detalle,
+      fecha: data.fecha.present ? data.fecha.value : this.fecha,
+      creado: data.creado.present ? data.creado.value : this.creado,
+      visto: data.visto.present ? data.visto.value : this.visto,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AvisoMpFila(')
+          ..write('id: $id, ')
+          ..write('idServidor: $idServidor, ')
+          ..write('tipo: $tipo, ')
+          ..write('mpId: $mpId, ')
+          ..write('pagoId: $pagoId, ')
+          ..write('montoCentavos: $montoCentavos, ')
+          ..write('referencia: $referencia, ')
+          ..write('estado: $estado, ')
+          ..write('detalle: $detalle, ')
+          ..write('fecha: $fecha, ')
+          ..write('creado: $creado, ')
+          ..write('visto: $visto')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    idServidor,
+    tipo,
+    mpId,
+    pagoId,
+    montoCentavos,
+    referencia,
+    estado,
+    detalle,
+    fecha,
+    creado,
+    visto,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AvisoMpFila &&
+          other.id == this.id &&
+          other.idServidor == this.idServidor &&
+          other.tipo == this.tipo &&
+          other.mpId == this.mpId &&
+          other.pagoId == this.pagoId &&
+          other.montoCentavos == this.montoCentavos &&
+          other.referencia == this.referencia &&
+          other.estado == this.estado &&
+          other.detalle == this.detalle &&
+          other.fecha == this.fecha &&
+          other.creado == this.creado &&
+          other.visto == this.visto);
+}
+
+class AvisosMpCompanion extends UpdateCompanion<AvisoMpFila> {
+  final Value<int> id;
+  final Value<int> idServidor;
+  final Value<String> tipo;
+  final Value<String> mpId;
+  final Value<String?> pagoId;
+  final Value<int?> montoCentavos;
+  final Value<String?> referencia;
+  final Value<String?> estado;
+  final Value<String?> detalle;
+  final Value<DateTime?> fecha;
+  final Value<DateTime> creado;
+  final Value<bool> visto;
+  const AvisosMpCompanion({
+    this.id = const Value.absent(),
+    this.idServidor = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.mpId = const Value.absent(),
+    this.pagoId = const Value.absent(),
+    this.montoCentavos = const Value.absent(),
+    this.referencia = const Value.absent(),
+    this.estado = const Value.absent(),
+    this.detalle = const Value.absent(),
+    this.fecha = const Value.absent(),
+    this.creado = const Value.absent(),
+    this.visto = const Value.absent(),
+  });
+  AvisosMpCompanion.insert({
+    this.id = const Value.absent(),
+    required int idServidor,
+    required String tipo,
+    required String mpId,
+    this.pagoId = const Value.absent(),
+    this.montoCentavos = const Value.absent(),
+    this.referencia = const Value.absent(),
+    this.estado = const Value.absent(),
+    this.detalle = const Value.absent(),
+    this.fecha = const Value.absent(),
+    required DateTime creado,
+    this.visto = const Value.absent(),
+  }) : idServidor = Value(idServidor),
+       tipo = Value(tipo),
+       mpId = Value(mpId),
+       creado = Value(creado);
+  static Insertable<AvisoMpFila> custom({
+    Expression<int>? id,
+    Expression<int>? idServidor,
+    Expression<String>? tipo,
+    Expression<String>? mpId,
+    Expression<String>? pagoId,
+    Expression<int>? montoCentavos,
+    Expression<String>? referencia,
+    Expression<String>? estado,
+    Expression<String>? detalle,
+    Expression<DateTime>? fecha,
+    Expression<DateTime>? creado,
+    Expression<bool>? visto,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (idServidor != null) 'id_servidor': idServidor,
+      if (tipo != null) 'tipo': tipo,
+      if (mpId != null) 'mp_id': mpId,
+      if (pagoId != null) 'pago_id': pagoId,
+      if (montoCentavos != null) 'monto_centavos': montoCentavos,
+      if (referencia != null) 'referencia': referencia,
+      if (estado != null) 'estado': estado,
+      if (detalle != null) 'detalle': detalle,
+      if (fecha != null) 'fecha': fecha,
+      if (creado != null) 'creado': creado,
+      if (visto != null) 'visto': visto,
+    });
+  }
+
+  AvisosMpCompanion copyWith({
+    Value<int>? id,
+    Value<int>? idServidor,
+    Value<String>? tipo,
+    Value<String>? mpId,
+    Value<String?>? pagoId,
+    Value<int?>? montoCentavos,
+    Value<String?>? referencia,
+    Value<String?>? estado,
+    Value<String?>? detalle,
+    Value<DateTime?>? fecha,
+    Value<DateTime>? creado,
+    Value<bool>? visto,
+  }) {
+    return AvisosMpCompanion(
+      id: id ?? this.id,
+      idServidor: idServidor ?? this.idServidor,
+      tipo: tipo ?? this.tipo,
+      mpId: mpId ?? this.mpId,
+      pagoId: pagoId ?? this.pagoId,
+      montoCentavos: montoCentavos ?? this.montoCentavos,
+      referencia: referencia ?? this.referencia,
+      estado: estado ?? this.estado,
+      detalle: detalle ?? this.detalle,
+      fecha: fecha ?? this.fecha,
+      creado: creado ?? this.creado,
+      visto: visto ?? this.visto,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (idServidor.present) {
+      map['id_servidor'] = Variable<int>(idServidor.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (mpId.present) {
+      map['mp_id'] = Variable<String>(mpId.value);
+    }
+    if (pagoId.present) {
+      map['pago_id'] = Variable<String>(pagoId.value);
+    }
+    if (montoCentavos.present) {
+      map['monto_centavos'] = Variable<int>(montoCentavos.value);
+    }
+    if (referencia.present) {
+      map['referencia'] = Variable<String>(referencia.value);
+    }
+    if (estado.present) {
+      map['estado'] = Variable<String>(estado.value);
+    }
+    if (detalle.present) {
+      map['detalle'] = Variable<String>(detalle.value);
+    }
+    if (fecha.present) {
+      map['fecha'] = Variable<DateTime>(fecha.value);
+    }
+    if (creado.present) {
+      map['creado'] = Variable<DateTime>(creado.value);
+    }
+    if (visto.present) {
+      map['visto'] = Variable<bool>(visto.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AvisosMpCompanion(')
+          ..write('id: $id, ')
+          ..write('idServidor: $idServidor, ')
+          ..write('tipo: $tipo, ')
+          ..write('mpId: $mpId, ')
+          ..write('pagoId: $pagoId, ')
+          ..write('montoCentavos: $montoCentavos, ')
+          ..write('referencia: $referencia, ')
+          ..write('estado: $estado, ')
+          ..write('detalle: $detalle, ')
+          ..write('fecha: $fecha, ')
+          ..write('creado: $creado, ')
+          ..write('visto: $visto')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -21411,6 +22114,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PromoComponentesTable promoComponentes = $PromoComponentesTable(
     this,
   );
+  late final $AvisosMpTable avisosMp = $AvisosMpTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -21444,6 +22148,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ventasAbiertas,
     movimientosDeuda,
     promoComponentes,
+    avisosMp,
   ];
 }
 
@@ -40038,6 +40743,345 @@ typedef $$PromoComponentesTableProcessedTableManager =
       ComponentePromo,
       PrefetchHooks Function({bool promoId, bool productoId})
     >;
+typedef $$AvisosMpTableCreateCompanionBuilder =
+    AvisosMpCompanion Function({
+      Value<int> id,
+      required int idServidor,
+      required String tipo,
+      required String mpId,
+      Value<String?> pagoId,
+      Value<int?> montoCentavos,
+      Value<String?> referencia,
+      Value<String?> estado,
+      Value<String?> detalle,
+      Value<DateTime?> fecha,
+      required DateTime creado,
+      Value<bool> visto,
+    });
+typedef $$AvisosMpTableUpdateCompanionBuilder =
+    AvisosMpCompanion Function({
+      Value<int> id,
+      Value<int> idServidor,
+      Value<String> tipo,
+      Value<String> mpId,
+      Value<String?> pagoId,
+      Value<int?> montoCentavos,
+      Value<String?> referencia,
+      Value<String?> estado,
+      Value<String?> detalle,
+      Value<DateTime?> fecha,
+      Value<DateTime> creado,
+      Value<bool> visto,
+    });
+
+class $$AvisosMpTableFilterComposer
+    extends Composer<_$AppDatabase, $AvisosMpTable> {
+  $$AvisosMpTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get idServidor => $composableBuilder(
+    column: $table.idServidor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mpId => $composableBuilder(
+    column: $table.mpId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pagoId => $composableBuilder(
+    column: $table.pagoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get montoCentavos => $composableBuilder(
+    column: $table.montoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referencia => $composableBuilder(
+    column: $table.referencia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get detalle => $composableBuilder(
+    column: $table.detalle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fecha => $composableBuilder(
+    column: $table.fecha,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creado => $composableBuilder(
+    column: $table.creado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get visto => $composableBuilder(
+    column: $table.visto,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AvisosMpTableOrderingComposer
+    extends Composer<_$AppDatabase, $AvisosMpTable> {
+  $$AvisosMpTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get idServidor => $composableBuilder(
+    column: $table.idServidor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mpId => $composableBuilder(
+    column: $table.mpId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pagoId => $composableBuilder(
+    column: $table.pagoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get montoCentavos => $composableBuilder(
+    column: $table.montoCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referencia => $composableBuilder(
+    column: $table.referencia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get detalle => $composableBuilder(
+    column: $table.detalle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fecha => $composableBuilder(
+    column: $table.fecha,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creado => $composableBuilder(
+    column: $table.creado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get visto => $composableBuilder(
+    column: $table.visto,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AvisosMpTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AvisosMpTable> {
+  $$AvisosMpTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get idServidor => $composableBuilder(
+    column: $table.idServidor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<String> get mpId =>
+      $composableBuilder(column: $table.mpId, builder: (column) => column);
+
+  GeneratedColumn<String> get pagoId =>
+      $composableBuilder(column: $table.pagoId, builder: (column) => column);
+
+  GeneratedColumn<int> get montoCentavos => $composableBuilder(
+    column: $table.montoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get referencia => $composableBuilder(
+    column: $table.referencia,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get estado =>
+      $composableBuilder(column: $table.estado, builder: (column) => column);
+
+  GeneratedColumn<String> get detalle =>
+      $composableBuilder(column: $table.detalle, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fecha =>
+      $composableBuilder(column: $table.fecha, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get creado =>
+      $composableBuilder(column: $table.creado, builder: (column) => column);
+
+  GeneratedColumn<bool> get visto =>
+      $composableBuilder(column: $table.visto, builder: (column) => column);
+}
+
+class $$AvisosMpTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AvisosMpTable,
+          AvisoMpFila,
+          $$AvisosMpTableFilterComposer,
+          $$AvisosMpTableOrderingComposer,
+          $$AvisosMpTableAnnotationComposer,
+          $$AvisosMpTableCreateCompanionBuilder,
+          $$AvisosMpTableUpdateCompanionBuilder,
+          (
+            AvisoMpFila,
+            BaseReferences<_$AppDatabase, $AvisosMpTable, AvisoMpFila>,
+          ),
+          AvisoMpFila,
+          PrefetchHooks Function()
+        > {
+  $$AvisosMpTableTableManager(_$AppDatabase db, $AvisosMpTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AvisosMpTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AvisosMpTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AvisosMpTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> idServidor = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<String> mpId = const Value.absent(),
+                Value<String?> pagoId = const Value.absent(),
+                Value<int?> montoCentavos = const Value.absent(),
+                Value<String?> referencia = const Value.absent(),
+                Value<String?> estado = const Value.absent(),
+                Value<String?> detalle = const Value.absent(),
+                Value<DateTime?> fecha = const Value.absent(),
+                Value<DateTime> creado = const Value.absent(),
+                Value<bool> visto = const Value.absent(),
+              }) => AvisosMpCompanion(
+                id: id,
+                idServidor: idServidor,
+                tipo: tipo,
+                mpId: mpId,
+                pagoId: pagoId,
+                montoCentavos: montoCentavos,
+                referencia: referencia,
+                estado: estado,
+                detalle: detalle,
+                fecha: fecha,
+                creado: creado,
+                visto: visto,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int idServidor,
+                required String tipo,
+                required String mpId,
+                Value<String?> pagoId = const Value.absent(),
+                Value<int?> montoCentavos = const Value.absent(),
+                Value<String?> referencia = const Value.absent(),
+                Value<String?> estado = const Value.absent(),
+                Value<String?> detalle = const Value.absent(),
+                Value<DateTime?> fecha = const Value.absent(),
+                required DateTime creado,
+                Value<bool> visto = const Value.absent(),
+              }) => AvisosMpCompanion.insert(
+                id: id,
+                idServidor: idServidor,
+                tipo: tipo,
+                mpId: mpId,
+                pagoId: pagoId,
+                montoCentavos: montoCentavos,
+                referencia: referencia,
+                estado: estado,
+                detalle: detalle,
+                fecha: fecha,
+                creado: creado,
+                visto: visto,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AvisosMpTable, AvisoMpFila>(table),
+                  BaseReferences<_$AppDatabase, $AvisosMpTable, AvisoMpFila>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AvisosMpTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AvisosMpTable,
+      AvisoMpFila,
+      $$AvisosMpTableFilterComposer,
+      $$AvisosMpTableOrderingComposer,
+      $$AvisosMpTableAnnotationComposer,
+      $$AvisosMpTableCreateCompanionBuilder,
+      $$AvisosMpTableUpdateCompanionBuilder,
+      (AvisoMpFila, BaseReferences<_$AppDatabase, $AvisosMpTable, AvisoMpFila>),
+      AvisoMpFila,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -40107,4 +41151,6 @@ class $AppDatabaseManager {
       $$MovimientosDeudaTableTableManager(_db, _db.movimientosDeuda);
   $$PromoComponentesTableTableManager get promoComponentes =>
       $$PromoComponentesTableTableManager(_db, _db.promoComponentes);
+  $$AvisosMpTableTableManager get avisosMp =>
+      $$AvisosMpTableTableManager(_db, _db.avisosMp);
 }
