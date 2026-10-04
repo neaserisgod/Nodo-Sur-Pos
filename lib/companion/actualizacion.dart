@@ -68,7 +68,9 @@ OfertaSitio? ofertaDeRespuesta(String cuerpo) {
   if (j is! Map || j['update'] != true) return null;
   final url = Uri.tryParse('${j['url']}');
   final sha = '${j['sha256']}'.toLowerCase();
-  if (url == null || !url.isScheme('https') || sha.length != 64) return null;
+  // Solo del sitio de Nodo Sur: la oferta trae la dirección Y el hash del mismo lugar, así que si la dirección pudiera apuntar a
+  // cualquier host, quien controlara la respuesta controlaría también el hash y el APK. Y el hash tiene que ser un SHA-256 de verdad.
+  if (url == null || !url.isScheme('https') || url.host != hostActualizaciones || !RegExp(r'^[0-9a-f]{64}$').hasMatch(sha)) return null;
   return OfertaSitio(version: '${j['version']}', url: url, sha256: sha);
 }
 
@@ -131,7 +133,7 @@ Future<void> descargarEInstalarActualizacion(
 }) async {
   final List<int> bytes;
   if (oferta != null) {
-    final r = await http.get(oferta.url);
+    final r = await http.get(oferta.url).timeout(const Duration(minutes: 10));
     if (r.statusCode != 200) {
       throw HttpException('El sitio respondió ${r.statusCode}');
     }

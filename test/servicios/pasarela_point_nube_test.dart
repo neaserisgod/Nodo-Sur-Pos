@@ -2,6 +2,7 @@
 // access token (el celular sin PC, una PC sin token cargado) y solo anda si el negocio conectó Mercado Pago y eligió terminal.
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -111,6 +112,25 @@ void main() {
         cliente: _cliente((r) async => _json({'error': 'mp_rechazo', 'status': 409, 'mensaje': 'cannot_cancel_order · no se puede'}, 502)),
       );
       await expectLater(p.cancelar('ORD1'), throwsA(isA<CobroPosnetException>().having((e) => e.mensaje, 'mensaje', contains('ya recibió la orden'))));
+    });
+
+    test('crear: un rechazo (mp_rechazo, 4xx de Mercado Pago) es definitivo; sin red o sin respuesta (504/5xx) es incierto', () async {
+      Future<CobroPosnetException> falla(Future<http.Response> Function(http.Request) f) async {
+        final p = PasarelaPointNube(token: 't', cliente: _cliente(f));
+        try {
+          await p.crear(externalReference: 'v', idempotencyKey: 'clave-0001-abc', montoCentavos: 100, canal: 'qr');
+        } on CobroPosnetException catch (e) {
+          return e;
+        }
+        fail('tenía que fallar');
+      }
+
+      expect((await falla((r) async => _json({'error': 'mp_rechazo', 'status': 400, 'mensaje': 'terminal inválida'}, 502))).incierto, isFalse);
+      expect((await falla((r) async => _json({'error': 'mp_no_conectado'}, 409))).incierto, isFalse);
+      expect((await falla((r) async => _json({'error': 'mp_sin_respuesta', 'status': 503, 'mensaje': 'no respondió'}, 504))).incierto, isTrue);
+      expect((await falla((r) async => _json({'error': 'mp_error'}, 502))).incierto, isTrue, reason: 'Mercado Pago sin cuerpo: no se sabe');
+      expect((await falla((r) async => http.Response('<html>Bad gateway</html>', 502))).incierto, isTrue);
+      expect((await falla((r) async => throw const SocketException('sin internet'))).incierto, isTrue);
     });
 
     test('un dispositivo ya no vinculado (401) pide volver a vincularlo', () async {

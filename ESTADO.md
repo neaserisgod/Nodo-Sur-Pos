@@ -68,6 +68,17 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
   título del commit con `release:` o `beta:`; Android a mano con `publicar-apk.yml` y un `build` mayor al último publicado.
   Detalle en `CONTEXTO.md` §5 y `docs/PRIMERA-VERSION.md`.
 
+## Revisión de blindaje técnico (04/10/2026)
+
+Auditoría de los dos repos (app y sitio) pedida por el dueño: "extremadamente blindado". Qué se corrigió y por qué está en
+`DECISIONES.md` ("Revisión de blindaje técnico") y `TRAMPAS.md` (las dos entradas del 2026-10-04). En una línea cada cosa:
+cobro Point directo ya no cuelga si cae internet y el reintento reutiliza la misma orden; confirmar un cobro del celular es
+idempotente y atómico con la venta; un fiado no se cobra dos veces; `registrarVenta` rechaza pagos que no suman el total; el servidor
+del celular no se rompe ni llena el disco con pedidos basura; restaurar una copia reemplaza la base de forma atómica y deja
+`.antes-de-restaurar`; el APK solo se acepta si viene de horsepos.com; en el sitio, plazos en todo pedido saliente, webhook acotado,
+órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
+esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
+
 ## Últimos cambios (02–03/10/2026)
 
 - **Auditoría de la caja**: `test/data/conciliacion_caja_test.dart` arma 120 días al azar y coincide siempre con un libro
@@ -117,8 +128,8 @@ obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
 
-- Fiado cobrado sin verificar estado ni transacción; separar/pagar proveedor sin transacción (de la revisión del
-  2026-09-29, no tocado). Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).
+- (Resuelto el 2026-10-04: cobrar un fiado ahora es atómico e idempotente, y separar/pagar proveedor van en transacción; ver
+  `TRAMPAS.md`.) Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).
 - Ventas abiertas: decidir si el fiado pasa a ser una venta abierta con nombre; refrescar precios de un borrador viejo.
 - Cuenta corriente: falta la deuda total en el Dashboard; el celular no tiene el apartado.
 - Promos: no se venden desde el celular; una venta ya cobrada se edita como líneas sueltas. Precio automático por proveedor:

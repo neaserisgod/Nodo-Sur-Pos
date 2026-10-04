@@ -730,3 +730,39 @@ proveedor con medio "Transferencia" pagado desde MP) tampoco se resta: también 
 
 Arreglo (elegido por el dueño): el cierre precarga lo del último arqueo **solo en la caja que no se movió** desde
 entonces (`cajasMovidasDesde`, en la PC y en el `GET /sesion` del celular); si se movió, el campo arranca vacío.
+
+## El cobro con la Point no puede asumir que internet anda ni que confirmar se llama una sola vez (2026-10-04)
+
+Revisión de blindaje. Cuatro agujeros en el camino de plata, todos con la misma forma: "funciona si nada falla".
+
+- **Cortes de red en el cobro directo.** Con el access token cargado en la PC (`PasarelaPointDirecta`), un corte de internet tiraba
+  una `SocketException` / `ClientException` / `TimeoutException` que ningún diálogo atrapa (solo atrapan `CobroPosnetException`):
+  el cobro quedaba girando sin mensaje, con la orden quizá creada en Mercado Pago. Ahora `cobro_posnet.dart` pone un plazo
+  (`plazoLlamadaMercadoPago`, 25 s) y traduce todo corte a `CobroPosnetException(incierto: true)`.
+- **Reintentar creaba una segunda orden.** `crearOrdenPendiente` sembraba una fila NUEVA (clave nueva) en cada intento, así que
+  "la respuesta se perdió, reintento" no usaba la misma clave de idempotencia (lo que el comentario de la tabla decía hacer): el
+  cliente podía quedar con dos órdenes vivas. Ahora un intento anterior del mismo cobro (misma sesión, canal y monto, sin id de
+  Mercado Pago, más nuevo que lo que vive una orden) se reutiliza. Un rechazo definitivo (4xx) cierra la fila como `rechazada`:
+  no se reutiliza y no aparece como "sin resolver" en el cierre. Lo que distingue un caso de otro es `incierto` (red, plazo, 5xx).
+  El sitio hace la misma distinción: un 4xx de Mercado Pago es `502 mp_rechazo`; un 5xx o sin respuesta es `504 mp_sin_respuesta`.
+- **Confirmar no era idempotente.** `POST /ventas/posnet/confirmar` grababa la venta y DESPUÉS marcaba la orden: si el celular no
+  recibía la respuesta y reintentaba, entraba la misma plata dos veces a la caja; y una caída entre las dos escrituras dejaba la
+  venta grabada con la orden "sin resolver". Ahora `registrarVenta(ordenCobroPendienteId:)` las hace en UNA transacción y
+  `registrarVentaSegunMedio` devuelve la venta ya grabada si la orden ya tiene una.
+- **Un fiado se cobraba dos veces.** `cobrarFiado` leía el pendiente, grababa la venta y recién después lo tildaba, sin mirar el
+  estado ni usar transacción: dos toques casi a la vez (doble clic, o PC y celular) hacían dos ventas por la misma deuda. Ahora todo
+  va en una transacción y mira `estado == 'PENDIENTE'` adentro (`PendienteYaResueltoException`).
+
+Regla: **toda escritura que mueve plata es una transacción que primero mira en qué estado está lo que va a cambiar**, y toda llamada
+a Mercado Pago distingue "me dijo que no" de "no sé". `test/data/blindaje_dinero_test.dart`, `test/data/cobro_posnet_red_test.dart` y
+`test/servidor/blindaje_servidor_test.dart` lo cubren.
+
+## El servidor del celular escucha en toda la red: lo que no pide llave tiene que ser a prueba de basura (2026-10-04)
+
+`/ping`, `/emparejar` y `/companion/apk` no piden `X-Companion-Token` (el celular los usa antes de tenerlo), y el servidor escucha
+en `0.0.0.0`. Dos problemas: un cuerpo con la forma equivocada (`[]` en vez de un objeto) tiraba un `TypeError` que salía como 500 y
+escribía un renglón con stack trace en `companion_errores.log`, que no tenía tope (alcanza un bucle en el wifi para llenar el disco
+de la caja); y nada acotaba el tamaño de un cuerpo. Ahora: `TypeError` → 400 (igual queda anotado: también es lo que tira un `!`
+sobre null), el log se rota a `.1` pasado 1 MB, y un cuerpo de más de 2 KB en las rutas sin llave (20 MB en las demás) se corta
+sin leerlo. Y un id de orden de Mercado Pago con `../` ya no llega a la URL: se valida (`^[\w-]{1,64}$`) y se codifica, porque con
+`GET /ventas/posnet/estado/<id>` el celular podía hacer que la PC le mandara su access token a otro endpoint de la API.

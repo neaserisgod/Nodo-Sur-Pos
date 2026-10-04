@@ -935,7 +935,7 @@ class VentaControlador extends ChangeNotifier {
   /// queda registrado en la venta: todavía no hay un selector de usuario
   /// independiente de la apertura de caja (Regla 18 completa es una
   /// ampliación futura, no de esta fase).
-  Future<int?> cobrarActual() async {
+  Future<int?> cobrarActual({int? ordenCobroPendienteId}) async {
     if (sesion == null) return null;
     final medio = medioElegido;
     final pagos = construirPagos();
@@ -953,12 +953,15 @@ class VentaControlador extends ChangeNotifier {
       }
       return null;
     }
-    return cobrar(usuarioId: sesion!.usuarioAbrioId, pagos: pagos);
+    return cobrar(usuarioId: sesion!.usuarioAbrioId, pagos: pagos, ordenCobroPendienteId: ordenCobroPendienteId);
   }
 
+  /// [ordenCobroPendienteId]: la orden de la Point que esta venta cobra; queda aprobada y ligada a la venta en la misma transacción
+  /// que la venta (`registrarVenta`).
   Future<int?> cobrar({
     required int usuarioId,
     required List<PagoARegistrar> pagos,
+    int? ordenCobroPendienteId,
   }) async {
     if (cobrando) return null;
     if (carrito.isEmpty || medioElegido == null || sesion == null) return null;
@@ -985,6 +988,7 @@ class VentaControlador extends ChangeNotifier {
         pagos: pagos,
         ventaAbiertaId: pestanaCobrada.dbId,
         encargueId: encargueId,
+        ordenCobroPendienteId: ordenCobroPendienteId,
       );
       pestanaCobrada.dbId = null;
 
@@ -1047,22 +1051,13 @@ class VentaControlador extends ChangeNotifier {
     // Directo con el access token de esta PC si está cargado (lo de siempre); si no, por el servidor con la cuenta conectada.
     final pasarela = await _pasarelaPoint();
 
-    final canal = canalElegido!;
-    final monto = montoParaPosnet;
-    final pendiente = await crearOrdenPendiente(
+    return iniciarOrdenDeCobro(
       db,
+      pasarela,
       sesionCajaId: sesion!.id,
-      canal: canal,
-      montoCentavos: monto,
+      canal: canalElegido!,
+      montoCentavos: montoParaPosnet,
     );
-    final creada = await pasarela.crear(
-      externalReference: pendiente.externalReference,
-      idempotencyKey: pendiente.idempotencyKey,
-      montoCentavos: monto,
-      canal: canal,
-    );
-    await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
-    return (ordenPendienteId: pendiente.id, ordenIdMp: creada.ordenIdMp);
   }
 
   /// Un paso de polling: consulta el estado actual de la orden y lo
@@ -1078,14 +1073,8 @@ class VentaControlador extends ChangeNotifier {
   /// antes) y se cierra el ciclo de la orden pendiente con el `ventaId`
   /// resultante.
   Future<int?> confirmarCobroPosnetAprobado(int ordenPendienteId) async {
-    final ventaId = await cobrarActual();
+    final ventaId = await cobrarActual(ordenCobroPendienteId: ordenPendienteId);
     if (ventaId != null) {
-      await marcarOrdenResuelta(
-        db,
-        id: ordenPendienteId,
-        estado: 'aprobada',
-        ventaId: ventaId,
-      );
       // Etapa C: con el interruptor prendido, el ticket sale en la terminal. En segundo plano: la venta ya está grabada y el
       // mostrador no espera a la impresora; si falla, se avisa sin tocar la venta.
       unawaited(imprimirTicketAlCobrar(db, ventaId, client: httpClientDePrueba).then((error) {

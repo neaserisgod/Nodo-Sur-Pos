@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_encargues.dart';
-import '../../data/repositorio_pendientes.dart' show cobrarDeuda;
+import '../../data/repositorio_pendientes.dart' show PendienteYaResueltoException, cobrarDeuda;
+import '../../data/repositorio_ventas.dart' show SesionCerradaException;
 import '../../domain/dinero.dart';
 import '../comun/armazon_gestion.dart';
 import '../comun/botones.dart';
@@ -136,8 +137,16 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       ),
     );
     if (efectivo == null) return;
-    await cobrarDeuda(widget.db, pendienteId: d.id, sesionCajaId: sesionId, usuarioId: widget.usuarioId, efectivo: efectivo);
+    String? aviso;
+    try {
+      await cobrarDeuda(widget.db, pendienteId: d.id, sesionCajaId: sesionId, usuarioId: widget.usuarioId, efectivo: efectivo);
+    } on PendienteYaResueltoException {
+      aviso = 'Esa deuda ya estaba cobrada: no se registró otro cobro.';
+    } on SesionCerradaException {
+      aviso = 'La caja ya se cerró: el cobro no se guardó.';
+    }
     await _cargar();
+    if (aviso != null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(aviso)));
   }
 
   @override

@@ -52,8 +52,23 @@ Future<int> crearFiado(
       );
 }
 
+/// Se tira cuando el fiado que se quiere cobrar ya no está pendiente (ya se cobró desde la PC, el celular o con un segundo
+/// toque). Quien llama avisa en vez de grabar otra venta por la misma deuda.
+class PendienteYaResueltoException implements Exception {
+  const PendienteYaResueltoException(this.pendiente);
+  final Pendiente pendiente;
+
+  @override
+  String toString() => 'Ese fiado ya está cobrado';
+}
+
 /// Cobra el fiado [pendienteId]: registra una venta de una sola línea
 /// "Varios" por el monto exacto adeudado y tilda el pendiente como resuelto.
+///
+/// Todo en UNA transacción, y el estado se mira adentro (revisión 2026-10-04): antes se leía el pendiente, se grababa la
+/// venta y recién después se lo tildaba, sin mirar si seguía pendiente. Dos toques casi a la vez (doble clic, o la PC y el
+/// celular) grababan dos ventas por la misma deuda y la caja contaba el fiado dos veces; una caída entre la venta y el tilde
+/// dejaba la deuda cobrada Y pendiente.
 Future<int> cobrarFiado(
   AppDatabase db, {
   required int pendienteId,
@@ -61,53 +76,58 @@ Future<int> cobrarFiado(
   required int usuarioId,
   required int medioPagoId,
   required bool medioEsEfectivo,
-}) async {
-  final pendiente =
-      await (db.select(db.pendientes)..where((p) => p.id.equals(pendienteId))).getSingle();
-  final monto = pendiente.montoCentavos!;
-  // Se registra bajo el producto "Varios" del catálogo (Regla 5/9): no tiene
-  // costo ni descuenta stock, que es exactamente lo que corresponde acá.
-  final varios = await (db.select(db.productos)..where((p) => p.esVarios.equals(true))).getSingle();
+}) {
+  return db.transaction(() async {
+    final pendiente = await (db.select(db.pendientes)..where((p) => p.id.equals(pendienteId))).getSingleOrNull();
+    if (pendiente == null || pendiente.tipo != 'FIADO' || pendiente.montoCentavos == null) {
+      throw ArgumentError('No existe un fiado con id $pendienteId');
+    }
+    if (pendiente.estado != 'PENDIENTE') throw PendienteYaResueltoException(pendiente);
+    final monto = pendiente.montoCentavos!;
+    // Se registra bajo el producto "Varios" del catálogo (Regla 5/9): no tiene
+    // costo ni descuenta stock, que es exactamente lo que corresponde acá.
+    final varios = await (db.select(db.productos)..where((p) => p.esVarios.equals(true))).getSingle();
 
-  final venta = Venta(lineas: [
-    LineaVentaPorUnidad(
-      productoId: varios.id.toString(),
-      nombreProducto: 'Fiado cobrado${pendiente.nombreLibre != null ? ' (${pendiente.nombreLibre})' : ''}',
-      proveedorId: null,
-      cantidad: 1,
-      esVarios: true,
-      precioUnitarioCentavos: monto,
-      costoUnitarioCentavos: null,
-    ),
-  ]);
+    final venta = Venta(lineas: [
+      LineaVentaPorUnidad(
+        productoId: varios.id.toString(),
+        nombreProducto: 'Fiado cobrado${pendiente.nombreLibre != null ? ' (${pendiente.nombreLibre})' : ''}',
+        proveedorId: null,
+        cantidad: 1,
+        esVarios: true,
+        precioUnitarioCentavos: monto,
+        costoUnitarioCentavos: null,
+      ),
+    ]);
 
-  final (ventaId, _) = await registrarVenta(
-    db,
-    venta: venta,
-    resultado: ResultadoTotalVenta(
-      subtotalCentavos: monto,
-      recargoCigarrillosCentavos: 0,
-      redondeoCentavos: 0,
-      totalCentavos: monto,
-    ),
-    sesionCajaId: sesionCajaId,
-    usuarioId: usuarioId,
-    pagos: [
-      PagoARegistrar(medioPagoId: medioPagoId, montoCentavos: monto, esEfectivo: medioEsEfectivo),
-    ],
-    esFiado: true,
-  );
+    final (ventaId, _) = await registrarVenta(
+      db,
+      venta: venta,
+      resultado: ResultadoTotalVenta(
+        subtotalCentavos: monto,
+        recargoCigarrillosCentavos: 0,
+        redondeoCentavos: 0,
+        totalCentavos: monto,
+      ),
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      pagos: [
+        PagoARegistrar(medioPagoId: medioPagoId, montoCentavos: monto, esEfectivo: medioEsEfectivo),
+      ],
+      esFiado: true,
+    );
 
-  await (db.update(db.pendientes)..where((p) => p.id.equals(pendienteId))).write(
-    PendientesCompanion(
-      estado: const Value('RESUELTO'),
-      ventaId: Value(ventaId),
-      fechaResuelta: Value(DateTime.now()),
-      actualizadoEn: Value(DateTime.now()),
-    ),
-  );
+    await (db.update(db.pendientes)..where((p) => p.id.equals(pendienteId))).write(
+      PendientesCompanion(
+        estado: const Value('RESUELTO'),
+        ventaId: Value(ventaId),
+        fechaResuelta: Value(DateTime.now()),
+        actualizadoEn: Value(DateTime.now()),
+      ),
+    );
 
-  return ventaId;
+    return ventaId;
+  });
 }
 
 Future<List<Pendiente>> listarEncargues(AppDatabase db) {

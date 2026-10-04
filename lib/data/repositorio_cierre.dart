@@ -786,11 +786,12 @@ Future<void> cerrarSesion(
 /// Reabre la sesión cerrada más reciente (Regla 6). Tira un error si no es
 /// la última: un cierre viejo, una vez que se abrió un día nuevo, queda
 /// cerrado para siempre.
-Future<void> reabrirSesion(AppDatabase db, {required int sesionId}) async {
+Future<void> reabrirSesion(AppDatabase db, {required int sesionId}) => db.transaction(() async {
+  // La comprobación y la escritura van juntas: si entre una y otra se abre un día nuevo, ya no es la última sesión.
   if (!await esUltimaSesion(db, sesionId)) {
     throw StateError('Solo se puede reabrir la última sesión cerrada');
   }
   await (db.update(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId))).write(
     SesionesDeCajaCompanion(estado: const Value('ABIERTA'), actualizadoEn: Value(DateTime.now())),
   );
-}
+});

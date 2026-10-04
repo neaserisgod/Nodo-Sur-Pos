@@ -571,7 +571,7 @@ Future<void> separarDelDia(
   required int proveedorId,
   required int montoMpCentavos,
   DateTime? ahora,
-}) async {
+}) => db.transaction(() async {
   final momento = ahora ?? DateTime.now();
   final inicio = _inicioDelDia(momento);
   final proveedor = await (db.select(db.proveedores)..where((p) => p.id.equals(proveedorId))).getSingle();
@@ -613,7 +613,7 @@ Future<void> separarDelDia(
       actualizadoEn: Value(DateTime.now()),
     ),
   );
-}
+});
 
 bool _esDelDia(DateTime? fecha, DateTime ahora) =>
     fecha != null && fecha.year == ahora.year && fecha.month == ahora.month && fecha.day == ahora.day;
@@ -630,7 +630,7 @@ bool puedeDesmarcarDelDia(Proveedor proveedor, {DateTime? ahora}) =>
 /// separado hoy y lo deja exactamente como estaba antes de la primera
 /// separación del día (corte y pendiente arrastrado incluidos). No hace nada
 /// si no se puede ([puedeDesmarcarDelDia]).
-Future<void> desmarcarDelDia(AppDatabase db, {required int proveedorId, DateTime? ahora}) async {
+Future<void> desmarcarDelDia(AppDatabase db, {required int proveedorId, DateTime? ahora}) => db.transaction(() async {
   final proveedor = await (db.select(db.proveedores)..where((p) => p.id.equals(proveedorId))).getSingle();
   if (!puedeDesmarcarDelDia(proveedor, ahora: ahora)) return;
   final separado = proveedor.separadoCentavos - proveedor.separadoDelDiaCentavos;
@@ -652,7 +652,7 @@ Future<void> desmarcarDelDia(AppDatabase db, {required int proveedorId, DateTime
       actualizadoEn: Value(DateTime.now()),
     ),
   );
-}
+});
 
 /// Lo cobrado HOY (todas las ventas no anuladas del día, todos los turnos)
 /// por caja, y el precio de lista de los cigarrillos vendidos hoy — lo que
@@ -1125,7 +1125,7 @@ Future<void> separarProveedor(
   AppDatabase db, {
   required int proveedorId,
   DateTime? fecha,
-}) async {
+}) => db.transaction(() async {
   final proveedor = await (db.select(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).getSingle();
@@ -1150,7 +1150,7 @@ Future<void> separarProveedor(
       colchonReposicionCentavos: const Value(0),
     ),
   );
-}
+});
 
 /// Registra el pago de lo separado. Si se pagó menos de lo separado, la
 /// diferencia no se pierde: queda como `pendienteBaseCentavos` para el
@@ -1188,6 +1188,11 @@ Future<void> pagarProveedor(
   DateTime? fecha,
   int? montoMpCentavos,
 }) => db.transaction(() async {
+  // Montos imposibles se rechazan acá y no solo en el diálogo: el celular también llama a esta función por la PC, y un negativo
+  // o una parte de Mercado Pago mayor al pago grabaría un movimiento de caja al revés.
+  if (montoCentavos < 0 || (montoMpCentavos != null && (montoMpCentavos < 0 || montoMpCentavos > montoCentavos))) {
+    throw ArgumentError('Monto de pago inválido: $montoCentavos (Mercado Pago: $montoMpCentavos)');
+  }
   final proveedor = await (db.select(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).getSingle();
@@ -1258,7 +1263,7 @@ Future<void> retenerGanancia(
   AppDatabase db, {
   required int proveedorId,
   required int montoCentavos,
-}) async {
+}) => db.transaction(() async {
   final proveedor = await (db.select(
     db.proveedores,
   )..where((p) => p.id.equals(proveedorId))).getSingle();
@@ -1271,7 +1276,7 @@ Future<void> retenerGanancia(
       ),
     ),
   );
-}
+});
 
 /// Regla 13: retira [montoCentavos] de ganancia de este proveedor fuera del
 /// negocio — efectivo al bolsillo de el dueño, o de Mercado Pago a su cuenta

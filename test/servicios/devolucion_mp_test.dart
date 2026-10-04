@@ -138,9 +138,43 @@ void main() {
     });
   });
 
+  group('devolverPorMp nunca lanza (revisión 2026-10-04): siempre dice qué pasó', () {
+    test('una respuesta que no es JSON, o un fallo al leer la cuenta, vuelve como error con mensaje', () async {
+      final c = (await cobroPointDeVenta(db, ventaId))!;
+      final rota = sitio(devolver: (_) => http.Response('<html>502 Bad Gateway</html>', 200));
+      final r1 = await devolverPorMp(c, almacen: await vinculada(), cliente: rota, db: db);
+      expect(r1.resultado, ResultadoDevolucionMp.error);
+      expect(r1.mensaje, contains('no se sabe si se devolvió'));
+      expect((await cobroPointDeVenta(db, ventaId))!.devuelta, isFalse, reason: 'sin confirmación no se anota');
+
+      final r2 = await devolverPorMp(c, almacen: _AlmacenQueFalla(), cliente: sitio(), db: db);
+      expect(r2.resultado, ResultadoDevolucionMp.error);
+      expect(r2.mensaje, isNotNull);
+    });
+
+    test('sin internet es un error normal con su mensaje (y se puede reintentar: la clave es fija)', () async {
+      final c = (await cobroPointDeVenta(db, ventaId))!;
+      final sinRed = ClienteNube(http: MockClient((_) async => throw const SocketException('sin internet')));
+      final r = await devolverPorMp(c, almacen: await vinculada(), cliente: sinRed, db: db);
+      expect(r.resultado, ResultadoDevolucionMp.error);
+      expect(r.mensaje, contains('conexión'));
+    });
+  });
+
   test('la orden devuelta sigue fuera de "sin resolver" del cierre', () async {
     await marcarOrdenDevuelta(db, ordenId);
     final venta = await (db.select(db.ventas)..where((v) => v.id.equals(ventaId))).getSingle();
     expect(await ordenesSinResolverDeSesion(db, venta.sesionCajaId), isEmpty);
   });
+}
+
+class _AlmacenQueFalla implements AlmacenCuenta {
+  @override
+  Future<CuentaVinculada?> leer() async => throw const FileSystemException('disco lleno');
+
+  @override
+  Future<void> guardar(CuentaVinculada cuenta) async {}
+
+  @override
+  Future<void> borrar() async {}
 }

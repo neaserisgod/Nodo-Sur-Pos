@@ -89,7 +89,16 @@ Future<({ResultadoDevolucionMp resultado, String? mensaje})> devolverPorMp(
     if (db != null && cobro.ordenLocalId != null) await marcarOrdenDevuelta(db, cobro.ordenLocalId!);
   }
 
-  final cuenta = await almacen.leer();
+  // Nunca lanza (como `puedeOfrecerDevolucion`): con plata de por medio la pantalla tiene que poder decir SIEMPRE qué pasó. Antes
+  // cualquier falla que no fuera `ErrorNube` (leer la cuenta, una respuesta que no es JSON) salía sin mensaje, y quien anuló la
+  // venta no sabía si el cliente había recibido su plata o no. Reintentar es seguro: la clave de la devolución es fija por orden.
+  final CuentaVinculada? cuenta;
+  try {
+    cuenta = await almacen.leer();
+  } catch (e, st) {
+    unawaited(registrarSiNoEsDeRed('Leer la cuenta para devolver por Mercado Pago', e, st));
+    return (resultado: ResultadoDevolucionMp.error, mensaje: 'No se pudo leer la cuenta vinculada a este equipo');
+  }
   if (cuenta == null) {
     return (resultado: ResultadoDevolucionMp.error, mensaje: 'Este equipo ya no está vinculado a la cuenta');
   }
@@ -109,5 +118,12 @@ Future<({ResultadoDevolucionMp resultado, String? mensaje})> devolverPorMp(
       default:
         return (resultado: ResultadoDevolucionMp.error, mensaje: e.mensaje);
     }
+  } catch (e, st) {
+    // Pudo haber salido de Mercado Pago o no: se le dice a la persona que lo compruebe antes de reintentar o devolver a mano.
+    unawaited(registrarSiNoEsDeRed('Devolver por Mercado Pago', e, st));
+    return (
+      resultado: ResultadoDevolucionMp.error,
+      mensaje: 'Algo falló y no se sabe si se devolvió. Mirá el cobro en la app de Mercado Pago antes de volver a intentarlo',
+    );
   }
 }

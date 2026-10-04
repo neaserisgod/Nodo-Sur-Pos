@@ -224,6 +224,8 @@ class PuertoLocal implements ServicioCompanion {
       await repo_pendientes.cobrarDeuda(db, pendienteId: id, sesionCajaId: sesionCajaId, usuarioId: usuarioId, efectivo: efectivo);
     } on repo_ventas.SesionCerradaException {
       throw ErrorCompanion(409, 'La caja ya se cerró, este cobro no se guardó');
+    } on repo_pendientes.PendienteYaResueltoException {
+      throw ErrorCompanion(409, 'Esa deuda ya estaba cobrada');
     }
   }
 
@@ -1139,23 +1141,17 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
-    final pendiente = await repo_cobro.crearOrdenPendiente(
-      db,
-      sesionCajaId: sesionCajaId,
-      canal: canal,
-      montoCentavos: resultado.totalCentavos,
-    );
     try {
-      final creada = await pasarela.crear(
-        externalReference: pendiente.externalReference,
-        idempotencyKey: pendiente.idempotencyKey,
-        montoCentavos: resultado.totalCentavos,
+      final orden = await repo_cobro.iniciarOrdenDeCobro(
+        db,
+        pasarela,
+        sesionCajaId: sesionCajaId,
         canal: canal,
+        montoCentavos: resultado.totalCentavos,
       );
-      await repo_cobro.marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
       return (
-        ordenPendienteId: pendiente.id,
-        ordenIdMp: creada.ordenIdMp,
+        ordenPendienteId: orden.ordenPendienteId,
+        ordenIdMp: orden.ordenIdMp,
         totalCentavos: resultado.totalCentavos,
       );
     } on mp.CobroPosnetException catch (e) {
@@ -1184,7 +1180,8 @@ class PuertoLocal implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
   }) async {
-    final resultado = await repo_ventas.registrarVentaSegunMedio(
+    // La venta y la orden quedan ligadas en la MISMA transacción, y confirmar dos veces devuelve la misma venta.
+    return repo_ventas.registrarVentaSegunMedio(
       db,
       lineas: lineas,
       medio: composicionPagoDesdeTexto('virtual'),
@@ -1194,14 +1191,8 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      ordenCobroPendienteId: ordenPendienteId,
     );
-    await repo_cobro.marcarOrdenResuelta(
-      db,
-      id: ordenPendienteId,
-      estado: 'aprobada',
-      ventaId: resultado.ventaId,
-    );
-    return resultado;
   }
 
   @override

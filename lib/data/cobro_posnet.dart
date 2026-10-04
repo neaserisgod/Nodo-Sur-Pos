@@ -12,7 +12,9 @@
 // app, no le pedimos a la terminal que imprima su propio ticket),
 // `config.payment_method` (`medioDePagoOrden`: `qr` | `debit_card` | `credit_card` en 1 pago).
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
@@ -22,10 +24,47 @@ import '../domain/dinero.dart';
 
 class CobroPosnetException implements Exception {
   final String mensaje;
-  const CobroPosnetException(this.mensaje);
+
+  /// `true` cuando NO se sabe si Mercado Pago llegó a hacer lo pedido (se cortó la red, venció el plazo, respondió un 5xx).
+  /// Distinto de un rechazo (4xx), donde Mercado Pago dijo que no: ahí la orden no existe. Quien crea una orden usa esto para
+  /// decidir si reintenta con la MISMA clave de idempotencia (incierto) o si da el intento por fallido (rechazo).
+  final bool incierto;
+
+  const CobroPosnetException(this.mensaje, {this.incierto = false});
 
   @override
   String toString() => mensaje;
+}
+
+/// Cuánto se espera una respuesta de Mercado Pago antes de darla por perdida: sin tope, una conexión colgada dejaba el diálogo
+/// de cobro girando para siempre. No es `const` solo para que los tests puedan bajarlo; el código de la app no lo toca.
+Duration plazoLlamadaMercadoPago = const Duration(seconds: 25);
+
+/// Un id de orden de Mercado Pago (alfanumérico, con guiones o guion bajo). Se valida antes de armar una dirección con él: el id
+/// puede venir del celular, y un `..%2F` colado cambiaría a qué endpoint de la API se le manda el token de la PC.
+final _idOrdenValido = RegExp(r'^[\w-]{1,64}$');
+
+String _idOrdenSeguro(String ordenIdMp) {
+  if (!_idOrdenValido.hasMatch(ordenIdMp)) throw const CobroPosnetException('El id de la orden de Mercado Pago no es válido.');
+  return ordenIdMp;
+}
+
+/// Corre una llamada HTTP con tope de espera y traduce los cortes de red a [CobroPosnetException] (`incierto`): los diálogos de
+/// cobro solo entienden esa excepción, y una `SocketException` suelta los dejaba colgados sin decir nada.
+Future<T> _conRed<T>(Future<T> Function() llamada) async {
+  try {
+    return await llamada().timeout(plazoLlamadaMercadoPago);
+  } on TimeoutException {
+    throw const CobroPosnetException('Mercado Pago no respondió a tiempo. Revisá la conexión a internet.', incierto: true);
+  } on SocketException {
+    throw const CobroPosnetException('No hay conexión con Mercado Pago. Revisá la conexión a internet.', incierto: true);
+  } on HttpException {
+    throw const CobroPosnetException('La conexión con Mercado Pago se cortó. Probá de nuevo.', incierto: true);
+  } on TlsException {
+    throw const CobroPosnetException('No se pudo abrir una conexión segura con Mercado Pago. Revisá la fecha y hora de la PC.', incierto: true);
+  } on http.ClientException {
+    throw const CobroPosnetException('La conexión con Mercado Pago se cortó. Probá de nuevo.', incierto: true);
+  }
 }
 
 class OrdenCobroCreada {
@@ -45,7 +84,7 @@ Future<OrdenCobroCreada> crearOrdenCobro({
 }) async {
   final cliente = client ?? http.Client();
   try {
-    final respuesta = await cliente.post(
+    final respuesta = await _conRed(() => cliente.post(
       Uri.parse('https://api.mercadopago.com/v1/orders'),
       headers: {
         'Content-Type': 'application/json',
@@ -70,12 +109,14 @@ Future<OrdenCobroCreada> crearOrdenCobro({
           'payment_method': medioDePagoOrden(canal),
         },
       }),
-    );
+    ));
 
     final cuerpo = _decodificarONull(respuesta.body);
     if (respuesta.statusCode < 200 || respuesta.statusCode >= 300) {
       throw CobroPosnetException(
         'Mercado Pago Orders API (${respuesta.statusCode}): ${_mensajeDeError(cuerpo, respuesta.body)}',
+        // Un 5xx no dice si la orden se creó; un 4xx sí: no se creó.
+        incierto: respuesta.statusCode >= 500,
       );
     }
     final id = cuerpo?['id']?.toString();
@@ -83,6 +124,7 @@ Future<OrdenCobroCreada> crearOrdenCobro({
     if (id == null || estado == null) {
       throw CobroPosnetException(
         'Mercado Pago Orders API: respuesta sin id/status (${respuesta.body})',
+        incierto: true, // contestó 2xx pero sin id: la orden pudo haberse creado
       );
     }
     return OrdenCobroCreada(ordenIdMp: id, estado: estado);
@@ -100,10 +142,11 @@ Future<String> consultarOrden({
 }) async {
   final cliente = client ?? http.Client();
   try {
-    final respuesta = await cliente.get(
-      Uri.parse('https://api.mercadopago.com/v1/orders/$ordenIdMp'),
+    final id = _idOrdenSeguro(ordenIdMp);
+    final respuesta = await _conRed(() => cliente.get(
+      Uri.parse('https://api.mercadopago.com/v1/orders/${Uri.encodeComponent(id)}'),
       headers: {'Authorization': 'Bearer $accessToken'},
-    );
+    ));
 
     final cuerpo = _decodificarONull(respuesta.body);
     if (respuesta.statusCode < 200 || respuesta.statusCode >= 300) {
@@ -144,14 +187,15 @@ Future<void> cancelarOrdenCobro({
 }) async {
   final cliente = client ?? http.Client();
   try {
-    final respuesta = await cliente.post(
-      Uri.parse('https://api.mercadopago.com/v1/orders/$ordenIdMp/cancel'),
+    final id = _idOrdenSeguro(ordenIdMp);
+    final respuesta = await _conRed(() => cliente.post(
+      Uri.parse('https://api.mercadopago.com/v1/orders/${Uri.encodeComponent(id)}/cancel'),
       headers: {
         'Content-Type': 'application/json',
         'X-Idempotency-Key': _claveIdempotencia(),
         'Authorization': 'Bearer $accessToken',
       },
-    );
+    ));
 
     if (respuesta.statusCode < 200 || respuesta.statusCode >= 300) {
       final cuerpo = _decodificarONull(respuesta.body);
