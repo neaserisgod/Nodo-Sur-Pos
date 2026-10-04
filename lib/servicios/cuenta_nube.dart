@@ -11,6 +11,7 @@ import 'package:http/http.dart' as h;
 
 import 'package:path/path.dart' as p;
 
+import '../domain/avisos_mp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../domain/vinculacion.dart';
 import 'avisos_cobro_mp.dart';
@@ -423,6 +424,20 @@ class ClienteNube {
     return (cobros: cobros, truncado: j['truncado'] == true);
   });
 
+  /// Los avisos de cobros, contracargos y reclamos que el sitio guardó después de [desde] (el último id que esta PC ya tiene).
+  /// Es lo que llegó con la PC apagada o sin conexión en vivo.
+  Future<List<AvisoMp>> avisosMp(String token, {required int desde}) => _conRed(() async {
+    final r = await http.get(_uri('/api/mp/avisos', {'desde': '$desde'}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    final avisos = <AvisoMp>[];
+    for (final a in (j['avisos'] as List? ?? const []).whereType<Map>()) {
+      final aviso = avisoMpDesdeJson(a.cast<String, dynamic>());
+      if (aviso != null) avisos.add(aviso);
+    }
+    return avisos;
+  });
+
   /// Manda un ticket a la terminal de la sucursal por el servidor (el token de Mercado Pago no sale de ahí).
   Future<void> imprimirTicketPoint(String token, {required String externalReference, required String idempotencyKey, required String contenido}) => _conRed(() async {
     final r = await http.post(
@@ -548,6 +563,7 @@ class ClienteNube {
     try {
       final uri = Uri(scheme: esquema == 'https' ? 'wss' : 'ws', host: host, port: puerto, path: '/api/sync/escuchar');
       final mensajes = await _abrirEscucha(uri, _auth(token));
+      avisarConexionEnVivoAbierta();
       return mensajes.where((m) => m is String && !_esAvisoOrdenMp(m)).map((_) {});
     } on TimeoutException {
       throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
@@ -565,6 +581,11 @@ class ClienteNube {
     try {
       final j = jsonDecode(mensaje);
       final mp = j is Map ? j['mp'] : null;
+      if (mp is Map && mp['aviso'] is Map) {
+        final aviso = avisoMpDesdeJson((mp['aviso'] as Map).cast<String, dynamic>());
+        if (aviso != null) avisarAvisoMp(aviso);
+        return true; // un aviso que no se entiende tampoco es "bajá datos"
+      }
       if (mp is! Map || mp['orden'] is! String) return false;
       avisarOrdenMp(mp['orden'] as String);
       return true;
@@ -659,4 +680,26 @@ Future<CuentaVinculada> vincularEstaPc({
     await escucha.cancel();
     await servidor.close(force: true);
   }
+}
+
+/// Un aviso del sitio (`/api/mp/avisos` o el aviso en vivo). null si no se entiende: un tipo nuevo de un sitio más nuevo no
+/// tiene que romper nada.
+AvisoMp? avisoMpDesdeJson(Map<String, dynamic> j) {
+  final id = j['id'];
+  final tipo = TipoAvisoMp.values.where((t) => t.name == j['tipo']).firstOrNull;
+  final mpId = j['mpId'];
+  if (id is! num || tipo == null || mpId is! String) return null;
+  DateTime? fecha(Object? s) => s is num ? DateTime.fromMillisecondsSinceEpoch(s.toInt() * 1000) : null;
+  return AvisoMp(
+    idServidor: id.toInt(),
+    tipo: tipo,
+    mpId: mpId,
+    pagoId: j['pagoId'] as String?,
+    montoCentavos: (j['montoCentavos'] as num?)?.toInt(),
+    referencia: j['referencia'] as String?,
+    estado: j['estado'] as String?,
+    detalle: j['detalle'] as String?,
+    fecha: fecha(j['fecha']),
+    creado: fecha(j['creado']) ?? DateTime.now(),
+  );
 }

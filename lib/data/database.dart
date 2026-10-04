@@ -18,6 +18,7 @@ import 'identidad_sync.dart';
 import '../domain/modulos.dart';
 import 'tables/accesos_directos.dart';
 import 'tables/arqueos_intermedios.dart';
+import 'tables/avisos_mp.dart';
 import 'tables/caja.dart';
 import 'tables/catalogo.dart';
 import 'tables/cobro.dart';
@@ -127,6 +128,7 @@ const seccionesMenuIniciales = [
     VentasAbiertas,
     MovimientosDeuda,
     PromoComponentes,
+    AvisosMp,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -146,7 +148,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1069,6 +1071,10 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE configuracion_negocio_tabla SET global_id = '$globalIdConfiguracionNegocio', "
           'actualizado_en = COALESCE(actualizado_en, 0) WHERE global_id IS NULL',
         );
+      }
+      // v50 → v51 (etapa D, 2026-10-04): avisos de Mercado Pago (cobros, contracargos, reclamos) de este equipo. Tabla nueva.
+      if (from < 51) {
+        await m.createTable(avisosMp);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

@@ -20,11 +20,11 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 2025 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 2051 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
-- **`schemaVersion`**: **50** (`lib/data/database.dart`; las v40–v50 están comentadas en `onUpgrade`).
+- **`schemaVersion`**: **51** (`lib/data/database.dart`; las v40–v51 están comentadas en `onUpgrade`).
 - Capturas para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y
   `test/companion/capturas_companion_test.dart` (PNG en `capturas/`, ignorada por git; no son golden tests).
 
@@ -76,6 +76,10 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
   de "cerrar la app" termina en "Cerrar el sistema".
 - **Mercado Pago por negocio**: cobro por el servidor, interruptor "Cobrar e imprimir por Nodo Sur", imprimir en la
   terminal por el servidor, conciliación en el cierre.
+- **Posnet (2026-10-04)**: etapa A (la orden vence a los 2 minutos, avisos en vivo, "confirmá en la terminal"), B (devolver por
+  MP al anular), C (botón Tarjeta: débito o crédito en 1 pago, ticket en la Point, modo autónomo) y D (avisos de cobros sin
+  venta, contracargos y reclamos en la campanita; **falta activar los temas Pagos, Contracargos y Reclamos en el panel de MP**,
+  ver el README del sitio) hechas. Falta la E (saldo real en el cierre).
 - **Navbar y Configuración rehechas** (engranaje, 5 grupos) en PC y celular; navbar centrada con lupa y Venta como pantalla
   principal.
 - **Celular**: PDF del día completo, bienvenida, "Entrar con Google", "Configurá tu negocio", accesos de Inicio (Pagar

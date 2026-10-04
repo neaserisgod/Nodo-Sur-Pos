@@ -5,6 +5,8 @@
 
 import 'dart:async';
 
+import '../domain/avisos_mp.dart';
+
 final StreamController<String> _avisos = StreamController<String>.broadcast();
 
 /// Ids de las órdenes de las que Mercado Pago avisó algo.
@@ -31,3 +33,20 @@ Future<void> esperarAvisoOrden(String ordenId, Duration maximo) {
     unawaited(sub.cancel());
   });
 }
+
+// --- Avisos de cobros, contracargos y reclamos (etapa D) -------------------------------------------------------------------
+// Llegan por la misma conexión, con `{"mp":{"aviso":{…}}}`. A diferencia del aviso de una orden, ESTOS sí traen datos (lo que el
+// sitio consultó con su token); el servicio de avisos (`avisos_mp_servicio.dart`) los guarda y la campanita los cruza con las
+// ventas. Solo se muestran en la PC.
+
+final StreamController<AvisoMp> _avisosMp = StreamController<AvisoMp>.broadcast();
+final StreamController<void> _conexionAbierta = StreamController<void>.broadcast();
+
+Stream<AvisoMp> get avisosMpEnVivo => _avisosMp.stream;
+
+void avisarAvisoMp(AvisoMp aviso) => _avisosMp.add(aviso);
+
+/// Se abrió la conexión en vivo: lo que pasó con la PC apagada no tuvo aviso, hay que pedirlo.
+Stream<void> get conexionEnVivoAbierta => _conexionAbierta.stream;
+
+void avisarConexionEnVivoAbierta() => _conexionAbierta.add(null);

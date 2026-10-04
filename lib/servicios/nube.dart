@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/database.dart';
 import '../data/notificador_cambios.dart';
 import 'actualizaciones.dart';
+import 'avisos_mp_servicio.dart';
 import 'copias_nube.dart';
 import 'cuenta_nube.dart';
 import 'pc_local_nube.dart';
@@ -27,6 +28,7 @@ class NubeApp {
     required this.cliente,
     required this.copias,
     this.sync,
+    this.avisosMp,
     required this.idDispositivo,
     required this.nombreDispositivo,
     required this.abrirNavegador,
@@ -39,6 +41,9 @@ class NubeApp {
 
   /// Sincronización con los demás dispositivos de la cuenta, a través de la nube.
   final ServicioSyncNube? sync;
+
+  /// Avisos de cobros, contracargos y reclamos de Mercado Pago (etapa D). Solo la PC.
+  final ServicioAvisosMp? avisosMp;
   final Future<String> Function() idDispositivo;
   final String Function() nombreDispositivo;
   final Future<void> Function(Uri) abrirNavegador;
@@ -97,11 +102,13 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
     almacenEstado: AlmacenEstadoSyncEnArchivo(soporte.path),
     alAplicarBajada: avisos.cambioDelCelular,
   );
+  final avisosMp = ServicioAvisosMp(db: db, almacen: almacen, cliente: cliente);
   final nube = NubeApp(
     almacen: almacen,
     cliente: cliente,
     copias: copias,
     sync: sync,
+    avisosMp: avisosMp,
     idDispositivo: idClienteActualizaciones,
     nombreDispositivo: () => Platform.localHostname,
     abrirNavegador: (url) async {
@@ -112,6 +119,7 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
     carpetaTemporal: temporal,
   );
   nubeApp = nube;
+  avisosMp.iniciar();
   // Avisar que la PC está viva (y renovar el token) al abrir; la copia diaria y los avisos siguen solos.
   unawaited(copias
       .avisarYRenovar(cid: await idClienteActualizaciones(), sistema: Platform.operatingSystem)

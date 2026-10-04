@@ -1825,7 +1825,25 @@ Investigación completa (documentación oficial de Mercado Pago + pruebas con la
     - **Ticket**: la Point imprime **el ticket de la app** (no el de Mercado Pago) apenas se aprueba el cobro, con un
       **interruptor en Configuración**.
     - Modo de la terminal: PDV / autónomo.
-  - **D**: avisos de cobros que entraron sin venta, contracargos y reclamos.
+  - **D — hecha (2026-10-04)**: avisos de cobros que entraron sin venta, contracargos y reclamos.
+    - Decisiones del dueño: **solo avisar** en la campanita (un cobro sin venta no se carga solo: él decide); un contracargo
+      o reclamo **se muestra con la venta cruzada** y **no toca la caja ni el stock** (la plata la resuelve MP); **solo en la
+      PC**, con **"Visto"** que lo saca (queda en la base 30 días).
+    - Cómo: tres temas opcionales del webhook (`payment`, `topic_chargebacks_wh`, `topic_claims_integration_wh`). El sitio
+      consulta el objeto con el token del negocio, descarta lo que no es un cobro aprobado de la cuenta conectada, lo guarda
+      en `mp_avisos` (sin datos de quien pagó) y despierta a la sucursal; lo que llegó con la PC apagada se baja con
+      `GET /api/mp/avisos?desde=<id>` al arrancar y al abrirse la conexión en vivo (`servicios/avisos_mp_servicio.dart`).
+      Un cobro que salió de una orden de este servidor va solo a la sucursal de esa orden.
+    - **El sitio no decide qué cobro "tiene venta"** (las ventas viven en la app): lo cruza la PC (`domain/avisos_mp.dart`).
+      Primero por el `externalReference` de la orden; si no, por monto con la misma regla del cierre (`conciliarMp`: mismo
+      monto, el más cercano, cada venta una sola vez, ventas anuladas no cubren). Un cobro espera **5 minutos** (la venta se
+      graba al terminar de cobrar). Un cobro de una orden de la app que no terminó en venta (la PC se cerró) sí avisa.
+    - Contracargo/reclamo cambian de estado → aviso nuevo (clave: tipo + id + lo que cambió); la campanita muestra solo el
+      último. Cruce con la venta por referencia ("Venta K7-0123") o por monto ("Podría ser la venta…").
+    - Tabla nueva `avisos_mp` (schemaVersion 51), local, no se sincroniza. La campanita ya no depende del módulo de turnos.
+    - **Falta activarlo** en el panel de MP: además de "Order", tildar Pagos, Contracargos y Reclamos (README del sitio). Los
+      nombres exactos de los campos de contracargos y reclamos salen de la documentación, no se probaron con uno real: se
+      leen sin romper si falta alguno.
   - **E**: QR en pantalla sin terminal (Orders API `type: "qr"`, `config.qr.mode: "dynamic"`; hace falta crear una
     sucursal y una caja en MP) y el saldo real en el cierre con el reporte de Liquidaciones.
 - **No se puede por API**: la pantalla y configuración del aparato, el cierre de lote, las promociones de los bancos.
