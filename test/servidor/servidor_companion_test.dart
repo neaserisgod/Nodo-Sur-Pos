@@ -1529,6 +1529,20 @@ void main() {
         expect(respuesta.statusCode, 400);
       });
 
+      test(
+        '"action_required" viaja como pendiente + enTerminal: un celular viejo no se rompe con un nombre nuevo (etapa A)',
+        () async {
+          await configurarMpAccessToken(db, 'TOKEN123');
+          await configurarMpTerminalCobroId(db, 'N950NCC503383252');
+          final puertoMock = await servidorConMock(clienteConEstado('action_required'));
+          final estado = await http.get(
+            Uri.parse('http://127.0.0.1:$puertoMock/ventas/posnet/estado/orden-mp-1'),
+            headers: headers(),
+          );
+          expect(jsonDecode(estado.body), {'estado': 'pendiente', 'enTerminal': true});
+        },
+      );
+
       test('ciclo completo aprobado: iniciar, consultar estado y confirmar graban la venta', () async {
         await configurarMpAccessToken(db, 'TOKEN123');
         await configurarMpTerminalCobroId(db, 'N950NCC503383252');

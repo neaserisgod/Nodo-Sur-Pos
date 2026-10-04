@@ -18,6 +18,7 @@ import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/venta.dart';
 import '../ui/tema/tokens.dart';
+import '../servicios/avisos_cobro_mp.dart';
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'tema/hoja_vidrio.dart';
@@ -105,6 +106,14 @@ class _DialogoCobroPosnetCompanionState
   int? _ordenPendienteId;
   String? _ordenIdMp;
   bool _cancelado = false;
+
+  /// La Point le pidió algo al cliente (`action_required`): se avisa en pantalla, el cobro sigue esperando.
+  bool _enTerminal = false;
+
+  /// Consultas seguidas que fallaron (sin red un momento). Recién después de [_maxFallasSeguidas] se muestra el error: una
+  /// falla suelta con la orden viva en la terminal no puede cortar el cobro.
+  int _fallasSeguidas = 0;
+  static const _maxFallasSeguidas = 3;
   bool _errorAlCancelar = false;
   ({int ventaId, int totalCentavos})? _resultadoAprobado;
 
@@ -153,13 +162,15 @@ class _DialogoCobroPosnetCompanionState
         timeoutPollingCobroPosnet.inMilliseconds ~/
         intervaloPollingCobroPosnet.inMilliseconds;
     for (var i = 0; i < intentos && mounted && !_cancelado; i++) {
-      await Future.delayed(intervaloPollingCobroPosnet);
+      // Con aviso en vivo de Mercado Pago se consulta al instante; sin aviso, la pausa de siempre.
+      await esperarAvisoOrden(_ordenIdMp!, intervaloPollingCobroPosnet);
       if (!mounted || _cancelado) return;
 
       final ResultadoOrdenCobro resultado;
       try {
         resultado = await widget.cliente.consultarEstadoPosnet(_ordenIdMp!);
       } catch (e) {
+        if (++_fallasSeguidas < _maxFallasSeguidas) continue;
         if (!mounted) return;
         setState(() {
           _fase = _Fase.error;
@@ -168,6 +179,9 @@ class _DialogoCobroPosnetCompanionState
         return;
       }
       if (!mounted || _cancelado) return;
+      _fallasSeguidas = 0;
+      final enTerminal = resultado == ResultadoOrdenCobro.confirmarEnTerminal;
+      if (enTerminal != _enTerminal) setState(() => _enTerminal = enTerminal);
 
       if (resultado == ResultadoOrdenCobro.aprobada) {
         try {
@@ -324,7 +338,9 @@ class _DialogoCobroPosnetCompanionState
       _Fase.creando => _filaCargando(
         'Enviando la orden a la terminal — $monto',
       ),
-      _Fase.esperando => _filaCargando('Esperando el pago — $monto'),
+      _Fase.esperando => _filaCargando(
+        _enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto',
+      ),
       _Fase.cancelando => _filaCargando('Cancelando en la terminal...'),
       _Fase.cobrandoAMano => _filaCargando('Grabando la venta — $monto'),
       _Fase.aprobado => Text('Pago aprobado — $monto'),

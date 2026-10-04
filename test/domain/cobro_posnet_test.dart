@@ -27,12 +27,49 @@ void main() {
       expect(clasificarEstadoOrden('processing'), ResultadoOrdenCobro.pendiente);
     });
 
-    test('"action_required" es pendiente', () {
-      expect(clasificarEstadoOrden('action_required'), ResultadoOrdenCobro.pendiente);
+    test('"action_required" es confirmar en la terminal: sigue esperando, pero se avisa en pantalla', () {
+      expect(clasificarEstadoOrden('action_required'), ResultadoOrdenCobro.confirmarEnTerminal);
+      expect(sigueEsperando(ResultadoOrdenCobro.confirmarEnTerminal), isTrue);
     });
 
     test('un estado desconocido nunca se inventa como rechazo — pendiente por defecto', () {
       expect(clasificarEstadoOrden('algo_que_mp_agregue_despues'), ResultadoOrdenCobro.pendiente);
+    });
+  });
+
+  group('vencimiento de la orden (etapa A, 2026-10-04)', () {
+    test('la orden vence a los 2 minutos y se manda en ISO 8601, como pide Mercado Pago', () {
+      expect(vencimientoOrdenCobroPosnet, const Duration(minutes: 2));
+      expect(duracionIso8601(vencimientoOrdenCobroPosnet), 'PT2M');
+      expect(duracionIso8601(const Duration(minutes: 1, seconds: 30)), 'PT1M30S');
+      expect(duracionIso8601(const Duration(hours: 1, minutes: 15)), 'PT1H15M');
+    });
+
+    test('se consulta un rato más de lo que dura la orden: siempre se llega a ver "expired" (no cobrada)', () {
+      expect(timeoutPollingCobroPosnet > vencimientoOrdenCobroPosnet, isTrue);
+    });
+
+    test('solo aprobada y rechazada terminan la espera', () {
+      expect(sigueEsperando(ResultadoOrdenCobro.pendiente), isTrue);
+      expect(sigueEsperando(ResultadoOrdenCobro.aprobada), isFalse);
+      expect(sigueEsperando(ResultadoOrdenCobro.rechazada), isFalse);
+    });
+  });
+
+  group('resultadoDesdeRespuesta — lo que el celular lee de la PC, sin romperse con una versión distinta', () {
+    test('lee los tres de siempre', () {
+      expect(resultadoDesdeRespuesta('aprobada'), ResultadoOrdenCobro.aprobada);
+      expect(resultadoDesdeRespuesta('rechazada'), ResultadoOrdenCobro.rechazada);
+      expect(resultadoDesdeRespuesta('pendiente'), ResultadoOrdenCobro.pendiente);
+    });
+
+    test('pendiente con enTerminal es confirmar en la terminal', () {
+      expect(resultadoDesdeRespuesta('pendiente', enTerminal: true), ResultadoOrdenCobro.confirmarEnTerminal);
+    });
+
+    test('algo desconocido o vacío es pendiente: nunca se inventa un cobro ni un rechazo', () {
+      expect(resultadoDesdeRespuesta('algo_nuevo'), ResultadoOrdenCobro.pendiente);
+      expect(resultadoDesdeRespuesta(null), ResultadoOrdenCobro.pendiente);
     });
   });
 }

@@ -1382,7 +1382,13 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   ) async {
     try {
       final estado = await (await _pasarelaPoint(db, httpClientDePrueba, soloToken: true)).consultar(ordenIdMp);
-      return _json({'estado': clasificarEstadoOrden(estado).name});
+      // Un celular viejo solo conoce aprobada/rechazada/pendiente (y se rompería con otro nombre): "confirmar en la terminal"
+      // viaja como pendiente + `enTerminal` (`resultadoDesdeRespuesta`, `domain/cobro_posnet.dart`).
+      final r = clasificarEstadoOrden(estado);
+      return _json({
+        'estado': r == ResultadoOrdenCobro.confirmarEnTerminal ? ResultadoOrdenCobro.pendiente.name : r.name,
+        if (r == ResultadoOrdenCobro.confirmarEnTerminal) 'enTerminal': true,
+      });
     } on CobroPosnetException catch (e) {
       return _error(502, e.mensaje);
     }

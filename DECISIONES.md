@@ -1764,14 +1764,39 @@ y frenó antes de arrancar ("no arranques"): **confirmar antes de empezar cada u
     (cobros, retiros, comisiones, retenciones, devoluciones, reclamos, rendimientos). Es asíncrono (unos minutos),
     hasta 60 días por reporte, vacío con cuentas de prueba.
   - La cuenta del local **acredita al instante**, así que el saldo disponible del reporte es el saldo real.
-  - **Sin verificar**: si los pagos y transferencias que hace el dueño desde MP (ej. "Pago Facturas AVC" o la
-    transferencia a otra cuenta del 03/10) aparecen como línea propia; la documentación no lo dice. Se comprueba con el
-    reporte del 03/10.
+  - **Verificado con el reporte del 03/10** (cuenta real): trae TODOS los egresos, no solo los que lista la
+    documentación. El "Pago Facturas AVC" sale partido en tres pagos ($68.935,71 + $66.040 + $66.040 = $201.015,71), una
+    transferencia sale como `payout`, un préstamo de MP como crédito con `loan-…` en la referencia, y cada pago propio
+    viene con un par `reserve_for_payment` (débito y crédito) que se anula: hay que ignorar esas filas. El saldo después
+    de cada movimiento coincidió al centavo con el arqueo de las 19:20 ($111.475,85) y el final ($135.441,59) explica el
+    descuadre: las ventas #433 ($81.940) y #434 ($4.500) figuraban cobradas por MP y no entraron (se pagaron a otra
+    cuenta). Cada cobro de la Point trae en `EXTERNAL_REFERENCE` el `externalReference` de la orden: así se cruza con la
+    venta de la app.
+  - **Sin verificar**: que un suscriptor común (no la cuenta de Nodo Sur, que tiene permiso de administrador en la
+    aplicación) pueda pedir el reporte. El dueño eligió esperar al primer suscriptor que conecte MP en vez de probar con
+    una cuenta de prueba. Y aunque la cuenta del local acredita al instante, 5 de sus últimos 30 cobros tardaron días
+    (hasta 24): el saldo real tiene que sumar lo cobrado y todavía no liberado (`money_release_date` de cada cobro).
+  - **Decisiones del dueño para el cierre** (2026-10-04): el saldo se pide con un **botón** (no al abrir el cierre); al
+    llegar, **llena el "MP contado" y queda editable**; las diferencias se **avisan y se pueden cargar** como gasto o
+    ingreso por MP con un toque.
   - **Idea del dueño**: el reporte sirve también para anotar los egresos que se olvide de cargar en la app — lo que
     salió de MP sin pasar por la app aparece en el cierre para registrarlo.
 - **Etapas, en este orden (elegido por el dueño)**:
-  - **A**: avisos en vivo del cobro (webhook "Order" de Mercado Pago al sitio, reenviado por la conexión de sync),
-    vencimiento de la orden (`expiration_time`, de 30 s a 3 h) y "confirmá en la terminal" (`action_required`).
+  - **A — hecha (2026-10-04)**: avisos en vivo, vencimiento y "confirmá en la terminal".
+    - Cada orden vence a los 2 minutos (`vencimientoOrdenCobroPosnet`; el sitio usa lo mismo) y se consulta 2:20
+      (`timeoutPollingCobroPosnet`): siempre se llega a ver el final, casi nunca queda "no sé si se cobró".
+    - Mercado Pago avisa al sitio (`/api/mp/webhook`, firma HMAC obligatoria) y el sitio despierta a los equipos de la
+      sucursal por el hub de sync con `{"mp":{"orden","accion"}}` (`servicios/avisos_cobro_mp.dart`). **El aviso solo
+      despierta**: la app consulta la orden antes de grabar nada, así que un aviso repetido o falso no cobra nada. Solo
+      llega para órdenes creadas por el servidor; las que crea la PC con su token propio siguen solo con la consulta.
+      **Falta activarlo** en el panel de Mercado Pago (pasos en el README del sitio) y cargar `MP_WEBHOOK_SECRET`;
+      hasta entonces todo anda como antes.
+    - `action_required` es un cuarto resultado (`confirmarEnTerminal`) que sigue esperando y muestra "El cliente tiene
+      que confirmar en la terminal". Hacia el celular viaja como `pendiente` + `enTerminal` (un celular viejo se rompía
+      con un nombre nuevo, `ResultadoOrdenCobro.values.byName`), y el celular lee cualquier cosa desconocida como
+      pendiente (`resultadoDesdeRespuesta`).
+    - Blindaje extra: una consulta que falla mientras se espera ya no corta el cobro; recién tres seguidas muestran el
+      error (antes una sola, con la orden viva en la terminal).
   - **B**: devoluciones desde la app (`POST /v1/orders/{id}/refund`, total o parcial). **Al anular una venta cobrada por
     la Point, se pregunta cada vez** "¿Devolver $X al cliente por Mercado Pago?". Lo cobrado a mano no tiene orden: se
     devuelve desde la app de MP.

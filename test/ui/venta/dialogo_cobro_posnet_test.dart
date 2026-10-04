@@ -18,6 +18,8 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ticket.dart'
     show configurarMpAccessToken, configurarMpTerminalCobroId;
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/domain/cobro_posnet.dart';
+import 'package:la_plazoleta/servicios/avisos_cobro_mp.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/dialogo_cobro_posnet.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
@@ -141,10 +143,12 @@ void main() {
     );
     await _abrir(tester, controlador);
 
-    // 30 intentos x 2s = 60s: el timeout completo (ver `_pollear`, cuenta
-    // intentos, no compara contra un reloj de pared).
-    for (var i = 0; i < 30; i++) {
-      await tester.pump(const Duration(seconds: 2));
+    // El timeout completo, en intentos (ver `_pollear`: cuenta intentos, no
+    // compara contra un reloj de pared). Desde la etapa A dura un poco más
+    // que la orden (`timeoutPollingCobroPosnet` > `vencimientoOrdenCobroPosnet`).
+    final intentos = timeoutPollingCobroPosnet.inMilliseconds ~/ intervaloPollingCobroPosnet.inMilliseconds;
+    for (var i = 0; i < intentos; i++) {
+      await tester.pump(intervaloPollingCobroPosnet);
     }
     await tester.pump();
 
@@ -281,6 +285,99 @@ void main() {
       controlador.carrito,
       isEmpty,
     ); // cobrarActual() de todas formas cobró
+    controlador.dispose();
+  });
+
+  testWidgets('la orden que se crea vence sola a los 2 minutos (etapa A)', (tester) async {
+    Map<String, dynamic>? cuerpo;
+    final client = MockClient((request) async {
+      if (request.method == 'POST') {
+        cuerpo = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      }
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    expect(cuerpo?['expiration_time'], 'PT2M');
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    controlador.dispose();
+  });
+
+  testWidgets('"action_required": avisa que el cliente confirme en la terminal y sigue esperando', (tester) async {
+    var estado = 'action_required';
+    final client = MockClient((request) async {
+      if (request.method == 'POST') return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': estado}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    expect(find.textContaining('El cliente tiene que confirmar en la terminal'), findsOneWidget);
+
+    estado = 'processed';
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    expect(find.textContaining('Pago aprobado'), findsOneWidget);
+    controlador.dispose();
+  });
+
+  testWidgets('una falla de red suelta mientras espera no corta el cobro; tres seguidas sí', (tester) async {
+    var fallas = 2;
+    final client = MockClient((request) async {
+      if (request.method == 'POST') return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      if (fallas > 0) {
+        fallas--;
+        return http.Response('{"message":"bad gateway"}', 502);
+      }
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(intervaloPollingCobroPosnet);
+      await tester.pump();
+    }
+    expect(find.textContaining('Pago aprobado'), findsOneWidget, reason: 'dos fallas y después aprobado: se cobró igual');
+    controlador.dispose();
+  });
+
+  testWidgets('tres fallas de red seguidas mientras espera: ahí sí se muestra el error', (tester) async {
+    final siempreFalla = MockClient((request) async => request.method == 'POST'
+        ? http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201)
+        : http.Response('{"message":"bad gateway"}', 502));
+    final c2 = await _controladorConCocaCola(db, client: siempreFalla);
+    await _abrir(tester, c2);
+    for (var i = 0; i < 2; i++) {
+      await tester.pump(intervaloPollingCobroPosnet);
+      await tester.pump();
+    }
+    expect(find.text('Reintentar'), findsNothing, reason: 'dos seguidas todavía no');
+    await tester.pump(intervaloPollingCobroPosnet);
+    await tester.pump();
+    expect(find.text('Reintentar'), findsOneWidget, reason: 'tres seguidas: ahí sí se muestra el error');
+    c2.dispose();
+  });
+
+  testWidgets('con aviso en vivo de Mercado Pago consulta al instante, sin esperar los 2 segundos', (tester) async {
+    var consultas = 0;
+    final client = MockClient((request) async {
+      if (request.method == 'POST') return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+      consultas++;
+      return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+    });
+    final controlador = await _controladorConCocaCola(db, client: client);
+    await _abrir(tester, controlador);
+    avisarOrdenMp('otra-orden');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(consultas, 0, reason: 'el aviso de otra orden no la despierta');
+    avisarOrdenMp('orden-mp-1');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(consultas, 1);
+    expect(find.textContaining('Pago aprobado'), findsOneWidget);
     controlador.dispose();
   });
 }
