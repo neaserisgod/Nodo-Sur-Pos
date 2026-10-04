@@ -3,12 +3,14 @@
 // mientras esté abierta y en la misma red. El celular nunca toca una base
 // de datos propia: todo lo que sabe es lo que este cliente le devuelve.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, resultadoDesdeRespuesta;
 import '../domain/descuento.dart' show TipoDescuento;
+import '../servicios/registro_errores.dart';
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
@@ -1620,7 +1622,9 @@ class ClienteCompanion implements ServicioCompanion {
       if (r.statusCode != 200) return null;
       final j = jsonDecode(r.body);
       return j is Map<String, dynamic> && j['cobro'] is Map<String, dynamic> ? CobroPoint.desdeJson(j['cobro'] as Map<String, dynamic>) : null;
-    } catch (_) {
+    } catch (e, st) {
+      // Sin la orden no se ofrece devolver; si no es solo falta de red, queda anotado.
+      unawaited(registrarSiNoEsDeRed('Pedir a la PC el cobro de una venta', e, st));
       return null;
     }
   }

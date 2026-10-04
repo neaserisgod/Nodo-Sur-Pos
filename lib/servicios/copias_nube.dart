@@ -11,6 +11,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import '../data/database.dart';
 import '../domain/respaldo.dart';
+import 'registro_errores.dart';
 import 'cuenta_nube.dart';
 
 /// Lo que se ve de un intento de subir.
@@ -168,7 +169,10 @@ class ServicioCopiasNube {
       final r = await cliente.avisar(cuenta.token, cid: cid, version: await versionApp(), sistema: sistema);
       if (r.tokenNuevo != null) await almacen.guardar(cuenta.conToken(r.tokenNuevo!));
       return r.canal;
-    } catch (_) {
+    } catch (e, st) {
+      // Si esto falla seguido el token de la cuenta no se renueva y un día la PC deja de poder subir copias: tiene que quedar
+      // anotado (sin internet no cuenta).
+      unawaited(registrarSiNoEsDeRed('Avisar a Nodo Sur y renovar el token', e, st));
       return null;
     }
   }

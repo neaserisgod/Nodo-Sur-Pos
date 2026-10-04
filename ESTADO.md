@@ -20,7 +20,7 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 2069 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 2072 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
@@ -110,8 +110,9 @@ test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con
 ## Pendiente
 
 **Pedido por el dueño / a confirmar antes de arrancar** (lista completa y orden de interés en `CONTEXTO.md` §7):
-integración total con Mercado Pago (webhooks, devoluciones desde el POS, saldo real en el cierre, QR en pantalla, cuotas);
-pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder token/terminal locales como avanzado); motivo
+integración con Mercado Pago: **solo queda el QR en pantalla sin terminal** (el dueño, 2026-10-04: "de momento no"; Orders API
+`type: "qr"`, `config.qr.mode: "dynamic"`, hace falta crear una sucursal y una caja en MP) y el saldo real en el cierre del
+celular; pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder token/terminal locales como avanzado); motivo
 obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**

@@ -1864,8 +1864,17 @@ Investigación completa (documentación oficial de Mercado Pago + pruebas con la
     - **Sin verificar con un reporte de hoy**: que la lista de reportes (`/v1/account/release_report/list`) traiga el `id` o el
       rango de cada uno (se reconoce por cualquiera de los dos), y los valores de `DESCRIPTION` más allá de `payment` y `payout`.
       Todo lo desconocido que salga de la cuenta se avisa como egreso sin registrar (se puede descartar no cargándolo).
-    - Falta en el celular (su cierre no lo tiene) y el QR en pantalla sin terminal (Orders API `type: "qr"`), que quedó afuera.
+    - Falta en el celular (su cierre no lo tiene).
+    - **Anotado, sin hacer (el dueño, 2026-10-04: "de momento no")**: **QR en pantalla sin terminal** (Orders API `type: "qr"`,
+      `config.qr.mode: "dynamic"`; hace falta crear una sucursal y una caja en Mercado Pago). Cuando se retome, preguntar los
+      detalles de negocio antes de escribir código, como en las otras etapas.
       Los endpoints de prueba de administradores (`/api/admin/mp-saldo`, `/api/admin/mp-reporte`) siguen en el sitio.
 - **No se puede por API**: la pantalla y configuración del aparato, el cierre de lote, las promociones de los bancos.
-- **Después del posnet**: revisar los errores que todavía se tapan en silencio. La clave propia del APK queda para más
-  adelante.
+- **Después del posnet — errores tapados en silencio, revisados (2026-10-04)**: se recorrieron los 30 `catch` que se tragan el
+  error (`lib/`). La mayoría están bien y quedan (preferencias que no se pudieron guardar, un cuerpo que no es JSON, un chip que
+  no se dibuja, un ping que da falso, un buscador chico). Los que ocultaban un problema real ahora lo anotan en `errores.log`
+  (`registrarSiNoEsDeRed`: **sin internet no se anota**, es lo normal en un local; cualquier otra cosa sí): la sync del celular
+  con la PC, avisar a Nodo Sur y renovar el token (si falla seguido, un día la PC deja de subir copias), publicar dónde está la
+  PC en el wifi, consultar si se puede devolver por MP, pedir a la PC el cobro de una venta (celular), guardar el borrador de la
+  venta y migrar la carpeta de datos vieja. Ninguno cambia lo que ve quien cobra. `ErrorNube` con código `sin_red` cuenta como
+  falta de red. La clave propia del APK queda para más adelante.

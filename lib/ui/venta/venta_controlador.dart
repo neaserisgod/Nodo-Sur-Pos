@@ -685,8 +685,9 @@ class VentaControlador extends ChangeNotifier {
           pestana.dbId = null;
           if (id != null) await borrarVentaAbierta(db, id);
         }
-      } catch (_) {
-        // Un borrador que no se pudo guardar nunca puede frenar la venta.
+      } catch (e, st) {
+        // Un borrador que no se pudo guardar nunca puede frenar la venta; queda anotado por si se repite.
+        unawaited(registrarError('Guardar el borrador de la venta', e, st));
       }
     });
   }

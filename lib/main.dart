@@ -64,8 +64,9 @@ Future<void> _main() async {
   if (Platform.isWindows) {
     try {
       await migrarCarpetaDatosVieja(nueva: await getApplicationSupportDirectory());
-    } catch (_) {
-      // Nunca frenar el arranque por esto: peor caso, hay que volver a vincular.
+    } catch (e, st) {
+      // Nunca frenar el arranque por esto: peor caso, hay que volver a vincular. Anotado para saber por qué.
+      unawaited(registrarError('Migrar la carpeta de datos vieja', e, st));
     }
   }
 

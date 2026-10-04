@@ -8,12 +8,14 @@
 // que los referencian — mismo orden de `tablasSincronizables`), y recuerda
 // hasta dónde llegó la última vez.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database.dart';
 import '../data/repositorio_sincronizacion.dart';
+import '../servicios/registro_errores.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 
@@ -61,9 +63,13 @@ Future<bool> sincronizarConPc(
       if (await _unaVuelta(cliente, db)) trajoAlgo = true;
     } while (_pedidaOtraVez);
     return trajoAlgo;
-  } catch (_) {
+  } catch (e, st) {
     // ErrorCompanion (token inválido, tabla rara) o cualquier falla de
-    // conexión real (SocketException, timeout) — ninguna es fatal acá.
+    // conexión real (SocketException, timeout) — ninguna es fatal acá. La
+    // falta de red es lo normal y no se anota; lo demás (un token que ya no
+    // sirve, una tabla que no se pudo aplicar) sí, o nadie se entera de que
+    // el celular dejó de sincronizar.
+    unawaited(registrarSiNoEsDeRed('Sync del celular con la PC', e, st));
     return false;
   } finally {
     _sincronizando = false;

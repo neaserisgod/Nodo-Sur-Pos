@@ -130,13 +130,16 @@ class AlmacenCuentaEnArchivo implements AlmacenCuenta {
 }
 
 /// Una falla del servicio, con un texto que se puede mostrar tal cual.
-class ErrorNube implements Exception {
+class ErrorNube implements Exception, ErrorQuePuedeSerDeRed {
   const ErrorNube(this.codigo, this.mensaje, {this.estado});
 
   /// Código del servidor (`no_upload`, `hash_mismatch`…) o uno propio (`sin_red`, `vinculacion_cancelada`).
   final String codigo;
   final String mensaje;
   final int? estado;
+
+  @override
+  bool get esDeRed => codigo == 'sin_red';
 
   /// La sesión del dispositivo ya no vale (se desvinculó desde el sitio o venció): hay que volver a vincular.
   bool get pideVincularDeNuevo => estado == 401;
