@@ -1864,7 +1864,10 @@ Investigación completa (documentación oficial de Mercado Pago + pruebas con la
     - **Sin verificar con un reporte de hoy**: que la lista de reportes (`/v1/account/release_report/list`) traiga el `id` o el
       rango de cada uno (se reconoce por cualquiera de los dos), y los valores de `DESCRIPTION` más allá de `payment` y `payout`.
       Todo lo desconocido que salga de la cuenta se avisa como egreso sin registrar (se puede descartar no cargándolo).
-    - Falta en el celular (su cierre no lo tiene) y el QR en pantalla sin terminal (Orders API `type: "qr"`), que quedó afuera.
+    - Falta en el celular (su cierre no lo tiene).
+    - **Anotado, sin hacer (el dueño, 2026-10-04: "de momento no")**: **QR en pantalla sin terminal** (Orders API `type: "qr"`,
+      `config.qr.mode: "dynamic"`; hace falta crear una sucursal y una caja en Mercado Pago). Cuando se retome, preguntar los
+      detalles de negocio antes de escribir código, como en las otras etapas.
       Los endpoints de prueba de administradores (`/api/admin/mp-saldo`, `/api/admin/mp-reporte`) siguen en el sitio.
 - **No se puede por API**: la pantalla y configuración del aparato, el cierre de lote, las promociones de los bancos.
 - **Después del posnet — errores tapados en silencio, revisados (2026-10-04)**: se recorrieron los 30 `catch` que se tragan el

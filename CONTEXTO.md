@@ -143,7 +143,7 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
 1. **Integración total con Mercado Pago** (le interesa mucho): avisos en vivo por webhooks (venta confirmada al
    instante y alerta de cobros que entraron sin venta), **devoluciones desde el POS** al anular una venta cobrada por
    MP, **saldo real automático** en el cierre (reporte de liquidaciones; hay que verificar que se pueda), cobrar con
-   **QR en pantalla** sin terminal, y crédito/cuotas por la Point. El MCP de Mercado Pago solo sirve para documentación,
+   **QR en pantalla** sin terminal (anotado, el dueño dijo "de momento no"), y crédito/cuotas por la Point (crédito en 1 pago ya está). El MCP de Mercado Pago solo sirve para documentación,
    webhooks de la app, usuarios de prueba y homologación: no lee la cuenta real.
    **Investigado y ordenado el 2026-10-04** (etapas A a E, decisiones del dueño y lo probado con la cuenta real en
    `DECISIONES.md`, "Integración de la Point con Mercado Pago"): el saldo directo está negado y el saldo real sale del
