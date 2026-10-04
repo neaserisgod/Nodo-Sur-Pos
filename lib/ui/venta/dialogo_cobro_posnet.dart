@@ -85,9 +85,7 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
   // ya no tiene un `resultado` del que sacar el total — mostrar el monto
   // que se cobró de verdad no puede depender de un estado que cambia
   // debajo del diálogo.
-  late final String _canal = widget.controlador.canalElegido == 'qr'
-      ? 'QR'
-      : 'Débito';
+  late final String _canal = nombreCanal(widget.controlador.canalElegido);
   late final String _monto = formatearARS(widget.controlador.montoParaPosnet);
 
   @override

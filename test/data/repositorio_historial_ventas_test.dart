@@ -129,6 +129,12 @@ void main() {
     expect(porMonto[40000], MedioVentaHistorial.mixto);
   });
 
+  test('una venta con crédito (etapa C) es "Crédito", no QR ni débito', () async {
+    await crearVenta(fecha: DateTime(2026, 8, 15), totalCentavos: 50000, medioPagoId: medioMpId, canal: 'credit_card');
+    final resultado = await historialDeVentas(db, desde: DateTime(2026, 8, 15), hasta: DateTime(2026, 8, 16));
+    expect(resultado.single.medio, MedioVentaHistorial.creditCard);
+  });
+
   test('filtroMedio deja solo las ventas de ese medio', () async {
     await crearVenta(fecha: DateTime(2026, 8, 15), totalCentavos: 10000, medioPagoId: medioEfectivoId);
     await crearVenta(fecha: DateTime(2026, 8, 15), totalCentavos: 20000, medioPagoId: medioMpId, canal: 'qr');

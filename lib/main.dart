@@ -30,6 +30,7 @@ import 'servicios/marca_actual.dart';
 import 'servicios/registro_errores.dart';
 import 'servicios/migracion_carpeta_datos.dart';
 import 'package:path_provider/path_provider.dart';
+import 'servicios/ticket_al_cobrar.dart';
 
 Future<void> main() async {
   // El dueño, 2026-09-18: "quedó la pantalla en negro" — la causa real esa vez
@@ -68,6 +69,7 @@ Future<void> _main() async {
     }
   }
 
+  await PreferenciaTicketPoint.cargar(); // interruptor "imprimir el ticket en la Point al cobrar" (etapa C)
   await PreferenciaCobroNube.cargar(); // interruptor de prueba "cobrar por Nodo Sur": se lee una vez, después va en memoria
 
   // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la

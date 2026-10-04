@@ -356,14 +356,17 @@ Derecha (ancho fijo) — panel de carrito + cobro apilados:
    - Cuatro botones de medio de pago en **grilla 2×2** (El dueño, tercera
      pasada: "los botones de cobro... no se ven bien" — en una sola fila
      de 4, el panel angosto truncaba la etiqueta), cada uno con su color
-     propio y grandes: Efectivo, QR, Débito, Mixto. Mixto abre campo para
-     la parte en efectivo. QR y Débito son dos acciones separadas para
-     quien cobra (cada una manda su propia orden a la terminal Point —
-     fase 12, ver `ESTADO.md`, todavía sin código), pero en la caja
-     **siguen siendo un solo medio de pago, "Mercado Pago"**: los dos
-     liquidan al mismo saldo, y separarlos ahí rompería el arqueo y todo
-     lo que asume un solo medio no efectivo. El canal (QR/débito) se
-     guarda como dato del pago, no como un medio de pago nuevo.
+     propio y grandes: Efectivo, QR, Tarjeta, Mixto. Mixto abre campo para
+     la parte en efectivo. **Tarjeta** (El dueño, 2026-10-04, etapa C)
+     pregunta Débito o Crédito, y crédito va **siempre en 1 pago y sin
+     recargo** (Mercado Pago solo deja limitar las cuotas si la orden es
+     de crédito, por eso elige el cajero y no el cliente en la terminal).
+     QR, débito y crédito son acciones separadas para quien cobra (cada
+     una manda su propia orden a la terminal Point), pero en la caja
+     **siguen siendo un solo medio de pago, "Mercado Pago"**: liquidan al
+     mismo saldo, y separarlos ahí rompería el arqueo y todo lo que asume
+     un solo medio no efectivo. El canal (QR/débito/crédito) se guarda
+     como dato del pago, no como un medio de pago nuevo.
    - Botón de cobrar.
 
 Regla dura: **el carrito scrollea si no entra completo, pero el resto del
@@ -391,9 +394,9 @@ botón, en tamaño chico. Las dos excepciones (2026-10-03) son de toda la app,
 no de cobrar: `Ctrl+F` busca (en Venta enfoca el campo único) y la tecla
 `Inicio` vuelve a Venta (salvo escribiendo en un campo, donde mueve el cursor).
 
-- `Alt+E` efectivo · `Alt+Q` QR · `Alt+D` débito · `Alt+X` mixto · `Alt+M`
-  cobro manual
-- `Alt+Q`/`Alt+D` (y los botones QR/Débito con mouse) eligen el canal nada
+- `Alt+E` efectivo · `Alt+Q` QR · `Alt+D` tarjeta (pregunta: `D` débito,
+  `C` crédito en 1 pago) · `Alt+X` mixto · `Alt+M` cobro manual
+- `Alt+Q`/`Alt+D` (y los botones QR/Tarjeta con mouse) eligen el canal nada
   más — de vuelta a dos pasos (El dueño, 2026-09-08: "necesito cobro
   manual... no hay más modal para seleccionarlo", revierte el paso único
   de la fase 12). "Cobrar" (`Enter` con el campo vacío, o el botón) recién

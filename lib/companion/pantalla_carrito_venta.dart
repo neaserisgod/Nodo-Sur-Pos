@@ -46,8 +46,17 @@ import '../ui/tema/iconos.dart';
 import 'tema/error_en_linea.dart';
 import 'tema/app_bar_companion.dart';
 import 'tema/colores_companion.dart';
+import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 
-enum _MedioVenta { efectivo, qr, debito }
+enum _MedioVenta { efectivo, qr, debito, credito }
+
+/// Canal de la Point de cada medio virtual (crédito siempre en 1 pago, etapa C). En el celular los medios ya son una lista de
+/// opciones, así que crédito es una más en vez del botón "Tarjeta" de la PC.
+String _canalDe(_MedioVenta m) => switch (m) {
+  _MedioVenta.debito => canalDebito,
+  _MedioVenta.credito => canalCredito,
+  _ => canalQr,
+};
 
 /// Los tres momentos de una venta en esta pantalla (mock completo del
 /// celular): armar el carrito, elegir cómo paga y confirmar, y el resumen de
@@ -322,7 +331,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     if (medio == _MedioVenta.efectivo) {
       await _cobrarEfectivo();
     } else {
-      await _cobrarPosnet(medio == _MedioVenta.qr ? 'qr' : 'debit_card');
+      await _cobrarPosnet(_canalDe(medio));
     }
   }
 
@@ -413,7 +422,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         lineas: widget.carrito,
         sesionCajaId: _sesionCajaId!,
         usuarioId: widget.usuarioId,
-        canal: medio == _MedioVenta.qr ? 'qr' : 'debit_card',
+        canal: _canalDe(medio),
         tipoDescuento: valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: widget.encargueId,
@@ -807,6 +816,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _MedioVenta.efectivo => 'Efectivo',
     _MedioVenta.qr => 'QR de Mercado Pago',
     _MedioVenta.debito => 'Tarjeta de débito',
+    _MedioVenta.credito => 'Tarjeta de crédito (1 pago)',
   };
 
   /// "¿Cómo paga?": el total ya calculado con el medio elegido, la lista de

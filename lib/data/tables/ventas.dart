@@ -135,7 +135,7 @@ class Pagos extends Table {
   IntColumn get medioPagoId => integer().references(MediosDePago, #id)();
   IntColumn get montoCentavos => integer()();
 
-  /// 'qr' | 'debit_card' | null (Fase 12). QR y Débito siguen siendo el
+  /// 'qr' | 'debit_card' | 'credit_card' | null (Fase 12; crédito desde la etapa C). QR y Débito siguen siendo el
   /// mismo `medioPagoId` de siempre ("Mercado Pago") — este es solo el
   /// dato de qué canal de la terminal Point se usó, o null si el pago no
   /// pasó por ahí (efectivo, o Mercado Pago cobrado a mano como hasta

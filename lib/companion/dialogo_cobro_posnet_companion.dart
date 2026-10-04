@@ -304,7 +304,7 @@ class _DialogoCobroPosnetCompanionState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Cobrar por ${widget.canal == 'qr' ? 'QR' : 'Débito'}',
+            'Cobrar por ${nombreCanal(widget.canal)}',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: Espaciado.lg),

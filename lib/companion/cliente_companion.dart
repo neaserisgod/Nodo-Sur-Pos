@@ -1671,7 +1671,7 @@ class ClienteCompanion implements ServicioCompanion {
 
 /// 'efectivo' | 'qr' | 'debitCard' | 'mixto' — mismos valores que
 /// `MedioVentaHistorial` (`repositorio_historial_ventas.dart`).
-enum MedioVentaHistorialCompanion { efectivo, qr, debitCard, mixto }
+enum MedioVentaHistorialCompanion { efectivo, qr, debitCard, mixto, creditCard }
 
 class VentaDelHistorialCompanion {
   final int ventaId;
@@ -1715,7 +1715,9 @@ class VentaDelHistorialCompanion {
         numero: j['numero'] as String?,
         fecha: DateTime.parse(j['fecha'] as String),
         totalCentavos: j['totalCentavos'] as int,
-        medio: MedioVentaHistorialCompanion.values.byName(j['medio'] as String),
+        medio: j['tarjeta'] == 'credito'
+            ? MedioVentaHistorialCompanion.creditCard
+            : MedioVentaHistorialCompanion.values.where((m) => m.name == j['medio']).firstOrNull ?? MedioVentaHistorialCompanion.qr,
         detalle: j['detalle'] as String,
         anulada: j['anulada'] as bool? ?? false,
         sesionAbierta: j['sesionAbierta'] as bool? ?? false,

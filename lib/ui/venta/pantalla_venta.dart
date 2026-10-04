@@ -56,6 +56,7 @@ import 'dialogo_arqueo_intermedio.dart';
 import 'dialogo_movimiento_rapido.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
+import 'elegir_tarjeta.dart';
 
 class PantallaVenta extends StatefulWidget {
   const PantallaVenta({
@@ -246,7 +247,7 @@ class _PantallaVentaState extends State<PantallaVenta>
           case 'q':
             c.elegirCanalDirecto('qr');
           case 'd':
-            c.elegirCanalDirecto('debit_card');
+            elegirTarjeta(context, c);
           case 'm':
             cobrarAMano(context, c);
           case 'x':

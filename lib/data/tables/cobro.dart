@@ -25,7 +25,7 @@ class OrdenesCobroPendientes extends Table {
   /// orden en vez de crear una nueva.
   TextColumn get idempotencyKey => text()();
 
-  /// 'qr' | 'debit_card'.
+  /// 'qr' | 'debit_card' | 'credit_card' (etapa C, siempre en 1 pago).
   TextColumn get canal => text()();
 
   IntColumn get montoCentavos => integer()();

@@ -43,6 +43,8 @@ import 'tacto_venta.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 import '../tema/movimiento.dart';
+import 'elegir_tarjeta.dart';
+import '../../domain/cobro_posnet.dart' show canalCredito, canalDebito, esCanalTarjeta;
 
 class PanelCobro extends StatelessWidget {
   const PanelCobro({super.key, required this.usuarioId});
@@ -105,12 +107,15 @@ class PanelCobro extends StatelessWidget {
             Expanded(
               child: _BotonMedio(
                 icono: IconosPlazoleta.creditCardOutlined,
-                etiqueta: 'Débito (Alt+D)',
-                seleccionado:
-                    c.medioElegido == ComposicionPago.virtual &&
-                    c.canalElegido == 'debit_card',
+                // Etapa C: "Tarjeta" pregunta Débito o Crédito (1 pago); elegido, dice cuál.
+                etiqueta: switch (c.medioElegido == ComposicionPago.virtual ? c.canalElegido : null) {
+                  canalDebito => 'Débito (Alt+D)',
+                  canalCredito => 'Crédito 1 pago (Alt+D)',
+                  _ => 'Tarjeta (Alt+D)',
+                },
+                seleccionado: c.medioElegido == ComposicionPago.virtual && esCanalTarjeta(c.canalElegido),
                 colorSeleccionado: ColorMedioPago.debito(context),
-                onPressed: () => _elegirCanal(context, 'debit_card'),
+                onPressed: () => elegirTarjeta(context, c),
               ),
             ),
             const SizedBox(width: Espaciado.sm),

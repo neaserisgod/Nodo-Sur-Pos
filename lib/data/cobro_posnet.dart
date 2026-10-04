@@ -10,14 +10,14 @@
 // decimal, nunca centavos), `config.point.terminal_id` +
 // `print_on_terminal: "no_ticket"` (imprimir es una acción aparte de esta
 // app, no le pedimos a la terminal que imprima su propio ticket),
-// `config.payment_method.default_type` (`qr` | `debit_card`).
+// `config.payment_method` (`medioDePagoOrden`: `qr` | `debit_card` | `credit_card` en 1 pago).
 
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
-import '../domain/cobro_posnet.dart' show duracionIso8601, vencimientoOrdenCobroPosnet;
+import '../domain/cobro_posnet.dart' show duracionIso8601, medioDePagoOrden, vencimientoOrdenCobroPosnet;
 import '../domain/dinero.dart';
 
 class CobroPosnetException implements Exception {
@@ -67,7 +67,7 @@ Future<OrdenCobroCreada> crearOrdenCobro({
             'terminal_id': terminalId,
             'print_on_terminal': 'no_ticket',
           },
-          'payment_method': {'default_type': canal},
+          'payment_method': medioDePagoOrden(canal),
         },
       }),
     );

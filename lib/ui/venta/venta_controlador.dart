@@ -36,6 +36,7 @@ import '../../domain/medio_pago.dart';
 import '../../domain/recargo_cigarrillos.dart';
 import '../../domain/venta.dart';
 import '../../servicios/registro_errores.dart';
+import '../../servicios/ticket_al_cobrar.dart';
 
 class VentaControlador extends ChangeNotifier {
   VentaControlador(this.db, {this.httpClientDePrueba}) {
@@ -166,7 +167,7 @@ class VentaControlador extends ChangeNotifier {
   /// aparte (dialogo_mixto.dart), no en el campo único.
   int? montoEfectivoMixtoCentavos;
 
-  /// 'qr' | 'debit_card' (Fase 12) — solo tiene sentido con
+  /// 'qr' | 'debit_card' | 'credit_card' (Fase 12; crédito desde la etapa C) — solo tiene sentido con
   /// `medioElegido == virtual` (QR/Débito directo) o `mixto` (canal del
   /// resto). Null en efectivo puro, o en un mixto donde no se cobra por
   /// posnet.
@@ -1084,6 +1085,13 @@ class VentaControlador extends ChangeNotifier {
         estado: 'aprobada',
         ventaId: ventaId,
       );
+      // Etapa C: con el interruptor prendido, el ticket sale en la terminal. En segundo plano: la venta ya está grabada y el
+      // mostrador no espera a la impresora; si falla, se avisa sin tocar la venta.
+      unawaited(imprimirTicketAlCobrar(db, ventaId, client: httpClientDePrueba).then((error) {
+        if (error == null) return;
+        avisoCobro = 'Cobrado. El ticket no salió en la terminal: $error';
+        notifyListeners();
+      }));
     }
     return ventaId;
   }

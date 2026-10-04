@@ -77,6 +77,7 @@ extension on MedioVentaHistorialCompanion {
     MedioVentaHistorialCompanion.efectivo => 'Efectivo',
     MedioVentaHistorialCompanion.qr => 'QR',
     MedioVentaHistorialCompanion.debitCard => 'Débito',
+    MedioVentaHistorialCompanion.creditCard => 'Crédito',
     MedioVentaHistorialCompanion.mixto => 'Mixto',
   };
 }
@@ -380,7 +381,8 @@ class _PantallaHistorialVentasState extends State<PantallaHistorialVentas> {
           Center(child: _selectorPeriodo(context)),
           const SizedBox(width: Espaciado.sm),
           ChipSeleccionable(texto: 'Todos los medios', seleccionado: _filtroMedio == null, onTap: () => _elegirMedio(null)),
-          for (final m in MedioVentaHistorialCompanion.values) ...[
+          // Sin chip de crédito: una PC vieja no entiende ese filtro (contestaría error).
+          for (final m in MedioVentaHistorialCompanion.values.where((m) => m != MedioVentaHistorialCompanion.creditCard)) ...[
             const SizedBox(width: Espaciado.sm),
             ChipSeleccionable(texto: m.etiqueta, seleccionado: _filtroMedio == m, onTap: () => _elegirMedio(m)),
           ],
