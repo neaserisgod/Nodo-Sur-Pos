@@ -448,6 +448,27 @@ class _BloqueMercadoPago extends StatelessWidget {
             Text('Esperado ${formatearARS(r.mpEsperadoCentavos)}', style: textTheme.bodyMedium?.tabular),
           ],
         ),
+        // De dónde sale el esperado, como el efectivo (El dueño, 2026-10-04: no cuadraba con Mercado Pago y no había
+        // cómo ver por qué). La cantidad de ventas se compara con los cobros de "Mercado Pago según Mercado Pago".
+        if (r.desgloseMp case final d?) ...[
+          const SizedBox(height: Espaciado.sm),
+          FilaDato(key: const Key('mp_desglose_inicial'), etiqueta: 'Saldo al abrir', valor: formatearARS(d.inicial)),
+          FilaDato(
+            key: const Key('mp_desglose_cobros'),
+            etiqueta: '+ Cobrado por MP (${d.ventas} ${d.ventas == 1 ? 'venta' : 'ventas'})',
+            valor: formatearARS(d.cobros),
+          ),
+          if (d.gastos != 0)
+            FilaDato(etiqueta: '− Gastos y pagos con MP', valor: formatearARS(d.gastos)),
+          if (d.ingresos != 0)
+            FilaDato(etiqueta: '+ Ingresos por MP', valor: formatearARS(d.ingresos)),
+          if (d.inicial != 0)
+            Text(
+              'El saldo al abrir es lo último contado. Lo que salió de Mercado Pago sin pasar por la app (una '
+              'transferencia a tu cuenta, un proveedor pagado por transferencia) no está restado acá.',
+              style: textTheme.bodySmall,
+            ),
+        ],
         const SizedBox(height: Espaciado.md),
         CampoPlata(
           key: const Key('campo_mp_contado'),

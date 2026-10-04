@@ -218,6 +218,24 @@ Future<int> pagosNoEfectivoDelDia(
   return fila.read(db.pagos.montoCentavos.sum()) ?? 0;
 }
 
+/// Cuántas ventas de la sesión se cobraron (todo o en parte) por Mercado Pago, con el mismo filtro que
+/// [pagosNoEfectivoDelDia]. Para el desglose del cierre: se compara a ojo con la cantidad de cobros que informa
+/// Mercado Pago ("Mercado Pago según Mercado Pago"), y si no coinciden, ahí está la diferencia.
+Future<int> cantidadVentasPorMpDelDia(AppDatabase db, int sesionId, {MedioDePago? medioMercadoPago}) async {
+  final mp = medioMercadoPago ?? await _medioMercadoPago(db);
+  final cantidad = db.pagos.ventaId.count(distinct: true);
+  final query = db.selectOnly(db.pagos)
+    ..addColumns([cantidad])
+    ..join([innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId))])
+    ..where(
+      db.ventas.sesionCajaId.equals(sesionId) &
+          db.pagos.medioPagoId.equals(mp.id) &
+          db.ventas.anuladaEn.isNull(),
+    );
+  final fila = await query.getSingle();
+  return fila.read(cantidad) ?? 0;
+}
+
 /// Suma del redondeo de todas las ventas de la sesión (Regla 2: se muestra
 /// como línea propia, separada de la diferencia de caja). Excluye
 /// anuladas — mismo motivo que `pagosNoEfectivoDelDia`: el redondeo de una
@@ -472,6 +490,12 @@ class ResumenCierre {
   /// solo en resúmenes armados a mano (tests viejos).
   final ({int fondo, int ventas, int gastos, int ingresos, int redondeo})? desgloseEfectivo;
 
+  /// De qué sale [mpEsperadoCentavos] (`mpEsperadoCentavos` de `domain/caja.dart`), renglón por renglón como el
+  /// efectivo (El dueño, 2026-10-04: el esperado de MP no cuadraba con lo que decía Mercado Pago y en la pantalla no
+  /// había forma de ver por qué). [ventas] es cuántas ventas entraron por MP, para compararla con los cobros que
+  /// informa Mercado Pago. Null solo en resúmenes armados a mano.
+  final ({int inicial, int cobros, int ventas, int gastos, int ingresos})? desgloseMp;
+
   const ResumenCierre({
     required this.efectivoEsperadoCentavos,
     required this.diferenciaCentavos,
@@ -484,6 +508,7 @@ class ResumenCierre {
     required this.mpDiferenciaCentavos,
     required this.lataDiferenciaCentavos,
     this.desgloseEfectivo,
+    this.desgloseMp,
   });
 }
 
@@ -530,6 +555,7 @@ Future<ResumenCierre> calcularResumenCierre(
   final futuroPagosLata = pagosALataDelDia(db, sesionId);
   final futuroIngresosALata = ingresosALaLataDelDia(db, sesionId);
   final futuroPagosNoEfectivo = pagosNoEfectivoDelDia(db, sesionId, medioMercadoPago: mp);
+  final futuroVentasPorMp = cantidadVentasPorMpDelDia(db, sesionId, medioMercadoPago: mp);
   final futuroGastosPorMp = gastosPorMpDelDia(
     db,
     sesionId,
@@ -575,11 +601,14 @@ Future<ResumenCierre> calcularResumenCierre(
       ? null
       : diferenciaArqueo(contadoCentavos: lataContadoCentavos, esperadoCentavos: lataFinal);
 
+  final cobrosMp = await futuroPagosNoEfectivo;
+  final gastosMp = await futuroGastosPorMp;
+  final ingresosMp = await futuroIngresosPorMp;
   final mpEsperada = mpEsperadoCentavos(
     inicialCentavos: sesion.saldoMpInicialCentavos,
-    pagosNoEfectivoCentavos: await futuroPagosNoEfectivo,
-    gastosPorMpCentavos: await futuroGastosPorMp,
-    ingresosPorMpCentavos: await futuroIngresosPorMp,
+    pagosNoEfectivoCentavos: cobrosMp,
+    gastosPorMpCentavos: gastosMp,
+    ingresosPorMpCentavos: ingresosMp,
   );
   final mpDiferencia = mpContadoCentavos == null
       ? null
@@ -612,6 +641,13 @@ Future<ResumenCierre> calcularResumenCierre(
       gastos: gastosEfectivo,
       ingresos: ingresosEfectivo,
       redondeo: redondeo,
+    ),
+    desgloseMp: (
+      inicial: sesion.saldoMpInicialCentavos,
+      cobros: cobrosMp,
+      ventas: await futuroVentasPorMp,
+      gastos: gastosMp,
+      ingresos: ingresosMp,
     ),
   );
 }

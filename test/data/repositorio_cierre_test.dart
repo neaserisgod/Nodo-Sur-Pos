@@ -650,6 +650,41 @@ void main() {
       expect(resumen.mpEsperadoCentavos, 50000);
       expect(resumen.mpDiferenciaCentavos, -2000);
     });
+
+    test(
+      'desgloseMp: saldo al abrir, cobrado y cuántas ventas, gastos e ingresos (El dueño, 2026-10-04: "no registra '
+      'bien?" — el esperado de MP se ve renglón por renglón)',
+      () async {
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0, mpInicialCentavos: 87000);
+        await crearVentaMp(sesionId, totalCentavos: 30000);
+        await crearVentaMp(sesionId, totalCentavos: 20000);
+        // Una venta mixta con dos pagos por MP cuenta como UNA venta, no dos.
+        final mixtaId = await db.into(db.ventas).insert(
+          VentasCompanion.insert(sesionCajaId: sesionId, usuarioId: usuarioId, subtotalCentavos: 9000, totalCentavos: 9000),
+        );
+        await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: mixtaId, medioPagoId: medioMpId, montoCentavos: 4000));
+        await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: mixtaId, medioPagoId: medioMpId, montoCentavos: 5000));
+        // Una anulada no suma ni a la plata ni a la cantidad.
+        final anuladaId = await db.into(db.ventas).insert(
+          VentasCompanion.insert(sesionCajaId: sesionId, usuarioId: usuarioId, subtotalCentavos: 7000, totalCentavos: 7000),
+        );
+        await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: anuladaId, medioPagoId: medioMpId, montoCentavos: 7000));
+        await anularVenta(db, ventaId: anuladaId, usuarioId: usuarioId, motivo: 'Prueba');
+        await crearGasto(sesionId, montoCentavos: 8000, deLata: false, medioPagoId: medioMpId);
+        await crearIngreso(sesionId, montoCentavos: 1000, deLata: false, medioPagoId: medioMpId);
+
+        final resumen = await calcularResumenCierre(db, sesionId: sesionId, efectivoContadoCentavos: 0);
+
+        final d = resumen.desgloseMp!;
+        expect(d.inicial, 87000);
+        expect(d.cobros, 59000);
+        expect(d.ventas, 3);
+        expect(d.gastos, 8000);
+        expect(d.ingresos, 1000);
+        // Los renglones suman exactamente el esperado: es la misma cuenta, no una paralela.
+        expect(d.inicial + d.cobros - d.gastos + d.ingresos, resumen.mpEsperadoCentavos);
+      },
+    );
   });
 
   group('cerrarSesion — persiste exactamente lo que calcularResumenCierre calculó', () {

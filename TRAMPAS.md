@@ -713,3 +713,13 @@ Regla: **el "ahora" de la caja (`esDeOtroDia`, `arqueoIntermedioVencido`) se lee
 (`package:clock`), no con `DateTime.now()`, para que un test lo fije con `withClock`. Un test que arma fechas
 relativas a la hora real tiene que pensar qué pasa cerca de la medianoche.
 `test/ui/venta/pantalla_venta_arqueo_intermedio_test.dart` lo cubre.
+
+## El esperado de Mercado Pago es un saldo, y la app no ve todo lo que sale de la cuenta (2026-10-04)
+
+`MP esperado = saldo al abrir + cobrado por MP − gastos y pagos con MP + ingresos` (REGLAS §10). El saldo al abrir
+se precarga con lo último **contado**, sin importar el día. Lo que sale de la cuenta de Mercado Pago sin pasar por la
+app no se resta: una transferencia del dueño a su cuenta entre turnos, o un proveedor con medio "Transferencia" que se
+paga desde MP (`pagarProveedor` no graba nada para transferencia). En esos casos el esperado queda inflado justo por
+ese monto, aunque cada venta esté bien registrada. Pasó el 03/10: esperado $222.373 contra $134.913 cobrados según
+Mercado Pago. Por eso el cierre muestra el esperado renglón por renglón (`ResumenCierre.desgloseMp`): si el
+"Cobrado por MP" cuadra con Mercado Pago, la diferencia está en el saldo al abrir.
