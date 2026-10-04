@@ -16,9 +16,16 @@ class PasarelaPointNube implements PasarelaPoint {
     try {
       return await f();
     } on ErrorNube catch (e) {
-      throw CobroPosnetException(e.pideVincularDeNuevo ? 'Este dispositivo ya no está vinculado a la cuenta. Volvé a vincularlo para cobrar con la terminal.' : e.mensaje);
+      throw CobroPosnetException(
+        e.pideVincularDeNuevo ? 'Este dispositivo ya no está vinculado a la cuenta. Volvé a vincularlo para cobrar con la terminal.' : e.mensaje,
+        incierto: _noSabeSiSeHizo(e),
+      );
     }
   }
+
+  /// Sin red, o el servidor/Mercado Pago no contestó (5xx, plazo vencido): no se sabe si la orden se creó. `mp_rechazo` (un 4xx de
+  /// Mercado Pago, que el servidor devuelve como 502) sí es un "no" definitivo.
+  static bool _noSabeSiSeHizo(ErrorNube e) => e.esDeRed || (e.estado != null && e.estado! >= 500 && e.codigo != 'mp_rechazo');
 
   @override
   Future<OrdenCobroCreada> crear({

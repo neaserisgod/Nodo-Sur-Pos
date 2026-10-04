@@ -8,6 +8,8 @@
 
 import 'package:drift/drift.dart';
 
+import '../domain/cobro_posnet.dart' show vencimientoOrdenCobroPosnet;
+import 'cobro_posnet.dart' show CobroPosnetException, PasarelaPoint;
 import 'database.dart';
 import 'identidad_sync.dart';
 
@@ -15,27 +17,84 @@ import 'identidad_sync.dart';
 /// la fila (para las siguientes actualizaciones) junto con la clave de
 /// idempotencia y la referencia externa recién generadas, que el llamador
 /// manda en el POST.
+///
+/// Si hay un intento anterior del MISMO cobro (misma sesión, canal y monto) que nunca obtuvo respuesta de Mercado Pago
+/// (`ordenIdMp` nulo, sigue 'pendiente') y es más nuevo que lo que vive una orden, se devuelve ese: misma clave de
+/// idempotencia, misma referencia. Así el reintento después de un corte de red le pide a Mercado Pago LA MISMA orden en vez de
+/// crear una segunda (el cliente podía terminar pagando dos veces, o pagando una orden que la caja ya no seguía). Un rechazo
+/// definitivo de Mercado Pago se marca 'rechazada' (`marcarOrdenResuelta`) y por eso nunca se reutiliza; pasado el
+/// vencimiento Mercado Pago ya venció esa orden sola y se empieza de nuevo.
 Future<({int id, String externalReference, String idempotencyKey})> crearOrdenPendiente(
   AppDatabase db, {
   required int sesionCajaId,
   required String canal,
   required int montoCentavos,
+}) {
+  return db.transaction(() async {
+    final desde = DateTime.now().subtract(vencimientoOrdenCobroPosnet);
+    final previa = await (db.select(db.ordenesCobroPendientes)
+          ..where(
+            (o) =>
+                o.sesionCajaId.equals(sesionCajaId) &
+                o.canal.equals(canal) &
+                o.montoCentavos.equals(montoCentavos) &
+                o.estado.equals('pendiente') &
+                o.ordenIdMp.isNull() &
+                o.ventaId.isNull() &
+                o.creadaEn.isBiggerOrEqualValue(desde),
+          )
+          ..orderBy([(o) => OrderingTerm.desc(o.id)])
+          ..limit(1))
+        .getSingleOrNull();
+    if (previa != null) return (id: previa.id, externalReference: previa.externalReference, idempotencyKey: previa.idempotencyKey);
+
+    // `generarGlobalId()` es el mismo generador de claves random que ya usaba
+    // este archivo antes de existir como función compartida (Regla 3) — ver
+    // `lib/data/identidad_sync.dart`.
+    final externalReference = generarGlobalId();
+    final idempotencyKey = generarGlobalId();
+    final id = await db.into(db.ordenesCobroPendientes).insert(
+          OrdenesCobroPendientesCompanion.insert(
+            externalReference: externalReference,
+            idempotencyKey: idempotencyKey,
+            canal: canal,
+            montoCentavos: montoCentavos,
+            sesionCajaId: sesionCajaId,
+          ),
+        );
+    return (id: id, externalReference: externalReference, idempotencyKey: idempotencyKey);
+  });
+}
+
+/// Crea la orden de cobro de punta a punta: la siembra en disco, se la pide a Mercado Pago y guarda el id que responde. Lo
+/// comparten la PC, el servidor para el celular y el celular sin PC (Regla 3: una sola secuencia).
+///
+/// Si Mercado Pago RECHAZA el pedido (4xx) la fila se cierra como 'rechazada': no hay orden ni nada que revisar en el cierre, y
+/// un reintento arranca limpio. Si NO se sabe qué pasó ([CobroPosnetException.incierto]: corte de red, plazo vencido, 5xx) la
+/// fila queda 'pendiente' y el próximo intento del mismo cobro la reutiliza ([crearOrdenPendiente]) con la misma clave de
+/// idempotencia, así nunca hay dos órdenes vivas por el mismo cobro. En los dos casos la excepción sigue de largo para que la
+/// pantalla muestre el motivo.
+Future<({int ordenPendienteId, String ordenIdMp})> iniciarOrdenDeCobro(
+  AppDatabase db,
+  PasarelaPoint pasarela, {
+  required int sesionCajaId,
+  required String canal,
+  required int montoCentavos,
 }) async {
-  // `generarGlobalId()` es el mismo generador de claves random que ya usaba
-  // este archivo antes de existir como función compartida (Regla 3) — ver
-  // `lib/data/identidad_sync.dart`.
-  final externalReference = generarGlobalId();
-  final idempotencyKey = generarGlobalId();
-  final id = await db.into(db.ordenesCobroPendientes).insert(
-        OrdenesCobroPendientesCompanion.insert(
-          externalReference: externalReference,
-          idempotencyKey: idempotencyKey,
-          canal: canal,
-          montoCentavos: montoCentavos,
-          sesionCajaId: sesionCajaId,
-        ),
-      );
-  return (id: id, externalReference: externalReference, idempotencyKey: idempotencyKey);
+  final pendiente = await crearOrdenPendiente(db, sesionCajaId: sesionCajaId, canal: canal, montoCentavos: montoCentavos);
+  try {
+    final creada = await pasarela.crear(
+      externalReference: pendiente.externalReference,
+      idempotencyKey: pendiente.idempotencyKey,
+      montoCentavos: montoCentavos,
+      canal: canal,
+    );
+    await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
+    return (ordenPendienteId: pendiente.id, ordenIdMp: creada.ordenIdMp);
+  } on CobroPosnetException catch (e) {
+    if (!e.incierto) await marcarOrdenResuelta(db, id: pendiente.id, estado: 'rechazada');
+    rethrow;
+  }
 }
 
 /// Se llama apenas el POST responde con éxito — recién ahí existe un id de

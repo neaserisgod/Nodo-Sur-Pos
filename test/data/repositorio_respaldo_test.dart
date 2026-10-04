@@ -94,5 +94,55 @@ void main() {
 
       expect(File(destino).readAsStringSync(), 'contenido de respaldo');
     });
+
+    test('la base que se reemplaza queda guardada como .antes-de-restaurar: restaurar el archivo equivocado no es irreversible', () async {
+      final origen = File('${carpetaTemp.path}/respaldo.sqlite')..writeAsStringSync('respaldo viejo');
+      final destino = File('${carpetaTemp.path}/destino.sqlite')..writeAsStringSync('base actual con las ventas de hoy');
+
+      await restaurarDesdeArchivo(rutaRespaldo: origen.path, rutaDestino: destino.path);
+
+      expect(destino.readAsStringSync(), 'respaldo viejo');
+      expect(File('${destino.path}.antes-de-restaurar').readAsStringSync(), 'base actual con las ventas de hoy');
+      expect(File('${destino.path}.restaurando').existsSync(), isFalse, reason: 'sin restos del temporal');
+    });
+
+    test('borra los -wal / -shm / -journal de la base vieja: aplicados a la nueva la corromperían', () async {
+      final origen = File('${carpetaTemp.path}/respaldo.sqlite')..writeAsStringSync('nuevo');
+      final destino = File('${carpetaTemp.path}/destino.sqlite')..writeAsStringSync('viejo');
+      for (final s in ['-wal', '-shm', '-journal']) {
+        File('${destino.path}$s').writeAsStringSync('resto');
+      }
+
+      await restaurarDesdeArchivo(rutaRespaldo: origen.path, rutaDestino: destino.path);
+
+      for (final s in ['-wal', '-shm', '-journal']) {
+        expect(File('${destino.path}$s').existsSync(), isFalse, reason: s);
+      }
+    });
+
+    test('si el respaldo no existe falla sin tocar la base actual ni dejar un temporal', () async {
+      final destino = File('${carpetaTemp.path}/destino.sqlite')..writeAsStringSync('base actual');
+
+      await expectLater(
+        restaurarDesdeArchivo(rutaRespaldo: '${carpetaTemp.path}/no-existe.sqlite', rutaDestino: destino.path),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect(destino.readAsStringSync(), 'base actual');
+      expect(File('${destino.path}.restaurando').existsSync(), isFalse);
+      expect(File('${destino.path}.antes-de-restaurar').existsSync(), isFalse);
+    });
+
+    test('una segunda restauración pisa el .antes-de-restaurar anterior (queda una sola copia, la última)', () async {
+      final a = File('${carpetaTemp.path}/a.sqlite')..writeAsStringSync('A');
+      final b = File('${carpetaTemp.path}/b.sqlite')..writeAsStringSync('B');
+      final destino = File('${carpetaTemp.path}/destino.sqlite')..writeAsStringSync('original');
+
+      await restaurarDesdeArchivo(rutaRespaldo: a.path, rutaDestino: destino.path);
+      await restaurarDesdeArchivo(rutaRespaldo: b.path, rutaDestino: destino.path);
+
+      expect(destino.readAsStringSync(), 'B');
+      expect(File('${destino.path}.antes-de-restaurar').readAsStringSync(), 'A');
+    });
   });
 }

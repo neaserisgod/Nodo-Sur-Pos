@@ -1878,3 +1878,38 @@ Investigación completa (documentación oficial de Mercado Pago + pruebas con la
   PC en el wifi, consultar si se puede devolver por MP, pedir a la PC el cobro de una venta (celular), guardar el borrador de la
   venta y migrar la carpeta de datos vieja. Ninguno cambia lo que ve quien cobra. `ErrorNube` con código `sin_red` cuenta como
   falta de red. La clave propia del APK queda para más adelante.
+
+## Revisión de blindaje técnico (2026-10-04)
+
+El dueño pidió revisar los dos repos y dejarlos "extremadamente blindados". Se auditó todo el código nuevo de Mercado Pago, el
+servidor del celular, el motor de sync, las actualizaciones y los endpoints del sitio; se corrigió lo que tenía riesgo real y se
+dejó anotado lo que no (más abajo). Lo que cambió y por qué (el detalle de cada bug está en `TRAMPAS.md`):
+
+- **Distinguir "no" de "no sé"** en toda llamada a Mercado Pago (`CobroPosnetException.incierto`; en el sitio `mp_rechazo` 502 contra
+  `mp_sin_respuesta` 504). Solo un "no sé" se reintenta, y con la MISMA clave de idempotencia: así nunca hay dos órdenes vivas por un
+  cobro. Un corte de red o un plazo vencido en el sitio contesta 504 y NUNCA marca la conexión para reconectar (eso solo lo hace un
+  400/401 de Mercado Pago al renovar el token). Renovar el token tiene el doble de plazo porque rota el `refresh_token`.
+- **Plazo en todo pedido saliente** del sitio (Mercado Pago, Google, Resend: 20 s) y de la app (cobro directo, 25 s; APK, 10 min).
+- **Idempotencia donde entra plata**: confirmar un cobro de la Point, cobrar un fiado, y `registrarVenta` rechaza pagos que no suman
+  el total (antes lo garantizaba cada llamador).
+- **Una orden de otra sucursal no se cancela ni se devuelve** desde este equipo (`orden_de_otra_sucursal`).
+- **Webhook**: cuerpo acotado a 16 KB. **Admin**: lo que crea algo en Mercado Pago por GET rechaza pedidos `cross-site`.
+- **Actualización del celular**: el APK y su hash solo se aceptan si la dirección es de `horsepos.com`, y el hash tiene que ser
+  hexadecimal de 64 caracteres.
+- **Sitio, política de contenido**: `script-src` ya no lleva `'unsafe-inline'` (el único script en línea, el de `/ingresar`, pasó a
+  `ingresar.js`; el resto son datos JSON-LD) y una prueba impide que vuelva a aparecer uno. `style-src` sigue con `'unsafe-inline'` (55
+  atributos `style=`: sacarlos es un cambio visual de varias páginas).
+- **Celular, cobro Point**: si el pago ya se aprobó en la terminal y falla guardar la venta (se cae el wifi), el diálogo reintenta solo
+  con la MISMA orden y, si no puede, solo ofrece "Reintentar" (volver a guardar esa venta) o "Cerrar": ya no ofrece "Reintentar" (que creaba
+  una segunda orden) ni "Cobrar a mano" (que podía duplicar una venta que sí se guardó).
+- **Restaurar una copia** reemplaza la base de forma atómica (copia al lado, comprueba el tamaño, renombra) y deja la anterior como
+  `.antes-de-restaurar`; borra los `-wal`/`-shm`/`-journal` viejos.
+- **CI**: el sitio ahora corre sus pruebas en cada PR (antes no tenía ninguna); los workflows de la app piden solo permiso de lectura.
+
+Lo que se revisó y quedó como estaba, a propósito: la sync (lista blanca de tablas y de columnas, sin SQL con datos remotos), la firma
+de los webhooks (HMAC en tiempo constante; no se agrega ventana de tiempo porque un reintento tardío de Mercado Pago es legítimo y el
+aviso solo despierta a la app, que consulta antes de grabar), los mails (todo escapado), las sesiones (cookie firmada + lista de
+cerradas) y la vinculación de equipos (PKCE, código de un solo uso). **Pendiente conocido, no tocado**: aceptar
+una invitación en el sitio, que son varios pasos sueltos (con marcha atrás manual si fallan) y no un `DB.batch`; transferir la propiedad de
+un negocio SÍ pasó a ser atómico (`DB.batch`).
+

@@ -19,6 +19,7 @@ import '../domain/dinero.dart';
 import '../domain/venta.dart';
 import '../ui/tema/tokens.dart';
 import '../servicios/avisos_cobro_mp.dart';
+import 'cliente_companion.dart' show ErrorCompanion;
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'tema/hoja_vidrio.dart';
@@ -63,6 +64,7 @@ enum _Fase {
   esperando,
   cancelando,
   cobrandoAMano,
+  guardandoVenta,
   aprobado,
   rechazado,
   expirado,
@@ -116,6 +118,15 @@ class _DialogoCobroPosnetCompanionState
   static const _maxFallasSeguidas = 3;
   bool _errorAlCancelar = false;
   ({int ventaId, int totalCentavos})? _resultadoAprobado;
+
+  /// La terminal ya aprobó el pago: el cliente PAGÓ. Desde acá, "Reintentar" no puede crear otra orden (cobraría dos veces) ni
+  /// "Cobrar a mano" grabar otra venta (quizá la primera sí se guardó y solo se perdió la respuesta): lo único seguro es volver a
+  /// pedir que se guarde ESTA venta, que el servidor resuelve de forma idempotente (misma orden = misma venta).
+  bool _pagoAprobado = false;
+
+  /// Cuántas veces se intenta guardar la venta antes de mostrar el error, y cuánto se espera entre una y otra (sin red un momento).
+  static const _intentosDeGuardado = 4;
+  Duration esperaEntreIntentosDeGuardado(int intento) => Duration(seconds: 1 << intento); // 1, 2, 4 s
 
   @override
   void initState() {
@@ -184,26 +195,8 @@ class _DialogoCobroPosnetCompanionState
       if (enTerminal != _enTerminal) setState(() => _enTerminal = enTerminal);
 
       if (resultado == ResultadoOrdenCobro.aprobada) {
-        try {
-          _resultadoAprobado = await widget.cliente.confirmarCobroPosnet(
-            ordenPendienteId: _ordenPendienteId!,
-            lineas: widget.lineas,
-            canal: widget.canal,
-            sesionCajaId: widget.sesionCajaId,
-            usuarioId: widget.usuarioId,
-            tipoDescuento: widget.tipoDescuento,
-            valorDescuento: widget.valorDescuento,
-            encargueId: widget.encargueId,
-          );
-          if (mounted) setState(() => _fase = _Fase.aprobado);
-        } catch (e) {
-          if (mounted) {
-            setState(() {
-              _fase = _Fase.error;
-              _error = mensajeDeError(e);
-            });
-          }
-        }
+        _pagoAprobado = true;
+        await _guardarVentaAprobada();
         return;
       }
       if (resultado == ResultadoOrdenCobro.rechazada) {
@@ -219,6 +212,43 @@ class _DialogoCobroPosnetCompanionState
     if (mounted && _fase == _Fase.esperando) {
       setState(() => _fase = _Fase.expirado);
     }
+  }
+
+  /// Graba la venta de un pago ya aprobado. Un corte de red NO es un rechazo: se reintenta solo unas veces (el servidor es
+  /// idempotente por orden, así que repetir nunca duplica la venta) antes de pedirle algo a la persona. Una respuesta del servidor
+  /// (`ErrorCompanion`: por ejemplo "la caja ya se cerró") es definitiva y se muestra de una.
+  Future<void> _guardarVentaAprobada() async {
+    if (mounted) setState(() => _fase = _Fase.guardandoVenta);
+    Object? ultimoError;
+    for (var intento = 0; intento < _intentosDeGuardado; intento++) {
+      if (intento > 0) await Future<void>.delayed(esperaEntreIntentosDeGuardado(intento));
+      if (!mounted) return;
+      try {
+        _resultadoAprobado = await widget.cliente.confirmarCobroPosnet(
+          ordenPendienteId: _ordenPendienteId!,
+          lineas: widget.lineas,
+          canal: widget.canal,
+          sesionCajaId: widget.sesionCajaId,
+          usuarioId: widget.usuarioId,
+          tipoDescuento: widget.tipoDescuento,
+          valorDescuento: widget.valorDescuento,
+          encargueId: widget.encargueId,
+        );
+        if (mounted) setState(() => _fase = _Fase.aprobado);
+        return;
+      } on ErrorCompanion catch (e) {
+        ultimoError = e;
+        break;
+      } catch (e) {
+        ultimoError = e;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _fase = _Fase.error;
+      _error = 'El pago YA se cobró en la terminal, pero no se pudo guardar la venta: ${mensajeDeError(ultimoError!)} '
+          'No cobres de nuevo: tocá Reintentar para guardarla.';
+    });
   }
 
   void _cancelar() {
@@ -342,7 +372,7 @@ class _DialogoCobroPosnetCompanionState
         _enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto',
       ),
       _Fase.cancelando => _filaCargando('Cancelando en la terminal...'),
-      _Fase.cobrandoAMano => _filaCargando('Grabando la venta — $monto'),
+      _Fase.cobrandoAMano || _Fase.guardandoVenta => _filaCargando('Grabando la venta — $monto'),
       _Fase.aprobado => Text('Pago aprobado — $monto'),
       _Fase.rechazado => const Text('El pago no se aprobó en la terminal.'),
       _Fase.expirado => const Text(
@@ -372,7 +402,7 @@ class _DialogoCobroPosnetCompanionState
       _Fase.creando || _Fase.esperando => [
         TextButton(onPressed: _cancelar, child: const Text('Cancelar')),
       ],
-      _Fase.cancelando || _Fase.cobrandoAMano => [],
+      _Fase.cancelando || _Fase.cobrandoAMano || _Fase.guardandoVenta => [],
       _Fase.aprobado => [
         FilledButton(onPressed: _cerrar, child: const Text('Listo')),
       ],
@@ -381,6 +411,11 @@ class _DialogoCobroPosnetCompanionState
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cerrar'),
         ),
+      ],
+      // Pago ya aprobado: solo se puede volver a guardar ESTA venta (o cerrar y revisarla en el cierre: la orden queda "sin resolver").
+      _Fase.error when _pagoAprobado => [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar')),
+        FilledButton(onPressed: _guardarVentaAprobada, child: const Text('Reintentar')),
       ],
       _Fase.rechazado || _Fase.expirado || _Fase.error => [
         TextButton(onPressed: _cobrarAMano, child: const Text('Cobrar a mano')),

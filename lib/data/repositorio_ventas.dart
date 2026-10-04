@@ -292,12 +292,22 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // Cargar un día histórico escribe ventas en una sesión que nace cerrada (`repositorio_carga_historica.dart`): es la única
   // excepción a "no se cobra contra una caja cerrada". Todo lo demás (PC, celular, posnet) tiene que dejarla en `true`.
   bool exigirSesionAbierta = true,
+  // La orden de la Point (`ordenes_cobro_pendientes`) que esta venta cobra: se marca aprobada y ligada a la venta en la MISMA
+  // transacción. Antes eran dos escrituras sueltas: una caída en el medio dejaba la venta grabada y la orden "sin resolver"
+  // (falsa alarma en el cierre), y un reintento del celular grababa la venta otra vez.
+  int? ordenCobroPendienteId,
 }) {
   return db.transaction(() async {
     // Un pago negativo no es plata que entró: restaría del esperado de su caja (revisión 2026-10-03: un mixto cuyo
     // total bajó después de cargar el efectivo grababa Mercado Pago en negativo).
     if (pagos.any((p) => p.montoCentavos < 0)) {
       throw ArgumentError('Un pago no puede ser negativo');
+    }
+    // Lo cobrado es lo que vale la venta, ni un centavo más ni menos: si no, el esperado de cada caja y la conciliación con
+    // Mercado Pago quedan descuadrados para siempre sin que nadie sepa de dónde salió la diferencia.
+    final cobrado = pagos.fold<int>(0, (suma, p) => suma + p.montoCentavos);
+    if (cobrado != resultado.totalCentavos) {
+      throw ArgumentError('Los pagos ($cobrado) no suman el total de la venta (${resultado.totalCentavos})');
     }
     // Dentro de la transacción, igual que gastos e ingresos: si el cierre llega justo antes, la venta se rechaza en vez de
     // grabarse contra una sesión cerrada (cambiaría los totales de un cierre ya hecho).
@@ -383,6 +393,13 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
               ),
             );
       }
+    }
+
+    if (ordenCobroPendienteId != null) {
+      final filas = await (db.update(db.ordenesCobroPendientes)..where((o) => o.id.equals(ordenCobroPendienteId))).write(
+        OrdenesCobroPendientesCompanion(estado: const Value('aprobada'), ventaId: Value(ventaId)),
+      );
+      if (filas == 0) throw ArgumentError('No existe la orden de cobro $ordenCobroPendienteId');
     }
 
     return (ventaId, stockActualizado);
@@ -739,6 +756,10 @@ Future<List<PagoARegistrar>> pagosSegunMedio(
 
 /// Calcula, arma los pagos y graba — el mismo camino tanto para "cobrar
 /// efectivo directo" como para "el posnet ya aprobó".
+///
+/// Con [ordenCobroPendienteId] (el posnet ya aprobó esa orden) confirmar es IDEMPOTENTE: si la orden ya quedó ligada a una venta,
+/// se devuelve esa venta y no se graba otra. Es lo que pasa cuando el celular no recibe la respuesta de "confirmar" y reintenta:
+/// sin esto la misma plata entraba dos veces a la caja.
 Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   AppDatabase db, {
   required List<LineaVenta> lineas,
@@ -749,28 +770,41 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
   int? encargueId,
-}) async {
-  final resultado = await calcularResultadoVenta(
-    db,
-    lineas: lineas,
-    medio: medio,
-    tipoDescuento: tipoDescuento,
-    valorDescuento: valorDescuento,
-  );
-  final pagos = await pagosSegunMedio(
-    db,
-    medio: medio,
-    totalCentavos: resultado.totalCentavos,
-    canal: canal,
-  );
-  final (ventaId, _) = await registrarVenta(
-    db,
-    venta: Venta(lineas: lineas),
-    resultado: resultado,
-    sesionCajaId: sesionCajaId,
-    usuarioId: usuarioId,
-    pagos: pagos,
-    encargueId: encargueId,
-  );
-  return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
+  int? ordenCobroPendienteId,
+}) {
+  return db.transaction(() async {
+    if (ordenCobroPendienteId != null) {
+      final orden = await (db.select(db.ordenesCobroPendientes)..where((o) => o.id.equals(ordenCobroPendienteId))).getSingleOrNull();
+      if (orden == null) throw ArgumentError('No existe la orden de cobro $ordenCobroPendienteId');
+      final yaGrabada = orden.ventaId;
+      if (yaGrabada != null) {
+        final venta = await (db.select(db.ventas)..where((v) => v.id.equals(yaGrabada))).getSingle();
+        return (ventaId: yaGrabada, totalCentavos: venta.totalCentavos);
+      }
+    }
+    final resultado = await calcularResultadoVenta(
+      db,
+      lineas: lineas,
+      medio: medio,
+      tipoDescuento: tipoDescuento,
+      valorDescuento: valorDescuento,
+    );
+    final pagos = await pagosSegunMedio(
+      db,
+      medio: medio,
+      totalCentavos: resultado.totalCentavos,
+      canal: canal,
+    );
+    final (ventaId, _) = await registrarVenta(
+      db,
+      venta: Venta(lineas: lineas),
+      resultado: resultado,
+      sesionCajaId: sesionCajaId,
+      usuarioId: usuarioId,
+      pagos: pagos,
+      encargueId: encargueId,
+      ordenCobroPendienteId: ordenCobroPendienteId,
+    );
+    return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
+  });
 }

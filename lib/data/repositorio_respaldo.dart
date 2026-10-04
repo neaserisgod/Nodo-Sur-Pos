@@ -132,8 +132,35 @@ Future<String> rutaArchivoBaseDeDatos() async {
 /// puede sobrescribir un archivo que SQLite todavía tiene abierto) y de
 /// reiniciar la app después — ver `PantallaRespaldo`, que hace las tres cosas
 /// en orden.
+///
+/// Reemplazo a prueba de cortes (revisión 2026-10-04): antes era un `File.copy` directo encima de la base, así que un corte de
+/// luz a mitad de la copia dejaba la base real a medias y sin respaldo del estado anterior. Ahora:
+///  1. se copia al lado, a `<destino>.restaurando`, y se comprueba que pesa lo mismo que el original;
+///  2. la base que se va a reemplazar queda guardada como `<destino>.antes-de-restaurar` (una sola copia, la última): restaurar
+///     el archivo equivocado ya no es irreversible;
+///  3. se borran los `-wal` / `-shm` / `-journal` de la base vieja (aplicados a la nueva la corromperían);
+///  4. se renombra el temporal sobre el destino (el renombrado es atómico en el mismo disco): o queda la base vieja entera o la
+///     nueva entera, nunca una mezcla.
 Future<void> restaurarDesdeArchivo({required String rutaRespaldo, required String rutaDestino}) async {
-  await File(rutaRespaldo).copy(rutaDestino);
+  final origen = File(rutaRespaldo);
+  final destino = File(rutaDestino);
+  final temporal = File('$rutaDestino.restaurando');
+  try {
+    await origen.copy(temporal.path);
+    if (await temporal.length() != await origen.length()) {
+      throw const FileSystemException('La copia del respaldo quedó incompleta');
+    }
+    if (await destino.exists()) await destino.copy('$rutaDestino.antes-de-restaurar');
+    for (final sufijo in const ['-wal', '-shm', '-journal']) {
+      final resto = File('$rutaDestino$sufijo');
+      if (await resto.exists()) await resto.delete();
+    }
+    await temporal.rename(rutaDestino);
+  } catch (_) {
+    // Cualquier falla deja la base actual como estaba y sin restos a medias.
+    if (await temporal.exists()) await temporal.delete();
+    rethrow;
+  }
 }
 
 /// Relanza el mismo ejecutable y termina el proceso actual — la forma más

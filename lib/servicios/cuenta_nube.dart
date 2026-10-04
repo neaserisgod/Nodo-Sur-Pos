@@ -166,6 +166,8 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
   'sin_permiso_devolver' => 'Devolver por Mercado Pago lo pueden hacer el dueño o el encargado.',
   'ya_devuelta' => 'Ese cobro ya estaba devuelto.',
+  'mp_sin_respuesta' => 'Mercado Pago no respondió a tiempo. Probá de nuevo en un momento.',
+  'orden_de_otra_sucursal' => 'Ese cobro es de otra sucursal: hay que cancelarlo o devolverlo desde la caja que lo cobró.',
   'no_cobrada' => 'Ese cobro no figura como cobrado en Mercado Pago: no hay nada para devolver.',
   _ => 'El servicio respondió con un error ($codigo).',
 };

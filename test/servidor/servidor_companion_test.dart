@@ -1024,6 +1024,15 @@ void main() {
       );
     }
 
+    // Una venta de verdad se paga: `registrarVenta` rechaza pagos que no suman el total (revisión 2026-10-04).
+    Future<List<PagoARegistrar>> pagoEnEfectivo(int totalCentavos) async => [
+      PagoARegistrar(
+        medioPagoId: (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle()).id,
+        montoCentavos: totalCentavos,
+        esEfectivo: true,
+      ),
+    ];
+
     Map<String, dynamic> lineaCoca(int productoId, {int cantidad = 1}) => lineaVentaAJson(
       LineaVentaPorUnidad(
         productoId: '$productoId',
@@ -1701,7 +1710,7 @@ void main() {
           ),
           sesionCajaId: sesionId,
           usuarioId: usuarioId,
-          pagos: [],
+          pagos: await pagoEnEfectivo(224500),
         );
 
         final respuesta = await http.get(url('/ventas/$ventaId/detalle'), headers: headers());
@@ -1748,7 +1757,7 @@ void main() {
           ),
           sesionCajaId: sesionId,
           usuarioId: usuarioId,
-          pagos: [],
+          pagos: await pagoEnEfectivo(112000),
         );
 
         final respuesta = await http.post(url('/ventas/$ventaId/imprimir'), headers: headers());
@@ -1782,7 +1791,7 @@ void main() {
           ),
           sesionCajaId: sesionId,
           usuarioId: usuarioId,
-          pagos: [],
+          pagos: await pagoEnEfectivo(112000),
         );
         var seLlamo = false;
         final puertoMock = await servidorConMock(

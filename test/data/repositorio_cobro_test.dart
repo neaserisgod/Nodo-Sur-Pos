@@ -40,12 +40,22 @@ void main() {
     expect(fila.ventaId, isNull);
   });
 
-  test('dos órdenes seguidas tienen externalReference e idempotencyKey distintos', () async {
+  test('dos cobros seguidos (el primero ya tiene su orden en Mercado Pago) tienen externalReference e idempotencyKey distintos', () async {
     final a = await crearOrdenPendiente(db, sesionCajaId: sesionId, canal: 'qr', montoCentavos: 100000);
+    await marcarOrdenConId(db, id: a.id, ordenIdMp: 'orden-mp-1');
     final b = await crearOrdenPendiente(db, sesionCajaId: sesionId, canal: 'qr', montoCentavos: 100000);
 
     expect(a.externalReference, isNot(b.externalReference));
     expect(a.idempotencyKey, isNot(b.idempotencyKey));
+  });
+
+  test('un intento que nunca obtuvo respuesta se reutiliza (misma clave): es el reintento del MISMO cobro', () async {
+    final a = await crearOrdenPendiente(db, sesionCajaId: sesionId, canal: 'qr', montoCentavos: 100000);
+    final b = await crearOrdenPendiente(db, sesionCajaId: sesionId, canal: 'qr', montoCentavos: 100000);
+
+    expect(b.id, a.id);
+    expect(b.externalReference, a.externalReference);
+    expect(b.idempotencyKey, a.idempotencyKey);
   });
 
   test('marcarOrdenConId guarda el id de Mercado Pago sin tocar el estado propio ("pendiente")', () async {

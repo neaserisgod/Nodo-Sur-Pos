@@ -73,7 +73,7 @@ import '../data/repositorio_ticket.dart';
 import '../servicios/actualizaciones.dart' show leerVersionApp;
 import '../data/repositorio_usuarios.dart';
 import '../data/repositorio_encargues.dart';
-import '../data/repositorio_pendientes.dart' show cobrarDeuda;
+import '../data/repositorio_pendientes.dart' show PendienteYaResueltoException, cobrarDeuda;
 import '../data/repositorio_ventas.dart';
 import '../servicios/nube.dart' show nubeApp;
 import '../servicios/pasarela_point_nube.dart';
@@ -210,6 +210,53 @@ Future<File> _archivoErroresCompanion() async {
   return File(path.join(documentos.path, 'companion_errores.log'));
 }
 
+/// El log de errores no crece sin tope (revisión 2026-10-04): cualquiera en el wifi puede mandar pedidos rotos a las rutas sin
+/// llave (`/emparejar`) y cada uno escribía un renglón con su stack trace hasta llenar el disco de la caja. Pasado este tamaño
+/// el archivo se renombra a `.1` (pisando el anterior): quedan los últimos ~2 MB, que alcanzan para diagnosticar.
+const int tamanioMaximoLogErrores = 1024 * 1024;
+
+Future<void> _anotarErrorDelServidor(String texto) async {
+  final archivo = await _archivoErroresCompanion();
+  if (await archivo.exists() && await archivo.length() > tamanioMaximoLogErrores) {
+    await archivo.rename('${archivo.path}.1');
+  }
+  await archivo.writeAsString(texto, mode: FileMode.append);
+}
+
+/// Un pedido con más cuerpo del que la app puede necesitar. Las rutas sin llave aceptan muy poco; las demás, lo que pesa una
+/// carga histórica o un lote de sincronización grandes.
+class _CuerpoDemasiadoGrande implements Exception {
+  const _CuerpoDemasiadoGrande();
+}
+
+/// No son `const` solo para que los tests puedan bajarlos; el código de la app no los toca.
+int maximoCuerpoPedido = 20 * 1024 * 1024;
+int maximoCuerpoPedidoSinLlave = 2 * 1024;
+
+/// Corta los pedidos con un cuerpo desmedido ANTES de leerlos (el servidor escucha en toda la red del local y `/ping`,
+/// `/emparejar` y `/companion/apk` no piden llave): con `Content-Length` se rechaza al instante; sin él (chunked) se cuenta lo que
+/// llega y se corta al pasarse.
+Middleware _limiteDeCuerpo() {
+  return (Handler interno) {
+    return (Request request) async {
+      // Una consulta (GET/HEAD) no lleva cuerpo que cuidar, y a `/companion/eventos` (una conexión que queda abierta) no se le toca.
+      if (request.method == 'GET' || request.method == 'HEAD') return interno(request);
+      final sinLlave = request.url.path == 'ping' || request.url.path == 'emparejar' || request.url.path == 'companion/apk';
+      final maximo = sinLlave ? maximoCuerpoPedidoSinLlave : maximoCuerpoPedido;
+      final declarado = request.contentLength;
+      if (declarado != null && declarado > maximo) return _error(413, 'El pedido es demasiado grande');
+      if (declarado != null) return interno(request);
+      var leidos = 0;
+      final limitado = request.read().map((trozo) {
+        leidos += trozo.length;
+        if (leidos > maximo) throw const _CuerpoDemasiadoGrande();
+        return trozo;
+      });
+      return interno(request.change(body: limitado));
+    };
+  };
+}
+
 /// Envuelve un handler que puede tirar `FormatException`/`ArgumentError`
 /// (dato inválido del celular, o una validación real del dominio como "un
 /// pesable necesita precio por kilo") y los traduce a 400 en vez de que
@@ -225,18 +272,31 @@ Handler _conManejoDeErrores(Handler handler) {
   return (request) async {
     try {
       return await handler(request);
+    } on _CuerpoDemasiadoGrande {
+      return _error(413, 'El pedido es demasiado grande');
     } on FormatException catch (e) {
       return _error(400, e.message);
     } on ArgumentError catch (e) {
       return _error(400, e.message.toString());
+    } on TypeError catch (e, stack) {
+      // Un cuerpo con la forma equivocada (`[]` en vez de un objeto, un campo de otro tipo) es un pedido mal armado, no una falla
+      // del servidor: 400. Pero un `TypeError` también es lo que tira un `!` sobre un null, o sea un bug propio: queda anotado.
+      try {
+        await _anotarErrorDelServidor(
+          '${DateTime.now().toIso8601String()} '
+          '${request.method} ${request.requestedUri.path} (400)\n'
+          '$e\n$stack\n\n',
+        );
+      } catch (_) {
+        // sin poder escribir el log, el 400 de abajo responde igual.
+      }
+      return _error(400, 'El pedido no tiene el formato esperado');
     } catch (e, stack) {
       try {
-        final archivo = await _archivoErroresCompanion();
-        await archivo.writeAsString(
+        await _anotarErrorDelServidor(
           '${DateTime.now().toIso8601String()} '
           '${request.method} ${request.requestedUri.path}\n'
           '$e\n$stack\n\n',
-          mode: FileMode.append,
         );
       } catch (_) {
         // si ni siquiera se pudo escribir el log, no hay mucho más para
@@ -479,6 +539,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       return _json({'ventaId': ventaId});
     } on SesionCerradaException {
       return _error(409, 'La caja ya se cerró, este cobro no se guardó');
+    } on PendienteYaResueltoException {
+      return _error(409, 'Esa deuda ya estaba cobrada');
     }
   });
 
@@ -1365,23 +1427,17 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
-    final pendiente = await crearOrdenPendiente(
-      db,
-      sesionCajaId: _intRequerido(body, 'sesionCajaId'),
-      canal: canal,
-      montoCentavos: resultado.totalCentavos,
-    );
     try {
-      final creada = await pasarela.crear(
-        externalReference: pendiente.externalReference,
-        idempotencyKey: pendiente.idempotencyKey,
-        montoCentavos: resultado.totalCentavos,
+      final orden = await iniciarOrdenDeCobro(
+        db,
+        pasarela,
+        sesionCajaId: _intRequerido(body, 'sesionCajaId'),
         canal: canal,
+        montoCentavos: resultado.totalCentavos,
       );
-      await marcarOrdenConId(db, id: pendiente.id, ordenIdMp: creada.ordenIdMp);
       return _json({
-        'ordenPendienteId': pendiente.id,
-        'ordenIdMp': creada.ordenIdMp,
+        'ordenPendienteId': orden.ordenPendienteId,
+        'ordenIdMp': orden.ordenIdMp,
         'totalCentavos': resultado.totalCentavos,
       }, status: 201);
     } on CobroPosnetException catch (e) {
@@ -1428,6 +1484,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         tipoDescuento: tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: body['encargueId'] as int?,
+        // La orden queda ligada a la venta en la misma transacción, y un reintento del celular (no recibió la respuesta)
+        // devuelve la venta ya grabada en vez de cobrar dos veces.
+        ordenCobroPendienteId: _intRequerido(body, 'ordenPendienteId'),
       );
     } on SesionCerradaException {
       // El pago ya se cobró en la terminal: la orden queda SIN resolver a propósito, así el cierre avisa que hay un cobro
@@ -1437,12 +1496,6 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     // Etapa C: el ticket en la terminal también para lo que cobra el celular por esta PC (el interruptor es de la PC). En
     // segundo plano y sin tocar la venta si falla.
     unawaited(imprimirTicketAlCobrar(db, resultado.ventaId, client: httpClientDePrueba));
-    await marcarOrdenResuelta(
-      db,
-      id: _intRequerido(body, 'ordenPendienteId'),
-      estado: 'aprobada',
-      ventaId: resultado.ventaId,
-    );
     return _json({
       'ventaId': resultado.ventaId,
       'totalCentavos': resultado.totalCentavos,
@@ -1454,11 +1507,17 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   router.post('/ventas/posnet/no-aprobado', (Request request) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    await marcarOrdenResuelta(
-      db,
-      id: _intRequerido(body, 'ordenPendienteId'),
-      estado: _textoRequerido(body, 'estado'),
-    );
+    // Solo un cierre sin venta: 'aprobada' (y 'devuelta') las escribe `/confirmar` junto con la venta, nunca un pedido suelto.
+    final estado = _textoRequerido(body, 'estado');
+    if (estado != 'rechazada' && estado != 'cancelada') {
+      return _error(400, '"estado" tiene que ser "rechazada" o "cancelada"');
+    }
+    final id = _intRequerido(body, 'ordenPendienteId');
+    // Una orden que ya terminó en una venta no se vuelve "no aprobada": ese cobro está hecho.
+    final orden = await (db.select(db.ordenesCobroPendientes)..where((o) => o.id.equals(id))).getSingleOrNull();
+    if (orden == null) return _error(404, 'No existe esa orden de cobro');
+    if (orden.ventaId != null) return _error(409, 'Esa orden ya terminó en una venta');
+    await marcarOrdenResuelta(db, id: id, estado: estado);
     return _json({'ok': true});
   });
 
@@ -1843,6 +1902,7 @@ Future<HttpServer> iniciarServidorCompanion(
 }) {
   final handler = const Pipeline()
       .addMiddleware(logRequests())
+      .addMiddleware(_limiteDeCuerpo())
       .addMiddleware(_autenticacion(db))
       .addMiddleware(_avisoDeCambios())
       .addMiddleware(_conManejoDeErrores)
