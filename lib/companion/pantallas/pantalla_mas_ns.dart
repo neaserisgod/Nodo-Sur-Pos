@@ -1,7 +1,5 @@
 // Más, tal cual el mock (docs/03 B5): la tarjeta del usuario, la apariencia (claro,
-// oscuro o automático), NEGOCIO, ESTA APLICACIÓN y "Desconectar de esta PC".
-// Lo que la app tiene y el mock no (encargues, pagar a un proveedor, cuenta de
-// Nodo Sur, modo de uso) se suma a esas mismas listas con el mismo aspecto.
+// oscuro o automático), NEGOCIO, ESTA APLICACIÓN y "Modo: … · Cambiar".
 
 import 'package:flutter/material.dart';
 
@@ -12,11 +10,7 @@ import '../pantalla_carga_historica.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
-import '../pantalla_historial_ventas.dart';
 import '../pantalla_pagar_proveedor.dart';
-import '../tablero_companion.dart';
-import '../base_local.dart';
-import '../tema/app_bar_companion.dart';
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 
@@ -90,22 +84,9 @@ class PantallaMasNs extends StatelessWidget {
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
-                    _Fila(icono: IconoNs.calendario, titulo: 'Cargar días anteriores', detalle: 'Completá ventas de días que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
-                    _Fila(
-                      icono: IconoNs.portapapeles,
-                      titulo: 'Historial de ventas',
-                      detalle: 'Hoy, ayer, la semana o el mes',
-                      onTap: () => app.irA((_) => const Scaffold(appBar: AppBarCompanion(titulo: 'Historial de ventas'), body: SafeArea(child: PantallaHistorialVentas()))),
-                    ),
-                    _Fila(
-                      icono: IconoNs.calendario,
-                      titulo: 'Tablero del día',
-                      detalle: 'Ventas por hora, más vendidos y stock bajo',
-                      onTap: () => app.irA((_) => Scaffold(appBar: const AppBarCompanion(titulo: 'Tablero del día'), body: SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, 24), child: TableroCompanion(db: baseLocalCompanion(), alTocarSeparar: () {}))))),
-                    ),
                     _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id))),
-                    _Fila(icono: IconoNs.billetera, titulo: 'Pagar a un proveedor', detalle: 'Copiá el alias y registrá la transferencia', onTap: () => app.irA((_) => const PantallaPagarProveedor())),
-                    _Fila(icono: IconoNs.enchufe, titulo: 'Cuenta de Nodo Sur', detalle: 'Sincronización y copias', onTap: () => app.irA((_) => const PantallaCuentaDelCelular())),
+                    _Fila(icono: IconoNs.billetera, titulo: 'Pagar proveedor', detalle: 'Anotá lo que le pagaste a cada uno', onTap: () => app.irA((_) => const PantallaPagarProveedor())),
+                    _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -113,28 +94,23 @@ class PantallaMasNs extends StatelessWidget {
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(
                   filas: [
-                    _Fila(
-                      icono: IconoNs.enchufe,
-                      titulo: 'Conexión con la PC',
-                      detalle: soloCelular && !app.pcEmparejada ? 'Funcionando solo en este celular' : (app.sinConexion ? 'Sin conexión · usás los datos del celular' : 'Conectado y sincronizado'),
-                      onTap: app.cambiarModo,
-                    ),
+                    _Fila(icono: IconoNs.enchufe, titulo: 'Cuenta', detalle: 'Sincronización: ${soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}', onTap: () => app.irA((_) => const PantallaCuentaDelCelular())),
                     _Fila(
                       icono: IconoNs.descarga,
                       titulo: 'Actualización',
-                      detalle: pend.hayActualizacion ? 'Hay una versión nueva' : 'Tenés la última versión',
+                      detalle: pend.hayActualizacion ? 'Hay una versión nueva · se baja sola' : 'Estás al día',
                       onTap: () => pend.hayActualizacion ? app.abrirActualizacion() : mostrarAvisoNs(context, 'Ya tenés la última versión'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 BotonNs(
-                  texto: app.pcEmparejada ? 'Desconectar de esta PC' : 'Emparejar con una PC',
+                  texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',
                   onTap: app.cambiarModo,
                   alto: 56,
                   tamanio: 16,
-                  fondo: app.pcEmparejada ? ns.bbg : ns.s,
-                  color: app.pcEmparejada ? ns.b : ns.ink,
+                  fondo: ns.bbg,
+                  color: ns.b,
                 ),
               ],
             );

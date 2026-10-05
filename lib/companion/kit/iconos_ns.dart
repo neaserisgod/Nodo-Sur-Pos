@@ -37,6 +37,8 @@ enum IconoNs {
   cerrar('M6 6l12 12M18 6L6 18'),
   computadora('M3 4h18v12H3zM8 20h8M12 16v4'),
   sinWifi('M2 8.8a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0M12 20h.01M4 4l16 16'),
+  celular('M7 3h10a1 1 0 011 1v16a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zM11 18h2'),
+  sinNube('M3 3l18 18M7.5 18A4.5 4.5 0 016 9.2a6 6 0 0110.8-1M17.5 18H11'),
   reintentar('M20 12a8 8 0 11-2.3-5.7M20 4v5h-5'),
   papelera('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3'),
   alertaCirculo('M12 8v5M12 16.5h.01M12 3a9 9 0 100 18 9 9 0 000-18z');

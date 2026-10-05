@@ -67,11 +67,11 @@ const List<FuncionNs> indiceFunciones = [
   FuncionNs(seccion: 3, titulo: 'Activar o desactivar formas de cobro', ruta: 'Más › Configuración › Formas de cobro que aceptás', claves: 'efectivo qr debito mixto', icono: IconoNs.ajustes, accion: AccionFuncion.configuracion),
   FuncionNs(seccion: 3, titulo: 'Ganancia de referencia por categoría', ruta: 'Más › Configuración', claves: 'margen porcentaje', icono: IconoNs.ajustes, accion: AccionFuncion.configuracion),
   FuncionNs(seccion: 3, titulo: 'Agregar o desactivar usuarios', ruta: 'Más › Configuración › Quiénes usan la app', claves: 'empleado persona nombre', icono: IconoNs.ajustes, accion: AccionFuncion.configuracion),
-  FuncionNs(seccion: 3, titulo: 'Cargar días anteriores', ruta: 'Más › Cargar días anteriores', claves: 'historico ventas pasadas completar', icono: IconoNs.calendario, accion: AccionFuncion.diasAnteriores),
+  FuncionNs(seccion: 3, titulo: 'Cargar días anteriores', ruta: 'Más › Carga histórica', claves: 'historico ventas pasadas completar', icono: IconoNs.calendario, accion: AccionFuncion.diasAnteriores),
   FuncionNs(seccion: 3, titulo: 'Cambiar de usuario', ruta: 'Más › Cambiar (usuario)', claves: 'turno quien sos salir', icono: IconoNs.ajustes, accion: AccionFuncion.cambiarUsuario),
-  FuncionNs(seccion: 3, titulo: 'Estado de la conexión con la PC', ruta: 'Más › Conexión con la PC', claves: 'wifi sin internet sincronizar offline', icono: IconoNs.enchufe, accion: AccionFuncion.irAMas),
+  FuncionNs(seccion: 3, titulo: 'Estado de la conexión con la PC', ruta: 'Más › Cuenta', claves: 'wifi sin internet sincronizar offline', icono: IconoNs.enchufe, accion: AccionFuncion.irAMas),
   FuncionNs(seccion: 3, titulo: 'Actualizar la aplicación', ruta: 'Más › Actualización', claves: 'version nueva instalar', icono: IconoNs.descarga, accion: AccionFuncion.actualizar),
-  FuncionNs(seccion: 3, titulo: 'Desconectar de esta PC', ruta: 'Más › Desconectar de esta PC', claves: 'emparejar qr vincular', icono: IconoNs.enchufe, accion: AccionFuncion.desconectar),
+  FuncionNs(seccion: 3, titulo: 'Desconectar de esta PC', ruta: 'Más › Modo · Cambiar', claves: 'emparejar qr vincular', icono: IconoNs.enchufe, accion: AccionFuncion.desconectar),
 ];
 
 /// Sugerencias del estado inicial y de "sin resultados".

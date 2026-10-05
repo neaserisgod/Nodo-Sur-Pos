@@ -5,6 +5,9 @@
 import 'package:flutter/material.dart';
 
 import '../app_ns.dart';
+import '../configurar/pendientes_en_inicio.dart';
+import '../modo_uso.dart';
+import '../sync_nube_companion.dart';
 import '../kit/kit_ns.dart';
 import '../pantalla_consultar_precio.dart';
 import '../pantalla_movimiento_caja.dart';
@@ -45,6 +48,15 @@ class PantallaInicioNs extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: margenNs),
                   child: Text('Hola, ${app.nombreUsuario ?? ''}', style: tituloNs(44, altura: 1.02, color: ns.ink)),
                 ),
+                if (app.sinConexion && app.modoUso != ModoUso.soloCelular)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(margenNs, 14, margenNs, 0),
+                    child: InfoNs(
+                      'La PC emparejada no contestó — vendiendo con la copia local, se sincroniza solo cuando vuelva a estar disponible.',
+                      icono: IconoNs.sinNube,
+                    ),
+                  ),
+                const PendientesEnInicio(),
                 const SizedBox(height: 14),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: margenNs),
@@ -106,23 +118,12 @@ class _FilaSuperior extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ns = context.ns;
-    final sin = app.sinConexion;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: margenNs),
       child: Row(
         children: [
-          // Solo informativo: el estado lo decide la conexión real con la PC.
-          Semantics(
-            label: sin ? 'Sin conexión con la PC' : 'Conectado a la PC',
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(color: sin ? ns.wbg : ns.gbg, shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: IconoNsWidget(sin ? IconoNs.sinWifi : IconoNs.computadora, tamanio: 22, color: sin ? ns.w : ns.g),
-            ),
-          ),
+          // Solo informativo: el estado lo decide la conexión real con la PC o la cuenta.
+          _IconoConexion(app: app),
           const Spacer(),
           BotonCircularNs(
             icono: IconoNs.campana,
@@ -132,6 +133,63 @@ class _FilaSuperior extends StatelessWidget {
             onTap: () => app.irA((_) => const PantallaNotificacionesNs()),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// El círculo de la izquierda: la computadora (con la PC), el wifi tachado (la PC no contesta), o el celular
+/// ("Por internet" en verde si la cuenta está vinculada, "Solo en este celular" en gris si no).
+class _IconoConexion extends StatefulWidget {
+  const _IconoConexion({required this.app});
+  final ControladorAppNs app;
+
+  @override
+  State<_IconoConexion> createState() => _IconoConexionState();
+}
+
+class _IconoConexionState extends State<_IconoConexion> {
+  bool _porInternet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.app.modoUso == ModoUso.soloCelular) _leerCuenta();
+  }
+
+  Future<void> _leerCuenta() async {
+    try {
+      final cuenta = await (await syncNubeDelCelular()).cuenta();
+      if (mounted && cuenta != null) setState(() => _porInternet = true);
+    } catch (_) {
+      // Sin cuenta legible se queda en "Solo en este celular".
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final app = widget.app;
+    final solo = app.modoUso == ModoUso.soloCelular;
+    final sin = !solo && app.sinConexion;
+    final (etiqueta, icono, fondo, color) = solo
+        ? (
+            _porInternet ? 'Por internet' : 'Solo en este celular',
+            IconoNs.celular,
+            _porInternet ? ns.gbg : ns.s,
+            _porInternet ? ns.g : ns.mute,
+          )
+        : sin
+        ? ('Sin conexión con la PC', IconoNs.sinWifi, ns.wbg, ns.w)
+        : ('Conectado a la PC', IconoNs.computadora, ns.gbg, ns.g);
+    return Semantics(
+      label: etiqueta,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(color: fondo, shape: BoxShape.circle),
+        alignment: Alignment.center,
+        child: IconoNsWidget(icono, tamanio: 22, color: color),
       ),
     );
   }

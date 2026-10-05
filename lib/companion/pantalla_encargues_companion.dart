@@ -7,15 +7,11 @@
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
-import '../ui/comun/estado_vacio.dart';
-import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart' show ApartadoCompanion, DeudaCompanion, EncargueCompanion, ProductoCompanion;
+import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'servicio_companion.dart';
-import 'tema/app_bar_companion.dart';
-import 'tema/superficie.dart';
-import 'tema/hoja_vidrio.dart';
 
 /// Lo que devuelve la pantalla al elegir "Entregar": el menú arma el carrito con esto.
 class EntregaEncargue {
@@ -76,14 +72,23 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
     if (creado == true) await _cargar();
   }
 
-  Future<void> _cancelar(EncargueCompanion e) async {
-    final confirmar = await confirmarAccionDestructiva(
+  Future<bool> _confirmar(String titulo, String texto, String confirmar, {bool peligro = true, String volver = 'Cancelar'}) async {
+    final ok = await mostrarHojaNs<bool>(
       context,
-      titulo: '¿Cancelar el encargue de ${e.nombreCliente}?',
-      contenido: 'Lo apartado vuelve al stock.',
-      textoConfirmar: 'Cancelar encargue',
+      builder: (ctx) => HojaNs(
+        titulo: titulo,
+        texto: texto,
+        botones: [
+          peligro ? BotonNs.peligroSolido(ctx, confirmar, () => Navigator.of(ctx).pop(true)) : BotonNs.primario(ctx, confirmar, () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, volver, () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
     );
-    if (!confirmar) return;
+    return ok ?? false;
+  }
+
+  Future<void> _cancelar(EncargueCompanion e) async {
+    if (!await _confirmar('¿Cancelar el encargue de ${e.nombreCliente}?', 'Lo apartado vuelve al stock.', 'Cancelar encargue', volver: 'Volver')) return;
     try {
       await widget.servicio.cancelarEncargue(e.id, usuarioId: widget.usuarioId);
       await _cargar();
@@ -93,13 +98,14 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   }
 
   Future<void> _entregarADeuda(EncargueCompanion e) async {
-    final confirmar = await confirmarAccionDestructiva(
-      context,
-      titulo: '¿Entregar a ${e.nombreCliente} y anotar la deuda?',
-      contenido: 'Se lleva lo apartado sin pagar. Queda en Deudas, a los precios de hoy, para cobrarle después. El stock ya está descontado.',
-      textoConfirmar: 'Entregar y anotar',
-    );
-    if (!confirmar) return;
+    if (!await _confirmar(
+      '¿Entregar a ${e.nombreCliente} y anotar la deuda?',
+      'Se lleva lo apartado sin pagar. Queda en Deudas, a los precios de hoy, para cobrarle después. El stock ya está descontado.',
+      'Entregar y anotar',
+      peligro: false,
+    )) {
+      return;
+    }
     try {
       await widget.servicio.entregarEncargueADeuda(e.id, usuarioId: widget.usuarioId);
       await _cargar();
@@ -111,30 +117,26 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   Future<void> _cobrarDeuda(DeudaCompanion d) async {
     final sesionId = widget.sesionCajaId;
     if (sesionId == null) {
-      setState(() => _error = 'Para cobrar una deuda hay que abrir la caja: el cobro entra como una venta del día.');
+      await mostrarHojaNs<void>(
+        context,
+        builder: (ctx) => HojaNs(
+          titulo: 'Cobrar a ${d.nombreCliente}',
+          texto: formatearARS(d.montoCentavos),
+          bloques: const [InfoNs('Para cobrar una deuda hay que abrir la caja: el cobro entra como una venta del día.', tono: TonoNs.warn)],
+          botones: [BotonNs.secundario(ctx, 'Cerrar', () => Navigator.of(ctx).pop())],
+        ),
+      );
       return;
     }
-    final efectivo = await mostrarHojaVidrio<bool>(
+    final efectivo = await mostrarHojaNs<bool>(
       context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Cobrar a ${d.nombreCliente}', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: Espaciado.xs),
-          Text(formatearARS(d.montoCentavos), style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Espaciado.lg),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Efectivo'),
-          ),
-          const SizedBox(height: Espaciado.sm),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)),
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Mercado Pago'),
-          ),
+      builder: (ctx) => HojaNs(
+        titulo: 'Cobrar a ${d.nombreCliente}',
+        texto: formatearARS(d.montoCentavos),
+        botones: [
+          BotonNs.primario(ctx, 'Efectivo', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Mercado Pago', () => Navigator.of(ctx).pop(false)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop()),
         ],
       ),
     );
@@ -155,118 +157,79 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
     Navigator.of(context).pop(EntregaEncargue(e.id));
   }
 
+  Widget _fechaYNombre(BuildContext context, String desde, String nombre) {
+    final ns = context.ns;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SeccionNs('Desde el $desde'),
+          const SizedBox(height: 4),
+          Text(nombre, style: tituloNs(30, track: -0.045, altura: 1.1, color: ns.ink)),
+        ],
+      ),
+    );
+  }
+
+  Widget _lineaDeTexto(BuildContext context, String texto) {
+    final ns = context.ns;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: ns.s2))),
+      child: Text(texto, style: estiloNs(15, color: ns.ink)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colores = context.colores;
-    return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Encargues'),
-      body: SafeArea(
-        child: _cargando
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
-                children: [
-                  FilledButton(
-                    key: const Key('encargue_nuevo'),
-                    style: FilledButton.styleFrom(minimumSize: const Size(128, 56)),
-                    onPressed: _nuevo,
-                    child: const Text('Nuevo encargue'),
+    final vacio = _encargues.isEmpty && _deudas.isEmpty;
+    return PaginaNs(
+      titulo: 'Encargues',
+      cuerpo: _cargando
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                KeyedSubtree(key: const Key('encargue_nuevo'), child: BotonNs.primario(context, 'Nuevo encargue', _nuevo, alto: 52, tamanio: 16)),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: InfoNs(_error!, key: const Key('encargues_error'), tono: TonoNs.bad),
                   ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: Espaciado.md),
-                      child: Text(_error!, key: const Key('encargues_error'), style: textTheme.bodyMedium?.copyWith(color: colores.error)),
+                if (vacio) const Padding(padding: EdgeInsets.only(top: 12), child: InfoNs('No hay encargues pendientes.')),
+                for (final e in _encargues)
+                  Column(
+                    key: Key('encargue_${e.id}'),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _fechaYNombre(context, '${e.desde.day}/${e.desde.month}', e.nombreCliente),
+                      for (final l in e.lineas) _lineaDeTexto(context, l),
+                      const SizedBox(height: 12),
+                      BotonNs.primario(context, 'Entregar', () => _entregar(e), alto: 52, tamanio: 16),
+                      const SizedBox(height: 8),
+                      KeyedSubtree(key: Key('encargue_deuda_${e.id}'), child: BotonNs.secundario(context, 'Entregar y anotar deuda', () => _entregarADeuda(e), alto: 52)),
+                      const SizedBox(height: 8),
+                      BotonNs.peligroSuave(context, 'Cancelar encargue', () => _cancelar(e)),
+                    ],
+                  ),
+                if (_deudas.isNotEmpty) ...[
+                  const Padding(padding: EdgeInsets.only(top: 22, bottom: 4), child: SeccionNs('Deudas')),
+                  for (final d in _deudas)
+                    Column(
+                      key: Key('deuda_${d.id}'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _fechaYNombre(context, '${d.desde.day}/${d.desde.month}', d.nombreCliente.isEmpty ? 'Deuda' : d.nombreCliente),
+                        if (d.detalle.isNotEmpty) _lineaDeTexto(context, d.detalle),
+                        const SizedBox(height: 12),
+                        BotonNs.primario(context, 'Cobrar ${formatearARS(d.montoCentavos)}', () => _cobrarDeuda(d), alto: 52, tamanio: 16),
+                      ],
                     ),
-                  const SizedBox(height: Espaciado.lg),
-                  if (_encargues.isEmpty && _deudas.isEmpty)
-                    const SizedBox(height: 320, child: EstadoVacio(mensaje: 'No hay encargues pendientes.'))
-                  else
-                    for (final e in _encargues)
-                      Padding(
-                        key: Key('encargue_${e.id}'),
-                        padding: const EdgeInsets.only(bottom: Espaciado.md),
-                        child: Superficie(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(child: Text(e.nombreCliente, style: textTheme.titleMedium)),
-                                  Text('desde el ${e.desde.day}/${e.desde.month}', style: textTheme.bodySmall),
-                                ],
-                              ),
-                              const SizedBox(height: Espaciado.sm),
-                              for (final l in e.lineas) Text(l, style: textTheme.bodyMedium),
-                              const SizedBox(height: Espaciado.md),
-                              // Mitad y mitad: con botones de ancho propio, el tema (que estira los botones) desbordaba el renglón.
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-                                      onPressed: () => _cancelar(e),
-                                      child: Text('Cancelar', style: TextStyle(color: colores.error)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: Espaciado.md),
-                                  Expanded(
-                                    child: FilledButton(
-                                      style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                                      onPressed: () => _entregar(e),
-                                      child: const Text('Entregar'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: Espaciado.sm),
-                              OutlinedButton(
-                                key: Key('encargue_deuda_${e.id}'),
-                                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-                                onPressed: () => _entregarADeuda(e),
-                                child: const Text('Entregar y anotar deuda'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  if (_deudas.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: Espaciado.md, bottom: Espaciado.md),
-                      child: Text('Deudas', style: textTheme.titleLarge),
-                    ),
-                    for (final d in _deudas)
-                      Padding(
-                        key: Key('deuda_${d.id}'),
-                        padding: const EdgeInsets.only(bottom: Espaciado.md),
-                        child: Superficie(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(child: Text(d.nombreCliente.isEmpty ? 'Deuda' : d.nombreCliente, style: textTheme.titleMedium)),
-                                  Text('desde el ${d.desde.day}/${d.desde.month}', style: textTheme.bodySmall),
-                                ],
-                              ),
-                              if (d.detalle.isNotEmpty) ...[
-                                const SizedBox(height: Espaciado.sm),
-                                Text(d.detalle, style: textTheme.bodyMedium),
-                              ],
-                              const SizedBox(height: Espaciado.md),
-                              FilledButton(
-                                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                                onPressed: () => _cobrarDeuda(d),
-                                child: Text('Cobrar ${formatearARS(d.montoCentavos)}'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
                 ],
-              ),
-      ),
+                const SizedBox(height: 12),
+              ],
+            ),
     );
   }
 }
@@ -311,36 +274,27 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
     }
   }
 
-  Future<void> _elegir(ProductoCompanion p) async {
-    final ctrl = TextEditingController(text: p.esPesable ? '' : '1');
-    final cantidad = await mostrarHojaVidrio<int>(
-      context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            p.esPesable ? 'Gramos de ${p.nombre}' : 'Cantidad de ${p.nombre}',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: Espaciado.md),
-          TextField(
-            controller: ctrl,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            onSubmitted: (t) => Navigator.of(context).pop(int.tryParse(t)),
-          ),
-          const SizedBox(height: Espaciado.lg),
-          FilledButton(onPressed: () => Navigator.of(context).pop(int.tryParse(ctrl.text)), child: const Text('Agregar')),
-        ],
-      ),
-    );
-    if (cantidad == null || cantidad <= 0) return;
+  /// Un toque en el resultado lo suma con 1 (o 100 g si se pesa); después se ajusta con el stepper.
+  void _elegir(ProductoCompanion p) {
     setState(() {
-      _elegidos.add((producto: p, cantidad: cantidad));
+      _elegidos.add((producto: p, cantidad: p.esPesable ? 100 : 1));
       _buscador.clear();
       _resultados = const [];
       _error = null;
+    });
+  }
+
+  void _cambiar(int i, int delta) {
+    final e = _elegidos[i];
+    final paso = e.producto.esPesable ? 100 : 1;
+    final nueva = e.cantidad + delta * paso;
+    setState(() {
+      _error = null;
+      if (nueva < paso) {
+        _elegidos.removeAt(i);
+      } else {
+        _elegidos[i] = (producto: e.producto, cantidad: nueva);
+      }
     });
   }
 
@@ -372,64 +326,62 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Nuevo encargue'),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
-          children: [
-            TextField(
-              key: const Key('encargue_nombre'),
-              controller: _nombre,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Cliente'),
-            ),
-            const SizedBox(height: Espaciado.md),
-            TextField(
-              key: const Key('encargue_buscador'),
-              controller: _buscador,
-              decoration: const InputDecoration(labelText: 'Buscar producto para apartar'),
-              onChanged: _buscar,
-            ),
-            for (final p in _resultados)
-              ListTile(
-                key: Key('encargue_opcion_${p.id}'),
-                title: Text(p.nombre),
-                subtitle: Text(p.esPesable ? '${p.stockGramos ?? 0} g en stock' : '${p.stock} en stock'),
+    final ns = context.ns;
+    return PaginaNs(
+      titulo: 'Nuevo encargue',
+      cuerpo: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          KeyedSubtree(
+            key: const Key('encargue_nombre'),
+            child: CampoNs(etiqueta: 'Cliente', controller: _nombre, placeholder: 'Nombre del cliente'),
+          ),
+          const SizedBox(height: 10),
+          KeyedSubtree(
+            key: const Key('encargue_buscador'),
+            child: CampoNs(etiqueta: 'Buscar producto para apartar', controller: _buscador, placeholder: 'Buscar producto', onChanged: _buscar),
+          ),
+          for (final p in _resultados)
+            KeyedSubtree(
+              key: Key('encargue_opcion_${p.id}'),
+              child: FilaProductoNs(
+                nombre: p.nombre,
+                detalle: p.esPesable ? '${p.stockGramos ?? 0} g en stock' : '${p.stock} en stock',
                 onTap: () => _elegir(p),
               ),
-            const SizedBox(height: Espaciado.md),
-            for (var i = 0; i < _elegidos.length; i++)
-              Row(
-                key: Key('encargue_elegido_$i'),
-                children: [
-                  Expanded(
-                    child: Text(
-                      _elegidos[i].producto.esPesable
-                          ? '${_elegidos[i].cantidad} g ${_elegidos[i].producto.nombre}'
-                          : '${_elegidos[i].cantidad} × ${_elegidos[i].producto.nombre}',
-                      style: textTheme.bodyLarge,
-                    ),
-                  ),
-                  IconButton(tooltip: 'Sacar', icon: const Icon(Icons.close), onPressed: () => setState(() => _elegidos.removeAt(i))),
-                ],
-              ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: Espaciado.sm),
-                child: Text(_error!, key: const Key('encargue_error'), style: textTheme.bodyMedium?.copyWith(color: context.colores.error)),
-              ),
-            const SizedBox(height: Espaciado.lg),
-            FilledButton(
-              key: const Key('encargue_apartar'),
-              style: FilledButton.styleFrom(minimumSize: const Size(128, 56)),
-              onPressed: _guardando || _elegidos.isEmpty ? null : _guardar,
-              child: const Text('Apartar'),
             ),
-          ],
-        ),
+          const SizedBox(height: 10),
+          for (var i = 0; i < _elegidos.length; i++)
+            Padding(
+              key: Key('encargue_elegido_$i'),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 6, 8, 6),
+                decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(_elegidos[i].producto.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, peso: FontWeight.w500, color: ns.ink))),
+                    StepperNs(
+                      cantidad: _elegidos[i].producto.esPesable ? '${_elegidos[i].cantidad} g' : '${_elegidos[i].cantidad}',
+                      onMenos: () => _cambiar(i, -1),
+                      onMas: () => _cambiar(i, 1),
+                      fondo: ns.s,
+                      anchoCantidad: 54,
+                      tamanioCantidad: 14,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
+      botones: [
+        if (_error != null) InfoNs(_error!, key: const Key('encargue_error'), tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+        KeyedSubtree(
+          key: const Key('encargue_apartar'),
+          child: BotonNs.primario(context, 'Apartar', _guardando || _elegidos.isEmpty ? null : _guardar, habilitado: !_guardando && _elegidos.isNotEmpty),
+        ),
+      ],
     );
   }
 }

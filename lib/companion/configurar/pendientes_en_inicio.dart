@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../ui/tema/tokens.dart';
+import '../kit/kit_ns.dart';
 import 'asistente_negocio.dart';
 import 'flujo_negocio.dart';
 import 'negocio_nuevo.dart';
@@ -29,7 +29,7 @@ class _PendientesEnInicioState extends State<PendientesEnInicio> {
       builder: (context, pendientes, _) {
         if (pendientes.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.lg, Espaciado.lg, 0),
+          padding: const EdgeInsets.fromLTRB(margenNs, 14, margenNs, 0),
           child: TarjetaConfiguracionPendiente(
             key: const Key('inicio-pendientes'),
             pendientes: pendientes,

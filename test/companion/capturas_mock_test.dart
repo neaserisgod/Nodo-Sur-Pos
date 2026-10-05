@@ -31,6 +31,9 @@ import 'package:la_plazoleta/companion/pantalla_formulario_producto.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_inicio_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_notificaciones_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
+import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
+import 'package:la_plazoleta/companion/configurar/negocio_nuevo.dart';
+import 'package:la_plazoleta/companion/pantallas/hoja_actualizar_ns.dart';
 
 import '../helpers/base_para_tests.dart';
 import '../helpers/controlador_falso_ns.dart';
@@ -231,10 +234,12 @@ void main() {
   }
 
   testWidgets('03-inicio', (t) async {
+    SharedPreferences.setMockInitialValues({});
     await servicioConCaja(t);
     await capturarNs(t, '03-inicio', const PantallaInicioNs(), barra: PestaniaNs.inicio);
   });
   testWidgets('03b-inicio-tablero', (t) async {
+    SharedPreferences.setMockInitialValues({});
     await servicioConCaja(t);
     await capturarNs(t, '03b-inicio-tablero', const PantallaInicioNs(), barra: PestaniaNs.inicio, antes: (t) async {
       await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
@@ -244,6 +249,7 @@ void main() {
     });
   });
   testWidgets('03-inicio oscuro', (t) async {
+    SharedPreferences.setMockInitialValues({});
     await servicioConCaja(t);
     await capturarNs(t, '03-inicio', const PantallaInicioNs(), barra: PestaniaNs.inicio, oscuro: true);
   });
@@ -883,6 +889,62 @@ void main() {
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
         await esperar(t);
         await t.tap(find.text('\$\u00A020.000'));
+        await esperar(t);
+      },
+    );
+  });
+
+  AsistenteNegocio asistente({PasoNegocio paso = PasoNegocio.negocio}) => AsistenteNegocio(
+        pasoInicial: paso,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => '7798123400055',
+        alGuardarProducto: (_) async {},
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+        categoriasExistentes: const ['Golosinas', 'Bebidas', 'Lácteos'],
+      );
+
+  testWidgets('02m-asistente-1-negocio', (t) async {
+    await capturarNs(t, '02m-asistente-1-negocio', asistente());
+  });
+  testWidgets('02n-asistente-1-rubro', (t) async {
+    await capturarNs(t, '02n-asistente-1-rubro', asistente(), antes: (t) async {
+      await t.enterText(find.byType(TextField).first, 'Almacén Don Pepe');
+      await t.pump();
+      await t.tap(find.byKey(const Key('rubro-kiosco')));
+      await esperar(t);
+      await t.drag(find.byType(Scrollable).first, const Offset(0, -300));
+      await esperar(t);
+    });
+  });
+  testWidgets('02o-asistente-2-escanear', (t) async {
+    await capturarNs(t, '02o-asistente-2-escanear', asistente(paso: PasoNegocio.producto));
+  });
+  testWidgets('02p-asistente-2-completar', (t) async {
+    await capturarNs(t, '02p-asistente-2-completar', asistente(paso: PasoNegocio.producto), antes: (t) async {
+      await t.tap(find.byKey(const Key('asistente-escanear')));
+      await esperar(t);
+    });
+  });
+  testWidgets('02r-asistente-3-cobros', (t) async {
+    await capturarNs(t, '02r-asistente-3-cobros', asistente(paso: PasoNegocio.cobros));
+  });
+  testWidgets('04d-inicio-pendiente-del-asistente', (t) async {
+    SharedPreferences.setMockInitialValues({'companion_configuracion_pendiente': ['producto', 'cobros']});
+    await servicioConCaja(t);
+    addTearDown(() => pasosPendientesNegocio.value = {});
+    await capturarNs(t, '04d-inicio-pendiente-del-asistente', const PantallaInicioNs(), barra: PestaniaNs.inicio, antes: (t) async {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await esperar(t);
+    });
+  });
+  testWidgets('41-actualizar-app', (t) async {
+    await capturarNs(
+      t,
+      '41-actualizar-app',
+      Builder(builder: (context) => Center(child: TextButton(onPressed: () => mostrarHojaActualizar(context, descargar: () async => File('x'), instalar: (_) async {}), child: const Text('abrir')))),
+      antes: (t) async {
+        await t.tap(find.text('abrir'));
         await esperar(t);
       },
     );

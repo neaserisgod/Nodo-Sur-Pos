@@ -124,10 +124,9 @@ Future<EstadoActualizacion> revisarActualizacion(
   );
 }
 
-/// Descarga el .apk que ofrece la PC a un archivo temporal y le pide a
-/// Android que lo instale — abre el instalador del sistema, la instalación
-/// en sí la confirma la persona (Android nunca deja instalar en silencio).
-Future<void> descargarEInstalarActualizacion(
+/// Descarga el .apk (del sitio, verificando su hash, o de la PC) a un archivo temporal, sin instalarlo todavía: la hoja
+/// de actualización muestra "Lista para instalar" entre una cosa y la otra.
+Future<File> descargarActualizacion(
   ClienteCompanion? cliente, {
   OfertaSitio? oferta,
 }) async {
@@ -152,5 +151,17 @@ Future<void> descargarEInstalarActualizacion(
     '${carpeta.path}/la_plazoleta_companion_actualizacion.apk',
   );
   await archivo.writeAsBytes(bytes);
+  return archivo;
+}
+
+/// Le pide a Android que instale el .apk descargado — abre el instalador del sistema, la instalación en sí la
+/// confirma la persona (Android nunca deja instalar en silencio).
+Future<void> instalarActualizacion(File archivo) async {
   await OpenFilex.open(archivo.path);
 }
+
+/// Las dos cosas juntas.
+Future<void> descargarEInstalarActualizacion(
+  ClienteCompanion? cliente, {
+  OfertaSitio? oferta,
+}) async => instalarActualizacion(await descargarActualizacion(cliente, oferta: oferta));

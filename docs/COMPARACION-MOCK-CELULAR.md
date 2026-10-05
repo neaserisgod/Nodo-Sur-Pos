@@ -68,6 +68,24 @@ mock"). Se compararon capturas de la app contra las del mock con `test/companion
 `capturas/companion-mock/`); la diferencia de píxeles va del 2 % al 14 % (tipografía y 1–3 px de interlineado). No se
 probó en un celular real.
 
+## 6b. Segunda vuelta del mock (2026-10-05)
+
+El dueño mandó un mock actualizado (175 capturas) que cubre casi todo lo que faltaba. Se hizo en 4 lotes:
+
+1. **Vender y Cobrar**: medios en lista (con Crédito), efectivo con "Justo" y billetes, "Cobrar a mano", descuento libre
+   (monto o porcentaje), cantidad exacta con un toque, deshacer al quitar, entregar un encargue, y la hoja de la terminal
+   con todos sus estados.
+2. **Caja**: cierre en dos etapas (contar a ciegas → revisar), contar la caja con aviso de 2 horas, gasto/ingreso con lata,
+   estados con la caja cerrada, cierres anteriores con detalle.
+3. **Productos y datos**: filtros y ganancia en Productos, edición en lote por contexto, formulario con ganancia, escáner,
+   Caja › Ventas por período con anular, Separar con lo vendido, tablero en Inicio, días históricos con detalle.
+4. **Arranque y gestión**: modo de uso, emparejar con código, entrar con Google, asistente de 3 pasos, Inicio con
+   estados de conexión y tarjeta de pasos pendientes, Encargues, Pagar proveedor, Cuenta y sincronización, Actualización
+   en 3 pasos (descargar → verificar → instalar) y Más.
+
+Desvíos a propósito: ver la lista en `ESTADO.md` ("Celular calcado del mock"). La pantalla "Probar estados" del mock no se
+implementa (es del simulador).
+
 ## 7. Plan por fases
 
 1. Tokens + iconos + componentes base + barra de 5 pestañas + cartel offline + toast + hoja.

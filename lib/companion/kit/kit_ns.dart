@@ -5,6 +5,7 @@ export 'formatos_ns.dart';
 export 'hoja_ns.dart';
 export 'iconos_ns.dart';
 export 'movimiento_ns.dart';
+export 'pagina_ns.dart';
 export 'piezas_ns.dart';
 export 'texto_ns.dart';
 export 'tokens_ns.dart';

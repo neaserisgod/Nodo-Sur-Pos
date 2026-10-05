@@ -127,7 +127,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    return _PaginaNs(
+    return PaginaNs(
       titulo: 'Días históricos',
       cuerpo: ListView(
         padding: EdgeInsets.zero,
@@ -158,37 +158,6 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
 }
 
 /// Página con el aspecto del mock: volver, título de 32, el cuerpo que scrollea y los botones fijos abajo.
-class _PaginaNs extends StatelessWidget {
-  const _PaginaNs({required this.titulo, required this.cuerpo, this.botones = const []});
-  final String titulo;
-  final Widget cuerpo;
-  final List<Widget> botones;
-
-  @override
-  Widget build(BuildContext context) {
-    final ns = context.ns;
-    return Scaffold(
-      backgroundColor: ns.paper,
-      body: SafeArea(
-        child: PantallaEntradaNs(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CabeceraSubNs(titulo: titulo, onVolver: () => Navigator.of(context).maybePop()),
-                const SizedBox(height: 14),
-                Expanded(child: cuerpo),
-                for (final b in botones) ...[const SizedBox(height: 8), b],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Confirmación de borrar algo del histórico (mock 39g/39h): hoja con el detalle y "Borrar" en rojo.
 Future<bool> _confirmarBorrado(BuildContext context, {required String titulo, String? texto}) async {
   final ok = await mostrarHojaNs<bool>(
@@ -279,7 +248,7 @@ class _PantallaDetalleDiaHistoricoState extends State<_PantallaDetalleDiaHistori
 
   @override
   Widget build(BuildContext context) {
-    return _PaginaNs(
+    return PaginaNs(
       titulo: _formatearFecha(widget.fecha),
       cuerpo: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -439,7 +408,7 @@ class _PantallaNuevoDiaHistoricoState extends State<_PantallaNuevoDiaHistorico> 
   Widget build(BuildContext context) {
     final fecha = _fecha;
     if (fecha == null) {
-      return _PaginaNs(
+      return PaginaNs(
         titulo: 'Nuevo día histórico',
         cuerpo: ListView(padding: EdgeInsets.zero, children: const [InfoNs('Elegí el día que querés cargar. Después armás las ventas una por una, cada una con su medio de pago.')]),
         botones: [BotonNs.primario(context, 'Elegir la fecha de este día', _elegirFecha, alto: 60)],
@@ -521,7 +490,7 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
   Widget build(BuildContext context) {
     final ns = context.ns;
     final total = _ventasCargadas.fold<int>(0, (acc, v) => acc + v.totalParaMostrar);
-    return _PaginaNs(
+    return PaginaNs(
       titulo: widget.titulo,
       cuerpo: ListView(
         padding: EdgeInsets.zero,

@@ -1,18 +1,11 @@
-// "¿Cómo usás el sistema?" — la primera pantalla de una instalación nueva, y a la que se vuelve desde Gestión para
-// cambiar de modo. Es solo la elección: qué pasa después (emparejar con la PC, o dejar el celular solo y ofrecer
+// "¿Cómo usás el sistema?" — la primera pantalla de una instalación nueva, y a la que se vuelve desde Más para cambiar de
+// modo (mock 01 y 01b). Es solo la elección: qué pasa después (emparejar con la PC, o dejar el celular solo y ofrecer
 // vincular la cuenta) lo resuelve `flujo_modo_uso.dart`.
 
 import 'package:flutter/material.dart';
 
-import '../domain/marca.dart';
-import '../servicios/marca_actual.dart';
-import '../ui/tema/iconos.dart';
-import '../ui/tema/tokens.dart';
-import 'bienvenida/aparecer.dart';
+import 'kit/kit_ns.dart';
 import 'modo_uso.dart';
-import 'tema/piezas_companion.dart';
-import 'tema/presionable.dart';
-import 'tema/tema_companion.dart';
 
 class PantallaElegirModo extends StatelessWidget {
   const PantallaElegirModo({super.key, required this.alElegir, this.actual});
@@ -20,147 +13,35 @@ class PantallaElegirModo extends StatelessWidget {
   /// Se llama con el modo tocado y el contexto de esta pantalla (para navegar desde ahí).
   final void Function(BuildContext context, ModoUso modo) alElegir;
 
-  /// El modo en uso hoy, si ya hay uno (cuando se llega desde Gestión): se marca y la pantalla tiene "volver".
+  /// El modo en uso hoy, si ya hay uno (cuando se llega desde Más): se marca y la pantalla tiene "volver".
   final ModoUso? actual;
 
   @override
   Widget build(BuildContext context) {
     final cambiando = actual != null;
-    return Scaffold(
-      appBar: cambiando ? AppBar(scrolledUnderElevation: 0) : null,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: Espaciado.xxl),
-          children: [
-            if (cambiando)
-              const EncabezadoCompanion(
-                rotulo: 'Gestión',
-                titulo: 'Modo de uso',
-                bajada: 'Cambiá cómo se usa este celular.',
-              )
-            else
-              Aparecer(
-                orden: 0,
-                child: ValueListenableBuilder<MarcaNegocio>(
-                  valueListenable: marcaActual,
-                  builder: (context, marca, _) => EncabezadoCompanion(
-                    rotulo: marca.nombre,
-                    titulo: '¿Cómo vas a usar el sistema?',
-                    bajada: 'Elegí una opción para empezar.',
-                    particulas: true,
-                    padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.xxl, Espaciado.xl, Espaciado.xl),
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Aparecer(
-                    orden: 1,
-                    child: _OpcionModo(
-                      clave: const Key('modo-pc-y-celular'),
-                      icono: IconosPlazoleta.computer,
-                      titulo: 'Tengo PC y celular',
-                      detalle:
-                          'El celular se conecta a la PC. Si la PC se apaga o queda fuera del wifi, sigue funcionando por internet.',
-                      marcado: actual == ModoUso.pcYCelular,
-                      onTap: () => alElegir(context, ModoUso.pcYCelular),
-                    ),
-                  ),
-                  const SizedBox(height: Espaciado.md),
-                  Aparecer(
-                    orden: 2,
-                    child: _OpcionModo(
-                      clave: const Key('modo-solo-celular'),
-                      icono: IconosPlazoleta.smartphone,
-                      titulo: 'Solo uso el celular',
-                      detalle:
-                          'El celular es el sistema. Podés guardar y sincronizar tus datos con tu cuenta de Nodo Sur.',
-                      marcado: actual == ModoUso.soloCelular,
-                      onTap: () => alElegir(context, ModoUso.soloCelular),
-                    ),
-                  ),
-                  const SizedBox(height: Espaciado.xl),
-                  Aparecer(
-                    orden: 3,
-                    child: Text(
-                      'Lo podés cambiar después, desde Gestión.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return PaginaArranqueNs(
+      titulo: cambiando ? 'Modo de uso' : '¿Cómo vas a usar el sistema?',
+      bajada: cambiando ? 'Cambiá cómo se usa este celular.' : 'Elegí una opción para empezar.',
+      alVolver: cambiando ? () => Navigator.of(context).maybePop() : null,
+      cuerpo: [
+        OpcionNs(
+          key: const Key('modo-pc-y-celular'),
+          titulo: 'Tengo PC y celular',
+          detalle: 'El celular se conecta a la PC. Si la PC se apaga o queda fuera del wifi, sigue funcionando por internet.',
+          marcada: actual == ModoUso.pcYCelular,
+          derecha: actual == ModoUso.pcYCelular ? 'Actual' : null,
+          onTap: () => alElegir(context, ModoUso.pcYCelular),
         ),
-      ),
-    );
-  }
-}
-
-/// Bloque gris con círculo de ícono, título y detalle: el mismo lenguaje que `FilaElegible` (elegir usuario).
-class _OpcionModo extends StatelessWidget {
-  const _OpcionModo({
-    required this.clave,
-    required this.icono,
-    required this.titulo,
-    required this.detalle,
-    required this.marcado,
-    required this.onTap,
-  });
-
-  final Key clave;
-  final IconData icono;
-  final String titulo;
-  final String detalle;
-  final bool marcado;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Presionable(
-      key: clave,
-      radio: radioSuperficieCompanion,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(Espaciado.lg),
-        decoration: BoxDecoration(
-          color: colores.fondoBloque,
-          borderRadius: BorderRadius.circular(radioSuperficieCompanion),
-          border: marcado ? Border.all(color: colores.textoPrimario, width: 1.5) : null,
+        OpcionNs(
+          key: const Key('modo-solo-celular'),
+          titulo: 'Solo uso el celular',
+          detalle: 'El celular es el sistema. Podés guardar y sincronizar tus datos con tu cuenta de Nodo Sur.',
+          marcada: actual == ModoUso.soloCelular,
+          derecha: actual == ModoUso.soloCelular ? 'Actual' : null,
+          onTap: () => alElegir(context, ModoUso.soloCelular),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(color: colores.fondo, shape: BoxShape.circle),
-              child: Icon(icono, color: colores.textoPrimario, size: 24),
-            ),
-            const SizedBox(width: Espaciado.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(titulo, style: textTheme.titleMedium),
-                  const SizedBox(height: Espaciado.xs),
-                  Text(detalle, style: textTheme.bodySmall),
-                ],
-              ),
-            ),
-            if (marcado) ...[
-              const SizedBox(width: Espaciado.sm),
-              Icon(IconosPlazoleta.check, color: colores.textoPrimario, size: 22),
-            ],
-          ],
-        ),
-      ),
+        const InfoNs('Lo podés cambiar después, desde Gestión.'),
+      ],
     );
   }
 }

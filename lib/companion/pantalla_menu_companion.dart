@@ -49,6 +49,7 @@ import 'modo_uso.dart';
 import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
+import 'pantallas/hoja_actualizar_ns.dart';
 import 'app_ns.dart';
 import 'funciones_ns.dart';
 import 'kit/kit_ns.dart';
@@ -62,7 +63,6 @@ import 'pantallas/pantalla_productos_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
-import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
@@ -445,22 +445,13 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
 
   @override
   Future<void> abrirActualizacion() async {
-    await mostrarHojaNs<void>(
+    final conexion = await leerConexion();
+    final oferta = _ofertaActualizacion;
+    if (!mounted) return;
+    await mostrarHojaActualizar(
       context,
-      builder: (ctx) => HojaNs(
-        titulo: 'Hay una versión nueva',
-        texto: _ofertaActualizacion == null
-            ? 'Ya hay una versión nueva publicada: mejoras en el cobro y en el historial.'
-            : 'La ${_ofertaActualizacion!.version} ya está lista.',
-        bloques: const [InfoNs('Al instalar, la app se cierra y se vuelve a abrir.')],
-        botones: [
-          BotonNs.primario(ctx, 'Descargar', () {
-            Navigator.of(ctx).pop();
-            _actualizar(_ofertaActualizacion);
-          }),
-          BotonNs.secundario(ctx, 'Después', () => Navigator.of(ctx).pop()),
-        ],
-      ),
+      descargar: () => descargarActualizacion(conexion == null ? null : ClienteCompanion(conexion), oferta: oferta),
+      instalar: instalarActualizacion,
     );
   }
 
@@ -677,25 +668,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       }
     } catch (_) {
       // Sin PC emparejada y sin sitio no hay a quién culpar: no se avisa.
-    }
-  }
-
-  Future<void> _actualizar([OfertaSitio? oferta]) async {
-    final conexion = await leerConexion();
-    if (conexion == null && oferta == null) return;
-    try {
-      await descargarEInstalarActualizacion(
-        conexion == null ? null : ClienteCompanion(conexion),
-        oferta: oferta,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se pudo actualizar: ${mensajeDeError(e)}'),
-          ),
-        );
-      }
     }
   }
 
