@@ -99,6 +99,9 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
 
   void _cambio() => setState(() => _sucio = true);
 
+  /// El precio que da [g] % de ganancia sobre el costo cargado (una sola cuenta: `domain/ganancia.dart`, Regla 3).
+  int _precioConGanancia(int g) => precioDesdeCostoYGanancia(_plata(_costo) ?? 0, g * 100);
+
   int? _plata(TextEditingController c) {
     final t = c.text.trim();
     if (t.isEmpty) return null;
@@ -117,7 +120,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
     if (precio <= costo) return (texto: 'El precio no cubre el costo', cubre: false);
     try {
       final bp = gananciaBpDesdeCostoYPrecio(costo, precio);
-      return (texto: 'Ganás ${plataNs(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(bp / 100).round()} %', cubre: true);
+      return (texto: 'Ganás ${plataNs(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(bp / 100).round()}%', cubre: true);
     } on ArgumentError {
       return null;
     }
@@ -212,7 +215,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
   }
 
   Future<void> _volver() async {
-    if (!_sucio || await confirmarSalirSinGuardar(context, texto: 'Lo que cargaste todavía no se guardó: se pierde si salís ahora.', seguir: 'Seguir editando')) {
+    if (!_sucio || await confirmarSalirSinGuardar(context, texto: 'Lo que cargaste todavía no se guardó — se pierde si salís ahora.', seguir: 'Seguir acá')) {
       if (mounted) Navigator.of(context).pop(false);
     }
   }
@@ -263,7 +266,27 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
                         CampoNs(etiqueta: _esPesable ? 'Precio por kilo' : 'Precio de venta', controller: _precio, grande: true, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), formatos: _soloNumeros, onChanged: (_) => _cambio()),
                         const SizedBox(height: 10),
                         CampoNs(etiqueta: _esPesable ? 'Lo que te cuesta el kilo' : 'Lo que te cuesta', controller: _costo, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), formatos: _soloNumeros, onChanged: (_) => _cambio()),
-                        if (margen != null) ...[const SizedBox(height: 10), InfoNs(margen.texto, tono: margen.cubre ? TonoNs.good : TonoNs.warn)],
+                        if (margen != null) ...[const SizedBox(height: 10), InfoNs(margen.texto, tono: margen.cubre ? TonoNs.good : TonoNs.bad)],
+                        if ((_plata(_costo) ?? 0) > 0) ...[
+                          const SizedBox(height: 10),
+                          Text('Poner el precio con ganancia', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final g in const [20, 30, 40])
+                                ChipNs(
+                                  texto: '$g% ganancia',
+                                  activo: _plata(_precio) == _precioConGanancia(g),
+                                  onTap: () => setState(() {
+                                    _precio.text = '${_precioConGanancia(g) ~/ centavosPorPeso}';
+                                    _sucio = true;
+                                  }),
+                                ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 10),
                         CampoNs(etiqueta: _esPesable ? 'Cuántos gramos tenés ahora' : 'Cuántas unidades tenés ahora', controller: _stock, placeholder: '0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _cambio()),
                         const SizedBox(height: 22),
@@ -298,12 +321,14 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
                             _sucio = true;
                           }),
                         ),
-                        if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
                       ],
                     ),
                   ),
+                  if (_error != null) ...[const SizedBox(height: 14), InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo, tamanio: 15, peso: FontWeight.w500)],
                   const SizedBox(height: 14),
-                  BotonNs.primario(context, _guardando ? 'Guardando…' : (esAlta ? 'Guardar producto' : 'Guardar cambios'), _guardando ? null : _guardar, habilitado: !_guardando),
+                  BotonNs.primario(context, _guardando ? 'Guardando…' : (esAlta ? 'Dar de alta' : 'Guardar cambios'), _guardando ? null : _guardar, habilitado: !_guardando),
+                  const SizedBox(height: 8),
+                  BotonNs.secundario(context, 'Cancelar', _guardando ? null : _volver),
                 ],
               ),
             ),

@@ -13,7 +13,7 @@ import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/domain/venta.dart';
-import 'package:la_plazoleta/companion/cliente_companion.dart' show ApartadoCompanion, ErrorCompanion, MedioGastoCompanion;
+import 'package:la_plazoleta/companion/cliente_companion.dart' show ApartadoCompanion, DetalleVentaCompanion, ErrorCompanion, LineaTicketCompanion, MedioGastoCompanion, MedioVentaHistorialCompanion, ProductoCompanion, VentaDelHistorialCompanion;
 import 'package:la_plazoleta/domain/cobro_posnet.dart';
 import 'package:la_plazoleta/domain/descuento.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
@@ -97,8 +97,47 @@ Future<void> capturarNs(
 
 /// Puerto local con una terminal Point de mentira: el estado de la orden lo elige cada captura.
 class _PuertoPosnet extends PuertoLocal {
-  _PuertoPosnet(super.base, {this.estado = ResultadoOrdenCobro.pendiente, this.nuncaCrea = false, this.falloAlCrear, this.falloAlGuardar, this.falloAlAnotar});
+  _PuertoPosnet(super.base, {this.estado = ResultadoOrdenCobro.pendiente, this.nuncaCrea = false, this.falloAlCrear, this.falloAlGuardar, this.falloAlAnotar, this.falloAlListar, this.conHistorial = false});
   final Object? falloAlAnotar;
+  final Object? falloAlListar;
+  final bool conHistorial;
+
+  @override
+  Future<List<ProductoCompanion>> productos({String? busqueda, int? proveedorId, bool sinCategoria = false, bool sinCodigoBarras = false, bool sinCosto = false, bool sinProveedor = false}) {
+    if (falloAlListar != null) return Future.error(falloAlListar!);
+    return super.productos(busqueda: busqueda, proveedorId: proveedorId, sinCategoria: sinCategoria, sinCodigoBarras: sinCodigoBarras, sinCosto: sinCosto, sinProveedor: sinProveedor);
+  }
+
+  static VentaDelHistorialCompanion _v(int id, int h, int m, int total, MedioVentaHistorialCompanion medio) =>
+      VentaDelHistorialCompanion(ventaId: id, numero: '#0$id', fecha: DateTime.now().copyWith(hour: h, minute: m), totalCentavos: total, medio: medio, detalle: '', anulada: false, sesionAbierta: true);
+
+  @override
+  Future<List<VentaDelHistorialCompanion>> historialDeVentas({required DateTime desde, required DateTime hasta, MedioVentaHistorialCompanion? filtroMedio}) async {
+    if (!conHistorial) return super.historialDeVentas(desde: desde, hasta: hasta, filtroMedio: filtroMedio);
+    return [
+      _v(143, 20, 12, 1435000, MedioVentaHistorialCompanion.efectivo),
+      _v(142, 19, 48, 900000, MedioVentaHistorialCompanion.qr),
+      _v(141, 19, 20, 530000, MedioVentaHistorialCompanion.debitCard),
+      _v(140, 18, 55, 920000, MedioVentaHistorialCompanion.efectivo),
+    ];
+  }
+
+  @override
+  Future<DetalleVentaCompanion> detalleVenta(int ventaId) async {
+    if (!conHistorial) return super.detalleVenta(ventaId);
+    return DetalleVentaCompanion(
+      fecha: DateTime(2026, 9, 29, 18, 55),
+      vendedor: 'Lucía',
+      lineas: const [
+        LineaTicketCompanion(nombreProducto: 'Leche entera 1 L', cantidad: 2, subtotalCentavos: 320000),
+        LineaTicketCompanion(nombreProducto: 'Facturas (docena)', cantidad: 1, subtotalCentavos: 650000),
+      ],
+      recargoCigarrillosCentavos: 0,
+      descuentoCentavos: 48500,
+      redondeoCentavos: -1500,
+      totalCentavos: 920000,
+    );
+  }
   final ResultadoOrdenCobro estado;
   final bool nuncaCrea;
   final Object? falloAlCrear;
@@ -181,10 +220,29 @@ void main() {
     await _cargarFigtree();
   });
 
+  Future<PuertoLocal> servicioConCaja(WidgetTester t, {bool abrir = true}) async {
+    final db = await t.runAsync(() async => baseDeTest());
+    usarBaseLocalDeTest(db!);
+    final servicio = PuertoLocal(baseLocalCompanion());
+    if (abrir) await t.runAsync(() => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 3000000));
+    return servicio;
+  }
+
   testWidgets('03-inicio', (t) async {
+    await servicioConCaja(t);
     await capturarNs(t, '03-inicio', const PantallaInicioNs(), barra: PestaniaNs.inicio);
   });
+  testWidgets('03b-inicio-tablero', (t) async {
+    await servicioConCaja(t);
+    await capturarNs(t, '03b-inicio-tablero', const PantallaInicioNs(), barra: PestaniaNs.inicio, antes: (t) async {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+      await esperar(t);
+      await t.drag(find.byType(Scrollable).first, const Offset(0, -560));
+      await esperar(t);
+    });
+  });
   testWidgets('03-inicio oscuro', (t) async {
+    await servicioConCaja(t);
     await capturarNs(t, '03-inicio', const PantallaInicioNs(), barra: PestaniaNs.inicio, oscuro: true);
   });
   testWidgets('45-notificaciones', (t) async {
@@ -200,14 +258,6 @@ void main() {
         const LineaVentaPesable(productoId: 'b', nombreProducto: 'Jamón cocido', proveedorId: null, gramos: 250, precioPorKiloCentavos: 1460000),
         const LineaVentaPorUnidad(productoId: 'c', nombreProducto: 'Pan lactal grande', proveedorId: null, cantidad: 3, precioUnitarioCentavos: 280000),
       ];
-
-  Future<PuertoLocal> servicioConCaja(WidgetTester t, {bool abrir = true}) async {
-    final db = await t.runAsync(() async => baseDeTest());
-    usarBaseLocalDeTest(db!);
-    final servicio = PuertoLocal(baseLocalCompanion());
-    if (abrir) await t.runAsync(() => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 3000000));
-    return servicio;
-  }
 
   testWidgets('05-vender-vacio', (t) async {
     final servicio = await servicioConCaja(t);
@@ -413,9 +463,9 @@ void main() {
     await terminarTest(t);
   }
 
-  Future<_PuertoPosnet> terminal(WidgetTester t, {ResultadoOrdenCobro estado = ResultadoOrdenCobro.pendiente, bool nuncaCrea = false, Object? falloAlCrear, Object? falloAlGuardar, Object? falloAlAnotar}) async {
+  Future<_PuertoPosnet> terminal(WidgetTester t, {ResultadoOrdenCobro estado = ResultadoOrdenCobro.pendiente, bool nuncaCrea = false, Object? falloAlCrear, Object? falloAlGuardar, Object? falloAlAnotar, Object? falloAlListar, bool conHistorial = false}) async {
     await servicioConCaja(t);
-    return _PuertoPosnet(baseLocalCompanion(), estado: estado, nuncaCrea: nuncaCrea, falloAlCrear: falloAlCrear, falloAlGuardar: falloAlGuardar, falloAlAnotar: falloAlAnotar);
+    return _PuertoPosnet(baseLocalCompanion(), estado: estado, nuncaCrea: nuncaCrea, falloAlCrear: falloAlCrear, falloAlGuardar: falloAlGuardar, falloAlAnotar: falloAlAnotar, falloAlListar: falloAlListar, conHistorial: conHistorial);
   }
 
   testWidgets('11b-cobro-terminal-enviando', (t) async {
@@ -479,11 +529,7 @@ void main() {
   testWidgets('29-caja-resumen oscuro', (t) async {
     await capturarNs(t, '29-caja-resumen', const PantallaCajaNs(), barra: PestaniaNs.caja, oscuro: true);
   });
-  testWidgets('30-caja-separar', (t) async {
-    await servicioConCaja(t);
-    final c = ControladorFalsoNs()..segmentoCaja.value = 1;
-    await capturarNs(t, '30-caja-separar', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja);
-  });
+
   testWidgets('31-caja-ventas', (t) async {
     await servicioConCaja(t);
     final c = ControladorFalsoNs()..segmentoCaja.value = 2;
@@ -633,7 +679,9 @@ void main() {
           nombre: nombre,
           esPesable: peso,
           precioCentavos: peso ? null : precio * 100,
+          costoCentavos: peso ? null : precio * 70,
           precioPorKiloCentavos: peso ? precio * 100 : null,
+          costoPorKiloCentavos: peso ? precio * 70 : null,
           stock: peso ? 0 : stock,
           stockGramos: peso ? stock : null,
           proveedorId: provs[prov].id,
@@ -677,6 +725,127 @@ void main() {
     final provs = (await t.runAsync(() => servicio.proveedores()))!;
     final cats = (await t.runAsync(() => servicio.categorias()))!;
     await capturarNs(t, '28-producto-nuevo', PantallaFormularioProducto(cliente: servicio, usuarioId: 1, proveedores: provs, categorias: cats));
+  });
+
+  /// Los chips de filtro viajan en una fila que se desliza: se la corre hasta que el chip pedido se vea y se lo toca.
+  Future<void> tocarChip(WidgetTester t, String texto) async {
+    bool visible() => find.text(texto).evaluate().isNotEmpty && t.getCenter(find.text(texto).first).dx < 360;
+    for (var i = 0; i < 8 && !visible(); i++) {
+      await t.drag(find.byType(FilaChipsNs).first, const Offset(-250, 0));
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    await t.tap(find.text(texto));
+  }
+
+  Future<void> esperarCarga(WidgetTester t) async {
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+    await esperar(t);
+  }
+  testWidgets('19d-productos-de-un-proveedor', (t) async {
+    final servicio = await conCatalogo(t);
+    final provs = (await t.runAsync(() => servicio.proveedores()))!;
+    await capturarNs(t, '19d-productos-de-un-proveedor', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: PestaniaNs.productos, antes: (t) async {
+      await esperarCarga(t);
+      await tocarChip(t, provs[1].nombre);
+      await esperar(t);
+    });
+  });
+  testWidgets('19e-productos-sin-resultados', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '19e-productos-sin-resultados', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: PestaniaNs.productos, antes: (t) async {
+      await esperarCarga(t);
+      await t.enterText(find.byType(TextField).first, 'zzz');
+      await esperar(t);
+    });
+  });
+  testWidgets('19g-productos-error-de-red', (t) async {
+    final servicio = await terminal(t, falloAlListar: const SocketException('x'));
+    await capturarNs(t, '19g-productos-error-de-red', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: PestaniaNs.productos, antes: esperarCarga);
+  });
+  testWidgets('21-productos-elegir-varios', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '21-productos-elegir-varios', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: null, antes: (t) async {
+      await esperarCarga(t);
+      await t.tap(find.text('Elegir varios'));
+      await esperar(t);
+      await t.tap(find.text('Agua mineral 1,5 L'));
+      await t.tap(find.text('Pan lactal grande'));
+      await esperar(t);
+    });
+  });
+  Future<void> abrirLote(WidgetTester t, PuertoLocal servicio) async {
+    final provs = (await t.runAsync(() => servicio.proveedores()))!;
+    await esperarCarga(t);
+    await tocarChip(t, provs[0].nombre);
+    await esperar(t);
+    await t.tap(find.text('Elegir varios'));
+    await esperar(t);
+    await t.tap(find.text('Cerveza lata 473 ml'));
+    await t.tap(find.text('Agua mineral 1,5 L'));
+    await esperar(t);
+    await t.tap(find.text('Editar (2)'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await esperar(t);
+  }
+  testWidgets('26-lote-proveedor-subio-precio', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '26-lote-proveedor-subio-precio', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: null, antes: (t) async {
+      await abrirLote(t, servicio);
+      await t.enterText(find.byType(TextField).last, '10');
+      await esperar(t);
+    });
+  });
+  testWidgets('27-lote-confirmar-cambio', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '27-lote-confirmar-cambio', const PantallaProductosNs(), controlador: ControladorConServicio(servicio), barra: null, antes: (t) async {
+      await abrirLote(t, servicio);
+      await t.enterText(find.byType(TextField).last, '10');
+      await esperar(t);
+      await t.tap(find.text('Revisar'));
+      await esperar(t);
+    });
+  });
+  testWidgets('28b-producto-nuevo-ganancia', (t) async {
+    final servicio = await conCatalogo(t);
+    final provs = (await t.runAsync(() => servicio.proveedores()))!;
+    final cats = (await t.runAsync(() => servicio.categorias()))!;
+    await capturarNs(t, '28b-producto-nuevo-ganancia', PantallaFormularioProducto(cliente: servicio, usuarioId: 1, proveedores: provs, categorias: cats), antes: (t) async {
+      await t.enterText(find.byType(TextField).at(0), 'Alfajor triple');
+      await t.pump();
+      await t.enterText(campoDe('Precio de venta'), '1200');
+      await t.pump();
+      await t.enterText(campoDe('Lo que te cuesta'), '800');
+      await esperar(t);
+    });
+  });
+  testWidgets('31-historial-hoy', (t) async {
+    final servicio = await terminal(t, conHistorial: true);
+    final c = ControladorConServicio(servicio)..segmentoCaja.value = 2;
+    await capturarNs(t, '31-historial-hoy', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja, antes: (t) async {
+      await esperarCarga(t);
+      await t.tap(find.text('Venta #0140'));
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await esperar(t);
+    });
+  });
+  testWidgets('31e-historial-anular-venta', (t) async {
+    final servicio = await terminal(t, conHistorial: true);
+    final c = ControladorConServicio(servicio)..segmentoCaja.value = 2;
+    await capturarNs(t, '31e-historial-anular-venta', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja, antes: (t) async {
+      await esperarCarga(t);
+      await t.tap(find.text('Venta #0143'));
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await esperar(t);
+      await t.tap(find.text('Anular venta'));
+      await esperar(t);
+      await t.enterText(find.byType(TextField).last, 'Error de carga');
+      await esperar(t);
+    });
+  });
+  testWidgets('30-caja-separar', (t) async {
+    await servicioConCaja(t);
+    final c = ControladorFalsoNs()..segmentoCaja.value = 1;
+    await capturarNs(t, '30-caja-separar', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja, antes: esperarCarga);
   });
 
   testWidgets('37-mas', (t) async {

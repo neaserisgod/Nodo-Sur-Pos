@@ -36,7 +36,9 @@ enum IconoNs {
   calculadora('M5 3h14v18H5zM8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01'),
   cerrar('M6 6l12 12M18 6L6 18'),
   computadora('M3 4h18v12H3zM8 20h8M12 16v4'),
-  sinWifi('M2 8.8a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0M12 20h.01M4 4l16 16');
+  sinWifi('M2 8.8a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0M12 20h.01M4 4l16 16'),
+  reintentar('M20 12a8 8 0 11-2.3-5.7M20 4v5h-5'),
+  alertaCirculo('M12 8v5M12 16.5h.01M12 3a9 9 0 100 18 9 9 0 000-18z');
 
   const IconoNs(this.trazo);
 

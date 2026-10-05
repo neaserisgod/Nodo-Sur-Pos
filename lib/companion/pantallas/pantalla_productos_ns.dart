@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import '../app_ns.dart';
 import '../cambios_companion.dart';
 import '../cliente_companion.dart';
+import '../escanear_codigo.dart';
 import '../funciones_ns.dart' show normalizarNs;
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
@@ -93,6 +94,20 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
 
   String? _nombreProveedor(int? id) => _proveedores.where((p) => p.id == id).firstOrNull?.nombre;
 
+  /// Lo que dice la lista cuando no hay nada para mostrar (mock `noProdMsg`).
+  String get _mensajeVacio {
+    if (_busqueda.text.trim().isNotEmpty) return 'Sin resultados';
+    return switch (_filtro) {
+      _Filtro.sinProveedor => 'Ningún producto sin proveedor',
+      _Filtro.sinCosto => 'Ningún producto sin costo',
+      _Filtro.sinCategoria => 'Ningún producto sin categoría',
+      _Filtro.sinCodigo => 'Ningún producto sin código de barras',
+      _Filtro.proveedor => 'Este proveedor no tiene productos cargados',
+      _Filtro.sinStock || _Filtro.pocoStock => 'No hay productos con ese filtro',
+      _Filtro.todos => 'Todavía no hay productos cargados',
+    };
+  }
+
   int get _nSinStock => _todos.where(sinStockNs).length;
   int get _nPocoStock => _todos.where(pocoStockNs).length;
 
@@ -130,6 +145,26 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
 
   void _alternarMarca(int id) => setState(() => _marcados.contains(id) ? _marcados.remove(id) : _marcados.add(id));
 
+  /// Escanear: si el código ya es de un producto se abre para editarlo; si no, se arma uno nuevo con ese código.
+  Future<void> _escanear() async {
+    final app = AppNs.of(context);
+    final s = app.servicio;
+    final u = app.usuarioId;
+    if (s == null || u == null) return;
+    final codigo = await escanearCodigo(context);
+    if (codigo == null || !mounted) return;
+    ProductoCompanion? existente;
+    try {
+      existente = await s.porCodigoBarras(codigo);
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
+      return;
+    }
+    if (!mounted) return;
+    final guardo = await mostrarFormularioProducto(context, cliente: s, usuarioId: u, proveedores: _proveedores, categorias: _categorias, producto: existente, codigoInicial: existente == null ? codigo : null);
+    if (guardo) await _cargar();
+  }
+
   Future<void> _nuevo() async {
     final app = AppNs.of(context);
     final s = app.servicio;
@@ -155,6 +190,22 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     }
   }
 
+  /// Qué se puede hacer con lo elegido depende de desde dónde se eligió (mock `bulkCtx`).
+  ContextoLote get _contextoLote => _filtro == _Filtro.proveedor
+      ? ContextoLote.proveedor
+      : _filtro == _Filtro.sinProveedor
+      ? ContextoLote.asignarProveedor
+      : _filtro == _Filtro.sinCategoria
+      ? ContextoLote.asignarCategoria
+      : ContextoLote.general;
+
+  String get _etiquetaLote => switch (_contextoLote) {
+    ContextoLote.proveedor => 'Editar (${_marcados.length})',
+    ContextoLote.asignarProveedor => 'Asignar proveedor (${_marcados.length})',
+    ContextoLote.asignarCategoria => 'Asignar categoría (${_marcados.length})',
+    ContextoLote.general => 'Editar en lote',
+  };
+
   Future<void> _editarEnLote() async {
     if (_marcados.isEmpty) {
       mostrarAvisoNs(context, 'Marcá al menos un producto');
@@ -165,7 +216,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     final u = app.usuarioId;
     if (s == null || u == null) return;
     final elegidos = [for (final p in _todos) if (_marcados.contains(p.id)) p];
-    final cambio = await mostrarHojaLote(context, servicio: s, usuarioId: u, productos: elegidos, proveedores: _proveedores, categorias: _categorias);
+    final cambio = await mostrarHojaLote(context, servicio: s, usuarioId: u, productos: elegidos, proveedores: _proveedores, categorias: _categorias, contexto: _contextoLote, nombreProveedor: _nombreProveedor(_proveedorId));
     if (cambio && mounted) {
       _salirDeSeleccion();
       await _cargar();
@@ -202,10 +253,16 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Expanded(child: _cargando ? const Center(child: CircularProgressIndicator(strokeWidth: 2)) : (_error != null ? Padding(padding: const EdgeInsets.all(margenNs), child: InfoNs(_error!, tono: TonoNs.bad)) : (conteo ? _vistaConteo(context, app) : _vistaCatalogo(context, app)))),
+                  Expanded(
+                    child: conteo
+                        ? (_cargando
+                              ? const Padding(padding: EdgeInsets.symmetric(horizontal: margenNs), child: EsqueletoListaNs())
+                              : (_error != null ? EstadoErrorNs(texto: _error!, onReintentar: _cargar) : _vistaConteo(context, app)))
+                        : _vistaCatalogo(context, app),
+                  ),
                 ],
               ),
-              if (_eligiendo && !conteo) Positioned(left: 16, right: 16, bottom: 16, child: _BarraLote(cantidad: _marcados.length, onEditar: _editarEnLote)),
+              if (_eligiendo && !conteo) Positioned(left: 16, right: 16, bottom: 16, child: _BarraLote(cantidad: _marcados.length, etiqueta: _etiquetaLote, onEditar: _editarEnLote)),
             ],
           ),
         ),
@@ -252,10 +309,23 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: margenNs),
-          child: BuscadorNs(controller: _busqueda, placeholder: 'Buscar producto por nombre', alto: 52, tamanioTexto: 16, tamanioLupa: 19, onChanged: (_) => setState(() {})),
+          child: Row(
+            children: [
+              Expanded(child: BuscadorNs(controller: _busqueda, placeholder: 'Buscar producto por nombre', onChanged: (_) => setState(() {}))),
+              const SizedBox(width: 8),
+              PresionNs(
+                onTap: _escanear,
+                etiqueta: 'Escanear código de barras',
+                child: Container(width: 56, height: 56, decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle), alignment: Alignment.center, child: const IconoNsWidget(IconoNs.escanear, tamanio: 24, color: TokensNs.blanco)),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
-        FilaChipsNs(
+        if (_filtro == _Filtro.proveedor)
+          _EncabezadoProveedor(nombre: _nombreProveedor(_proveedorId) ?? '', onTodos: () => _elegirFiltro(_Filtro.todos))
+        else
+          FilaChipsNs(
           chips: [
             ChipNs(texto: 'Todos', activo: _filtro == _Filtro.todos, onTap: () => _elegirFiltro(_Filtro.todos)),
             ChipNs(texto: 'Sin stock ($_nSinStock)', activo: _filtro == _Filtro.sinStock, onTap: () => _elegirFiltro(_Filtro.sinStock)),
@@ -289,8 +359,12 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: margenNs),
-          child: visibles.isEmpty
-              ? Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('No hay productos con ese filtro. Probá con otro nombre o tocá "Todos".', style: estiloNs(16, color: ns.mute)))
+          child: _cargando
+              ? const EsqueletoListaNs()
+              : _error != null
+              ? EstadoErrorNs(texto: _error!, onReintentar: _cargar)
+              : visibles.isEmpty
+              ? Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text(_mensajeVacio, style: estiloNs(16, color: ns.mute)))
               : ListaAgrupadaNs(filas: [for (final p in visibles) _FilaProducto(producto: p, proveedor: _nombreProveedor(p.proveedorId), eligiendo: _eligiendo, marcado: _marcados.contains(p.id), onTap: () => _tocar(p))]),
         ),
       ],
@@ -368,6 +442,42 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
   }
 }
 
+/// Ganancia sobre el precio, redondeada: 2.100 con costo 1.470 → 30. Null si falta el costo o el precio.
+int? _ganancia(ProductoCompanion p) {
+  final precio = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
+  final costo = p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos;
+  if (precio == null || costo == null || precio <= 0 || costo <= 0) return null;
+  return ((precio - costo) * 100 / precio).round();
+}
+
+/// Encabezado de "los productos de un proveedor": iniciales, nombre y "Todos" para volver.
+class _EncabezadoProveedor extends StatelessWidget {
+  const _EncabezadoProveedor({required this.nombre, required this.onTodos});
+  final String nombre;
+  final VoidCallback onTodos;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final iniciales = nombre.split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: margenNs),
+      child: Row(
+        children: [
+          Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.ibg, shape: BoxShape.circle), alignment: Alignment.center, child: Text(iniciales, style: estiloNs(16, peso: FontWeight.w700, color: ns.i))),
+          const SizedBox(width: 12),
+          Expanded(child: Text(nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(22, peso: FontWeight.w500, track: -0.03, color: ns.ink))),
+          PresionNs(
+            onTap: onTodos,
+            etiqueta: 'Todos',
+            child: Container(height: 44, padding: const EdgeInsets.symmetric(horizontal: 16), alignment: Alignment.center, child: Text('Todos', style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, decoracion: TextDecoration.underline))),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FilaProducto extends StatelessWidget {
   const _FilaProducto({required this.producto, required this.proveedor, required this.eligiendo, required this.marcado, required this.onTap});
   final ProductoCompanion producto;
@@ -410,7 +520,20 @@ class _FilaProducto extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text(precioTextoNs(p), style: estiloNs(21, peso: peso450, track: -0.04, color: ns.ink, tabular: true)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(precioTextoNs(p), style: estiloNs(21, peso: peso450, track: -0.04, color: ns.ink, tabular: true)),
+                if (_ganancia(p) != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(999)),
+                    child: Text('${_ganancia(p)}% gan.', style: estiloNs(12, peso: FontWeight.w700, color: ns.g, tabular: true)),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -420,8 +543,9 @@ class _FilaProducto extends StatelessWidget {
 
 /// Barra de lote flotante (docs/03 B3.1): "N seleccionados" y "Editar en lote".
 class _BarraLote extends StatelessWidget {
-  const _BarraLote({required this.cantidad, required this.onEditar});
+  const _BarraLote({required this.cantidad, required this.etiqueta, required this.onEditar});
   final int cantidad;
+  final String etiqueta;
   final VoidCallback onEditar;
 
   @override
@@ -436,7 +560,7 @@ class _BarraLote extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: Text(cantidad == 1 ? '1 seleccionado' : '$cantidad seleccionados', style: estiloNs(16, peso: FontWeight.w600, color: TokensNs.blanco))),
-            BotonNs(texto: 'Editar en lote', onTap: onEditar, alto: 48, tamanio: 15, fondo: cantidad == 0 ? const Color(0x29FFFFFF) : ns.paper, color: cantidad == 0 ? const Color(0xB3FFFFFF) : ns.ink, rellenar: false, paddingH: 22),
+            BotonNs(texto: etiqueta, onTap: onEditar, alto: 48, tamanio: 15, fondo: cantidad == 0 ? const Color(0x29FFFFFF) : ns.paper, color: cantidad == 0 ? const Color(0xB3FFFFFF) : ns.ink, rellenar: false, paddingH: 22),
           ],
         ),
       ),

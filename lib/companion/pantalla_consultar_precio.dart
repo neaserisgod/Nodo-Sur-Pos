@@ -186,7 +186,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                if (_error != null) ...[InfoNs(_error!, tono: TonoNs.bad), const SizedBox(height: 14)],
+                if (_error != null) ...[InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo, tamanio: 15, peso: FontWeight.w500), const SizedBox(height: 14)],
                 if (sel != null) ...[
                   EntradaNs(
                     child: HeroNs(

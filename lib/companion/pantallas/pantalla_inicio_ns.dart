@@ -10,6 +10,7 @@ import '../pantalla_consultar_precio.dart';
 import '../pantalla_movimiento_caja.dart';
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
+import 'tablero_ns.dart';
 
 class PantallaInicioNs extends StatelessWidget {
   const PantallaInicioNs({super.key});
@@ -82,6 +83,7 @@ class PantallaInicioNs extends StatelessWidget {
                     ),
                   ),
                 ),
+                const TableroNs(),
               ],
             );
           },

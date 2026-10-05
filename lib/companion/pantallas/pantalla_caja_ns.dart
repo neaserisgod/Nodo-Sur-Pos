@@ -7,7 +7,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositorio_reposicion.dart' show SeparacionDelDia;
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
+import '../../domain/periodo.dart' show PeriodoResumen;
 import '../../ui/historial/devolucion_mp_dialogo.dart' show ofrecerDevolucionDeCobro;
 import '../../ui/separaciones/separaciones_controlador.dart';
 import '../app_ns.dart';
@@ -17,7 +19,6 @@ import '../cliente_companion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
-import '../pantalla_separaciones_companion.dart';
 import '../pantalla_movimiento_caja.dart';
 import '../sync_nube_companion.dart' show syncNubeCompanion;
 import 'hoja_abrir_caja_ns.dart';
@@ -347,72 +348,200 @@ class _SepararState extends State<_Separar> {
     super.dispose();
   }
 
+  /// `90.000`, sin el `$`: las cifras chicas de "Efectivo 90.000 · MP 52.600".
+  static String _sinSigno(int centavos) => plataNs(centavos).replaceFirst(RegExp(r'^\$\s?'), '');
+
+  bool _vendido = false;
+
   @override
   Widget build(BuildContext context) {
-    final ns = context.ns;
     final c = _c;
     if (c == null) return const SizedBox.shrink();
     return ChangeNotifierProvider<SeparacionesControlador>.value(
       value: c,
       child: Consumer<SeparacionesControlador>(
         builder: (context, c, _) {
-          final tarjetas = c.tarjetas;
           final ef = c.separarEfectivoCentavos;
           final mp = c.separarMpCentavos;
           return ListView(
             padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, BarraInferiorNs.espacioReservado),
             children: [
-              Text('Plata del día que tenés que apartar para pagarle a cada proveedor. Tocá uno cuando ya lo separaste.', style: estiloNs(15, altura: 1.4, color: ns.mute)),
-              const SizedBox(height: 8),
-              Text('Separá ${plataNs(ef + mp)} en total: ${plataNs(ef)} de efectivo y ${plataNs(mp)} de Mercado Pago.', style: estiloNs(15, peso: FontWeight.w600, altura: 1.4, color: ns.ink)),
+              _heroSeparar(context, c, ef, mp),
               const SizedBox(height: 14),
-              SeccionNs('${c.cantidadSeparadas} de ${tarjetas.length} separados'),
-              const SizedBox(height: 10),
-              if (tarjetas.isEmpty)
-                Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Hoy no hay nada para separar', style: estiloNs(16, color: ns.mute)))
-              else
-                for (final t in tarjetas) ...[
-                  Opacity(
-                    opacity: t.separada ? 0.6 : 1,
-                    child: PresionNs(
-                      onTap: t.bloqueada || c.procesando.contains(t.proveedorId) ? null : () => c.alternar(t).then((_) => _app?.refrescar()),
-                      etiqueta: t.fila.proveedor!.nombre,
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 64),
-                        padding: const EdgeInsets.fromLTRB(18, 12, 22, 12),
-                        decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(999)),
-                        child: Row(
-                          children: [
-                            CasillaNs(marcada: t.separada, tamanio: 30),
-                            const SizedBox(width: 14),
-                            Expanded(child: Text(t.fila.proveedor!.nombre, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink))),
-                            Text(plataNs(t.totalCentavos), style: estiloNs(20, peso: FontWeight.w500, track: -0.03, color: ns.ink, tabular: true)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+              Row(
+                children: [
+                  ChipNs(texto: 'Qué separar', activo: !_vendido, onTap: () => setState(() => _vendido = false)),
+                  const SizedBox(width: 8),
+                  ChipNs(texto: 'Lo vendido', activo: _vendido, onTap: () => setState(() => _vendido = true)),
                 ],
-              const SizedBox(height: 6),
-              PresionNs(
-                onTap: () => AppNs.of(context).irA((_) => PantallaSeparacionesCompanion(db: baseLocalCompanion(), usuarioId: AppNs.of(context).usuarioId ?? 0)),
-                etiqueta: 'Ver lo vendido por proveedor',
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 60),
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: TokensNs.contorno, width: 1.5)),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text('Ver lo vendido por proveedor', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink))),
-                      IconoNsWidget(IconoNs.chevron, tamanio: 18, color: ns.mute, grosor: 2.2),
-                    ],
-                  ),
-                ),
               ),
+              const SizedBox(height: 10),
+              if (_vendido) ..._lVendido(context, c) else ..._queSeparar(context, c),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _heroSeparar(BuildContext context, SeparacionesControlador c, int ef, int mp) {
+    final blanco85 = estiloNs(14, color: const Color(0xD9FFFFFF));
+    Widget fila(Color punto, String texto, int valor) => Row(
+      children: [
+        Container(width: 9, height: 9, decoration: BoxDecoration(color: punto, shape: BoxShape.circle)),
+        const SizedBox(width: 8),
+        Expanded(child: Text(texto, style: blanco85)),
+        Text(plataNs(valor), style: estiloNs(14, peso: FontWeight.w700, color: TokensNs.blanco, tabular: true)),
+      ],
+    );
+    return SizedBox(
+      width: double.infinity,
+      child: HeroNs(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Separar para proveedores · hoy', style: estiloNs(14, peso: FontWeight.w500, color: const Color(0xD9FFFFFF))),
+            const SizedBox(height: 4),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(plataNs(ef + mp), style: tituloNs(50, track: -0.06, altura: 1.02, color: TokensNs.blanco))),
+            const SizedBox(height: 8),
+            fila(const Color(0xFFFF8A3D), 'De efectivo', ef),
+            const SizedBox(height: 6),
+            fila(const Color(0xFF3B6CFF), 'De Mercado Pago', mp),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1, thickness: 1, color: Color(0x38FFFFFF))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text.rich(TextSpan(style: blanco85, children: [const TextSpan(text: 'Cobrado '), TextSpan(text: plataNs(c.cobrado.efectivoCentavos + c.cobrado.mpCentavos), style: estiloNs(14, peso: FontWeight.w700, color: TokensNs.blanco, tabular: true))])),
+                Text.rich(TextSpan(style: blanco85, children: [const TextSpan(text: 'Te queda '), TextSpan(text: plataNs(c.quedaEfectivoCentavos + c.quedaMpCentavos), style: estiloNs(14, peso: FontWeight.w700, color: const Color(0xFF63D9B0), tabular: true))])),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _queSeparar(BuildContext context, SeparacionesControlador c) {
+    final ns = context.ns;
+    final tarjetas = c.tarjetas;
+    return [
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text('Plata del día que tenés que apartar para pagarle a cada proveedor. Tocá uno cuando ya lo separaste.', style: estiloNs(15, altura: 1.4, color: ns.mute))),
+      const SizedBox(height: 10),
+      SeccionNs('${c.cantidadSeparadas} de ${tarjetas.length} separados'),
+      const SizedBox(height: 10),
+      if (tarjetas.isEmpty)
+        Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Hoy no hay nada para separar', style: estiloNs(16, color: ns.mute)))
+      else
+        for (final t in tarjetas) ...[
+          PresionNs(
+            onTap: t.bloqueada || c.procesando.contains(t.proveedorId) ? null : () => c.alternar(t).then((_) => _app?.refrescar()),
+            etiqueta: t.fila.proveedor!.nombre,
+            child: Semantics(
+              checked: t.separada,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 72),
+                padding: const EdgeInsets.fromLTRB(18, 12, 22, 12),
+                decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(32)),
+                child: Row(
+                  children: [
+                    CasillaNs(marcada: t.separada, tamanio: 30),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t.fila.proveedor!.nombre, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                          Text('Efectivo ${_sinSigno(t.efectivoCentavos)} · MP ${_sinSigno(t.mpCentavos)}', style: estiloNs(13, altura: 1.25, color: ns.mute, tabular: true)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(plataNs(t.totalCentavos), style: estiloNs(20, peso: peso450, track: -0.03, color: ns.ink, tabular: true)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+    ];
+  }
+
+  List<Widget> _lVendido(BuildContext context, SeparacionesControlador c) {
+    final ns = context.ns;
+    final periodos = [(PeriodoResumen.hoy, 'Hoy'), (PeriodoResumen.semana, 'Semana'), (PeriodoResumen.mes, 'Mes')];
+    final texto = switch (c.periodo) {
+      PeriodoResumen.hoy => 'Lo que vendiste a cada proveedor hoy. Lo vendido sin costo cargado suma a lo vendido, pero no al costo ni a la ganancia.',
+      PeriodoResumen.semana => 'Lo que vendiste a cada proveedor en la semana, desde el lunes. Lo vendido sin costo cargado suma a lo vendido, pero no al costo ni a la ganancia.',
+      PeriodoResumen.mes => 'Lo que vendiste a cada proveedor en el mes, desde el día 1. Lo vendido sin costo cargado suma a lo vendido, pero no al costo ni a la ganancia.',
+      _ => 'Lo que vendiste a cada proveedor desde el último pago. Lo vendido sin costo cargado suma a lo vendido, pero no al costo ni a la ganancia.',
+    };
+    return [
+      Row(
+        children: [
+          for (final (p, l) in periodos) ...[
+            ChipNs(texto: l, activo: c.periodo == p, onTap: () => c.cambiarPeriodo(p)),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+      const SizedBox(height: 10),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(texto, style: estiloNs(14, altura: 1.4, color: ns.mute))),
+      const SizedBox(height: 10),
+      if (c.vendidos.isEmpty)
+        Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Todavía no hay ventas en este período', style: estiloNs(16, color: ns.mute)))
+      else
+        for (final f in c.vendidos) ...[_TarjetaVendidoNs(fila: f), const SizedBox(height: 8)],
+    ];
+  }
+}
+
+class _TarjetaVendidoNs extends StatelessWidget {
+  const _TarjetaVendidoNs({required this.fila});
+  final SeparacionDelDia fila;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final conCosto = fila.vendidoCentavos - fila.vendidoSinCostoCentavos;
+    Widget caja(String etiqueta, int valor, {Color? color}) => Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(color: ns.paper, borderRadius: BorderRadius.circular(18)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(etiqueta, style: estiloNs(12, color: ns.mute)),
+            Text(plataNs(valor), style: estiloNs(17, peso: FontWeight.w600, color: color ?? ns.ink, tabular: true)),
+          ],
+        ),
+      ),
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(fila.nombre, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink))),
+              if (conCosto > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(999)),
+                  child: Text('${(fila.gananciaCentavos * 100 / conCosto).round()} %', style: estiloNs(13, peso: FontWeight.w700, color: ns.g)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text('Vendido', style: estiloNs(13, color: ns.mute)),
+          Text(plataNs(fila.vendidoCentavos), style: tituloNs(34, track: -0.05, altura: 1.05, color: ns.ink)),
+          const SizedBox(height: 10),
+          Row(children: [caja('Costo', fila.costoCentavos), const SizedBox(width: 8), caja('Ganancia', fila.gananciaCentavos, color: ns.g)]),
+        ],
       ),
     );
   }
@@ -428,6 +557,7 @@ class _Ventas extends StatefulWidget {
 }
 
 class _VentasState extends State<_Ventas> {
+  _Periodo _periodo = _Periodo.hoy;
   MedioVentaHistorialCompanion? _filtro;
   List<VentaDelHistorialCompanion> _ventas = [];
   bool _cargando = true;
@@ -465,7 +595,13 @@ class _VentasState extends State<_Ventas> {
     try {
       final ahora = DateTime.now();
       final hoy = DateTime(ahora.year, ahora.month, ahora.day);
-      final ventas = await servicio.historialDeVentas(desde: hoy, hasta: hoy.add(const Duration(days: 1)), filtroMedio: _filtro);
+      final (desde, hasta) = switch (_periodo) {
+        _Periodo.hoy => (hoy, hoy.add(const Duration(days: 1))),
+        _Periodo.ayer => (hoy.subtract(const Duration(days: 1)), hoy),
+        _Periodo.sieteDias => (hoy.subtract(const Duration(days: 6)), hoy.add(const Duration(days: 1))),
+        _Periodo.mes => (DateTime(hoy.year, hoy.month), hoy.add(const Duration(days: 1))),
+      };
+      final ventas = await servicio.historialDeVentas(desde: desde, hasta: hasta, filtroMedio: _filtro);
       if (mounted) {
         setState(() {
           _ventas = ventas;
@@ -513,11 +649,11 @@ class _VentasState extends State<_Ventas> {
     final confirmado = await mostrarHojaNs<bool>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: '¿Eliminar la venta ${v.etiqueta}?',
-        texto: 'Se descuenta de la caja y vuelve el stock.',
+        titulo: '¿Anular la venta de ${plataNs(v.totalCentavos)}?',
+        texto: 'Se repone el stock y se revierte la caja. La venta sigue viéndose acá, marcada como anulada.',
         bloques: [CampoNs(etiqueta: 'Motivo', controller: motivo, placeholder: 'Ej: error de carga')],
         botones: [
-          BotonNs.peligroSolido(ctx, 'Eliminar venta', () {
+          BotonNs.peligroSolido(ctx, 'Anular', () {
             if (motivo.text.trim().isEmpty) {
               mostrarAvisoNs(ctx, 'Escribí el motivo');
               return;
@@ -537,7 +673,7 @@ class _VentasState extends State<_Ventas> {
     try {
       await servicio.anularVenta(ventaId: v.ventaId, usuarioId: usuario, motivo: texto);
       if (!mounted) return;
-      mostrarAvisoNs(context, 'Venta eliminada');
+      mostrarAvisoNs(context, 'Venta anulada');
       setState(() => _abierta = null);
       await _cargar();
       await app.refrescar();
@@ -556,6 +692,7 @@ class _VentasState extends State<_Ventas> {
     ('Efectivo', MedioVentaHistorialCompanion.efectivo),
     ('QR', MedioVentaHistorialCompanion.qr),
     ('Débito', MedioVentaHistorialCompanion.debitCard),
+    ('Crédito', MedioVentaHistorialCompanion.creditCard),
     ('Mixto', MedioVentaHistorialCompanion.mixto),
   ];
 
@@ -585,34 +722,68 @@ class _VentasState extends State<_Ventas> {
             child: Text('${vigentes.length} ${vigentes.length == 1 ? 'venta' : 'ventas'} · ${plataNs(total)}', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute, tabular: true)),
           ),
           const SizedBox(height: 10),
+          FilaChipsNs(chips: [for (final p in _Periodo.values) ChipNs(texto: p.texto, activo: _periodo == p, onTap: () {
+            setState(() {
+              _periodo = p;
+              _abierta = null;
+            });
+            _cargar();
+          })]),
+          const SizedBox(height: 10),
           FilaChipsNs(chips: [for (final f in _filtros) ChipNs(texto: f.$1, activo: _filtro == f.$2, onTap: () {
             setState(() => _filtro = f.$2);
             _cargar();
           })]),
           const SizedBox(height: 10),
           if (_cargando)
-            const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+            const Padding(padding: EdgeInsets.symmetric(horizontal: margenNs), child: EsqueletoListaNs(filas: 6, alto: 64))
           else if (_error != null)
-            Padding(padding: const EdgeInsets.symmetric(horizontal: margenNs), child: InfoNs(_error!, tono: TonoNs.bad))
+            EstadoErrorNs(texto: _error!, onReintentar: _cargar)
           else if (_ventas.isEmpty)
-            Padding(padding: const EdgeInsets.symmetric(horizontal: margenNs), child: Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Sin ventas hoy.', style: estiloNs(16, color: ns.mute))))
+            Padding(padding: const EdgeInsets.symmetric(horizontal: margenNs), child: Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Sin ventas en este período', style: estiloNs(16, color: ns.mute))))
           else
-            for (final v in _ventas)
+            for (var i = 0; i < _ventas.length; i++) ...[
+              if (i == 0 || !_mismoDia(_ventas[i - 1].fecha, _ventas[i].fecha))
+                Padding(padding: const EdgeInsets.fromLTRB(margenNs + 6, 10, margenNs, 10), child: Text(_tituloDia(_ventas[i].fecha), style: estiloNs(18, peso: FontWeight.w600, track: -0.02, color: ns.ink))),
               Padding(
-                padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, 8),
+                padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, 10),
                 child: _FilaVenta(
-                  venta: v,
-                  medio: v.anulada ? 'Eliminada' : _medio(v.medio),
-                  abierta: _abierta == v.ventaId,
-                  detalle: _detalles[v.ventaId],
-                  onTap: () => _alternar(v),
-                  onEliminar: !v.anulada && v.sesionAbierta ? () => _eliminar(v) : null,
+                  venta: _ventas[i],
+                  medio: _ventas[i].anulada ? 'Anulada' : _medio(_ventas[i].medio),
+                  abierta: _abierta == _ventas[i].ventaId,
+                  detalle: _detalles[_ventas[i].ventaId],
+                  onTap: () => _alternar(_ventas[i]),
+                  onEliminar: !_ventas[i].anulada && _ventas[i].sesionAbierta && AppNs.of(context).cajaAbierta ? () => _eliminar(_ventas[i]) : null,
                 ),
               ),
+            ],
         ],
       ),
     );
   }
+
+  static bool _mismoDia(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static String _tituloDia(DateTime f) {
+    final ahora = DateTime.now();
+    final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+    final dia = DateTime(f.year, f.month, f.day);
+    if (dia == hoy) return 'Hoy';
+    if (dia == hoy.subtract(const Duration(days: 1))) return 'Ayer';
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dos(f.day)}/${dos(f.month)}/${f.year}';
+  }
+}
+
+/// Qué días mira el historial (pastillas, no desplegable).
+enum _Periodo {
+  hoy('Hoy'),
+  ayer('Ayer'),
+  sieteDias('Últimos 7 días'),
+  mes('Este mes');
+
+  const _Periodo(this.texto);
+  final String texto;
 }
 
 class _FilaVenta extends StatelessWidget {
@@ -625,6 +796,21 @@ class _FilaVenta extends StatelessWidget {
   final VoidCallback? onEliminar;
 
   String _hora(DateTime f) => '${f.hour.toString().padLeft(2, '0')}:${f.minute.toString().padLeft(2, '0')}';
+
+  static String _fechaHoraNs(DateTime f) {
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dos(f.day)}/${dos(f.month)}/${f.year} ${dos(f.hour)}:${dos(f.minute)}';
+  }
+
+  static Widget _filaDetalle(String clave, String valor) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(child: Text(clave, style: estiloNs(14, color: const Color(0xDBFFFFFF)))),
+        Text(valor, style: estiloNs(14, color: const Color(0xDBFFFFFF), tabular: true)),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -673,6 +859,7 @@ class _FilaVenta extends StatelessWidget {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${_fechaHoraNs(detalle!.fecha)} · ${detalle!.vendedor}', style: estiloNs(13, color: const Color(0xB3FFFFFF)))),
                             for (final l in detalle!.lineas)
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 3),
@@ -683,9 +870,23 @@ class _FilaVenta extends StatelessWidget {
                                   ],
                                 ),
                               ),
+                            const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, thickness: 1, color: Color(0x38FFFFFF))),
+                            _filaDetalle('Subtotal', plataNs(detalle!.subtotalCentavos)),
+                            if (detalle!.recargoCigarrillosCentavos != 0) _filaDetalle('Recargo cigarrillos', plataNs(detalle!.recargoCigarrillosCentavos)),
+                            if (detalle!.descuentoCentavos != 0) _filaDetalle('Descuento', '-${plataNs(detalle!.descuentoCentavos)}'),
+                            if (detalle!.redondeoCentavos != 0) _filaDetalle('Redondeo', '${detalle!.redondeoCentavos < 0 ? '-' : ''}${plataNs(detalle!.redondeoCentavos.abs())}'),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                children: [
+                                  Expanded(child: Text('Total', style: estiloNs(16, peso: FontWeight.w700, color: TokensNs.blanco))),
+                                  Text(plataNs(detalle!.totalCentavos), style: estiloNs(16, peso: FontWeight.w700, color: TokensNs.blanco, tabular: true)),
+                                ],
+                              ),
+                            ),
                             if (onEliminar != null) ...[
                               const SizedBox(height: 10),
-                              BotonNs(texto: 'Eliminar esta venta', onTap: onEliminar, alto: 48, tamanio: 15, fondo: const Color(0x24FFFFFF), color: TokensNs.eliminarSobreOscuro),
+                              BotonNs(texto: 'Anular venta', onTap: onEliminar, alto: 48, tamanio: 15, fondo: const Color(0x24FFFFFF), color: TokensNs.eliminarSobreOscuro),
                             ],
                           ],
                         ),

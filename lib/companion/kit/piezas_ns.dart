@@ -589,10 +589,13 @@ enum TonoNs { neutro, warn, good, bad, info }
 
 /// Aviso informativo: padding 14/18, radio 22, 14/1.4.
 class InfoNs extends StatelessWidget {
-  const InfoNs(this.texto, {super.key, this.tono = TonoNs.neutro, this.tamanio = 14, this.radio = 22, this.peso = FontWeight.w400, this.vertical = 14});
+  const InfoNs(this.texto, {super.key, this.tono = TonoNs.neutro, this.tamanio = 14, this.radio = 22, this.peso = FontWeight.w400, this.vertical = 14, this.icono});
 
   final String texto;
   final double vertical;
+
+  /// Icono a la izquierda (los avisos de error con alerta).
+  final IconoNs? icono;
   final TonoNs tono;
   final double tamanio;
   final double radio;
@@ -612,7 +615,16 @@ class InfoNs extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 18, vertical: vertical),
       decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(radio)),
-      child: Text(texto, style: estiloNs(tamanio, peso: peso, altura: 1.4, color: color)),
+      child: icono == null
+          ? Text(texto, style: estiloNs(tamanio, peso: peso, altura: 1.4, color: color))
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(padding: const EdgeInsets.only(top: 1), child: IconoNsWidget(icono!, tamanio: 20, color: color)),
+                const SizedBox(width: 10),
+                Expanded(child: Text(texto, style: estiloNs(tamanio, peso: peso, altura: 1.4, color: color))),
+              ],
+            ),
     );
   }
 }

@@ -236,3 +236,106 @@ class EstadoVacioNs extends StatelessWidget {
     );
   }
 }
+
+/// Filas grises que "respiran" mientras carga una lista (mock `skel`: 72 de alto, radio 28, fondo `s`).
+class EsqueletoListaNs extends StatefulWidget {
+  const EsqueletoListaNs({super.key, this.filas = 6, this.alto = 72, this.radio = 28});
+  final int filas;
+  final double alto;
+  final double radio;
+
+  @override
+  State<EsqueletoListaNs> createState() => _EsqueletoListaNsState();
+}
+
+class _EsqueletoListaNsState extends State<EsqueletoListaNs> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1300));
+  bool _arrancado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_arrancado) return;
+    _arrancado = true;
+    if (!sinMovimiento(context)) _c.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Semantics(
+      label: 'Cargando',
+      child: ExcludeSemantics(
+        child: AnimatedBuilder(
+          animation: _c,
+          builder: (context, _) => Opacity(
+            opacity: 1 - 0.45 * _c.value,
+            child: Column(
+              children: [
+                for (var i = 0; i < widget.filas; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  Container(height: widget.alto, decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(widget.radio))),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Error de red a pantalla: círculo rojo, el texto y "Reintentar" (mock `isErr`).
+class EstadoErrorNs extends StatelessWidget {
+  const EstadoErrorNs({super.key, required this.texto, this.onReintentar});
+  final String texto;
+  final VoidCallback? onReintentar;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 72, height: 72, decoration: BoxDecoration(color: ns.bbg, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.alertaCirculo, tamanio: 32, color: ns.b)),
+            const SizedBox(height: 16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Text(texto, textAlign: TextAlign.center, style: estiloNs(16, altura: 1.45, color: ns.mute)),
+            ),
+            if (onReintentar != null) ...[
+              const SizedBox(height: 16),
+              PresionNs(
+                onTap: onReintentar,
+                etiqueta: 'Reintentar',
+                child: Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 26),
+                  decoration: BoxDecoration(color: ns.prim, borderRadius: BorderRadius.circular(999)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const IconoNsWidget(IconoNs.reintentar, tamanio: 18, color: TokensNs.blanco, grosor: 2.2),
+                      const SizedBox(width: 8),
+                      Text('Reintentar', style: estiloNs(16, peso: FontWeight.w600, color: TokensNs.blanco)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
