@@ -50,6 +50,7 @@ void main() {
     expect(find.byType(PantallaNotificacionesNs), findsOneWidget);
     Navigator.of(t.element(find.byType(PantallaNotificacionesNs))).pop();
     await t.pump(const Duration(seconds: 1));
+    await t.pump(const Duration(seconds: 1));
 
     // Las otras pantallas que se abren con push: Buscador de funciones y Consultar precio.
     final destinos = <String, Type>{'Buscá una función': PantallaBuscadorNs, 'Consultar': PantallaConsultarPrecio};
@@ -62,6 +63,7 @@ void main() {
       final pantalla = find.byType(e.value);
       expect(pantalla, findsOneWidget, reason: 'no abrió "${e.key}"');
       Navigator.of(t.element(pantalla)).pop();
+      await t.pump(const Duration(seconds: 1));
       await t.pump(const Duration(seconds: 1));
     }
 

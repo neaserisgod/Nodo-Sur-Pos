@@ -1,6 +1,7 @@
 // Movimiento del mock (docs/01 §5): una sola curva, `cubic-bezier(.2,.7,.1,1)`,
 // entradas que suben 14 px con fade y todo se apaga con "reducir movimiento".
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 const Curve curvaNs = Cubic(.2, .7, .1, 1);
@@ -62,12 +63,48 @@ class _EntradaNsState extends State<EntradaNs> with SingleTickerProviderStateMix
   }
 }
 
-/// Pantalla completa: misma entrada con 0,55 s.
+/// Pantalla completa. La entrada ya la hace la transición de ruta (fundido cruzado, ver `tema_companion.dart`) o el cambio
+/// de pestaña (`CambioDePestanaNs`): hacerla acá también sumaba una segunda animación encima.
 class PantallaEntradaNs extends StatelessWidget {
   const PantallaEntradaNs({super.key, required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) => EntradaNs(duracion: const Duration(milliseconds: 550), child: child);
+  Widget build(BuildContext context) => child;
+}
+
+/// Al cambiar de pestaña, la nueva entra con el mismo fundido cruzado que al abrir una pantalla (`FadeThroughTransition`).
+/// Las pestañas siguen armadas debajo (no pierden lo que tenían), solo se repite la entrada en cada cambio.
+class CambioDePestanaNs extends StatefulWidget {
+  const CambioDePestanaNs({super.key, required this.indice, required this.child});
+  final int indice;
+  final Widget child;
+
+  @override
+  State<CambioDePestanaNs> createState() => _CambioDePestanaNsState();
+}
+
+class _CambioDePestanaNsState extends State<CambioDePestanaNs> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 300), value: 1);
+
+  @override
+  void didUpdateWidget(CambioDePestanaNs viejo) {
+    super.didUpdateWidget(viejo);
+    if (viejo.indice != widget.indice && !sinMovimiento(context)) _c.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeThroughTransition(
+        animation: _c,
+        secondaryAnimation: kAlwaysDismissedAnimation,
+        fillColor: Colors.transparent,
+        child: widget.child,
+      );
 }
 
 /// Feedback de toque del mock (`.press`): al apretar baja a 0,97 con la curva
