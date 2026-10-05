@@ -766,3 +766,18 @@ de la caja); y nada acotaba el tamaño de un cuerpo. Ahora: `TypeError` → 400 
 sobre null), el log se rota a `.1` pasado 1 MB, y un cuerpo de más de 2 KB en las rutas sin llave (20 MB en las demás) se corta
 sin leerlo. Y un id de orden de Mercado Pago con `../` ya no llega a la URL: se valida (`^[\w-]{1,64}$`) y se codifica, porque con
 `GET /ventas/posnet/estado/<id>` el celular podía hacer que la PC le mandara su access token a otro endpoint de la API.
+
+---
+
+## En el celular, una pantalla abierta con `Navigator.push` no ve el `AppNs` del menú
+
+`lib/companion/app_ns.dart`, `companion_app.dart` — `AppNs` lo arma el menú (`PantallaMenuCompanion`) alrededor de sus pestañas, y las rutas que se abren con `Navigator.push` (Notificaciones, Buscador de funciones, Consultar precio, Cierre, Gasto) cuelgan del **navegador**, no del menú: `AppNs.of(context)` ahí falla con "Falta AppNs arriba en el árbol". Se vio recién en el celular real (APK 2133); los tests no lo mostraron porque montaban cada pantalla suelta dentro de su propio `AppNs`.
+
+Arreglo (APK 2134): el menú publica su controlador en `puenteAppNs` y `MaterialApp.builder` pone `PuenteAppNs` arriba del navegador. Cualquier pantalla nueva del celular que lea `AppNs` anda sin hacer nada más.
+
+## El menú del celular resuelve el servicio *después* de abrirse: una pestaña que carga una sola vez se queda esperando
+
+`pantalla_menu_companion.dart` — `_servicio` arranca en `null` y se completa en `_iniciarConexion()`. Una pestaña que carga en `initState`/`didChangeDependencies` con `AppNs.of(context).servicio` y se va si es `null` **no vuelve a intentar** (Productos y Caja › Ventas quedaban en el esqueleto para siempre). Dos reglas: (1) el `setState` del menú suma `_version`, así `AppNs.updateShouldNotify` avisa a quien lo lee; (2) quien carga debe recordar qué servicio usó (`_servicioCargado`) y recargar cuando aparece uno distinto, nunca comparar el controlador consigo mismo (es el mismo objeto).
+
+Para probarlo hay que armar el **menú real** (`test/companion/menu_real_test.dart`), no un `ControladorFalsoNs` con el servicio ya puesto.
+

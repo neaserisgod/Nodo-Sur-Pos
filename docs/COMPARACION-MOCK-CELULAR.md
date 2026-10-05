@@ -1,5 +1,7 @@
 # App del celular vs. mock "Nodo Sur · App del celular" (2026-10-04)
 
+> **Ojo:** las secciones 1 a 4 describen la app **antes** del rediseño (04/10) y se dejan como historia de la comparación. Lo que se hizo y lo que quedó distinto está en las secciones 6, 6b y 6c.
+
 Fuente del mock: paquete `nodo-sur-mock-celular` (docs 00–08, 46 capturas, 46 tablas de medidas, `Movil.dc.html`).
 Objetivo del dueño: que la app sea **tal cual el mock**, adaptando solo lo que el mock no tiene.
 
@@ -16,7 +18,7 @@ iconos); no son un error de la app.
 | Tokens | `--ink --paper --s --s2 --mute --line --prim --hero --toast` + 4 pares fondo/texto; tema claro, oscuro (el primario pasa a azul) y automático | `ColoresPlazoleta` con otros valores (`borde`, `fondoBloque`…); oscuro con acento blanco |
 | Iconos | Trazo único 24×24, grosor 2, sin relleno, propios (31 paths) | Material Icons |
 | Tipografía | Figtree, títulos y cifras grandes en peso 450 con tracking negativo, números tabulares | Figtree 400–700 estática (sin 450: se usa 500, desviación permitida por el doc 07) |
-| Animación | `.scr` 0,55 s, `.rv` 0,6 s, hoja 0,5 s, toast 0,45 s, tilde que se dibuja; se apagan con "reducir movimiento" | Transición propia distinta; partículas |
+| Animación | `.scr` 0,55 s, `.rv` 0,6 s, hoja 0,5 s, toast 0,45 s, tilde que se dibuja; se apagan con "reducir movimiento" | (Antes) transición propia distinta; partículas. **Hoy:** igual al mock salvo la entrada de pantalla, que es un fundido cruzado por decisión del dueño (ver 6c) |
 | Cartel sin conexión | Tira de 34 px arriba en todas las pantallas (menos Emparejar y ¿Quién sos?) que corre todo 34 px | Franja "modo local" dentro de Inicio |
 | Hojas | Hoja inferior radio 40, asa, título 28, botones apilados; el velo cierra (decisión del doc 07) salvo terminal y "salir sin guardar" | `hoja_vidrio` y diálogos de Material |
 | Avisos | Toast oscuro flotante abajo (2,6 s) | `SnackBar` |
@@ -85,6 +87,19 @@ El dueño mandó un mock actualizado (175 capturas) que cubre casi todo lo que f
 
 Desvíos a propósito: ver la lista en `ESTADO.md` ("Celular calcado del mock"). La pantalla "Probar estados" del mock no se
 implementa (es del simulador).
+
+## 6c. Después del lanzamiento (2026-10-05)
+
+| APK | Qué cambió |
+|---|---|
+| 2133 | El rediseño completo (4 lotes). |
+| 2134 | Arreglo: Productos y Caja › Ventas se quedaban cargando; Notificaciones, Buscador, Consultar precio, Cierre y Gasto se rompían al abrir. |
+| 2135 | Animaciones: fundido cruzado al abrir pantallas y al cambiar de pestaña. |
+
+- **Qué falló en el 2133:** el menú resuelve el servicio después de abrirse y no avisaba a las pestañas, y las pantallas abiertas con `Navigator.push` no encontraban `AppNs` (cuelga del menú, no del navegador). Los tests no lo mostraron porque usaban un controlador falso con el servicio ya armado y montaban cada pantalla suelta.
+- **Arreglo:** `setState` del menú suma versión; `AppNs` se publica arriba del navegador (`puenteAppNs` + `PuenteAppNs`); Productos y Ventas cargan apenas aparece el servicio. Test con el menú real: `test/companion/menu_real_test.dart`.
+- **Animación (decisión del dueño, 05/10):** de las opciones que se le dieron (fade + subida del mock, fundido cruzado, deslizamiento en eje, tarjeta que se agranda, sin animación) eligió el **fundido cruzado**. Se aplica a la ruta (`tema_companion.dart`, `FadeThroughTransition`) y al cambio de pestaña (`CambioDePestanaNs`). `PantallaEntradaNs` quedó sin animación: antes se sumaba una segunda entrada encima de la de la ruta. Respeta "reducir movimiento".
+- **Probado en un celular real por el dueño:** anda todo.
 
 ## 7. Plan por fases
 
