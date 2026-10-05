@@ -29,7 +29,7 @@ horsepos.com y antigravity.google. Se hicieron **dos versiones**:
   `docs/mock-pc/NodoSurPC-v3-expresivo.html` (vivo: https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js). **Pendiente: llevarla al sitio**
   (repo `NodoSurPage`, fuera de este repo).
 - **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
-  Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html`.
+  Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
 
 **No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
