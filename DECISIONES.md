@@ -1974,3 +1974,9 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **Fotos**: se achican a 2000 px / JPEG 85 antes de mandarlas (un pedido admite 20 MB). Los PDF van tal cual.
 - **Pantalla de prueba antes que pantalla final**: para validar la lectura con la clave y las facturas reales sin tocar costos ni stock.
 - El `Modal` admite como máximo 3 botones (con 4 o más se rompe la maquetación): acciones extras van dentro del contenido.
+- **Si ninguna forma de leer los importes cierra** (algo está mal leído), se muestra la que deja MENOS líneas sospechosas, y a igual cantidad la de menor
+  diferencia (2026-10-05, lo encontró la primera lectura real de Gemini): la forma correcta solo marca la línea mal leída; una equivocada las marca todas y no
+  le sirve al dueño para saber dónde mirar.
+- **Google saturado o sin cupo en un modelo** (2026-10-05, el dueño vio "los servidores de Google no responden"): los modelos nuevos devuelven 503
+  "overloaded" seguido y cada modelo tiene su propio cupo gratis. La lectura de facturas reintenta una vez ante un 503 y pasa al modelo liviano
+  ante un 503 que sigue, un 404 o un 429; el mensaje de un error 5xx ahora trae el detalle que manda Google. Una clave mala o la falta de internet no se reintentan.

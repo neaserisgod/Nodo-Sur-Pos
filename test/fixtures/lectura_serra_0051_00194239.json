@@ -1,0 +1,32 @@
+{
+  "facturas": [
+    {
+      "proveedor": {"razon_social": "Serra SRL", "cuit": "30670378213"},
+      "tipo": "A",
+      "numero": "0051-00194239",
+      "fecha": "2026-08-31",
+      "condicion_pago": "cuenta_corriente",
+      "lineas": [
+        {"codigo": "00001421", "descripcion": "D ANC SAL FINA PAQ 500G (12)", "cantidad": 4, "precio_unitario": 939.22, "descuento_pct": null, "importe": 4545.82, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00009908", "descripcion": "MC PAN RALLADO 500GR (12)", "cantidad": 3, "precio_unitario": 1339.37, "descuento_pct": null, "importe": 4861.95, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00022082", "descripcion": "BG CHOCOLINAS 170G (40)", "cantidad": 2, "precio_unitario": 1472.75, "descuento_pct": null, "importe": 3564.06, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00001243", "descripcion": "BG MEDIA TARDE SANDW 3X107G (16)", "cantidad": 2, "precio_unitario": 1346.71, "descuento_pct": null, "importe": 3259.04, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00018175", "descripcion": "MC 9 ORO BIZCOCHO CLAS 200G (24)", "cantidad": 2, "precio_unitario": 1031.19, "descuento_pct": null, "importe": 2495.48, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00009825", "descripcion": "MC 9 ORO BIZCOCHO AGRIDUL 200G (20)", "cantidad": 3, "precio_unitario": 1031.19, "descuento_pct": null, "importe": 3743.23, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00009828", "descripcion": "MC 9 ORO SCONCITOS 200G (20)", "cantidad": 1, "precio_unitario": 1053.94, "descuento_pct": null, "importe": 1275.28, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00018379", "descripcion": "MC 9 ORO BIZC AZUCARADOS 210G (28)", "cantidad": 3, "precio_unitario": 1031.19, "descuento_pct": null, "importe": 3743.23, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00019615", "descripcion": "BG ALF AGUILA MINITORTA BL 69G(21)", "cantidad": 3, "precio_unitario": 1215.44, "descuento_pct": null, "importe": 4412.06, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00019342", "descripcion": "BG ALF AGUILA MINITORTA CLAS 69G(21)", "cantidad": 2, "precio_unitario": 1215.44, "descuento_pct": null, "importe": 2941.38, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00022043", "descripcion": "BG ALF MINITORTA BROWN 71G (21)", "cantidad": 3, "precio_unitario": 1215.44, "descuento_pct": null, "importe": 4412.06, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00009444", "descripcion": "BG ALF AGUILA MINITORTA DARK 69G (2", "cantidad": 3, "precio_unitario": 1215.44, "descuento_pct": null, "importe": 4412.06, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00023738", "descripcion": "BG ALF CHOCOTORTA 71.5G (21)", "cantidad": 3, "precio_unitario": 1215.44, "descuento_pct": null, "importe": 4412.06, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00014195", "descripcion": "OP FILTROS LIBELLA SLIM X200 (20)", "cantidad": 4, "precio_unitario": 1834.71, "descuento_pct": null, "importe": 8880.0, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00014223", "descripcion": "OP FILTRO LIBELLA EXTRA SLIM 200 (2", "cantidad": 4, "precio_unitario": 1834.71, "descuento_pct": null, "importe": 8880.0, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00011183", "descripcion": "TS OCB PAP PREMIUM 25X50H (40)", "cantidad": 1, "precio_unitario": 17767.11, "descuento_pct": null, "importe": 21498.21, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "00001461", "descripcion": "IMP ENCENDEDOR CANDELA TRANS 25U (4", "cantidad": 1, "precio_unitario": 6066.9, "descuento_pct": null, "importe": 7340.95, "alicuota_iva": null, "internos_importe": 0, "es_detalle": false}
+      ],
+      "pie": {"subtotal": 78245.36, "descuento_global": 0, "impuestos_internos": 0, "percepciones": 0, "iva_total": 16431.52, "total": 94676.88},
+      "advertencias": []
+    }
+  ]
+}

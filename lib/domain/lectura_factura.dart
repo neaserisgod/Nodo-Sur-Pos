@@ -303,39 +303,53 @@ FacturaNormalizada normalizarFactura(FacturaLeida leida, {ModoImportes? preferid
   final orden = [?preferido, ...ModoImportes.values.where((m) => m != preferido)];
   final total = leida.pie.totalCentavos;
 
+  List<int> sospechosasDe(FacturaDeCompra f) => [
+        for (var i = 0; i < productos.length; i++)
+          if (_esSospechosa(productos[i], f.lineas[i].netoCentavos)) i,
+      ];
+
   var elegido = orden.first;
   ControlDeFactura? control;
   FacturaDeCompra? factura;
+  List<int>? sospechosas;
   if (productos.isEmpty) {
     factura = const FacturaDeCompra(lineas: []);
+    sospechosas = const [];
   } else if (total == null) {
     factura = armar(elegido);
+    sospechosas = sospechosasDe(factura);
   } else {
     for (final modo in orden) {
       final candidata = armar(modo);
       final c = _controlarSinTirar(candidata, total);
       if (c == null) continue;
-      if (control == null && modo == orden.first || c.cierra) {
+      final sosp = sospechosasDe(candidata);
+      // La primera forma que cierra gana. Si ninguna cierra, se queda con la que deja MENOS líneas sospechosas (la forma correcta
+      // solo marca la línea mal leída; una forma equivocada las marca todas) y, a igual cantidad, con la de menor diferencia.
+      final mejora = control == null ||
+          sosp.length < sospechosas!.length ||
+          (sosp.length == sospechosas.length && c.diferenciaCentavos.abs() < control.diferenciaCentavos.abs());
+      if (c.cierra || mejora) {
         elegido = modo;
         factura = candidata;
         control = c;
+        sospechosas = sosp;
       }
       if (c.cierra) break;
     }
-    factura ??= armar(elegido);
+    if (factura == null) {
+      factura = armar(elegido);
+      sospechosas = sospechosasDe(factura);
+    }
   }
 
-  final sospechosas = [
-    for (var i = 0; i < productos.length; i++)
-      if (_esSospechosa(productos[i], factura.lineas[i].netoCentavos)) i,
-  ];
   return FacturaNormalizada(
     leida: leida,
     modo: elegido,
     factura: factura,
     lineas: productos,
     control: control,
-    lineasSospechosas: sospechosas,
+    lineasSospechosas: sospechosas!,
   );
 }
 

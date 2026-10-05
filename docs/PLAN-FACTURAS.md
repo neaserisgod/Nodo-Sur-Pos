@@ -42,6 +42,10 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   - `domain/lectura_factura.dart`: interpreta la respuesta con cuidado (una línea rota se descarta y se avisa; CUIT, fechas y números en formato argentino) y **prueba las formas de leer los importes** (neto / con IVA / con IVA e internos) **hasta que una cierra con el total impreso**: no hace falta una regla por proveedor. Marca las líneas donde cantidad × precio no da el importe.
   - `servicios/preparar_imagen.dart`: achica la foto (2000 px, JPEG 85), respeta el giro del celular; los PDF van tal cual.
   - Pantalla de prueba: Proveedores › Más acciones › "Leer una factura (prueba)". Muestra el costo por unidad y si cierra; "Copiar lectura" deja el JSON de la IA en el portapapeles. **No guarda nada.**
-- **Falta**: probarla con la clave real y las facturas reales; CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
+- **Primera lectura real (2026-10-05)**: Serra 0051-00194239 (17 líneas). Gemini leyó bien las 17 líneas, el proveedor, el CUIT, el número, la fecha y la condición
+  (cuenta corriente); ignoró lo escrito a mano y los datos del comprador; no inventó nada. El sistema eligió solo "importes con IVA adentro" y la factura cierra con
+  **0 centavos** de diferencia contra el total impreso ($94.676,88), sin líneas sospechosas. Quedó como caso de prueba (`test/fixtures/lectura_serra_0051_00194239.json`).
+  En esa factura "cantidad" son unidades (4 × 939,22), no bultos.
+- **Falta**: probarla con las otras facturas reales (Coca-Cola de costado, carbónicas y matriz de puntos son las difíciles); CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
   convertir bultos en unidades (hoy `cantidad` se toma como unidades); enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.

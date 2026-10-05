@@ -74,7 +74,20 @@ void main() {
     expect(r.modelo, 'gemini-3.5-flash-lite');
   });
 
-  test('un fallo que no es 404 (sin cupo) se muestra tal cual, sin probar otro modelo', () async {
+  test('sin cupo en el modelo fuerte (429), prueba el liviano, que tiene su propio cupo', () async {
+    final pedidos = <String>[];
+    final r = await leerFacturasConGemini(
+      [adjunto],
+      client: MockClient((req) async {
+        pedidos.add(req.url.path);
+        return req.url.path.contains(modeloParaLeerFacturas) ? http.Response('{}', 429) : http.Response(_respuesta(_facturaElpar), 200);
+      }),
+    );
+    expect(pedidos, hasLength(2));
+    expect(r.modelo, isNot(modeloParaLeerFacturas));
+  });
+
+  test('sin cupo en los dos modelos, avisa que se acabó el cupo gratis', () async {
     var pedidos = 0;
     await expectLater(
       leerFacturasConGemini(
@@ -85,6 +98,61 @@ void main() {
         }),
       ),
       throwsA(isA<ErrorGemini>().having((e) => e.mensaje, 'mensaje', contains('cupo gratis'))),
+    );
+    expect(pedidos, 2); // un 429 no se reintenta: pasa al otro modelo y listo
+  });
+
+  test('si Google está saturado (503), reintenta una vez el mismo modelo y anda', () async {
+    final pedidos = <String>[];
+    final r = await leerFacturasConGemini(
+      [adjunto],
+      espera: Duration.zero,
+      client: MockClient((req) async {
+        pedidos.add(req.url.path);
+        return pedidos.length == 1 ? http.Response('{"error":{"message":"The model is overloaded."}}', 503) : http.Response(_respuesta(_facturaElpar), 200);
+      }),
+    );
+    expect(pedidos, hasLength(2));
+    expect(pedidos.toSet(), hasLength(1)); // el mismo modelo las dos veces
+    expect(r.modelo, modeloParaLeerFacturas);
+  });
+
+  test('si el modelo fuerte sigue saturado, pasa al liviano', () async {
+    final pedidos = <String>[];
+    final r = await leerFacturasConGemini(
+      [adjunto],
+      espera: Duration.zero,
+      client: MockClient((req) async {
+        pedidos.add(req.url.path);
+        return req.url.path.contains(modeloParaLeerFacturas) ? http.Response('{}', 503) : http.Response(_respuesta(_facturaElpar), 200);
+      }),
+    );
+    expect(pedidos, hasLength(3)); // fuerte, fuerte (reintento), liviano
+    expect(r.modelo, isNot(modeloParaLeerFacturas));
+  });
+
+  test('si todo está caído, el mensaje trae el detalle que manda Google', () async {
+    await expectLater(
+      leerFacturasConGemini(
+        [adjunto],
+        espera: Duration.zero,
+        client: MockClient((_) async => http.Response('{"error":{"message":"The model is overloaded. Please try again later."}}', 503)),
+      ),
+      throwsA(isA<ErrorGemini>().having((e) => e.mensaje, 'mensaje', allOf(contains('503'), contains('overloaded')))),
+    );
+  });
+
+  test('una clave mala (400) no prueba otro modelo ni reintenta', () async {
+    var pedidos = 0;
+    await expectLater(
+      leerFacturasConGemini(
+        [adjunto],
+        client: MockClient((_) async {
+          pedidos++;
+          return http.Response('{"error":{"message":"API key not valid"}}', 400);
+        }),
+      ),
+      throwsA(isA<ErrorGemini>().having((e) => e.mensaje, 'mensaje', contains('clave no es válida'))),
     );
     expect(pedidos, 1);
   });
