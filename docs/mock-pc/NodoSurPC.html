@@ -140,12 +140,12 @@ svg.ic{flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:rou
 .chk.on{background:var(--prim);box-shadow:none}
 
 /* ---------- hoja inferior ---------- */
-.veil{position:absolute;inset:38px 0 0;background:var(--scrim);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fade .3s ease both}
+.veil{position:absolute;inset:38px 0 0;background:var(--scrim);z-index:40;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .3s ease both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
-.sheet{width:760px;max-height:92%;background:var(--paper);border-radius:40px 40px 0 0;padding:12px 32px 32px;display:flex;flex-direction:column;gap:14px;animation:sheet .5s var(--ease) both;box-shadow:0 -20px 60px rgba(0,0,0,.25);overflow:hidden}
+@keyframes sheet{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+.sheet{width:760px;max-height:100%;background:var(--paper);border-radius:40px;padding:30px 32px 32px;display:flex;flex-direction:column;gap:14px;animation:sheet .35s var(--ease) both;box-shadow:0 30px 80px rgba(0,0,0,.28);overflow:hidden}
 .sheet.wide{width:1040px}
-.asa{width:44px;height:5px;border-radius:3px;background:#d3d7df;align-self:center;flex:none}
+.asa{display:none;width:44px;height:5px;border-radius:3px;background:#d3d7df;align-self:center;flex:none}
 .sbody{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0;padding:2px}
 .sfoot{display:flex;flex-direction:column;gap:8px;flex:none}
 .btn-main{height:60px;border-radius:999px;background:var(--prim);color:#fff;font-size:17px;font-weight:600;transition:transform .3s var(--ease)}
@@ -708,7 +708,7 @@ function popHtml(){
 /* ================= panel "qué cambia" ================= */
 var CAMBIA={
  venta:{hoy:['Navbar solo con texto, acento único tinta negra; el total y "Cobrar" van en tarjeta casi negra.','Medios: efectivo naranja, QR azul, débito verde agua, mixto violeta; íconos Material Rounded.','Diálogos centrados con peso 600 en los títulos; avisos como SnackBar.'],
-  mock:['<b>Navbar con íconos de trazo</b> y Venta como botón azul de marca (más oscuro cuando está activa); el resto, burbuja azul claro con texto azul.','<b>Medios en 2×2</b>: se pintan al elegirse (verde, azul, gris, ámbar) y desaparece el violeta. <b>Cobrar en azul</b>.','<b>Títulos en peso 450</b> con tracking −0,055em y cifras tabulares; total en tarjeta "héroe".','<b>Hojas inferiores</b> (radio 40, asa) en vez de diálogos; el velo cierra, salvo la terminal y "Venta cobrada".','Línea nueva del carrito con aro azul; deshacer y cantidad exacta con doble clic.'],
+  mock:['<b>Navbar con íconos de trazo</b> y Venta como botón azul de marca (más oscuro cuando está activa); el resto, burbuja azul claro con texto azul.','<b>Medios en 2×2</b>: se pintan al elegirse (verde, azul, gris, ámbar) y desaparece el violeta. <b>Cobrar en azul</b>.','<b>Títulos en peso 450</b> con tracking −0,055em y cifras tabulares; total en tarjeta "héroe".','<b>Modales al centro</b> (radio 40, sombra suave, título 28/450, botones apilados); el velo cierra, salvo la terminal y "Venta cobrada".','Línea nueva del carrito con aro azul; deshacer y cantidad exacta con doble clic.'],
   igual:['Dos zonas: grilla con "Más vendidos" a la izquierda, carrito + cobro fijo a la derecha. Búsqueda, total y medios siempre visibles.','Atajos Alt, Enter cobra, recargo de cigarrillos antes del redondeo, redondeo solo en efectivo, crédito en 1 pago.']},
  inicio:{hoy:['Fila de 4 indicadores, gráfico por hora y 3 tarjetas abajo; tarjeta destacada casi negra con degradé.','Sin saludo ni botón grande de "Nueva venta".'],
   mock:['<b>"Hola, Ana"</b> en 56/450 y botón azul <b>Nueva venta</b> de ancho fijo, como en el celular.','Tarjeta "Hoy vendiste" con ganancia en verde y barra efectivo / Mercado Pago (verde y azul).','Encabezados de sección en mayúsculas 14/700, etiquetas de estado con los 4 tonos del mock.'],
