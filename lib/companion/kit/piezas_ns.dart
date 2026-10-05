@@ -533,9 +533,12 @@ class InterruptorNs extends StatelessWidget {
 /// Stepper − n +: contenedor con padding 3, botones de 44 y cantidad de ancho
 /// mínimo [anchoCantidad].
 class StepperNs extends StatelessWidget {
-  const StepperNs({super.key, required this.cantidad, required this.onMenos, required this.onMas, this.fondo, this.anchoCantidad = 60, this.tamanioCantidad = 16});
+  const StepperNs({super.key, required this.cantidad, required this.onMenos, required this.onMas, this.fondo, this.anchoCantidad = 60, this.tamanioCantidad = 16, this.onTapCantidad});
 
   final String cantidad;
+
+  /// Tocar la cantidad (mock: "Tocá la cantidad para escribirla exacta").
+  final VoidCallback? onTapCantidad;
   final VoidCallback? onMenos;
   final VoidCallback? onMas;
   final Color? fondo;
@@ -553,9 +556,24 @@ class StepperNs extends StatelessWidget {
         children: [
           BotonCircularNs(icono: IconoNs.menos, onTap: onMenos, etiqueta: 'Menos', tamanioIcono: 14, grosor: 2.6, colorIcono: ns.ink),
           const SizedBox(width: 3),
-          SizedBox(
-            width: anchoCantidad,
-            child: Text(cantidad, textAlign: TextAlign.center, maxLines: 1, style: estiloNs(tamanioCantidad, peso: FontWeight.w700, tabular: true, color: ns.ink)),
+          Semantics(
+            button: onTapCantidad != null,
+            label: 'Cantidad $cantidad',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTapCantidad,
+              child: Container(
+                width: anchoCantidad,
+                height: 44,
+                alignment: Alignment.center,
+                child: Text(
+                  cantidad,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: estiloNs(tamanioCantidad, peso: FontWeight.w700, tabular: true, color: ns.ink).copyWith(decoration: onTapCantidad != null ? TextDecoration.underline : null, decorationThickness: 1),
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 3),
           BotonCircularNs(icono: IconoNs.masMas, onTap: onMas, etiqueta: 'Más', tamanioIcono: 14, grosor: 2.6, colorIcono: ns.ink),
@@ -571,9 +589,10 @@ enum TonoNs { neutro, warn, good, bad, info }
 
 /// Aviso informativo: padding 14/18, radio 22, 14/1.4.
 class InfoNs extends StatelessWidget {
-  const InfoNs(this.texto, {super.key, this.tono = TonoNs.neutro, this.tamanio = 14, this.radio = 22, this.peso = FontWeight.w400});
+  const InfoNs(this.texto, {super.key, this.tono = TonoNs.neutro, this.tamanio = 14, this.radio = 22, this.peso = FontWeight.w400, this.vertical = 14});
 
   final String texto;
+  final double vertical;
   final TonoNs tono;
   final double tamanio;
   final double radio;
@@ -591,7 +610,7 @@ class InfoNs extends StatelessWidget {
     };
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: 18, vertical: vertical),
       decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(radio)),
       child: Text(texto, style: estiloNs(tamanio, peso: peso, altura: 1.4, color: color)),
     );
@@ -915,4 +934,58 @@ class _PintorTilde extends CustomPainter {
 
   @override
   bool shouldRepaint(_PintorTilde old) => old.avance != avance || old.color != color;
+}
+
+/// Bloque "esperando…" de las hojas (mock: spinner de 26 con borde de 3 + texto 17/500 sobre `--s`, radio 26).
+class FilaEsperaNs extends StatelessWidget {
+  const FilaEsperaNs(this.texto, {super.key});
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(26)),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(strokeWidth: 3, color: ns.ink, backgroundColor: ns.s2),
+          ),
+          const SizedBox(width: 14),
+          Expanded(child: Text(texto, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, altura: 1.3, color: ns.ink))),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarjeta oscura de las hojas (mock `B.hero`): rótulo, cifra grande y una línea de apoyo.
+class HeroHojaNs extends StatelessWidget {
+  const HeroHojaNs({super.key, required this.rotulo, required this.cifra, required this.apoyo});
+  final String rotulo;
+  final String cifra;
+  final String apoyo;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: HeroNs(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(rotulo, style: estiloNs(14, peso: FontWeight.w600, color: const Color(0xC7FFFFFF))),
+            const SizedBox(height: 6),
+            Text(cifra, style: tituloNs(44, track: -0.058, altura: 1.02, color: TokensNs.blanco)),
+            const SizedBox(height: 6),
+            Text(apoyo, style: estiloNs(14, altura: 1.4, color: const Color(0xCCFFFFFF))),
+          ],
+        ),
+      ),
+    );
+  }
 }

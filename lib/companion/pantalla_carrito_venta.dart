@@ -5,14 +5,13 @@
 // desktop"): buscar, calcular el total real (recargo de cigarrillos, redondeo,
 // descuento), cobrar en efectivo o por la terminal y asentar la venta.
 //
-// Lo que el mock no tiene y la app sí se conserva con el mismo aspecto:
-// el crédito en 1 pago, "Cobrar a mano (sin terminal)", el caramelo cuando el
-// vuelto es de $100, entregar un encargue, gramos exactos con doble toque y
-// "Deshacer" al quitar una línea. Mixto (efectivo + QR/débito) todavía no se
-// cobra desde el celular: queda pendiente de decidir (ver el documento
-// `docs/COMPARACION-MOCK-CELULAR.md`).
+// El mock (lote 1) ya trae lo que la app tiene: crédito en 1 pago, descuento
+// libre (monto o porcentaje), cantidad exacta con un toque, "Deshacer" al quitar
+// una línea, entregar un encargue, el caramelo cuando el vuelto es de $100 y
+// "Cobrar a mano (sin terminal)".
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
 import '../data/identidad_sync.dart' show generarGlobalId;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
@@ -45,9 +44,6 @@ String _canalDe(_MedioVenta m) => switch (m) {
 /// Los tres momentos de una venta en esta pantalla.
 enum _Paso { carrito, cobro, cobrado }
 
-/// Descuento fijo del mock: 10 % sobre el total (1000 puntos básicos).
-const int _descuentoFijoBp = 1000;
-
 /// Lo que muestra "Venta cobrada" una vez asentada la venta.
 typedef _ResumenCobro = ({int ventaId, int totalCentavos, _MedioVenta medio, int productos, int vueltoCentavos});
 
@@ -58,7 +54,7 @@ class PantallaCarritoVenta extends StatefulWidget {
     required this.servicio,
     required this.usuarioId,
     required this.carrito,
-    this.encargueId,
+    this.encargue,
   });
 
   /// Imprimir ticket — exclusivo de la PC. Null sin PC emparejada.
@@ -72,8 +68,9 @@ class PantallaCarritoVenta extends StatefulWidget {
   /// El carrito del menú principal (lista mutable compartida).
   final List<LineaVenta> carrito;
 
-  /// El encargue por apartado que esta venta entrega: al cobrar libera lo apartado.
-  final int? encargueId;
+  /// El encargue por apartado que esta venta entrega (id): al cobrar libera lo apartado. Se comparte con el menú, que lo
+  /// pone cuando se elige "Entregar" desde Más → Encargues; acá se limpia al cobrar o al vaciar la venta.
+  final ValueNotifier<int?>? encargue;
 
   @override
   State<PantallaCarritoVenta> createState() => _PantallaCarritoVentaState();
@@ -95,10 +92,19 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   final _otroCtrl = TextEditingController();
   bool _escaneando = false;
 
-  /// Descuento fijo del 10 % (el del mock). El valor se guarda como porcentaje.
-  bool _descuento = false;
+  /// Descuento libre (mock 08b): monto en pesos o porcentaje. `_valorDescuento` son centavos si es monto y puntos básicos si
+  /// es porcentaje (la unidad de `calcularDescuento`); 0 = sin descuento.
   TipoDescuento _tipoDescuento = TipoDescuento.porcentaje;
   int _valorDescuento = 0;
+
+  /// El encargue que se está entregando (id compartido con el menú) y el nombre del cliente para mostrarlo.
+  late final ValueNotifier<int?> _encargue = widget.encargue ?? ValueNotifier<int?>(null);
+  String? _encargueNombre;
+  List<EncargueCompanion> _encargues = [];
+
+  /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra "Venta cobrada".
+  bool _cobradoAMano = false;
+  String? _encargueEntregado;
 
   final _busquedaCtrl = TextEditingController();
   final _busquedaFocus = FocusNode();
@@ -119,10 +125,14 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   void initState() {
     super.initState();
     _cargarMasVendidos();
+    _cargarEncargues();
+    _encargue.addListener(_alCambiarEncargue);
   }
 
   @override
   void dispose() {
+    _encargue.removeListener(_alCambiarEncargue);
+    if (widget.encargue == null) _encargue.dispose();
     _otroCtrl.dispose();
     _busquedaCtrl.dispose();
     _busquedaFocus.dispose();
@@ -214,26 +224,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   void _quitarLinea(int index) {
     final quitada = widget.carrito[index];
     _actualizarLinea(index, null);
-    // Un toque saca la línea, así que se puede deshacer (sigue en la app aunque el mock no lo tenga).
-    final mensajero = ScaffoldMessenger.of(context);
-    mensajero.clearSnackBars();
-    mensajero.showSnackBar(
-      SnackBar(
-        content: Text('Quitaste ${quitada.nombreProducto}'),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'Deshacer',
-          onPressed: () {
-            if (!mounted) return;
-            _claveCobroActual = null;
-            setState(() {
-              widget.carrito.insert(index.clamp(0, widget.carrito.length), quitada);
-              _resultado = null;
-            });
-          },
-        ),
-      ),
-    );
+    // Un toque saca la línea, así que se puede deshacer (mock 08d): aviso de 5 s con "Deshacer".
+    mostrarAvisoConAccionNs(context, 'Quitaste ${quitada.nombreProducto}', 'Deshacer', () {
+      if (!mounted) return;
+      _claveCobroActual = null;
+      setState(() {
+        widget.carrito.insert(index.clamp(0, widget.carrito.length), quitada);
+        _resultado = null;
+      });
+    });
   }
 
   /// `nueva` null = eliminar la línea (restar por debajo de 1 saca la línea entera).
@@ -247,6 +246,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       }
       _resultado = null;
     });
+    if (widget.carrito.isEmpty) _encargue.value = null; // sin líneas ya no se está entregando nada
   }
 
   LineaVenta _conValor(LineaVenta l, int valor) {
@@ -282,28 +282,59 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _actualizarLinea(index, _conValor(l, nuevo));
   }
 
-  /// Doble toque sobre la cantidad: escribir el valor exacto (gramos o unidades).
+  /// Un toque sobre la cantidad: escribir el valor exacto (gramos o unidades), con atajos y el subtotal en vivo (mock 08c).
   Future<void> _editarExacto(int index) async {
     final l = widget.carrito[index];
     final esPesable = l is LineaVentaPesable;
     final actual = esPesable ? l.gramos : (l as LineaVentaPorUnidad).cantidad;
     final ctrl = TextEditingController(text: '$actual');
+    final atajos = esPesable ? const [('100 g', 100), ('250 g', 250), ('500 g', 500), ('1 kg', 1000)] : const [('1', 1), ('2', 2), ('3', 3), ('6', 6), ('12', 12)];
     final valor = await mostrarHojaNs<int>(
       context,
-      builder: (ctx) => HojaNs(
-        titulo: esPesable ? 'Gramos' : 'Cantidad',
-        bloques: [
-          CampoNs(etiqueta: esPesable ? 'Gramos' : 'Cantidad', controller: ctrl, grande: true, teclado: TextInputType.number, formatos: soloDigitosNs, autofoco: true, onSubmit: (t) => Navigator.of(ctx).pop(int.tryParse(t))),
-        ],
-        botones: [
-          BotonNs.primario(ctx, 'Listo', () => Navigator.of(ctx).pop(int.tryParse(ctrl.text))),
-          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop()),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHoja) {
+          final v = int.tryParse(ctrl.text) ?? 0;
+          return HojaNs(
+            titulo: esPesable ? 'Gramos' : 'Cantidad',
+            texto: l.nombreProducto,
+            bloques: [
+              CampoNs(
+                etiqueta: esPesable ? 'Gramos exactos' : 'Unidades exactas',
+                controller: ctrl,
+                placeholder: esPesable ? '0 g' : '0',
+                grande: true,
+                teclado: TextInputType.number,
+                formatos: soloDigitosNs,
+                autofoco: true,
+                onChanged: (_) => setHoja(() {}),
+                onSubmit: (t) => Navigator.of(ctx).pop(int.tryParse(t)),
+              ),
+              _EtiquetaHoja('Atajos'),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final (texto, n) in atajos)
+                    ChipNs(
+                      texto: texto,
+                      activo: v == n,
+                      onTap: () => setHoja(() => ctrl.text = '$n'),
+                    ),
+                ],
+              ),
+              if (v > 0) FilaClaveValorNs(clave: 'Subtotal', valor: plataNs(_conValor(l, v).subtotalCentavos), sinLinea: true) else const InfoNs('Con 0 se quita del carrito.'),
+            ],
+            botones: [
+              BotonNs.primario(ctx, 'Listo', () => Navigator.of(ctx).pop(ctrl.text.trim().isEmpty ? -1 : int.tryParse(ctrl.text) ?? 0)),
+              BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop()),
+            ],
+          );
+        },
       ),
     );
-    ctrl.dispose();
-    if (valor == null || !mounted) return;
-    if (valor <= 0) return _quitarLinea(index);
+    // Sin dispose: la hoja todavía se está cerrando (animación de salida) y su campo aún lee el controlador.
+    if (valor == null || valor < 0 || !mounted) return; // cancelar o campo vacío: no cambia nada
+    if (valor == 0) return _quitarLinea(index);
     _actualizarLinea(index, _conValor(widget.carrito[index], valor));
   }
 
@@ -330,17 +361,186 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   int get _subtotalCentavos => Venta(lineas: widget.carrito).subtotalCentavos;
 
-  /// Descuento del chip: 10 % del subtotal, redondeado al peso (docs/02 §4.1).
-  int get _descuentoCentavos => _descuento ? ((_subtotalCentavos * _descuentoFijoBp / 10000) / centavosPorPeso).round() * centavosPorPeso : 0;
+  /// Descuento cargado: monto o porcentaje, nunca más que el total (la misma cuenta del escritorio, `calcularDescuento`).
+  int get _descuentoCentavos => calcularDescuento(baseCentavos: _subtotalCentavos, tipo: _tipoDescuento, valor: _valorDescuento);
 
-  void _alternarDescuento() {
+  /// Lo que se ve al lado del chip: "− $ 1.625 (10 %)".
+  String get _notaDescuento {
+    final pct = _tipoDescuento == TipoDescuento.porcentaje ? ' (${_porcentajeTexto(_valorDescuento)} %)' : '';
+    return '− ${plataNs(_descuentoCentavos)}$pct';
+  }
+
+  static String _porcentajeTexto(int bp) {
+    final v = bp / 100;
+    return (v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString()).replaceAll('.', ',');
+  }
+
+  /// Hoja "Descuento" (mock 08b): monto en pesos o porcentaje, con el total sin redondeo en vivo.
+  Future<void> _abrirDescuento() async {
+    final base = _subtotalCentavos;
+    var tipo = _valorDescuento > 0 ? _tipoDescuento : TipoDescuento.monto;
+    final ctrl = TextEditingController(
+      text: _valorDescuento <= 0
+          ? ''
+          : (_tipoDescuento == TipoDescuento.porcentaje ? _porcentajeTexto(_valorDescuento) : '${_valorDescuento ~/ centavosPorPeso}'),
+    );
+    int valorDe(String texto) {
+      if (tipo == TipoDescuento.porcentaje) {
+        final v = double.tryParse(texto.replaceAll(',', '.')) ?? 0;
+        return ((v > 100 ? 100 : v) * 100).round();
+      }
+      return (int.tryParse(texto.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
+    }
+
+    final tenia = _valorDescuento > 0;
+    final r = await mostrarHojaNs<({TipoDescuento tipo, int valor})?>(
+      context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHoja) {
+          final valor = valorDe(ctrl.text);
+          final dm = calcularDescuento(baseCentavos: base, tipo: tipo, valor: valor);
+          final esPct = tipo == TipoDescuento.porcentaje;
+          return HojaNs(
+            titulo: 'Descuento',
+            texto: 'Poné el monto o el porcentaje que quieras. Nunca puede pasar del total de la venta.',
+            bloques: [
+              _EtiquetaHoja('¿Cómo lo querés cargar?'),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChipNs(
+                    texto: 'Monto en pesos',
+                    activo: !esPct,
+                    onTap: () => setHoja(() {
+                      tipo = TipoDescuento.monto;
+                      ctrl.clear();
+                    }),
+                  ),
+                  ChipNs(
+                    texto: 'Porcentaje',
+                    activo: esPct,
+                    onTap: () => setHoja(() {
+                      tipo = TipoDescuento.porcentaje;
+                      ctrl.clear();
+                    }),
+                  ),
+                ],
+              ),
+              CampoNs(
+                key: ValueKey('descuento:${esPct ? 'pct' : 'monto'}'),
+                etiqueta: esPct ? 'Porcentaje de descuento' : 'Monto del descuento',
+                controller: ctrl,
+                placeholder: esPct ? '0 %' : '\$ 0',
+                grande: true,
+                teclado: esPct ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.number,
+                formatos: esPct ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]'))] : soloDigitosNs,
+                autofoco: true,
+                onChanged: (_) => setHoja(() {}),
+              ),
+              if (valor > 0) ...[
+                FilaClaveValorNs(clave: 'Descuento', valor: '− ${plataNs(dm)}', colorValor: context.ns.g),
+                FilaClaveValorNs(clave: 'Total sin redondeo', valor: plataNs(base - dm)),
+              ] else
+                FilaClaveValorNs(clave: 'Total sin descuento', valor: plataNs(base)),
+            ],
+            botones: [
+              BotonNs.primario(ctx, 'Listo', () => Navigator.of(ctx).pop((tipo: tipo, valor: valor))),
+              if (tenia || valor > 0) BotonNs.secundario(ctx, 'Quitar el descuento', () => Navigator.of(ctx).pop((tipo: TipoDescuento.monto, valor: 0))),
+            ],
+          );
+        },
+      ),
+    );
+    // Sin dispose: la hoja todavía se está cerrando (animación de salida) y su campo aún lee el controlador.
+    if (r == null || !mounted) return;
     _claveCobroActual = null;
     setState(() {
-      _descuento = !_descuento;
-      _tipoDescuento = TipoDescuento.porcentaje;
-      _valorDescuento = _descuento ? _descuentoFijoBp : 0;
+      _tipoDescuento = r.tipo;
+      _valorDescuento = r.valor;
       _resultado = null;
     });
+  }
+
+  // ───────────────────────── Encargues ─────────────────────────
+
+  Future<void> _cargarEncargues() async {
+    try {
+      final lista = await widget.servicio.encargues();
+      if (!mounted) return;
+      setState(() {
+        _encargues = lista;
+        _encargueNombre = _nombreDeEncargue(_encargue.value);
+      });
+    } catch (_) {
+      // Sin encargues (o sin conexión) no se ofrece el atajo.
+    }
+  }
+
+  String? _nombreDeEncargue(int? id) => id == null ? null : _encargues.where((e) => e.id == id).firstOrNull?.nombreCliente;
+
+  void _alCambiarEncargue() {
+    if (!mounted) return;
+    setState(() => _encargueNombre = _nombreDeEncargue(_encargue.value));
+    if (_encargue.value != null && _encargueNombre == null) _cargarEncargues();
+  }
+
+  /// Hoja "Encargues para entregar" (mock 08e): elegir uno carga lo apartado en la venta, a los precios de hoy.
+  Future<void> _abrirEncargues() async {
+    await _cargarEncargues();
+    if (!mounted) return;
+    final totales = <int, int>{};
+    for (final e in _encargues) {
+      try {
+        totales[e.id] = Venta(lineas: await widget.servicio.lineasDeEncargue(e.id)).subtotalCentavos;
+      } catch (_) {
+        // Sin el total la fila igual se puede elegir.
+      }
+    }
+    if (!mounted) return;
+    String? aviso;
+    await mostrarHojaNs<void>(
+      context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHoja) => HojaNs(
+          titulo: 'Encargues para entregar',
+          texto: 'Elegí uno y se carga lo apartado en la venta, a los precios de hoy. Después cobrás como siempre.',
+          bloques: [
+            if (aviso != null) InfoNs(aviso!, tono: TonoNs.warn),
+            if (_encargues.isEmpty)
+              const InfoNs('No hay encargues pendientes.')
+            else
+              for (final e in _encargues)
+                _FilaEncargue(
+                  nombre: e.nombreCliente,
+                  detalle: 'Desde el ${e.desde.day}/${e.desde.month} · ${e.lineas.length} ${e.lineas.length == 1 ? 'producto' : 'productos'}',
+                  total: totales[e.id],
+                  onTap: () async {
+                    if (widget.carrito.isNotEmpty) {
+                      setHoja(() => aviso = 'Hay una venta armada: cobrala o vaciala antes de entregar un encargue.');
+                      return;
+                    }
+                    try {
+                      final lineas = await widget.servicio.lineasDeEncargue(e.id);
+                      if (!mounted) return;
+                      widget.carrito
+                        ..clear()
+                        ..addAll(lineas);
+                      _claveCobroActual = null;
+                      _resultado = null;
+                      _encargue.value = e.id;
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                      mostrarAvisoNs(context, 'Encargue de ${e.nombreCliente} cargado en la venta');
+                    } catch (err) {
+                      setHoja(() => aviso = mensajeDeError(err));
+                    }
+                  },
+                ),
+          ],
+          botones: [BotonNs.secundario(ctx, 'Cerrar', () => Navigator.of(ctx).pop())],
+        ),
+      ),
+    );
   }
 
   // ───────────────────────── Cobro ─────────────────────────
@@ -435,7 +635,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         usuarioId: widget.usuarioId,
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
-        encargueId: widget.encargueId,
+        encargueId: _encargue.value,
         claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
@@ -470,9 +670,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         montoCentavos: total,
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
-        encargueId: widget.encargueId,
+        encargueId: _encargue.value,
       );
-      if (resultado != null) await _ventaCobrada(resultado.ventaId, resultado.totalCentavos);
+      if (resultado != null) await _ventaCobrada(resultado.ventaId, resultado.totalCentavos, aMano: resultado.aMano);
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -497,10 +697,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         canal: _canalDe(_medio),
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
-        encargueId: widget.encargueId,
+        encargueId: _encargue.value,
         claveCobro: _claveCobro,
       );
-      await _ventaCobrada(r.ventaId, r.totalCentavos);
+      await _ventaCobrada(r.ventaId, r.totalCentavos, aMano: true);
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -508,7 +708,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  Future<void> _ventaCobrada(int ventaId, int totalCentavos) async {
+  Future<void> _ventaCobrada(int ventaId, int totalCentavos, {bool aMano = false}) async {
     _claveCobroActual = null;
     // El resumen se arma ANTES de vaciar el carrito: cuántos productos fueron
     // y cuánto se devuelve dependen de lo que había.
@@ -516,8 +716,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final productos = widget.carrito.length;
     final vuelto = medio == _MedioVenta.efectivo ? vueltoCentavos(pagaCentavos: _pagaEfectivoCentavos(totalCentavos), totalCentavos: totalCentavos) : 0;
     widget.carrito.clear();
-    _descuento = false;
     _valorDescuento = 0;
+    _cobradoAMano = aMano;
+    _encargueEntregado = _encargueNombre;
+    _encargue.value = null;
     if (!mounted) return;
     setState(() {
       _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
@@ -545,6 +747,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     setState(() {
       _paso = _Paso.carrito;
       _cobrado = null;
+      _cobradoAMano = false;
+      _encargueEntregado = null;
       _resultado = null;
       _error = null;
     });
@@ -653,12 +857,21 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 },
               ),
               const SizedBox(height: 14),
+              if (_encargue.value != null && n > 0) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+                  child: Text('Entregando el encargue de ${_encargueNombre ?? 'un cliente'}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+                ),
+                const SizedBox(height: 14),
+              ],
               Expanded(child: n == 0 ? _vacio(context) : _lineas(context)),
               if (n > 0) ...[
                 _filaDescuento(context),
                 const SizedBox(height: 14),
                 _barraTotal(context),
-                const SizedBox(height: BarraInferiorNs.espacioReservado - 40),
+                const SizedBox(height: BarraInferiorNs.espacioReservado),
               ] else
                 const SizedBox(height: BarraInferiorNs.espacioReservado),
             ],
@@ -682,6 +895,35 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       padding: EdgeInsets.zero,
       children: [
         Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
+        if (_encargues.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          PresionNs(
+            onTap: _abrirEncargues,
+            etiqueta: 'Entregar un encargue',
+            child: Container(
+              height: 64,
+              padding: const EdgeInsets.fromLTRB(12, 10, 18, 10),
+              decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(999)),
+              child: Row(
+                children: [
+                  Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.paper, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.producto, tamanio: 22, color: ns.i)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Entregar un encargue', maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(16, peso: FontWeight.w600, color: ns.i)),
+                        Text('${_encargues.length} ${_encargues.length == 1 ? 'encargue' : 'encargues'} para entregar', maxLines: 1, style: estiloNs(13, color: ns.i)),
+                      ],
+                    ),
+                  ),
+                  IconoNsWidget(IconoNs.chevron, tamanio: 18, color: ns.i),
+                ],
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         const SeccionNs('Más vendidos'),
         const SizedBox(height: 10),
@@ -720,41 +962,53 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Widget _lineas(BuildContext context) {
+    final n = widget.carrito.length;
     return ListView.separated(
       padding: EdgeInsets.zero,
-      itemCount: widget.carrito.length,
+      itemCount: n + 1,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, i) => EntradaNs(
-        child: _LineaCarrito(
-          linea: widget.carrito[i],
-          onMenos: () => _ajustarLinea(i, -1),
-          onMas: () => _ajustarLinea(i, 1),
-          onQuitar: () => _quitarLinea(i),
-          onEditar: () => _editarExacto(i),
-        ),
-      ),
+      itemBuilder: (context, i) {
+        if (i == n) {
+          return EntradaNs(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 2, 6, 8),
+              child: Text('Tocá la cantidad para escribirla exacta.', style: estiloNs(13, color: context.ns.mute)),
+            ),
+          );
+        }
+        return EntradaNs(
+          child: _LineaCarrito(
+            linea: widget.carrito[i],
+            onMenos: () => _ajustarLinea(i, -1),
+            onMas: () => _ajustarLinea(i, 1),
+            onQuitar: () => _quitarLinea(i),
+            onEditar: () => _editarExacto(i),
+          ),
+        );
+      },
     );
   }
 
   Widget _filaDescuento(BuildContext context) {
     final ns = context.ns;
+    final activo = _valorDescuento > 0;
     return Row(
       children: [
         PresionNs(
-          onTap: _alternarDescuento,
-          etiqueta: _descuento ? 'Quitar descuento 10 %' : 'Aplicar descuento 10 %',
+          onTap: _abrirDescuento,
+          etiqueta: activo ? 'Descuento aplicado' : 'Descuento',
           child: Container(
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 18),
-            decoration: BoxDecoration(color: _descuento ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
+            decoration: BoxDecoration(color: activo ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
             child: Center(
               widthFactor: 1,
-              child: Text(_descuento ? 'Descuento 10 % aplicado' : 'Aplicar descuento 10 %', style: estiloNs(14, peso: FontWeight.w600, color: _descuento ? TokensNs.blanco : ns.ink)),
+              child: Text(activo ? 'Descuento aplicado' : 'Descuento', style: estiloNs(14, peso: FontWeight.w600, color: activo ? TokensNs.blanco : ns.ink)),
             ),
           ),
         ),
         const Spacer(),
-        if (_descuento) Text('− ${plataNs(_descuentoCentavos)}', style: estiloNs(14, color: ns.mute, tabular: true)),
+        if (activo) Text(_notaDescuento, style: estiloNs(14, color: ns.mute, tabular: true)),
       ],
     );
   }
@@ -788,9 +1042,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   static const _nombres = {
     _MedioVenta.efectivo: 'Efectivo',
-    _MedioVenta.qr: 'Mercado Pago',
+    _MedioVenta.qr: 'QR de Mercado Pago',
     _MedioVenta.debito: 'Tarjeta de débito',
-    _MedioVenta.credito: 'Tarjeta de crédito',
+    _MedioVenta.credito: 'Tarjeta de crédito (1 pago)',
   };
 
   static const _colores = {
@@ -805,6 +1059,12 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _MedioVenta.qr: IconoNs.escanear,
     _MedioVenta.debito: IconoNs.tarjeta,
     _MedioVenta.credito: IconoNs.tarjeta,
+  };
+
+  static const _textoTerminal = {
+    _MedioVenta.qr: 'Se cobra con el QR de Mercado Pago en la terminal. Vas a ver acá si el pago se aprobó.',
+    _MedioVenta.debito: 'Se cobra con la tarjeta de débito en la terminal. Vas a ver acá si el pago se aprobó.',
+    _MedioVenta.credito: 'Se cobra con la tarjeta de crédito en la terminal, siempre en 1 pago y sin recargo. Vas a ver acá si el pago se aprobó.',
   };
 
   Widget _vistaCobro(BuildContext context) {
@@ -848,35 +1108,25 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                     ),
                   ),
                 const SizedBox(height: 14),
-                Text('¿Cómo paga?', style: estiloNs(17, peso: FontWeight.w600, color: ns.ink)),
-                const SizedBox(height: 10),
-                GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 170 / 68,
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    for (final m in _MedioVenta.values)
-                      _TarjetaMedio(nombre: _nombres[m]!, icono: _iconos[m]!, color: _colores[m]!, activo: _medio == m, onTap: _cobrando ? null : () => _elegirMedio(m)),
-                  ],
-                ),
-                const SizedBox(height: 14),
+                Text('¿Cómo paga?', style: estiloNs(17, peso: FontWeight.w600, track: -0.02, color: ns.ink)),
+                const SizedBox(height: 12),
+                for (final m in _MedioVenta.values) ...[
+                  _FilaMedio(nombre: _nombres[m]!, icono: _iconos[m]!, color: _colores[m]!, activo: _medio == m, onTap: _cobrando ? null : () => _elegirMedio(m)),
+                  if (m != _MedioVenta.values.last) const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 12),
                 if (efectivo && total != null) _panelEfectivo(context, total),
                 if (!efectivo) ...[
-                  InfoNs(
-                    _medio == _MedioVenta.qr
-                        ? 'Se cobra con el QR de Mercado Pago en la terminal. Vas a ver acá si el pago se aprobó.'
-                        : 'Se cobra con la tarjeta en la terminal. Vas a ver acá si el pago se aprobó.',
-                    tono: TonoNs.info,
-                    radio: 24,
-                    tamanio: 15,
-                    peso: FontWeight.w500,
+                  InfoNs(_textoTerminal[_medio]!, tono: TonoNs.info, radio: 24, tamanio: 15, peso: FontWeight.w500, vertical: 16),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: BotonNs(texto: 'Cobrar a mano (sin terminal)', onTap: _cobrando ? null : _cobrarAMano, alto: 48, tamanio: 15, fondo: ns.s, color: ns.ink, rellenar: false, paddingH: 22),
                   ),
-                  const SizedBox(height: 4),
-                  BotonNs.texto(context, 'Cobrar a mano (sin terminal)', _cobrando ? null : _cobrarAMano),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                    child: Text('Para ventas que el cliente ya pagó por otro lado, como un link de pago.', style: estiloNs(13, altura: 1.35, color: ns.mute)),
+                  ),
                 ],
                 if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: InfoNs(_error!, tono: TonoNs.bad)),
               ],
@@ -902,7 +1152,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final ns = context.ns;
     final paga = _pagaEfectivoCentavos(total);
     final vuelto = vueltoCentavos(pagaCentavos: paga, totalCentavos: total);
-    final billetes = atajosDeEfectivo(total, cuantos: 3).where((b) => b != total).take(3).toList();
+    final billetes = atajosDeEfectivo(total, cuantos: 3).where((b) => b != total).take(2).toList(); // el mock muestra Justo + 2 billetes
     final otroActivo = _otroMontoCentavos > 0;
     return EntradaNs(
       child: Container(
@@ -975,7 +1225,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
               vuelto < 0 ? 'Falta ${plataNs(-vuelto)}' : 'Vuelto ${plataNs(vuelto)}',
               style: estiloNs(32, peso: FontWeight.w600, track: -0.04, color: vuelto < 0 ? ns.b : ns.g, tabular: true),
             ),
-            if (vueltoEsCaramelo(vuelto)) BotonNs.texto(context, 'Agregar caramelo en vez del vuelto', _agregarCaramelo),
+            if (vueltoEsCaramelo(vuelto))
+              Align(
+                alignment: Alignment.centerLeft,
+                child: BotonNs(texto: 'Agregar caramelo en vez del vuelto', onTap: _agregarCaramelo, alto: 48, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 20),
+              ),
           ],
         ),
       ),
@@ -1005,6 +1259,14 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 const SizedBox(height: 14),
                 Text('${_nombres[c.medio]} · ${c.productos == 1 ? '1 producto' : '${c.productos} productos'}', style: estiloNs(16, color: ns.mute)),
                 const SizedBox(height: 14),
+                if (_encargueEntregado != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(999)),
+                    child: Text('Encargue de $_encargueEntregado entregado', style: estiloNs(14, peso: FontWeight.w600, color: ns.i)),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 if (c.medio == _MedioVenta.efectivo)
                   Container(
                     width: double.infinity,
@@ -1013,7 +1275,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                     child: Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
                   )
                 else
-                  Text('Cobro registrado en la caja', style: estiloNs(16, color: ns.mute)),
+                  Text(_cobradoAMano ? 'Cobrado a mano: queda registrado sin pasar por la terminal' : 'Cobro registrado en la caja', style: estiloNs(16, altura: 1.4, color: ns.mute)),
               ],
             ),
           ),
@@ -1180,7 +1442,7 @@ class _LineaCarrito extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              GestureDetector(onDoubleTap: onEditar, child: StepperNs(cantidad: cantidad, onMenos: onMenos, onMas: onMas)),
+              StepperNs(cantidad: cantidad, onMenos: onMenos, onMas: onMas, onTapCantidad: onEditar),
               const SizedBox(width: 8),
               Expanded(
                 child: Align(
@@ -1196,8 +1458,8 @@ class _LineaCarrito extends StatelessWidget {
   }
 }
 
-class _TarjetaMedio extends StatelessWidget {
-  const _TarjetaMedio({required this.nombre, required this.icono, required this.color, required this.activo, required this.onTap});
+class _FilaMedio extends StatelessWidget {
+  const _FilaMedio({required this.nombre, required this.icono, required this.color, required this.activo, required this.onTap});
   final String nombre;
   final IconoNs icono;
   final Color color;
@@ -1213,9 +1475,9 @@ class _TarjetaMedio extends StatelessWidget {
         onTap: onTap,
         etiqueta: nombre,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(color: activo ? color : ns.s, borderRadius: BorderRadius.circular(26)),
+          height: 56,
+          padding: const EdgeInsets.fromLTRB(8, 6, 18, 6),
+          decoration: BoxDecoration(color: activo ? color : ns.s, borderRadius: BorderRadius.circular(999)),
           child: Row(
             children: [
               Container(
@@ -1225,10 +1487,59 @@ class _TarjetaMedio extends StatelessWidget {
                 alignment: Alignment.center,
                 child: IconoNsWidget(icono, tamanio: 20, color: activo ? TokensNs.blanco : color),
               ),
-              const SizedBox(width: 10),
-              Expanded(child: Text(nombre, maxLines: 2, style: estiloNs(16, peso: FontWeight.w600, track: -0.01, altura: 1.15, color: activo ? TokensNs.blanco : ns.ink))),
+              const SizedBox(width: 14),
+              Expanded(child: Text(nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(16, peso: FontWeight.w600, track: -0.02, color: activo ? TokensNs.blanco : ns.ink))),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rótulo chico de una hoja ("Atajos", "¿Cómo lo querés cargar?"): 14/600 en gris.
+class _EtiquetaHoja extends StatelessWidget {
+  const _EtiquetaHoja(this.texto);
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Text(texto, style: estiloNs(14, peso: FontWeight.w600, color: context.ns.mute));
+}
+
+/// Fila de un encargue en la hoja "Encargues para entregar": cliente, desde cuándo y el total de hoy.
+class _FilaEncargue extends StatelessWidget {
+  const _FilaEncargue({required this.nombre, required this.detalle, required this.total, required this.onTap});
+  final String nombre;
+  final String detalle;
+  final int? total;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return PresionNs(
+      onTap: onTap,
+      etiqueta: 'Entregar el encargue de $nombre',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, color: ns.ink)),
+                  Text(detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, color: ns.ink)),
+                ],
+              ),
+            ),
+            if (total != null) ...[
+              const SizedBox(width: 12),
+              Text(plataNs(total!), style: estiloNs(18, peso: FontWeight.w500, color: ns.ink, tabular: true)),
+            ],
+          ],
         ),
       ),
     );

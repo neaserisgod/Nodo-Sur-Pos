@@ -61,7 +61,14 @@ Se ubican dentro del mock sin inventar pantallas nuevas de otro estilo:
 3. Todas las cifras salen de datos reales; las del mock son de ejemplo.
 4. Versión: se muestra la real (`package_info`), no 1.0.0/1.0.1.
 
-## 6. Plan por fases
+## 6. Estado (2026-10-04)
+
+Hecho: todo lo de las fases 1 a 5 de abajo, salvo lo listado como pendiente en `ESTADO.md` ("En curso — celular calcado del
+mock"). Se compararon capturas de la app contra las del mock con `test/companion/capturas_mock_test.dart` (PNG en
+`capturas/companion-mock/`); la diferencia de píxeles va del 2 % al 14 % (tipografía y 1–3 px de interlineado). No se
+probó en un celular real.
+
+## 7. Plan por fases
 
 1. Tokens + iconos + componentes base + barra de 5 pestañas + cartel offline + toast + hoja.
 2. Emparejar, ¿Quién sos?, Inicio, Notificaciones, Buscador de funciones.

@@ -581,7 +581,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   }
 
   /// El encargue por apartado que el carrito está entregando (null en una venta común).
-  int? _encargueId;
+  final ValueNotifier<int?> _encargueEnVenta = ValueNotifier<int?>(null);
 
   /// Encargues (El dueño, 2026-10-02). "Entregar" vuelve acá con el encargue elegido: se arma el carrito con lo
   /// apartado a los precios de hoy y se abre; al cobrar, la venta libera lo apartado.
@@ -608,7 +608,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _carrito
         ..clear()
         ..addAll(lineas);
-      _encargueId = entrega.id;
+      _encargueEnVenta.value = entrega.id;
     } catch (_) {
       return; // sin lineas no se abre un carrito vacío: el encargue sigue pendiente y se puede reintentar
     }
@@ -741,7 +741,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                       servicio: _servicio!,
                       usuarioId: _usuarioId!,
                       carrito: _carrito,
-                      encargueId: _encargueId,
+                      encargue: _encargueEnVenta,
                     ),
               const PantallaCajaNs(),
               PantallaMasNs(alAbrirEncargues: _abrirEncargues),

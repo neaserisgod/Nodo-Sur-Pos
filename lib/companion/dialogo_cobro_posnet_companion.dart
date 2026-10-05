@@ -22,13 +22,13 @@ import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 import 'kit/kit_ns.dart';
 
-/// Devuelve `(ventaId, totalCentavos)` si se aprobó y se grabó la venta,
+/// Devuelve `(ventaId, totalCentavos, aMano)` si se aprobó y se grabó la venta,
 /// `null` en cualquier otro cierre (cancelado, rechazado sin reintentar).
 /// [montoCentavos] ya viene con el descuento aplicado (lo calculó
 /// `PantallaCarritoVenta` antes de abrir este diálogo) — [tipoDescuento]/
 /// [valorDescuento] viajan igual, para que `iniciarCobroPosnet`/
 /// `confirmarCobroPosnet` recalculen el mismo total del lado del servidor.
-Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
+Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosnetCompanion(
   BuildContext context, {
   required ServicioCompanion cliente,
   required int usuarioId,
@@ -40,7 +40,7 @@ Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
   int valorDescuento = 0,
   int? encargueId,
 }) {
-  return mostrarHojaNs<({int ventaId, int totalCentavos})?>(
+  return mostrarHojaNs<({int ventaId, int totalCentavos, bool aMano})?>(
     context,
     descartable: false,
     builder: (context) => _DialogoCobroPosnetCompanion(
@@ -115,7 +115,7 @@ class _DialogoCobroPosnetCompanionState
   int _fallasSeguidas = 0;
   static const _maxFallasSeguidas = 3;
   bool _errorAlCancelar = false;
-  ({int ventaId, int totalCentavos})? _resultadoAprobado;
+  ({int ventaId, int totalCentavos, bool aMano})? _resultadoAprobado;
 
   /// La terminal ya aprobó el pago: el cliente PAGÓ. Desde acá, "Reintentar" no puede crear otra orden (cobraría dos veces) ni
   /// "Cobrar a mano" grabar otra venta (quizá la primera sí se guardó y solo se perdió la respuesta): lo único seguro es volver a
@@ -222,7 +222,7 @@ class _DialogoCobroPosnetCompanionState
       if (intento > 0) await Future<void>.delayed(esperaEntreIntentosDeGuardado(intento));
       if (!mounted) return;
       try {
-        _resultadoAprobado = await widget.cliente.confirmarCobroPosnet(
+        final r = await widget.cliente.confirmarCobroPosnet(
           ordenPendienteId: _ordenPendienteId!,
           lineas: widget.lineas,
           canal: widget.canal,
@@ -232,6 +232,7 @@ class _DialogoCobroPosnetCompanionState
           valorDescuento: widget.valorDescuento,
           encargueId: widget.encargueId,
         );
+        _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
         if (mounted) setState(() => _fase = _Fase.aprobado);
         return;
       } on ErrorCompanion catch (e) {
@@ -311,7 +312,7 @@ class _DialogoCobroPosnetCompanionState
         valorDescuento: widget.valorDescuento,
         encargueId: widget.encargueId,
       );
-      if (mounted) Navigator.of(context).pop(resultado);
+      if (mounted) Navigator.of(context).pop((ventaId: resultado.ventaId, totalCentavos: resultado.totalCentavos, aMano: true));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -323,67 +324,40 @@ class _DialogoCobroPosnetCompanionState
 
   void _cerrar() => Navigator.of(context).pop(_resultadoAprobado);
 
-  /// Hoja de la terminal del mock (docs/03 H3): mientras espera, "Cobrando en la
-  /// terminal" con el total en una tarjeta oscura; si no se aprobó, "El pago no
-  /// se aprobó" con sus salidas. No se cierra tocando afuera.
+  static const _textoSinPc = 'No se pudo conectar con la PC — revisá que esté prendida, con la app abierta, y que el celular esté en la misma WiFi.';
+
+  String get _nombreCanal => switch (widget.canal) {
+    canalDebito => 'Débito',
+    canalCredito => 'Crédito',
+    canalQr => 'QR',
+    _ => 'Mercado Pago',
+  };
+
+  /// Hoja de la terminal del mock (09 · estados de la terminal): una sola hoja "Cobrar por QR / Débito / Crédito" que cambia de
+  /// bloque según el estado. No se cierra tocando afuera.
   @override
   Widget build(BuildContext context) {
-    final fallo = switch (_fase) {
-      _Fase.rechazado || _Fase.expirado || _Fase.error => true,
-      _ => false,
-    };
     final monto = plataNs(widget.montoCentavos);
-    final hero = HeroNs(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Total a cobrar', style: estiloNs(14, peso: FontWeight.w600, color: const Color(0xC7FFFFFF))),
-          const SizedBox(height: 6),
-          Text(monto, style: tituloNs(44, track: -0.058, altura: 1.02, color: TokensNs.blanco)),
-          const SizedBox(height: 6),
-          Text(_subtituloHero(), style: estiloNs(14, altura: 1.4, color: const Color(0xCCFFFFFF))),
-        ],
-      ),
-    );
+    final List<Widget> bloques = switch (_fase) {
+      _Fase.creando => [FilaEsperaNs('Enviando la orden a la terminal — $monto')],
+      _Fase.esperando => [FilaEsperaNs(_enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto')],
+      _Fase.cancelando => [const FilaEsperaNs('Cancelando en la terminal...')],
+      _Fase.cobrandoAMano || _Fase.guardandoVenta => [FilaEsperaNs('Grabando la venta — $monto')],
+      _Fase.aprobado => [HeroHojaNs(rotulo: 'Pago aprobado', cifra: monto, apoyo: _nombreCanal)],
+      _Fase.rechazado => [const InfoNs('El pago no se aprobó en la terminal.', tono: TonoNs.warn), const InfoNs('Todavía no se cobró nada.')],
+      _Fase.expirado => [const InfoNs('No se pudo confirmar el pago a tiempo. Revisá la terminal.', tono: TonoNs.warn)],
+      _Fase.error when _pagoAprobado => [InfoNs(_error ?? '', tono: TonoNs.bad), HeroHojaNs(rotulo: 'Ya cobrado', cifra: monto, apoyo: _nombreCanal)],
+      _Fase.error => [InfoNs(_error ?? _textoSinPc, tono: TonoNs.warn)],
+    };
     return PopScope(
       canPop: false,
-      child: HojaNs(
-        titulo: switch (_fase) {
-          _Fase.aprobado => 'Pago aprobado',
-          _ when fallo => 'El pago no se aprobó',
-          _ => 'Cobrando en la terminal',
-        },
-        texto: switch (_fase) {
-          _Fase.aprobado => null,
-          _ when fallo => 'Si la terminal sigue esperando el pago, cancelalo a mano ahí.',
-          _ => 'Pedile al cliente que acerque la tarjeta o escanee el QR. Esperando la confirmación de Mercado Pago…',
-        },
-        bloques: [
-          if (fallo) InfoNs(_mensajeFallo(), tono: TonoNs.warn) else hero,
-        ],
-        botones: _botones(),
-      ),
+      child: HojaNs(titulo: 'Cobrar por $_nombreCanal', bloques: bloques, botones: _botones()),
     );
   }
 
-  String _subtituloHero() => switch (_fase) {
-    _Fase.creando => 'Enviando la orden a la terminal',
-    _Fase.esperando => _enTerminal ? 'El cliente tiene que confirmar en la terminal' : 'Esperando el pago',
-    _Fase.cancelando => 'Cancelando en la terminal…',
-    _Fase.cobrandoAMano || _Fase.guardandoVenta => 'Grabando la venta',
-    _Fase.aprobado => 'Ya está cobrado',
-    _ => '',
-  };
-
-  String _mensajeFallo() => switch (_fase) {
-    _Fase.rechazado => 'Todavía no se cobró nada. El pago no se aprobó en la terminal.',
-    _Fase.expirado => 'No se pudo confirmar el pago a tiempo. Revisá la terminal.',
-    _ => _error ?? 'No se pudo conectar con Mercado Pago.',
-  };
-
   List<Widget> _botones() {
     return switch (_fase) {
-      _Fase.creando || _Fase.esperando => [BotonNs.secundario(context, 'Cancelar cobro', _cancelar)],
+      _Fase.creando || _Fase.esperando => [BotonNs.secundario(context, 'Cancelar', _cancelar)],
       _Fase.cancelando || _Fase.cobrandoAMano || _Fase.guardandoVenta => [],
       _Fase.aprobado => [BotonNs.primario(context, 'Listo', _cerrar)],
       _Fase.error when _errorAlCancelar => [BotonNs.primario(context, 'Cerrar', () => Navigator.of(context).pop())],
@@ -392,10 +366,11 @@ class _DialogoCobroPosnetCompanionState
         BotonNs.primario(context, 'Reintentar', _guardarVentaAprobada),
         BotonNs.secundario(context, 'Cerrar', () => Navigator.of(context).pop()),
       ],
+      // El mock no dibuja "Cancelar" acá, pero sin salida la hoja (que no se cierra tocando afuera) dejaba a la persona encerrada.
       _Fase.rechazado || _Fase.expirado || _Fase.error => [
         BotonNs.primario(context, 'Reintentar', _reintentar),
         BotonNs.secundario(context, 'Cobrar a mano', _cobrarAMano),
-        BotonNs.secundario(context, 'Cancelar', () => Navigator.of(context).pop()),
+        BotonNs.texto(context, 'Cancelar', () => Navigator.of(context).pop()),
       ],
     };
   }

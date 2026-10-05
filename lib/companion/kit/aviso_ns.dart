@@ -37,6 +37,85 @@ void mostrarAvisoEnNs(OverlayState overlay, String texto, {bool largo = false}) 
   });
 }
 
+/// Aviso con una acción (mock `hasUndo`): píldora oscura de 68 de alto sobre la barra inferior, con "Quitaste X" y un botón blanco
+/// "Deshacer". Dura 5 s; si llega otro aviso o se toca la acción, se va.
+void mostrarAvisoConAccionNs(BuildContext context, String texto, String accion, VoidCallback alTocar) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _temporizador?.cancel();
+  _avisoActual?.remove();
+  late final OverlayEntry entrada;
+  void quitar() {
+    if (_avisoActual == entrada) {
+      _temporizador?.cancel();
+      entrada.remove();
+      _avisoActual = null;
+    }
+  }
+
+  entrada = OverlayEntry(
+    builder: (_) => _AvisoAccionNs(
+      texto: texto,
+      accion: accion,
+      alTocar: () {
+        quitar();
+        alTocar();
+      },
+    ),
+  );
+  _avisoActual = entrada;
+  overlay.insert(entrada);
+  _temporizador = Timer(const Duration(seconds: 5), quitar);
+}
+
+class _AvisoAccionNs extends StatelessWidget {
+  const _AvisoAccionNs({required this.texto, required this.accion, required this.alTocar});
+  final String texto;
+  final String accion;
+  final VoidCallback alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: 16,
+      child: EntradaNs(
+        duracion: const Duration(milliseconds: 450),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            height: 68,
+            padding: const EdgeInsets.fromLTRB(26, 0, 10, 0),
+            decoration: BoxDecoration(
+              color: ns.toast,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: const [BoxShadow(color: Color(0x47121317), blurRadius: 40, offset: Offset(0, 18))],
+            ),
+            child: Row(
+              children: [
+                Expanded(child: Text(texto, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(15, peso: FontWeight.w600, color: TokensNs.blanco))),
+                const SizedBox(width: 10),
+                PresionNs(
+                  onTap: alTocar,
+                  etiqueta: accion,
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    decoration: BoxDecoration(color: TokensNs.blanco, borderRadius: BorderRadius.circular(999)),
+                    child: Center(widthFactor: 1, child: Text(accion, style: estiloNs(15, peso: FontWeight.w600, color: const Color(0xFF121317)))),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AvisoNs extends StatefulWidget {
   const _AvisoNs({required this.texto});
   final String texto;

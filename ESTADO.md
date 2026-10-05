@@ -79,6 +79,27 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
+## En curso — celular calcado del mock (04/10/2026)
+
+Rama `claude/mock-celular-calco`, **sin mezclar ni publicar** (falta probarla en un celular real y el OK del dueño). El
+celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete `nodo-sur-mock-celular`): barra inferior de 5
+pestañas (Inicio · Productos · Vender · Caja · Más), paleta/tipografía/iconos/animaciones del mock, y las pantallas
+Emparejar, Inicio, Notificaciones, Buscador de funciones, Vender (carrito → cobrar → venta cobrada), Consultar precio,
+Gasto o ingreso, Caja (Resumen · Separar · Ventas), Contar la caja, Cerrar caja, Productos, Controlar stock, Editar en
+lote, Nuevo/Editar producto, Más, Configuración, Días anteriores y Cierres anteriores. Comparación y decisiones en
+[`docs/COMPARACION-MOCK-CELULAR.md`](./docs/COMPARACION-MOCK-CELULAR.md); el kit está en `lib/companion/kit/` y las pantallas
+nuevas en `lib/companion/pantallas/`.
+
+Pendiente o distinto del mock a propósito (a confirmar con el dueño):
+- **Pago mixto** no se cobra desde el celular (el mock lo tiene, la PC también; falta el endpoint). En su lugar queda el
+  crédito en 1 pago, que el mock no tiene.
+- **¿Quién sos?**: el perfil sale de la cuenta con que se entró (decisión del 2026-10-02), no de una lista como en el mock.
+- **Cerrar caja**: el resultado primero se revisa y recién después se cierra (el mock lo da por cerrado al ver el resultado).
+- **Descuento**: el chip aplica el 10 % fijo del mock; ya no hay descuento por monto o porcentaje libre desde el carrito.
+- **Editar en lote**: sin "bajar precios", "valor fijo" ni stock fijo/restar (sí: subir precios y costos, cargar pedido,
+  proveedor y categoría).
+- Bienvenida, elegir modo y entrar con cuenta conservan su diseño (con la paleta nueva); no están rehechas al mock.
+
 ## Últimos cambios (02–03/10/2026)
 
 - **Auditoría de la caja**: `test/data/conciliacion_caja_test.dart` arma 120 días al azar y coincide siempre con un libro
