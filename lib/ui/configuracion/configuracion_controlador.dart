@@ -25,6 +25,7 @@ enum SeccionConfiguracion {
   respaldo,
   impresion,
   companion,
+  asistenteIa,
   actualizaciones,
 }
 
@@ -39,10 +40,11 @@ enum GrupoConfiguracion {
     SeccionConfiguracion.mediosPago,
   ]),
   productos('Productos', 'Ganancia por categoría', [SeccionConfiguracion.categorias]),
-  equiposYCuenta('Equipos y cuenta', 'Nodo Sur, impresión, celular y copias', [
+  equiposYCuenta('Equipos y cuenta', 'Nodo Sur, impresión, celular, IA y copias', [
     SeccionConfiguracion.cuentaNube,
     SeccionConfiguracion.impresion,
     SeccionConfiguracion.companion,
+    SeccionConfiguracion.asistenteIa,
     SeccionConfiguracion.respaldo,
     SeccionConfiguracion.actualizaciones,
   ]),

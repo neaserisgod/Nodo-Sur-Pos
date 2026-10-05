@@ -1913,3 +1913,14 @@ cerradas) y la vinculación de equipos (PKCE, código de un solo uso). **Pendien
 una invitación en el sitio, que son varios pasos sueltos (con marcha atrás manual si fallan) y no un `DB.batch`; transferir la propiedad de
 un negocio SÍ pasó a ser atómico (`DB.batch`).
 
+
+## IA de Google (Gemini) con clave personal gratuita (2026-10-05)
+
+- **Clave por API key en la PC, guardada en las preferencias locales** (como "Cobrar e imprimir por Nodo Sur"), **no** en
+  `configuracion_negocio_tabla`: esa tabla se sincroniza a la nube y al celular y una clave personal no puede viajar con ella.
+  Tampoco entra en las copias de la base. El celular queda afuera por ahora.
+- **Privacidad**: en el plan gratis Google puede usar lo que recibe para mejorar sus productos. Regla para cualquier prompt:
+  productos, precios y totales agregados; nunca nombres de clientes ni de fiados.
+- **`generateContent` de la API v1beta**, clave en el encabezado `x-goog-api-key` (no en la URL), modelo `gemini-2.5-flash`
+  (`modeloGeminiPorDefecto`). Los modelos con cupo gratis cambian: si Google retira uno, "Probar" avisa y se cambia esa constante.
+- La IA solo sugiere: no toca caja, stock ni precios sin que el dueño lo confirme, y la app anda igual sin clave, sin cupo o sin internet.

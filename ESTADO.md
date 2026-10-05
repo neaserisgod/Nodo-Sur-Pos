@@ -109,7 +109,7 @@ Distinto del mock a propósito:
 
 Pendiente / ideas (sin hacer):
 - **Pagar proveedor sin la PC**: hoy solo anda con la PC prendida y en el wifi del local, porque `movimientos_deuda` no se sincroniza al celular. Opciones: anotar el pago pendiente en el celular y que la PC lo tome, o copiar la cuenta corriente al celular.
-- **Leer facturas/comprobantes con IA (Gemini)** en Pagar proveedor: idea hablada, sin decidir (privacidad del plan gratis, clave en el servidor y no en el APK).
+- **IA de Google (Gemini), 2026-10-05**: hay cliente (`lib/servicios/gemini.dart`) y Configuración › Asistente IA para cargar la clave gratuita; solo en la PC, todavía no se usa para nada (sin compilar ni probar: sin Flutter en la sesión). Sugerir promos con ella es lo próximo. **Leer facturas con IA** en Pagar proveedor sigue sin decidir (la clave de este equipo no sirve para el celular).
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
