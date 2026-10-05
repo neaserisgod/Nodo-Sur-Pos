@@ -1,0 +1,23 @@
+{
+  "facturas": [
+    {
+      "proveedor": {"razon_social": "SERRA SRL", "cuit": "30670378213"},
+      "tipo": "A",
+      "numero": "0065-00076671",
+      "fecha": "2026-07-14",
+      "condicion_pago": "contado",
+      "lineas": [
+        {"codigo": "011643", "descripcion": "MP MARLBORO KS 20", "cantidad": 10, "precio_unitario": 1109.96, "descuento_pct": null, "importe": 54537.92, "alicuota_iva": 21.0, "internos_importe": 41107.4, "es_detalle": false},
+        {"codigo": "017307", "descripcion": "MP PHILIP MORRIS RED SELECT KS SOF", "cantidad": 10, "precio_unitario": 404.6, "descuento_pct": null, "importe": 20635.36, "alicuota_iva": 21.0, "internos_importe": 15739.7, "es_detalle": false},
+        {"codigo": "011982", "descripcion": "MP MARLB CRAFTED RED KS SOF 20", "cantidad": 20, "precio_unitario": 660.18, "descuento_pct": null, "importe": 65837.96, "alicuota_iva": 21.0, "internos_importe": 49861.6, "es_detalle": false},
+        {"codigo": "011940", "descripcion": "MP MARLB CRAFTED FORWARD KS SOF 20", "cantidad": 10, "precio_unitario": 660.18, "descuento_pct": null, "importe": 32918.98, "alicuota_iva": 21.0, "internos_importe": 24930.8, "es_detalle": false},
+        {"codigo": "011919", "descripcion": "MP CHESTER BLUE MOTION SOF 20", "cantidad": 10, "precio_unitario": 850.31, "descuento_pct": null, "importe": 42057.85, "alicuota_iva": 21.0, "internos_importe": 31769.1, "es_detalle": false},
+        {"codigo": "011296", "descripcion": "MP PHILIP BLUE SPIN BOX 20", "cantidad": 10, "precio_unitario": 1069.08, "descuento_pct": null, "importe": 52572.67, "alicuota_iva": 21.0, "internos_importe": 39636.8, "es_detalle": false},
+        {"codigo": "011287", "descripcion": "MP PHILIP MORRIS KS", "cantidad": 10, "precio_unitario": 987.3, "descuento_pct": null, "importe": 48641.93, "alicuota_iva": 21.0, "internos_importe": 36695.6, "es_detalle": false},
+        {"codigo": "011990", "descripcion": "MP MARLB CRAFTED PURPLE BOX 20", "cantidad": 10, "precio_unitario": 721.5, "descuento_pct": null, "importe": 35866.95, "alicuota_iva": 21.0, "internos_importe": 27136.8, "es_detalle": false}
+      ],
+      "pie": {"subtotal": 71232.9, "descuento_global": 0, "impuestos_internos": 266877.8, "percepciones": 0.0, "iva_total": 14958.91, "total": 353069.61},
+      "advertencias": []
+    }
+  ]
+}

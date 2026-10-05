@@ -55,6 +55,9 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   - `servicios/vinculador_ia.dart`: para lo que el parecido no resuelve, Gemini elige ENTRE los productos del proveedor (solo nombres, sin precios ni costos); lo que devuelve se valida contra esa lista y queda en amarillo.
   - Se aprende: migración v52 con `vinculos_factura` (por proveedor, código o descripción → producto, con "unidades por cantidad") y `cuits_proveedor` (el CUIT reconoce al proveedor sin preguntar). Locales: no se sincronizan.
   - La pantalla de prueba muestra el proveedor, el producto de cada línea (se cambia con un selector), "× unid." (un bulto de 6 = 6, recalcula el costo por unidad) y "Aprender estos vínculos".
+- **Tercera lectura real**: Serra 0065-00076671, cigarrillos (8 líneas, contado, $353.069,61). Los impuestos internos son $266.877,80, el 75 % de la factura. Gemini leyó los internos de cada línea
+  y el pie; el sistema eligió "IVA e internos adentro", cierra con 1 centavo y no cuenta los internos dos veces. Un atado de Marlboro KS cuesta $5.454. En esa factura "cantidad" son atados
+  ("Total Bultos 90" = la suma de las cantidades). Caso de prueba: `test/fixtures/lectura_serra_cigarrillos_0065_00076671.json`. Los cigarrillos no siguen el precio automático por %: ganancia fija por atado.
 - **Falta**: probarla con las otras facturas reales (Coca-Cola de costado, carbónicas y matriz de puntos son las difíciles); CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión final; aplicar (costo, stock, deuda y precio sugerido) y deshacer;
   enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.

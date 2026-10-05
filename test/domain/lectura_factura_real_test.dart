@@ -101,5 +101,47 @@ void main() {
       expect(n.lineasSospechosas, [3]);
     });
   });
+
+  group('Serra 0065-00076671 (la tercera lectura real: cigarrillos, impuestos internos por línea)', () {
+    late Map<String, dynamic> cigarrillos;
+
+    setUp(() {
+      cigarrillos = jsonDecode(File('test/fixtures/lectura_serra_cigarrillos_0065_00076671.json').readAsStringSync()) as Map<String, dynamic>;
+    });
+
+    test('se leen las 8 líneas con sus impuestos internos y el pie', () {
+      final f = leerRespuestaDeFacturas(cigarrillos).facturas.single;
+      expect(f.advertencias, isEmpty);
+      expect(f.lineas, hasLength(8));
+      expect(f.lineas.first.internosCentavos, 4110740);
+      expect(f.pie.internosCentavos, 26687780);
+      expect(f.pie.totalCentavos, 35306961);
+      expect(f.condicionPago, 'contado');
+    });
+
+    test('elige solo "IVA e internos adentro", cierra con 1 centavo y no cuenta los internos dos veces', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(cigarrillos).facturas.single);
+      expect(n.modo, ModoImportes.conIvaEInternos);
+      expect(n.cierra, isTrue);
+      expect(n.control!.diferenciaCentavos.abs(), lessThanOrEqualTo(1));
+      expect(n.lineasSospechosas, isEmpty);
+      // Los internos del pie (266.877,80) son la suma de los de las líneas: no se vuelven a sumar.
+      expect(n.factura.internosAlPieCentavos, 0);
+    });
+
+    test('el costo de cada atado es el importe de la línea entre sus unidades, redondeado al peso hacia arriba', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(cigarrillos).facturas.single);
+      final costos = costosDeFactura(n.factura);
+      // Marlboro KS: 54.537,92 / 10 = 5.453,79 → $5.454. Crafted Red (20 atados): 65.837,96 / 20 = 3.291,90 → $3.292.
+      expect(costos.map((c) => c.costoUnitarioCentavos), [545400, 206400, 329200, 329200, 420600, 525800, 486500, 358700]);
+      expect(costos.first.internosCentavos, 4110740);
+    });
+
+    test('los impuestos internos son la mayor parte del costo de un atado', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(cigarrillos).facturas.single);
+      final c = costosDeFactura(n.factura).first;
+      expect(c.internosCentavos * 100 ~/ c.totalCentavos, greaterThan(70)); // más del 70 % del costo son impuestos internos
+    });
+  });
 }
 
