@@ -36,6 +36,7 @@ import 'tables/ventas.dart';
 import 'tables/deuda_proveedores.dart';
 import 'tables/promos.dart';
 import 'tables/ventas_abiertas.dart';
+import 'tables/vinculos_factura.dart';
 
 part 'database.g.dart';
 
@@ -129,6 +130,8 @@ const seccionesMenuIniciales = [
     MovimientosDeuda,
     PromoComponentes,
     AvisosMp,
+    VinculosFactura,
+    CuitsProveedor,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -148,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 51;
+  int get schemaVersion => 52;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1075,6 +1078,12 @@ class AppDatabase extends _$AppDatabase {
       // v50 → v51 (etapa D, 2026-10-04): avisos de Mercado Pago (cobros, contracargos, reclamos) de este equipo. Tabla nueva.
       if (from < 51) {
         await m.createTable(avisosMp);
+      }
+      // v51 → v52 (2026-10-05): facturas de compra con IA. Dos tablas nuevas, locales: lo que se aprendió al vincular las líneas de
+      // una factura con los productos (`vinculos_factura`) y el CUIT de cada proveedor (`cuits_proveedor`). No tocan ninguna fila existente.
+      if (from < 52) {
+        await m.createTable(vinculosFactura);
+        await m.createTable(cuitsProveedor);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

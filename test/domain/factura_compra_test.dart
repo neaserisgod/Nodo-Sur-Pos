@@ -206,4 +206,36 @@ void main() {
       expect(costosDeFactura(const FacturaDeCompra(lineas: [])), isEmpty);
     });
   });
+
+  group('conUnidadesPorCantidad (cuando la factura cuenta por bultos)', () {
+    test('dos bultos de 6 son 12 unidades y el costo por unidad baja a la sexta parte', () {
+      // Neto 100,00 + IVA 21,00 = 121,00 por la línea entera.
+      final porBulto = FacturaDeCompra(lineas: [linea(100, 2)]);
+      expect(costosDeFactura(porBulto).single.costoUnitarioCentavos, 6100); // 121 / 2 = 60,50 → $61
+      final porUnidad = conUnidadesPorCantidad(porBulto, [6]);
+      expect(porUnidad.lineas.single.unidades, 12);
+      expect(costosDeFactura(porUnidad).single.costoUnitarioCentavos, 1100); // 121 / 12 = 10,08 → $11
+    });
+
+    test('no cambia el total de la factura (el control sigue cerrando)', () {
+      final f = FacturaDeCompra(lineas: [linea(100, 2), linea(50, 1)]);
+      final a = controlarFactura(f, totalImpresoCentavos: 18150);
+      final b = controlarFactura(conUnidadesPorCantidad(f, [6, 1]), totalImpresoCentavos: 18150);
+      expect(b.totalCalculadoCentavos, a.totalCalculadoCentavos);
+      expect(b.cierra, isTrue);
+    });
+
+    test('un multiplicador menor a 1 cuenta como 1, y la cantidad de multiplicadores tiene que coincidir', () {
+      final f = FacturaDeCompra(lineas: [linea(100, 2)]);
+      expect(conUnidadesPorCantidad(f, [0]).lineas.single.unidades, 2);
+      expect(() => conUnidadesPorCantidad(f, [1, 1]), throwsArgumentError);
+    });
+
+    test('conserva el descuento, los internos del pie y las percepciones', () {
+      final f = FacturaDeCompra(lineas: [linea(100, 1)], descuentoGlobalCentavos: 500, internosAlPieCentavos: 300, percepcionesCentavos: 200);
+      final g = conUnidadesPorCantidad(f, [3]);
+      expect((g.descuentoGlobalCentavos, g.internosAlPieCentavos, g.percepcionesCentavos), (500, 300, 200));
+    });
+  });
 }
+

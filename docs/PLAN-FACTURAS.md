@@ -46,6 +46,13 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   (cuenta corriente); ignoró lo escrito a mano y los datos del comprador; no inventó nada. El sistema eligió solo "importes con IVA adentro" y la factura cierra con
   **0 centavos** de diferencia contra el total impreso ($94.676,88), sin líneas sospechosas. Quedó como caso de prueba (`test/fixtures/lectura_serra_0051_00194239.json`).
   En esa factura "cantidad" son unidades (4 × 939,22), no bultos.
-- **Falta**: probarla con las otras facturas reales (Coca-Cola de costado, carbónicas y matriz de puntos son las difíciles); CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
-  convertir bultos en unidades (hoy `cantidad` se toma como unidades); enderezar fotos de costado; después, el celular con cámara.
+- **Hecho (vincular con los productos, 2026-10-05)**:
+  - `domain/vinculo_factura.dart`: propone el producto de cada línea: 1) lo ya aprendido de ese proveedor (por código y por descripción) = verde, 2) código de barras = verde, 3) parecido de nombre
+    con abreviaturas ("ALF" ≈ alfajor, "BL" ≈ blanco; los tamaños tienen que ser iguales; el producto del mismo proveedor desempata) = amarillo, para confirmar. Sin parecido claro queda sin vincular
+    y se ofrecen alternativas: nunca se inventa un vínculo. Probado con las descripciones reales de Serra.
+  - `servicios/vinculador_ia.dart`: para lo que el parecido no resuelve, Gemini elige ENTRE los productos del proveedor (solo nombres, sin precios ni costos); lo que devuelve se valida contra esa lista y queda en amarillo.
+  - Se aprende: migración v52 con `vinculos_factura` (por proveedor, código o descripción → producto, con "unidades por cantidad") y `cuits_proveedor` (el CUIT reconoce al proveedor sin preguntar). Locales: no se sincronizan.
+  - La pantalla de prueba muestra el proveedor, el producto de cada línea (se cambia con un selector), "× unid." (un bulto de 6 = 6, recalcula el costo por unidad) y "Aprender estos vínculos".
+- **Falta**: probarla con las otras facturas reales (Coca-Cola de costado, carbónicas y matriz de puntos son las difíciles); CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión final; aplicar (costo, stock, deuda y precio sugerido) y deshacer;
+  enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.

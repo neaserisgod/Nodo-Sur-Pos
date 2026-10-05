@@ -181,3 +181,26 @@ void _validar(FacturaDeCompra f) {
   final suma = f.lineas.fold<int>(0, (a, l) => a + l.netoCentavos);
   if (f.descuentoGlobalCentavos > suma) throw ArgumentError('El descuento es mayor que la factura entera: está mal leído');
 }
+
+/// La misma factura con las unidades de cada línea multiplicadas por [multiplicadores] (uno por línea): cuando la columna "cantidad" cuenta
+/// bultos, una cantidad de 2 con 6 unidades por bulto son 12 unidades y el costo por unidad baja a la sexta parte. Se aprende por producto
+/// (`VinculoAprendido.unidadesPorCantidad`). Un multiplicador menor a 1 cuenta como 1.
+FacturaDeCompra conUnidadesPorCantidad(FacturaDeCompra factura, List<int> multiplicadores) {
+  if (multiplicadores.length != factura.lineas.length) {
+    throw ArgumentError('Hace falta un multiplicador por línea (${factura.lineas.length}), llegaron ${multiplicadores.length}');
+  }
+  return FacturaDeCompra(
+    lineas: [
+      for (var i = 0; i < factura.lineas.length; i++)
+        LineaDeFactura(
+          unidades: factura.lineas[i].unidades * (multiplicadores[i] < 1 ? 1 : multiplicadores[i]),
+          netoCentavos: factura.lineas[i].netoCentavos,
+          alicuotaBp: factura.lineas[i].alicuotaBp,
+          internosCentavos: factura.lineas[i].internosCentavos,
+        ),
+    ],
+    descuentoGlobalCentavos: factura.descuentoGlobalCentavos,
+    internosAlPieCentavos: factura.internosAlPieCentavos,
+    percepcionesCentavos: factura.percepcionesCentavos,
+  );
+}

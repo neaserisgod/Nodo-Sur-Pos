@@ -1980,3 +1980,14 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **Google saturado o sin cupo en un modelo** (2026-10-05, el dueño vio "los servidores de Google no responden"): los modelos nuevos devuelven 503
   "overloaded" seguido y cada modelo tiene su propio cupo gratis. La lectura de facturas reintenta una vez ante un 503 y pasa al modelo liviano
   ante un 503 que sigue, un 404 o un 429; el mensaje de un error 5xx ahora trae el detalle que manda Google. Una clave mala o la falta de internet no se reintentan.
+
+### Vincular facturas con productos (2026-10-05)
+
+- **Se aprende, no se configura**: cada vínculo confirmado (código o descripción de ese proveedor → producto, con "unidades por cantidad") se guarda y la próxima factura sale
+  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige. Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
+  `proveedores` (tabla sincronizada) para no tocar el protocolo de sync.
+- **Nunca se inventa un vínculo**: el parecido de nombre propone solo con un parecido claro y una ventaja sobre el segundo; si no, queda sin vincular con alternativas. La IA solo
+  elige entre los productos que se le muestran y se descarta cualquier id que no esté en esa lista. Lo de la IA o del parecido siempre queda en amarillo hasta que el dueño confirma.
+- **Los tamaños tienen que coincidir** (70g ≠ 69g): un tamaño que contradice casi seguro es otro producto.
+- **Las unidades por cantidad (bultos) son un dato del vínculo**, no del proveedor: cada producto puede venir distinto. Por defecto 1.
+- La normalización de texto (sin acentos ni mayúsculas) pasó a `domain/` y `data/normalizacion_texto.dart` la re-exporta: `domain/` no puede importar `data/` y la definición sigue siendo una sola.
