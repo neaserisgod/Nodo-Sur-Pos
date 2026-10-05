@@ -62,6 +62,9 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
 
   bool _cargando = true;
   SesionCaja? _sesion;
+
+  /// Nombre de quien abrió la caja, para el saludo "Hola, Ana" (mock Nodo Sur). Null sin caja abierta: el título es "Inicio".
+  String? _nombreUsuario;
   TableroDelDia? _tablero;
   _Vista _vista = _Vista.hoy;
 
@@ -107,8 +110,13 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
   Future<void> _cargarTodo() async {
     final sesion = await sesionAbierta(widget.db);
     final tablero = await tableroDelDia(widget.db, ahora: widget.ahora);
+    final usuarioId = sesion?.usuarioAbrioId;
+    final usuario = usuarioId == null
+        ? null
+        : await (widget.db.select(widget.db.usuarios)..where((u) => u.id.equals(usuarioId))).getSingleOrNull();
     if (!mounted) return;
     setState(() {
+      _nombreUsuario = usuario?.nombre.trim().isEmpty ?? true ? null : usuario!.nombre.trim();
       _sesion = sesion;
       _tablero = tablero;
       _version++;
@@ -145,7 +153,7 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
       claveActiva: 'dashboard',
       usuarioId: sesion?.usuarioAbrioId ?? 0,
       sesionCajaId: sesion?.id,
-      titulo: 'Inicio',
+      titulo: _nombreUsuario == null ? 'Inicio' : 'Hola, $_nombreUsuario',
       subtitulo: !verMes
           ? 'Hoy · ${fechaLarga(hoy)}${sesion == null ? ' · caja cerrada' : ''}'
           : 'Este mes · ${mesLargo(hoy)}',
@@ -161,7 +169,12 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
             ),
             const SizedBox(width: Espaciado.md),
           ],
-          BotonDestacado(texto: 'Ir a Venta', icono: IconosPlazoleta.pointOfSaleOutlined, onTap: () => _ir('venta')),
+          BotonDestacado(
+            texto: 'Nueva venta',
+            icono: IconosPlazoleta.pointOfSaleOutlined,
+            degrade: const [azulMarca, azulMarca],
+            onTap: () => _ir('venta'),
+          ),
         ],
       ),
       child: !verMes

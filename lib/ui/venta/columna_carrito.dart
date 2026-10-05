@@ -138,10 +138,9 @@ class ColumnaCarrito extends StatelessWidget {
                             maxWidth: Medidas.anchoFilaCarrito,
                           ),
                           child: Container(
+                            // La línea recién agregada lleva un aro azul de marca (mock Nodo Sur), ya no un relleno gris.
                             decoration: BoxDecoration(
-                              color: esUltima
-                                  ? context.colores.destacado
-                                  : null,
+                              border: esUltima ? Border.all(color: azulMarca, width: 2) : null,
                               borderRadius: BorderRadius.circular(
                                 radioControlEscritorio,
                               ),
@@ -407,7 +406,7 @@ class _IconoAccion extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(Espaciado.xs),
-        child: Icon(
+        child: IconoPlz(
           icono,
           size: TactoVenta.icono,
           color: context.colores.textoSecundario,
@@ -471,7 +470,7 @@ class _EscalonCantidad extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Icon(icono, size: 16, color: context.colores.textoSecundario),
+        child: IconoPlz(icono, size: 16, color: context.colores.textoSecundario),
       ),
     );
   }
@@ -513,7 +512,7 @@ class _EstadoVacio extends StatelessWidget {
           width: 22,
           height: 22,
           decoration: BoxDecoration(color: ganancia.withValues(alpha: 0.14), shape: BoxShape.circle),
-          child: Icon(Icons.check_rounded, size: 15, color: ganancia),
+          child: IconoPlz(IconosPlazoleta.check, size: 15, color: ganancia),
         ),
         const SizedBox(width: Espaciado.sm),
         // `Flexible`, no `Text` suelto: en el piso mínimo (1366×768,
@@ -537,7 +536,7 @@ class _EstadoVacio extends StatelessWidget {
             onTap: onImprimir,
             child: Padding(
               padding: const EdgeInsets.all(Espaciado.xs),
-              child: Icon(
+              child: IconoPlz(
                 IconosPlazoleta.printOutlined,
                 size: TactoVenta.icono,
                 color: context.colores.textoSecundario,
@@ -676,7 +675,7 @@ class _PildoraVenta extends StatelessWidget {
                       child: SizedBox(
                         width: Medidas.alturaControl,
                         height: Medidas.alturaControl,
-                        child: Icon(Icons.close_rounded, size: 18, color: colorTexto),
+                        child: IconoPlz(IconosPlazoleta.close, size: 18, color: colorTexto),
                       ),
                     ),
                   ),
@@ -712,8 +711,8 @@ class _BotonNuevaVenta extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         onTap: activo ? onTap : null,
         child: Center(
-          child: Icon(
-            Icons.add,
+          child: IconoPlz(
+            IconosPlazoleta.add,
             color: activo ? colores.acento : colores.textoTenue,
           ),
         ),

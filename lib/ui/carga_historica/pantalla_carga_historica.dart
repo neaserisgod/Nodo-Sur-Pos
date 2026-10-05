@@ -199,7 +199,7 @@ class _SelectorFechaState extends State<_SelectorFecha> {
         Row(
           children: [
             ActionChip(
-              avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+              avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
               label: const Text('Historial'),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
@@ -381,12 +381,12 @@ class _Calendario extends StatelessWidget {
               ),
               IconButton(
                 tooltip: 'Mes anterior',
-                icon: const Icon(IconosPlazoleta.chevronLeft),
+                icon: const IconoPlz(IconosPlazoleta.chevronLeft),
                 onPressed: () => onMes(DateTime(mes.year, mes.month - 1)),
               ),
               IconButton(
                 tooltip: 'Mes siguiente',
-                icon: const Icon(IconosPlazoleta.chevronRight),
+                icon: const IconoPlz(IconosPlazoleta.chevronRight),
                 onPressed: () => onMes(DateTime(mes.year, mes.month + 1)),
               ),
             ],
@@ -722,7 +722,7 @@ class _ColumnaCarrito extends StatelessWidget {
                   Text(formatearARS(linea.subtotalCentavos)),
                   IconButton(
                     tooltip: 'Quitar la línea',
-                    icon: const Icon(IconosPlazoleta.deleteOutline, size: 18),
+                    icon: const IconoPlz(IconosPlazoleta.deleteOutline, size: 18),
                     onPressed: () => controlador.eliminarLinea(i),
                   ),
                 ],
@@ -849,7 +849,7 @@ class _ColumnaCobro extends StatelessWidget {
                                     Text(formatearARS(v.totalCentavos)),
                                     IconButton(
                                       tooltip: 'Quitar de la tanda',
-                                      icon: const Icon(IconosPlazoleta.close, size: 16),
+                                      icon: const IconoPlz(IconosPlazoleta.close, size: 16),
                                       onPressed: () =>
                                           controlador.quitarVentaDeLaTanda(i),
                                     ),

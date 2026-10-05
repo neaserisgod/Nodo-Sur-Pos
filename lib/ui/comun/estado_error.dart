@@ -39,7 +39,7 @@ class EstadoError extends StatelessWidget {
                 color: colores.error.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
-              child: Icon(IconosPlazoleta.errorOutline, size: 32, color: colores.error),
+              child: IconoPlz(IconosPlazoleta.errorOutline, size: 32, color: colores.error),
             ),
             const SizedBox(height: Espaciado.lg),
             Text(
@@ -50,7 +50,7 @@ class EstadoError extends StatelessWidget {
             const SizedBox(height: Espaciado.lg),
             FilledButton.icon(
               onPressed: onReintentar,
-              icon: const Icon(IconosPlazoleta.refresh),
+              icon: const IconoPlz(IconosPlazoleta.refresh),
               label: const Text('Reintentar'),
             ),
           ],

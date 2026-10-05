@@ -79,6 +79,20 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
+## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
+
+Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla.
+Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en
+`docs/mock-pc/NodoSurPC.html` (todas las pantallas y modales, claro/oscuro). Decisiones del dueño (05/10): modales al centro, "Cobrar"
+azul, colores de medios como el mock, títulos en peso 500, ninguna función nueva.
+
+**Hecho en el código** (`flutter analyze` limpio; suite completa verde): paleta y acentos del mock (azul de marca en oscuro, medios
+verde/azul/gris/ámbar, sin degradés), navbar con íconos de trazo y Venta azul, "Cobrar" y "Nueva venta" azules, medios grises hasta
+elegirse, aro azul en la última línea del carrito, toast oscuro, **íconos de trazo en toda la app** (`IconoPlz`), saludo "Hola, nombre"
+en Inicio. **Distinto del mock a propósito:** no hay franja "Este mes" en Inicio (ya existe la vista "Este mes", y no se repite una cuenta
+de plata); Historial, cierre y Configuración ya tenían la disposición del mock, solo cambiaron colores e íconos. Los íconos que no
+tienen trazo equivalente siguen en Material. No probado en una PC real; solo capturas de test (`test/ui/capturas_escritorio_test.dart`).
+
 ## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 
 Mezclado en `main` (PR #67, #68 y #69) y publicado en estable, al 100 % (APK 2133, 2134 y 2135). El celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete

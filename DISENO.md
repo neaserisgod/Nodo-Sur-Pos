@@ -16,6 +16,32 @@ el mismo cambio.
 Para saber qué pantallas ya tienen esto aplicado y cuáles no, ver
 `ESTADO.md` — ese dato cambia seguido y no se duplica acá.
 
+**PC pasada al lenguaje del mock del celular (2026-10-05) — vigente, manda sobre lo de abajo.** El dueño pidió que la PC siga el
+mock "Nodo Sur" (mismo del celular) más horsepos.com/antigravity. Mock de escritorio en `docs/mock-pc/NodoSurPC.html` y comparación en
+`docs/COMPARACION-MOCK-PC.md`. Decisiones del dueño: **modales al centro** (no hojas inferiores), **"Cobrar" azul**, **colores de medios
+como el mock** (efectivo verde, Mercado Pago azul, tarjeta gris, mixto ámbar, sin violeta), **títulos en peso 500** (no se suma Figtree
+variable) y **ninguna función nueva** (solo aspecto). Qué cambió en el código:
+
+- `colores_escritorio.dart` y `acentos.dart`: mismos valores que el celular. En oscuro el acento es el azul de marca `#2F5BE8`
+  (en claro sigue la tinta); las piezas destacadas son de color plano, sin degradé. `azulMarca` / `azulMarcaOscuro` son constantes fijas.
+- Navbar (`navbar_superior.dart`): íconos de trazo (`IconoNs`, los del celular) sobre una cápsula gris; la sección activa lleva burbuja azul
+  claro con texto azul; **Venta es siempre el botón azul** (más oscuro si es la pantalla activa).
+- Venta: "Cobrar" y "Nueva venta" (Inicio) en azul; los cuatro medios son grises hasta elegirse y entonces se llenan con su color; la
+  línea recién agregada del carrito lleva un aro azul de 2 px.
+- Los avisos (`SnackBar`) son el toast oscuro del mock, radio 26.
+- Íconos: `IconoPlz` (`tema/iconos.dart`) dibuja el trazo del mock (`IconoNs`, los del celular) cuando hay equivalente y, si no, el Material de
+  siempre. Se usa en lugar de `Icon(IconosPlazoleta.x)`; para sumar un ícono se agrega su trazo a `IconoNs` y su equivalencia en
+  `IconoPlz._trazos`. En los tests se buscan con `buscarIcono` (`test/ui/buscar_icono.dart`), no con `find.byIcon`.
+- Inicio: el título pasa a "Hola, <quien abrió la caja>" (sin caja abierta sigue "Inicio").
+- Movimiento (pulido, 2026-10-05): el cambio de pantalla es un **fundido cruzado** (`FadeThroughTransition`, el mismo del celular): la que
+  sale se desvanece y recién después aparece la nueva, sin zoom ni desplazamiento de toda la pantalla (antes se superponían y se sentía
+  como una "splasheando" sobre la otra). Saltar entre secciones usa `pushAndRemoveUntil` (una sola transición) en vez de `popUntil` +
+  `push` (dos a la vez). Lo que sigue moviéndose al entrar son las tarjetas y filas (`Entrada`). Con "reducir animaciones" de Windows el
+  cambio es instantáneo.
+- Sigue igual: los layouts de cada pantalla (ya coincidían con el mock: Historial con sus pestañas, cierre en dos fases, Configuración por
+  grupos), el peso de los títulos y todos los números. No se agregó la franja "Este mes" al tablero: ese resumen ya es la vista "Este mes"
+  de Inicio, y duplicarlo repetiría una cuenta de plata en dos lugares.
+
 **Estética horsepos.com / antigravity (2026-10-02/03) — vigente, manda sobre todo lo de abajo.**
 Es lo más reciente y lo que corre hoy (PR #24, #50 y `docs/ESTANDARES-GOOGLE.md`):
 

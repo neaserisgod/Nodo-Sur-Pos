@@ -33,7 +33,7 @@ class EstadoVacio extends StatelessWidget {
                 color: colores.textoTenue.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icono, size: 32, color: colores.textoTenue),
+              child: IconoPlz(icono, size: 32, color: colores.textoTenue),
             ),
             const SizedBox(height: Espaciado.lg),
             Text(

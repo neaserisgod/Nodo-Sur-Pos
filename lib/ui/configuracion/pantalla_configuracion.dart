@@ -683,7 +683,7 @@ class _SeccionUsuariosState extends State<_SeccionUsuarios> {
               ),
               IconButton(
                 tooltip: 'Agregar',
-                icon: const Icon(IconosPlazoleta.add),
+                icon: const IconoPlz(IconosPlazoleta.add),
                 onPressed: _agregar,
               ),
             ],
@@ -890,7 +890,7 @@ class _SeccionMenu extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     tooltip: 'Subir',
-                    icon: const Icon(IconosPlazoleta.arrowUpward, size: 16),
+                    icon: const IconoPlz(IconosPlazoleta.arrowUpward, size: 16),
                     onPressed: i == 0
                         ? null
                         : () => c.moverSeccion(i, arriba: true),
@@ -899,7 +899,7 @@ class _SeccionMenu extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     tooltip: 'Bajar',
-                    icon: const Icon(IconosPlazoleta.arrowDownward, size: 16),
+                    icon: const IconoPlz(IconosPlazoleta.arrowDownward, size: 16),
                     onPressed: i == c.secciones.length - 1
                         ? null
                         : () => c.moverSeccion(i, arriba: false),

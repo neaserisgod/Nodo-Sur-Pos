@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
@@ -60,7 +61,7 @@ void main() {
     await tester.tap(find.text('Usuarios'));
     await tester.pumpAndSettle();
     await tester.enterText(_campo('campo_nuevo_usuario'), 'Ayuda finde');
-    await tester.tap(find.byIcon(IconosPlazoleta.add));
+    await tester.tap(buscarIcono(IconosPlazoleta.add));
     await tester.pumpAndSettle();
 
     expect(find.text('Ayuda finde'), findsOneWidget);

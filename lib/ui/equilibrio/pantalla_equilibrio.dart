@@ -224,7 +224,7 @@ class _TarjetaEstadoDeResultados extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                icon: const Icon(IconosPlazoleta.add),
+                icon: const IconoPlz(IconosPlazoleta.add),
                 label: const Text('Agregar sueldo del dueño'),
                 onPressed: () => c.agregarConcepto(nombreConceptoSueldo),
               ),
@@ -450,7 +450,7 @@ class _TarjetaFijosDelMes extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium!.tabular,
                   ),
                   IconButton(
-                    icon: const Icon(IconosPlazoleta.edit, size: 18),
+                    icon: const IconoPlz(IconosPlazoleta.edit, size: 18),
                     tooltip: 'Cargar / corregir monto de este mes',
                     onPressed: () => mostrarDialogoCargarMontoFijo(
                       context,
@@ -465,7 +465,7 @@ class _TarjetaFijosDelMes extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(IconosPlazoleta.add),
+              icon: const IconoPlz(IconosPlazoleta.add),
               label: const Text('Nuevo concepto'),
               onPressed: () => mostrarDialogoNuevoConceptoFijo(context, c),
             ),

@@ -100,7 +100,7 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
         Row(
           children: [
             ActionChip(
-              avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+              avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
               label: const Text('Proveedores'),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
@@ -305,7 +305,7 @@ class _Desplegable<T> extends StatelessWidget {
           children: [
             Text(texto, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(width: Espaciado.xs),
-            const Icon(IconosPlazoleta.expandMore, size: 18),
+            const IconoPlz(IconosPlazoleta.expandMore, size: 18),
           ],
         ),
       ),
@@ -369,9 +369,9 @@ class _FilaConteo extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(tooltip: 'Restar', icon: const Icon(IconosPlazoleta.remove), onPressed: () => c.sumar(producto, -1)),
+                    IconButton(tooltip: 'Restar', icon: const IconoPlz(IconosPlazoleta.remove), onPressed: () => c.sumar(producto, -1)),
                     SizedBox(width: 96, child: _CampoContado(c: c, producto: producto)),
-                    IconButton(tooltip: 'Sumar', icon: const Icon(IconosPlazoleta.add), onPressed: () => c.sumar(producto, 1)),
+                    IconButton(tooltip: 'Sumar', icon: const IconoPlz(IconosPlazoleta.add), onPressed: () => c.sumar(producto, 1)),
                   ],
                 ),
               ),

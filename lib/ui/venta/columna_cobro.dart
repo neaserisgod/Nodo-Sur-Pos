@@ -141,7 +141,8 @@ class PanelCobro extends StatelessWidget {
                 // el color deshabilitado tiene que notarse en el fondo, no
                 // solo en el texto). `onPressed` es `null` solo con el
                 // carrito vacío o sin medio elegido, a propósito.
-                color: habilitado ? colores.acento : colores.fondo,
+                // Azul de marca (mock Nodo Sur, decisión del dueño 2026-10-05): vender y cobrar son el color de acción.
+                color: habilitado ? azulMarca : colores.fondo,
                 // Píldora completa, no `TactoVenta.radio` — es la única
                 // acción PRIMARIA del panel (rediseño de composición): se
                 // distingue en forma de los cuatro selectores de medio de
@@ -156,16 +157,16 @@ class PanelCobro extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      IconoPlz(
                         IconosPlazoleta.shoppingCartCheckout,
                         size: TactoVenta.icono,
-                        color: habilitado ? colores.acentoTexto : colores.textoTenue,
+                        color: habilitado ? Colors.white : colores.textoTenue,
                       ),
                       const SizedBox(width: Espaciado.sm),
                       Text(
                         'Cobrar',
                         style: TextStyle(
-                          color: habilitado ? colores.acentoTexto : colores.textoTenue,
+                          color: habilitado ? Colors.white : colores.textoTenue,
                           fontSize: TamanioTexto.subtitulo,
                         ),
                       ),
@@ -483,16 +484,15 @@ class _BotonMedio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    // Sin elegir, cada medio ya se reconoce por su color (fondo suave y
-    // texto en su tono, como las filas Efectivo/MP del "Lenguaje de
-    // diseño", 2026-09-26); elegido, el color lleno.
+    // Sin elegir, el botón es neutro (bloque gris, texto en tinta); elegido, el color de su medio lo llena (mock Nodo
+    // Sur, 2026-10-05).
     final colorMedio = colorSeleccionado;
     final colorFondo = seleccionado
         ? (colorMedio ?? colores.acento)
-        : (colorMedio == null ? colores.fondoBloque : colorMedio.withValues(alpha: 0.11));
+        : colores.fondoBloque;
     final colorContenido = seleccionado
         ? (colorMedio == null ? colores.acentoTexto : context.acentosPlazoleta.textoSobreColor)
-        : (colorMedio == null ? colores.textoPrimario : Color.lerp(colorMedio, colores.textoPrimario, 0.35)!);
+        : colores.textoPrimario;
     // Elegido, el color llena el botón con una transición corta y el botón late una vez (2026-10-03).
     return Pulso(
       valor: seleccionado,
@@ -530,9 +530,10 @@ class _BotonMedio extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: colorContenido.withValues(alpha: 0.18),
+                    // Sin elegir, el círculo del ícono es del color del fondo de pantalla (mock `--paper`); elegido, blanco translúcido.
+                    color: seleccionado ? Colors.white.withValues(alpha: 0.2) : colores.fondo,
                   ),
-                  child: Icon(icono, size: 14, color: colorContenido),
+                  child: IconoPlz(icono!, size: 14, color: colorContenido),
                 ),
                 const SizedBox(width: Espaciado.sm),
               ],

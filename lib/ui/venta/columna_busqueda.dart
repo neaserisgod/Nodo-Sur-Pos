@@ -203,7 +203,7 @@ class _BarraBusquedaVentaState extends State<BarraBusquedaVenta> {
           autofocus: true,
           decoration: InputDecoration(
             hintText: 'Código, nombre o "200 nombre"',
-            prefixIcon: Icon(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
+            prefixIcon: IconoPlz(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
             contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
             // Octava pasada (El dueño: "necesito que la barra de busqueda se
             // note que es una barra de busqueda") — mismo relleno que

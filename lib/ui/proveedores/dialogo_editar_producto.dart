@@ -626,7 +626,7 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                   ),
                   IconButton(
                     onPressed: _crearCategoria,
-                    icon: const Icon(IconosPlazoleta.add),
+                    icon: const IconoPlz(IconosPlazoleta.add),
                     tooltip: 'Nueva categoría',
                   ),
                   // Sin el módulo de caja aparte no se ofrece, salvo que este producto ya sea un cigarrillo
@@ -766,12 +766,12 @@ class _Pasos extends StatelessWidget {
       keyboardType: TextInputType.number,
       prefixIcon: IconButton(
         tooltip: 'Restar $paso $unidad',
-        icon: const Icon(IconosPlazoleta.remove),
+        icon: const IconoPlz(IconosPlazoleta.remove),
         onPressed: () => alSumar(controller, -paso),
       ),
       suffixIcon: IconButton(
         tooltip: 'Sumar $paso $unidad',
-        icon: const Icon(IconosPlazoleta.add),
+        icon: const IconoPlz(IconosPlazoleta.add),
         onPressed: () => alSumar(controller, paso),
       ),
     );

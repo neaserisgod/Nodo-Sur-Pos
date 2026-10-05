@@ -10,6 +10,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../companion/kit/iconos_ns.dart';
+import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/presionable.dart';
 import '../tema/tokens.dart';
@@ -23,6 +25,17 @@ class ItemNavbarSuperior {
   final String clave;
   final String etiqueta;
 }
+
+/// Ícono de trazo de cada sección (mock: los mismos del celular). Una clave que no está acá (sección nueva) va sin ícono.
+IconoNs? iconoDeSeccion(String clave) => switch (clave) {
+  'dashboard' => IconoNs.inicio,
+  'venta' => IconoNs.carrito,
+  'proveedores' => IconoNs.camion,
+  'separaciones' => IconoNs.billetera,
+  'historial' => IconoNs.portapapeles,
+  'encargues' => IconoNs.calendario,
+  _ => null,
+};
 
 /// Alto de la barra: la búsqueda que la acompaña usa el mismo.
 const double altoNavbarSuperior = 52;
@@ -86,16 +99,23 @@ class NavbarSuperior extends StatelessWidget {
                     duration: Animaciones.corta,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (final item in secciones)
-                            _Pastilla(
-                              etiqueta: item.etiqueta,
-                              activa: item.clave == claveActiva,
-                              onTap: () => onSeleccionar(item.clave),
-                            ),
-                        ],
+                      // Las pastillas van sobre una cápsula gris, como la barra del mock.
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(color: context.colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final item in secciones)
+                              _Pastilla(
+                                etiqueta: item.etiqueta,
+                                icono: iconoDeSeccion(item.clave),
+                                esVenta: item.clave == 'venta',
+                                activa: item.clave == claveActiva,
+                                onTap: () => onSeleccionar(item.clave),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -177,9 +197,13 @@ class NavbarSuperior extends StatelessWidget {
 }
 
 class _Pastilla extends StatelessWidget {
-  const _Pastilla({required this.etiqueta, required this.activa, required this.onTap});
+  const _Pastilla({required this.etiqueta, required this.activa, required this.onTap, this.icono, this.esVenta = false});
 
   final String etiqueta;
+  final IconoNs? icono;
+
+  /// Venta es el botón azul de marca (más oscuro cuando es la pantalla activa), como "Vender" del celular.
+  final bool esVenta;
   final bool activa;
   final VoidCallback onTap;
 
@@ -187,6 +211,10 @@ class _Pastilla extends StatelessWidget {
   Widget build(BuildContext context) {
     final colores = context.colores;
     final textTheme = Theme.of(context).textTheme;
+    final Color fondo = esVenta
+        ? (activa ? azulMarcaOscuro : azulMarca)
+        : (activa ? context.azulSuaveFondo : colores.fondoBloque.withValues(alpha: 0));
+    final Color texto = esVenta ? Colors.white : (activa ? context.azulSuaveTexto : colores.textoSecundario);
     return Padding(
       padding: const EdgeInsets.only(right: 2),
       child: Presionable(
@@ -197,19 +225,26 @@ class _Pastilla extends StatelessWidget {
           duration: Animaciones.corta,
           curve: Animaciones.curva,
           height: Medidas.alturaControl,
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+          padding: EdgeInsets.only(left: icono == null ? Espaciado.lg + 2 : Espaciado.lg, right: Espaciado.lg + 2),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: activa ? colores.fondoBloque : colores.fondoBloque.withValues(alpha: 0),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: AnimatedDefaultTextStyle(
-            duration: Animaciones.corta,
-            style: textTheme.bodyMedium!.copyWith(
-              fontWeight: activa ? Pesos.medium : FontWeight.w500,
-              color: activa ? colores.textoPrimario : colores.textoSecundario,
-            ),
-            child: Text(etiqueta, maxLines: 1),
+          decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(999)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icono != null) ...[
+                IconoNsWidget(icono!, tamanio: 20, color: texto, grosor: 2.1),
+                const SizedBox(width: Espaciado.sm),
+              ],
+              AnimatedDefaultTextStyle(
+                duration: Animaciones.corta,
+                style: textTheme.bodyMedium!.copyWith(
+                  fontWeight: (activa || esVenta) ? Pesos.fuerte : Pesos.medium,
+                  color: texto,
+                  letterSpacing: -0.16,
+                ),
+                child: Text(etiqueta, maxLines: 1),
+              ),
+            ],
           ),
         ),
       ),
@@ -242,7 +277,7 @@ class _BotonRedondo extends StatelessWidget {
           child: SizedBox(
             width: Medidas.alturaControl,
             height: Medidas.alturaControl,
-            child: Icon(icono, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
+            child: IconoPlz(icono, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
           ),
         ),
       ),

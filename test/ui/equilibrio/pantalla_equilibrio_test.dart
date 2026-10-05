@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_equilibrio.dart';
 import 'package:la_plazoleta/ui/equilibrio/pantalla_equilibrio.dart';
@@ -56,7 +57,7 @@ void main() {
 
       await _pump(tester, db, usuarioId: usuarioId);
 
-      await tester.tap(find.widgetWithIcon(IconButton, IconosPlazoleta.edit).first);
+      await tester.tap(find.ancestor(of: buscarIcono(IconosPlazoleta.edit), matching: find.byType(IconButton)).first);
       await tester.pumpAndSettle();
       await tester.enterText(_campo('campo_monto_fijo'), '935000');
       await tester.tap(find.text('Guardar'));

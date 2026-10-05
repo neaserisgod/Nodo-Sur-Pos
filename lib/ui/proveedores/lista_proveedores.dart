@@ -149,7 +149,7 @@ class _FilaProveedor extends StatelessWidget {
               Insignia(texto: '$stockBajo', tono: Tono.alerta),
             ],
             const SizedBox(width: Espaciado.xs),
-            Icon(IconosPlazoleta.chevronRight, color: colores.textoSecundario),
+            IconoPlz(IconosPlazoleta.chevronRight, color: colores.textoSecundario),
           ],
         ),
       ),
