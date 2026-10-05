@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:la_plazoleta/companion/pantalla_carga_historica.dart';
 import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
@@ -846,6 +848,21 @@ void main() {
     await servicioConCaja(t);
     final c = ControladorFalsoNs()..segmentoCaja.value = 1;
     await capturarNs(t, '30-caja-separar', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja, antes: esperarCarga);
+  });
+
+  testWidgets('39b-dias-historicos-vacio', (t) async {
+    SharedPreferences.setMockInitialValues({'companion_usuario_id': 1, 'companion_usuario_nombre': 'Ana'});
+    await servicioConCaja(t);
+    await capturarNs(t, '39b-dias-historicos-vacio', const PantallaCargaHistorica(), antes: esperarCarga);
+  });
+  testWidgets('40-nuevo-dia-fecha', (t) async {
+    SharedPreferences.setMockInitialValues({'companion_usuario_id': 1, 'companion_usuario_nombre': 'Ana'});
+    await servicioConCaja(t);
+    await capturarNs(t, '40-nuevo-dia-fecha', const PantallaCargaHistorica(), antes: (t) async {
+      await esperarCarga(t);
+      await t.tap(find.text('Nuevo día'));
+      await esperar(t);
+    });
   });
 
   testWidgets('37-mas', (t) async {
