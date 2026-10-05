@@ -86,8 +86,9 @@ Future<void> navegarASeccionDeGestion(
     navigator.popUntil((route) => route.isFirst);
     return;
   }
-  navigator.popUntil((route) => route.isFirst);
-
+  // Sin `popUntil` + `push`: eso animaba la salida de la pantalla vieja y la entrada de la nueva a la vez, una encima de la
+  // otra. `pushAndRemoveUntil` hace una sola transición (la vieja se desvanece y la nueva aparece) y recién después saca
+  // de la pila lo que sobraba.
   final sesionIdReal = sesionCajaId ?? (await sesionAbierta(db))?.id;
 
   final Widget? pantalla = switch (clave) {
@@ -109,5 +110,5 @@ Future<void> navegarASeccionDeGestion(
     _ => null,
   };
   if (pantalla == null) return;
-  await navigator.push(MaterialPageRoute(builder: (_) => pantalla));
+  await navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => pantalla), (route) => route.isFirst);
 }

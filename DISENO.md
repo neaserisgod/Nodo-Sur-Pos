@@ -33,6 +33,11 @@ variable) y **ninguna función nueva** (solo aspecto). Qué cambió en el códig
   siempre. Se usa en lugar de `Icon(IconosPlazoleta.x)`; para sumar un ícono se agrega su trazo a `IconoNs` y su equivalencia en
   `IconoPlz._trazos`. En los tests se buscan con `buscarIcono` (`test/ui/buscar_icono.dart`), no con `find.byIcon`.
 - Inicio: el título pasa a "Hola, <quien abrió la caja>" (sin caja abierta sigue "Inicio").
+- Movimiento (pulido, 2026-10-05): el cambio de pantalla es un **fundido cruzado** (`FadeThroughTransition`, el mismo del celular): la que
+  sale se desvanece y recién después aparece la nueva, sin zoom ni desplazamiento de toda la pantalla (antes se superponían y se sentía
+  como una "splasheando" sobre la otra). Saltar entre secciones usa `pushAndRemoveUntil` (una sola transición) en vez de `popUntil` +
+  `push` (dos a la vez). Lo que sigue moviéndose al entrar son las tarjetas y filas (`Entrada`). Con "reducir animaciones" de Windows el
+  cambio es instantáneo.
 - Sigue igual: los layouts de cada pantalla (ya coincidían con el mock: Historial con sus pestañas, cierre en dos fases, Configuración por
   grupos), el peso de los títulos y todos los números. No se agregó la franja "Este mes" al tablero: ese resumen ya es la vista "Este mes"
   de Inicio, y duplicarlo repetiría una cuenta de plata en dos lugares.

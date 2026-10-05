@@ -12,6 +12,7 @@
 // (`DISENO.md` se reescribe en el mismo cambio que cada fase, no todo de
 // una).
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 import 'acentos.dart';
@@ -222,9 +223,10 @@ abstract final class TemaPlazoleta {
   }
 }
 
-/// Fundido corto con un acercamiento muy leve (98% → 100%) y la pantalla de abajo que se aleja un poco: se siente
-/// fluido sin "viajar" de costado (El dueño, 2026-10-03: "que se vea todo fluido"). Sin desplazamiento lateral: esta app
-/// no tiene jerarquía de pestañas como la companion. Al volver, la misma animación al revés.
+/// Cambio de pantalla: fundido cruzado ("fade through", el mismo del celular). La pantalla que sale se desvanece primero y
+/// recién después aparece la nueva, así nunca se ven las dos superpuestas. Sin zoom ni desplazamiento: lo que se mueve al
+/// entrar son las tarjetas y filas de cada pantalla (`Entrada`), y sumar un movimiento de toda la pantalla arriba de eso se
+/// sentía como una pantalla "splasheando" sobre la otra (El dueño, 2026-10-05: "pulí las animaciones").
 class _TransicionCorta extends PageTransitionsBuilder {
   const _TransicionCorta();
 
@@ -232,7 +234,7 @@ class _TransicionCorta extends PageTransitionsBuilder {
   Duration get transitionDuration => Animaciones.media;
 
   @override
-  Duration get reverseTransitionDuration => Animaciones.corta;
+  Duration get reverseTransitionDuration => Animaciones.media;
 
   @override
   Widget buildTransitions<T>(
@@ -242,25 +244,13 @@ class _TransicionCorta extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final entrada = CurvedAnimation(parent: animation, curve: Animaciones.curva, reverseCurve: Curves.easeInCubic);
-    final tapada = CurvedAnimation(parent: secondaryAnimation, curve: Animaciones.curva, reverseCurve: Curves.easeInCubic);
-    // 2026-10-03 (el dueño: "las animaciones son una miseria"): la pantalla nueva sube un poco además de fundirse y
-    // crecer, y la de abajo se achica y se atenúa, para que el cambio se lea como un paso. Misma duración.
-    return FadeTransition(
-      opacity: entrada,
-      child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.015), end: Offset.zero).animate(entrada),
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.97, end: 1).animate(entrada),
-          child: FadeTransition(
-            opacity: Tween<double>(begin: 1, end: 0.7).animate(tapada),
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 1, end: 0.985).animate(tapada),
-              child: child,
-            ),
-          ),
-        ),
-      ),
+    // Sin esto (reducir animaciones de Windows) el cambio es instantáneo.
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return FadeThroughTransition(
+      animation: animation,
+      secondaryAnimation: secondaryAnimation,
+      fillColor: Theme.of(context).scaffoldBackgroundColor,
+      child: child,
     );
   }
 }
