@@ -1951,3 +1951,15 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **El porcentaje se elige en cada sugerencia**, con los mismos atajos y "Otro %" que el creador; el precio, el ahorro y la ganancia se
   recalculan al instante con `calcularPromo` y "Crear" abre el creador con ese porcentaje. Un porcentaje que topea contra la lista avisa
   que no hay descuento; uno que no cubre el costo no deja crear.
+
+## Facturas de compra con IA (2026-10-05)
+
+- **Costo = lo que realmente paga** (el dueño es monotributista y no recupera IVA): neto + IVA + impuestos internos + su parte de las
+  percepciones − su parte de los descuentos del pie, redondeado hacia arriba al peso por unidad. Los descuentos del pie se reparten siempre; las
+  percepciones por defecto también (`percepcionesAlCosto`), a confirmar con el dueño.
+- **Entra stock con la factura** (casilla por factura): cambia la regla de `REGLAS-NEGOCIO.md` de que el stock solo baja.
+- **Solo costo y precio sugerido**: las anotaciones a mano de las facturas no se leen ni se aplican (el dueño: "solo quiero el costo y un sugerido").
+- **Plan gratis de Gemini aceptado** para las facturas (llevan costos y datos del comercio): decisión del dueño.
+- **El control de totales es la red de seguridad**: la IA transcribe, el código suma, y si no cierra con el total impreso (tolerancia 2 centavos +
+  1 por línea; en las facturas reales la diferencia fue de 0 a 2) se marca para revisar. Atrapa un dígito mal leído y el descuento aplicado dos veces.
+- **Se aprende por proveedor** (unidades por bulto, vínculos de producto), no con plantillas: ver las fichas de `docs/PLAN-FACTURAS.md`.
