@@ -79,9 +79,19 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
-## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 1: mock y comparación
+## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
 
-Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla. **Etapa 1 hecha: no se tocó código de Flutter.** Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en `docs/mock-pc/NodoSurPC.html` (todas las pantallas y hojas, claro/oscuro; v2 del 05/10 con Movimientos, Cierres, Encargues, búsqueda global y el detalle de cada botón). Espera el OK del dueño y sus respuestas a las 6 preguntas del doc (azul en Cobrar, hojas inferiores en PC, fin del violeta, peso 450...) antes de la etapa 2.
+Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla.
+Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en
+`docs/mock-pc/NodoSurPC.html` (todas las pantallas y modales, claro/oscuro). Decisiones del dueño (05/10): modales al centro, "Cobrar"
+azul, colores de medios como el mock, títulos en peso 500, ninguna función nueva.
+
+**Hecho en el código** (`flutter analyze` limpio; suite completa verde): paleta y acentos del mock (azul de marca en oscuro, medios
+verde/azul/gris/ámbar, sin degradés), navbar con íconos de trazo y Venta azul, "Cobrar" y "Nueva venta" azules, medios grises hasta
+elegirse, aro azul en la última línea del carrito, toast oscuro. **Falta** (el mock lo propone, el código no): íconos de trazo dentro
+de las pantallas (hoy Material Rounded), "Hola, Ana" y la franja "Este mes" en Inicio, pastillas Ventas/Movimientos/Cierres con la
+disposición del mock en Historial, cierre de caja en dos pasos centrados con el diseño del mock, y el resto del detalle visual
+pantalla por pantalla. No probado en una PC real; solo capturas de test (`test/ui/capturas_escritorio_test.dart`).
 
 ## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 

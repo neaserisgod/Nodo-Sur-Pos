@@ -1,7 +1,7 @@
 # App de PC vs. mock del celular + horsepos.com / antigravity (2026-10-05)
 
 Rama `claude/horsepos-redesign-mock-2a305t`. **Etapa 1 (esta): comparación y mock de escritorio. No se tocó código de Flutter.**
-Etapa 2 (después del OK del dueño): llevar el mock a `lib/ui/`, una fase por vez (ver "Plan" abajo).
+Etapa 2 (empezada el 05/10 con las respuestas del dueño): llevar el mock a `lib/ui/`. Lo ya aplicado está al final, en "7. Estado de la etapa 2".
 
 - **Mock de PC (artifact, interactivo, claro/oscuro, 1920×1080):** https://claude.ai/artifact/P4VGSxmyWQBXaXo4QTbrYT
   Fuente en este repo: `docs/mock-pc/NodoSurPC.html` (un solo archivo, sin dependencias salvo la fuente Figtree de Google Fonts).
@@ -110,3 +110,12 @@ atajos Alt; Venta es la pantalla principal; navbar superior centrada (no se pasa
 6. Capturas con `test/ui/capturas_escritorio_test.dart` contra el mock, `flutter analyze` y la suite completa.
 
 Nada de esto se probó en una PC real; el mock es HTML y las cifras son de ejemplo (iguales a las del mock del celular).
+
+## 7. Estado de la etapa 2 (2026-10-05)
+
+Respuestas del dueño: "Cobrar" azul; colores de medios como el mock; títulos en peso 500; ninguna función nueva; modales al centro.
+
+- **Aplicado:** paleta y acentos, navbar con íconos y Venta azul, Cobrar y Nueva venta azules, medios grises hasta elegirse, aro azul en
+  la línea nueva del carrito, toast oscuro. Ver `DISENO.md` (bloque del 2026-10-05).
+- **Pendiente:** íconos de trazo dentro de las pantallas; "Hola, Ana" y "Este mes" en Inicio; Historial con la disposición del mock;
+  cierre de caja en dos pasos centrados; ajuste fino pantalla por pantalla. Decidir si se hace todo o solo lo que el dueño elija.

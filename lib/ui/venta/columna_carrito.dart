@@ -138,10 +138,9 @@ class ColumnaCarrito extends StatelessWidget {
                             maxWidth: Medidas.anchoFilaCarrito,
                           ),
                           child: Container(
+                            // La línea recién agregada lleva un aro azul de marca (mock Nodo Sur), ya no un relleno gris.
                             decoration: BoxDecoration(
-                              color: esUltima
-                                  ? context.colores.destacado
-                                  : null,
+                              border: esUltima ? Border.all(color: azulMarca, width: 2) : null,
                               borderRadius: BorderRadius.circular(
                                 radioControlEscritorio,
                               ),
