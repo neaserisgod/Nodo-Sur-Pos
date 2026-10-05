@@ -18,6 +18,16 @@ y el detalle en `DECISIONES.md`.
   (los celulares toman la más nueva). La 2129 quedó **bloqueada** en el sitio (03/10).
 - **Sitio** (`NodoSurPage`): en producción al mezclar a `main`.
 
+## Rediseño de la PC v3 — mock hecho, sin aplicar al código (05/10/2026)
+
+El dueño rechazó el aspecto de la app de escritorio y pidió **rehacerla desde cero** (disposición incluida) con el lenguaje de
+horsepos.com y antigravity.google. Hay un **mock interactivo nuevo** (`docs/mock-pc/NodoSurPC-v3.html`; vivo en
+https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js) y una **especificación completa para aplicarlo al pie de la letra**:
+[`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) (tokens, movimiento con valores, componentes, cada pantalla y diálogo,
+reglas, mapeo a `lib/ui/`, plan por fases, excepciones y pendientes). Decisiones del dueño: pastilla flotante + mega-menú, Venta con
+buscador gigante + grilla + ticket alto, carácter alto en todas las pantallas. **No se tocó código de Flutter.** Reemplaza al mock y a
+la comparación de la sección siguiente; hay funciones nuevas a confirmar (sección 14.3 de la especificación) antes de construirlas.
+
 ## Métricas
 
 - **Tests**: 2374 verdes (`flutter test --exclude-tags bench`, 2026-10-05). La suite completa a veces muestra 1–3 fallos que cambian de nombre
