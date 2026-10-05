@@ -49,6 +49,28 @@ enum ConfianzaVinculo { alta, media, ninguna }
 
 enum OrigenVinculo { aprendido, codigoDeBarras, nombre, ia, manual }
 
+/// El estado de una línea de factura frente a tus productos, tal como lo ve el dueño (el punto verde, amarillo o rojo).
+enum EstadoDeVinculo { seguro, aConfirmar, sinVincular }
+
+/// Verde: lo propuesto por lo aprendido o por el código de barras y el dueño no lo cambió. Amarillo: hay producto pero falta que lo confirme
+/// (parecido de nombre, IA, o elegido a mano y todavía sin aprender). Rojo: sin producto.
+EstadoDeVinculo estadoDeVinculo(PropuestaDeVinculo? propuesta, int? elegido) {
+  if (elegido == null) return EstadoDeVinculo.sinVincular;
+  final intacto = propuesta != null && propuesta.productoId == elegido;
+  final confiable = propuesta?.origen == OrigenVinculo.aprendido || propuesta?.origen == OrigenVinculo.codigoDeBarras;
+  return intacto && confiable ? EstadoDeVinculo.seguro : EstadoDeVinculo.aConfirmar;
+}
+
+/// Cuántas líneas hay en cada estado, para el resumen "reconocí 8 de 10".
+Map<EstadoDeVinculo, int> resumenDeVinculos(List<PropuestaDeVinculo?> propuestas, List<int?> elegidos) {
+  final r = {for (final e in EstadoDeVinculo.values) e: 0};
+  for (var i = 0; i < elegidos.length; i++) {
+    final estado = estadoDeVinculo(i < propuestas.length ? propuestas[i] : null, elegidos[i]);
+    r[estado] = r[estado]! + 1;
+  }
+  return r;
+}
+
 class PropuestaDeVinculo {
   const PropuestaDeVinculo({
     required this.confianza,

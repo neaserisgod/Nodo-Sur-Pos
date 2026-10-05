@@ -126,6 +126,8 @@ void main() {
       expect(find.byTooltip('Parecido de nombre: confirmalo'), findsOneWidget);
       expect(find.text('Crema simple 200 gr'), findsWidgets);
       expect(find.text('Aprender estos vínculos (1)'), findsOneWidget);
+      expect(find.text('Reconocí 1 de 1 productos:'), findsOneWidget);
+      expect(find.text('1 para confirmar'), findsOneWidget);
     });
 
     testWidgets('"Aprender" guarda el vínculo y la línea pasa a verde', (tester) async {
@@ -137,6 +139,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Aprendí 1 vínculo'), findsOneWidget);
       expect(find.byTooltip('Aprendido de facturas anteriores'), findsOneWidget);
+      expect(find.text('1 seguros'), findsOneWidget);
+      expect(find.text('1 para confirmar'), findsNothing);
       final vinculos = await vinculosDe(db, elpar);
       expect(vinculos.every((v) => v.productoId == crema), isTrue);
       expect(vinculos, isNotEmpty);

@@ -2004,3 +2004,7 @@ Una factura cuenta en unidades o en bultos (pack de 6, caja de 24) y **no lo dic
 ## Selector de modelo de la IA; las facturas se leen con el elegido (El dueño, 2026-10-05)
 
 El lector de facturas probaba primero `gemini-3.8-flash` (el más nuevo). El dueño vio que `gemini-3.5-flash-lite` dio buenos resultados en las últimas lecturas y es baratísimo: **ahora se lee con el modelo elegido, por defecto `gemini-3.5-flash-lite`**, y `gemini-3.8-flash` queda de respaldo si el elegido está saturado, sin cupo o no existe para la clave (`modeloDeRespaldoParaFacturas`). El modelo se elige en Configuración › Asistente IA (PC y celular) y también dentro del lector de facturas, mientras se prueba; es un solo ajuste local (`ClaveGemini.elegirModelo`), no toca la clave ni se sincroniza.
+
+## Resumen "reconocí X de Y" en el lector de facturas (El dueño, 2026-10-05)
+
+Arriba de las líneas de cada factura, el lector dice cuántas de las líneas reconoció de tus productos y en qué estado: **seguros** (verde: ya aprendido o código de barras), **para confirmar** (amarillo: parecido de nombre, IA o elegido a mano) y **sin vincular** (rojo). La clasificación vive en un solo lugar (`estadoDeVinculo` / `resumenDeVinculos`, `domain/vinculo_factura.dart`) y se actualiza al cambiar un producto.
