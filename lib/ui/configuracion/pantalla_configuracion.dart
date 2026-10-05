@@ -28,6 +28,7 @@ import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
 import '../../servicios/nube.dart';
 import '../../servicios/pc_local_nube.dart';
+import 'seccion_asistente_ia.dart';
 import 'seccion_cuenta_nube.dart';
 
 class PantallaConfiguracion extends StatefulWidget {
@@ -232,6 +233,8 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
         return const SizedBox.shrink();
       case SeccionConfiguracion.companion:
         return _SeccionCompanion(c: c);
+      case SeccionConfiguracion.asistenteIa:
+        return const SeccionAsistenteIa();
       case SeccionConfiguracion.actualizaciones:
         return const _SeccionActualizaciones();
     }
@@ -254,6 +257,7 @@ String _palabrasClave(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.respaldo => 'backup copia drive onedrive carpeta',
   SeccionConfiguracion.impresion => 'ticket pdf impresora posnet point terminal token',
   SeccionConfiguracion.companion => 'celular android qr emparejar apk',
+  SeccionConfiguracion.asistenteIa => 'ia inteligencia artificial gemini google clave api promos sugerencias',
   SeccionConfiguracion.actualizaciones => 'version actualizar actualizacion update buscar novedades',
 };
 
@@ -272,6 +276,7 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.respaldo => 'Respaldo',
   SeccionConfiguracion.impresion => 'Impresión y posnet',
   SeccionConfiguracion.companion => 'Celular',
+  SeccionConfiguracion.asistenteIa => 'Asistente IA',
   SeccionConfiguracion.actualizaciones => 'Versión',
 };
 

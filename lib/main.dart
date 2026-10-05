@@ -30,6 +30,7 @@ import 'servicios/marca_actual.dart';
 import 'servicios/registro_errores.dart';
 import 'servicios/migracion_carpeta_datos.dart';
 import 'package:path_provider/path_provider.dart';
+import 'servicios/gemini.dart';
 import 'servicios/ticket_al_cobrar.dart';
 
 Future<void> main() async {
@@ -49,6 +50,7 @@ Future<void> main() async {
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   instalarRegistroDeErrores();
+  await ClaveGemini.cargar(); // clave de la IA de Google: solo de este equipo (PC y celular, cada uno la suya)
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
   // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que

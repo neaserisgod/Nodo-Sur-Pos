@@ -20,7 +20,7 @@ y el detalle en `DECISIONES.md`.
 
 ## Métricas
 
-- **Tests**: 2072 verdes (`flutter test --exclude-tags bench`, 2026-10-04). La suite completa a veces muestra 1–3 fallos que cambian de nombre
+- **Tests**: 2243 verdes (`flutter test --exclude-tags bench`, 2026-10-05). La suite completa a veces muestra 1–3 fallos que cambian de nombre
   entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
   runner, sin investigar.
 - **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
@@ -109,7 +109,7 @@ Distinto del mock a propósito:
 
 Pendiente / ideas (sin hacer):
 - **Pagar proveedor sin la PC**: hoy solo anda con la PC prendida y en el wifi del local, porque `movimientos_deuda` no se sincroniza al celular. Opciones: anotar el pago pendiente en el celular y que la PC lo tome, o copiar la cuenta corriente al celular.
-- **Leer facturas/comprobantes con IA (Gemini)** en Pagar proveedor: idea hablada, sin decidir (privacidad del plan gratis, clave en el servidor y no en el APK).
+- **IA de Google (Gemini) y promos sugeridas, 2026-10-05**: cliente en `lib/servicios/gemini.dart`; la clave se carga en Configuración › Asistente IA de la PC y del celular (cada equipo la suya, local; `probarYGuardarClave` no guarda una clave rota). **Sugerir promos** (solo PC, Proveedores › Promos › "Sugerir promos"): `domain/sugerencia_promos.dart` busca los pares que se llevan juntos (≥3 ventas, lift ≥ 1,2, últimos 90 días, sin anuladas), `data/repositorio_sugerencia_promos.dart` les calcula el precio con `calcularPromo`, y Gemini (`servicios/asistente_promos.dart`) solo les pone nombre y motivo; sin clave o sin cupo se ven igual con "A + B". "Crear" abre el creador precargado. Probado con `flutter analyze` y tests; **no probado con una clave real de Google ni en un celular**. El celular no tiene promos, así que no tiene las sugerencias. **Leer facturas con IA** en Pagar proveedor sigue sin decidir.
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
