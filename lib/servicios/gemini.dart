@@ -160,6 +160,25 @@ class ClienteGemini {
   void close() => _client.close();
 }
 
+/// Lo que hacen "Guardar" en Configuración de la PC y del celular (una sola forma de cargar la clave en las dos apps):
+/// prueba [clave] contra Google y, si anda, la guarda. Devuelve null si quedó guardada, o el motivo si no — y entonces NO se
+/// guarda, para no dejar una clave rota. Una clave vacía borra la que había.
+Future<String?> probarYGuardarClave(String clave, {http.Client? client}) async {
+  if (clave.trim().isEmpty) {
+    await ClaveGemini.guardar(null);
+    return null;
+  }
+  final cliente = ClienteGemini(apiKey: clave.trim(), client: client);
+  try {
+    final motivo = await cliente.probar();
+    if (motivo != null) return motivo;
+    await ClaveGemini.guardar(clave);
+    return null;
+  } finally {
+    cliente.close();
+  }
+}
+
 String _textoDeRespuesta(String cuerpo) {
   final Object? data;
   try {

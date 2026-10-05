@@ -21,6 +21,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
+import '../servicios/gemini.dart';
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
@@ -376,6 +377,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             ),
           const SizedBox(height: 2),
           BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+          _seccion('Asistente IA'),
+          _filaClaveIa(context),
           const SizedBox(height: 8),
         ],
       ),
@@ -423,6 +426,59 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         ],
       ),
     );
+  }
+
+  /// La clave gratuita de Google (Gemini) de ESTE celular: se guarda al instante y no viaja con la sync (a diferencia del resto
+  /// de la configuración), porque es personal. Mismo guardado y mismas pruebas que la PC (`probarYGuardarClave`).
+  Widget _filaClaveIa(BuildContext context) {
+    final ns = context.ns;
+    final configurada = ClaveGemini.configurada;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.fromLTRB(22, 10, 12, 10),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('IA de Google (Gemini)', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                Text(configurada ? 'Clave cargada en este celular' : 'Sin clave — es gratis en aistudio.google.com/apikey', style: estiloNs(14, color: ns.mute)),
+              ],
+            ),
+          ),
+          BotonNs(
+            texto: configurada ? 'Cambiar' : 'Cargar',
+            onTap: _cargarClaveIa,
+            alto: 44,
+            tamanio: 14,
+            fondo: ns.paper,
+            color: ns.ink,
+            rellenar: false,
+            paddingH: 18,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cargarClaveIa() async {
+    final ctrl = TextEditingController(text: ClaveGemini.valor ?? '');
+    await mostrarHojaVidrio<bool>(
+      context,
+      builder: (context) => _HojaAccion(
+        titulo: 'Clave de la IA de Google',
+        onGuardar: () async {
+          final motivo = await probarYGuardarClave(ctrl.text);
+          // `_HojaAccion` muestra el motivo y deja la hoja abierta; la clave rota no se guarda.
+          if (motivo != null) throw FormatException(motivo);
+        },
+        child: CampoTexto(controller: ctrl, autofocus: true, etiqueta: 'Clave de API', obscureText: true),
+      ),
+    );
+    ctrl.dispose();
+    if (mounted) setState(() {});
   }
 
   void _cambiarMarkup(CategoriaCompanion c, int delta) {

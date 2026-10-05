@@ -50,6 +50,7 @@ Future<void> main() async {
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   instalarRegistroDeErrores();
+  await ClaveGemini.cargar(); // clave de la IA de Google: solo de este equipo (PC y celular, cada uno la suya)
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
   // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que
@@ -72,7 +73,6 @@ Future<void> _main() async {
   }
 
   await PreferenciaTicketPoint.cargar(); // interruptor "imprimir el ticket en la Point al cobrar" (etapa C)
-  await ClaveGemini.cargar(); // clave de la IA de Google: solo de este equipo
   await PreferenciaCobroNube.cargar(); // interruptor de prueba "cobrar por Nodo Sur": se lee una vez, después va en memoria
 
   // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la

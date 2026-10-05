@@ -170,4 +170,26 @@ void main() {
       expect(await mal.probar(), contains('cupo gratis'));
     });
   });
+
+  group('probarYGuardarClave', () {
+    test('una clave que anda se guarda', () async {
+      final r = await probarYGuardarClave(' AIza-buena ', client: MockClient((_) async => http.Response(_respuesta('ok'), 200)));
+      expect(r, isNull);
+      expect(ClaveGemini.valor, 'AIza-buena');
+    });
+
+    test('una clave rota NO se guarda y no pisa la anterior', () async {
+      await ClaveGemini.guardar('AIza-vieja');
+      final r = await probarYGuardarClave('AIza-rota', client: MockClient((_) async => http.Response('{"error":{"message":"API key not valid"}}', 400)));
+      expect(r, contains('clave no es válida'));
+      expect(ClaveGemini.valor, 'AIza-vieja');
+    });
+
+    test('vacía borra la clave sin llamar a Google', () async {
+      await ClaveGemini.guardar('AIza-vieja');
+      final r = await probarYGuardarClave('  ', client: MockClient((_) async => fail('no tenía que llamar a Google')));
+      expect(r, isNull);
+      expect(ClaveGemini.configurada, isFalse);
+    });
+  });
 }

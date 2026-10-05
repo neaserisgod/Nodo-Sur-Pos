@@ -32,19 +32,9 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
     super.dispose();
   }
 
-  Future<void> _guardar() async {
-    await ClaveGemini.guardar(_clave.text);
-    if (!mounted) return;
-    setState(() => _resultado = null);
-  }
-
   Future<void> _probar() async {
-    await _guardar();
-    if (!mounted || !ClaveGemini.configurada) return;
     setState(() => _probando = true);
-    final cliente = ClienteGemini(apiKey: ClaveGemini.valor!, client: widget.client);
-    final motivo = await cliente.probar();
-    cliente.close();
+    final motivo = await probarYGuardarClave(_clave.text, client: widget.client);
     if (!mounted) return;
     setState(() {
       _probando = false;
@@ -98,7 +88,9 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
           if (_resultado != null) ...[
             const SizedBox(height: Espaciado.md),
             Text(
-              _resultado!.isEmpty ? 'Anda: la clave es válida y el cupo gratis responde.' : _resultado!,
+              _resultado!.isEmpty
+                  ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada.' : 'Clave quitada.')
+                  : '$_resultado (no se guardó)',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: _resultado!.isEmpty ? colores.textoPrimario : colores.error,
               ),
