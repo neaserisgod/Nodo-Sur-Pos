@@ -379,6 +379,10 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
           _seccion('Asistente IA'),
           _filaClaveIa(context),
+          if (ClaveGemini.configurada) ...[
+            const SizedBox(height: 8),
+            _filaModeloIa(context),
+          ],
           const SizedBox(height: 8),
         ],
       ),
@@ -461,6 +465,35 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         ],
       ),
     );
+  }
+
+  /// Con qué modelo de Google consulta este celular (por defecto el más barato). Se guarda al elegir; la clave no se toca.
+  Widget _filaModeloIa(BuildContext context) {
+    final ns = context.ns;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.fromLTRB(22, 10, 12, 10),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Modelo de la IA', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                Text(ClaveGemini.modelo ?? modeloGeminiPorDefecto, style: estiloNs(14, color: ns.mute)),
+              ],
+            ),
+          ),
+          BotonNs(texto: 'Elegir', onTap: _elegirModeloIa, alto: 44, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _elegirModeloIa() async {
+    await mostrarHojaVidrio<bool>(context, builder: (_) => const _HojaModeloIa());
+    if (mounted) setState(() {});
   }
 
   Future<void> _cargarClaveIa() async {
@@ -574,6 +607,36 @@ class _FilaPorcentaje extends StatelessWidget {
 /// Molde compartido por las hojas de edición de acá abajo: título, un
 /// mensaje de error si `onGuardar` tira, y el botón "Guardar" con su
 /// spinner mientras corre.
+class _HojaModeloIa extends StatelessWidget {
+  const _HojaModeloIa();
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final actual = ClaveGemini.modelo ?? modeloGeminiPorDefecto;
+    final modelos = [if (!modelosGemini.contains(actual)) actual, ...modelosGemini];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Modelo de la IA', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: Espaciado.md),
+        for (final m in modelos)
+          ListTile(
+            key: ValueKey('modelo_ia_$m'),
+            title: Text(m, style: estiloNs(16, peso: m == actual ? FontWeight.w600 : FontWeight.w400, color: ns.ink)),
+            subtitle: Text(etiquetaDeModelo(m).substring(m.length).replaceFirst(' — ', ''), style: estiloNs(13, color: ns.mute)),
+            trailing: m == actual ? Icon(Icons.check, color: ns.ink) : null,
+            onTap: () async {
+              await ClaveGemini.elegirModelo(m);
+              if (context.mounted) Navigator.of(context).pop(true);
+            },
+          ),
+      ],
+    );
+  }
+}
+
 class _HojaAccion extends StatefulWidget {
   const _HojaAccion({required this.titulo, required this.child, required this.onGuardar});
 

@@ -22066,6 +22066,749 @@ class AvisosMpCompanion extends UpdateCompanion<AvisoMpFila> {
   }
 }
 
+class $VinculosFacturaTable extends VinculosFactura
+    with TableInfo<$VinculosFacturaTable, VinculoFacturaFila> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VinculosFacturaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _proveedorIdMeta = const VerificationMeta(
+    'proveedorId',
+  );
+  @override
+  late final GeneratedColumn<int> proveedorId = GeneratedColumn<int>(
+    'proveedor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES proveedores (id)',
+    ),
+  );
+  static const VerificationMeta _tipoClaveMeta = const VerificationMeta(
+    'tipoClave',
+  );
+  @override
+  late final GeneratedColumn<String> tipoClave = GeneratedColumn<String>(
+    'tipo_clave',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _claveMeta = const VerificationMeta('clave');
+  @override
+  late final GeneratedColumn<String> clave = GeneratedColumn<String>(
+    'clave',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productoIdMeta = const VerificationMeta(
+    'productoId',
+  );
+  @override
+  late final GeneratedColumn<int> productoId = GeneratedColumn<int>(
+    'producto_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES productos (id)',
+    ),
+  );
+  static const VerificationMeta _unidadesPorCantidadMeta =
+      const VerificationMeta('unidadesPorCantidad');
+  @override
+  late final GeneratedColumn<int> unidadesPorCantidad = GeneratedColumn<int>(
+    'unidades_por_cantidad',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    proveedorId,
+    tipoClave,
+    clave,
+    productoId,
+    unidadesPorCantidad,
+    actualizadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vinculos_factura';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VinculoFacturaFila> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('proveedor_id')) {
+      context.handle(
+        _proveedorIdMeta,
+        proveedorId.isAcceptableOrUnknown(
+          data['proveedor_id']!,
+          _proveedorIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proveedorIdMeta);
+    }
+    if (data.containsKey('tipo_clave')) {
+      context.handle(
+        _tipoClaveMeta,
+        tipoClave.isAcceptableOrUnknown(data['tipo_clave']!, _tipoClaveMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoClaveMeta);
+    }
+    if (data.containsKey('clave')) {
+      context.handle(
+        _claveMeta,
+        clave.isAcceptableOrUnknown(data['clave']!, _claveMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_claveMeta);
+    }
+    if (data.containsKey('producto_id')) {
+      context.handle(
+        _productoIdMeta,
+        productoId.isAcceptableOrUnknown(data['producto_id']!, _productoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productoIdMeta);
+    }
+    if (data.containsKey('unidades_por_cantidad')) {
+      context.handle(
+        _unidadesPorCantidadMeta,
+        unidadesPorCantidad.isAcceptableOrUnknown(
+          data['unidades_por_cantidad']!,
+          _unidadesPorCantidadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {proveedorId, tipoClave, clave},
+  ];
+  @override
+  VinculoFacturaFila map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VinculoFacturaFila(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      proveedorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}proveedor_id'],
+      )!,
+      tipoClave: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_clave'],
+      )!,
+      clave: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}clave'],
+      )!,
+      productoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}producto_id'],
+      )!,
+      unidadesPorCantidad: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unidades_por_cantidad'],
+      )!,
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      )!,
+    );
+  }
+
+  @override
+  $VinculosFacturaTable createAlias(String alias) {
+    return $VinculosFacturaTable(attachedDatabase, alias);
+  }
+}
+
+class VinculoFacturaFila extends DataClass
+    implements Insertable<VinculoFacturaFila> {
+  final int id;
+  final int proveedorId;
+
+  /// 'codigo' | 'descripcion' (`TipoClaveVinculo` del dominio).
+  final String tipoClave;
+
+  /// El código o la descripción ya normalizados (`claveDeCodigo`, `claveDeDescripcion`).
+  final String clave;
+  final int productoId;
+
+  /// Cuántas unidades del producto entran por cada unidad de la columna "cantidad" de la factura (un bulto de 6 = 6).
+  final int unidadesPorCantidad;
+  final DateTime actualizadoEn;
+  const VinculoFacturaFila({
+    required this.id,
+    required this.proveedorId,
+    required this.tipoClave,
+    required this.clave,
+    required this.productoId,
+    required this.unidadesPorCantidad,
+    required this.actualizadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['proveedor_id'] = Variable<int>(proveedorId);
+    map['tipo_clave'] = Variable<String>(tipoClave);
+    map['clave'] = Variable<String>(clave);
+    map['producto_id'] = Variable<int>(productoId);
+    map['unidades_por_cantidad'] = Variable<int>(unidadesPorCantidad);
+    map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    return map;
+  }
+
+  VinculosFacturaCompanion toCompanion(bool nullToAbsent) {
+    return VinculosFacturaCompanion(
+      id: Value(id),
+      proveedorId: Value(proveedorId),
+      tipoClave: Value(tipoClave),
+      clave: Value(clave),
+      productoId: Value(productoId),
+      unidadesPorCantidad: Value(unidadesPorCantidad),
+      actualizadoEn: Value(actualizadoEn),
+    );
+  }
+
+  factory VinculoFacturaFila.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VinculoFacturaFila(
+      id: serializer.fromJson<int>(json['id']),
+      proveedorId: serializer.fromJson<int>(json['proveedorId']),
+      tipoClave: serializer.fromJson<String>(json['tipoClave']),
+      clave: serializer.fromJson<String>(json['clave']),
+      productoId: serializer.fromJson<int>(json['productoId']),
+      unidadesPorCantidad: serializer.fromJson<int>(
+        json['unidadesPorCantidad'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'proveedorId': serializer.toJson<int>(proveedorId),
+      'tipoClave': serializer.toJson<String>(tipoClave),
+      'clave': serializer.toJson<String>(clave),
+      'productoId': serializer.toJson<int>(productoId),
+      'unidadesPorCantidad': serializer.toJson<int>(unidadesPorCantidad),
+      'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
+    };
+  }
+
+  VinculoFacturaFila copyWith({
+    int? id,
+    int? proveedorId,
+    String? tipoClave,
+    String? clave,
+    int? productoId,
+    int? unidadesPorCantidad,
+    DateTime? actualizadoEn,
+  }) => VinculoFacturaFila(
+    id: id ?? this.id,
+    proveedorId: proveedorId ?? this.proveedorId,
+    tipoClave: tipoClave ?? this.tipoClave,
+    clave: clave ?? this.clave,
+    productoId: productoId ?? this.productoId,
+    unidadesPorCantidad: unidadesPorCantidad ?? this.unidadesPorCantidad,
+    actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+  );
+  VinculoFacturaFila copyWithCompanion(VinculosFacturaCompanion data) {
+    return VinculoFacturaFila(
+      id: data.id.present ? data.id.value : this.id,
+      proveedorId: data.proveedorId.present
+          ? data.proveedorId.value
+          : this.proveedorId,
+      tipoClave: data.tipoClave.present ? data.tipoClave.value : this.tipoClave,
+      clave: data.clave.present ? data.clave.value : this.clave,
+      productoId: data.productoId.present
+          ? data.productoId.value
+          : this.productoId,
+      unidadesPorCantidad: data.unidadesPorCantidad.present
+          ? data.unidadesPorCantidad.value
+          : this.unidadesPorCantidad,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VinculoFacturaFila(')
+          ..write('id: $id, ')
+          ..write('proveedorId: $proveedorId, ')
+          ..write('tipoClave: $tipoClave, ')
+          ..write('clave: $clave, ')
+          ..write('productoId: $productoId, ')
+          ..write('unidadesPorCantidad: $unidadesPorCantidad, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    proveedorId,
+    tipoClave,
+    clave,
+    productoId,
+    unidadesPorCantidad,
+    actualizadoEn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VinculoFacturaFila &&
+          other.id == this.id &&
+          other.proveedorId == this.proveedorId &&
+          other.tipoClave == this.tipoClave &&
+          other.clave == this.clave &&
+          other.productoId == this.productoId &&
+          other.unidadesPorCantidad == this.unidadesPorCantidad &&
+          other.actualizadoEn == this.actualizadoEn);
+}
+
+class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
+  final Value<int> id;
+  final Value<int> proveedorId;
+  final Value<String> tipoClave;
+  final Value<String> clave;
+  final Value<int> productoId;
+  final Value<int> unidadesPorCantidad;
+  final Value<DateTime> actualizadoEn;
+  const VinculosFacturaCompanion({
+    this.id = const Value.absent(),
+    this.proveedorId = const Value.absent(),
+    this.tipoClave = const Value.absent(),
+    this.clave = const Value.absent(),
+    this.productoId = const Value.absent(),
+    this.unidadesPorCantidad = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  });
+  VinculosFacturaCompanion.insert({
+    this.id = const Value.absent(),
+    required int proveedorId,
+    required String tipoClave,
+    required String clave,
+    required int productoId,
+    this.unidadesPorCantidad = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  }) : proveedorId = Value(proveedorId),
+       tipoClave = Value(tipoClave),
+       clave = Value(clave),
+       productoId = Value(productoId);
+  static Insertable<VinculoFacturaFila> custom({
+    Expression<int>? id,
+    Expression<int>? proveedorId,
+    Expression<String>? tipoClave,
+    Expression<String>? clave,
+    Expression<int>? productoId,
+    Expression<int>? unidadesPorCantidad,
+    Expression<DateTime>? actualizadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (proveedorId != null) 'proveedor_id': proveedorId,
+      if (tipoClave != null) 'tipo_clave': tipoClave,
+      if (clave != null) 'clave': clave,
+      if (productoId != null) 'producto_id': productoId,
+      if (unidadesPorCantidad != null)
+        'unidades_por_cantidad': unidadesPorCantidad,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+    });
+  }
+
+  VinculosFacturaCompanion copyWith({
+    Value<int>? id,
+    Value<int>? proveedorId,
+    Value<String>? tipoClave,
+    Value<String>? clave,
+    Value<int>? productoId,
+    Value<int>? unidadesPorCantidad,
+    Value<DateTime>? actualizadoEn,
+  }) {
+    return VinculosFacturaCompanion(
+      id: id ?? this.id,
+      proveedorId: proveedorId ?? this.proveedorId,
+      tipoClave: tipoClave ?? this.tipoClave,
+      clave: clave ?? this.clave,
+      productoId: productoId ?? this.productoId,
+      unidadesPorCantidad: unidadesPorCantidad ?? this.unidadesPorCantidad,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (proveedorId.present) {
+      map['proveedor_id'] = Variable<int>(proveedorId.value);
+    }
+    if (tipoClave.present) {
+      map['tipo_clave'] = Variable<String>(tipoClave.value);
+    }
+    if (clave.present) {
+      map['clave'] = Variable<String>(clave.value);
+    }
+    if (productoId.present) {
+      map['producto_id'] = Variable<int>(productoId.value);
+    }
+    if (unidadesPorCantidad.present) {
+      map['unidades_por_cantidad'] = Variable<int>(unidadesPorCantidad.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VinculosFacturaCompanion(')
+          ..write('id: $id, ')
+          ..write('proveedorId: $proveedorId, ')
+          ..write('tipoClave: $tipoClave, ')
+          ..write('clave: $clave, ')
+          ..write('productoId: $productoId, ')
+          ..write('unidadesPorCantidad: $unidadesPorCantidad, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CuitsProveedorTable extends CuitsProveedor
+    with TableInfo<$CuitsProveedorTable, CuitProveedor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CuitsProveedorTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _proveedorIdMeta = const VerificationMeta(
+    'proveedorId',
+  );
+  @override
+  late final GeneratedColumn<int> proveedorId = GeneratedColumn<int>(
+    'proveedor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES proveedores (id)',
+    ),
+  );
+  static const VerificationMeta _cuitMeta = const VerificationMeta('cuit');
+  @override
+  late final GeneratedColumn<String> cuit = GeneratedColumn<String>(
+    'cuit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, proveedorId, cuit];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cuits_proveedor';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CuitProveedor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('proveedor_id')) {
+      context.handle(
+        _proveedorIdMeta,
+        proveedorId.isAcceptableOrUnknown(
+          data['proveedor_id']!,
+          _proveedorIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proveedorIdMeta);
+    }
+    if (data.containsKey('cuit')) {
+      context.handle(
+        _cuitMeta,
+        cuit.isAcceptableOrUnknown(data['cuit']!, _cuitMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cuitMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CuitProveedor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CuitProveedor(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      proveedorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}proveedor_id'],
+      )!,
+      cuit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cuit'],
+      )!,
+    );
+  }
+
+  @override
+  $CuitsProveedorTable createAlias(String alias) {
+    return $CuitsProveedorTable(attachedDatabase, alias);
+  }
+}
+
+class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
+  final int id;
+  final int proveedorId;
+  final String cuit;
+  const CuitProveedor({
+    required this.id,
+    required this.proveedorId,
+    required this.cuit,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['proveedor_id'] = Variable<int>(proveedorId);
+    map['cuit'] = Variable<String>(cuit);
+    return map;
+  }
+
+  CuitsProveedorCompanion toCompanion(bool nullToAbsent) {
+    return CuitsProveedorCompanion(
+      id: Value(id),
+      proveedorId: Value(proveedorId),
+      cuit: Value(cuit),
+    );
+  }
+
+  factory CuitProveedor.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CuitProveedor(
+      id: serializer.fromJson<int>(json['id']),
+      proveedorId: serializer.fromJson<int>(json['proveedorId']),
+      cuit: serializer.fromJson<String>(json['cuit']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'proveedorId': serializer.toJson<int>(proveedorId),
+      'cuit': serializer.toJson<String>(cuit),
+    };
+  }
+
+  CuitProveedor copyWith({int? id, int? proveedorId, String? cuit}) =>
+      CuitProveedor(
+        id: id ?? this.id,
+        proveedorId: proveedorId ?? this.proveedorId,
+        cuit: cuit ?? this.cuit,
+      );
+  CuitProveedor copyWithCompanion(CuitsProveedorCompanion data) {
+    return CuitProveedor(
+      id: data.id.present ? data.id.value : this.id,
+      proveedorId: data.proveedorId.present
+          ? data.proveedorId.value
+          : this.proveedorId,
+      cuit: data.cuit.present ? data.cuit.value : this.cuit,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CuitProveedor(')
+          ..write('id: $id, ')
+          ..write('proveedorId: $proveedorId, ')
+          ..write('cuit: $cuit')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, proveedorId, cuit);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CuitProveedor &&
+          other.id == this.id &&
+          other.proveedorId == this.proveedorId &&
+          other.cuit == this.cuit);
+}
+
+class CuitsProveedorCompanion extends UpdateCompanion<CuitProveedor> {
+  final Value<int> id;
+  final Value<int> proveedorId;
+  final Value<String> cuit;
+  const CuitsProveedorCompanion({
+    this.id = const Value.absent(),
+    this.proveedorId = const Value.absent(),
+    this.cuit = const Value.absent(),
+  });
+  CuitsProveedorCompanion.insert({
+    this.id = const Value.absent(),
+    required int proveedorId,
+    required String cuit,
+  }) : proveedorId = Value(proveedorId),
+       cuit = Value(cuit);
+  static Insertable<CuitProveedor> custom({
+    Expression<int>? id,
+    Expression<int>? proveedorId,
+    Expression<String>? cuit,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (proveedorId != null) 'proveedor_id': proveedorId,
+      if (cuit != null) 'cuit': cuit,
+    });
+  }
+
+  CuitsProveedorCompanion copyWith({
+    Value<int>? id,
+    Value<int>? proveedorId,
+    Value<String>? cuit,
+  }) {
+    return CuitsProveedorCompanion(
+      id: id ?? this.id,
+      proveedorId: proveedorId ?? this.proveedorId,
+      cuit: cuit ?? this.cuit,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (proveedorId.present) {
+      map['proveedor_id'] = Variable<int>(proveedorId.value);
+    }
+    if (cuit.present) {
+      map['cuit'] = Variable<String>(cuit.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CuitsProveedorCompanion(')
+          ..write('id: $id, ')
+          ..write('proveedorId: $proveedorId, ')
+          ..write('cuit: $cuit')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -22115,6 +22858,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $AvisosMpTable avisosMp = $AvisosMpTable(this);
+  late final $VinculosFacturaTable vinculosFactura = $VinculosFacturaTable(
+    this,
+  );
+  late final $CuitsProveedorTable cuitsProveedor = $CuitsProveedorTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -22149,6 +22896,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     movimientosDeuda,
     promoComponentes,
     avisosMp,
+    vinculosFactura,
+    cuitsProveedor,
   ];
 }
 
@@ -24113,6 +24862,44 @@ final class $$ProveedoresTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VinculosFacturaTable, List<VinculoFacturaFila>>
+  _vinculosFacturaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.vinculosFactura,
+    aliasName: 'proveedores__id__vinculos_factura__proveedor_id',
+  );
+
+  $$VinculosFacturaTableProcessedTableManager get vinculosFacturaRefs {
+    final manager = $$VinculosFacturaTableTableManager(
+      $_db,
+      $_db.vinculosFactura,
+    ).filter((f) => f.proveedorId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _vinculosFacturaRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CuitsProveedorTable, List<CuitProveedor>>
+  _cuitsProveedorRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.cuitsProveedor,
+    aliasName: 'proveedores__id__cuits_proveedor__proveedor_id',
+  );
+
+  $$CuitsProveedorTableProcessedTableManager get cuitsProveedorRefs {
+    final manager = $$CuitsProveedorTableTableManager(
+      $_db,
+      $_db.cuitsProveedor,
+    ).filter((f) => f.proveedorId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_cuitsProveedorRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ProveedoresTableFilterComposer
@@ -24365,6 +25152,56 @@ class $$ProveedoresTableFilterComposer
           }) => $$MovimientosDeudaTableFilterComposer(
             $db: $db,
             $table: $db.movimientosDeuda,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> vinculosFacturaRefs(
+    Expression<bool> Function($$VinculosFacturaTableFilterComposer f) f,
+  ) {
+    final $$VinculosFacturaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vinculosFactura,
+      getReferencedColumn: (t) => t.proveedorId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VinculosFacturaTableFilterComposer(
+            $db: $db,
+            $table: $db.vinculosFactura,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> cuitsProveedorRefs(
+    Expression<bool> Function($$CuitsProveedorTableFilterComposer f) f,
+  ) {
+    final $$CuitsProveedorTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.cuitsProveedor,
+      getReferencedColumn: (t) => t.proveedorId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CuitsProveedorTableFilterComposer(
+            $db: $db,
+            $table: $db.cuitsProveedor,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -24755,6 +25592,56 @@ class $$ProveedoresTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> vinculosFacturaRefs<T extends Object>(
+    Expression<T> Function($$VinculosFacturaTableAnnotationComposer a) f,
+  ) {
+    final $$VinculosFacturaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vinculosFactura,
+      getReferencedColumn: (t) => t.proveedorId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VinculosFacturaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vinculosFactura,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> cuitsProveedorRefs<T extends Object>(
+    Expression<T> Function($$CuitsProveedorTableAnnotationComposer a) f,
+  ) {
+    final $$CuitsProveedorTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.cuitsProveedor,
+      getReferencedColumn: (t) => t.proveedorId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CuitsProveedorTableAnnotationComposer(
+            $db: $db,
+            $table: $db.cuitsProveedor,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProveedoresTableTableManager
@@ -24776,6 +25663,8 @@ class $$ProveedoresTableTableManager
             bool lineasDeVentaRefs,
             bool historialPedidosRefs,
             bool movimientosDeudaRefs,
+            bool vinculosFacturaRefs,
+            bool cuitsProveedorRefs,
           })
         > {
   $$ProveedoresTableTableManager(_$AppDatabase db, $ProveedoresTable table)
@@ -24916,6 +25805,8 @@ class $$ProveedoresTableTableManager
                 lineasDeVentaRefs = false,
                 historialPedidosRefs = false,
                 movimientosDeudaRefs = false,
+                vinculosFacturaRefs = false,
+                cuitsProveedorRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -24925,6 +25816,8 @@ class $$ProveedoresTableTableManager
                     if (lineasDeVentaRefs) db.lineasDeVenta,
                     if (historialPedidosRefs) db.historialPedidos,
                     if (movimientosDeudaRefs) db.movimientosDeuda,
+                    if (vinculosFacturaRefs) db.vinculosFactura,
+                    if (cuitsProveedorRefs) db.cuitsProveedor,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -25034,6 +25927,48 @@ class $$ProveedoresTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (vinculosFacturaRefs)
+                        await $_getPrefetchedData<
+                          Proveedor,
+                          $ProveedoresTable,
+                          VinculoFacturaFila
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProveedoresTableReferences
+                              ._vinculosFacturaRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProveedoresTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).vinculosFacturaRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.proveedorId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (cuitsProveedorRefs)
+                        await $_getPrefetchedData<
+                          Proveedor,
+                          $ProveedoresTable,
+                          CuitProveedor
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProveedoresTableReferences
+                              ._cuitsProveedorRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProveedoresTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).cuitsProveedorRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.proveedorId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -25060,6 +25995,8 @@ typedef $$ProveedoresTableProcessedTableManager =
         bool lineasDeVentaRefs,
         bool historialPedidosRefs,
         bool movimientosDeudaRefs,
+        bool vinculosFacturaRefs,
+        bool cuitsProveedorRefs,
       })
     >;
 typedef $$ClientesTableCreateCompanionBuilder =
@@ -26233,6 +27170,26 @@ final class $$ProductosTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VinculosFacturaTable, List<VinculoFacturaFila>>
+  _vinculosFacturaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.vinculosFactura,
+    aliasName: 'productos__id__vinculos_factura__producto_id',
+  );
+
+  $$VinculosFacturaTableProcessedTableManager get vinculosFacturaRefs {
+    final manager = $$VinculosFacturaTableTableManager(
+      $_db,
+      $_db.vinculosFactura,
+    ).filter((f) => f.productoId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _vinculosFacturaRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ProductosTableFilterComposer
@@ -26579,6 +27536,31 @@ class $$ProductosTableFilterComposer
           }) => $$PromoComponentesTableFilterComposer(
             $db: $db,
             $table: $db.promoComponentes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> vinculosFacturaRefs(
+    Expression<bool> Function($$VinculosFacturaTableFilterComposer f) f,
+  ) {
+    final $$VinculosFacturaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vinculosFactura,
+      getReferencedColumn: (t) => t.productoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VinculosFacturaTableFilterComposer(
+            $db: $db,
+            $table: $db.vinculosFactura,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -27102,6 +28084,31 @@ class $$ProductosTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> vinculosFacturaRefs<T extends Object>(
+    Expression<T> Function($$VinculosFacturaTableAnnotationComposer a) f,
+  ) {
+    final $$VinculosFacturaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vinculosFactura,
+      getReferencedColumn: (t) => t.productoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VinculosFacturaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vinculosFactura,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProductosTableTableManager
@@ -27127,6 +28134,7 @@ class $$ProductosTableTableManager
             bool configuracionNegocioTablaRefs,
             bool promoComponentesRefs,
             bool promosDondeEntra,
+            bool vinculosFacturaRefs,
           })
         > {
   $$ProductosTableTableManager(_$AppDatabase db, $ProductosTable table)
@@ -27275,6 +28283,7 @@ class $$ProductosTableTableManager
                 configuracionNegocioTablaRefs = false,
                 promoComponentesRefs = false,
                 promosDondeEntra = false,
+                vinculosFacturaRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -27287,6 +28296,7 @@ class $$ProductosTableTableManager
                       db.configuracionNegocioTabla,
                     if (promoComponentesRefs) db.promoComponentes,
                     if (promosDondeEntra) db.promoComponentes,
+                    if (vinculosFacturaRefs) db.vinculosFactura,
                   ],
                   addJoins:
                       <
@@ -27482,6 +28492,27 @@ class $$ProductosTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (vinculosFacturaRefs)
+                        await $_getPrefetchedData<
+                          Producto,
+                          $ProductosTable,
+                          VinculoFacturaFila
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductosTableReferences
+                              ._vinculosFacturaRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).vinculosFacturaRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -27512,6 +28543,7 @@ typedef $$ProductosTableProcessedTableManager =
         bool configuracionNegocioTablaRefs,
         bool promoComponentesRefs,
         bool promosDondeEntra,
+        bool vinculosFacturaRefs,
       })
     >;
 typedef $$GastosFijosTableCreateCompanionBuilder =
@@ -41082,6 +42114,740 @@ typedef $$AvisosMpTableProcessedTableManager =
       AvisoMpFila,
       PrefetchHooks Function()
     >;
+typedef $$VinculosFacturaTableCreateCompanionBuilder =
+    VinculosFacturaCompanion Function({
+      Value<int> id,
+      required int proveedorId,
+      required String tipoClave,
+      required String clave,
+      required int productoId,
+      Value<int> unidadesPorCantidad,
+      Value<DateTime> actualizadoEn,
+    });
+typedef $$VinculosFacturaTableUpdateCompanionBuilder =
+    VinculosFacturaCompanion Function({
+      Value<int> id,
+      Value<int> proveedorId,
+      Value<String> tipoClave,
+      Value<String> clave,
+      Value<int> productoId,
+      Value<int> unidadesPorCantidad,
+      Value<DateTime> actualizadoEn,
+    });
+
+final class $$VinculosFacturaTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $VinculosFacturaTable,
+          VinculoFacturaFila
+        > {
+  $$VinculosFacturaTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProveedoresTable _proveedorIdTable(_$AppDatabase db) => db.proveedores
+      .createAlias('vinculos_factura__proveedor_id__proveedores__id');
+
+  $$ProveedoresTableProcessedTableManager get proveedorId {
+    final $_column = $_itemColumn<int>('proveedor_id')!;
+
+    final manager = $$ProveedoresTableTableManager(
+      $_db,
+      $_db.proveedores,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_proveedorIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductosTable _productoIdTable(_$AppDatabase db) =>
+      db.productos.createAlias('vinculos_factura__producto_id__productos__id');
+
+  $$ProductosTableProcessedTableManager get productoId {
+    final $_column = $_itemColumn<int>('producto_id')!;
+
+    final manager = $$ProductosTableTableManager(
+      $_db,
+      $_db.productos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VinculosFacturaTableFilterComposer
+    extends Composer<_$AppDatabase, $VinculosFacturaTable> {
+  $$VinculosFacturaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipoClave => $composableBuilder(
+    column: $table.tipoClave,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clave => $composableBuilder(
+    column: $table.clave,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unidadesPorCantidad => $composableBuilder(
+    column: $table.unidadesPorCantidad,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProveedoresTableFilterComposer get proveedorId {
+    final $$ProveedoresTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableFilterComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableFilterComposer get productoId {
+    final $$ProductosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableFilterComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VinculosFacturaTableOrderingComposer
+    extends Composer<_$AppDatabase, $VinculosFacturaTable> {
+  $$VinculosFacturaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipoClave => $composableBuilder(
+    column: $table.tipoClave,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clave => $composableBuilder(
+    column: $table.clave,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unidadesPorCantidad => $composableBuilder(
+    column: $table.unidadesPorCantidad,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProveedoresTableOrderingComposer get proveedorId {
+    final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableOrderingComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableOrderingComposer get productoId {
+    final $$ProductosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableOrderingComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VinculosFacturaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VinculosFacturaTable> {
+  $$VinculosFacturaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tipoClave =>
+      $composableBuilder(column: $table.tipoClave, builder: (column) => column);
+
+  GeneratedColumn<String> get clave =>
+      $composableBuilder(column: $table.clave, builder: (column) => column);
+
+  GeneratedColumn<int> get unidadesPorCantidad => $composableBuilder(
+    column: $table.unidadesPorCantidad,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  $$ProveedoresTableAnnotationComposer get proveedorId {
+    final $$ProveedoresTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableAnnotationComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableAnnotationComposer get productoId {
+    final $$ProductosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VinculosFacturaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VinculosFacturaTable,
+          VinculoFacturaFila,
+          $$VinculosFacturaTableFilterComposer,
+          $$VinculosFacturaTableOrderingComposer,
+          $$VinculosFacturaTableAnnotationComposer,
+          $$VinculosFacturaTableCreateCompanionBuilder,
+          $$VinculosFacturaTableUpdateCompanionBuilder,
+          (VinculoFacturaFila, $$VinculosFacturaTableReferences),
+          VinculoFacturaFila,
+          PrefetchHooks Function({bool proveedorId, bool productoId})
+        > {
+  $$VinculosFacturaTableTableManager(
+    _$AppDatabase db,
+    $VinculosFacturaTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VinculosFacturaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VinculosFacturaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VinculosFacturaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> proveedorId = const Value.absent(),
+                Value<String> tipoClave = const Value.absent(),
+                Value<String> clave = const Value.absent(),
+                Value<int> productoId = const Value.absent(),
+                Value<int> unidadesPorCantidad = const Value.absent(),
+                Value<DateTime> actualizadoEn = const Value.absent(),
+              }) => VinculosFacturaCompanion(
+                id: id,
+                proveedorId: proveedorId,
+                tipoClave: tipoClave,
+                clave: clave,
+                productoId: productoId,
+                unidadesPorCantidad: unidadesPorCantidad,
+                actualizadoEn: actualizadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int proveedorId,
+                required String tipoClave,
+                required String clave,
+                required int productoId,
+                Value<int> unidadesPorCantidad = const Value.absent(),
+                Value<DateTime> actualizadoEn = const Value.absent(),
+              }) => VinculosFacturaCompanion.insert(
+                id: id,
+                proveedorId: proveedorId,
+                tipoClave: tipoClave,
+                clave: clave,
+                productoId: productoId,
+                unidadesPorCantidad: unidadesPorCantidad,
+                actualizadoEn: actualizadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VinculosFacturaTable, VinculoFacturaFila>(table),
+                  $$VinculosFacturaTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({proveedorId = false, productoId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (proveedorId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.proveedorId,
+                                referencedTable:
+                                    $$VinculosFacturaTableReferences
+                                        ._proveedorIdTable(db),
+                                referencedColumn:
+                                    $$VinculosFacturaTableReferences
+                                        ._proveedorIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (productoId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.productoId,
+                                referencedTable:
+                                    $$VinculosFacturaTableReferences
+                                        ._productoIdTable(db),
+                                referencedColumn:
+                                    $$VinculosFacturaTableReferences
+                                        ._productoIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VinculosFacturaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VinculosFacturaTable,
+      VinculoFacturaFila,
+      $$VinculosFacturaTableFilterComposer,
+      $$VinculosFacturaTableOrderingComposer,
+      $$VinculosFacturaTableAnnotationComposer,
+      $$VinculosFacturaTableCreateCompanionBuilder,
+      $$VinculosFacturaTableUpdateCompanionBuilder,
+      (VinculoFacturaFila, $$VinculosFacturaTableReferences),
+      VinculoFacturaFila,
+      PrefetchHooks Function({bool proveedorId, bool productoId})
+    >;
+typedef $$CuitsProveedorTableCreateCompanionBuilder =
+    CuitsProveedorCompanion Function({
+      Value<int> id,
+      required int proveedorId,
+      required String cuit,
+    });
+typedef $$CuitsProveedorTableUpdateCompanionBuilder =
+    CuitsProveedorCompanion Function({
+      Value<int> id,
+      Value<int> proveedorId,
+      Value<String> cuit,
+    });
+
+final class $$CuitsProveedorTableReferences
+    extends BaseReferences<_$AppDatabase, $CuitsProveedorTable, CuitProveedor> {
+  $$CuitsProveedorTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProveedoresTable _proveedorIdTable(_$AppDatabase db) => db.proveedores
+      .createAlias('cuits_proveedor__proveedor_id__proveedores__id');
+
+  $$ProveedoresTableProcessedTableManager get proveedorId {
+    final $_column = $_itemColumn<int>('proveedor_id')!;
+
+    final manager = $$ProveedoresTableTableManager(
+      $_db,
+      $_db.proveedores,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_proveedorIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CuitsProveedorTableFilterComposer
+    extends Composer<_$AppDatabase, $CuitsProveedorTable> {
+  $$CuitsProveedorTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cuit => $composableBuilder(
+    column: $table.cuit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProveedoresTableFilterComposer get proveedorId {
+    final $$ProveedoresTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableFilterComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CuitsProveedorTableOrderingComposer
+    extends Composer<_$AppDatabase, $CuitsProveedorTable> {
+  $$CuitsProveedorTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cuit => $composableBuilder(
+    column: $table.cuit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProveedoresTableOrderingComposer get proveedorId {
+    final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableOrderingComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CuitsProveedorTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CuitsProveedorTable> {
+  $$CuitsProveedorTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get cuit =>
+      $composableBuilder(column: $table.cuit, builder: (column) => column);
+
+  $$ProveedoresTableAnnotationComposer get proveedorId {
+    final $$ProveedoresTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorId,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableAnnotationComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CuitsProveedorTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CuitsProveedorTable,
+          CuitProveedor,
+          $$CuitsProveedorTableFilterComposer,
+          $$CuitsProveedorTableOrderingComposer,
+          $$CuitsProveedorTableAnnotationComposer,
+          $$CuitsProveedorTableCreateCompanionBuilder,
+          $$CuitsProveedorTableUpdateCompanionBuilder,
+          (CuitProveedor, $$CuitsProveedorTableReferences),
+          CuitProveedor,
+          PrefetchHooks Function({bool proveedorId})
+        > {
+  $$CuitsProveedorTableTableManager(
+    _$AppDatabase db,
+    $CuitsProveedorTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CuitsProveedorTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CuitsProveedorTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CuitsProveedorTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> proveedorId = const Value.absent(),
+                Value<String> cuit = const Value.absent(),
+              }) => CuitsProveedorCompanion(
+                id: id,
+                proveedorId: proveedorId,
+                cuit: cuit,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int proveedorId,
+                required String cuit,
+              }) => CuitsProveedorCompanion.insert(
+                id: id,
+                proveedorId: proveedorId,
+                cuit: cuit,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CuitsProveedorTable, CuitProveedor>(table),
+                  $$CuitsProveedorTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({proveedorId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (proveedorId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.proveedorId,
+                                referencedTable: $$CuitsProveedorTableReferences
+                                    ._proveedorIdTable(db),
+                                referencedColumn:
+                                    $$CuitsProveedorTableReferences
+                                        ._proveedorIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CuitsProveedorTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CuitsProveedorTable,
+      CuitProveedor,
+      $$CuitsProveedorTableFilterComposer,
+      $$CuitsProveedorTableOrderingComposer,
+      $$CuitsProveedorTableAnnotationComposer,
+      $$CuitsProveedorTableCreateCompanionBuilder,
+      $$CuitsProveedorTableUpdateCompanionBuilder,
+      (CuitProveedor, $$CuitsProveedorTableReferences),
+      CuitProveedor,
+      PrefetchHooks Function({bool proveedorId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -41153,4 +42919,8 @@ class $AppDatabaseManager {
       $$PromoComponentesTableTableManager(_db, _db.promoComponentes);
   $$AvisosMpTableTableManager get avisosMp =>
       $$AvisosMpTableTableManager(_db, _db.avisosMp);
+  $$VinculosFacturaTableTableManager get vinculosFactura =>
+      $$VinculosFacturaTableTableManager(_db, _db.vinculosFactura);
+  $$CuitsProveedorTableTableManager get cuitsProveedor =>
+      $$CuitsProveedorTableTableManager(_db, _db.cuitsProveedor);
 }

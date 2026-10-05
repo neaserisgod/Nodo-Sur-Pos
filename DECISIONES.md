@@ -1980,3 +1980,27 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **Google saturado o sin cupo en un modelo** (2026-10-05, el dueño vio "los servidores de Google no responden"): los modelos nuevos devuelven 503
   "overloaded" seguido y cada modelo tiene su propio cupo gratis. La lectura de facturas reintenta una vez ante un 503 y pasa al modelo liviano
   ante un 503 que sigue, un 404 o un 429; el mensaje de un error 5xx ahora trae el detalle que manda Google. Una clave mala o la falta de internet no se reintentan.
+
+### Vincular facturas con productos (2026-10-05)
+
+- **Se aprende, no se configura**: cada vínculo confirmado (código o descripción de ese proveedor → producto, con "unidades por cantidad") se guarda y la próxima factura sale
+  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige. Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
+  `proveedores` (tabla sincronizada) para no tocar el protocolo de sync.
+- **Nunca se inventa un vínculo**: el parecido de nombre propone solo con un parecido claro y una ventaja sobre el segundo; si no, queda sin vincular con alternativas. La IA solo
+  elige entre los productos que se le muestran y se descarta cualquier id que no esté en esa lista. Lo de la IA o del parecido siempre queda en amarillo hasta que el dueño confirma.
+- **Los tamaños tienen que coincidir** (70g ≠ 69g): un tamaño que contradice casi seguro es otro producto.
+- **Las unidades por cantidad (bultos) son un dato del vínculo**, no del proveedor: cada producto puede venir distinto. Por defecto 1.
+- La normalización de texto (sin acentos ni mayúsculas) pasó a `domain/` y `data/normalizacion_texto.dart` la re-exporta: `domain/` no puede importar `data/` y la definición sigue siendo una sola.
+
+## Bultos y unidades en las facturas (El dueño, 2026-10-05: "necesito discriminarlos")
+
+Una factura cuenta en unidades o en bultos (pack de 6, caja de 24) y **no lo dice**: cambia con el proveedor y con el producto (Serra imprime "(12)" pero cuenta unidades sueltas; Manaos cobra el pack de 6; Bebidas del Lago pone el precio por bulto de 4x6 pero cuenta latas). Mezclarlos deja el costo por unidad y el stock 6 o 24 veces mal.
+
+- **Se propone y lo confirma el dueño; lo aprendido manda.** `domain/unidades_bulto.dart`: `sugerirUnidadesPorBulto` lee la pista de la descripción ("(24)", "6X1500", "473X6", "4X6" = 24, "X24", "25U"; un paréntesis cortado "(2" no cuenta) e `inferirUnidadesPorCantidad` la compara con el costo que ya tiene cargado el producto: si el costo por cantidad de la factura se parece al tuyo (±40 %) → unidades sueltas (1); si es unas N veces mayor y la descripción sugiere un pack de N → bulto de N; si no se parece a ninguna → no se adivina.
+- Sin costo cargado en el producto el bulto **no se pre-llena a ciegas**: queda en 1 con un aviso con lo que dice la descripción. Los pesables no se comparan (su costo es por kilo).
+- En el diálogo, el campo "× unid." pasa a decir "bulto ×" cuando es más de 1 y un ícono de info explica por qué se propuso. Cambiar el producto de una línea vuelve a proponer.
+- Lo que el dueño confirma con "Aprender estos vínculos" se guarda por proveedor y producto (`vinculos_factura.unidadesPorCantidad`, ya existía) y vale para las próximas facturas.
+
+## Selector de modelo de la IA; las facturas se leen con el elegido (El dueño, 2026-10-05)
+
+El lector de facturas probaba primero `gemini-3.8-flash` (el más nuevo). El dueño vio que `gemini-3.5-flash-lite` dio buenos resultados en las últimas lecturas y es baratísimo: **ahora se lee con el modelo elegido, por defecto `gemini-3.5-flash-lite`**, y `gemini-3.8-flash` queda de respaldo si el elegido está saturado, sin cupo o no existe para la clave (`modeloDeRespaldoParaFacturas`). El modelo se elige en Configuración › Asistente IA (PC y celular) y también dentro del lector de facturas, mientras se prueba; es un solo ajuste local (`ClaveGemini.elegirModelo`), no toca la clave ni se sincroniza.

@@ -46,6 +46,33 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   (cuenta corriente); ignoró lo escrito a mano y los datos del comprador; no inventó nada. El sistema eligió solo "importes con IVA adentro" y la factura cierra con
   **0 centavos** de diferencia contra el total impreso ($94.676,88), sin líneas sospechosas. Quedó como caso de prueba (`test/fixtures/lectura_serra_0051_00194239.json`).
   En esa factura "cantidad" son unidades (4 × 939,22), no bultos.
-- **Falta**: probarla con las otras facturas reales (Coca-Cola de costado, carbónicas y matriz de puntos son las difíciles); CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
-  convertir bultos en unidades (hoy `cantidad` se toma como unidades); enderezar fotos de costado; después, el celular con cámara.
+- **Segunda lectura real**: Puelche 0148-00034664 (7 líneas, contado, con el "Descuento 5 %" aparte). Gemini leyó las 7 líneas, el descuento general ($1.644,87) y el total sin errores; cierra con 2 centavos de
+  diferencia (redondeo del proveedor), sin líneas sospechosas (los precios con 3 decimales no dan falsas alarmas). Caso de prueba: `test/fixtures/lectura_puelche_0148_00034664.json`.
+- **Hecho (vincular con los productos, 2026-10-05)**:
+  - `domain/vinculo_factura.dart`: propone el producto de cada línea: 1) lo ya aprendido de ese proveedor (por código y por descripción) = verde, 2) código de barras = verde, 3) parecido de nombre
+    con abreviaturas ("ALF" ≈ alfajor, "BL" ≈ blanco; los tamaños tienen que ser iguales; el producto del mismo proveedor desempata) = amarillo, para confirmar. Sin parecido claro queda sin vincular
+    y se ofrecen alternativas: nunca se inventa un vínculo. Probado con las descripciones reales de Serra.
+  - `servicios/vinculador_ia.dart`: para lo que el parecido no resuelve, Gemini elige ENTRE los productos del proveedor (solo nombres, sin precios ni costos); lo que devuelve se valida contra esa lista y queda en amarillo.
+  - Se aprende: migración v52 con `vinculos_factura` (por proveedor, código o descripción → producto, con "unidades por cantidad") y `cuits_proveedor` (el CUIT reconoce al proveedor sin preguntar). Locales: no se sincronizan.
+  - La pantalla de prueba muestra el proveedor, el producto de cada línea (se cambia con un selector), "× unid." (un bulto de 6 = 6, recalcula el costo por unidad) y "Aprender estos vínculos".
+- **Tercera lectura real**: Serra 0065-00076671, cigarrillos (8 líneas, contado, $353.069,61). Los impuestos internos son $266.877,80, el 75 % de la factura. Gemini leyó los internos de cada línea
+  y el pie; el sistema eligió "IVA e internos adentro", cierra con 1 centavo y no cuenta los internos dos veces. Un atado de Marlboro KS cuesta $5.454. En esa factura "cantidad" son atados
+  ("Total Bultos 90" = la suma de las cantidades). Caso de prueba: `test/fixtures/lectura_serra_cigarrillos_0065_00076671.json`. Los cigarrillos no siguen el precio automático por %: ganancia fija por atado.
+- **Cuarta lectura real**: Coca-Cola (Embotelladora del Atlántico) 3579-00021534, Factura B, foto de COSTADO, 4 líneas, contado, con percepción de $5.427,69. Gemini la leyó entera aunque estaba girada. Cierra al
+  centavo. Encontró un problema real: puso el MONTO del descuento ($3.230,78) en `descuento_pct`, y las 4 líneas salían sospechosas sin motivo. Arreglado de dos formas: el pedido distingue `descuento_pct` (0 a 100) de
+  `descuento_importe` (pesos), y el código toma un "porcentaje" mayor a 100 como monto y acepta el monto por unidad o de toda la línea. Un pack es de 6 latas: con "× 6" el costo por lata es $2.380.
+  Caso de prueba: `test/fixtures/lectura_cocacola_3579_00021534.json`.
+- **Quinta y sexta lectura real (2026-10-05)**: Manaos / La Magdalena (2 facturas en una foto, carbónica) y Bebidas del Lago (2 por foto, matriz de puntos, combos). Gemini separó las facturas y
+  leyó bien las líneas, los combos (sus componentes en cero no se suman) y los pies. Lo que mostraron, ya resuelto: (1) Bebidas del Lago imprime cada importe con TODO adentro (IVA, internos y su parte de la
+  percepción de IIBB): nueva forma de leer `todoIncluido`, que no cuenta la percepción dos veces; (2) imprime con UN decimal: la diferencia con el total es de 18 y 21 centavos, así que hay dos niveles
+  ("cierra" al centavo, y "cierra con redondeo de impresión" hasta 10 centavos por línea); (3) una línea con precio por bulto y cantidad por lata no es un error si la factura cierra: las líneas
+  sospechosas solo se marcan cuando NO cierra; (4) Gemini leyó un CUIT de 12 dígitos y una fecha de 2023 (era 2026): el CUIT se valida con su dígito verificador y la fecha se marca como dudosa si
+  está a más de un año; un CUIT inválido NO reconoce a ningún proveedor (se elige a mano). Casos de prueba: `test/fixtures/lectura_manaos_dos_por_foto.json` y `lectura_bebidas_del_lago_dos_por_foto.json`.
+- **Falta**: CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión final; aplicar (costo, stock, deuda y precio sugerido) y deshacer;
+  enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.
+
+## Bultos y unidades (2026-10-05)
+
+Cada proveedor cuenta distinto y la factura no lo aclara: Serra imprime "(12)" pero cuenta unidades (columnas BTOS/UNIDS); Manaos y Coca cobran el pack ("6X1500", "473X6"); Bebidas del Lago pone el precio por bulto de "4X6" y cuenta latas; Elpar imprime "(24)" que NO es lo comprado; Maxiconsumo trae "U. x". Por eso la app **no decide sola**: `domain/unidades_bulto.dart` propone el "× unid." con la pista de la descripción más el costo que ya tenés cargado (si cuesta parecido a tu unidad, son unidades; si cuesta unas N veces más y la descripción sugiere un pack de N, es un bulto de N), lo muestra como "bulto ×" con el motivo, y lo que confirmás con "Aprender" queda por proveedor y producto. Sin costo cargado no se pre-llena nada. Decisión completa en `DECISIONES.md`.
+

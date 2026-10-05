@@ -176,7 +176,7 @@ class _AccionesProveedores extends StatelessWidget {
               ),
             // Prueba de la lectura de facturas con IA (2026-10-05): todavía no guarda nada.
             PopupMenuItem(
-              value: () => mostrarDialogoLeerFactura(context),
+              value: () => mostrarDialogoLeerFactura(context, db: db),
               child: const Text('Leer una factura (prueba)'),
             ),
             PopupMenuItem(

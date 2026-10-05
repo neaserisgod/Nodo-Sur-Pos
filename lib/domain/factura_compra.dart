@@ -122,6 +122,7 @@ class ControlDeFactura {
     required this.totalCalculadoCentavos,
     required this.diferenciaCentavos,
     required this.toleranciaCentavos,
+    required this.toleranciaLaxaCentavos,
   });
 
   /// Suma de los netos menos el descuento global: lo que la factura imprime como "subtotal".
@@ -134,8 +135,15 @@ class ControlDeFactura {
   final int diferenciaCentavos;
   final int toleranciaCentavos;
 
+  /// Para las facturas que imprimen cada línea con UN solo decimal (matriz de puntos): hasta 10 centavos de redondeo por línea.
+  final int toleranciaLaxaCentavos;
+
   /// Cierra si la diferencia es solo el redondeo del proveedor.
   bool get cierra => diferenciaCentavos.abs() <= toleranciaCentavos;
+
+  /// No cierra al centavo pero la diferencia es del tamaño del redondeo de una impresión con un decimal (Bebidas del Lago: $0,18 en
+  /// 4 líneas). Un error de lectura es de pesos, no de centavos: sigue dejando afuera cualquier dígito mal leído.
+  bool get cierraConRedondeo => !cierra && diferenciaCentavos.abs() <= toleranciaLaxaCentavos;
 }
 
 /// Compara el total que sale de las líneas leídas con el [totalImpresoCentavos]. Si no cierra, algo se leyó mal (un dígito, una
@@ -157,6 +165,7 @@ ControlDeFactura controlarFactura(FacturaDeCompra factura, {required int totalIm
     totalCalculadoCentavos: total,
     diferenciaCentavos: total - totalImpresoCentavos,
     toleranciaCentavos: 2 + lineas.length,
+    toleranciaLaxaCentavos: 2 + 10 * lineas.length,
   );
 }
 
@@ -180,4 +189,27 @@ void _validar(FacturaDeCompra f) {
   }
   final suma = f.lineas.fold<int>(0, (a, l) => a + l.netoCentavos);
   if (f.descuentoGlobalCentavos > suma) throw ArgumentError('El descuento es mayor que la factura entera: está mal leído');
+}
+
+/// La misma factura con las unidades de cada línea multiplicadas por [multiplicadores] (uno por línea): cuando la columna "cantidad" cuenta
+/// bultos, una cantidad de 2 con 6 unidades por bulto son 12 unidades y el costo por unidad baja a la sexta parte. Se aprende por producto
+/// (`VinculoAprendido.unidadesPorCantidad`). Un multiplicador menor a 1 cuenta como 1.
+FacturaDeCompra conUnidadesPorCantidad(FacturaDeCompra factura, List<int> multiplicadores) {
+  if (multiplicadores.length != factura.lineas.length) {
+    throw ArgumentError('Hace falta un multiplicador por línea (${factura.lineas.length}), llegaron ${multiplicadores.length}');
+  }
+  return FacturaDeCompra(
+    lineas: [
+      for (var i = 0; i < factura.lineas.length; i++)
+        LineaDeFactura(
+          unidades: factura.lineas[i].unidades * (multiplicadores[i] < 1 ? 1 : multiplicadores[i]),
+          netoCentavos: factura.lineas[i].netoCentavos,
+          alicuotaBp: factura.lineas[i].alicuotaBp,
+          internosCentavos: factura.lineas[i].internosCentavos,
+        ),
+    ],
+    descuentoGlobalCentavos: factura.descuentoGlobalCentavos,
+    internosAlPieCentavos: factura.internosAlPieCentavos,
+    percepcionesCentavos: factura.percepcionesCentavos,
+  );
 }

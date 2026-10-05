@@ -20,6 +20,10 @@ enum ModoImportes {
 
   /// El importe trae el IVA y los impuestos internos de la línea adentro. Serra.
   conIvaEInternos,
+
+  /// El importe ya es TODO lo que se pagó por la línea: IVA, impuestos internos y su parte de las percepciones (la suma de las líneas
+  /// es el total de la factura). Bebidas del Lago. Se prueba al final: es la más permisiva.
+  todoIncluido,
 }
 
 class LineaLeida {
@@ -30,6 +34,7 @@ class LineaLeida {
     this.cantidad,
     this.precioUnitarioCentavos,
     this.descuentoPct,
+    this.descuentoImporteCentavos,
     this.alicuotaBp,
     this.internosCentavos = 0,
     this.esDetalle = false,
@@ -46,6 +51,9 @@ class LineaLeida {
 
   /// El % de descuento impreso en la línea (puede ser solo informativo: el importe ya lo trae aplicado).
   final double? descuentoPct;
+
+  /// El descuento de la línea cuando la factura lo imprime como MONTO y no como % (Coca-Cola: "descuento 3.230,78" sobre 16.153,85).
+  final int? descuentoImporteCentavos;
 
   /// IVA de la línea en puntos básicos (2100 = 21 %). Null = no lo dice: se asume 21 %.
   final int? alicuotaBp;
@@ -146,6 +154,10 @@ LecturaDeFacturas leerRespuestaDeFacturas(Object? json) {
     if (descartadas > 0) advertencias.add('$descartadas línea(s) no se pudieron leer y se descartaron.');
     final proveedor = f['proveedor'] is Map ? f['proveedor'] as Map : const {};
     final pie = f['pie'] is Map ? f['pie'] as Map : const {};
+    final cuitCrudo = _texto(proveedor['cuit']);
+    if (cuitCrudo != null && _cuit(cuitCrudo) == null) {
+      advertencias.add('El CUIT del proveedor ("$cuitCrudo") no es válido: se leyó mal. Elegí el proveedor a mano.');
+    }
     facturas.add(
       FacturaLeida(
         proveedorNombre: _texto(proveedor['razon_social']),
@@ -176,12 +188,21 @@ LineaLeida? _leerLinea(Object? l) {
   final importe = _centavos(l['importe']);
   if (importe == null) return null;
   final alicuota = _numero(l['alicuota_iva']);
+  var descuentoPct = _numero(l['descuento_pct']);
+  var descuentoImporte = _centavos(l['descuento_importe']);
+  // Un "porcentaje" de más de 100 no es un porcentaje: es el monto del descuento (la IA suele confundirlos si la columna se llama
+  // "Descuento"). Pasa a ser el monto en vez de tirar abajo la comprobación de la línea.
+  if (descuentoPct != null && descuentoPct > 100) {
+    descuentoImporte ??= _centavos(descuentoPct);
+    descuentoPct = null;
+  }
   return LineaLeida(
     codigo: _texto(l['codigo']),
     descripcion: _texto(l['descripcion']) ?? '(sin descripción)',
     cantidad: _numero(l['cantidad']),
     precioUnitarioCentavos: _centavos(l['precio_unitario']),
-    descuentoPct: _numero(l['descuento_pct']),
+    descuentoPct: descuentoPct,
+    descuentoImporteCentavos: descuentoImporte?.abs(),
     alicuotaBp: alicuota == null ? null : (alicuota * 100).round(),
     internosCentavos: (_centavos(l['internos_importe']) ?? 0).abs(),
     importeCentavos: importe,
@@ -218,7 +239,28 @@ int? _centavos(Object? v) {
 
 String? _cuit(Object? v) {
   final digitos = (_texto(v) ?? '').replaceAll(RegExp(r'\D'), '');
-  return digitos.length == 11 ? digitos : null;
+  return cuitValido(digitos) ? digitos : null;
+}
+
+/// Un CUIT es válido si tiene 11 dígitos y el último es el verificador que dan los diez primeros (pesos 5,4,3,2,7,6,5,4,3,2; módulo 11).
+/// Sirve para no creerle a una lectura con un dígito de más o de menos: un CUIT mal leído NO reconoce al proveedor equivocado.
+bool cuitValido(String digitos) {
+  if (!RegExp(r'^\d{11}$').hasMatch(digitos)) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  var suma = 0;
+  for (var i = 0; i < 10; i++) {
+    suma += int.parse(digitos[i]) * pesos[i];
+  }
+  final resto = suma % 11;
+  final verificador = resto == 0 ? 0 : (resto == 1 ? 9 : 11 - resto);
+  return verificador == int.parse(digitos[10]);
+}
+
+/// La fecha de la factura parece mal leída: más de un año hacia atrás o más de una semana hacia adelante respecto de [ahora]. Pasó con una
+/// factura de 2026 leída como 2023 (la matriz de puntos confunde los últimos dígitos).
+bool fechaDudosa(DateTime? fecha, DateTime ahora) {
+  if (fecha == null) return false;
+  return fecha.isBefore(ahora.subtract(const Duration(days: 400))) || fecha.isAfter(ahora.add(const Duration(days: 7)));
 }
 
 DateTime? _fecha(Object? v) {
@@ -268,10 +310,16 @@ class FacturaNormalizada {
   /// Null si la factura no trae el total impreso (no se puede controlar).
   final ControlDeFactura? control;
 
-  /// Posiciones (en [lineas]) donde cantidad × precio no da el importe: es donde mirar primero si algo no cierra.
+  /// Posiciones (en [lineas]) donde cantidad × precio no da el importe: es donde mirar primero si algo no cierra. Vacío si la factura
+  /// cierra: con el total confirmado, una diferencia de precio por bulto (el precio es de un bulto de 24 y la cantidad son 6 latas)
+  /// no es un error.
   final List<int> lineasSospechosas;
 
-  bool get cierra => control?.cierra ?? false;
+  /// Cierra al centavo o con el redondeo de una impresión de un solo decimal (ver [ControlDeFactura.cierraConRedondeo]).
+  bool get cierra => control?.cierra == true || control?.cierraConRedondeo == true;
+
+  /// Cierra pero solo con redondeo de impresión: se avisa, aunque es válida.
+  bool get cierraConRedondeo => control?.cierraConRedondeo == true;
 }
 
 /// Lleva [leida] a la forma de las cuentas probando las formas de leer los importes ([ModoImportes]). Con [preferido] (lo que ya se
@@ -292,13 +340,17 @@ FacturaNormalizada normalizarFactura(FacturaLeida leida, {ModoImportes? preferid
   final descuentoGlobal = leida.pie.descuentoGlobalCentavos + descuentoEnLineas;
   final internosDeLineas = productos.fold<int>(0, (a, l) => a + l.internosCentavos);
 
-  FacturaDeCompra armar(ModoImportes modo) => FacturaDeCompra(
-        lineas: [for (final l in productos) _lineaNormalizada(l, modo)],
-        descuentoGlobalCentavos: descuentoGlobal,
-        // Los impuestos internos del pie ya están sumados en las líneas si las líneas los traen: no contarlos dos veces.
-        internosAlPieCentavos: internosDeLineas > 0 ? 0 : leida.pie.internosCentavos,
-        percepcionesCentavos: leida.pie.percepcionesCentavos,
-      );
+  FacturaDeCompra armar(ModoImportes modo) {
+    final todoIncluido = modo == ModoImportes.todoIncluido;
+    return FacturaDeCompra(
+      lineas: [for (final l in productos) _lineaNormalizada(l, modo)],
+      descuentoGlobalCentavos: descuentoGlobal,
+      // Los impuestos internos del pie ya están sumados en las líneas si las líneas los traen: no contarlos dos veces. Y con
+      // `todoIncluido` ni los internos ni las percepciones del pie se suman: ya están adentro de cada importe.
+      internosAlPieCentavos: todoIncluido || internosDeLineas > 0 ? 0 : leida.pie.internosCentavos,
+      percepcionesCentavos: todoIncluido ? 0 : leida.pie.percepcionesCentavos,
+    );
+  }
 
   final orden = [?preferido, ...ModoImportes.values.where((m) => m != preferido)];
   final total = leida.pie.totalCentavos;
@@ -319,25 +371,35 @@ FacturaNormalizada normalizarFactura(FacturaLeida leida, {ModoImportes? preferid
     factura = armar(elegido);
     sospechosas = sospechosasDe(factura);
   } else {
+    // 1) La primera forma que cierra al centavo gana. 2) Si ninguna, la primera que cierra con el redondeo de una impresión de un decimal.
+    // 3) Si ninguna cierra (algo está mal leído), la que deja MENOS líneas sospechosas (la correcta solo marca la línea mal leída; una
+    // equivocada las marca todas) y, a igual cantidad, la de menor diferencia.
+    ({ModoImportes modo, FacturaDeCompra factura, ControlDeFactura control, List<int> sospechosas})? exacta;
+    ({ModoImportes modo, FacturaDeCompra factura, ControlDeFactura control, List<int> sospechosas})? conRedondeo;
+    ({ModoImportes modo, FacturaDeCompra factura, ControlDeFactura control, List<int> sospechosas})? mejor;
     for (final modo in orden) {
       final candidata = armar(modo);
       final c = _controlarSinTirar(candidata, total);
       if (c == null) continue;
       final sosp = sospechosasDe(candidata);
-      // La primera forma que cierra gana. Si ninguna cierra, se queda con la que deja MENOS líneas sospechosas (la forma correcta
-      // solo marca la línea mal leída; una forma equivocada las marca todas) y, a igual cantidad, con la de menor diferencia.
-      final mejora = control == null ||
-          sosp.length < sospechosas!.length ||
-          (sosp.length == sospechosas.length && c.diferenciaCentavos.abs() < control.diferenciaCentavos.abs());
-      if (c.cierra || mejora) {
-        elegido = modo;
-        factura = candidata;
-        control = c;
-        sospechosas = sosp;
+      final r = (modo: modo, factura: candidata, control: c, sospechosas: sosp);
+      if (c.cierra) {
+        exacta = r;
+        break;
       }
-      if (c.cierra) break;
+      if (c.cierraConRedondeo) conRedondeo ??= r;
+      final mejora = mejor == null ||
+          sosp.length < mejor.sospechosas.length ||
+          (sosp.length == mejor.sospechosas.length && c.diferenciaCentavos.abs() < mejor.control.diferenciaCentavos.abs());
+      if (mejora) mejor = r;
     }
-    if (factura == null) {
+    final elegida = exacta ?? conRedondeo ?? mejor;
+    if (elegida != null) {
+      elegido = elegida.modo;
+      factura = elegida.factura;
+      control = elegida.control;
+      sospechosas = elegida.sospechosas;
+    } else {
       factura = armar(elegido);
       sospechosas = sospechosasDe(factura);
     }
@@ -349,7 +411,7 @@ FacturaNormalizada normalizarFactura(FacturaLeida leida, {ModoImportes? preferid
     factura: factura,
     lineas: productos,
     control: control,
-    lineasSospechosas: sospechosas!,
+    lineasSospechosas: (control?.cierra == true || control?.cierraConRedondeo == true) ? const [] : sospechosas,
   );
 }
 
@@ -360,8 +422,16 @@ LineaDeFactura _lineaNormalizada(LineaLeida l, ModoImportes modo) {
     ModoImportes.neto => l.importeCentavos,
     ModoImportes.conIva => netoDesdeImporteConIva(l.importeCentavos, alicuota),
     ModoImportes.conIvaEInternos => netoDesdeImporteConIva(l.importeCentavos - l.internosCentavos, alicuota),
+    ModoImportes.todoIncluido => l.importeCentavos,
   };
-  return LineaDeFactura(unidades: unidades, netoCentavos: neto < 0 ? 0 : neto, alicuotaBp: alicuota, internosCentavos: l.internosCentavos);
+  // Con `todoIncluido` el importe ya es el costo de la línea: sin IVA ni internos aparte.
+  final todo = modo == ModoImportes.todoIncluido;
+  return LineaDeFactura(
+    unidades: unidades,
+    netoCentavos: neto < 0 ? 0 : neto,
+    alicuotaBp: todo ? 0 : alicuota,
+    internosCentavos: todo ? 0 : l.internosCentavos,
+  );
 }
 
 ControlDeFactura? _controlarSinTirar(FacturaDeCompra f, int total) {
@@ -374,13 +444,17 @@ ControlDeFactura? _controlarSinTirar(FacturaDeCompra f, int total) {
 }
 
 /// Una línea es sospechosa si ni cantidad × precio ni ese mismo importe con el descuento de la línea dan su neto. Con el descuento
-/// y sin él: en algunas facturas el % es informativo y el precio ya lo trae (Puelche), en otras hay que aplicarlo (Elpar).
+/// y sin él: en algunas facturas el % es informativo y el precio ya lo trae (Puelche), en otras hay que aplicarlo (Elpar). El descuento
+/// puede venir como % o como monto (por unidad o de toda la línea).
 bool _esSospechosa(LineaLeida l, int netoCentavos) {
   final precio = l.precioUnitarioCentavos;
   final cantidad = l.cantidad;
   if (precio == null || cantidad == null) return false;
   final sinDescuento = precio * cantidad;
-  final conDescuento = sinDescuento * (1 - (l.descuentoPct ?? 0) / 100);
   final tolerancia = (sinDescuento * 0.001).round().clamp(5, 1 << 30);
-  return (sinDescuento - netoCentavos).abs() > tolerancia && (conDescuento - netoCentavos).abs() > tolerancia;
+  bool coincide(double esperado) => (esperado - netoCentavos).abs() <= tolerancia;
+  final monto = l.descuentoImporteCentavos;
+  return !(coincide(sinDescuento.toDouble()) ||
+      coincide(sinDescuento * (1 - (l.descuentoPct ?? 0) / 100)) ||
+      (monto != null && (coincide(sinDescuento - monto) || coincide(sinDescuento - monto * cantidad))));
 }

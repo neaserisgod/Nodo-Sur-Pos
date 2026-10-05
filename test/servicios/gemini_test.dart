@@ -221,6 +221,23 @@ void main() {
       expect(ClienteGemini.guardado().modelo, 'gemini-3.8-flash');
     });
 
+    test('elegirModelo cambia solo el modelo, lo recuerda al reiniciar y no hace nada sin clave', () async {
+      await ClaveGemini.elegirModelo('gemini-3.8-flash');
+      expect(ClaveGemini.modelo, isNull); // sin clave no hay a qué asociarlo
+
+      await ClaveGemini.guardar('AIza-buena', modelo: 'gemini-3.5-flash-lite');
+      await ClaveGemini.elegirModelo('gemini-3.8-flash');
+      expect(ClaveGemini.valor, 'AIza-buena');
+      ClaveGemini.fijarParaTest(null);
+      await ClaveGemini.cargar();
+      expect(ClaveGemini.modelo, 'gemini-3.8-flash');
+    });
+
+    test('etiquetaDeModelo agrega la nota, y un modelo desconocido se muestra con su nombre', () {
+      expect(etiquetaDeModelo('gemini-3.5-flash-lite'), contains('barato'));
+      expect(etiquetaDeModelo('gemini-9'), 'gemini-9');
+    });
+
     test('quitar la clave borra también el modelo', () async {
       await ClaveGemini.guardar('AIza-buena', modelo: 'gemini-3.8-flash');
       await ClaveGemini.guardar(null);

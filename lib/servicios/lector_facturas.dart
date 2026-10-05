@@ -10,9 +10,9 @@ import 'package:http/http.dart' as http;
 import '../domain/lectura_factura.dart';
 import 'gemini.dart';
 
-/// Para leer facturas conviene un modelo más fuerte que el de las promos (tablas chicas, copias carbónicas, fotos torcidas). Si Google
-/// no lo da para esta clave (404), se usa el que le anduvo al guardarla.
-const modeloParaLeerFacturas = 'gemini-3.8-flash';
+/// Se lee con el modelo que el dueño eligió (Configuración › Asistente IA; por defecto `gemini-3.5-flash-lite`, que anduvo bien en las
+/// seis facturas reales y es el más barato — El dueño, 2026-10-05). Si ese está saturado o sin cupo, se prueba con este, más fuerte.
+const modeloDeRespaldoParaFacturas = 'gemini-3.8-flash';
 
 const instruccionesDeLecturaDeFacturas = '''
 Sos un lector de facturas de compra de un almacén de barrio en Argentina. Recibís fotos o PDF de facturas, remitos o comprobantes de proveedores. Transcribí SOLO lo que está impreso; no hagas cuentas, no corrijas y no adivines.
@@ -23,7 +23,7 @@ Reglas:
 - IGNORÁ todo lo escrito a mano, los resaltados, los sellos y los papeles pegados. No los transcribas.
 - NO transcribas los datos del comprador (el cliente): ni su nombre, ni su CUIT, ni su domicilio. Solo los del proveedor que emite la factura.
 - Los números van como número JSON, con punto decimal y sin separador de miles (1234.56). Si un dato no se lee con seguridad, devolvé null: nunca lo inventes. Si hay algo dudoso o ilegible, anotalo en "advertencias".
-- "importe" de cada línea es el importe FINAL de esa línea tal como está impreso en la última columna de importes (no lo recalcules). "precio_unitario" es el precio de UNA unidad tal como está impreso (puede tener 3 decimales). "cantidad" es lo que dice la columna de cantidad, sin multiplicarla por nada. "descuento_pct" es el % de descuento impreso en la línea, aunque diga que es informativo.
+- "importe" de cada línea es el importe FINAL de esa línea tal como está impreso en la última columna de importes (no lo recalcules). "precio_unitario" es el precio de UNA unidad tal como está impreso (puede tener 3 decimales). "cantidad" es lo que dice la columna de cantidad, sin multiplicarla por nada. "descuento_pct" es el PORCENTAJE de descuento impreso en la línea (un número de 0 a 100), aunque diga que es informativo. Si la factura imprime el descuento como un MONTO en pesos y no como porcentaje, ponelo en "descuento_importe" y dejá "descuento_pct" en null.
 - "alicuota_iva" de la línea: 21, 10.5 o 0, si la factura lo indica por línea; si no, null.
 - "internos_importe": el impuesto interno de la línea, si hay una columna de impuestos internos; si no, 0.
 - Si un combo se detalla en líneas hijas sin importe propio, ponelas con "es_detalle": true y "importe": 0.
@@ -33,7 +33,7 @@ Reglas:
 - "tipo": "A", "B", "C", "remito" u "otro". "fecha": AAAA-MM-DD. "cuit" del proveedor solo con los 11 dígitos.
 
 Respondé únicamente JSON, con esta forma:
-{"facturas":[{"proveedor":{"razon_social":"...","cuit":"..."},"tipo":"A","numero":"0001-00001234","fecha":"2026-08-25","condicion_pago":"contado","lineas":[{"codigo":"...","descripcion":"...","cantidad":3,"precio_unitario":1714.05,"descuento_pct":5,"importe":4885.04,"alicuota_iva":21,"internos_importe":0,"es_detalle":false}],"pie":{"subtotal":0,"descuento_global":0,"impuestos_internos":0,"percepciones":0,"iva_total":0,"total":0},"advertencias":[]}]}
+{"facturas":[{"proveedor":{"razon_social":"...","cuit":"..."},"tipo":"A","numero":"0001-00001234","fecha":"2026-08-25","condicion_pago":"contado","lineas":[{"codigo":"...","descripcion":"...","cantidad":3,"precio_unitario":1714.05,"descuento_pct":5,"descuento_importe":null,"importe":4885.04,"alicuota_iva":21,"internos_importe":0,"es_detalle":false}],"pie":{"subtotal":0,"descuento_global":0,"impuestos_internos":0,"percepciones":0,"iva_total":0,"total":0},"advertencias":[]}]}
 ''';
 
 class ResultadoDeLectura {
@@ -61,7 +61,7 @@ Future<ResultadoDeLectura> leerFacturasConGemini(
   final clave = ClaveGemini.valor;
   if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
 
-  final modelos = {modeloParaLeerFacturas, ClaveGemini.modelo ?? modeloGeminiPorDefecto};
+  final modelos = {ClaveGemini.modelo ?? modeloGeminiPorDefecto, modeloDeRespaldoParaFacturas};
   ErrorGemini? ultimo;
   for (final modelo in modelos) {
     for (var intento = 0; intento < 2; intento++) {

@@ -33,6 +33,19 @@ const modelosGemini = [
 /// El que se usa mientras no se haya probado ninguno con la clave.
 const modeloGeminiPorDefecto = 'gemini-3.5-flash-lite';
 
+/// Qué es cada modelo, para el selector. Un modelo que no esté acá se muestra solo con su nombre.
+const _notasDeModelos = {
+  'gemini-3.5-flash-lite': 'el más barato y rápido; anduvo bien con las facturas',
+  'gemini-3.8-flash': 'el más nuevo y fuerte; se satura más seguido',
+  'gemini-3.5-flash': 'intermedio',
+  'gemini-3.1-flash-lite': 'liviano, de la generación anterior',
+  'gemini-2.5-flash-lite': 'solo cuentas viejas',
+  'gemini-2.5-flash': 'solo cuentas viejas',
+};
+
+/// El nombre del modelo con una nota corta, para mostrar en el selector.
+String etiquetaDeModelo(String modelo) => _notasDeModelos.containsKey(modelo) ? '$modelo — ${_notasDeModelos[modelo]}' : modelo;
+
 const _claveGuardada = 'gemini_api_key';
 const _modeloGuardado = 'gemini_modelo';
 const _base = 'https://generativelanguage.googleapis.com/v1beta';
@@ -75,6 +88,22 @@ abstract final class ClaveGemini {
         } else {
           await prefs.setString(_modeloGuardado, _modelo!);
         }
+      }
+    } catch (_) {
+      // Sin almacenamiento vale hasta cerrar la app.
+    }
+  }
+
+  /// Cambia solo el modelo (la clave queda como está): el selector de Configuración y del lector de facturas. Sin clave no hace nada.
+  static Future<void> elegirModelo(String modelo) async {
+    if (_valor == null) return;
+    _modelo = _limpia(modelo);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_modelo == null) {
+        await prefs.remove(_modeloGuardado);
+      } else {
+        await prefs.setString(_modeloGuardado, _modelo!);
       }
     } catch (_) {
       // Sin almacenamiento vale hasta cerrar la app.

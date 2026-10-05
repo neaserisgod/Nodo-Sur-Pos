@@ -47,4 +47,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(ClaveGemini.configurada, isFalse);
   });
+
+  group('selector de modelo', () {
+    testWidgets('sin clave no se ofrece', (tester) async {
+      await _montar(tester, MockClient((_) async => http.Response(_ok, 200)));
+      expect(find.text('Modelo de la IA'), findsNothing);
+    });
+
+    testWidgets('con clave arranca en el más barato y elegir otro lo guarda sin tocar la clave', (tester) async {
+      ClaveGemini.fijarParaTest('AIza-buena');
+      await _montar(tester, MockClient((_) async => http.Response(_ok, 200)));
+      expect(find.widgetWithText(TextField, etiquetaDeModelo(modeloGeminiPorDefecto)), findsOneWidget);
+      await tester.tap(find.byType(DropdownMenu<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(etiquetaDeModelo('gemini-3.8-flash')).last);
+      await tester.pumpAndSettle();
+      expect(ClaveGemini.modelo, 'gemini-3.8-flash');
+      expect(ClaveGemini.valor, 'AIza-buena');
+    });
+  });
 }

@@ -1,0 +1,266 @@
+{
+  "facturas": [
+    {
+      "proveedor": {
+        "razon_social": "BEBIDAS DEL LAGO S.A.",
+        "cuit": "30710036868"
+      },
+      "tipo": "otro",
+      "numero": "000500471757",
+      "fecha": "2023-09-04",
+      "condicion_pago": "contado",
+      "lineas": [
+        {
+          "codigo": "019254",
+          "descripcion": "ANDES ORIGEN IPA CAN 4X6 473",
+          "cantidad": 6,
+          "precio_unitario": 45612.73,
+          "descuento_pct": null,
+          "importe": 15385.44,
+          "alicuota_iva": null,
+          "internos_importe": 1449.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "029743",
+          "descripcion": "QUILMES 1890 CAN X24 473CC SMK",
+          "cantidad": 6,
+          "precio_unitario": 25339.17,
+          "descuento_pct": 10.0,
+          "importe": 8608.92,
+          "alicuota_iva": null,
+          "internos_importe": 867.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "031205",
+          "descripcion": "ANDES ORIGEN RUBIA 2.0 CAN 4X6 473C",
+          "cantidad": 6,
+          "precio_unitario": 41683.67,
+          "descuento_pct": null,
+          "importe": 14053.94,
+          "alicuota_iva": null,
+          "internos_importe": 1318.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "900377",
+          "descripcion": "COMBO LATONES - BAJO DROP ABRIL -",
+          "cantidad": 1,
+          "precio_unitario": 53200.93,
+          "descuento_pct": null,
+          "importe": 72039.5,
+          "alicuota_iva": null,
+          "internos_importe": 7022.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN BUDWEISER CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 32435.39,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN STELLA ARTOIS CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 48446.37,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN ANDES ORIGEN RUBIA 2.0 CAN 4X4",
+          "cantidad": null,
+          "precio_unitario": 37429.31,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN QUILMES CLASICA CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 31549.9,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN BRAHMA CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 30682.87,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN ANDES BLANCA CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 32259.89,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        }
+      ],
+      "pie": {
+        "subtotal": 98445.38,
+        "descuento_global": 0,
+        "impuestos_internos": 10658.15,
+        "percepciones": 984.45,
+        "iva_total": 17085.0,
+        "total": 110087.98
+      },
+      "advertencias": []
+    },
+    {
+      "proveedor": {
+        "razon_social": "BEBIDAS DEL LAGO S.A.",
+        "cuit": "30710036868"
+      },
+      "tipo": "otro",
+      "numero": "000500470720",
+      "fecha": "2026-07-17",
+      "condicion_pago": "contado",
+      "lineas": [
+        {
+          "codigo": "019254",
+          "descripcion": "ANDES ORIGEN IPA CAN 4X6 473",
+          "cantidad": 6,
+          "precio_unitario": 40272.61,
+          "descuento_pct": null,
+          "importe": 13579.8,
+          "alicuota_iva": null,
+          "internos_importe": 1275.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "024879",
+          "descripcion": "STELLA ARTOIS PM CAN 4X6 473CC TERM",
+          "cantidad": 6,
+          "precio_unitario": 48151.98,
+          "descuento_pct": null,
+          "importe": 16250.0,
+          "alicuota_iva": null,
+          "internos_importe": 1538.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "024879",
+          "descripcion": "STELLA ARTOIS PM CAN 4X6 473CC TERM",
+          "cantidad": 6,
+          "precio_unitario": 30988.8,
+          "descuento_pct": null,
+          "importe": 10433.6,
+          "alicuota_iva": null,
+          "internos_importe": 965.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "007634",
+          "descripcion": "BRAHMA - 4X6 LAT 473",
+          "cantidad": 1,
+          "precio_unitario": 50860.42,
+          "descuento_pct": null,
+          "importe": 68875.7,
+          "alicuota_iva": null,
+          "internos_importe": 6719.0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "900377",
+          "descripcion": "COMBO LATONES - BAJO DROP ABRIL -",
+          "cantidad": null,
+          "precio_unitario": 30743.58,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN BUDWEISER CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 46741.99,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN STELLA ARTOIS CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 35725.71,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN ANDES ORIGEN RUBIA 2.0 CAN 4X4",
+          "cantidad": null,
+          "precio_unitario": 30691.02,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN QUILMES CLASICA CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 28978.14,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        },
+        {
+          "codigo": null,
+          "descripcion": "4UN BRAHMA CAN 4X4 710CC",
+          "cantidad": null,
+          "precio_unitario": 30561.22,
+          "descuento_pct": null,
+          "importe": 0.0,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": true
+        }
+      ],
+      "pie": {
+        "subtotal": 97663.65,
+        "descuento_global": 0,
+        "impuestos_internos": 10499.02,
+        "percepciones": 976.64,
+        "iva_total": 16949.0,
+        "total": 109139.31
+      },
+      "advertencias": []
+    }
+  ]
+}

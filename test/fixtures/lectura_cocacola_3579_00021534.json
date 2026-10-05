@@ -1,0 +1,19 @@
+{
+  "facturas": [
+    {
+      "proveedor": {"razon_social": "Embotelladora del Atlántico S.A.", "cuit": "30529135943"},
+      "tipo": "B",
+      "numero": "3579-00021534",
+      "fecha": "2026-08-25",
+      "condicion_pago": "contado",
+      "lineas": [
+        {"codigo": "100362", "descripcion": "MONSTER NCY ULTRA WHITE 473X6*", "cantidad": 1.0, "precio_unitario": 16153.85, "descuento_pct": 3230.78, "importe": 12923.07, "alicuota_iva": 0.0, "internos_importe": 0.0, "es_detalle": false},
+        {"codigo": "100361", "descripcion": "MONSTER NCY GREEN 473X6 *", "cantidad": 1.0, "precio_unitario": 16153.85, "descuento_pct": 3230.78, "importe": 12923.07, "alicuota_iva": 0.0, "internos_importe": 0.0, "es_detalle": false},
+        {"codigo": "100370", "descripcion": "MONSTER PIPELINE PUNCH 473X6*", "cantidad": 1.0, "precio_unitario": 16153.85, "descuento_pct": 3230.78, "importe": 12923.07, "alicuota_iva": 0.0, "internos_importe": 0.0, "es_detalle": false},
+        {"codigo": "100371", "descripcion": "MONSTER ULTRA PEACHY KEEN 473X6*", "cantidad": 1.0, "precio_unitario": 16153.85, "descuento_pct": 3230.78, "importe": 12923.07, "alicuota_iva": 0.0, "internos_importe": 0.0, "es_detalle": false}
+      ],
+      "pie": {"subtotal": 51692.28, "descuento_global": 0, "impuestos_internos": 0.0, "percepciones": 5427.69, "iva_total": 0.0, "total": 57119.97},
+      "advertencias": []
+    }
+  ]
+}

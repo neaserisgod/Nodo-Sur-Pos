@@ -44,8 +44,8 @@ void main() {
         return http.Response(_respuesta(_facturaElpar), 200);
       }),
     );
-    expect(url.path, contains(modeloParaLeerFacturas));
-    expect(r.modelo, modeloParaLeerFacturas);
+    expect(url.path, contains(modeloGeminiPorDefecto));
+    expect(r.modelo, modeloGeminiPorDefecto);
     expect(cuerpo['systemInstruction']['parts'][0]['text'], instruccionesDeLecturaDeFacturas);
     expect((cuerpo['contents'][0]['parts'] as List)[1]['inlineData']['mimeType'], 'image/jpeg');
     expect(cuerpo['generationConfig']['temperature'], 0);
@@ -58,20 +58,35 @@ void main() {
     expect(instruccionesDeLecturaDeFacturas, contains('IGNORÁ todo lo escrito a mano'));
     expect(instruccionesDeLecturaDeFacturas, contains('NO transcribas los datos del comprador'));
     expect(instruccionesDeLecturaDeFacturas, contains('MÁS DE UNA factura'));
+    expect(instruccionesDeLecturaDeFacturas, contains('descuento_importe')); // el monto de un descuento no va en el campo del porcentaje
   });
 
-  test('si el modelo fuerte no está para esta clave (404), prueba el que le anduvo al guardarla', () async {
+  test('lee con el modelo que el dueño eligió, no con el más nuevo', () async {
+    ClaveGemini.fijarParaTest('AIza-buena', modelo: 'gemini-3.1-flash-lite');
+    late Uri url;
+    final r = await leerFacturasConGemini(
+      [adjunto],
+      client: MockClient((req) async {
+        url = req.url;
+        return http.Response(_respuesta(_facturaElpar), 200);
+      }),
+    );
+    expect(url.path, contains('gemini-3.1-flash-lite'));
+    expect(r.modelo, 'gemini-3.1-flash-lite');
+  });
+
+  test('si el elegido no está para esta clave (404), prueba el de respaldo', () async {
     ClaveGemini.fijarParaTest('AIza-buena', modelo: 'gemini-3.5-flash-lite');
     final pedidos = <String>[];
     final r = await leerFacturasConGemini(
       [adjunto],
       client: MockClient((req) async {
         pedidos.add(req.url.path);
-        return req.url.path.contains(modeloParaLeerFacturas) ? http.Response('{}', 404) : http.Response(_respuesta(_facturaElpar), 200);
+        return req.url.path.contains(modeloGeminiPorDefecto) ? http.Response('{}', 404) : http.Response(_respuesta(_facturaElpar), 200);
       }),
     );
     expect(pedidos, hasLength(2));
-    expect(r.modelo, 'gemini-3.5-flash-lite');
+    expect(r.modelo, modeloDeRespaldoParaFacturas);
   });
 
   test('sin cupo en el modelo fuerte (429), prueba el liviano, que tiene su propio cupo', () async {
@@ -80,11 +95,11 @@ void main() {
       [adjunto],
       client: MockClient((req) async {
         pedidos.add(req.url.path);
-        return req.url.path.contains(modeloParaLeerFacturas) ? http.Response('{}', 429) : http.Response(_respuesta(_facturaElpar), 200);
+        return req.url.path.contains(modeloGeminiPorDefecto) ? http.Response('{}', 429) : http.Response(_respuesta(_facturaElpar), 200);
       }),
     );
     expect(pedidos, hasLength(2));
-    expect(r.modelo, isNot(modeloParaLeerFacturas));
+    expect(r.modelo, isNot(modeloGeminiPorDefecto));
   });
 
   test('sin cupo en los dos modelos, avisa que se acabó el cupo gratis', () async {
@@ -114,7 +129,7 @@ void main() {
     );
     expect(pedidos, hasLength(2));
     expect(pedidos.toSet(), hasLength(1)); // el mismo modelo las dos veces
-    expect(r.modelo, modeloParaLeerFacturas);
+    expect(r.modelo, modeloGeminiPorDefecto);
   });
 
   test('si el modelo fuerte sigue saturado, pasa al liviano', () async {
@@ -124,11 +139,11 @@ void main() {
       espera: Duration.zero,
       client: MockClient((req) async {
         pedidos.add(req.url.path);
-        return req.url.path.contains(modeloParaLeerFacturas) ? http.Response('{}', 503) : http.Response(_respuesta(_facturaElpar), 200);
+        return req.url.path.contains(modeloGeminiPorDefecto) ? http.Response('{}', 503) : http.Response(_respuesta(_facturaElpar), 200);
       }),
     );
     expect(pedidos, hasLength(3)); // fuerte, fuerte (reintento), liviano
-    expect(r.modelo, isNot(modeloParaLeerFacturas));
+    expect(r.modelo, isNot(modeloGeminiPorDefecto));
   });
 
   test('si todo está caído, el mensaje trae el detalle que manda Google', () async {

@@ -231,6 +231,28 @@ void main() {
       expect(n.factura.internosAlPieCentavos, 100000);
     });
 
+    test('un descuento que viene como MONTO (aunque la IA lo ponga en el campo del porcentaje) no da falsa alarma', () {
+      final enElPorcentaje = normalizar(factura([linea('Pack x6', 1, 16153.85, 12923.07, descuento: 3230.78, alicuota: 0)], {'total': 12923.07}));
+      expect(enElPorcentaje.lineasSospechosas, isEmpty);
+      expect(enElPorcentaje.lineas.single.descuentoImporteCentavos, 323078);
+      expect(enElPorcentaje.lineas.single.descuentoPct, isNull);
+    });
+
+    test('el descuento en monto también se acepta en su propio campo, por unidad o de toda la línea', () {
+      // El total impreso NO coincide a propósito: una factura que cierra no marca líneas, y acá se prueba el aviso de la línea.
+      Map<String, dynamic> conMonto(num monto) => factura(
+            [
+              {'descripcion': 'x', 'cantidad': 3, 'precio_unitario': 1000, 'descuento_importe': monto, 'importe': 2400.0, 'alicuota_iva': 0},
+            ],
+            {'total': 5000},
+          );
+      // 3 × 1.000 − 600 (monto de toda la línea) = 2.400, y 3 × (1.000 − 200) = 2.400 (monto por unidad): el importe se explica.
+      expect(normalizar(conMonto(600)).lineasSospechosas, isEmpty);
+      expect(normalizar(conMonto(200)).lineasSospechosas, isEmpty);
+      // Un monto que no explica la diferencia sigue marcándose.
+      expect(normalizar(conMonto(50)).lineasSospechosas, [0]);
+    });
+
     test('el combo con sus componentes en cero no suma dos veces', () {
       final n = normalizar(factura(
         [
@@ -270,4 +292,40 @@ void main() {
       expect(n.factura.lineas.map((l) => l.unidades), [1, 1]);
     });
   });
+
+  group('CUIT, fecha y redondeo de impresión', () {
+    test('un CUIT válido tiene 11 dígitos y el verificador correcto (los de las facturas reales)', () {
+      for (final c in ['30670378213', '30538048190', '30708174757', '30529135943', '30710036868', '20160537036']) {
+        expect(cuitValido(c), isTrue, reason: c);
+      }
+    });
+
+    test('un dígito de más, de menos o cambiado no es un CUIT', () {
+      expect(cuitValido('201605370360'), isFalse); // 12 dígitos (la carbónica de Manaos)
+      expect(cuitValido('3067037821'), isFalse);
+      expect(cuitValido('30670378214'), isFalse); // verificador cambiado
+      expect(cuitValido('abc'), isFalse);
+    });
+
+    test('una fecha de hace más de un año, o de más de una semana en el futuro, es dudosa', () {
+      final hoy = DateTime(2026, 10, 5);
+      expect(fechaDudosa(DateTime(2023, 9, 4), hoy), isTrue);
+      expect(fechaDudosa(DateTime(2026, 7, 14), hoy), isFalse);
+      expect(fechaDudosa(DateTime(2026, 10, 10), hoy), isFalse);
+      expect(fechaDudosa(DateTime(2026, 11, 20), hoy), isTrue);
+      expect(fechaDudosa(null, hoy), isFalse);
+    });
+
+    test('una diferencia de pocos centavos cierra "con redondeo" y una de pesos no cierra nunca', () {
+      Map<String, dynamic> unaLinea(num importe, num total) => factura([linea('x', 1, importe, importe, alicuota: 0)], {'total': total});
+      final conRedondeo = normalizar(unaLinea(1000.05, 1000.15)); // 10 centavos: no es exacto, pero es de impresión
+      expect(conRedondeo.cierra, isTrue);
+      expect(conRedondeo.cierraConRedondeo, isTrue);
+      final exacta = normalizar(unaLinea(1000, 1000));
+      expect(exacta.cierra, isTrue);
+      expect(exacta.cierraConRedondeo, isFalse);
+      expect(normalizar(unaLinea(1000, 1001)).cierra, isFalse); // un peso de diferencia ya es un error de lectura
+    });
+  });
 }
+
