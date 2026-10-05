@@ -296,7 +296,8 @@ String _mensajeDeError(int estado, String cuerpo, String modelo) {
     case 429:
       return 'Se acabó el cupo gratis por ahora (hay un límite por minuto y otro por día). Probá en un rato.';
     default:
-      if (estado >= 500) return 'Los servidores de Google no responden ahora. Probá en un rato.';
+      // Con el detalle que manda Google ("The model is overloaded"): sirve para distinguir una caída de un modelo saturado.
+      if (estado >= 500) return 'Los servidores de Google no pudieron responder ($estado)${_detalle(cuerpo)} Probá en un rato.';
       return 'La IA devolvió un error ($estado)${_detalle(cuerpo)}';
   }
 }

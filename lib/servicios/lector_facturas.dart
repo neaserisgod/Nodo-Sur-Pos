@@ -48,7 +48,15 @@ class ResultadoDeLectura {
 
 /// Manda [adjuntos] (fotos ya achicadas y/o PDF) a Gemini y devuelve lo que leyó. Lanza [ErrorGemini] con un mensaje listo para mostrar
 /// si no hay clave, no hay cupo o no hay internet.
-Future<ResultadoDeLectura> leerFacturasConGemini(List<AdjuntoGemini> adjuntos, {http.Client? client}) async {
+///
+/// Los modelos más nuevos se saturan seguido (Google contesta 503 "overloaded") y cada modelo tiene su propio cupo gratis: ante un 503 se
+/// reintenta una vez ([espera] después) y, si sigue, se pasa al modelo siguiente; ante un 404 (no está para esta clave) o un 429 (se
+/// acabó el cupo de ESE modelo) se pasa directo. Cualquier otro fallo (clave mala, sin internet) no lo arregla otro modelo.
+Future<ResultadoDeLectura> leerFacturasConGemini(
+  List<AdjuntoGemini> adjuntos, {
+  http.Client? client,
+  Duration espera = const Duration(seconds: 3),
+}) async {
   if (adjuntos.isEmpty) throw const ErrorGemini('No hay nada para leer: elegí una foto o un PDF.');
   final clave = ClaveGemini.valor;
   if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
@@ -56,22 +64,29 @@ Future<ResultadoDeLectura> leerFacturasConGemini(List<AdjuntoGemini> adjuntos, {
   final modelos = {modeloParaLeerFacturas, ClaveGemini.modelo ?? modeloGeminiPorDefecto};
   ErrorGemini? ultimo;
   for (final modelo in modelos) {
-    // Leer una hoja entera tarda más que ponerle nombre a una promo.
-    final cliente = ClienteGemini(apiKey: clave, modelo: modelo, client: client, timeout: const Duration(seconds: 180));
-    try {
-      final json = await cliente.generarJson(
-        'Transcribí las facturas de los archivos adjuntos.',
-        sistema: instruccionesDeLecturaDeFacturas,
-        temperatura: 0,
-        adjuntos: adjuntos,
-      );
-      return ResultadoDeLectura(lectura: leerRespuestaDeFacturas(json), json: json, modelo: modelo);
-    } on ErrorGemini catch (e) {
-      // Un 404 es "este modelo no está para tu clave": se prueba el siguiente. Cualquier otro fallo no lo arregla otro modelo.
-      if (e.estado != 404) rethrow;
-      ultimo = e;
-    } finally {
-      cliente.close();
+    for (var intento = 0; intento < 2; intento++) {
+      // Leer una hoja entera tarda más que ponerle nombre a una promo.
+      final cliente = ClienteGemini(apiKey: clave, modelo: modelo, client: client, timeout: const Duration(seconds: 180));
+      try {
+        final json = await cliente.generarJson(
+          'Transcribí las facturas de los archivos adjuntos.',
+          sistema: instruccionesDeLecturaDeFacturas,
+          temperatura: 0,
+          adjuntos: adjuntos,
+        );
+        return ResultadoDeLectura(lectura: leerRespuestaDeFacturas(json), json: json, modelo: modelo);
+      } on ErrorGemini catch (e) {
+        ultimo = e;
+        final saturado = (e.estado ?? 0) >= 500;
+        if (saturado && intento == 0) {
+          await Future<void>.delayed(espera);
+          continue;
+        }
+        if (saturado || e.estado == 404 || e.estado == 429) break; // al modelo siguiente
+        rethrow;
+      } finally {
+        cliente.close();
+      }
     }
   }
   throw ultimo!;

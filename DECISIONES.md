@@ -1977,3 +1977,6 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **Si ninguna forma de leer los importes cierra** (algo está mal leído), se muestra la que deja MENOS líneas sospechosas, y a igual cantidad la de menor
   diferencia (2026-10-05, lo encontró la primera lectura real de Gemini): la forma correcta solo marca la línea mal leída; una equivocada las marca todas y no
   le sirve al dueño para saber dónde mirar.
+- **Google saturado o sin cupo en un modelo** (2026-10-05, el dueño vio "los servidores de Google no responden"): los modelos nuevos devuelven 503
+  "overloaded" seguido y cada modelo tiene su propio cupo gratis. La lectura de facturas reintenta una vez ante un 503 y pasa al modelo liviano
+  ante un 503 que sigue, un 404 o un 429; el mensaje de un error 5xx ahora trae el detalle que manda Google. Una clave mala o la falta de internet no se reintentan.
