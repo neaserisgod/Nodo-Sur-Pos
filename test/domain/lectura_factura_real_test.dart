@@ -56,4 +56,50 @@ void main() {
     expect(n.control!.diferenciaCentavos, greaterThan(9000));
     expect(n.lineasSospechosas, [3]);
   });
+
+  group('Puelche 0148-00034664 (la segunda lectura real: descuento general aparte, contado)', () {
+    late Map<String, dynamic> puelche;
+
+    setUp(() {
+      puelche = jsonDecode(File('test/fixtures/lectura_puelche_0148_00034664.json').readAsStringSync()) as Map<String, dynamic>;
+    });
+
+    test('se lee la cabecera, las 7 líneas y el descuento del pie, sin advertencias', () {
+      final f = leerRespuestaDeFacturas(puelche).facturas.single;
+      expect(f.advertencias, isEmpty);
+      expect(f.proveedorCuit, '30538048190');
+      expect(f.numero, '0148-00034664');
+      expect(f.fecha, DateTime(2026, 10, 1));
+      expect(f.condicionPago, 'contado');
+      expect(f.lineas, hasLength(7));
+      expect(f.pie.descuentoGlobalCentavos, 164487);
+      expect(f.pie.totalCentavos, 3781572);
+    });
+
+    test('cierra con el total impreso (2 centavos de redondeo del proveedor), con los importes sin IVA y sin líneas sospechosas', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(puelche).facturas.single);
+      expect(n.modo, ModoImportes.neto);
+      expect(n.cierra, isTrue);
+      expect(n.control!.diferenciaCentavos.abs(), lessThanOrEqualTo(2));
+      // Los precios con 3 decimales (534,076) no dan falsas alarmas.
+      expect(n.lineasSospechosas, isEmpty);
+    });
+
+    test('el descuento general baja el costo de cada producto y el IVA se suma después', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(puelche).facturas.single);
+      final costos = costosDeFactura(n.factura);
+      // Fibra: 5 unidades, 2.670,38 − su parte del descuento + IVA = 3.069,60 → 613,92 → $614 c/u.
+      expect(costos.first.costoUnitarioCentavos, 61400);
+      expect(costos.map((c) => c.costoUnitarioCentavos), [61400, 189400, 189400, 182000, 658600, 658600, 122700]);
+    });
+
+    test('un dígito mal leído en esta factura también se atrapa', () {
+      final lineas = (puelche['facturas'] as List).single['lineas'] as List;
+      (lineas[3] as Map<String, dynamic>)['importe'] = 8014.27; // 100 pesos de más en el rollo de cocina
+      final n = normalizarFactura(leerRespuestaDeFacturas(puelche).facturas.single);
+      expect(n.cierra, isFalse);
+      expect(n.lineasSospechosas, [3]);
+    });
+  });
 }
+

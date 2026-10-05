@@ -46,6 +46,8 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   (cuenta corriente); ignoró lo escrito a mano y los datos del comprador; no inventó nada. El sistema eligió solo "importes con IVA adentro" y la factura cierra con
   **0 centavos** de diferencia contra el total impreso ($94.676,88), sin líneas sospechosas. Quedó como caso de prueba (`test/fixtures/lectura_serra_0051_00194239.json`).
   En esa factura "cantidad" son unidades (4 × 939,22), no bultos.
+- **Segunda lectura real**: Puelche 0148-00034664 (7 líneas, contado, con el "Descuento 5 %" aparte). Gemini leyó las 7 líneas, el descuento general ($1.644,87) y el total sin errores; cierra con 2 centavos de
+  diferencia (redondeo del proveedor), sin líneas sospechosas (los precios con 3 decimales no dan falsas alarmas). Caso de prueba: `test/fixtures/lectura_puelche_0148_00034664.json`.
 - **Hecho (vincular con los productos, 2026-10-05)**:
   - `domain/vinculo_factura.dart`: propone el producto de cada línea: 1) lo ya aprendido de ese proveedor (por código y por descripción) = verde, 2) código de barras = verde, 3) parecido de nombre
     con abreviaturas ("ALF" ≈ alfajor, "BL" ≈ blanco; los tamaños tienen que ser iguales; el producto del mismo proveedor desempata) = amarillo, para confirmar. Sin parecido claro queda sin vincular

@@ -1,0 +1,22 @@
+{
+  "facturas": [
+    {
+      "proveedor": {"razon_social": "Puelche S.A.", "cuit": "30538048190"},
+      "tipo": "A",
+      "numero": "0148-00034664",
+      "fecha": "2026-10-01",
+      "condicion_pago": "contado",
+      "lineas": [
+        {"codigo": "29597", "descripcion": "Fibra Esponjas Economica Salvauñas", "cantidad": 5, "precio_unitario": 534.076, "descuento_pct": null, "importe": 2670.38, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "30305", "descripcion": "Lavavajilla +Concentrado Limon MaxDeseng Ala", "cantidad": 2, "precio_unitario": 1647.06, "descuento_pct": null, "importe": 3294.12, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "30576", "descripcion": "Lavavajilla +Concentrado Pomelo MaxDeser Ala", "cantidad": 2, "precio_unitario": 1647.01, "descuento_pct": null, "importe": 3294.02, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "25268", "descripcion": "Rollo Cocina Suave 40 Paños", "cantidad": 5, "precio_unitario": 1582.854, "descuento_pct": null, "importe": 7914.27, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "30811", "descripcion": "Acondicionador Ceramidas", "cantidad": 1, "precio_unitario": 5729.11, "descuento_pct": null, "importe": 5729.11, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "10425", "descripcion": "Shampoo Ceramidas", "cantidad": 1, "precio_unitario": 5729.11, "descuento_pct": null, "importe": 5729.11, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false},
+        {"codigo": "28017", "descripcion": "Toalla Fem. Anatomica Normal C/Alas", "cantidad": 4, "precio_unitario": 1066.633, "descuento_pct": null, "importe": 4266.53, "alicuota_iva": 21, "internos_importe": 0, "es_detalle": false}
+      ],
+      "pie": {"subtotal": 31252.66, "descuento_global": 1644.87, "impuestos_internos": 0, "percepciones": 0, "iva_total": 6563.06, "total": 37815.72},
+      "advertencias": []
+    }
+  ]
+}
