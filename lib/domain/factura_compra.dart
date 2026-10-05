@@ -122,6 +122,7 @@ class ControlDeFactura {
     required this.totalCalculadoCentavos,
     required this.diferenciaCentavos,
     required this.toleranciaCentavos,
+    required this.toleranciaLaxaCentavos,
   });
 
   /// Suma de los netos menos el descuento global: lo que la factura imprime como "subtotal".
@@ -134,8 +135,15 @@ class ControlDeFactura {
   final int diferenciaCentavos;
   final int toleranciaCentavos;
 
+  /// Para las facturas que imprimen cada línea con UN solo decimal (matriz de puntos): hasta 10 centavos de redondeo por línea.
+  final int toleranciaLaxaCentavos;
+
   /// Cierra si la diferencia es solo el redondeo del proveedor.
   bool get cierra => diferenciaCentavos.abs() <= toleranciaCentavos;
+
+  /// No cierra al centavo pero la diferencia es del tamaño del redondeo de una impresión con un decimal (Bebidas del Lago: $0,18 en
+  /// 4 líneas). Un error de lectura es de pesos, no de centavos: sigue dejando afuera cualquier dígito mal leído.
+  bool get cierraConRedondeo => !cierra && diferenciaCentavos.abs() <= toleranciaLaxaCentavos;
 }
 
 /// Compara el total que sale de las líneas leídas con el [totalImpresoCentavos]. Si no cierra, algo se leyó mal (un dígito, una
@@ -157,6 +165,7 @@ ControlDeFactura controlarFactura(FacturaDeCompra factura, {required int totalIm
     totalCalculadoCentavos: total,
     diferenciaCentavos: total - totalImpresoCentavos,
     toleranciaCentavos: 2 + lineas.length,
+    toleranciaLaxaCentavos: 2 + 10 * lineas.length,
   );
 }
 

@@ -1,0 +1,101 @@
+{
+  "facturas": [
+    {
+      "proveedor": {
+        "razon_social": "MEHDI SERGIO ALFREDO",
+        "cuit": "201605370360"
+      },
+      "tipo": "A",
+      "numero": "0001-00046896",
+      "fecha": "2026-09-03",
+      "condicion_pago": "contado",
+      "lineas": [
+        {
+          "codigo": "36101",
+          "descripcion": "ALVURA AGUA MINERAL-6X1500 S/GAS",
+          "cantidad": 1.0,
+          "precio_unitario": 7694.95,
+          "descuento_pct": null,
+          "importe": 7694.95,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "55852",
+          "descripcion": "MANAOS LIMA-LIMON-PACK 6X1500",
+          "cantidad": 1.0,
+          "precio_unitario": 8034.72,
+          "descuento_pct": null,
+          "importe": 8034.72,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "55853",
+          "descripcion": "MANAOS POMELO-PACK 6X1500",
+          "cantidad": 1.0,
+          "precio_unitario": 8034.72,
+          "descuento_pct": null,
+          "importe": 8034.72,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": false
+        }
+      ],
+      "pie": {
+        "subtotal": 23764.39,
+        "descuento_global": 0,
+        "impuestos_internos": 545.1,
+        "percepciones": 0,
+        "iva_total": 4990.52,
+        "total": 29300.01
+      },
+      "advertencias": []
+    },
+    {
+      "proveedor": {
+        "razon_social": "MEHDI SERGIO ALFREDO",
+        "cuit": "201605370360"
+      },
+      "tipo": "A",
+      "numero": "0001-00048107",
+      "fecha": "2026-10-01",
+      "condicion_pago": "contado",
+      "lineas": [
+        {
+          "codigo": "55852",
+          "descripcion": "MANAOS LIMA-LIMON-PACK 6X1500",
+          "cantidad": 1.0,
+          "precio_unitario": 8034.72,
+          "descuento_pct": null,
+          "importe": 8034.72,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": false
+        },
+        {
+          "codigo": "36101",
+          "descripcion": "ALVURA AGUA MINERAL-6X1500 S/GAS",
+          "cantidad": 1.0,
+          "precio_unitario": 7694.95,
+          "descuento_pct": null,
+          "importe": 7694.95,
+          "alicuota_iva": null,
+          "internos_importe": 0,
+          "es_detalle": false
+        }
+      ],
+      "pie": {
+        "subtotal": 15729.67,
+        "descuento_global": 0,
+        "impuestos_internos": 467.11,
+        "percepciones": 0,
+        "iva_total": 3303.23,
+        "total": 19500.01
+      },
+      "advertencias": []
+    }
+  ]
+}

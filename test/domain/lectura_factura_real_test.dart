@@ -143,5 +143,141 @@ void main() {
       expect(c.internosCentavos * 100 ~/ c.totalCentavos, greaterThan(70)); // más del 70 % del costo son impuestos internos
     });
   });
+
+  group('Coca-Cola 3579-00021534 (la cuarta lectura real: foto de costado, Factura B, descuento como monto)', () {
+    late Map<String, dynamic> coca;
+
+    setUp(() {
+      coca = jsonDecode(File('test/fixtures/lectura_cocacola_3579_00021534.json').readAsStringSync()) as Map<String, dynamic>;
+    });
+
+    test('se lee entera aunque la foto estaba de costado, y el "porcentaje" de 3.230,78 pasa a ser un monto', () {
+      final f = leerRespuestaDeFacturas(coca).facturas.single;
+      expect(f.advertencias, isEmpty);
+      expect(f.proveedorCuit, '30529135943');
+      expect(f.tipo, 'B');
+      expect(f.numero, '3579-00021534');
+      expect(f.condicionPago, 'contado');
+      expect(f.lineas, hasLength(4));
+      // Un descuento "de 3230,78 %" no existe: era el monto.
+      expect(f.lineas.first.descuentoPct, isNull);
+      expect(f.lineas.first.descuentoImporteCentavos, 323078);
+      expect(f.pie.percepcionesCentavos, 542769);
+    });
+
+    test('cierra al centavo y NO marca líneas sospechosas (16.153,85 − 3.230,78 = 12.923,07)', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(coca).facturas.single);
+      expect(n.cierra, isTrue);
+      expect(n.control!.diferenciaCentavos, 0);
+      expect(n.lineasSospechosas, isEmpty);
+    });
+
+    test('el costo de cada pack lleva su parte de la percepción de \$5.427,69', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(coca).facturas.single);
+      final costos = costosDeFactura(n.factura);
+      expect(costos.fold<int>(0, (a, c) => a + c.percepcionesCentavos), 542769);
+      // 12.923,07 + 1.356,92 = 14.279,99 → $14.280 por pack.
+      expect(costos.map((c) => c.costoUnitarioCentavos), [1428000, 1428000, 1428000, 1428000]);
+    });
+
+    test('con "× 6" (un pack son 6 latas) el costo por lata es \$2.380', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(coca).facturas.single);
+      final porLata = costosDeFactura(conUnidadesPorCantidad(n.factura, [6, 6, 6, 6]));
+      expect(porLata.map((c) => c.costoUnitarioCentavos), [238000, 238000, 238000, 238000]);
+    });
+  });
+
+  group('Manaos / La Magdalena (la quinta lectura real: DOS facturas en una foto)', () {
+    late Map<String, dynamic> manaos;
+
+    setUp(() {
+      manaos = jsonDecode(File('test/fixtures/lectura_manaos_dos_por_foto.json').readAsStringSync()) as Map<String, dynamic>;
+    });
+
+    test('devuelve las dos facturas separadas, cada una con su número y su fecha', () {
+      final facturas = leerRespuestaDeFacturas(manaos).facturas;
+      expect(facturas.map((f) => f.numero), ['0001-00046896', '0001-00048107']);
+      expect(facturas.map((f) => f.fecha), [DateTime(2026, 9, 3), DateTime(2026, 10, 1)]);
+      expect(facturas.map((f) => f.lineas.length), [3, 2]);
+    });
+
+    test('un CUIT con un dígito de más (la carbónica) NO se cree: queda sin leer y avisa que se elija el proveedor a mano', () {
+      for (final f in leerRespuestaDeFacturas(manaos).facturas) {
+        expect(f.proveedorCuit, isNull);
+        expect(f.advertencias.single, contains('no es válido'));
+      }
+    });
+
+    test('las dos cierran al centavo, con los impuestos internos que vienen solo al pie', () {
+      for (final f in leerRespuestaDeFacturas(manaos).facturas) {
+        final n = normalizarFactura(f);
+        expect(n.cierra, isTrue);
+        expect(n.cierraConRedondeo, isFalse);
+        expect(n.control!.diferenciaCentavos, 0);
+        expect(n.factura.internosAlPieCentavos, f.pie.internosCentavos);
+      }
+    });
+
+    test('el costo de cada pack lleva IVA y su parte de los impuestos internos del pie', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(manaos).facturas.first);
+      // Alvura: 7.694,95 + IVA 1.615,94 + su parte de los internos del pie = 9.487,40 → $9.488 el pack.
+      expect(costosDeFactura(n.factura).map((c) => c.costoUnitarioCentavos), [948800, 990700, 990700]);
+    });
+  });
+
+  group('Bebidas del Lago (la sexta lectura real: matriz de puntos, dos por foto, combos)', () {
+    late Map<String, dynamic> lago;
+
+    setUp(() {
+      lago = jsonDecode(File('test/fixtures/lectura_bebidas_del_lago_dos_por_foto.json').readAsStringSync()) as Map<String, dynamic>;
+    });
+
+    test('las líneas hijas del combo no son productos: quedan 4 por factura', () {
+      for (final f in leerRespuestaDeFacturas(lago).facturas) {
+        expect(f.lineas, hasLength(10));
+        expect(normalizarFactura(f).lineas, hasLength(4));
+      }
+    });
+
+    test('el importe de cada línea ya incluye IVA, internos y percepción: elige "todoIncluido" y no cuenta la percepción dos veces', () {
+      for (final f in leerRespuestaDeFacturas(lago).facturas) {
+        final n = normalizarFactura(f);
+        expect(n.modo, ModoImportes.todoIncluido);
+        expect(n.factura.percepcionesCentavos, 0);
+        expect(n.factura.internosAlPieCentavos, 0);
+        expect(costosDeFactura(n.factura).every((c) => c.percepcionesCentavos == 0), isTrue);
+      }
+    });
+
+    test('cierra con el redondeo de una impresión de un decimal (18 y 21 centavos), no al centavo', () {
+      final diferencias = <int>[];
+      for (final f in leerRespuestaDeFacturas(lago).facturas) {
+        final n = normalizarFactura(f);
+        expect(n.cierra, isTrue);
+        expect(n.cierraConRedondeo, isTrue);
+        diferencias.add(n.control!.diferenciaCentavos);
+      }
+      expect(diferencias, [-18, -21]);
+    });
+
+    test('no marca líneas sospechosas aunque el precio sea por bulto y la cantidad por lata (la factura cierra)', () {
+      for (final f in leerRespuestaDeFacturas(lago).facturas) {
+        expect(normalizarFactura(f).lineasSospechosas, isEmpty);
+      }
+    });
+
+    test('la fecha de 2023 (una factura de 2026 mal leída) se marca como dudosa; la otra no', () {
+      final fechas = leerRespuestaDeFacturas(lago).facturas.map((f) => f.fecha).toList();
+      final hoy = DateTime(2026, 10, 5);
+      expect(fechaDudosa(fechas[0], hoy), isTrue);
+      expect(fechaDudosa(fechas[1], hoy), isFalse);
+    });
+
+    test('el costo por lata es el importe de la línea entre las 6 latas, subido al peso', () {
+      final n = normalizarFactura(leerRespuestaDeFacturas(lago).facturas.last);
+      // Andes IPA: 13.579,80 / 6 = 2.263,30 → $2.264.
+      expect(costosDeFactura(n.factura).first.costoUnitarioCentavos, 226400);
+    });
+  });
 }
 

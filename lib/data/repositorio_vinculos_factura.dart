@@ -4,13 +4,14 @@
 
 import 'package:drift/drift.dart';
 
+import '../domain/lectura_factura.dart' show cuitValido;
 import '../domain/vinculo_factura.dart';
 import 'database.dart';
 
-/// Solo los dígitos de un CUIT; null si no tiene los 11 que corresponden.
+/// Solo los dígitos de un CUIT; null si no es válido (11 dígitos y verificador correcto: `cuitValido`).
 String? cuitNormalizado(String? texto) {
   final d = (texto ?? '').replaceAll(RegExp(r'\D'), '');
-  return d.length == 11 ? d : null;
+  return cuitValido(d) ? d : null;
 }
 
 /// El proveedor dueño de ese CUIT, o null si ninguno lo tiene cargado.

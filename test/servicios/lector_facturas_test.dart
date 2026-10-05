@@ -58,6 +58,7 @@ void main() {
     expect(instruccionesDeLecturaDeFacturas, contains('IGNORÁ todo lo escrito a mano'));
     expect(instruccionesDeLecturaDeFacturas, contains('NO transcribas los datos del comprador'));
     expect(instruccionesDeLecturaDeFacturas, contains('MÁS DE UNA factura'));
+    expect(instruccionesDeLecturaDeFacturas, contains('descuento_importe')); // el monto de un descuento no va en el campo del porcentaje
   });
 
   test('si el modelo fuerte no está para esta clave (404), prueba el que le anduvo al guardarla', () async {

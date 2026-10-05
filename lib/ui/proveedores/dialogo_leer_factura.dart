@@ -295,6 +295,7 @@ String _nombreDelModo(ModoImportes m) => switch (m) {
   ModoImportes.neto => 'importes sin IVA',
   ModoImportes.conIva => 'importes con el IVA adentro',
   ModoImportes.conIvaEInternos => 'importes con IVA e impuestos internos adentro',
+  ModoImportes.todoIncluido => 'importes finales (IVA, impuestos y percepciones ya adentro)',
 };
 
 class _TarjetaFactura extends StatelessWidget {
@@ -356,12 +357,23 @@ class _TarjetaFactura extends StatelessWidget {
               children: [
                 if (control == null)
                   const Insignia(texto: 'Sin total impreso: no se puede controlar', tono: Tono.alerta)
+                else if (n.cierraConRedondeo)
+                  Insignia(
+                    texto: 'Cierra con redondeo de impresión (diferencia de ${formatearARS(control.diferenciaCentavos.abs())})',
+                    tono: Tono.alerta,
+                  )
                 else if (n.cierra)
                   const Insignia(texto: 'Cierra con el total impreso', tono: Tono.ganancia)
                 else
                   Insignia(texto: 'No cierra: diferencia de ${formatearARS(control.diferenciaCentavos.abs())} — revisá', tono: Tono.error),
-                Insignia(texto: _nombreDelModo(n.modo)),
+                Insignia(
+                  texto: n.modo == ModoImportes.neto && n.lineas.isNotEmpty && n.lineas.every((l) => l.alicuotaBp == 0)
+                      ? 'importes finales (el IVA no está discriminado)'
+                      : _nombreDelModo(n.modo),
+                ),
                 if (e.proveedor != null) Insignia(texto: 'Proveedor: ${e.proveedor!.nombre}', tono: Tono.ganancia),
+                if (fechaDudosa(f.fecha, DateTime.now()))
+                  Insignia(texto: 'La fecha (${f.fecha!.day}/${f.fecha!.month}/${f.fecha!.year}) parece mal leída: revisala', tono: Tono.error),
               ],
             ),
             for (final a in f.advertencias) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(a, style: textTheme.bodySmall)),
