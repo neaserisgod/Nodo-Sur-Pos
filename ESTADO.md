@@ -42,6 +42,9 @@ en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "V
 (vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
 "Venta cobrada" sin botón de siguiente, diálogos sin "Cancelar".
 
+**Auditoría del mock v4 (05/10):** se comparó contra la app real y **no tiene todas las funciones**: faltan ~35 (unas 15 de prioridad alta) y hay 7 cosas
+inventadas que no existen en la real. Detalle y orden para cerrar en [`docs/AUDITORIA-MOCK-V4.md`](./docs/AUDITORIA-MOCK-V4.md). **Antes de aplicar el diseño al código hay que cerrar esa lista.**
+
 **No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
