@@ -15,22 +15,20 @@ import 'package:flutter/material.dart';
 
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
-import '../domain/dinero.dart';
 import '../domain/venta.dart';
-import '../ui/tema/tokens.dart';
 import '../servicios/avisos_cobro_mp.dart';
 import 'cliente_companion.dart' show ErrorCompanion;
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
-import 'tema/hoja_vidrio.dart';
+import 'kit/kit_ns.dart';
 
-/// Devuelve `(ventaId, totalCentavos)` si se aprobó y se grabó la venta,
+/// Devuelve `(ventaId, totalCentavos, aMano)` si se aprobó y se grabó la venta,
 /// `null` en cualquier otro cierre (cancelado, rechazado sin reintentar).
 /// [montoCentavos] ya viene con el descuento aplicado (lo calculó
 /// `PantallaCarritoVenta` antes de abrir este diálogo) — [tipoDescuento]/
 /// [valorDescuento] viajan igual, para que `iniciarCobroPosnet`/
 /// `confirmarCobroPosnet` recalculen el mismo total del lado del servidor.
-Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
+Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosnetCompanion(
   BuildContext context, {
   required ServicioCompanion cliente,
   required int usuarioId,
@@ -42,9 +40,9 @@ Future<({int ventaId, int totalCentavos})?> mostrarDialogoCobroPosnetCompanion(
   int valorDescuento = 0,
   int? encargueId,
 }) {
-  return mostrarHojaVidrio<({int ventaId, int totalCentavos})?>(
+  return mostrarHojaNs<({int ventaId, int totalCentavos, bool aMano})?>(
     context,
-    esDescartable: false,
+    descartable: false,
     builder: (context) => _DialogoCobroPosnetCompanion(
       cliente: cliente,
       usuarioId: usuarioId,
@@ -117,7 +115,7 @@ class _DialogoCobroPosnetCompanionState
   int _fallasSeguidas = 0;
   static const _maxFallasSeguidas = 3;
   bool _errorAlCancelar = false;
-  ({int ventaId, int totalCentavos})? _resultadoAprobado;
+  ({int ventaId, int totalCentavos, bool aMano})? _resultadoAprobado;
 
   /// La terminal ya aprobó el pago: el cliente PAGÓ. Desde acá, "Reintentar" no puede crear otra orden (cobraría dos veces) ni
   /// "Cobrar a mano" grabar otra venta (quizá la primera sí se guardó y solo se perdió la respuesta): lo único seguro es volver a
@@ -224,7 +222,7 @@ class _DialogoCobroPosnetCompanionState
       if (intento > 0) await Future<void>.delayed(esperaEntreIntentosDeGuardado(intento));
       if (!mounted) return;
       try {
-        _resultadoAprobado = await widget.cliente.confirmarCobroPosnet(
+        final r = await widget.cliente.confirmarCobroPosnet(
           ordenPendienteId: _ordenPendienteId!,
           lineas: widget.lineas,
           canal: widget.canal,
@@ -234,6 +232,7 @@ class _DialogoCobroPosnetCompanionState
           valorDescuento: widget.valorDescuento,
           encargueId: widget.encargueId,
         );
+        _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
         if (mounted) setState(() => _fase = _Fase.aprobado);
         return;
       } on ErrorCompanion catch (e) {
@@ -313,7 +312,7 @@ class _DialogoCobroPosnetCompanionState
         valorDescuento: widget.valorDescuento,
         encargueId: widget.encargueId,
       );
-      if (mounted) Navigator.of(context).pop(resultado);
+      if (mounted) Navigator.of(context).pop((ventaId: resultado.ventaId, totalCentavos: resultado.totalCentavos, aMano: true));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -325,101 +324,53 @@ class _DialogoCobroPosnetCompanionState
 
   void _cerrar() => Navigator.of(context).pop(_resultadoAprobado);
 
+  static const _textoSinPc = 'No se pudo conectar con la PC — revisá que esté prendida, con la app abierta, y que el celular esté en la misma WiFi.';
+
+  String get _nombreCanal => switch (widget.canal) {
+    canalDebito => 'Débito',
+    canalCredito => 'Crédito',
+    canalQr => 'QR',
+    _ => 'Mercado Pago',
+  };
+
+  /// Hoja de la terminal del mock (09 · estados de la terminal): una sola hoja "Cobrar por QR / Débito / Crédito" que cambia de
+  /// bloque según el estado. No se cierra tocando afuera.
   @override
   Widget build(BuildContext context) {
+    final monto = plataNs(widget.montoCentavos);
+    final List<Widget> bloques = switch (_fase) {
+      _Fase.creando => [FilaEsperaNs('Enviando la orden a la terminal — $monto')],
+      _Fase.esperando => [FilaEsperaNs(_enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto')],
+      _Fase.cancelando => [const FilaEsperaNs('Cancelando en la terminal...')],
+      _Fase.cobrandoAMano || _Fase.guardandoVenta => [FilaEsperaNs('Grabando la venta — $monto')],
+      _Fase.aprobado => [HeroHojaNs(rotulo: 'Pago aprobado', cifra: monto, apoyo: _nombreCanal)],
+      _Fase.rechazado => [const InfoNs('El pago no se aprobó en la terminal.', tono: TonoNs.warn), const InfoNs('Todavía no se cobró nada.')],
+      _Fase.expirado => [const InfoNs('No se pudo confirmar el pago a tiempo. Revisá la terminal.', tono: TonoNs.warn)],
+      _Fase.error when _pagoAprobado => [InfoNs(_error ?? '', tono: TonoNs.bad), HeroHojaNs(rotulo: 'Ya cobrado', cifra: monto, apoyo: _nombreCanal)],
+      _Fase.error => [InfoNs(_error ?? _textoSinPc, tono: TonoNs.warn)],
+    };
     return PopScope(
       canPop: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Cobrar por ${nombreCanal(widget.canal)}',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: Espaciado.lg),
-          _contenido(),
-          const SizedBox(height: Espaciado.lg),
-          _filaBotones(),
-        ],
-      ),
-    );
-  }
-
-  /// `_botones()` puede devolver 0, 1 o 2 botones según la fase — con dos,
-  /// van lado a lado (mismo ancho cada uno); con uno, ocupa todo el ancho.
-  Widget _filaBotones() {
-    final botones = _botones();
-    if (botones.isEmpty) return const SizedBox.shrink();
-    if (botones.length == 1) return botones.first;
-    return Row(
-      children: [
-        for (var i = 0; i < botones.length; i++) ...[
-          if (i > 0) const SizedBox(width: Espaciado.sm),
-          Expanded(child: botones[i]),
-        ],
-      ],
-    );
-  }
-
-  Widget _contenido() {
-    final monto = formatearARS(widget.montoCentavos);
-    return switch (_fase) {
-      _Fase.creando => _filaCargando(
-        'Enviando la orden a la terminal — $monto',
-      ),
-      _Fase.esperando => _filaCargando(
-        _enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto',
-      ),
-      _Fase.cancelando => _filaCargando('Cancelando en la terminal...'),
-      _Fase.cobrandoAMano || _Fase.guardandoVenta => _filaCargando('Grabando la venta — $monto'),
-      _Fase.aprobado => Text('Pago aprobado — $monto'),
-      _Fase.rechazado => const Text('El pago no se aprobó en la terminal.'),
-      _Fase.expirado => const Text(
-        'No se pudo confirmar el pago a tiempo. Revisá la terminal.',
-      ),
-      _Fase.error => Text(_error ?? 'No se pudo conectar con Mercado Pago.'),
-    };
-  }
-
-  Widget _filaCargando(String texto) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        const SizedBox(width: 16),
-        Flexible(child: Text(texto)),
-      ],
+      child: HojaNs(titulo: 'Cobrar por $_nombreCanal', bloques: bloques, botones: _botones()),
     );
   }
 
   List<Widget> _botones() {
     return switch (_fase) {
-      _Fase.creando || _Fase.esperando => [
-        TextButton(onPressed: _cancelar, child: const Text('Cancelar')),
-      ],
+      _Fase.creando || _Fase.esperando => [BotonNs.secundario(context, 'Cancelar', _cancelar)],
       _Fase.cancelando || _Fase.cobrandoAMano || _Fase.guardandoVenta => [],
-      _Fase.aprobado => [
-        FilledButton(onPressed: _cerrar, child: const Text('Listo')),
-      ],
-      _Fase.error when _errorAlCancelar => [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cerrar'),
-        ),
-      ],
+      _Fase.aprobado => [BotonNs.primario(context, 'Listo', _cerrar)],
+      _Fase.error when _errorAlCancelar => [BotonNs.primario(context, 'Cerrar', () => Navigator.of(context).pop())],
       // Pago ya aprobado: solo se puede volver a guardar ESTA venta (o cerrar y revisarla en el cierre: la orden queda "sin resolver").
       _Fase.error when _pagoAprobado => [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar')),
-        FilledButton(onPressed: _guardarVentaAprobada, child: const Text('Reintentar')),
+        BotonNs.primario(context, 'Reintentar', _guardarVentaAprobada),
+        BotonNs.secundario(context, 'Cerrar', () => Navigator.of(context).pop()),
       ],
+      // El mock no dibuja "Cancelar" acá, pero sin salida la hoja (que no se cierra tocando afuera) dejaba a la persona encerrada.
       _Fase.rechazado || _Fase.expirado || _Fase.error => [
-        TextButton(onPressed: _cobrarAMano, child: const Text('Cobrar a mano')),
-        FilledButton(onPressed: _reintentar, child: const Text('Reintentar')),
+        BotonNs.primario(context, 'Reintentar', _reintentar),
+        BotonNs.secundario(context, 'Cobrar a mano', _cobrarAMano),
+        BotonNs.texto(context, 'Cancelar', () => Navigator.of(context).pop()),
       ],
     };
   }

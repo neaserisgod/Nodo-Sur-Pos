@@ -24,29 +24,18 @@ import 'package:flutter/material.dart';
 import '../domain/dinero.dart';
 import '../domain/medio_pago.dart';
 import '../domain/venta.dart';
-import '../ui/comun/campo_texto.dart';
-import '../ui/tema/tokens.dart';
 import 'base_local.dart';
 import 'carrito_venta.dart';
 import 'cliente_companion.dart';
+import 'kit/kit_ns.dart';
 import 'debounce.dart';
 import 'emparejamiento.dart';
-import 'fila_linea_carrito.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
-import 'tema/chip_icono.dart';
-import '../ui/comun/estado_vacio.dart';
-import 'tema/hoja_vidrio.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
-import 'tema/error_en_linea.dart';
-import 'tema/esqueleto_companion.dart';
-import 'tema/app_bar_companion.dart';
 
 enum _MedioHistorico { efectivo, virtual, mixto }
 
@@ -72,7 +61,7 @@ String _medioDeTexto(String medio) => switch (medio) {
   _ => 'Mixto',
 };
 
-/// El hub: lista los días ya cargados, "+ Nuevo día" para arrancar uno.
+/// El hub (mock 39): lista los días ya cargados, "Nuevo día" para arrancar uno.
 class PantallaCargaHistorica extends StatefulWidget {
   const PantallaCargaHistorica({super.key});
 
@@ -100,9 +89,7 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
     final conexion = await leerConexion();
     final usuario = await leerUsuario();
     if (usuario == null || !mounted) return;
-    final cliente = conexion == null
-        ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()))
-        : await resolverServicioCompanion(conexion);
+    final cliente = conexion == null ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion())) : await resolverServicioCompanion(conexion);
     if (!mounted) return;
     setState(() {
       _cliente = cliente;
@@ -113,7 +100,10 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
 
   Future<void> _cargarDias() async {
     if (_cliente == null) return;
-    setState(() => _cargando = true);
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
     try {
       final dias = await _cliente!.diasHistoricos();
       if (mounted) setState(() => _dias = dias);
@@ -125,111 +115,68 @@ class _PantallaCargaHistoricaState extends State<PantallaCargaHistorica> {
   }
 
   Future<void> _nuevoDia() async {
-    await pushSinTeclado(
-      context,
-      (_) => _PantallaNuevoDiaHistorico(
-        cliente: _cliente!,
-        usuarioId: _usuarioId!,
-      ),
-    );
+    await pushSinTeclado(context, (_) => _PantallaNuevoDiaHistorico(cliente: _cliente!, usuarioId: _usuarioId!));
     await _cargarDias();
   }
 
   Future<void> _abrirDia(DiaHistoricoCompanion dia) async {
-    await pushSinTeclado(
-      context,
-      (_) => _PantallaDetalleDiaHistorico(
-        cliente: _cliente!,
-        usuarioId: _usuarioId!,
-        sesionId: dia.sesionId,
-        fecha: dia.fecha,
-      ),
-    );
+    await pushSinTeclado(context, (_) => _PantallaDetalleDiaHistorico(cliente: _cliente!, usuarioId: _usuarioId!, sesionId: dia.sesionId, fecha: dia.fecha));
     await _cargarDias();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Días históricos'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _cliente == null ? null : _nuevoDia,
-        icon: const Icon(IconosPlazoleta.add),
-        label: const Text('Nuevo día'),
-      ),
-      body: SafeArea(
-        child: _cargando
-            ? const EsqueletoLista()
-            : _error != null
-            ? Center(
-                child: ErrorEnLinea(_error!),
-              )
-            : _dias.isEmpty
-            ? const EstadoVacio(
-                mensaje: 'Todavía no cargaste ningún día — tocá "Nuevo día"',
-                icono: IconosPlazoleta.history,
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(Espaciado.lg),
-                itemCount: _dias.length,
-                itemBuilder: (context, i) {
-                  final d = _dias[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                    child: Superficie(
-                      padding: EdgeInsets.zero,
-                      child: Presionable(
-                        onTap: () => _abrirDia(d),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Espaciado.lg,
-                            vertical: Espaciado.md,
-                          ),
-                          child: Row(
-                            children: [
-                              ChipIcono(icono: IconosPlazoleta.eventOutlined, color: context.colores.acento),
-                              const SizedBox(width: Espaciado.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _formatearFecha(d.fecha),
-                                      style: Theme.of(context).textTheme.titleMedium,
-                                    ),
-                                    Text(
-                                      '${d.cantidadVentas} venta(s)',
-                                      style: TextStyle(color: context.colores.textoSecundario),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                formatearARS(d.totalCentavos),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+    final ns = context.ns;
+    return PaginaNs(
+      titulo: 'Días históricos',
+      cuerpo: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const InfoNs('Cargá ventas de días que no registraste para tener las ganancias completas. No descuentan stock.'),
+          const SizedBox(height: 10),
+          if (_cargando)
+            const EsqueletoListaNs(filas: 2, alto: 64)
+          else if (_error != null)
+            InfoNs(_error!, tono: TonoNs.bad)
+          else if (_dias.isEmpty)
+            Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Todavía no cargaste ningún día. Tocá "Nuevo día".', style: estiloNs(16, color: ns.mute)))
+          else
+            for (final d in _dias) ...[
+              FilaProductoNs(
+                nombre: _formatearFecha(d.fecha),
+                detalle: '${d.cantidadVentas} ${d.cantidadVentas == 1 ? 'venta' : 'ventas'}',
+                valor: plataNs(d.totalCentavos),
+                onTap: () => _abrirDia(d),
               ),
+              const SizedBox(height: 10),
+            ],
+        ],
       ),
+      botones: [BotonNs.primario(context, 'Nuevo día', _cliente == null ? null : _nuevoDia, habilitado: _cliente != null, alto: 60)],
     );
   }
 }
 
-/// El detalle de un día ya cargado: sus ventas, con eliminar puntual,
-/// agregar más, o borrar el día entero.
+/// Página con el aspecto del mock: volver, título de 32, el cuerpo que scrollea y los botones fijos abajo.
+/// Confirmación de borrar algo del histórico (mock 39g/39h): hoja con el detalle y "Borrar" en rojo.
+Future<bool> _confirmarBorrado(BuildContext context, {required String titulo, String? texto}) async {
+  final ok = await mostrarHojaNs<bool>(
+    context,
+    builder: (ctx) => HojaNs(
+      titulo: titulo,
+      texto: texto,
+      botones: [
+        BotonNs.peligroSolido(ctx, 'Borrar', () => Navigator.of(ctx).pop(true)),
+        BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
+
+/// El detalle de un día ya cargado (mock 39e/39f): resumen, ventas con tacho, agregar más o borrar el día.
 class _PantallaDetalleDiaHistorico extends StatefulWidget {
-  const _PantallaDetalleDiaHistorico({
-    required this.cliente,
-    required this.usuarioId,
-    required this.sesionId,
-    required this.fecha,
-  });
+  const _PantallaDetalleDiaHistorico({required this.cliente, required this.usuarioId, required this.sesionId, required this.fecha});
 
   final ServicioCompanion cliente;
   final int usuarioId;
@@ -237,16 +184,15 @@ class _PantallaDetalleDiaHistorico extends StatefulWidget {
   final DateTime fecha;
 
   @override
-  State<_PantallaDetalleDiaHistorico> createState() =>
-      _PantallaDetalleDiaHistoricoState();
+  State<_PantallaDetalleDiaHistorico> createState() => _PantallaDetalleDiaHistoricoState();
 }
 
-class _PantallaDetalleDiaHistoricoState
-    extends State<_PantallaDetalleDiaHistorico> {
+class _PantallaDetalleDiaHistoricoState extends State<_PantallaDetalleDiaHistorico> {
   List<VentaHistoricaResumenCompanion> _ventas = [];
   ResumenDiaHistoricoCompanion? _resumen;
   bool _cargando = true;
   String? _error;
+  bool _verVentas = false;
 
   @override
   void initState() {
@@ -255,12 +201,12 @@ class _PantallaDetalleDiaHistoricoState
   }
 
   Future<void> _cargar() async {
-    setState(() => _cargando = true);
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
     try {
-      final resultados = await Future.wait([
-        widget.cliente.ventasDeDiaHistorico(widget.sesionId),
-        widget.cliente.resumenDiaHistorico(widget.sesionId),
-      ]);
+      final resultados = await Future.wait([widget.cliente.ventasDeDiaHistorico(widget.sesionId), widget.cliente.resumenDiaHistorico(widget.sesionId)]);
       if (mounted) {
         setState(() {
           _ventas = resultados[0] as List<VentaHistoricaResumenCompanion>;
@@ -275,239 +221,126 @@ class _PantallaDetalleDiaHistoricoState
   }
 
   Future<void> _eliminarVenta(VentaHistoricaResumenCompanion venta) async {
-    // Antes borraba directo con un solo toque — una fila en una lista larga
-    // es más fácil de tocar por error que el botón de "Borrar día completo"
-    // (que sí tenía confirmación), así que la acción más chica quedaba con
-    // MENOS protección que la más grande.
-    final confirmar = await confirmarAccionDestructiva(
-      context,
-      titulo: 'Borrar esta venta',
-      contenido: formatearARS(venta.totalCentavos),
-    );
-    if (!confirmar) return;
+    // Una fila en una lista larga es fácil de tocar por error: pide confirmación como "Borrar el día".
+    if (!await _confirmarBorrado(context, titulo: 'Borrar esta venta', texto: plataNs(venta.totalCentavos))) return;
     try {
-      await widget.cliente.eliminarVentaHistorica(
-        sesionId: widget.sesionId,
-        ventaId: venta.ventaId,
-        usuarioId: widget.usuarioId,
-      );
+      await widget.cliente.eliminarVentaHistorica(sesionId: widget.sesionId, ventaId: venta.ventaId, usuarioId: widget.usuarioId);
       await _cargar();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo borrar: ${mensajeDeError(e)}')),
-        );
-      }
+      if (mounted) mostrarAvisoNs(context, 'No se pudo borrar: ${mensajeDeError(e)}', largo: true);
     }
   }
 
   Future<void> _agregarMas() async {
-    await pushSinTeclado(
-      context,
-      (_) => _PantallaAgregarADiaHistorico(
-        cliente: widget.cliente,
-        usuarioId: widget.usuarioId,
-        sesionId: widget.sesionId,
-        fecha: widget.fecha,
-      ),
-    );
+    await pushSinTeclado(context, (_) => _PantallaAgregarADiaHistorico(cliente: widget.cliente, usuarioId: widget.usuarioId, sesionId: widget.sesionId, fecha: widget.fecha));
     await _cargar();
   }
 
   Future<void> _borrarDia() async {
-    final confirmar = await confirmarAccionDestructiva(
-      context,
-      titulo: 'Borrar día completo',
-      contenido: 'Se borran las ${_ventas.length} venta(s) de ${_formatearFecha(widget.fecha)}.',
-    );
-    if (!confirmar) return;
+    if (!await _confirmarBorrado(context, titulo: 'Borrar día completo', texto: 'Se borran las ${_ventas.length} ventas de ${_formatearFecha(widget.fecha)}.')) return;
     try {
       await widget.cliente.eliminarDiaHistorico(widget.sesionId);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo borrar: ${mensajeDeError(e)}')),
-        );
-      }
+      if (mounted) mostrarAvisoNs(context, 'No se pudo borrar: ${mensajeDeError(e)}', largo: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      // Arranca en "Resumen" (El dueño, 2026-09-07: "hay que scrollear
-      // demasiado... sobre todo que ordenemos y resumamos todo") — antes
-      // esta pantalla era directo la lista de ventas una por una, y para
-      // saber "cuánto vendí" o "cuánto separo de tal proveedor" había que
-      // sumarlas a ojo. "Ventas" (para editar/borrar una puntual) queda
-      // en la segunda pestaña, no es lo primero que hace falta ver.
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_formatearFecha(widget.fecha)),
-          actions: [
-            IconButton(
-              tooltip: 'Borrar el día',
-              icon: const Icon(IconosPlazoleta.deleteOutline),
-              onPressed: _borrarDia,
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Resumen'),
-              Tab(text: 'Ventas'),
-            ],
+    return PaginaNs(
+      titulo: _formatearFecha(widget.fecha),
+      cuerpo: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [ChipNs(texto: 'Resumen', activo: !_verVentas, onTap: () => setState(() => _verVentas = false)), const SizedBox(width: 8), ChipNs(texto: 'Ventas', activo: _verVentas, onTap: () => setState(() => _verVentas = true))]),
+          const SizedBox(height: 10),
+          Expanded(
+            child: _cargando
+                ? const EsqueletoListaNs(filas: 5, alto: 72)
+                : _error != null
+                ? SingleChildScrollView(child: EstadoErrorNs(texto: _error!, onReintentar: _cargar))
+                : (_verVentas ? _pestanaVentas(context) : _pestanaResumen(context)),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _agregarMas,
-          icon: const Icon(IconosPlazoleta.add),
-          label: const Text('Agregar más'),
-        ),
-        body: SafeArea(
-          child: _cargando
-              ? const EsqueletoLista()
-              : _error != null
-              ? Center(
-                  child: ErrorEnLinea(_error!),
-                )
-              : TabBarView(
-                  children: [_pestanaResumen(context), _pestanaVentas(context)],
-                ),
-        ),
+        ],
       ),
+      botones: [
+        BotonNs.primario(context, 'Agregar más', _agregarMas, alto: 60),
+        BotonNs.peligroSuave(context, 'Borrar el día', _borrarDia),
+      ],
     );
   }
 
   Widget _pestanaResumen(BuildContext context) {
+    final ns = context.ns;
     final resumen = _resumen;
     if (resumen == null) return const SizedBox.shrink();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.lg,
-        80,
-      ),
+      padding: EdgeInsets.zero,
       children: [
-        Superficie(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                formatearARS(resumen.totalCentavos),
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                '${_ventas.length} venta(s)',
-                style: TextStyle(color: context.colores.textoSecundario),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Espaciado.md),
-              FilaDatoSimple(
-                'Efectivo',
-                formatearARS(resumen.efectivoCentavos),
-              ),
-              FilaDatoSimple(
-                'Mercado Pago',
-                formatearARS(resumen.mercadoPagoCentavos),
-              ),
-              if (resumen.cigarrillosListaCentavos > 0)
-                FilaDatoSimple(
-                  'Cigarrillos a separar (lista)',
-                  formatearARS(resumen.cigarrillosListaCentavos),
-                ),
-            ],
-          ),
-        ),
-        SeccionProductosSinDatos(productos: resumen.productosSinDatos),
-        const SizedBox(height: Espaciado.lg),
-        Text('Por proveedor', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: Espaciado.sm),
+        HeroHojaNs(rotulo: 'Vendido ese día', cifra: plataNs(resumen.totalCentavos), apoyo: '${_ventas.length} ${_ventas.length == 1 ? 'venta' : 'ventas'}'),
+        FilaClaveValorNs(clave: 'Efectivo', valor: plataNs(resumen.efectivoCentavos)),
+        FilaClaveValorNs(clave: 'Mercado Pago', valor: plataNs(resumen.mercadoPagoCentavos)),
+        if (resumen.cigarrillosListaCentavos > 0) FilaClaveValorNs(clave: 'Cigarrillos a separar (lista)', valor: plataNs(resumen.cigarrillosListaCentavos)),
+        if (resumen.productosSinDatos.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          const SeccionNs('Vendido sin proveedor o costo'),
+          const SizedBox(height: 10),
+          const InfoNs('Completalo para tener números más claros.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w500),
+          const SizedBox(height: 10),
+          for (final p in resumen.productosSinDatos) ...[
+            FilaProductoNs(nombre: p.nombreProducto, detalle: [if (p.sinProveedor) 'sin proveedor', if (p.sinCosto) 'sin costo'].join(' · '), valor: plataNs(p.vendidoCentavos)),
+            const SizedBox(height: 10),
+          ],
+        ],
+        const SizedBox(height: 18),
+        const SeccionNs('Por proveedor'),
+        const SizedBox(height: 10),
         if (resumen.porProveedor.isEmpty)
-          Text(
-            'Nada con proveedor y costo cargado todavía.',
-            style: TextStyle(color: context.colores.textoSecundario),
-          )
+          Text('Nada con proveedor y costo cargado todavía.', style: estiloNs(15, color: ns.mute))
         else
-          for (final p in resumen.porProveedor)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Espaciado.sm),
-              child: Superficie(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      p.nombreProveedor,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: Espaciado.xs),
-                    FilaDatoSimple('Vendido', formatearARS(p.vendidoCentavos)),
-                    FilaDatoSimple(
-                      'Separar (costo real)',
-                      formatearARS(p.costoRealCentavos),
-                    ),
-                    FilaDatoSimple(
-                      'Ganancia',
-                      formatearARS(p.gananciaCentavos),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          for (final p in resumen.porProveedor) ...[
+            FilaProductoNs(nombre: p.nombreProveedor, detalle: 'Vendido ${plataNs(p.vendidoCentavos)} · Ganancia ${plataNs(p.gananciaCentavos)}', valor: plataNs(p.costoRealCentavos)),
+            const SizedBox(height: 10),
+          ],
       ],
     );
   }
 
   Widget _pestanaVentas(BuildContext context) {
+    final ns = context.ns;
     if (_ventas.isEmpty) {
-      return const EstadoVacio(
-        mensaje: 'Sin ventas — "Agregar más" para cargar',
-        icono: IconosPlazoleta.receiptLongOutlined,
-      );
+      return Align(alignment: Alignment.topCenter, child: Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Sin ventas — "Agregar más" para cargar', style: estiloNs(16, color: ns.mute))));
     }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.lg,
-        80,
-      ),
+    return ListView.separated(
+      padding: EdgeInsets.zero,
       itemCount: _ventas.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final v = _ventas[i];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: Espaciado.sm),
-          child: Superficie(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        v.detalle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        _medioDeTexto(v.medioResumen),
-                        style: TextStyle(
-                          color: context.colores.textoSecundario,
-                        ),
-                      ),
-                    ],
-                  ),
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+          decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(v.detalle, maxLines: 3, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, altura: 1.2, color: ns.ink)),
+                    Text(_medioDeTexto(v.medioResumen), style: estiloNs(13, color: ns.mute)),
+                  ],
                 ),
-                Text(formatearARS(v.totalCentavos)),
-                IconButton(
-                  tooltip: 'Eliminar la venta',
-                  icon: const Icon(IconosPlazoleta.deleteOutline),
-                  onPressed: () => _eliminarVenta(v),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              Text(plataNs(v.totalCentavos), style: estiloNs(18, peso: FontWeight.w500, track: -0.03, color: ns.ink, tabular: true)),
+              const SizedBox(width: 6),
+              PresionNs(
+                onTap: () => _eliminarVenta(v),
+                etiqueta: 'Borrar la venta',
+                child: Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.bbg, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.papelera, tamanio: 20, color: ns.b)),
+              ),
+            ],
           ),
         );
       },
@@ -515,38 +348,6 @@ class _PantallaDetalleDiaHistoricoState
   }
 }
 
-/// Etiqueta a la izquierda, valor a la derecha — mismo patrón que
-/// `FilaDato` del kit de escritorio (`lib/ui/comun/`), pero sin depender
-/// de él para no acoplar la companion al kit de escritorio por una fila
-/// tan chica.
-class FilaDatoSimple extends StatelessWidget {
-  const FilaDatoSimple(this.etiqueta, this.valor, {super.key});
-  final String etiqueta;
-  final String valor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            etiqueta,
-            style: TextStyle(color: context.colores.textoSecundario),
-          ),
-          Text(valor, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
-/// "Vendido sin proveedor o costo", producto por producto (El dueño,
-/// 2026-09-07: "de lo vendido decime que no tiene costo o proveedor, así
-/// le asignamos uno") — compartida por el resumen de un día histórico y
-/// el arqueo en vivo (Regla 3, mismo dato: `ResumenDiaHistoricoCompanion.
-/// productosSinDatos`).
 class SeccionProductosSinDatos extends StatelessWidget {
   const SeccionProductosSinDatos({super.key, required this.productos});
 
@@ -558,70 +359,38 @@ class SeccionProductosSinDatos extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: Espaciado.lg),
-        Text(
-          'Vendido sin proveedor o costo — completalo para números más claros',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: Espaciado.sm),
-        for (final p in productos)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Espaciado.sm),
-            child: Superficie(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          p.nombreProducto,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          [
-                            if (p.sinProveedor) 'sin proveedor',
-                            if (p.sinCosto) 'sin costo',
-                          ].join(' · '),
-                          style: TextStyle(
-                            color: context.colores.textoSecundario,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(formatearARS(p.vendidoCentavos)),
-                ],
-              ),
-            ),
+        const SizedBox(height: 18),
+        const SeccionNs('Vendido sin proveedor o costo — completalo para números más claros'),
+        const SizedBox(height: 10),
+        for (final p in productos) ...[
+          FilaProductoNs(
+            nombre: p.nombreProducto,
+            detalle: [if (p.sinProveedor) 'sin proveedor', if (p.sinCosto) 'sin costo'].join(' · '),
+            valor: plataNs(p.vendidoCentavos),
           ),
+          const SizedBox(height: 10),
+        ],
       ],
     );
   }
 }
 
-/// Elegir la fecha y armar un día nuevo de cero.
+/// Elegir la fecha y armar un día nuevo de cero (mock 40).
 class _PantallaNuevoDiaHistorico extends StatefulWidget {
-  const _PantallaNuevoDiaHistorico({
-    required this.cliente,
-    required this.usuarioId,
-  });
+  const _PantallaNuevoDiaHistorico({required this.cliente, required this.usuarioId});
 
   final ServicioCompanion cliente;
   final int usuarioId;
 
   @override
-  State<_PantallaNuevoDiaHistorico> createState() =>
-      _PantallaNuevoDiaHistoricoState();
+  State<_PantallaNuevoDiaHistorico> createState() => _PantallaNuevoDiaHistoricoState();
 }
 
-class _PantallaNuevoDiaHistoricoState
-    extends State<_PantallaNuevoDiaHistorico> {
+class _PantallaNuevoDiaHistoricoState extends State<_PantallaNuevoDiaHistorico> {
   DateTime? _fecha;
 
-  /// Solo el día (El dueño, 2026-09-07: "necesito que solo sea el día que se
-  /// cargue") — sin hora: la carga histórica es para saber ganancias, no
-  /// para reconstruir a qué hora se vendió cada cosa.
+  /// Solo el día (El dueño, 2026-09-07: "necesito que solo sea el día que se cargue") — sin hora: la carga histórica es
+  /// para saber ganancias, no para reconstruir a qué hora se vendió cada cosa. Hasta 5 años atrás.
   Future<void> _elegirFecha() async {
     final ahora = DateTime.now();
     final fecha = await showDatePicker(
@@ -629,6 +398,7 @@ class _PantallaNuevoDiaHistoricoState
       initialDate: _fecha ?? ahora,
       firstDate: DateTime(ahora.year - 5),
       lastDate: ahora,
+      helpText: 'Elegí la fecha',
     );
     if (fecha == null || !mounted) return;
     setState(() => _fecha = DateTime(fecha.year, fecha.month, fecha.day, 12));
@@ -638,39 +408,24 @@ class _PantallaNuevoDiaHistoricoState
   Widget build(BuildContext context) {
     final fecha = _fecha;
     if (fecha == null) {
-      return Scaffold(
-        appBar: const AppBarCompanion(titulo: 'Nuevo día histórico'),
-        body: SafeArea(
-          child: Center(
-            child: FilledButton(
-              onPressed: _elegirFecha,
-              child: const Text('Elegir la fecha de este día'),
-            ),
-          ),
-        ),
+      return PaginaNs(
+        titulo: 'Nuevo día histórico',
+        cuerpo: ListView(padding: EdgeInsets.zero, children: const [InfoNs('Elegí el día que querés cargar. Después armás las ventas una por una, cada una con su medio de pago.')]),
+        botones: [BotonNs.primario(context, 'Elegir la fecha de este día', _elegirFecha, alto: 60)],
       );
     }
     return _AcumuladorDeVentas(
       cliente: widget.cliente,
       titulo: _formatearFecha(fecha),
       textoBoton: 'Guardar día',
-      onGuardar: (ventas) => widget.cliente.guardarDiaHistorico(
-        fecha: fecha,
-        usuarioId: widget.usuarioId,
-        ventas: ventas,
-      ),
+      onGuardar: (ventas) => widget.cliente.guardarDiaHistorico(fecha: fecha, usuarioId: widget.usuarioId, ventas: ventas),
     );
   }
 }
 
 /// Agregar más ventas a un día que ya existe.
 class _PantallaAgregarADiaHistorico extends StatelessWidget {
-  const _PantallaAgregarADiaHistorico({
-    required this.cliente,
-    required this.usuarioId,
-    required this.sesionId,
-    required this.fecha,
-  });
+  const _PantallaAgregarADiaHistorico({required this.cliente, required this.usuarioId, required this.sesionId, required this.fecha});
 
   final ServicioCompanion cliente;
   final int usuarioId;
@@ -681,35 +436,23 @@ class _PantallaAgregarADiaHistorico extends StatelessWidget {
   Widget build(BuildContext context) {
     return _AcumuladorDeVentas(
       cliente: cliente,
-      titulo: 'Agregar a ${_formatearFecha(fecha)}',
-      textoBoton: 'Agregar',
-      onGuardar: (ventas) => cliente.agregarVentasADiaHistorico(
-        sesionId: sesionId,
-        usuarioId: usuarioId,
-        ventas: ventas,
-      ),
+      titulo: _formatearFecha(fecha),
+      textoBoton: 'Agregar al día',
+      onGuardar: (ventas) => cliente.agregarVentasADiaHistorico(sesionId: sesionId, usuarioId: usuarioId, ventas: ventas),
     );
   }
 }
 
-/// Junta ventas en memoria (buscar → carrito → elegir medio → "Agregar
-/// venta", las veces que haga falta) y recién las manda todas juntas con
-/// [onGuardar] — comparten esto tanto armar un día de cero como agregarle
-/// más a uno que ya existe (Regla 3: un solo lugar para "acumular antes de
-/// guardar").
+/// Junta ventas en memoria (buscar → carrito → elegir medio → "Agregar venta", las veces que haga falta) y recién las
+/// manda todas juntas con [onGuardar] — comparten esto tanto armar un día de cero como agregarle más a uno que ya existe
+/// (Regla 3: un solo lugar para "acumular antes de guardar").
 class _AcumuladorDeVentas extends StatefulWidget {
-  const _AcumuladorDeVentas({
-    required this.cliente,
-    required this.titulo,
-    required this.textoBoton,
-    required this.onGuardar,
-  });
+  const _AcumuladorDeVentas({required this.cliente, required this.titulo, required this.textoBoton, required this.onGuardar});
 
   final ServicioCompanion cliente;
   final String titulo;
   final String textoBoton;
-  final Future<void> Function(List<VentaHistoricaPendienteCompanion> ventas)
-  onGuardar;
+  final Future<void> Function(List<VentaHistoricaPendienteCompanion> ventas) onGuardar;
 
   @override
   State<_AcumuladorDeVentas> createState() => _AcumuladorDeVentasState();
@@ -720,65 +463,15 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
   bool _guardando = false;
   String? _error;
 
-  void _agregarVenta(VentaHistoricaPendienteCompanion venta) {
-    setState(() => _ventasCargadas.add(venta));
-  }
+  void _agregarVenta(VentaHistoricaPendienteCompanion venta) => setState(() => _ventasCargadas.add(venta));
 
-  void _quitarVenta(int index) {
-    setState(() => _ventasCargadas.removeAt(index));
-    Navigator.of(
-      context,
-    ).pop(); // vuelve del diálogo de detalle a ver la lista actualizada
-    _mostrarVentasCargadas(context);
-  }
-
-  /// El dueño, 2026-09-07: "en las ventas históricas no me gusta que aparezca
-  /// abajo las ventas por agregar" — la tira de tarjetas siempre visible
-  /// se reemplazó por esta barra compacta (mismo patrón que la del
-  /// carrito del menú principal); el detalle con el tacho para borrar una
-  /// puntual queda a un toque, no ocupando la pantalla todo el tiempo.
-  Future<void> _mostrarVentasCargadas(BuildContext context) async {
-    if (_ventasCargadas.isEmpty) return;
-    await mostrarHojaVidrio<void>(
-      context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Ventas cargadas', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: Espaciado.sm),
-          SizedBox(
-            height: 320,
-            child: ListView.builder(
-              itemCount: _ventasCargadas.length,
-              itemBuilder: (context, i) {
-                final v = _ventasCargadas[i];
-                return ListTile(
-                  title: Text(
-                    'Venta ${i + 1} — ${formatearARS(v.totalParaMostrar)}',
-                  ),
-                  subtitle: Text(_medioDeTexto(v.medio)),
-                  trailing: IconButton(
-                    tooltip: 'Quitar la venta',
-                    icon: const Icon(IconosPlazoleta.deleteOutline),
-                    onPressed: () => _quitarVenta(i),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: Espaciado.md),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
+  void _quitarVenta(int index) => setState(() => _ventasCargadas.removeAt(index));
 
   Future<void> _guardar() async {
-    if (_ventasCargadas.isEmpty) return;
+    if (_ventasCargadas.isEmpty) {
+      mostrarAvisoNs(context, 'Agregá al menos una venta');
+      return;
+    }
     setState(() {
       _guardando = true;
       _error = null;
@@ -795,103 +488,64 @@ class _AcumuladorDeVentasState extends State<_AcumuladorDeVentas> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.titulo),
-        // Separado a propósito de "Agregar venta" (El dueño, 2026-09-07: "el
-        // botón de guardar para cerrar el día se confunde muy fácil e
-        // invita a apretarlo para guardar las ventas, y termino teniendo
-        // que volver a abrirlo") — antes los dos botones quedaban pegados
-        // y se parecían; acá arriba queda claro que termina todo el día,
-        // no una venta más.
-        actions: [
-          // Sin color a mano en ninguno de los dos (El dueño, 2026-09-13: "hay
-          // algo más sin el lenguaje?") — `Colors.white` acá era invisible
-          // en tema claro: este AppBar no tiene fondo propio, hereda el
-          // fondo normal de la app (claro en horario de local abierto), no
-          // uno oscuro como para justificar texto blanco a mano. Sin
-          // `color`, el `TextButton` ya trae el color correcto para los dos
-          // temas solo.
-          TextButton(
-            onPressed: _ventasCargadas.isEmpty || _guardando ? null : _guardar,
-            child: _guardando
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(widget.textoBoton),
-          ),
+    final ns = context.ns;
+    final total = _ventasCargadas.fold<int>(0, (acc, v) => acc + v.totalParaMostrar);
+    return PaginaNs(
+      titulo: widget.titulo,
+      cuerpo: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _ArmadorDeVenta(cliente: widget.cliente, onVentaLista: _agregarVenta),
+          if (_ventasCargadas.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            SeccionNs('${_ventasCargadas.length} ${_ventasCargadas.length == 1 ? 'venta cargada' : 'ventas cargadas'} · ${plataNs(total)}'),
+            const SizedBox(height: 10),
+            for (var i = 0; i < _ventasCargadas.length; i++) ...[
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 10, 10, 10),
+                decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Venta ${i + 1} — ${plataNs(_ventasCargadas[i].totalParaMostrar)}', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
+                          Text(_medioDeTexto(_ventasCargadas[i].medio), style: estiloNs(13, color: ns.mute)),
+                        ],
+                      ),
+                    ),
+                    PresionNs(
+                      onTap: () => _quitarVenta(i),
+                      etiqueta: 'Quitar la venta',
+                      child: Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.paper, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.papelera, tamanio: 20, color: ns.b)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ],
+          if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(Espaciado.md),
-                child: ErrorEnLinea(_error!),
-              ),
-            Expanded(
-              child: _ArmadorDeVenta(
-                cliente: widget.cliente,
-                onVentaLista: _agregarVenta,
-              ),
-            ),
-            if (_ventasCargadas.isNotEmpty) _barraVentasCargadas(context),
-          ],
+      botones: [
+        BotonNs(
+          texto: _guardando ? 'Guardando…' : widget.textoBoton,
+          onTap: _guardando ? null : _guardar,
+          alto: 60,
+          tamanio: 17,
+          fondo: _ventasCargadas.isEmpty ? ns.s : ns.prim,
+          color: _ventasCargadas.isEmpty ? ns.mute : TokensNs.blanco,
+          habilitado: !_guardando,
         ),
-      ),
-    );
-  }
-
-  Widget _barraVentasCargadas(BuildContext context) {
-    final total = _ventasCargadas.fold<int>(
-      0,
-      (acc, v) => acc + v.totalParaMostrar,
-    );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: context.colores.textoSecundario.withValues(alpha: 0.2),
-          ),
-        ),
-      ),
-      child: InkWell(
-        onTap: () => _mostrarVentasCargadas(context),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Espaciado.lg,
-            vertical: Espaciado.md,
-          ),
-          child: Row(
-            children: [
-              Text(
-                '${_ventasCargadas.length} venta(s)',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const Spacer(),
-              Text(
-                formatearARS(total),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(width: Espaciado.sm),
-              Icon(
-                IconosPlazoleta.receiptLongOutlined,
-                color: context.colores.textoSecundario,
-              ),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 }
 
-/// El armado de UNA venta: buscar (sin exigir stock), agregar al carrito,
-/// elegir medio, "Agregar venta" — devuelve la venta ya armada por
-/// [onVentaLista] y se vacía sola para la próxima.
+/// El armado de UNA venta (mock 40c): buscar (sin exigir stock), agregar al carrito, elegir cómo pagaron, "Agregar venta" —
+/// devuelve la venta ya armada por [onVentaLista] y se vacía sola para la próxima.
 class _ArmadorDeVenta extends StatefulWidget {
   const _ArmadorDeVenta({required this.cliente, required this.onVentaLista});
 
@@ -914,12 +568,8 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
   final _montoEfectivoCtrl = TextEditingController();
   String? _error;
 
-  /// Total real (con recargo de cigarrillos y redondeo, Regla 6/5) para el
-  /// medio elegido — sin esto el botón mostraba siempre el subtotal crudo,
-  /// sin importar el medio, y parecía que el recargo nunca se aplicaba
-  /// (El dueño, 2026-09-07: "revisa que la apk no agrega los recargos
-  /// automáticos" — el cálculo real ya estaba bien, lo que faltaba era
-  /// mostrarlo acá antes de confirmar).
+  /// Total real (con recargo de cigarrillos y redondeo, Regla 6/5) para el medio elegido: sin esto el botón mostraba
+  /// siempre el subtotal crudo (El dueño, 2026-09-07: "revisa que la apk no agrega los recargos automáticos").
   ResultadoTotalVenta? _resultado;
   bool _calculando = false;
 
@@ -930,10 +580,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
     }
     setState(() => _calculando = true);
     try {
-      final resultado = await widget.cliente.calcularVenta(
-        lineas: _carrito,
-        medio: _medio.texto,
-      );
+      final resultado = await widget.cliente.calcularVenta(lineas: _carrito, medio: _medio.texto);
       if (mounted) setState(() => _resultado = resultado);
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
@@ -960,12 +607,8 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
     }
     setState(() => _buscando = true);
     try {
-      final resultado = await widget.cliente.buscarVenta(
-        texto,
-        exigirStock: false,
-      );
-      // Descarta una respuesta que ya no corresponde al texto actual —
-      // otra, más nueva, pudo llegar antes por el jitter normal de WiFi.
+      final resultado = await widget.cliente.buscarVenta(texto, exigirStock: false);
+      // Descarta una respuesta que ya no corresponde al texto actual: otra, más nueva, pudo llegar antes por el jitter del WiFi.
       if (mounted && _busquedaCtrl.text == texto) {
         setState(() {
           _resultados = resultado.resultados;
@@ -973,33 +616,21 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
         });
       }
     } finally {
-      if (mounted && _busquedaCtrl.text == texto) {
-        setState(() => _buscando = false);
-      }
+      if (mounted && _busquedaCtrl.text == texto) setState(() => _buscando = false);
     }
   }
 
   void _agregarAlCarrito(ProductoCompanion producto) {
-    final resultado = lineaDesdeResultadoBusqueda(
-      producto,
-      gramos: _gramosBusqueda,
-    );
+    final resultado = lineaDesdeResultadoBusqueda(producto, gramos: _gramosBusqueda);
     if (resultado.error != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(resultado.error!)));
+      mostrarAvisoNs(context, resultado.error!, largo: true);
       return;
     }
     final nueva = resultado.linea!;
     setState(() {
-      final indiceExistente = _carrito.indexWhere(
-        (l) => l.productoId == nueva.productoId,
-      );
-      if (indiceExistente != -1) {
-        _carrito[indiceExistente] = sumarLineasVenta(
-          _carrito[indiceExistente],
-          nueva,
-        );
+      final i = _carrito.indexWhere((l) => l.productoId == nueva.productoId);
+      if (i != -1) {
+        _carrito[i] = sumarLineasVenta(_carrito[i], nueva);
       } else {
         _carrito.add(nueva);
       }
@@ -1010,19 +641,41 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
     _recalcular();
   }
 
-  /// Bug real, encontrado revisando que el recargo se aplique bien en las
-  /// dos apps (El dueño, 2026-09-08): esta pantalla mandaba `_medio.texto`
-  /// literal ("mixto" si se apretó Mixto) sin importar el monto que se
-  /// terminaba tipeando — mismo error que ya se había encontrado y
-  /// arreglado en el escritorio (`VentaControlador.confirmarMixto`,
-  /// `DECISIONES.md`): un "mixto" con el efectivo en $0 es virtual puro
-  /// (no debería redondear, Regla 2) y un "mixto" con el efectivo igual al
-  /// total es efectivo puro (no debería llevar recargo de cigarrillos,
-  /// Regla 6) — mandar "mixto" tal cual en cualquiera de los dos casos
-  /// cobraba de más. Ahora reclasifica con la misma `clasificarComposicion`
-  /// del dominio antes de mandar nada, y si dejó de ser mixto de verdad
-  /// vuelve a pedir el total con el medio correcto (el recargo/redondeo
-  /// cambia según cuál sea).
+  LineaVenta _conValor(LineaVenta l, int valor) {
+    if (l is LineaVentaPesable) {
+      return LineaVentaPesable(productoId: l.productoId, nombreProducto: l.nombreProducto, proveedorId: l.proveedorId, gramos: valor, precioPorKiloCentavos: l.precioPorKiloCentavos, costoPorKiloCentavos: l.costoPorKiloCentavos);
+    }
+    final u = l as LineaVentaPorUnidad;
+    return LineaVentaPorUnidad(
+      productoId: u.productoId,
+      nombreProducto: u.nombreProducto,
+      proveedorId: u.proveedorId,
+      cantidad: valor,
+      esVarios: u.esVarios,
+      tipoCigarrillo: u.tipoCigarrillo,
+      precioUnitarioCentavos: u.precioUnitarioCentavos,
+      costoUnitarioCentavos: u.costoUnitarioCentavos,
+    );
+  }
+
+  /// − / + de una línea: 1 unidad, o 50 g si es por peso; por debajo de 1 la saca.
+  void _ajustar(int i, int signo) {
+    final l = _carrito[i];
+    final actual = l is LineaVentaPesable ? l.gramos : (l as LineaVentaPorUnidad).cantidad;
+    final nuevo = actual + (l is LineaVentaPesable ? 50 : 1) * signo;
+    setState(() {
+      if (nuevo <= 0) {
+        _carrito.removeAt(i);
+      } else {
+        _carrito[i] = _conValor(l, nuevo);
+      }
+    });
+    _recalcular();
+  }
+
+  /// Un "mixto" con el efectivo en $0 es virtual puro (no debería redondear, Regla 2) y con el efectivo igual al total es
+  /// efectivo puro (no debería llevar recargo de cigarrillos, Regla 6): se reclasifica con `clasificarComposicion` del
+  /// dominio antes de mandar nada, igual que en el escritorio (`VentaControlador.confirmarMixto`).
   Future<void> _confirmarVenta() async {
     if (_carrito.isEmpty) return;
     int? montoEfectivo;
@@ -1035,21 +688,14 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
         setState(() => _error = 'Monto en efectivo inválido');
         return;
       }
-      final techo =
-          resultado?.totalCentavos ?? Venta(lineas: _carrito).subtotalCentavos;
-      final real = clasificarComposicion(
-        montoEfectivoCentavos: montoEfectivo,
-        totalCentavos: techo,
-      );
+      final techo = resultado?.totalCentavos ?? Venta(lineas: _carrito).subtotalCentavos;
+      final real = clasificarComposicion(montoEfectivoCentavos: montoEfectivo, totalCentavos: techo);
       medioTexto = real.name; // 'efectivo' | 'virtual' | 'mixto'
       if (real != ComposicionPago.mixto) {
         montoEfectivo = null;
         setState(() => _calculando = true);
         try {
-          resultado = await widget.cliente.calcularVenta(
-            lineas: _carrito,
-            medio: medioTexto,
-          );
+          resultado = await widget.cliente.calcularVenta(lineas: _carrito, medio: medioTexto);
         } catch (e) {
           if (mounted) setState(() => _error = mensajeDeError(e));
           return;
@@ -1059,12 +705,7 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
       }
     }
     widget.onVentaLista(
-      VentaHistoricaPendienteCompanion(
-        lineas: List.of(_carrito),
-        medio: medioTexto,
-        montoEfectivoMixtoCentavos: montoEfectivo,
-        totalCentavos: resultado?.totalCentavos,
-      ),
+      VentaHistoricaPendienteCompanion(lineas: List.of(_carrito), medio: medioTexto, montoEfectivoMixtoCentavos: montoEfectivo, totalCentavos: resultado?.totalCentavos),
     );
     setState(() {
       _carrito.clear();
@@ -1077,169 +718,89 @@ class _ArmadorDeVentaState extends State<_ArmadorDeVenta> {
 
   @override
   Widget build(BuildContext context) {
+    final ns = context.ns;
     final subtotal = Venta(lineas: _carrito).subtotalCentavos;
+    final total = _resultado?.totalCentavos ?? subtotal;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Espaciado.lg,
-            Espaciado.lg,
-            Espaciado.lg,
-            0,
-          ),
-          child: Superficie(
-            child: CampoTexto(
-              controller: _busquedaCtrl,
-              etiqueta: 'Buscar producto vendido ese día',
-              prefixIcon: const Icon(IconosPlazoleta.search),
-              suffixIcon: _buscando
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : null,
-              onChanged: (texto) {
-                setState(() {});
-                if (texto.trim().isEmpty) {
-                  _debouncer.cancelar();
-                  _buscar(texto);
-                } else {
-                  _debouncer.ejecutar(() => _buscar(texto));
-                }
-              },
-            ),
-          ),
+        CampoNs(
+          etiqueta: 'Buscar producto vendido ese día',
+          controller: _busquedaCtrl,
+          placeholder: 'Buscar producto',
+          grande: false,
+          onChanged: (texto) {
+            setState(() {});
+            if (texto.trim().isEmpty) {
+              _debouncer.cancelar();
+              _buscar(texto);
+            } else {
+              _debouncer.ejecutar(() => _buscar(texto));
+            }
+          },
         ),
+        const SizedBox(height: 10),
         if (_busquedaCtrl.text.trim().isNotEmpty)
-          Expanded(child: _listaResultados(context))
+          if (_resultados.isEmpty && !_buscando)
+            Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Sin resultados', style: estiloNs(16, color: ns.mute)))
+          else
+            for (final p in _resultados.take(8)) ...[
+              FilaProductoNs(nombre: p.nombre, valor: p.esPesable ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(p.precioCentavos ?? 0), onTap: () => _agregarAlCarrito(p)),
+              const SizedBox(height: 8),
+            ]
         else ...[
-          Expanded(child: _listaCarrito(context)),
-          _panelVenta(context, subtotal),
-        ],
-      ],
-    );
-  }
-
-  Widget _listaResultados(BuildContext context) {
-    if (_resultados.isEmpty && !_buscando) {
-      return const EstadoVacio(
-        mensaje: 'Sin resultados',
-        icono: IconosPlazoleta.searchOff,
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      itemCount: _resultados.length,
-      itemBuilder: (context, i) {
-        final p = _resultados[i];
-        final precioTexto = p.esPesable
-            ? '${formatearARS(p.precioPorKiloCentavos ?? 0)}/kg'
-            : formatearARS(p.precioCentavos ?? 0);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: Espaciado.sm),
-          child: Superficie(
-            padding: EdgeInsets.zero,
-            child: Presionable(
-              onTap: () => _agregarAlCarrito(p),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Espaciado.lg,
-                  vertical: Espaciado.md,
-                ),
+          if (_carrito.isEmpty)
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Text('Buscá y tocá los productos de esta venta', style: estiloNs(15, color: ns.mute)))
+          else
+            for (var i = 0; i < _carrito.length; i++) ...[
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
+                decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(26)),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Text(p.nombre, style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                    Text(precioTexto, style: TextStyle(color: context.colores.textoSecundario)),
+                    Expanded(child: Text(_carrito[i].nombreProducto, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, altura: 1.2, color: ns.ink))),
+                    const SizedBox(width: 8),
+                    StepperNs(cantidad: _carrito[i] is LineaVentaPesable ? '${(_carrito[i] as LineaVentaPesable).gramos} g' : '${(_carrito[i] as LineaVentaPorUnidad).cantidad}', onMenos: () => _ajustar(i, -1), onMas: () => _ajustar(i, 1)),
                   ],
                 ),
               ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _listaCarrito(BuildContext context) {
-    if (_carrito.isEmpty) {
-      return Center(
-        child: Text(
-          'Buscá y tocá los productos de esta venta',
-          style: TextStyle(color: context.colores.textoSecundario),
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        Espaciado.sm,
-        Espaciado.lg,
-        Espaciado.sm,
-      ),
-      itemCount: _carrito.length,
-      itemBuilder: (context, i) => Padding(
-        padding: const EdgeInsets.only(bottom: Espaciado.xs),
-        child: FilaLineaCarrito(
-          linea: _carrito[i],
-          onCambiar: (nueva) {
-            setState(() => _carrito[i] = nueva);
-            _recalcular();
-          },
-          onEliminar: () {
-            setState(() => _carrito.removeAt(i));
-            _recalcular();
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _panelVenta(BuildContext context, int subtotal) {
-    final total = _resultado?.totalCentavos ?? subtotal;
-    return Padding(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_error != null) ...[
-            ErrorEnLinea(_error!),
-            const SizedBox(height: Espaciado.sm),
-          ],
-          SegmentedButton<_MedioHistorico>(
-            segments: [
-              for (final m in _MedioHistorico.values)
-                ButtonSegment(value: m, label: Text(m.etiqueta)),
+              const SizedBox(height: 8),
             ],
-            selected: {_medio},
-            onSelectionChanged: (s) {
-              setState(() => _medio = s.first);
-              _recalcular();
-            },
+          const SizedBox(height: 6),
+          Text('Cómo pagaron', style: estiloNs(15, peso: FontWeight.w500, color: ns.mute)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final m in _MedioHistorico.values)
+                ChipNs(
+                  texto: m.etiqueta,
+                  activo: _medio == m,
+                  onTap: () {
+                    setState(() => _medio = m);
+                    _recalcular();
+                  },
+                ),
+            ],
           ),
           if (_medio == _MedioHistorico.mixto) ...[
-            const SizedBox(height: Espaciado.sm),
-            Superficie(
-              child: CampoPlata(
-                controller: _montoEfectivoCtrl,
-                etiqueta: 'Monto en efectivo',
-              ),
-            ),
+            const SizedBox(height: 10),
+            CampoNs(etiqueta: 'Monto en efectivo', controller: _montoEfectivoCtrl, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() => _error = null)),
           ],
-          const SizedBox(height: Espaciado.md),
-          FilledButton(
-            onPressed: _carrito.isEmpty || _calculando ? null : _confirmarVenta,
-            child: _calculando
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text('Agregar venta — ${formatearARS(total)}'),
+          if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
+          const SizedBox(height: 10),
+          BotonNs(
+            texto: _calculando ? 'Calculando…' : 'Agregar venta — ${plataNs(total)}',
+            onTap: _carrito.isEmpty || _calculando ? null : _confirmarVenta,
+            alto: 56,
+            tamanio: 17,
+            fondo: _carrito.isEmpty ? ns.s : ns.prim,
+            color: _carrito.isEmpty ? ns.mute : TokensNs.blanco,
+            habilitado: _carrito.isNotEmpty && !_calculando,
           ),
         ],
-      ),
+      ],
     );
   }
 }

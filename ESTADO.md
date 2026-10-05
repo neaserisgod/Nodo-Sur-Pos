@@ -79,6 +79,29 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
+## Celular calcado del mock (04–05/10/2026)
+
+Rama `claude/mock-celular-calco`. El celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete
+`nodo-sur-mock-celular`, segunda vuelta con 175 capturas): barra inferior de 5 pestañas, paleta/tipografía/iconos/animaciones
+del mock y todas sus pantallas: bienvenida/modo de uso/emparejar/entrar con Google/asistente de 3 pasos, Inicio (con tablero,
+estados de conexión y tarjeta "Te faltan N pasos"), Vender → Cobrar (crédito, descuento libre, cantidad exacta, deshacer,
+entregar encargue, hoja de la terminal con todos sus estados), Caja (Resumen · Separar · Ventas), Contar la caja, Cerrar caja
+en dos etapas, Gasto o ingreso (con lata), Productos (filtros, ganancia, proveedor), Controlar stock, Editar en lote por
+contexto, Nuevo/Editar producto, Días históricos, Cierres anteriores, Encargues, Pagar proveedor, Cuenta y sincronización,
+Actualización en 3 pasos, Más y Configuración. Comparación y decisiones en
+[`docs/COMPARACION-MOCK-CELULAR.md`](./docs/COMPARACION-MOCK-CELULAR.md); el kit está en `lib/companion/kit/` y las pantallas
+nuevas en `lib/companion/pantallas/`. **No se probó en un celular real** (solo tests y capturas contra las del mock).
+
+Distinto del mock a propósito:
+- **Pago mixto** no se cobra desde el celular (falta el endpoint); queda el crédito en 1 pago.
+- **¿Quién sos?**: el perfil sale de la cuenta con que se entró (decisión del 2026-10-02), no de una lista.
+- **Bienvenida**: se conserva la animada de la app (el mock tiene 6 escenas estáticas).
+- **Terminal**: en los fallos se suma un botón "Cancelar" que el mock no tiene.
+- **Encargues**: las líneas no muestran precio (el servidor del celular no los manda).
+- **Pagar proveedor**: sin alias/CVU (en el mock es solo una propuesta de diseño).
+- **Más**: sin "Historial de ventas" ni "Tablero del día" como filas (el historial está en Caja › Ventas y el tablero en Inicio),
+  y "Probar estados" es solo del mock.
+
 ## Últimos cambios (02–03/10/2026)
 
 - **Auditoría de la caja**: `test/data/conciliacion_caja_test.dart` arma 120 días al azar y coincide siempre con un libro

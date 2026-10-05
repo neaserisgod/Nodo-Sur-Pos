@@ -82,7 +82,7 @@ void main() {
     expect(find.byKey(const Key('estado_sync')), findsNothing, reason: 'sin resultados todavía no hay novedad');
     sync.servicio.ultimo = const SyncNubeExpirada();
     await tester.pumpAndSettle();
-    expect(find.text('Quedó atrás de la nube'), findsOneWidget);
+    expect(find.textContaining('Pasó mucho tiempo sin sincronizar'), findsOneWidget);
     expect(find.byKey(const Key('volver_a_bajar_todo')), findsOneWidget);
     expect(find.textContaining('restaurar'), findsNothing);
   });
@@ -93,7 +93,7 @@ void main() {
     await tester.tap(find.text('Desvincular'));
     await tester.pumpAndSettle();
     expect(find.text('¿Desvincular este celular?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Desvincular').last);
+    await tester.tap(find.text('Desvincular').last);
     await tester.pumpAndSettle();
     expect(await sync.cuenta(), isNull);
     expect(find.text('Vincular con Nodo Sur'), findsOneWidget);

@@ -5,18 +5,14 @@
 // a internet si la PC no contesta (`conmutador_sync.dart`) y vuelve a la PC cuando contesta.
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
-import '../ui/tema/iconos.dart';
-import '../ui/tema/tokens.dart';
 import 'conmutador_sync.dart';
+import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
-import 'tema/fila_dato_companion.dart';
-import 'tema/piezas_companion.dart';
-import 'tema/superficie.dart';
-import 'tema/hoja_vidrio.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
   const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar});
@@ -73,13 +69,18 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
   }
 
   Future<void> _desvincular() async {
-    final confirmar = await confirmarAccionDestructiva(
+    final confirmar = await mostrarHojaNs<bool>(
       context,
-      titulo: '¿Desvincular este celular?',
-      contenido: 'Sin la cuenta no podrá sincronizar por internet. Lo que ya tiene guardado en el celular no se borra.',
-      textoConfirmar: 'Desvincular',
+      builder: (ctx) => HojaNs(
+        titulo: '¿Desvincular este celular?',
+        texto: 'Sin la cuenta no podrá sincronizar por internet. Lo que ya tiene guardado en el celular no se borra.',
+        botones: [
+          BotonNs.peligroSolido(ctx, 'Desvincular', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
     );
-    if (!confirmar) return;
+    if (confirmar != true) return;
     await _sync.desvincular();
     await _leerCuenta();
   }
@@ -112,94 +113,68 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: widget.alContinuar == null ? AppBar(scrolledUnderElevation: 0) : null,
-      body: SafeArea(
-        child: _cargando
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(Espaciado.xl, 0, Espaciado.xl, Espaciado.xl),
-                children: [
-                  const EncabezadoCompanion(
-                    rotulo: 'Gestión',
-                    titulo: 'Cuenta y sincronización',
-                    padding: EdgeInsets.fromLTRB(0, Espaciado.lg, 0, Espaciado.lg),
-                  ),
-                  ValueListenableBuilder<ModoSync>(
-                    valueListenable: _sync.conmutador.modo,
-                    builder: (context, modo, _) => _TarjetaModo(modo: modo, hayCuenta: _cuenta != null),
-                  ),
-                  if (_cuenta != null)
-                    ValueListenableBuilder<int>(
-                      valueListenable: _sync.servicio.alCambiarEstado,
-                      builder: (context, _, _) {
-                        final vista = vistaDeSync(_sync.servicio.ultimo);
-                        // "Todavía no hubo una vuelta" no es una novedad para mostrar: se ve recién con un resultado.
-                        if (_sync.servicio.ultimo == null) return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: Espaciado.md),
-                          child: _EstadoSync(vista: vista, ocupado: _ocupado, alVolverABajar: _volverABajarTodo),
-                        );
-                      },
-                    ),
-                  const SizedBox(height: Espaciado.lg),
-                  Superficie(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        FilaDatoCompanion(
-                          etiqueta: 'Cuenta de Nodo Sur',
-                          valor: _cuenta?.email ?? 'Sin vincular',
-                          destacado: _cuenta == null,
-                        ),
-                        if (_cuenta != null)
-                          FilaDatoCompanion(etiqueta: 'Este celular', valor: _cuenta!.nombreDispositivo),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: Espaciado.lg),
-                  if (_mensaje != null) ...[
-                    Text(_mensaje!, style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: Espaciado.md),
-                  ],
-                  if (_cuenta == null)
-                    FilledButton(
-                      onPressed: _ocupado ? null : _vincular,
-                      child: _ocupado
-                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Vincular con Nodo Sur'),
-                    )
-                  else ...[
-                    FilledButton(
-                      onPressed: _ocupado ? null : _sincronizarAhora,
-                      child: const Text('Sincronizar ahora'),
-                    ),
-                    const SizedBox(height: Espaciado.sm),
-                    TextButton(
-                      onPressed: _ocupado ? null : _desvincular,
-                      child: Text('Desvincular', style: TextStyle(color: context.colores.error)),
-                    ),
-                  ],
-                  if (widget.alContinuar != null) ...[
-                    const SizedBox(height: Espaciado.lg),
-                    OutlinedButton(
-                      onPressed: _ocupado ? null : () => widget.alContinuar!(context),
-                      child: Text(_cuenta == null ? 'Vincular más tarde' : 'Continuar'),
-                    ),
-                  ],
-                  if (_cuenta case final cuenta?) ...[
-                    const SizedBox(height: Espaciado.lg),
-                    Superficie(child: EstadoMercadoPago(leer: () => _sync.cliente.estadoMp(cuenta.token))),
-                  ],
-                  const SizedBox(height: Espaciado.xl),
-                  Text(
-                    'Con la PC prendida, el celular sincroniza con ella. Si la PC se apaga o queda fuera del wifi, '
-                    'pasa solo a internet; cuando la PC vuelve, vuelve a ella.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+    final ns = context.ns;
+    if (_cargando) {
+      return PaginaNs(titulo: 'Cuenta y sincronización', sinVolver: widget.alContinuar != null, cuerpo: const Center(child: CircularProgressIndicator()));
+    }
+    final cuenta = _cuenta;
+    return PaginaNs(
+      titulo: 'Cuenta y sincronización',
+      sinVolver: widget.alContinuar != null,
+      cuerpo: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          ValueListenableBuilder<ModoSync>(
+            valueListenable: _sync.conmutador.modo,
+            builder: (context, modo, _) => _TarjetaModo(modo: modo, hayCuenta: cuenta != null),
+          ),
+          if (cuenta != null)
+            ValueListenableBuilder<int>(
+              valueListenable: _sync.servicio.alCambiarEstado,
+              builder: (context, _, _) {
+                // "Todavía no hubo una vuelta" no es una novedad para mostrar: se ve recién con un resultado.
+                if (_sync.servicio.ultimo == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _EstadoSync(vista: vistaDeSync(_sync.servicio.ultimo), ocupado: _ocupado, alVolverABajar: _volverABajarTodo),
+                );
+              },
+            ),
+          if (_mensaje != null) Padding(padding: const EdgeInsets.only(top: 12), child: InfoNs(_mensaje!)),
+          const SizedBox(height: 8),
+          FilaClaveValorNs(
+            clave: 'Cuenta de Nodo Sur',
+            valor: cuenta?.email ?? 'Sin vincular',
+            tamanioValor: 19,
+            colorValor: cuenta == null ? ns.b : null,
+          ),
+          if (cuenta != null) FilaClaveValorNs(clave: 'Este celular', valor: cuenta.nombreDispositivo),
+          if (cuenta == null) ...[
+            const SizedBox(height: 12),
+            const InfoNs(
+              'Con la PC prendida, el celular sincroniza con ella. Si la PC se apaga o queda fuera del wifi, pasa solo a internet; cuando la PC vuelve, vuelve a ella.',
+            ),
+          ] else ...[
+            const SizedBox(height: 20),
+            const SeccionNs('Mercado Pago'),
+            _SeccionMp(leer: () => _sync.cliente.estadoMp(cuenta.token)),
+            const SizedBox(height: 12),
+            const InfoNs(
+              'Con la PC prendida, el celular sincroniza con ella. Si la PC se apaga o queda fuera del wifi, pasa solo a internet; cuando la PC vuelve, vuelve a ella.',
+            ),
+          ],
+        ],
       ),
+      botones: [
+        if (cuenta == null)
+          BotonNs.primario(context, _ocupado ? 'Vinculando…' : 'Vincular con Nodo Sur', _ocupado ? null : _vincular, habilitado: !_ocupado)
+        else ...[
+          BotonNs.primario(context, 'Sincronizar ahora', _ocupado ? null : _sincronizarAhora, habilitado: !_ocupado),
+          BotonNs.peligroSuave(context, 'Desvincular', _ocupado ? null : _desvincular),
+        ],
+        if (widget.alContinuar != null)
+          BotonNs.secundario(context, cuenta == null ? 'Vincular más tarde' : 'Continuar', _ocupado ? null : () => widget.alContinuar!(context)),
+      ],
     );
   }
 }
@@ -223,37 +198,80 @@ class _EstadoSync extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    final color = switch (vista.tono) {
-      TonoSync.bien => colores.acento,
-      TonoSync.espera => colores.textoSecundario,
-      TonoSync.atencion => colores.error,
+    final tono = switch (vista.tono) {
+      TonoSync.bien => TonoNs.good,
+      TonoSync.espera => vista.titulo == 'Sin conexión' ? TonoNs.warn : TonoNs.neutro,
+      TonoSync.atencion => TonoNs.bad,
     };
-    return Superficie(
+    return Column(
       key: const Key('estado_sync'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.circle, size: 10, color: color),
-              const SizedBox(width: Espaciado.sm),
-              Expanded(child: Text(vista.titulo, style: textTheme.titleMedium)),
-            ],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InfoNs(vista.detalle, tono: tono),
+        if (vista.puedeVolverABajar) ...[
+          const SizedBox(height: 12),
+          KeyedSubtree(
+            key: const Key('volver_a_bajar_todo'),
+            child: BotonNs.secundario(context, 'Volver a bajar todo', ocupado ? null : alVolverABajar),
           ),
-          const SizedBox(height: Espaciado.xs),
-          Text(vista.detalle, style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
-          if (vista.puedeVolverABajar) ...[
-            const SizedBox(height: Espaciado.md),
-            OutlinedButton(
-              key: const Key('volver_a_bajar_todo'),
-              onPressed: ocupado ? null : alVolverABajar,
-              child: const Text('Volver a bajar todo'),
+        ],
+      ],
+    );
+  }
+}
+
+/// Mercado Pago: lo que dice el servidor (conectado, sin conectar, hay que reconectarlo) y el atajo al sitio.
+class _SeccionMp extends StatefulWidget {
+  const _SeccionMp({required this.leer});
+  final Future<EstadoMp> Function() leer;
+
+  @override
+  State<_SeccionMp> createState() => _SeccionMpState();
+}
+
+class _SeccionMpState extends State<_SeccionMp> {
+  late Future<EstadoMp?> _estado = _cargar();
+
+  Future<EstadoMp?> _cargar() async {
+    try {
+      return await widget.leer();
+    } on ErrorNube {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<EstadoMp?>(
+      future: _estado,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: FilaEsperaNs('Mirando Mercado Pago…'));
+        }
+        final vista = vistaDeEstadoMp(snap.data);
+        return Column(
+          key: const Key('estado_mercado_pago'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FilaClaveValorNs(clave: 'Mercado Pago', valor: vista.titulo),
+            InfoNs(vista.detalle),
+            const SizedBox(height: 8),
+            KeyedSubtree(
+              key: const Key('mp_abrir_negocio'),
+              child: BotonNs.secundario(
+                context,
+                vista.listo ? 'Administrar en el sitio' : 'Conectar en el sitio',
+                () async => launchUrl(urlNegocioNube, mode: LaunchMode.externalApplication),
+              ),
+            ),
+            const SizedBox(height: 8),
+            KeyedSubtree(
+              key: const Key('mp_reintentar'),
+              child: BotonNs.secundario(context, 'Actualizar', () => setState(() => _estado = _cargar())),
             ),
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -266,35 +284,22 @@ class _TarjetaModo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (titulo, detalle, icono) = switch (modo) {
-      ModoSync.pc => ('Con la PC', 'Sincronizando por wifi.', IconosPlazoleta.cloudSync),
-      ModoSync.nube => ('Por internet', 'La PC no contesta: sincronizando con la nube.', IconosPlazoleta.cloudUploadOutlined),
-      ModoSync.local => (
-        'Solo en este celular',
-        hayCuenta ? 'Esperando para sincronizar.' : 'Vinculá tu cuenta para sincronizar por internet.',
-        IconosPlazoleta.cloudOff,
-      ),
+    final (titulo, detalle) = switch (modo) {
+      ModoSync.pc => ('Con la PC', 'Sincronizando por wifi.'),
+      ModoSync.nube => ('Por internet', 'La PC no contesta: sincronizando con la nube.'),
+      ModoSync.local => ('Solo en este celular', hayCuenta ? 'Esperando para sincronizar.' : 'Vinculá tu cuenta para sincronizar por internet.'),
     };
-    final textTheme = Theme.of(context).textTheme;
-    // El bloque negro del rediseño: lo más importante de la pantalla (con quién se sincroniza ahora).
-    return BloqueHero(
-      animar: false,
-      minAlto: 112,
-      child: Row(
+    // El bloque negro: lo más importante de la pantalla (con quién se sincroniza ahora).
+    return HeroNs(
+      ancho: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ahora', style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
-                Text(titulo, style: textTheme.headlineMedium?.copyWith(color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(detalle, style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.72))),
-              ],
-            ),
-          ),
-          const SizedBox(width: Espaciado.md),
-          BotonFlecha(icono: icono, tamanio: 48),
+          Text('Ahora', style: estiloNs(14, peso: FontWeight.w600, color: const Color(0xC7FFFFFF))),
+          const SizedBox(height: 4),
+          Text(titulo, style: tituloNs(46, track: -0.058, altura: 1.02, color: TokensNs.blanco)),
+          const SizedBox(height: 6),
+          Text(detalle, style: estiloNs(15, altura: 1.4, color: const Color(0xCCFFFFFF))),
         ],
       ),
     );

@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 
 import '../../ui/tema/tokens.dart';
+import '../kit/tokens_ns.dart';
 import 'colores_companion.dart';
 
 /// Radio de "Superficie" — 28, tarjetas muy redondeadas como las de la web
@@ -66,7 +67,12 @@ abstract final class TemaCompanion {
       // También los acentos del escritorio: las piezas del kit compartido
       // (`lib/ui/comun/tarjetas.dart`, "Lenguaje de diseño" 2026-09-26) los
       // leen — mismos valores que `acentos`, ver `colores_companion.dart`.
-      extensions: [colores, acentos, brillo == Brightness.dark ? acentosPlazoletaCompanionOscuro : acentosPlazoletaCompanionClaro],
+      extensions: [
+        colores,
+        acentos,
+        brillo == Brightness.dark ? acentosPlazoletaCompanionOscuro : acentosPlazoletaCompanionClaro,
+        brillo == Brightness.dark ? TokensNs.oscuroTokens : TokensNs.claro,
+      ],
       dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: Espaciado.lg),
       appBarTheme: AppBarTheme(
         backgroundColor: colores.fondo,
@@ -83,11 +89,15 @@ abstract final class TemaCompanion {
         shadowColor: Colors.black.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioSuperficieCompanion)),
       ),
+      // Aviso flotante del mock (docs/01 §6.14): fondo `toast`, texto blanco
+      // 15/600 centrado, radio 26, a 100 px del borde de abajo.
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: colores.textoPrimario,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: colores.fondo),
+        backgroundColor: brillo == Brightness.dark ? TokensNs.oscuroTokens.toast : TokensNs.claro.toast,
+        contentTextStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35, color: TokensNs.blanco),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioControlCompanion)),
+        insetPadding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        actionTextColor: TokensNs.blanco,
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: colores.fondoBloque,
@@ -167,7 +177,7 @@ abstract final class TemaCompanion {
         backgroundColor: colores.fondo,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(radioSuperficieCompanion + 4)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
         ),
       ),
       iconTheme: IconThemeData(color: colores.textoSecundario),
@@ -220,8 +230,8 @@ abstract final class TemaCompanion {
 /// pulgar, no compartidos con la densidad de un mostrador con mouse.
 const double alturaControlCompanion = 56;
 
-/// Desliza desde abajo con fade al entrar, sale con fade solo (más corto)
-/// al volver — reemplaza el zoom de Material por defecto.
+/// Entrada de pantalla del mock (`.scr`, 0,55 s): fade y subida de 14 px con
+/// la curva `cubic-bezier(.2,.7,.1,1)`. Al salir solo se desvanece.
 class _TransicionCompanion extends PageTransitionsBuilder {
   const _TransicionCompanion();
 
@@ -233,18 +243,14 @@ class _TransicionCompanion extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final entrando = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
+    final t = CurvedAnimation(parent: animation, curve: const Cubic(.2, .7, .1, 1));
     return FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: const Interval(0, 0.7)),
+      opacity: t,
       child: SlideTransition(
-        position: entrando,
+        position: Tween<Offset>(begin: const Offset(0, 14 / 844), end: Offset.zero).animate(t),
         child: FadeTransition(
-          opacity: Tween<double>(begin: 1, end: 0).animate(
-            CurvedAnimation(parent: secondaryAnimation, curve: const Interval(0, 0.4)),
-          ),
+          opacity: Tween<double>(begin: 1, end: 0).animate(CurvedAnimation(parent: secondaryAnimation, curve: const Interval(0, 0.4))),
           child: child,
         ),
       ),

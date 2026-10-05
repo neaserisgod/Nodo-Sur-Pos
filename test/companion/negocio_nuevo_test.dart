@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
@@ -200,11 +201,11 @@ void main() {
       await t.pumpAndSettle();
 
       final siguiente = find.byKey(const Key('asistente-seguir'));
-      expect(t.widget<FilledButton>(siguiente).onPressed, isNull, reason: 'sin nombre ni rubro no se sigue');
+      expect(t.widget<BotonNs>(find.descendant(of: siguiente, matching: find.byType(BotonNs))).habilitado, isFalse, reason: 'sin nombre ni rubro no se sigue');
       await t.enterText(find.byKey(const Key('asistente-nombre')), 'Almacén Don Pepe');
       await t.tap(find.byKey(const Key('rubro-kiosco')));
       await t.pump();
-      expect(find.text('Golosinas'), findsOneWidget, reason: 'muestra las categorías del rubro elegido');
+      expect(find.textContaining('categorías para empezar: Golosinas'), findsOneWidget, reason: 'muestra las categorías del rubro elegido');
       await t.tap(siguiente);
       await t.pumpAndSettle();
       expect(negocio, ('Almacén Don Pepe', PlantillaRubro.kiosco));

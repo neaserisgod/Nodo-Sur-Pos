@@ -10,8 +10,7 @@
 // mano después de cada `Navigator.push`.
 import 'package:flutter/material.dart';
 
-import '../ui/tema/tokens.dart';
-import 'tema/hoja_vidrio.dart';
+import 'kit/kit_ns.dart';
 
 /// Empuja [builder] como ruta nueva, desenfocando antes y después. Usar en
 /// vez de `Navigator.of(context).push(MaterialPageRoute(builder: builder))`
@@ -41,41 +40,24 @@ Future<T?> pushSinTeclado<T>(
 /// Confirma antes de perder datos sin guardar — Precios (formulario) y
 /// Conteo de stock (hasta 30-80 campos tipeados recorriendo la góndola)
 /// dejaban salir con el botón atrás sin avisar nada. Un solo diálogo
-/// (Regla 3) en vez de que cada pantalla arme el suyo.
-Future<bool> confirmarSalirSinGuardar(BuildContext context) async {
-  final confirmar = await mostrarHojaVidrio<bool>(
+/// (Regla 3) en vez de que cada pantalla arme el suyo. Es la hoja
+/// "¿Salir sin guardar?" del mock (docs/03 H7): no se cierra tocando afuera.
+Future<bool> confirmarSalirSinGuardar(
+  BuildContext context, {
+  String texto = 'Lo que contaste todavía no se guardó: se pierde si salís ahora.',
+  String seguir = 'Seguir contando',
+}) async {
+  final salir = await mostrarHojaNs<bool>(
     context,
-    builder: (context) => Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('¿Salir sin guardar?', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: Espaciado.sm),
-        Text(
-          'Lo que cargaste todavía no se guardó — se pierde si salís ahora.',
-          style: TextStyle(color: context.colores.textoSecundario),
-        ),
-        const SizedBox(height: Espaciado.lg),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Seguir acá'),
-              ),
-            ),
-            const SizedBox(width: Espaciado.sm),
-            Expanded(
-              child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: context.colores.error),
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Salir sin guardar'),
-              ),
-            ),
-          ],
-        ),
+    descartable: false,
+    builder: (ctx) => HojaNs(
+      titulo: '¿Salir sin guardar?',
+      texto: texto,
+      botones: [
+        BotonNs.primario(ctx, seguir, () => Navigator.of(ctx).pop(false)),
+        BotonNs.peligroSuave(ctx, 'Salir sin guardar', () => Navigator.of(ctx).pop(true)),
       ],
     ),
   );
-  return confirmar ?? false;
+  return salir ?? false;
 }

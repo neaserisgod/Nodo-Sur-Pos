@@ -78,9 +78,11 @@ void main() {
     await _asentar(t);
     await t.tap(find.byKey(Key('encargue_opcion_$cerveza')));
     await t.pumpAndSettle();
-    await t.enterText(find.byType(TextField).last, '3');
-    await t.tap(find.text('Agregar'));
-    await t.pumpAndSettle();
+    for (var i = 0; i < 2; i++) {
+      await t.tap(find.bySemanticsLabel('Más'));
+      await t.pump();
+    }
+    expect(find.text('3'), findsOneWidget);
     await t.tap(find.byKey(const Key('encargue_apartar')));
     await _asentar(t);
     await t.pumpAndSettle(); // termina de salir la pantalla de alta
@@ -96,9 +98,9 @@ void main() {
     await abrir(t);
     expect(await stock(t), 9);
 
-    await t.tap(find.text('Cancelar'));
-    await t.pumpAndSettle();
     await t.tap(find.text('Cancelar encargue'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Cancelar encargue').last);
     await _asentar(t);
 
     expect(await stock(t), 12);
@@ -137,9 +139,10 @@ void main() {
     await _asentar(t);
     await t.tap(find.byKey(Key('encargue_opcion_$cerveza')));
     await t.pumpAndSettle();
-    await t.enterText(find.byType(TextField).last, '99');
-    await t.tap(find.text('Agregar'));
-    await t.pumpAndSettle();
+    for (var i = 0; i < 12; i++) {
+      await t.tap(find.bySemanticsLabel('Más'));
+      await t.pump();
+    }
     await t.tap(find.byKey(const Key('encargue_apartar')));
     await _asentar(t);
 
@@ -163,7 +166,7 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.byKey(Key('encargue_$id')), findsNothing);
-    expect(find.text('Deudas'), findsOneWidget);
+    expect(find.text('DEUDAS'), findsOneWidget);
     expect(await stock(t), 9); // el stock ya estaba descontado al apartar
 
     await t.tap(find.textContaining('Cobrar'));
@@ -172,7 +175,7 @@ void main() {
     await _asentar(t);
     await t.pumpAndSettle();
 
-    expect(find.text('Deudas'), findsNothing);
+    expect(find.text('DEUDAS'), findsNothing);
     expect((await t.runAsync(() => db.select(db.ventas).get()))!, hasLength(1));
   });
 }

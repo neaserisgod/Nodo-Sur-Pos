@@ -1,15 +1,14 @@
-// Conteo de stock del celular (mock completo, 2026-10-02): lo que no se puede
-// romper es que un campo vacío NO toca el stock, que lo cargado se guarda como
-// valor contado con su rastro ("Conteo físico") y que cambiar de proveedor o de
-// filtro no hace perder lo ya cargado.
+// Conteo de stock del celular (mock del 2026-10-04): lo que no se puede romper es
+// que un campo vacío NO toca el stock, que lo cargado se guarda como valor contado
+// con su rastro ("Conteo físico"), que el tilde copia lo guardado y que un
+// pesable se cuenta en gramos.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
+import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
-import 'package:la_plazoleta/companion/tema/chip_seleccionable.dart';
-import 'package:la_plazoleta/companion/tema/superficie.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,16 +50,18 @@ void tester(WidgetTester t) {
   addTearDown(t.view.resetDevicePixelRatio);
 }
 
-Future<void> _abrir(WidgetTester t) async {
-  await t.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: const PantallaConteoStock()));
+Future<void> _abrir(WidgetTester t, {int? proveedorId, bool soloSinStock = false}) async {
+  await t.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: PantallaConteoStock(proveedorId: proveedorId, soloSinStock: soloSinStock)));
   await _asentar(t);
 }
 
-Finder _fila(String nombre) => find.ancestor(of: find.text(nombre), matching: find.byType(Superficie)).first;
+/// El campo de conteo de la fila de [nombre].
+Finder _campo(String nombre) => find.descendant(of: _fila(nombre), matching: find.byType(TextField));
 
-Finder _masDe(String nombre) => find.descendant(of: _fila(nombre), matching: find.byTooltip('Uno más'));
+Finder _fila(String nombre) => find.byKey(ValueKey('conteo:$nombre'));
 
-Finder _menosDe(String nombre) => find.descendant(of: _fila(nombre), matching: find.byTooltip('Uno menos'));
+/// El tilde "Está igual que lo guardado": el último botón de la fila.
+Finder _igualDe(String nombre) => find.descendant(of: _fila(nombre), matching: find.byType(PresionNs)).last;
 
 Future<int> _stockDe(WidgetTester t, AppDatabase db, int id) async =>
     (await t.runAsync(() => (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle()))!.stock;
@@ -70,99 +71,93 @@ void main() {
     final e = await _preparar(t);
     final cerveza = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 12, proveedorId: e.proveedores[0], usuarioId: 1)))!;
     final agua = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Agua', esPesable: false, stock: 30, proveedorId: e.proveedores[0], usuarioId: 1)))!;
-    await _abrir(t);
+    await _abrir(t, proveedorId: e.proveedores[0]);
 
-    await t.tap(_masDe('Cerveza'));
+    await t.enterText(_campo('Cerveza'), '13');
     await t.pump();
-    expect(find.text('Guardar conteo (1)'), findsOneWidget);
+    expect(find.textContaining('Guardar conteo (1 de 2)'), findsOneWidget);
+    expect(find.text('+1 u. de diferencia'), findsOneWidget);
 
-    await t.tap(find.text('Guardar conteo (1)'));
+    await t.tap(find.textContaining('Guardar conteo (1 de 2)'));
     await _asentar(t);
+    await t.pump(const Duration(seconds: 4)); // el aviso flotante se va solo
 
-    expect(await _stockDe(t, e.db, cerveza), 13, reason: 'partió del stock del sistema (12) y sumó uno');
+    expect(await _stockDe(t, e.db, cerveza), 13);
     expect(await _stockDe(t, e.db, agua), 30, reason: 'el agua no se tocó: su stock queda como estaba');
     final movimientos = (await t.runAsync(() => (e.db.select(e.db.movimientosDeStock)..where((m) => m.productoId.equals(cerveza))).get()))!;
     expect(movimientos.last.motivo, 'Conteo físico');
     final delAgua = (await t.runAsync(() => (e.db.select(e.db.movimientosDeStock)..where((m) => m.productoId.equals(agua))).get()))!;
     expect(delAgua.where((m) => m.motivo == 'Conteo físico'), isEmpty, reason: 'sin tocar, no deja ningún movimiento de conteo');
-    expect(find.text('Guardar conteo (1)'), findsNothing, reason: 'tras guardar se limpia lo cargado');
+    expect(find.textContaining('Guardar conteo ('), findsNothing, reason: 'tras guardar se limpia lo cargado');
   });
 
-  testWidgets('sin nada cargado el botón de guardar está deshabilitado', (t) async {
+  testWidgets('el tilde copia lo guardado: cuenta como contado y no mueve el stock', (t) async {
+    final e = await _preparar(t);
+    final cerveza = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 12, proveedorId: e.proveedores[0], usuarioId: 1)))!;
+    await _abrir(t, proveedorId: e.proveedores[0]);
+
+    await t.tap(_igualDe('Cerveza'));
+    await t.pump();
+    expect(find.text('Coincide con lo guardado'), findsOneWidget);
+    await t.tap(find.textContaining('Guardar conteo (1 de 1)'));
+    await _asentar(t);
+    await t.pump(const Duration(seconds: 4)); // el aviso flotante se va solo
+
+    expect(await _stockDe(t, e.db, cerveza), 12);
+    final movimientos = (await t.runAsync(() => (e.db.select(e.db.movimientosDeStock)..where((m) => m.productoId.equals(cerveza))).get()))!;
+    expect(movimientos.where((m) => m.motivo == 'Conteo físico'), isEmpty, reason: 'sin diferencia no hay movimiento de stock que registrar');
+  });
+
+  testWidgets('sin nada cargado el botón de guardar está apagado', (t) async {
     final e = await _preparar(t);
     await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 12, proveedorId: e.proveedores[0], usuarioId: 1));
-    await _abrir(t);
+    await _abrir(t, proveedorId: e.proveedores[0]);
 
-    final boton = t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Guardar conteo'));
-    expect(boton.onPressed, isNull);
+    expect(find.text('Guardar conteo'), findsOneWidget);
+    await t.tap(find.text('Guardar conteo'));
+    await _asentar(t);
+    await t.pump(const Duration(seconds: 4)); // el aviso flotante se va solo
+    expect(find.textContaining('Guardado:'), findsWidgets, reason: 'tocarlo apagado no guarda nada: solo quedan los "Guardado: 12 u." de las filas');
   });
 
-  testWidgets('el menos no baja de cero', (t) async {
+  testWidgets('un valor inválido avisa y no se guarda', (t) async {
     final e = await _preparar(t);
     final id = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 1, proveedorId: e.proveedores[0], usuarioId: 1)))!;
-    await _abrir(t);
+    await _abrir(t, proveedorId: e.proveedores[0]);
 
-    await t.tap(_menosDe('Cerveza'));
-    await t.tap(_menosDe('Cerveza'));
-    await t.tap(_menosDe('Cerveza'));
+    await t.enterText(_campo('Cerveza'), 'abc');
     await t.pump();
-    await t.tap(find.text('Guardar conteo (1)'));
+    expect(find.text('Número inválido'), findsOneWidget);
+    await t.tap(find.textContaining('Guardar conteo'));
     await _asentar(t);
+    await t.pump(const Duration(seconds: 4)); // el aviso flotante se va solo
 
-    expect(await _stockDe(t, e.db, id), 0);
+    expect(await _stockDe(t, e.db, id), 1);
   });
 
-  testWidgets('cambiar de proveedor no pierde lo ya cargado y se guarda todo junto', (t) async {
-    final e = await _preparar(t);
-    final cerveza = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 12, proveedorId: e.proveedores[1], usuarioId: 1)))!;
-    final pan = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Pan', esPesable: false, stock: 5, proveedorId: e.proveedores[0], usuarioId: 1)))!;
-    await _abrir(t);
-
-    await t.tap(_masDe('Cerveza'));
-    await t.pump();
-
-    // Se mira solo al proveedor del pan (el primer chip, a la vista): la cerveza sale de la vista pero su conteo sigue cargado.
-    final nombreProv2 = (await t.runAsync(() => e.puerto.proveedores()))!.firstWhere((p) => p.id == e.proveedores[0]).nombre;
-    await t.tap(find.widgetWithText(ChipSeleccionable, nombreProv2).first);
-    await t.pump();
-    expect(find.text('Cerveza'), findsNothing);
-    expect(find.text('Guardar conteo (1)'), findsOneWidget);
-
-    await t.tap(_masDe('Pan'));
-    await t.pump();
-    expect(find.text('Guardar conteo (2)'), findsOneWidget);
-
-    await t.tap(find.text('Guardar conteo (2)'));
-    await _asentar(t);
-    expect(await _stockDe(t, e.db, cerveza), 13);
-    expect(await _stockDe(t, e.db, pan), 6);
-  });
-
-  testWidgets('el filtro "Sin stock" muestra solo lo agotado', (t) async {
+  testWidgets('"Productos sin stock" muestra solo lo agotado, de todos los proveedores', (t) async {
     final e = await _preparar(t);
     await t.runAsync(() => e.puerto.crearProducto(nombre: 'Cerveza', esPesable: false, stock: 12, proveedorId: e.proveedores[0], usuarioId: 1));
-    await t.runAsync(() => e.puerto.crearProducto(nombre: 'Yerba', esPesable: false, stock: 0, proveedorId: e.proveedores[0], usuarioId: 1));
-    await _abrir(t);
-    expect(find.text('Cerveza'), findsOneWidget);
-    expect(find.text('Yerba'), findsOneWidget);
-
-    await t.tap(find.widgetWithText(ChipSeleccionable, 'Sin stock'));
-    await t.pump();
+    await t.runAsync(() => e.puerto.crearProducto(nombre: 'Yerba', esPesable: false, stock: 0, proveedorId: e.proveedores[1], usuarioId: 1));
+    await _abrir(t, soloSinStock: true);
 
     expect(find.text('Cerveza'), findsNothing);
     expect(find.text('Yerba'), findsOneWidget);
+    expect(find.text('Productos sin stock'), findsOneWidget);
   });
 
   testWidgets('un pesable se cuenta en gramos y guarda gramos', (t) async {
     final e = await _preparar(t);
     final id = (await t.runAsync(() => e.puerto.crearProducto(nombre: 'Jamón', esPesable: true, precioPorKiloCentavos: 1000000, stockGramos: 3200, proveedorId: e.proveedores[0], usuarioId: 1)))!;
-    await _abrir(t);
+    await _abrir(t, proveedorId: e.proveedores[0]);
 
-    expect(find.descendant(of: _fila('Jamón'), matching: find.byTooltip('Uno más')), findsNothing, reason: 'los pesables no llevan −/+');
-    await t.enterText(find.descendant(of: _fila('Jamón'), matching: find.byType(TextField)), '2750');
+    expect(find.text('Guardado: 3200 g'), findsOneWidget);
+    await t.enterText(_campo('Jamón'), '2750');
     await t.pump();
-    await t.tap(find.text('Guardar conteo (1)'));
+    expect(find.text('−450 g de diferencia'), findsOneWidget);
+    await t.tap(find.textContaining('Guardar conteo (1 de 1)'));
     await _asentar(t);
+    await t.pump(const Duration(seconds: 4)); // el aviso flotante se va solo
 
     final guardado = (await t.runAsync(() => (e.db.select(e.db.productos)..where((p) => p.id.equals(id))).getSingle()))!;
     expect(guardado.stockGramos, 2750);

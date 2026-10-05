@@ -1,33 +1,16 @@
-// Movimiento de caja — fusiona "Gasto rápido" e "Ingreso rápido" (El dueño,
-// 2026-09-18: "reacomodación de absolutamente todos los elementos... no
-// cambios de skin"). Eran dos pantallas casi idénticas (mismo formulario,
-// misma `SesionAbiertaGate`, mismas tres cajas) que solo diferían en qué
-// endpoint llamaban y en la etiqueta — dos accesos en el menú para una
-// misma idea ("anotar un movimiento de caja que no es una venta"). Un
-// selector Gasto/Ingreso arriba reemplaza la necesidad de dos pantallas y
-// dos accesos separados.
+// "Gasto o ingreso", tal cual el mock (docs/03 C2): anotar la plata que sale o
+// entra de la caja sin ser una venta. Una sola pantalla para los dos (El dueño,
+// 2026-09-18: gasto e ingreso rápidos se fusionaron). Con la caja cerrada ofrece
+// abrirla ahí mismo. Además de "Cajón normal" y "Mercado Pago" del mock, sigue la
+// "Lata cigarrillos" que la app ya tenía.
 
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
-import '../ui/comun/campo_texto.dart';
-import '../ui/tema/tokens.dart';
-import 'aviso_modo_local.dart';
-import 'base_local.dart';
+import 'app_ns.dart';
 import 'cliente_companion.dart';
-import 'emparejamiento.dart';
+import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
-import 'puerto_local.dart';
-import 'seleccion_servicio.dart';
-import 'servicio_companion.dart';
-import 'servicio_companion_offline.dart';
-import 'sesion_abierta_gate.dart';
-import 'tema/colores_companion.dart';
-import '../ui/comun/estado_error.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
-import 'tema/error_en_linea.dart';
-import 'tema/app_bar_companion.dart';
 
 enum TipoMovimientoCaja { gasto, ingreso }
 
@@ -42,102 +25,96 @@ class PantallaMovimientoCaja extends StatefulWidget {
 
 class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
   late TipoMovimientoCaja _tipo = widget.tipoInicial;
-
-  ServicioCompanion? _cliente;
-  bool _pcEmparejada = false;
-  int? _usuarioId;
-
-  /// null mientras no se sabe si hay sesión abierta o no.
-  int? _sesionCajaId;
-
   final _montoCtrl = TextEditingController();
   final _motivoCtrl = TextEditingController();
   MedioGastoCompanion _medio = MedioGastoCompanion.cajonNormal;
   bool _guardando = false;
-  bool _cargandoInicial = true;
+  bool _guardado = false;
   String? _error;
-  String? _errorInicial;
+  final _fondoCtrl = TextEditingController();
+  int? _lataArrastra;
 
   @override
   void initState() {
     super.initState();
-    _iniciar();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _cargarSesion());
+  }
+
+  /// Con la caja cerrada: el fondo sugerido y cuánto trae la lata de antes.
+  Future<void> _cargarSesion() async {
+    final app = AppNs.of(context);
+    if (app.cajaAbierta || app.servicio == null) return;
+    try {
+      final sesion = await app.servicio!.sesion();
+      if (!mounted) return;
+      setState(() {
+        _lataArrastra = sesion.lataQueSeArrastraCentavos;
+        if (sesion.fondoInicialSugeridoCentavos != null && _fondoCtrl.text.isEmpty) _fondoCtrl.text = '${sesion.fondoInicialSugeridoCentavos! ~/ centavosPorPeso}';
+      });
+    } catch (_) {
+      // Sin la sesión a mano igual se puede abrir.
+    }
+  }
+
+  Future<void> _abrirCaja(ControladorAppNs app) async {
+    final servicio = app.servicio;
+    final usuario = app.usuarioId;
+    if (servicio == null || usuario == null) return;
+    final centavos = (int.tryParse(_fondoCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    try {
+      await servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: centavos);
+      if (!mounted) return;
+      mostrarAvisoNs(context, 'Caja abierta con ${plataNs(centavos)}');
+      await app.refrescar();
+    } catch (e) {
+      if (mounted) setState(() => _error = mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
   }
 
   @override
   void dispose() {
     _montoCtrl.dispose();
     _motivoCtrl.dispose();
+    _fondoCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _iniciar() async {
-    setState(() {
-      _cargandoInicial = true;
-      _errorInicial = null;
-    });
-    try {
-      final conexion = await leerConexion();
-      final usuario = await leerUsuario();
-      if (usuario == null) {
-        throw const ErrorCompanion(0, 'Falta elegir usuario.');
-      }
-      final servicio = conexion == null
-          ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()))
-          : await resolverServicioCompanion(conexion);
-      if (!mounted) return;
-      setState(() {
-        _cliente = servicio;
-        _pcEmparejada = conexion != null;
-        _usuarioId = usuario.id;
-      });
-    } catch (e) {
-      if (mounted) setState(() => _errorInicial = mensajeDeError(e));
-    } finally {
-      if (mounted) setState(() => _cargandoInicial = false);
-    }
-  }
+  int get _montoCentavos => (int.tryParse(_montoCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
 
-  Future<void> _confirmar() async {
-    final int monto;
-    try {
-      monto = parsearARS(_montoCtrl.text);
-    } on FormatException {
-      setState(() => _error = 'Monto inválido');
+  Future<void> _guardar() async {
+    final app = AppNs.of(context);
+    if (_montoCentavos <= 0) {
+      mostrarAvisoNs(context, 'Escribí el monto');
       return;
     }
-    if (monto <= 0) {
-      setState(() => _error = 'El monto tiene que ser mayor a cero');
-      return;
-    }
+    final servicio = app.servicio;
+    final sesionId = app.sesion?.id;
+    final usuarioId = app.usuarioId;
+    if (servicio == null || sesionId == null || usuarioId == null) return;
     setState(() {
       _guardando = true;
       _error = null;
     });
     try {
       if (_tipo == TipoMovimientoCaja.gasto) {
-        await _cliente!.registrarGasto(
-          sesionCajaId: _sesionCajaId!,
-          usuarioId: _usuarioId!,
-          montoCentavos: monto,
-          medio: _medio,
-          motivo: _motivoCtrl.text,
-        );
+        await servicio.registrarGasto(sesionCajaId: sesionId, usuarioId: usuarioId, montoCentavos: _montoCentavos, medio: _medio, motivo: _motivoCtrl.text);
       } else {
-        await _cliente!.registrarIngreso(
-          sesionCajaId: _sesionCajaId!,
-          usuarioId: _usuarioId!,
-          montoCentavos: monto,
-          medio: _medio,
-          motivo: _motivoCtrl.text,
-        );
+        await servicio.registrarIngreso(sesionCajaId: sesionId, usuarioId: usuarioId, montoCentavos: _montoCentavos, medio: _medio, motivo: _motivoCtrl.text);
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_tipo == TipoMovimientoCaja.gasto ? 'Gasto anotado' : 'Ingreso anotado')),
-        );
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
+      // Guardar limpia el monto y el motivo y muestra el aviso verde (el esperado de caja cambió).
+      setState(() {
+        _montoCtrl.clear();
+        _motivoCtrl.clear();
+        _guardado = true;
+      });
+      await app.refrescar();
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -147,98 +124,130 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
 
   @override
   Widget build(BuildContext context) {
-    final acentos = context.acentos;
-    final colorTipo = _tipo == TipoMovimientoCaja.gasto ? acentos.mixto : acentos.dinero;
+    final app = AppNs.of(context);
+    final ns = context.ns;
+    final gasto = _tipo == TipoMovimientoCaja.gasto;
+    final listo = _montoCentavos > 0 && !_guardando;
+    final cajas = [
+      ('Cajón normal', MedioGastoCompanion.cajonNormal),
+      ('Lata cigarrillos', MedioGastoCompanion.lata),
+      ('Mercado Pago', MedioGastoCompanion.mercadoPago),
+    ];
     return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Movimiento de caja', etiquetaSalida: 'Cerrar'),
+      backgroundColor: ns.paper,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: _cargandoInicial
-            ? const Center(child: CircularProgressIndicator())
-            : _cliente == null
-            ? EstadoError(
-                mensaje: _errorInicial ?? 'No se pudo conectar.',
-                onReintentar: _iniciar,
-              )
-            : _sesionCajaId == null
-            ? SesionAbiertaGate(
-                cliente: _cliente!,
-                usuarioId: _usuarioId!,
-                onLista: (id) => setState(() => _sesionCajaId = id),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(Espaciado.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
-                    SegmentedButton<TipoMovimientoCaja>(
-                      segments: const [
-                        ButtonSegment(
-                          value: TipoMovimientoCaja.gasto,
-                          label: Text('Gasto'),
-                          icon: Icon(IconosPlazoleta.removeCircleOutline),
-                        ),
-                        ButtonSegment(
-                          value: TipoMovimientoCaja.ingreso,
-                          label: Text('Ingreso'),
-                          icon: Icon(IconosPlazoleta.addCircleOutline),
-                        ),
-                      ],
-                      selected: {_tipo},
-                      onSelectionChanged: (s) => setState(() => _tipo = s.first),
-                    ),
-                    const SizedBox(height: Espaciado.lg),
-                    if (_error != null) ...[
-                      ErrorEnLinea(_error!),
-                      const SizedBox(height: Espaciado.md),
-                    ],
-                    Superficie(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto', textInputAction: TextInputAction.next),
-                          const SizedBox(height: Espaciado.lg),
-                          CampoTexto(
-                            controller: _motivoCtrl,
-                            etiqueta: 'Motivo (opcional)',
+        child: PantallaEntradaNs(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CabeceraSubNs(titulo: 'Gasto o ingreso', onVolver: () => Navigator.of(context).maybePop()),
+                const SizedBox(height: 14),
+                if (!app.cajaAbierta)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            padding: EdgeInsets.zero,
+                            children: [
+                              const InfoNs('No hay caja abierta en la PC ahora mismo.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w600),
+                              const SizedBox(height: 10),
+                              CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondoCtrl, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+                              if (_lataArrastra != null)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                                  child: Text('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(_lataArrastra!)} de antes — no hace falta contarla ahora.', style: estiloNs(14, altura: 1.4, color: ns.mute)),
+                                ),
+                              if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
+                            ],
                           ),
-                          const SizedBox(height: Espaciado.lg),
-                          SegmentedButton<MedioGastoCompanion>(
-                            segments: const [
-                              ButtonSegment(
-                                value: MedioGastoCompanion.cajonNormal,
-                                label: Text('Cajón normal'),
-                              ),
-                              ButtonSegment(
-                                value: MedioGastoCompanion.lata,
-                                label: Text('Lata cigarrillos'),
-                              ),
-                              ButtonSegment(
-                                value: MedioGastoCompanion.mercadoPago,
-                                label: Text('Mercado Pago'),
+                        ),
+                        const SizedBox(height: 14),
+                        BotonNs.primario(context, _guardando ? 'Abriendo…' : 'Abrir caja y continuar', _guardando ? null : () => _abrirCaja(app), alto: 64, tamanio: 18, habilitado: !_guardando),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Anotá la plata que sale o entra de la caja sin ser una venta.', style: estiloNs(15, altura: 1.4, color: ns.mute)),
+                        const SizedBox(height: 14),
+                        SegmentoNs(
+                          opciones: const ['Sale plata', 'Entra plata'],
+                          indice: gasto ? 0 : 1,
+                          alto: 48,
+                          onCambio: (i) => setState(() {
+                            _tipo = i == 0 ? TipoMovimientoCaja.gasto : TipoMovimientoCaja.ingreso;
+                            _guardado = false;
+                          }),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(gasto ? 'De dónde sale la plata' : 'A dónde entra la plata', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            for (var i = 0; i < cajas.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              Expanded(
+                                child: PresionNs(
+                                  onTap: () => setState(() => _medio = cajas[i].$2),
+                                  etiqueta: cajas[i].$1,
+                                  child: Container(
+                                    height: 52,
+                                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    decoration: BoxDecoration(color: _medio == cajas[i].$2 ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
+                                    alignment: Alignment.center,
+                                    child: Text(cajas[i].$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(15, peso: FontWeight.w600, color: _medio == cajas[i].$2 ? TokensNs.blanco : ns.ink)),
+                                  ),
+                                ),
                               ),
                             ],
-                            selected: {_medio},
-                            onSelectionChanged: (s) => setState(() => _medio = s.first),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        CampoNs(
+                          etiqueta: 'Monto',
+                          controller: _montoCtrl,
+                          placeholder: '\$ 0',
+                          radio: 30,
+                          teclado: TextInputType.number,
+                          formatos: soloDigitosNs,
+                          onChanged: (_) => setState(() => _guardado = false),
+                          estiloGrande: 46,
+                        ),
+                        const SizedBox(height: 14),
+                        CampoNs(
+                          etiqueta: 'Motivo (opcional)',
+                          controller: _motivoCtrl,
+                          placeholder: 'Ej: compra de cambio',
+                          radio: 26,
+                          onChanged: (_) => setState(() => _guardado = false),
+                        ),
+                        const Spacer(),
+                        if (_error != null) ...[InfoNs(_error!, tono: TonoNs.bad), const SizedBox(height: 14)],
+                        if (_guardado) ...[EntradaNs(child: InfoNs('Listo: el movimiento quedó anotado en la caja.', tono: TonoNs.good, peso: FontWeight.w600, tamanio: 15)), const SizedBox(height: 14)],
+                        BotonNs(
+                          texto: gasto ? 'Anotar gasto' : 'Anotar ingreso',
+                          onTap: _guardar,
+                          alto: 64,
+                          tamanio: 18,
+                          fondo: listo ? ns.prim : ns.s,
+                          color: listo ? TokensNs.blanco : ns.mute,
+                          habilitado: !_guardando,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: Espaciado.xl),
-                    FilledButton(
-                      onPressed: _guardando ? null : _confirmar,
-                      style: FilledButton.styleFrom(backgroundColor: colorTipo, foregroundColor: acentos.textoSobreColor),
-                      child: _guardando
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(_tipo == TipoMovimientoCaja.gasto ? 'Anotar gasto' : 'Anotar ingreso'),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

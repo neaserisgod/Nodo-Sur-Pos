@@ -11,19 +11,12 @@
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
-import '../ui/comun/campo_texto.dart';
-import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
+import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
-import 'tema/chip_seleccionable.dart';
-import 'tema/colores_companion.dart';
-import 'tema/error_en_linea.dart';
-import '../ui/comun/estado_error.dart';
-import 'tema/superficie.dart';
-import 'tema/app_bar_companion.dart';
 
 /// De dónde sale la plata; las claves son las de `OrigenPagoDeuda`.
 const _origenes = <({String clave, String etiqueta})>[
@@ -154,8 +147,8 @@ class _PantallaPagarProveedorState extends State<PantallaPagarProveedor> {
         nota: _notaCtrl.text.trim().isEmpty ? null : _notaCtrl.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pago al proveedor anotado')));
       Navigator.of(context).pop();
+      mostrarAvisoNs(context, 'Pago al proveedor anotado');
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -180,80 +173,52 @@ class _PantallaPagarProveedorState extends State<PantallaPagarProveedor> {
 
   @override
   Widget build(BuildContext context) {
-    final acentos = context.acentos;
-    final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Pagar proveedor'),
-      body: SafeArea(
-        child: _cargando
-            ? const Center(child: CircularProgressIndicator())
-            : _servicio == null
-            ? EstadoError(mensaje: _errorInicial ?? 'No se pudo conectar.', onReintentar: _iniciar)
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(Espaciado.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+    final ns = context.ns;
+    final saldo = _saldos[_proveedorId] ?? 0;
+    final resumen = _proveedorId == null ? '' : _resumen();
+    Widget etiqueta(String t) => Padding(padding: const EdgeInsets.only(bottom: 8, top: 4), child: Text(t, style: estiloNs(13, peso: FontWeight.w500, color: ns.mute)));
+    return PaginaNs(
+      titulo: 'Pagar proveedor',
+      cuerpo: _cargando
+          ? const Center(child: CircularProgressIndicator())
+          : _servicio == null
+          ? ListView(children: [EstadoErrorNs(texto: _errorInicial ?? 'No se pudo conectar.', onReintentar: _iniciar)])
+          : ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                etiqueta('Proveedor'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Text('¿A quién le pagás?', style: textTheme.labelMedium),
-                    const SizedBox(height: Espaciado.sm),
-                    Wrap(
-                      spacing: Espaciado.sm,
-                      runSpacing: Espaciado.sm,
-                      children: [
-                        for (final p in _proveedores)
-                          ChipSeleccionable(
-                            texto: (_saldos[p.id] ?? 0) > 0 ? '${p.nombre} · ${formatearARS(_saldos[p.id]!)}' : p.nombre,
-                            seleccionado: _proveedorId == p.id,
-                            onTap: () => _elegirProveedor(p),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: Espaciado.lg),
-                    if (_error != null) ...[
-                      ErrorEnLinea(_error!),
-                      const SizedBox(height: Espaciado.md),
-                    ],
-                    Superficie(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          CampoPlata(controller: _montoCtrl, etiqueta: 'Monto', onChanged: (_) => setState(() {})),
-                          if (_proveedorId != null && _resumen().isNotEmpty) ...[
-                            const SizedBox(height: Espaciado.sm),
-                            Text(_resumen(), style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario)),
-                          ],
-                          const SizedBox(height: Espaciado.lg),
-                          CampoTexto(controller: _notaCtrl, etiqueta: 'Nota (opcional)'),
-                          const SizedBox(height: Espaciado.lg),
-                          Text('¿De dónde sale la plata?', style: textTheme.labelMedium),
-                          const SizedBox(height: Espaciado.sm),
-                          Wrap(
-                            spacing: Espaciado.sm,
-                            runSpacing: Espaciado.sm,
-                            children: [
-                              for (final o in _origenes)
-                                ChipSeleccionable(
-                                  texto: o.etiqueta,
-                                  seleccionado: _origen == o.clave,
-                                  onTap: () => setState(() => _origen = o.clave),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Espaciado.xl),
-                    FilledButton(
-                      onPressed: _guardando ? null : _confirmar,
-                      style: FilledButton.styleFrom(backgroundColor: acentos.mixto, foregroundColor: acentos.textoSobreColor),
-                      child: _guardando
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Anotar pago'),
-                    ),
+                    for (final p in _proveedores) ChipNs(texto: p.nombre, activo: _proveedorId == p.id, onTap: () => _elegirProveedor(p)),
                   ],
                 ),
-              ),
-      ),
+                const SizedBox(height: 10),
+                if (_proveedorId != null) FilaClaveValorNs(clave: 'Saldo con este proveedor', valor: formatearARS(saldo), tamanioValor: 17),
+                const SizedBox(height: 4),
+                CampoNs(etiqueta: 'Monto', controller: _montoCtrl, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+                if (resumen.isNotEmpty) ...[const SizedBox(height: 8), InfoNs(resumen)],
+                const SizedBox(height: 10),
+                CampoNs(etiqueta: 'Nota (opcional)', controller: _notaCtrl, placeholder: 'Ej: pedido del jueves'),
+                const SizedBox(height: 14),
+                etiqueta('De dónde salió la plata'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final o in _origenes) ChipNs(texto: o.etiqueta, activo: _origen == o.clave, onTap: () => setState(() => _origen = o.clave)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+      botones: [
+        if (_servicio != null) ...[
+          if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+          BotonNs.primario(context, _guardando ? 'Anotando…' : 'Anotar pago', _guardando ? null : _confirmar, habilitado: !_guardando),
+        ],
+      ],
     );
   }
 }

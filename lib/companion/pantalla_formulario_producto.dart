@@ -1,41 +1,24 @@
-// Alta y edición completa de producto desde la companion — antes vivía
-// privada adentro de `pantalla_precios.dart` ("alta rápida", solo nombre/
-// código/precio/costo/proveedor); ahora es pública porque también la abre
-// el escáner central (`boton_escaner_companion.dart`), y ganó categoría y
-// stock (El dueño, 2026-09-17: "que sea uno como se debe, con todos los campos
-// necesarios para dejarlo andando" — sin categoría el producto queda
-// invisible en reportes por categoría, y sin stock ni siquiera aparece en
-// la búsqueda de venta, Regla 8).
+// Nuevo / Editar producto, tal cual el mock (docs/03 D6): una página con
+// DATOS BÁSICOS (nombre, código de barras, por peso, precio, costo, stock) y
+// ORGANIZACIÓN (categoría, proveedor, activo), con "Guardar producto" abajo.
 //
-// Modal, no pantalla completa (El dueño, 2026-09-19: "los modales de edición y
-// agregado" — mismo lenguaje que el resto de la companion, `mostrarHojaVidrio`)
-// y edición SÍ puede tocar stock directo (El dueño: "y el stock? o que
-// carajos?" — antes era exclusivo de "Conteo de stock" para no duplicar ese
-// camino; ahora se reusa la MISMA fórmula, `ajustarStock` — Regla 3 —, así
-// que no hay dos caminos, solo dos lugares desde donde se puede llegar al
-// mismo).
+// Lo que ya hacía la app y se conserva: el margen en vivo ("Ganás $ X · N %"),
+// poder tipear el stock al editar (deja su rastro de movimiento) y confirmar
+// antes de perder lo cargado.
 
 import 'package:flutter/material.dart';
-
-import '../ui/comun/tarjetas.dart';
+import 'package:flutter/services.dart';
 
 import '../domain/dinero.dart';
 import '../domain/ganancia.dart';
-import '../ui/comun/campo_texto.dart';
-import '../ui/tema/tokens.dart';
 import 'cliente_companion.dart';
 import 'escanear_codigo.dart';
+import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'servicio_companion.dart';
-import 'tema/hoja_vidrio.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
-import 'tema/error_en_linea.dart';
 
-/// Abre el formulario como hoja de vidrio y devuelve `true` si se guardó
-/// algo — mismo contrato que tenía `pushSinTeclado<bool>` antes de que esto
-/// dejara de ser una pantalla propia.
+/// Abre la página de alta o edición. Devuelve `true` si se guardó algo.
 Future<bool> mostrarFormularioProducto(
   BuildContext context, {
   required ServicioCompanion cliente,
@@ -45,18 +28,11 @@ Future<bool> mostrarFormularioProducto(
   ProductoCompanion? producto,
   String? codigoInicial,
 }) async {
-  final resultado = await mostrarHojaVidrio<bool>(
+  final guardado = await pushSinTeclado<bool>(
     context,
-    builder: (_) => PantallaFormularioProducto(
-      cliente: cliente,
-      usuarioId: usuarioId,
-      proveedores: proveedores,
-      categorias: categorias,
-      producto: producto,
-      codigoInicial: codigoInicial,
-    ),
+    (_) => PantallaFormularioProducto(cliente: cliente, usuarioId: usuarioId, proveedores: proveedores, categorias: categorias, producto: producto, codigoInicial: codigoInicial),
   );
-  return resultado ?? false;
+  return guardado ?? false;
 }
 
 class PantallaFormularioProducto extends StatefulWidget {
@@ -75,137 +51,34 @@ class PantallaFormularioProducto extends StatefulWidget {
   final List<ProveedorCompanion> proveedores;
   final List<CategoriaCompanion> categorias;
 
-  /// No nulo = edición; null = alta.
+  /// Null = alta de un producto nuevo.
   final ProductoCompanion? producto;
 
-  /// Solo para alta: el código escaneado que no matcheó ningún producto.
+  /// Código ya leído (al escanear algo que no existe): arranca cargado.
   final String? codigoInicial;
 
   @override
-  State<PantallaFormularioProducto> createState() =>
-      _PantallaFormularioProductoState();
+  State<PantallaFormularioProducto> createState() => _PantallaFormularioProductoState();
 }
 
-class _PantallaFormularioProductoState
-    extends State<PantallaFormularioProducto> {
-  late final _nombreCtrl = TextEditingController(
-    text: widget.producto?.nombre ?? '',
-  );
-  late final _codigoCtrl = TextEditingController(
-    text: widget.producto?.codigoBarras ?? widget.codigoInicial ?? '',
-  );
-  late final _precioCtrl = TextEditingController(
-    text: widget.producto == null
-        ? ''
-        : formatearARS(
-            widget.producto!.esPesable
-                ? widget.producto!.precioPorKiloCentavos ?? 0
-                : widget.producto!.precioCentavos ?? 0,
-            conSigno: false,
-          ),
-  );
-  late final _costoCtrl = TextEditingController(
-    text: widget.producto == null
-        ? ''
-        : formatearARS(
-            widget.producto!.esPesable
-                ? widget.producto!.costoPorKiloCentavos ?? 0
-                : widget.producto!.costoCentavos ?? 0,
-            conSigno: false,
-          ),
-  );
+class _PantallaFormularioProductoState extends State<PantallaFormularioProducto> {
+  static final _soloNumeros = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
 
-  /// En alta arranca vacío (0 si no se toca). En edición arranca con el
-  /// stock real — El dueño, 2026-09-19: "y el stock?", tocarlo desde acá ya no
-  /// es un camino aparte, es el mismo `ajustarStock` que usa Conteo de
-  /// stock (Regla 3), disparado solo si el valor cambió (ver `_guardar`).
-  late final _stockCtrl = TextEditingController(
-    text: widget.producto == null
-        ? ''
-        : '${widget.producto!.esPesable ? widget.producto!.stockGramos ?? 0 : widget.producto!.stock}',
-  );
+  late final _nombre = TextEditingController(text: widget.producto?.nombre ?? '');
+  late final _codigo = TextEditingController(text: widget.producto?.codigoBarras ?? widget.codigoInicial ?? '');
+  late final _precio = TextEditingController(text: _texto(widget.producto == null ? null : (widget.producto!.esPesable ? widget.producto!.precioPorKiloCentavos : widget.producto!.precioCentavos)));
+  late final _costo = TextEditingController(text: _texto(widget.producto == null ? null : (widget.producto!.esPesable ? widget.producto!.costoPorKiloCentavos : widget.producto!.costoCentavos)));
+  late final _stock = TextEditingController(text: widget.producto == null ? '' : '${widget.producto!.esPesable ? widget.producto!.stockGramos ?? 0 : widget.producto!.stock}');
 
   late bool _esPesable = widget.producto?.esPesable ?? false;
   late bool _activo = widget.producto?.activo ?? true;
   int? _proveedorId;
   int? _categoriaId;
-
   bool _guardando = false;
+  bool _sucio = false;
   String? _error;
 
-  /// Sin esto, el botón atrás del sistema salía directo perdiendo lo
-  /// tipeado sin avisar nada.
-  bool _dirty = false;
-  void _marcarDirty([String? _]) => _dirty = true;
-
-  /// A diferencia de `_marcarDirty`, esto SÍ reconstruye — precio y costo
-  /// alimentan la ganancia en vivo de abajo (`_margenTexto`), así que
-  /// necesitan un rebuild por cada tecla. Nombre/código no lo necesitan
-  /// (el propio `TextField` ya se repinta solo), por eso siguen con la
-  /// versión liviana.
-  void _alCambiarPrecioOCosto(String _) {
-    _dirty = true;
-    setState(() {});
-  }
-
-  /// Ganancia en vivo (El dueño, 2026-09-19: "que sea compacta a la vez que
-  /// potente") — mismo cálculo que "Ganancia en vivo" de Productos en el
-  /// escritorio (Regla 3, `gananciaBpDesdeCostoYPrecio`,
-  /// `lib/domain/ganancia.dart`), que la companion no tenía todavía. Null si
-  /// falta un dato o el costo es 0 (no hay ganancia que mostrar, no un error).
-  ///
-  /// "Lenguaje de diseño" (2026-09-26, mock `MovilEditar`): dice cuánto se
-  /// gana por unidad, además del porcentaje, y avisa si el precio no cubre
-  /// el costo.
-  ({String texto, bool cubre})? get _margenTexto {
-    final textoPrecio = _precioCtrl.text.trim();
-    final costo = _costoParseado;
-    if (textoPrecio.isEmpty || costo == null) return null;
-    try {
-      final precio = parsearARS(textoPrecio);
-      if (precio <= costo) return (texto: 'El precio no cubre el costo', cubre: false);
-      final gananciaBp = gananciaBpDesdeCostoYPrecio(costo, precio);
-      return (
-        texto: 'Ganás ${formatearARS(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(gananciaBp / 100).round()}%',
-        cubre: true,
-      );
-    } on FormatException {
-      return null;
-    } on ArgumentError {
-      return null;
-    }
-  }
-
-  /// Null sin costo, o con costo $0 (Regla 4: no es un costo).
-  int? get _costoParseado {
-    final texto = _costoCtrl.text.trim();
-    if (texto.isEmpty) return null;
-    try {
-      final costo = parsearARS(texto);
-      return costo > 0 ? costo : null;
-    } on FormatException {
-      return null;
-    }
-  }
-
-  /// Precio rápido: el que da [gananciaBp] de ganancia sobre el precio, redondeado hacia arriba al peso
-  /// (`precioDesdeCostoYGanancia`, Regla 5) — un botón que se toca a
-  /// propósito, nunca un autocompletado (Regla 14).
-  void _aplicarPrecioRapido(int gananciaBp) {
-    final costo = _costoParseado;
-    if (costo == null) return;
-    _precioCtrl.text = formatearARS(precioDesdeCostoYGanancia(costo, gananciaBp)).replaceAll('\$', '');
-    _alCambiarPrecioOCosto('');
-  }
-
-  Future<void> _reescanear() async {
-    final codigo = await escanearCodigo(context);
-    if (codigo == null || !mounted) return;
-    setState(() {
-      _codigoCtrl.text = codigo;
-      _dirty = true;
-    });
-  }
+  static String _texto(int? centavos) => centavos == null || centavos == 0 ? '' : formatearARS(centavos, conSigno: false);
 
   @override
   void initState() {
@@ -216,53 +89,86 @@ class _PantallaFormularioProductoState
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
-    _codigoCtrl.dispose();
-    _precioCtrl.dispose();
-    _costoCtrl.dispose();
-    _stockCtrl.dispose();
+    _nombre.dispose();
+    _codigo.dispose();
+    _precio.dispose();
+    _costo.dispose();
+    _stock.dispose();
     super.dispose();
   }
 
+  void _cambio() => setState(() => _sucio = true);
+
+  /// El precio que da [g] % de ganancia sobre el costo cargado (una sola cuenta: `domain/ganancia.dart`, Regla 3).
+  int _precioConGanancia(int g) => precioDesdeCostoYGanancia(_plata(_costo) ?? 0, g * 100);
+
+  int? _plata(TextEditingController c) {
+    final t = c.text.trim();
+    if (t.isEmpty) return null;
+    try {
+      return parsearARS(t);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// "Ganás $ X por unidad · N %" o el aviso de que el precio no cubre el costo.
+  ({String texto, bool cubre})? get _margen {
+    final precio = _plata(_precio);
+    final costo = _plata(_costo);
+    if (precio == null || costo == null || costo <= 0) return null;
+    if (precio <= costo) return (texto: 'El precio no cubre el costo', cubre: false);
+    try {
+      final bp = gananciaBpDesdeCostoYPrecio(costo, precio);
+      return (texto: 'Ganás ${plataNs(precio - costo)} ${_esPesable ? 'por kilo' : 'por unidad'} · ${(bp / 100).round()}%', cubre: true);
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  Future<void> _escanear() async {
+    final c = await escanearCodigo(context);
+    if (c == null || !mounted) return;
+    setState(() {
+      _codigo.text = c;
+      _sucio = true;
+    });
+  }
+
   Future<void> _guardar() async {
-    if (_nombreCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Falta el nombre');
+    if (_nombre.text.trim().isEmpty) {
+      mostrarAvisoNs(context, 'Falta el nombre');
+      return;
+    }
+    final precioTexto = _precio.text.trim();
+    if (precioTexto.isEmpty) {
+      mostrarAvisoNs(context, _esPesable ? 'Un producto por peso necesita precio por kilo' : 'Falta el precio');
       return;
     }
     final int? precio;
     final int? costo;
     final int? stockTipeado;
     try {
-      precio = _precioCtrl.text.trim().isEmpty
-          ? null
-          : parsearARS(_precioCtrl.text);
-      costo = _costoCtrl.text.trim().isEmpty
-          ? null
-          : parsearARS(_costoCtrl.text);
-      stockTipeado = _stockCtrl.text.trim().isEmpty
-          ? null
-          : int.parse(_stockCtrl.text.trim());
+      precio = parsearARS(precioTexto);
+      costo = _costo.text.trim().isEmpty ? null : parsearARS(_costo.text);
+      stockTipeado = _stock.text.trim().isEmpty ? null : int.parse(_stock.text.trim());
     } on FormatException {
       setState(() => _error = 'Precio, costo o stock inválido');
       return;
     }
-    if (_esPesable && precio == null) {
-      setState(() => _error = 'Un producto pesable necesita precio por kilo');
-      return;
-    }
-
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final navegador = Navigator.of(context);
+    final esAlta = widget.producto == null;
     setState(() {
       _guardando = true;
       _error = null;
     });
     try {
-      final producto = widget.producto;
-      if (producto == null) {
+      final codigo = _codigo.text.trim().isEmpty ? null : _codigo.text.trim();
+      if (esAlta) {
         await widget.cliente.crearProducto(
-          nombre: _nombreCtrl.text.trim(),
-          codigoBarras: _codigoCtrl.text.trim().isEmpty
-              ? null
-              : _codigoCtrl.text.trim(),
+          nombre: _nombre.text.trim(),
+          codigoBarras: codigo,
           categoriaId: _categoriaId,
           proveedorId: _proveedorId,
           esPesable: _esPesable,
@@ -275,18 +181,11 @@ class _PantallaFormularioProductoState
           usuarioId: widget.usuarioId,
         );
       } else {
-        // Stock nunca viaja por `actualizarProducto` (Regla 8/6: todo
-        // movimiento de stock deja rastro en `movimientos_de_stock`,
-        // cambiarlo "de paso" en una edición de precio no lo dejaría) — se
-        // pasa el valor QUE YA TENÍA sin tocar, y si el campo de acá abajo
-        // cambió, se dispara un `ajustarStock` aparte, mismo camino que
-        // usa Conteo de stock.
+        final p = widget.producto!;
         await widget.cliente.actualizarProducto(
-          producto.id,
-          nombre: _nombreCtrl.text.trim(),
-          codigoBarras: _codigoCtrl.text.trim().isEmpty
-              ? null
-              : _codigoCtrl.text.trim(),
+          p.id,
+          nombre: _nombre.text.trim(),
+          codigoBarras: codigo,
           categoriaId: _categoriaId,
           proveedorId: _proveedorId,
           esPesable: _esPesable,
@@ -294,24 +193,20 @@ class _PantallaFormularioProductoState
           costoCentavos: _esPesable ? null : costo,
           precioPorKiloCentavos: _esPesable ? precio : null,
           costoPorKiloCentavos: _esPesable ? costo : null,
-          stock: producto.stock,
-          stockGramos: producto.stockGramos,
+          stock: p.stock,
+          stockGramos: p.stockGramos,
           activo: _activo,
           usuarioId: widget.usuarioId,
         );
-        final stockActual = _esPesable ? producto.stockGramos ?? 0 : producto.stock;
-        if (stockTipeado != null && stockTipeado != stockActual) {
-          await widget.cliente.ajustarStock(
-            producto.id,
-            stock: _esPesable ? producto.stock : stockTipeado,
-            stockGramos: _esPesable ? stockTipeado : null,
-            motivo: 'Editado desde ficha de producto',
-            usuarioId: widget.usuarioId,
-          );
+        final actual = _esPesable ? p.stockGramos ?? 0 : p.stock;
+        if (stockTipeado != null && stockTipeado != actual) {
+          await widget.cliente.ajustarStock(p.id, stock: _esPesable ? p.stock : stockTipeado, stockGramos: _esPesable ? stockTipeado : null, motivo: 'Editado desde ficha de producto', usuarioId: widget.usuarioId);
         }
       }
-      _dirty = false;
-      if (mounted) Navigator.of(context).pop(true);
+      _sucio = false;
+      if (!mounted) return;
+      navegador.pop(true);
+      mostrarAvisoEnNs(overlay, esAlta ? 'Producto guardado' : 'Cambios guardados');
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -319,281 +214,147 @@ class _PantallaFormularioProductoState
     }
   }
 
+  Future<void> _volver() async {
+    if (!_sucio || await confirmarSalirSinGuardar(context, texto: 'Lo que cargaste todavía no se guardó — se pierde si salís ahora.', seguir: 'Seguir acá')) {
+      if (mounted) Navigator.of(context).pop(false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ns = context.ns;
     final esAlta = widget.producto == null;
+    final margen = _margen;
     return PopScope(
-      // Siempre `false`, no `!_dirty`: `_dirty` se marca sin pasar por
-      // `setState` (no hace falta rebuild solo por eso), así que un
-      // `canPop` calculado en el build anterior podría estar desactualizado
-      // al momento real de tocar atrás. Se decide fresco adentro del
-      // callback en vez de confiar en el valor ya construido.
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        if (!_dirty || await confirmarSalirSinGuardar(context)) {
-          if (context.mounted) Navigator.of(context).pop();
-        }
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _volver();
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            esAlta ? 'Nuevo producto' : 'Editar producto',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: Espaciado.md),
-          // Alto acotado + scroll propio adentro de la hoja — con seis
-          // campos más la ganancia en vivo, en un celular chico (o con el
-          // teclado ya abierto achicando el espacio disponible) puede no
-          // entrar entero; la hoja en sí no scrollea (`mostrarHojaVidrio`),
-          // así que el que scrollea es este contenido, no la hoja completa
-          // (el título y el botón de guardar siempre quedan visibles).
-          // `ConstrainedBox` con un tope, no `Flexible`: adentro de una
-          // `Column` con `mainAxisSize.min` (la hoja se achica a su
-          // contenido) un `Flexible` no tiene "espacio sobrante" que
-          // repartir y el `SingleChildScrollView` recibiría una altura sin
-          // límite — error real de Flutter, no solo estético.
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
-            child: SingleChildScrollView(
+      child: Scaffold(
+        backgroundColor: ns.paper,
+        body: SafeArea(
+          child: PantallaEntradaNs(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _SeccionFormulario(
-                    titulo: 'Datos básicos',
-                    campos: [
-                      CampoTexto(
-                        controller: _nombreCtrl,
-                        etiqueta: 'Nombre',
-                        autofocus: esAlta,
-                        textInputAction: TextInputAction.next,
-                        onChanged: _marcarDirty,
-                      ),
-                      CampoTexto(
-                        controller: _codigoCtrl,
-                        etiqueta: 'Código de barras (opcional)',
-                        textInputAction: TextInputAction.next,
-                        onChanged: _marcarDirty,
-                        suffixIcon: IconButton(
-                          icon: const Icon(IconosPlazoleta.qrCodeScanner),
-                          tooltip: 'Escanear',
-                          onPressed: _reescanear,
+                  CabeceraSubNs(titulo: esAlta ? 'Nuevo producto' : 'Editar producto', tamanio: 32, onVolver: _volver),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        const SeccionNs('Datos básicos'),
+                        const SizedBox(height: 10),
+                        CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej: Alfajor triple', onChanged: (_) => _cambio()),
+                        const SizedBox(height: 10),
+                        CampoNs(etiqueta: 'Código de barras (opcional)', controller: _codigo, placeholder: 'Escribilo o escaneá', teclado: TextInputType.number, onChanged: (_) => _cambio()),
+                        const SizedBox(height: 10),
+                        BotonNs.secundario(context, 'Escanear código', _escanear, alto: 54, icono: IconoNs.escanear),
+                        const SizedBox(height: 10),
+                        InterruptorNs(
+                          etiqueta: 'Se vende por peso',
+                          descripcion: _esPesable ? 'El precio y el stock van por kilo y gramos' : 'Se vende por unidad',
+                          encendido: _esPesable,
+                          onCambio: (v) => setState(() {
+                            _esPesable = v;
+                            _sucio = true;
+                          }),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Espaciado.md),
-                  _SeccionFormulario(
-                    titulo: 'Precio',
-                    campos: [
-                      Row(
-                        children: [
-                          const Expanded(child: Text('Se vende pesado (por kilo)')),
-                          Switch(
-                            value: _esPesable,
-                            onChanged: (v) => setState(() {
-                              _esPesable = v;
-                              _dirty = true;
-                            }),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: CampoPlata(
-                              controller: _precioCtrl,
-                              etiqueta: _esPesable ? 'Precio/kilo' : 'Precio',
-                              textInputAction: TextInputAction.next,
-                              onChanged: _alCambiarPrecioOCosto,
-                            ),
-                          ),
-                          const SizedBox(width: Espaciado.md),
-                          Expanded(
-                            child: CampoPlata(
-                              controller: _costoCtrl,
-                              etiqueta: _esPesable ? 'Costo/kilo' : 'Costo',
-                              textInputAction: TextInputAction.next,
-                              onChanged: _alCambiarPrecioOCosto,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_margenTexto != null || _costoParseado != null) ...[
-                        const SizedBox(height: Espaciado.sm),
-                        Wrap(
-                          spacing: Espaciado.sm,
-                          runSpacing: Espaciado.sm,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            if (_margenTexto != null)
-                              Insignia(
-                                texto: _margenTexto!.texto,
-                                tono: _margenTexto!.cubre ? Tono.ganancia : Tono.error,
-                              ),
-                            if (_costoParseado != null)
-                              for (final bp in const [2000, 3000, 4000])
-                                ActionChip(
-                                  label: Text('${bp ~/ 100}% ganancia'),
-                                  onPressed: () => _aplicarPrecioRapido(bp),
+                        const SizedBox(height: 10),
+                        CampoNs(etiqueta: _esPesable ? 'Precio por kilo' : 'Precio de venta', controller: _precio, grande: true, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), formatos: _soloNumeros, onChanged: (_) => _cambio()),
+                        const SizedBox(height: 10),
+                        CampoNs(etiqueta: _esPesable ? 'Lo que te cuesta el kilo' : 'Lo que te cuesta', controller: _costo, placeholder: '\$ 0', teclado: const TextInputType.numberWithOptions(decimal: true), formatos: _soloNumeros, onChanged: (_) => _cambio()),
+                        if (margen != null) ...[const SizedBox(height: 10), InfoNs(margen.texto, tono: margen.cubre ? TonoNs.good : TonoNs.bad)],
+                        if ((_plata(_costo) ?? 0) > 0) ...[
+                          const SizedBox(height: 10),
+                          Text('Poner el precio con ganancia', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final g in const [20, 30, 40])
+                                ChipNs(
+                                  texto: '$g% ganancia',
+                                  activo: _plata(_precio) == _precioConGanancia(g),
+                                  onTap: () => setState(() {
+                                    _precio.text = '${_precioConGanancia(g) ~/ centavosPorPeso}';
+                                    _sucio = true;
+                                  }),
                                 ),
-                          ],
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        CampoNs(etiqueta: _esPesable ? 'Cuántos gramos tenés ahora' : 'Cuántas unidades tenés ahora', controller: _stock, placeholder: '0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _cambio()),
+                        const SizedBox(height: 22),
+                        const SeccionNs('Organización'),
+                        const SizedBox(height: 10),
+                        _FilaOpciones(
+                          etiqueta: 'Categoría',
+                          opciones: [('Sin categoría', null), for (final c in widget.categorias) (c.nombre, c.id)],
+                          elegida: _categoriaId,
+                          onElegir: (v) => setState(() {
+                            _categoriaId = v;
+                            _sucio = true;
+                          }),
+                        ),
+                        const SizedBox(height: 14),
+                        _FilaOpciones(
+                          etiqueta: 'Proveedor',
+                          opciones: [('Sin proveedor', null), for (final p in widget.proveedores) (p.nombre, p.id)],
+                          elegida: _proveedorId,
+                          onElegir: (v) => setState(() {
+                            _proveedorId = v;
+                            _sucio = true;
+                          }),
+                        ),
+                        const SizedBox(height: 14),
+                        InterruptorNs(
+                          etiqueta: 'Activo',
+                          descripcion: _activo ? 'Aparece en la venta' : 'Oculto en la venta',
+                          encendido: _activo,
+                          onCambio: (v) => setState(() {
+                            _activo = v;
+                            _sucio = true;
+                          }),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: Espaciado.md),
-                  _SeccionFormulario(
-                    titulo: 'Organización',
-                    campos: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int?>(
-                              initialValue: _categoriaId,
-                              // `isExpanded: true` — sin esto, un nombre
-                              // largo de categoría desborda el ancho
-                              // acotado que le toca acá adentro de la fila
-                              // de dos columnas.
-                              isExpanded: true,
-                              decoration: const InputDecoration(labelText: 'Categoría'),
-                              items: [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  child: Text('Sin categoría'),
-                                ),
-                                for (final c in widget.categorias)
-                                  DropdownMenuItem(
-                                    value: c.id,
-                                    child: Text(c.nombre, overflow: TextOverflow.ellipsis),
-                                  ),
-                              ],
-                              onChanged: (v) => setState(() {
-                                _categoriaId = v;
-                                _dirty = true;
-                              }),
-                            ),
-                          ),
-                          const SizedBox(width: Espaciado.md),
-                          Expanded(
-                            child: DropdownButtonFormField<int?>(
-                              initialValue: _proveedorId,
-                              isExpanded: true,
-                              decoration: const InputDecoration(labelText: 'Proveedor'),
-                              items: [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  child: Text('Sin proveedor'),
-                                ),
-                                for (final p in widget.proveedores)
-                                  DropdownMenuItem(
-                                    value: p.id,
-                                    child: Text(
-                                      '${p.codigo} — ${p.nombre}',
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                              ],
-                              onChanged: (v) => setState(() {
-                                _proveedorId = v;
-                                _dirty = true;
-                              }),
-                            ),
-                          ),
-                        ],
-                      ),
-                      CampoTexto(
-                        controller: _stockCtrl,
-                        etiqueta: _esPesable ? 'Stock (gramos)' : 'Stock (unidades)',
-                        keyboardType: TextInputType.number,
-                        onChanged: _marcarDirty,
-                      ),
-                      if (!esAlta)
-                        Row(
-                          children: [
-                            const Expanded(child: Text('Activo (se puede vender)')),
-                            Switch(
-                              value: _activo,
-                              onChanged: (v) => setState(() {
-                                _activo = v;
-                                _dirty = true;
-                              }),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: Espaciado.md),
-                    ErrorEnLinea(_error!),
-                  ],
+                  if (_error != null) ...[const SizedBox(height: 14), InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo, tamanio: 15, peso: FontWeight.w500)],
+                  const SizedBox(height: 14),
+                  BotonNs.primario(context, _guardando ? 'Guardando…' : (esAlta ? 'Dar de alta' : 'Guardar cambios'), _guardando ? null : _guardar, habilitado: !_guardando),
+                  const SizedBox(height: 8),
+                  BotonNs.secundario(context, 'Cancelar', _guardando ? null : _volver),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: Espaciado.lg),
-          FilledButton(
-            onPressed: _guardando ? null : _guardar,
-            child: _guardando
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(esAlta ? 'Dar de alta' : 'Guardar cambios'),
-          ),
-          const SizedBox(height: Espaciado.sm),
-          // Cancelar hace lo mismo que volver atrás: pregunta antes de tirar lo tipeado.
-          OutlinedButton(onPressed: _guardando ? null : _cancelar, child: const Text('Cancelar')),
-        ],
+        ),
       ),
     );
   }
-
-  Future<void> _cancelar() async {
-    if (!_dirty || await confirmarSalirSinGuardar(context)) {
-      if (mounted) Navigator.of(context).pop();
-    }
-  }
 }
 
-/// Una sección del formulario: título chico arriba, una sola `Superficie`
-/// abajo con todos sus campos separados por aire, no una tarjeta por campo.
-class _SeccionFormulario extends StatelessWidget {
-  const _SeccionFormulario({required this.titulo, required this.campos});
-
-  final String titulo;
-  final List<Widget> campos;
+/// Una fila de opciones con su etiqueta (chips que saltan de línea).
+class _FilaOpciones extends StatelessWidget {
+  const _FilaOpciones({required this.etiqueta, required this.opciones, required this.elegida, required this.onElegir});
+  final String etiqueta;
+  final List<(String, int?)> opciones;
+  final int? elegida;
+  final ValueChanged<int?> onElegir;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: Espaciado.xs, bottom: Espaciado.sm),
-          child: Text(
-            titulo,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: context.colores.textoSecundario),
-          ),
-        ),
-        Superficie(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < campos.length; i++) ...[
-                if (i > 0) const SizedBox(height: Espaciado.lg),
-                campos[i],
-              ],
-            ],
-          ),
-        ),
+        Text(etiqueta, style: estiloNs(14, peso: FontWeight.w600, color: context.ns.mute)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [for (final o in opciones) ChipNs(texto: o.$1, activo: elegida == o.$2, onTap: () => onElegir(o.$2))]),
       ],
     );
   }

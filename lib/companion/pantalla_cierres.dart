@@ -30,30 +30,26 @@ import '../data/pdf_dia_completo.dart';
 import '../data/repositorio_conciliacion_mp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../servicios/conciliacion_mp_nube.dart';
-import '../ui/cierre/seccion_mp_real.dart';
+import 'pantallas/seccion_mp_real_ns.dart';
 import 'sync_nube_companion.dart';
-import '../domain/dinero.dart';
 import '../ui/tema/tokens.dart';
 import 'cambios_companion.dart';
 import 'base_local.dart';
 import 'cache_cierres.dart';
+import 'kit/kit_ns.dart';
 import 'cliente_companion.dart' show ClienteCompanion, ResumenCierreCompanion, SesionCerradaCompanion;
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
-import 'navbar_companion.dart';
 import 'puerto_local.dart';
 import 'seccion_extra_cierre_companion.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
+import 'tema/app_bar_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/esqueleto_companion.dart';
 import '../ui/comun/estado_error.dart';
 import '../ui/comun/estado_vacio.dart';
-import 'tema/hoja_vidrio.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
 import '../ui/tema/iconos.dart';
-import 'tema/error_en_linea.dart';
 
 class PantallaCierres extends StatefulWidget {
   const PantallaCierres({super.key});
@@ -189,21 +185,11 @@ class _PantallaCierresState extends State<PantallaCierres> {
   }
 
   Widget _lista(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.lg,
-        Espaciado.lg + NavbarCompanion.espacioReservado,
-      ),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(margenNs, 14, margenNs, 24),
       itemCount: _cierres.length,
-      itemBuilder: (context, i) {
-        final c = _cierres[i];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: Espaciado.sm),
-          child: _FilaCierre(cierre: c, servicio: _servicio),
-        );
-      },
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, i) => _FilaCierre(cierre: _cierres[i], servicio: _servicio),
     );
   }
 }
@@ -226,7 +212,7 @@ class _FilaCierreState extends State<_FilaCierre> {
   /// tuvo: cigarrillos, redondeo, vendido sin costo, reserva de fijos, nota
   /// y a separar por proveedor.
   Future<void> _abrirDetalle() async {
-    await mostrarHojaVidrio<void>(
+    await mostrarHojaNs<void>(
       context,
       builder: (context) => _DetalleCierreCompanion(
         cierre: widget.cierre,
@@ -235,77 +221,24 @@ class _FilaCierreState extends State<_FilaCierre> {
     );
   }
 
+  /// Una fila como en el mock (36): "03/10/2026 21:40 · Ana", lo vendido y a la derecha la mayor diferencia
+  /// ("Cuadró", "−$ 400", "+$ 150").
   @override
   Widget build(BuildContext context) {
     final c = widget.cierre;
-    final colores = context.colores;
-    return Superficie(
-      padding: EdgeInsets.zero,
-      child: Presionable(
-        onTap: _abrirDetalle,
-        child: Padding(
-          padding: const EdgeInsets.all(Bento.paddingBloque),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _fecha(c.fechaCierre ?? c.fechaApertura),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      c.nombreEmpleado,
-                      style: TextStyle(color: colores.textoSecundario),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    formatearARS(c.totalVendidoCentavos),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  _chipDiferencia(context, c),
-                ],
-              ),
-              Icon(IconosPlazoleta.chevronRight, color: colores.textoSecundario),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Suma máxima diferencia en valor absoluto entre las tres cajas, para un
-  /// solo indicador rápido en la fila colapsada (el desglose completo por
-  /// caja aparece recién al expandir).
-  Widget _chipDiferencia(BuildContext context, SesionCerradaCompanion c) {
-    final diferencias = [
-      c.diferenciaCentavos,
-      c.mpDiferenciaCentavos,
-      c.lataDiferenciaCentavos,
-    ].whereType<int>();
-    if (diferencias.isEmpty) return const SizedBox.shrink();
-    final peor = diferencias.reduce((a, b) => a.abs() > b.abs() ? a : b);
-    if (peor == 0) {
-      return Text(
-        'Cuadró',
-        style: TextStyle(
-          color: context.colores.textoSecundario,
-          fontSize: TamanioTexto.etiqueta,
-        ),
-      );
-    }
-    return Text(
-      peor > 0 ? '+${formatearARS(peor)}' : '-${formatearARS(-peor)}',
-      style: TextStyle(color: context.colores.error, fontSize: TamanioTexto.etiqueta),
+    final dif = [c.diferenciaCentavos, c.mpDiferenciaCentavos, c.lataDiferenciaCentavos].whereType<int>();
+    final peor = dif.isEmpty ? 0 : dif.reduce((a, b) => a.abs() > b.abs() ? a : b);
+    return FilaProductoNs(
+      nombre: '${_fecha(c.fechaCierre ?? c.fechaApertura)} · ${c.nombreEmpleado}',
+      detalle: 'Vendido ${plataNs(c.totalVendidoCentavos)}',
+      valor: dif.isEmpty ? '' : _diferenciaTexto(peor),
+      onTap: _abrirDetalle,
     );
   }
 }
+
+/// `Cuadró` / `−$ 400` / `+$ 150` (la diferencia más grande del cierre).
+String _diferenciaTexto(int d) => d == 0 ? 'Cuadró' : '${d > 0 ? '+' : '−'}${plataNs(d.abs())}';
 
 /// Detalle completo de un cierre, en una hoja de vidrio (El dueño, 2026-09-19:
 /// rework de "Cierres" con el desglose por proveedor) — las tres cajas
@@ -398,104 +331,49 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
     }
   }
 
+  Widget _filaCaja(String nombre, int? contado, int? esperado, int? diferencia) {
+    if (contado == null && esperado == null) return const SizedBox.shrink();
+    return FilaProductoNs(
+      nombre: nombre,
+      detalle: 'Contado ${plataNs(contado ?? 0)} · Esperado ${plataNs(esperado ?? 0)}',
+      valor: diferencia == null ? '—' : (diferencia == 0 ? '=' : _diferenciaTexto(diferencia)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = widget.cierre;
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(_fecha(c.fechaCierre ?? c.fechaApertura), style: Theme.of(context).textTheme.titleLarge),
-          Text(c.nombreEmpleado, style: TextStyle(color: context.colores.textoSecundario)),
-          const SizedBox(height: Espaciado.lg),
-          _filaCaja(context, 'Efectivo', c.efectivoContadoCentavos, c.efectivoEsperadoCentavos, c.diferenciaCentavos),
-          _filaCaja(context, 'Mercado Pago', c.mpContadoCentavos, c.mpEsperadoCentavos, c.mpDiferenciaCentavos),
-          _filaCaja(context, 'Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
-          const SizedBox(height: Espaciado.lg),
-          ...[
-            OutlinedButton.icon(
-              key: const Key('exportar_dia'),
-              onPressed: _exportando ? null : _exportarDia,
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: Text(_exportando ? 'Armando el PDF…' : 'Exportar el día completo (PDF)'),
-            ),
-            if (_errorExportar != null) ErrorEnLinea(_errorExportar!),
-            const SizedBox(height: Espaciado.sm),
-          ],
-          SeccionMpReal(
-            cargar: _cargarMpReal,
-            mpEsperadoCentavos: c.mpEsperadoCentavos ?? 0,
-            mpContadoCentavos: c.mpContadoCentavos,
-          ),
-          const SizedBox(height: Espaciado.md),
-          if (_resumen != null) ...[
-            const Divider(),
-            const SizedBox(height: Espaciado.sm),
-            SeccionExtraCierreCompanion(resumen: _resumen!),
-          ] else if (_error != null)
-            ErrorEnLinea(_error!)
-          else
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(Espaciado.lg),
-                child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-            ),
-        ],
-      ),
+    return HojaNs(
+      titulo: _fecha(c.fechaCierre ?? c.fechaApertura),
+      texto: 'Cerró ${c.nombreEmpleado}',
+      bloques: [
+        _filaCaja('Efectivo', c.efectivoContadoCentavos, c.efectivoEsperadoCentavos, c.diferenciaCentavos),
+        _filaCaja('Mercado Pago', c.mpContadoCentavos, c.mpEsperadoCentavos, c.mpDiferenciaCentavos),
+        _filaCaja('Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
+        BotonNs.secundario(context, _exportando ? 'Armando el PDF…' : 'Exportar el día completo (PDF)', _exportando ? null : _exportarDia, alto: 52),
+        if (_errorExportar != null) InfoNs(_errorExportar!, tono: TonoNs.bad),
+        SeccionMpRealNs(cargar: _cargarMpReal, mpEsperadoCentavos: c.mpEsperadoCentavos ?? 0, mpContadoCentavos: c.mpContadoCentavos),
+        if (_resumen != null)
+          SeccionExtraCierreCompanion(resumen: _resumen!)
+        else if (_error != null)
+          InfoNs(_error!, tono: TonoNs.bad)
+        else
+          const Padding(padding: EdgeInsets.all(14), child: Center(child: SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5)))),
+      ],
+      botones: [BotonNs.secundario(context, 'Cerrar', () => Navigator.of(context).pop())],
     );
   }
 }
 
-Widget _filaCaja(
-  BuildContext context,
-  String etiqueta,
-  int? contado,
-  int? esperado,
-  int? diferencia,
-) {
-  if (contado == null && esperado == null) return const SizedBox.shrink();
-  final colores = context.colores;
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: Espaciado.xs),
-    child: Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(etiqueta, style: TextStyle(color: colores.textoSecundario)),
-        ),
-        Expanded(
-          child: Text(
-            'Contado ${formatearARS(contado ?? 0)}',
-            style: const TextStyle(fontSize: TamanioTexto.etiqueta),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            'Esperado ${formatearARS(esperado ?? 0)}',
-            style: const TextStyle(fontSize: TamanioTexto.etiqueta),
-          ),
-        ),
-        SizedBox(
-          width: 70,
-          child: Text(
-            diferencia == null
-                ? '—'
-                : diferencia == 0
-                ? '='
-                : diferencia > 0
-                ? '+${formatearARS(diferencia)}'
-                : '-${formatearARS(-diferencia)}',
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: diferencia == null || diferencia == 0 ? colores.textoSecundario : colores.error,
-              fontWeight: Pesos.medium,
-            ),
-          ),
-        ),
-      ],
-    ),
+/// "Cierres anteriores" como página completa (docs/03 D2).
+class PaginaCierresAnteriores extends StatelessWidget {
+  const PaginaCierresAnteriores({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: context.ns.paper,
+    appBar: const AppBarCompanion(titulo: 'Cierres anteriores'),
+    body: const SafeArea(child: PantallaCierres()),
   );
 }
 

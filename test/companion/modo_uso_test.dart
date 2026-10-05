@@ -102,7 +102,7 @@ void main() {
     testWidgets('al cambiar desde Gestión: tiene título propio y marca el modo actual', (tester) async {
       await abrir(tester, actual: ModoUso.soloCelular);
       expect(find.text('Modo de uso'), findsOneWidget);
-      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(find.text('Actual'), findsOneWidget);
       expect(find.text('¿Cómo vas a usar el sistema?'), findsNothing);
     });
   });

@@ -1,101 +1,70 @@
-// "Consultar precio" — para responder rápido "¿cuánto sale esto?" sin
-// entrar al formulario de edición: escanear o escribir, ver el precio
-// grande, listo. Es de solo lectura a propósito (no comparte pantalla con
-// "Precios y alta de producto", que sí escribe) — así un vistazo rápido
-// nunca corre el riesgo de tocar un precio sin querer.
+// "Consultar precio", tal cual el mock (docs/03 C1): escribir o escanear, ver el
+// precio gigante en una tarjeta oscura y, si hace falta, agregarlo a la venta.
+// Es de solo lectura a propósito: un vistazo rápido nunca corre el riesgo de
+// tocar un precio sin querer.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../domain/dinero.dart';
-import '../ui/tema/tokens.dart';
-import 'cambios_companion.dart';
-import 'aviso_modo_local.dart';
+import 'app_ns.dart';
 import 'base_local.dart';
+import 'cambios_companion.dart';
+import 'carrito_venta.dart';
 import 'cliente_companion.dart' show ProductoCompanion;
 import 'debounce.dart';
 import 'emparejamiento.dart';
 import 'escanear_codigo.dart';
+import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
-import 'tema/esqueleto_companion.dart';
-import 'tema/colores_companion.dart';
-import '../ui/comun/estado_error.dart';
-import '../ui/comun/estado_vacio.dart';
-import 'tema/piezas_companion.dart';
-import 'tema/presionable.dart';
-import 'tema/superficie.dart';
-import '../ui/tema/iconos.dart';
-import 'tema/error_en_linea.dart';
-import 'tema/app_bar_companion.dart';
-import 'boton_escaner_companion.dart';
+import '../domain/venta.dart';
 
 class PantallaConsultarPrecio extends StatefulWidget {
   const PantallaConsultarPrecio({super.key});
 
   @override
-  State<PantallaConsultarPrecio> createState() =>
-      _PantallaConsultarPrecioState();
+  State<PantallaConsultarPrecio> createState() => _PantallaConsultarPrecioState();
 }
 
 class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
-  ServicioCompanion? _cliente;
-  bool _pcEmparejada = false;
-
+  ServicioCompanion? _servicio;
   final _busquedaCtrl = TextEditingController();
   final _debouncer = Debouncer();
   List<ProductoCompanion> _resultados = [];
+  Map<int, String> _proveedores = {};
   ProductoCompanion? _seleccionado;
-  bool _buscando = false;
   bool _escaneando = false;
-  bool _cargandoInicial = true;
   String? _error;
-  String? _errorInicial;
-
-  /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
-  /// sincronizó" — repite la búsqueda actual sola apenas la sync trae algo
-  /// nuevo.
   StreamSubscription<void>? _subCambiosSync;
 
   @override
   void initState() {
     super.initState();
     _iniciar();
-    _subCambiosSync = avisosCambiosCompanion.listen((_) {
-      _buscar(_busquedaCtrl.text);
-    });
+    // Llegó algo nuevo por la sync: se repite la búsqueda sola.
+    _subCambiosSync = avisosCambiosCompanion.listen((_) => _buscar(_busquedaCtrl.text));
   }
 
-  /// Sin PC emparejada (El dueño, 2026-09-18: "no debería tener que escanear
-  /// ya, es innecesario") cae a la base local sincronizada por Supabase en
-  /// vez de mostrar un error — buscar/consultar precio no necesita la PC
-  /// para nada que ya haya sincronizado.
+  /// Sin PC emparejada cae a la base local sincronizada: buscar un precio no necesita la PC.
   Future<void> _iniciar() async {
-    setState(() {
-      _cargandoInicial = true;
-      _errorInicial = null;
-    });
     try {
       final conexion = await leerConexion();
-      final servicio = conexion == null
-          ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion()))
-          : await resolverServicioCompanion(conexion);
-      if (mounted) {
-        setState(() {
-          _cliente = servicio;
-          _pcEmparejada = conexion != null;
-        });
-        // El mock arranca con todos los productos a la vista, no con la lista vacía.
-        await _buscar('');
+      final servicio = conexion == null ? ServicioCompanionOffline(PuertoLocal(baseLocalCompanion())) : await resolverServicioCompanion(conexion);
+      if (!mounted) return;
+      _servicio = servicio;
+      try {
+        final provs = await servicio.proveedores();
+        _proveedores = {for (final p in provs) p.id: p.nombre};
+      } catch (_) {
+        // Sin proveedores solo se muestra el stock.
       }
+      await _buscar('');
     } catch (e) {
-      if (mounted) setState(() => _errorInicial = mensajeDeError(e));
-    } finally {
-      if (mounted) setState(() => _cargandoInicial = false);
+      if (mounted) setState(() => _error = mensajeDeError(e));
     }
   }
 
@@ -108,31 +77,25 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
   }
 
   Future<void> _buscar(String texto) async {
-    if (_cliente == null) return;
-    setState(() {
-      _seleccionado = null;
-      _buscando = true;
-    });
+    final servicio = _servicio;
+    if (servicio == null) return;
     try {
-      final resultados = await _cliente!.productos(busqueda: texto.trim().isEmpty ? null : texto);
-      // Descarta una respuesta que ya no corresponde al texto actual —
-      // otra, más nueva, pudo llegar antes por el jitter normal de WiFi.
+      final lista = await servicio.productos(busqueda: texto.trim().isEmpty ? null : texto);
+      // Descarta una respuesta que ya no corresponde al texto actual.
       if (mounted && _busquedaCtrl.text == texto) {
-        setState(() => _resultados = resultados);
+        setState(() {
+          _resultados = texto.trim().isEmpty ? lista.take(6).toList() : lista;
+          _error = null;
+        });
       }
     } catch (e) {
-      if (mounted && _busquedaCtrl.text == texto) {
-        setState(() => _error = mensajeDeError(e));
-      }
-    } finally {
-      if (mounted && _busquedaCtrl.text == texto) {
-        setState(() => _buscando = false);
-      }
+      if (mounted && _busquedaCtrl.text == texto) setState(() => _error = mensajeDeError(e));
     }
   }
 
   Future<void> _escanear() async {
-    if (_cliente == null || _escaneando) return;
+    final servicio = _servicio;
+    if (servicio == null || _escaneando) return;
     final codigo = await escanearCodigo(context);
     if (codigo == null || !mounted) return;
     setState(() {
@@ -140,14 +103,13 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
       _error = null;
     });
     try {
-      final producto = await _cliente!.porCodigoBarras(codigo);
+      final producto = await servicio.porCodigoBarras(codigo);
       if (!mounted) return;
       if (producto == null) {
         setState(() => _error = 'No hay ningún producto con ese código');
       } else {
         setState(() {
           _seleccionado = producto;
-          _resultados = [];
           _busquedaCtrl.clear();
         });
       }
@@ -158,152 +120,125 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
     }
   }
 
+  /// "Agregar a la venta": suma el producto al carrito (un pesable entra con 250 g) y va a Vender.
+  void _agregarALaVenta(ProductoCompanion p) {
+    final app = AppNs.of(context);
+    final r = lineaDesdeResultadoBusqueda(p, gramos: p.esPesable ? 250 : null);
+    if (r.error != null) {
+      mostrarAvisoNs(context, r.error!, largo: true);
+      return;
+    }
+    final nueva = r.linea!;
+    final i = app.carrito.indexWhere((l) => l.productoId == nueva.productoId);
+    if (i != -1) {
+      app.carrito[i] = sumarLineasVenta(app.carrito[i], nueva);
+    } else {
+      app.carrito.add(nueva);
+    }
+    Navigator.of(context).pop();
+    app.irAPestania(PestaniaNs.vender);
+  }
+
+  String _meta(ProductoCompanion p) {
+    final prov = _proveedores[p.proveedorId];
+    return [if (p.esPesable) 'Por kilo', ?prov, 'stock ${stockTextoNs(p)}'].join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ns = context.ns;
+    final sel = _seleccionado;
     return Scaffold(
-      appBar: const AppBarCompanion(titulo: 'Precio', etiquetaSalida: 'Cerrar'),
+      backgroundColor: ns.paper,
       body: SafeArea(
-        child: _cargandoInicial
-            ? const EsqueletoLista()
-            : _cliente == null
-            ? EstadoError(
-                mensaje: _errorInicial ?? 'No se pudo conectar.',
-                onReintentar: _iniciar,
-              )
-            : Column(
-                children: [
-                  AvisoModoLocal(servicio: _cliente, pcEmparejada: _pcEmparejada),
-                  Padding(
-                    padding: const EdgeInsets.all(Espaciado.lg),
-                    child: Row(
-                      children: [
-                        Expanded(
-                    child: TextField(
-                      controller: _busquedaCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Escribí el nombre, o escaneá',
-                        prefixIcon: const Icon(IconosPlazoleta.search),
-                        suffixIcon: _buscando
-                            ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
-                            : null,
+        child: PantallaEntradaNs(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CabeceraSubNs(titulo: 'Consultar precio', onVolver: () => Navigator.of(context).maybePop(), track: -0.05),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BuscadorNs(
+                        controller: _busquedaCtrl,
+                        placeholder: 'Escribí el nombre o escaneá',
+                        onChanged: (t) {
+                          setState(() => _seleccionado = null);
+                          _debouncer.ejecutar(() => _buscar(t));
+                        },
                       ),
-                      onChanged: (texto) => _debouncer.ejecutar(() => _buscar(texto)),
                     ),
-                        ),
-                        const SizedBox(width: Espaciado.sm),
-                        BotonEscanerCampo(onTap: _escanear, cargando: _escaneando),
-                      ],
+                    const SizedBox(width: 8),
+                    PresionNs(
+                      onTap: _escaneando ? null : _escanear,
+                      etiqueta: 'Escanear código de barras',
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle),
+                        alignment: Alignment.center,
+                        child: const IconoNsWidget(IconoNs.escanear, tamanio: 24, color: TokensNs.blanco),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (_error != null) ...[InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo, tamanio: 15, peso: FontWeight.w500), const SizedBox(height: 14)],
+                if (sel != null) ...[
+                  EntradaNs(
+                    child: HeroNs(
+                      radio: 40,
+                      padding: const EdgeInsets.all(26),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(sel.nombre, style: estiloNs(15, peso: FontWeight.w600, color: const Color(0xC7FFFFFF))),
+                          const SizedBox(height: 6),
+                          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(precioTextoNs(sel), style: tituloNs(72, track: -0.065, color: TokensNs.blanco))),
+                          const SizedBox(height: 12),
+                          Text(_meta(sel), style: estiloNs(15, color: const Color(0xC7FFFFFF))),
+                          if (!sel.activo) ...[const SizedBox(height: 8), Text('Producto desactivado', style: estiloNs(14, peso: FontWeight.w700, color: TokensNs.eliminarSobreOscuro))],
+                        ],
+                      ),
                     ),
                   ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: ErrorEnLinea(_error!),
-                    ),
-                  if (_seleccionado != null)
-                    Expanded(child: _TarjetaPrecio(producto: _seleccionado!))
-                  else
-                    Expanded(
-                      child: _resultados.isEmpty && !_buscando
-                          ? EstadoVacio(
-                              mensaje: _busquedaCtrl.text.trim().isEmpty
-                                  ? 'No hay productos cargados'
-                                  : 'Sin resultados',
-                              icono: _busquedaCtrl.text.trim().isEmpty
-                                  ? IconosPlazoleta.search
-                                  : IconosPlazoleta.searchOff,
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(Espaciado.lg),
-                              itemCount: _resultados.length,
-                              itemBuilder: (context, i) {
-                                final p = _resultados[i];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: Espaciado.sm),
-                                  child: Superficie(
-                                    padding: EdgeInsets.zero,
-                                    child: Presionable(
-                                      onTap: () => setState(() => _seleccionado = p),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: Espaciado.lg,
-                                          vertical: Espaciado.md,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(child: Text(p.nombre, style: Theme.of(context).textTheme.titleMedium)),
-                                            const SizedBox(width: Espaciado.md),
-                                            Text(
-                                              p.esPesable
-                                                  ? '${formatearARS(p.precioPorKiloCentavos ?? 0)}/kg'
-                                                  : formatearARS(p.precioCentavos ?? 0),
-                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
+                  const SizedBox(height: 14),
+                  BotonNs.primario(context, 'Agregar a la venta', () => _agregarALaVenta(sel)),
+                  const SizedBox(height: 14),
                 ],
-              ),
-      ),
-    );
-  }
-}
-
-class _TarjetaPrecio extends StatelessWidget {
-  const _TarjetaPrecio({required this.producto});
-
-  final ProductoCompanion producto;
-
-  @override
-  Widget build(BuildContext context) {
-    final precioTexto = producto.esPesable
-        ? '${formatearARS(producto.precioPorKiloCentavos ?? 0)} / kg'
-        : formatearARS(producto.precioCentavos ?? 0);
-    final stockTexto = producto.esPesable
-        ? '${producto.stockGramos ?? 0} g'
-        : '${producto.stock} un.';
-
-    final colores = context.colores;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Espaciado.lg),
-        child: BloqueHero(
-          animar: false,
-          padding: const EdgeInsets.all(Espaciado.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                producto.nombre,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: context.acentos.textoSobreColor),
-              ),
-              const SizedBox(height: Espaciado.lg),
-              Text(
-                precioTexto,
-                style: Theme.of(
-                  context,
-                ).textTheme.displayLarge?.copyWith(fontSize: 56, color: context.acentos.textoSobreColor),
-              ),
-              const SizedBox(height: Espaciado.md),
-              Text(
-                'Stock: $stockTexto',
-                style: TextStyle(color: context.acentos.textoSobreColor.withValues(alpha: 0.8)),
-              ),
-              if (!producto.activo) ...[
-                const SizedBox(height: Espaciado.sm),
-                Text(
-                  'Producto desactivado',
-                  style: TextStyle(color: colores.errorTexto, backgroundColor: colores.error),
+                Expanded(
+                  child: ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: _resultados.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
+                      final p = _resultados[i];
+                      return EntradaNs(
+                        child: PresionNs(
+                          onTap: () => setState(() => _seleccionado = p),
+                          etiqueta: p.nombre,
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 56),
+                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                            decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(999)),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(p.nombre, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink))),
+                                const SizedBox(width: 12),
+                                Text(precioTextoNs(p), style: estiloNs(19, peso: FontWeight.w500, color: ns.ink, tabular: true)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
