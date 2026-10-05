@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -238,6 +239,49 @@ void main() {
       final r = await probarYGuardarClave('  ', client: MockClient((_) async => fail('no tenía que llamar a Google')));
       expect(r, isNull);
       expect(ClaveGemini.configurada, isFalse);
+    });
+  });
+
+  group('adjuntos (fotos y PDF)', () {
+    test('van como inlineData en base64, después del texto', () async {
+      late Map<String, dynamic> cuerpo;
+      final cliente = ClienteGemini(
+        apiKey: 'k',
+        client: MockClient((r) async {
+          cuerpo = jsonDecode(r.body) as Map<String, dynamic>;
+          return http.Response(_respuesta('ok'), 200);
+        }),
+      );
+      await cliente.generarTexto('leé esto', adjuntos: [
+        AdjuntoGemini('image/jpeg', Uint8List.fromList([1, 2, 3])),
+        AdjuntoGemini('application/pdf', Uint8List.fromList([4, 5])),
+      ]);
+      final partes = cuerpo['contents'][0]['parts'] as List;
+      expect(partes[0]['text'], 'leé esto');
+      expect(partes[1]['inlineData']['mimeType'], 'image/jpeg');
+      expect(partes[1]['inlineData']['data'], base64Encode([1, 2, 3]));
+      expect(partes[2]['inlineData']['mimeType'], 'application/pdf');
+    });
+
+    test('si pesan demasiado, avisa sin mandar nada', () async {
+      final cliente = ClienteGemini(apiKey: 'k', client: MockClient((_) async => fail('no tenía que llamar a Google')));
+      expect(
+        cliente.generarTexto('x', adjuntos: [AdjuntoGemini('image/jpeg', Uint8List(maximoBytesAdjuntosGemini + 1))]),
+        throwsA(isA<ErrorGemini>().having((e) => e.mensaje, 'mensaje', contains('pesan demasiado'))),
+      );
+    });
+
+    test('sin adjuntos el pedido sigue siendo solo texto', () async {
+      late Map<String, dynamic> cuerpo;
+      final cliente = ClienteGemini(
+        apiKey: 'k',
+        client: MockClient((r) async {
+          cuerpo = jsonDecode(r.body) as Map<String, dynamic>;
+          return http.Response(_respuesta('ok'), 200);
+        }),
+      );
+      await cliente.generarTexto('hola');
+      expect((cuerpo['contents'][0]['parts'] as List), hasLength(1));
     });
   });
 }

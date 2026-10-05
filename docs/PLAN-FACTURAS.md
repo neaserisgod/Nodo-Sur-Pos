@@ -35,8 +35,13 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
 
 ## Estado
 
-- **Hecho**: `lib/domain/factura_compra.dart` + `test/domain/factura_compra_test.dart` (costo real de cada línea y control de totales),
-  probado con Elpar, Puelche (2) y Serra: las cuatro cierran con el total impreso con 0 a 2 centavos de diferencia.
-- **Falta**: esquema de lectura y prompt de Gemini; CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
-  achicar/enderezar la foto; después, el celular con cámara.
+- **Hecho (cuentas)**: `lib/domain/factura_compra.dart`: costo real de cada línea y control de totales, probado con Elpar, Puelche (2) y Serra.
+- **Hecho (lectura, 2026-10-05)**:
+  - `ClienteGemini` acepta fotos y PDF (`AdjuntoGemini`).
+  - `servicios/lector_facturas.dart`: el pedido a Gemini (transcribir sin hacer cuentas, ignorar lo escrito a mano y los datos del comprador, varias facturas por foto, combos, descuento global) con el modelo `gemini-3.8-flash` y, si no está para la clave, el que le anduvo al guardarla.
+  - `domain/lectura_factura.dart`: interpreta la respuesta con cuidado (una línea rota se descarta y se avisa; CUIT, fechas y números en formato argentino) y **prueba las formas de leer los importes** (neto / con IVA / con IVA e internos) **hasta que una cierra con el total impreso**: no hace falta una regla por proveedor. Marca las líneas donde cantidad × precio no da el importe.
+  - `servicios/preparar_imagen.dart`: achica la foto (2000 px, JPEG 85), respeta el giro del celular; los PDF van tal cual.
+  - Pantalla de prueba: Proveedores › Más acciones › "Leer una factura (prueba)". Muestra el costo por unidad y si cierra; "Copiar lectura" deja el JSON de la IA en el portapapeles. **No guarda nada.**
+- **Falta**: probarla con la clave real y las facturas reales; CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión; aplicar y deshacer;
+  convertir bultos en unidades (hoy `cantidad` se toma como unidades); enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.

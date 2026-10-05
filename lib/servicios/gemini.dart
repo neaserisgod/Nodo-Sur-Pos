@@ -13,6 +13,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,6 +93,16 @@ abstract final class ClaveGemini {
   }
 }
 
+/// Un archivo para que Gemini lo mire junto con el pedido: una foto (`image/jpeg`, `image/png`...) o un `application/pdf`.
+class AdjuntoGemini {
+  const AdjuntoGemini(this.mimeType, this.bytes);
+  final String mimeType;
+  final Uint8List bytes;
+}
+
+/// Lo que Google acepta en un solo pedido, entre texto y archivos (20 MB). Con margen: el base64 pesa un tercio más.
+const maximoBytesAdjuntosGemini = 14 * 1024 * 1024;
+
 /// Un fallo de la consulta, con un mensaje que se le puede mostrar tal cual al dueño. Nunca lleva la clave.
 class ErrorGemini implements Exception {
   const ErrorGemini(this.mensaje, {this.estado});
@@ -130,13 +141,27 @@ class ClienteGemini {
 
   /// Manda [prompt] y devuelve el texto de la respuesta. [sistema] son las instrucciones fijas (rol, formato).
   /// Con [json] el modelo contesta JSON válido — usar [generarJson] para recibirlo ya decodificado.
-  Future<String> generarTexto(String prompt, {String? sistema, double temperatura = 0.7, bool json = false}) async {
+  Future<String> generarTexto(
+    String prompt, {
+    String? sistema,
+    double temperatura = 0.7,
+    bool json = false,
+    List<AdjuntoGemini> adjuntos = const [],
+  }) async {
+    if (adjuntos.fold<int>(0, (a, x) => a + x.bytes.length) > maximoBytesAdjuntosGemini) {
+      throw const ErrorGemini('Los archivos pesan demasiado para mandarlos juntos. Probá con menos páginas o fotos más chicas.');
+    }
     final cuerpo = <String, Object?>{
       'contents': [
         {
           'role': 'user',
+          // El texto va antes que los archivos: así lo recomienda Google.
           'parts': [
             {'text': prompt},
+            for (final a in adjuntos)
+              {
+                'inlineData': {'mimeType': a.mimeType, 'data': base64Encode(a.bytes)},
+              },
           ],
         },
       ],
@@ -175,8 +200,13 @@ class ClienteGemini {
   }
 
   /// Como [generarTexto] pero pidiendo y decodificando JSON. [ErrorGemini] si lo que vuelve no es JSON.
-  Future<Object?> generarJson(String prompt, {String? sistema, double temperatura = 0.4}) async {
-    final texto = await generarTexto(prompt, sistema: sistema, temperatura: temperatura, json: true);
+  Future<Object?> generarJson(
+    String prompt, {
+    String? sistema,
+    double temperatura = 0.4,
+    List<AdjuntoGemini> adjuntos = const [],
+  }) async {
+    final texto = await generarTexto(prompt, sistema: sistema, temperatura: temperatura, json: true, adjuntos: adjuntos);
     try {
       return jsonDecode(texto);
     } on FormatException {
