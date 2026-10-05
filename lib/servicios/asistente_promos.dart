@@ -5,7 +5,6 @@
 // Privacidad (plan gratis de Google): al prompt van solo nombres de productos y números agregados. Nunca clientes ni fiados.
 
 import '../data/repositorio_sugerencia_promos.dart';
-import '../domain/dinero.dart';
 import 'gemini.dart';
 
 class TextoDePromo {
@@ -18,12 +17,15 @@ const maximoLargoNombreDePromo = 40;
 
 const _instrucciones =
     'Sos el asistente de un almacén de barrio en Bariloche. Te paso combos de productos que los clientes ya se llevan juntos. '
-    'Para cada uno escribí: un nombre corto y atractivo para la promo (máximo $maximoLargoNombreDePromo caracteres, sin emojis, '
-    'sin comillas) y un motivo de una sola frase para el dueño, en español rioplatense. '
-    'Usá solo los datos que te doy; no inventes números ni descuentos. '
+    'Para cada uno escribí: (1) "nombre": cómo se llamaría la promo, corto y claro (máximo $maximoLargoNombreDePromo caracteres, '
+    'sin emojis, sin comillas, sin eslóganes: nombrá los productos, ej. "Doble IPA y APA"); y (2) "motivo": UNA frase para el '
+    'dueño que explique por qué conviene, apoyada SOLO en los números que te doy (cuántas veces se llevaron juntos). No '
+    'menciones precios ni descuentos: el dueño los elige después. No es publicidad: nada de frases de venta ni de "dale que sale solo". Español rioplatense. '
+    'Usá solo los datos que te doy; no inventes números ni descuentos ni fechas. '
     'Respondé únicamente JSON con esta forma: {"promos":[{"i":0,"nombre":"...","motivo":"..."}]}, una entrada por combo.';
 
-/// El pedido: un combo por línea, solo nombres y números.
+/// El pedido: un combo por línea, solo nombres y cuántas ventas. Sin precios ni costos: la IA no los necesita (el dueño elige el
+/// porcentaje después) y es lo más sensible de lo que se le podría mandar a Google.
 String armarPedidoDePromos(List<SugerenciaDePromo> sugerencias) {
   final b = StringBuffer('Combos (últimos 90 días de ventas):\n');
   for (var i = 0; i < sugerencias.length; i++) {
@@ -36,9 +38,8 @@ String armarPedidoDePromos(List<SugerenciaDePromo> sugerencias) {
         )
         .join(' + ');
     b.writeln(
-      '$i) $articulos — se llevaron juntos en ${s.par.ventasJuntos} ventas; '
-      'sueltos ${formatearARS(s.calculo.listaCentavos)}, la promo costaría ${formatearARS(s.calculo.precioCentavos)} '
-      '(el cliente ahorra ${formatearARS(s.ahorroCentavos)}).',
+      '$i) $articulos — se llevaron juntos en ${s.par.ventasJuntos} ventas '
+      '(el primero se vendió en ${s.par.ventasA} ventas y el segundo en ${s.par.ventasB}).',
     );
   }
   return b.toString();

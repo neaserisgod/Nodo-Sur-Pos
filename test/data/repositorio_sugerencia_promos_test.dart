@@ -85,9 +85,16 @@ void main() {
     expect(s.gananciaCentavos, 30000);
   });
 
-  test('con pocas ventas juntas no sugiere nada', () async {
-    await yerbaYGalletitas(2);
+  test('con una sola venta juntos es casualidad: no sugiere nada', () async {
+    await yerbaYGalletitas(1);
     expect(await sugerirPromos(db, ahora: ahora), isEmpty);
+  });
+
+  test('con 2 ventas juntas ya sugiere (el mínimo bajó de 3 a 2)', () async {
+    await yerbaYGalletitas(2);
+    final r = await sugerirPromos(db, ahora: ahora);
+    expect(r, hasLength(1));
+    expect(r.single.par.ventasJuntos, 2);
   });
 
   test('las ventas anuladas y las de hace más de 90 días no cuentan', () async {

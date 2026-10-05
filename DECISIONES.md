@@ -1933,10 +1933,21 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **Los números los calcula el código, la IA solo redacta.** Los pares salen de las ventas reales (`paresQueSeCompranJuntos`) y el
   precio de `calcularPromo`/`precioDePromo` (Regla 3: una fórmula). Gemini recibe nombres y totales agregados — nunca clientes ni
   fiados — y devuelve nombre y motivo; si falla o no hay clave, se muestra "A + B". Una respuesta de la IA se valida antes de usarla.
-- **Qué cuenta como "se llevan juntos"**: al menos 3 ventas en común y que vayan juntos ≥ 20 % más seguido que el azar (lift 1,2):
+- **Qué cuenta como "se llevan juntos"**: al menos 2 ventas en común (eran 3; el dueño, 2026-10-05, vio una sola sugerencia: en un comercio donde cada producto vende poco, 3 es demasiado) y que vayan juntos ≥ 20 % más seguido que el azar (lift 1,2):
   sin eso, lo que se vende en todas las ventas (una gaseosa) iría "junto" con todo. Ventas anuladas y de más de 90 días no cuentan; una venta
   de más de 40 productos distintos (pedido grande) tampoco. Pares: de a dos artículos, una unidad de cada uno.
 - **Porcentaje de partida** (`porcentajeSugeridoDePromoBp`): la promo regala más o menos la mitad de la ganancia de los sueltos, en saltos de 5 %,
   entre 10 % y 40 %. Si los sueltos dejan menos de 20 % de ganancia no se sugiere nada. Es solo el punto de partida: el creador lo deja cambiar.
   **Decisión mía, no del dueño** — confirmar o ajustar.
 - No se sugiere un par que ya entra entero en una promo existente. Solo PC por ahora: el celular no tiene el apartado de promos.
+
+### Ajustes de las promos sugeridas (2026-10-05, con la captura del dueño)
+
+- **El dato real va siempre** ("se llevaron juntos en N ventas"); la frase de la IA es un agregado aparte, marcada "IA:". La primera
+  versión la reemplazaba y quedaba un eslogan sin evidencia.
+- **La IA no ve precios ni costos**, solo nombres y cuántas ventas (`armarPedidoDePromos`). Motivos: el dueño elige el porcentaje después
+  (el ahorro de un texto escrito para otro porcentaje quedaría mal) y los costos son lo más sensible que se le puede mandar a Google en el
+  plan gratis. Se le pide un nombre descriptivo y un motivo apoyado solo en las ventas — nada de frases de venta.
+- **El porcentaje se elige en cada sugerencia**, con los mismos atajos y "Otro %" que el creador; el precio, el ahorro y la ganancia se
+  recalculan al instante con `calcularPromo` y "Crear" abre el creador con ese porcentaje. Un porcentaje que topea contra la lista avisa
+  que no hay descuento; uno que no cubre el costo no deja crear.

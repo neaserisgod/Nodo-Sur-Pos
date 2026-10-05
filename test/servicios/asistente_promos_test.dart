@@ -38,6 +38,9 @@ void main() {
     final pedido = armarPedidoDePromos([sugerencia]);
     expect(pedido, contains('0) Yerba + Galletitas'));
     expect(pedido, contains('7 ventas'));
+    // La IA no ve precios ni costos: el dueño elige el porcentaje después y es lo más sensible que se podría mandar.
+    expect(pedido, isNot(contains('\$')));
+    expect(pedido, isNot(contains('1.800')));
   });
 
   group('leerTextosDePromos', () {
