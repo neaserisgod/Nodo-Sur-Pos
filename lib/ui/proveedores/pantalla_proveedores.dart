@@ -30,6 +30,7 @@ import '../stock_proveedor/pantalla_stock_proveedor.dart';
 import '../tema/tokens.dart';
 import 'detalle_proveedor.dart';
 import 'dialogo_importar_csv.dart';
+import 'dialogo_leer_factura.dart';
 import 'dialogo_promos.dart';
 import 'dialogo_nuevo_proveedor.dart';
 import 'lista_proveedores.dart';
@@ -173,6 +174,11 @@ class _AccionesProveedores extends StatelessWidget {
                     mostrarDialogoPromos(context, db: db, usuarioId: usuarioId),
                 child: const Text('Promos'),
               ),
+            // Prueba de la lectura de facturas con IA (2026-10-05): todavía no guarda nada.
+            PopupMenuItem(
+              value: () => mostrarDialogoLeerFactura(context),
+              child: const Text('Leer una factura (prueba)'),
+            ),
             PopupMenuItem(
               value: () => mostrarDialogoImportarCsv(
                 context,

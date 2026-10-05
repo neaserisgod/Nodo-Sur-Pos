@@ -58,6 +58,7 @@ dependencies:
   archive: ^4.0.9
   url_launcher: ^6.3.1
   crypto: ^3.0.6
+  image: ^4.9.2
   # El "ahora" de la caja (sesión de otro día, arqueo cada 2hs) pasa por acá para que los tests fijen la hora: con
   # DateTime.now() los tests del arqueo fallaban entre las 0 y las 3, cuando "hace 3 horas" ya es ayer.
   clock: ^1.1.2
