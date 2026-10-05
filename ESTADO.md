@@ -79,9 +79,9 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
-## Celular calcado del mock (04–05/10/2026)
+## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 
-Rama `claude/mock-celular-calco`. El celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete
+Mezclado en `main` (PR #67, #68 y #69) y publicado en estable, al 100 % (APK 2133, 2134 y 2135). El celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete
 `nodo-sur-mock-celular`, segunda vuelta con 175 capturas): barra inferior de 5 pestañas, paleta/tipografía/iconos/animaciones
 del mock y todas sus pantallas: bienvenida/modo de uso/emparejar/entrar con Google/asistente de 3 pasos, Inicio (con tablero,
 estados de conexión y tarjeta "Te faltan N pasos"), Vender → Cobrar (crédito, descuento libre, cantidad exacta, deshacer,
@@ -90,7 +90,11 @@ en dos etapas, Gasto o ingreso (con lata), Productos (filtros, ganancia, proveed
 contexto, Nuevo/Editar producto, Días históricos, Cierres anteriores, Encargues, Pagar proveedor, Cuenta y sincronización,
 Actualización en 3 pasos, Más y Configuración. Comparación y decisiones en
 [`docs/COMPARACION-MOCK-CELULAR.md`](./docs/COMPARACION-MOCK-CELULAR.md); el kit está en `lib/companion/kit/` y las pantallas
-nuevas en `lib/companion/pantallas/`. **No se probó en un celular real** (solo tests y capturas contra las del mock).
+nuevas en `lib/companion/pantallas/`. **Probado por el dueño en su celular (05/10/2026): anda todo.**
+
+Lo que pasó después del primer lanzamiento (2133):
+- **2134 — arreglo.** En el celular real, Productos y Caja › Ventas quedaban cargando para siempre y Notificaciones, el Buscador de funciones, Consultar precio, Cierre y Gasto se rompían al abrirse. Causas: (1) el menú resuelve el servicio *después* de abrirse y no avisaba a las pestañas; (2) las pantallas abiertas con `Navigator.push` no encontraban `AppNs`. Ahora `setState` del menú suma versión y `AppNs` se publica arriba del navegador (`puenteAppNs` / `PuenteAppNs`, en `app_ns.dart` y `companion_app.dart`). Los tests no lo vieron porque usaban un controlador falso: hay un test nuevo con el **menú real** (`test/companion/menu_real_test.dart`).
+- **2135 — animaciones.** Fundido cruzado de Material Motion (`FadeThroughTransition`) al abrir pantallas (`tema_companion.dart`) y al cambiar de pestaña (`CambioDePestanaNs`, en `kit/movimiento_ns.dart`), y `PantallaEntradaNs` ya no anima (se sumaba una segunda entrada). Decisión del dueño del 05/10, **distinta del mock**, que usa fade + subida de 14 px (`.scr`, 0,55 s). Se mantienen las entradas de tarjetas/filas, hojas, avisos y el efecto de apretar; todo respeta "reducir movimiento".
 
 Distinto del mock a propósito:
 - **Pago mixto** no se cobra desde el celular (falta el endpoint); queda el crédito en 1 pago.
@@ -99,8 +103,15 @@ Distinto del mock a propósito:
 - **Terminal**: en los fallos se suma un botón "Cancelar" que el mock no tiene.
 - **Encargues**: las líneas no muestran precio (el servidor del celular no los manda).
 - **Pagar proveedor**: sin alias/CVU (en el mock es solo una propuesta de diseño).
+- **Animación de pantallas**: fundido cruzado en vez del fade + subida del mock (decisión del dueño, APK 2135).
 - **Más**: sin "Historial de ventas" ni "Tablero del día" como filas (el historial está en Caja › Ventas y el tablero en Inicio),
   y "Probar estados" es solo del mock.
+
+Pendiente / ideas (sin hacer):
+- **Pagar proveedor sin la PC**: hoy solo anda con la PC prendida y en el wifi del local, porque `movimientos_deuda` no se sincroniza al celular. Opciones: anotar el pago pendiente en el celular y que la PC lo tome, o copiar la cuenta corriente al celular.
+- **Leer facturas/comprobantes con IA (Gemini)** en Pagar proveedor: idea hablada, sin decidir (privacidad del plan gratis, clave en el servidor y no en el APK).
+- **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
+- **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
 ## Últimos cambios (02–03/10/2026)
 

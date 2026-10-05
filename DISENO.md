@@ -92,6 +92,8 @@ colores/tipografía/radios sí se actualizan como cualquier pantalla.
 
 ---
 
+**Celular: movimiento (2026-10-05).** El mock manda una entrada de pantalla `fade + subida de 14 px`; el dueño eligió en su lugar un **fundido cruzado** (Material Motion, `FadeThroughTransition`) para que pasar de una pantalla a otra se sienta una sola unidad. Se aplica al abrir/cerrar pantallas (`pageTransitionsTheme` en `lib/companion/tema/tema_companion.dart`) y al cambiar de pestaña (`CambioDePestanaNs`, `lib/companion/kit/movimiento_ns.dart`). Reglas: una pantalla **no** anima su propia entrada (`PantallaEntradaNs` es un pase directo: antes se sumaba una segunda entrada a la de la ruta); lo que sí anima es lo chico (tarjetas y filas con `EntradaNs`, hojas, avisos, el 0,97 al apretar); todo respeta "reducir movimiento". Detalle en `docs/COMPARACION-MOCK-CELULAR.md` §6c.
+
 ## Principio rector: evitar fatiga visual
 
 El dueño mira esta pantalla doce horas por día, seis días por semana. Esa es
