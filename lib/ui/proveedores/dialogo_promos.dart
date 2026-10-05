@@ -46,8 +46,9 @@ Future<void> mostrarDialogoPromos(
   );
 }
 
-/// Lo que el dueño eligió crear de las sugerencias: la sugerencia y el nombre con que se muestra (el de la IA, o el simple).
-typedef _SugerenciaElegida = ({SugerenciaDePromo sugerencia, String nombre});
+/// Lo que el dueño eligió crear de las sugerencias: la sugerencia, el nombre con que se muestra (el de la IA, o el simple) y el
+/// porcentaje de ganancia que dejó elegido.
+typedef _SugerenciaElegida = ({SugerenciaDePromo sugerencia, String nombre, int bp});
 
 // ─── Lista de promos ─────────────────────────────────────────────────────
 
@@ -256,6 +257,16 @@ class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
   bool _redactando = false;
   String? _avisoIa;
 
+  /// El porcentaje elegido por sugerencia (por posición); sin elegir, el de partida de la sugerencia.
+  final Map<int, int> _bpElegido = {};
+
+  int _bpDe(int i) => _bpElegido[i] ?? _sugerencias![i].porcentajeBp;
+
+  Future<void> _otroPorcentaje(int i) async {
+    final bp = await pedirOtroPorcentaje(context, actualBp: _bpDe(i));
+    if (bp != null) setState(() => _bpElegido[i] = bp);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -311,7 +322,7 @@ class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
             ? Padding(
                 padding: const EdgeInsets.symmetric(vertical: Espaciado.lg),
                 child: Text(
-                  'Todavía no hay nada para sugerir: hacen falta artículos que se vendan juntos al menos 3 veces, con stock, '
+                  'Todavía no hay nada para sugerir: hacen falta artículos que se vendan juntos al menos 2 veces, con stock, '
                   'con costo cargado y con ganancia suficiente para descontar.',
                   style: textTheme.bodyMedium?.copyWith(
                     color: colores.textoSecundario,
@@ -351,14 +362,13 @@ class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
                         final s = sugerencias[i];
                         final texto = i < _textos.length ? _textos[i] : null;
                         final nombre = texto?.nombre ?? s.nombreSimple;
+                        final bp = _bpDe(i);
+                        final calculo = calcularPromo(s.componentes, bp);
+                        final cubreElCosto = calculo?.cubreElCosto ?? false;
+                        final esAtajo = _atajosPorcentaje.contains(bp);
                         return Container(
                           padding: const EdgeInsets.all(Espaciado.md),
-                          decoration: BoxDecoration(
-                            color: colores.fondo,
-                            borderRadius: BorderRadius.circular(
-                              radioControlEscritorio,
-                            ),
-                          ),
+                          decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(radioControlEscritorio)),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -366,40 +376,59 @@ class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Text(nombre, style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte)),
+                                    if (texto != null) Text(s.nombreSimple, style: textTheme.bodySmall),
+                                    // El dato real va siempre: la frase de la IA es un agregado, no lo reemplaza.
                                     Text(
-                                      nombre,
-                                      style: textTheme.bodyMedium?.copyWith(
-                                        fontWeight: Pesos.fuerte,
-                                      ),
+                                      'Se llevaron juntos en ${s.par.ventasJuntos} ventas '
+                                      '(uno se vendió en ${s.par.ventasA} y el otro en ${s.par.ventasB}).',
+                                      style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
                                     ),
-                                    if (texto != null)
+                                    if (texto != null && texto.motivo.isNotEmpty)
+                                      Text('IA: ${texto.motivo}', style: textTheme.bodySmall?.copyWith(color: colores.textoTenue)),
+                                    const SizedBox(height: Espaciado.sm),
+                                    Wrap(
+                                      spacing: Espaciado.md,
+                                      runSpacing: Espaciado.sm,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      children: [
+                                        GrupoPildoras<int>(
+                                          opciones: [
+                                            for (final a in _atajosPorcentaje) (a, _pct(a)),
+                                            if (!esAtajo) (bp, _pct(bp)),
+                                          ],
+                                          elegida: bp,
+                                          onElegir: (v) => setState(() => _bpElegido[i] = v),
+                                        ),
+                                        TextButton(onPressed: () => _otroPorcentaje(i), child: const Text('Otro %')),
+                                      ],
+                                    ),
+                                    const SizedBox(height: Espaciado.xs),
+                                    if (calculo == null)
+                                      Text('Falta el costo o el precio de algún artículo.', style: textTheme.bodySmall)
+                                    else ...[
                                       Text(
-                                        s.nombreSimple,
+                                        'Sueltos ${formatearARS(calculo.listaCentavos)} · promo ${formatearARS(calculo.precioCentavos)} '
+                                        '(el cliente ahorra ${formatearARS(calculo.listaCentavos - calculo.precioCentavos)}) · '
+                                        'te quedan ${formatearARS(calculo.precioCentavos - calculo.costoCentavos)} por promo',
                                         style: textTheme.bodySmall,
                                       ),
-                                    Text(
-                                      texto?.motivo.isNotEmpty == true
-                                          ? texto!.motivo
-                                          : 'Se llevaron juntos en ${s.par.ventasJuntos} ventas.',
-                                      style: textTheme.bodySmall?.copyWith(
-                                        color: colores.textoSecundario,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Sueltos ${formatearARS(s.calculo.listaCentavos)} · promo ${formatearARS(s.calculo.precioCentavos)} '
-                                      '(el cliente ahorra ${formatearARS(s.ahorroCentavos)}) · te quedan ${formatearARS(s.gananciaCentavos)} por promo',
-                                      style: textTheme.bodySmall,
-                                    ),
+                                      if (calculo.topeadoPorLista)
+                                        Text(
+                                          'Con ese porcentaje no baja del precio de lista: no hay descuento para el cliente.',
+                                          style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
+                                        ),
+                                      if (!cubreElCosto)
+                                        Text('Con ese porcentaje la promo no cubre su costo.', style: textTheme.bodySmall?.copyWith(color: colores.error)),
+                                    ],
                                   ],
                                 ),
                               ),
                               const SizedBox(width: Espaciado.sm),
                               TextButton(
-                                onPressed: () => Navigator.of(context)
-                                    .pop<_SugerenciaElegida>((
-                                      sugerencia: s,
-                                      nombre: nombre,
-                                    )),
+                                onPressed: cubreElCosto
+                                    ? () => Navigator.of(context).pop<_SugerenciaElegida>((sugerencia: s, nombre: nombre, bp: bp))
+                                    : null,
                                 child: const Text('Crear'),
                               ),
                             ],
@@ -462,7 +491,7 @@ class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
       _Elegido(c.producto, c.cantidad),
   ];
   List<Producto> _elegibles = const [];
-  late int _bp = widget.sugerida?.sugerencia.porcentajeBp ?? 3000;
+  late int _bp = widget.sugerida?.bp ?? 3000;
   String? _error;
 
   @override

@@ -33,7 +33,8 @@ const maximoProductosPorVentaParaPares = 40;
 /// Los pares que más se compran juntos, de [ventas] (cada una, los ids de producto distintos que llevó; ya sin anuladas).
 ///
 /// - [elegibles]: solo estos ids pueden formar un par (null = todos). Sí cuentan para el total de ventas todas.
-/// - [minVentasJuntos]: con menos de estas ventas en común, es casualidad.
+/// - [minVentasJuntos]: con menos de estas ventas en común, es casualidad (2 desde el 2026-10-05: con 3 casi no salía nada
+///   en un comercio donde cada producto vende poco).
 /// - [liftMinimoBp]: ver [ParSugerido.liftBp]; 12000 = al menos 20 % más seguido que el azar.
 /// - [promosExistentes]: los ids de cada promo ya armada; un par que ya entra entero en alguna no se vuelve a sugerir.
 ///
@@ -41,7 +42,7 @@ const maximoProductosPorVentaParaPares = 40;
 List<ParSugerido> paresQueSeCompranJuntos(
   List<Set<int>> ventas, {
   Set<int>? elegibles,
-  int minVentasJuntos = 3,
+  int minVentasJuntos = 2,
   int liftMinimoBp = 12000,
   int maximo = 10,
   List<Set<int>> promosExistentes = const [],

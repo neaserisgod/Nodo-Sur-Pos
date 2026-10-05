@@ -75,7 +75,9 @@ void main() {
         '{"candidates":[{"content":{"parts":[{"text":"{\\"promos\\":[{\\"i\\":0,\\"nombre\\":\\"Merienda Dulce\\",\\"motivo\\":\\"Van juntos seguido.\\"}]}"}]}}]}';
     await abrirSugerencias(tester, ia: MockClient((_) async => http.Response(respuesta, 200)));
     expect(find.text('Merienda Dulce'), findsOneWidget);
-    expect(find.text('Van juntos seguido.'), findsOneWidget);
+    expect(find.text('IA: Van juntos seguido.'), findsOneWidget);
+    // El dato real sigue a la vista aunque la IA haya escrito su frase.
+    expect(find.textContaining('Se llevaron juntos en 4 ventas'), findsOneWidget);
   });
 
   testWidgets('si la IA falla, las sugerencias se ven igual', (tester) async {
@@ -94,4 +96,30 @@ void main() {
     // 15 %: costo 1.500 / 0,85 → 1.800 (sueltos 2.300).
     expect(find.textContaining('1.800'), findsWidgets);
   });
+
+  testWidgets('se puede elegir el porcentaje: el precio se recalcula y "Crear" lo lleva al creador', (tester) async {
+    await abrirSugerencias(tester);
+    // Parte en 15 %: costo 1.500 / 0,85 → 1.800.
+    expect(find.textContaining('promo \$1.800'), findsOneWidget);
+
+    await tester.tap(find.text('25%'));
+    await tester.pumpAndSettle();
+    // 25 %: 1.500 / 0,75 = 2.000 (sueltos 2.300).
+    expect(find.textContaining('promo \$2.000'), findsOneWidget);
+    expect(find.textContaining('promo \$1.800'), findsNothing);
+
+    await tester.tap(find.text('Crear'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nueva promo'), findsWidgets);
+    expect(find.textContaining('2.000'), findsWidgets);
+  });
+
+  testWidgets('con un porcentaje que topea contra la lista, avisa que no hay descuento', (tester) async {
+    await abrirSugerencias(tester);
+    await tester.tap(find.text('40%'));
+    await tester.pumpAndSettle();
+    // 40 %: 1.500 / 0,6 = 2.500, pero el tope es la lista (2.300): no hay descuento, y sigue cubriendo el costo.
+    expect(find.textContaining('no baja del precio de lista'), findsOneWidget);
+  });
 }
+
