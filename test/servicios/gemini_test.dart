@@ -172,10 +172,58 @@ void main() {
   });
 
   group('probarYGuardarClave', () {
-    test('una clave que anda se guarda', () async {
+    test('una clave que anda se guarda, con el primer modelo que le anduvo', () async {
       final r = await probarYGuardarClave(' AIza-buena ', client: MockClient((_) async => http.Response(_respuesta('ok'), 200)));
       expect(r, isNull);
       expect(ClaveGemini.valor, 'AIza-buena');
+      expect(ClaveGemini.modelo, modelosGemini.first);
+    });
+
+    test('si el primer modelo da 404 (cuenta nueva con los 2.5, o modelo retirado), prueba el siguiente y guarda ese', () async {
+      final pedidos = <String>[];
+      final r = await probarYGuardarClave(
+        'AIza-buena',
+        client: MockClient((req) async {
+          pedidos.add(req.url.path);
+          return req.url.path.contains(modelosGemini.first) ? http.Response('{"error":{"message":"not found"}}', 404) : http.Response(_respuesta('ok'), 200);
+        }),
+      );
+      expect(r, isNull);
+      expect(ClaveGemini.modelo, modelosGemini[1]);
+      expect(pedidos, hasLength(2));
+    });
+
+    test('si ningún modelo está disponible, lo dice y no guarda la clave', () async {
+      final r = await probarYGuardarClave('AIza-buena', client: MockClient((_) async => http.Response('{}', 404)));
+      expect(r, contains('Ningún modelo gratuito'));
+      expect(ClaveGemini.configurada, isFalse);
+    });
+
+    test('un fallo que no es 404 (sin cupo) corta ahí: no se prueban los demás modelos', () async {
+      var pedidos = 0;
+      final r = await probarYGuardarClave(
+        'AIza-buena',
+        client: MockClient((_) async {
+          pedidos++;
+          return http.Response('{}', 429);
+        }),
+      );
+      expect(r, contains('cupo gratis'));
+      expect(pedidos, 1);
+    });
+
+    test('la clave guardada recuerda el modelo después de reiniciar', () async {
+      await ClaveGemini.guardar('AIza-buena', modelo: 'gemini-3.8-flash');
+      ClaveGemini.fijarParaTest(null);
+      await ClaveGemini.cargar();
+      expect(ClaveGemini.modelo, 'gemini-3.8-flash');
+      expect(ClienteGemini.guardado().modelo, 'gemini-3.8-flash');
+    });
+
+    test('quitar la clave borra también el modelo', () async {
+      await ClaveGemini.guardar('AIza-buena', modelo: 'gemini-3.8-flash');
+      await ClaveGemini.guardar(null);
+      expect(ClaveGemini.modelo, isNull);
     });
 
     test('una clave rota NO se guarda y no pisa la anterior', () async {

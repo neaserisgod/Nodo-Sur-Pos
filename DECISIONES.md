@@ -1921,8 +1921,11 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
   Tampoco entra en las copias de la base. **También en el celular** (el dueño, 2026-10-05): cada equipo guarda su clave y habla directo con Google; la PC y el celular comparten el mismo cliente y el mismo guardado (`probarYGuardarClave`).
 - **Privacidad**: en el plan gratis Google puede usar lo que recibe para mejorar sus productos. Regla para cualquier prompt:
   productos, precios y totales agregados; nunca nombres de clientes ni de fiados.
-- **`generateContent` de la API v1beta**, clave en el encabezado `x-goog-api-key` (no en la URL), modelo `gemini-2.5-flash`
-  (`modeloGeminiPorDefecto`). Los modelos con cupo gratis cambian: si Google retira uno, "Probar" avisa y se cambia esa constante.
+- **`generateContent` de la API v1beta**, clave en el encabezado `x-goog-api-key` (no en la URL). **El modelo no está fijo**
+  (2026-10-05, el dueño mandó la captura: "El modelo gemini-2.5-flash ya no está disponible"): Google dejó los 2.5 solo para cuentas
+  que ya los usaban y a una clave nueva le contestan 404. "Guardar y probar" recorre `modelosGemini` (3.5-flash-lite, 3.8-flash, ...),
+  salta al siguiente solo con un 404 y guarda el que le anduvo a la clave (`ClaveGemini.modelo`). Sumar o quitar un modelo es tocar esa lista.
+  Cualquier otro fallo (clave mala, sin cupo, sin internet) corta ahí.
 - La IA solo sugiere: no toca caja, stock ni precios sin que el dueño lo confirme, y la app anda igual sin clave, sin cupo o sin internet.
 
 ## Promos sugeridas (2026-10-05)
