@@ -195,7 +195,7 @@ class _DialogoEditarCantidadState extends State<_DialogoEditarCantidad> {
                     onTap: () => _tecla(t),
                     child: Center(
                       child: t == '⌫'
-                          ? const Icon(IconosPlazoleta.backspace, semanticLabel: 'Borrar')
+                          ? const IconoPlz(IconosPlazoleta.backspace, semanticLabel: 'Borrar')
                           : Text(t, style: textTheme.titleLarge?.copyWith(fontWeight: Pesos.fuerte)),
                     ),
                   ),

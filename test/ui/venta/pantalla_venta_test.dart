@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -410,7 +411,7 @@ void main() {
           await tester.pump();
           expect(_enElCarrito('Coca-Cola 500ml'), findsOneWidget);
 
-          await tester.tap(find.byIcon(IconosPlazoleta.deleteOutline));
+          await tester.tap(buscarIcono(IconosPlazoleta.deleteOutline));
           await tester.pump();
 
           expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
@@ -437,7 +438,7 @@ void main() {
         expect(_enElCarrito('Marlboro'), findsOneWidget);
 
         // Dos líneas, dos tachos — se toca el de la primera (Coca-Cola).
-        await tester.tap(find.byIcon(IconosPlazoleta.deleteOutline).first);
+        await tester.tap(buscarIcono(IconosPlazoleta.deleteOutline).first);
         await tester.pump();
 
         expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
@@ -472,16 +473,17 @@ void main() {
           await tester.pump();
           expect(find.text('x1'), findsOneWidget);
 
-          await tester.tap(find.byIcon(IconosPlazoleta.add));
+          // El último "+" del árbol es el del stepper del carrito; el primero es el de "Nueva venta" en la cabecera.
+          await tester.tap(buscarIcono(IconosPlazoleta.add).last);
           await tester.pump();
           expect(find.text('x2'), findsOneWidget);
 
-          await tester.tap(find.byIcon(IconosPlazoleta.remove));
+          await tester.tap(buscarIcono(IconosPlazoleta.remove));
           await tester.pump();
           expect(find.text('x1'), findsOneWidget);
 
           // En 1, "−" saca la línea entera.
-          await tester.tap(find.byIcon(IconosPlazoleta.remove));
+          await tester.tap(buscarIcono(IconosPlazoleta.remove));
           await tester.pump();
           expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
         },
@@ -895,7 +897,7 @@ void main() {
         // bloque siempre visible a un ícono que abre un modal (mismo
         // criterio que la companion) — hay que abrirlo antes de tocar el
         // toggle $/% o el campo.
-        await tester.tap(find.byIcon(IconosPlazoleta.sellOutlined));
+        await tester.tap(buscarIcono(IconosPlazoleta.sellOutlined));
         await tester.pumpAndSettle();
         await tester.tap(find.text('%'));
         await tester.pump();

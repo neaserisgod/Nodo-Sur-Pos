@@ -5,6 +5,7 @@
 // no solo por texto.
 
 import 'package:flutter/material.dart';
+import 'iconos.dart';
 
 import 'resplandor.dart';
 
@@ -39,7 +40,7 @@ class ChipIcono extends StatelessWidget {
         borderRadius: BorderRadius.circular(tamanio * 0.32),
         boxShadow: resplandor ? resplandorNeon(color, alpha: 0.35, radio: 14, offset: const Offset(0, 3)) : null,
       ),
-      child: Icon(icono, color: color, size: tamanioIcono),
+      child: IconoPlz(icono, color: color, size: tamanioIcono),
     );
   }
 }

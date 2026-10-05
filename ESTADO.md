@@ -88,10 +88,10 @@ azul, colores de medios como el mock, títulos en peso 500, ninguna función nue
 
 **Hecho en el código** (`flutter analyze` limpio; suite completa verde): paleta y acentos del mock (azul de marca en oscuro, medios
 verde/azul/gris/ámbar, sin degradés), navbar con íconos de trazo y Venta azul, "Cobrar" y "Nueva venta" azules, medios grises hasta
-elegirse, aro azul en la última línea del carrito, toast oscuro. **Falta** (el mock lo propone, el código no): íconos de trazo dentro
-de las pantallas (hoy Material Rounded), "Hola, Ana" y la franja "Este mes" en Inicio, pastillas Ventas/Movimientos/Cierres con la
-disposición del mock en Historial, cierre de caja en dos pasos centrados con el diseño del mock, y el resto del detalle visual
-pantalla por pantalla. No probado en una PC real; solo capturas de test (`test/ui/capturas_escritorio_test.dart`).
+elegirse, aro azul en la última línea del carrito, toast oscuro, **íconos de trazo en toda la app** (`IconoPlz`), saludo "Hola, nombre"
+en Inicio. **Distinto del mock a propósito:** no hay franja "Este mes" en Inicio (ya existe la vista "Este mes", y no se repite una cuenta
+de plata); Historial, cierre y Configuración ya tenían la disposición del mock, solo cambiaron colores e íconos. Los íconos que no
+tienen trazo equivalente siguen en Material. No probado en una PC real; solo capturas de test (`test/ui/capturas_escritorio_test.dart`).
 
 ## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 

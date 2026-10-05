@@ -149,7 +149,7 @@ class Modal extends StatelessWidget {
                               shape: const CircleBorder(),
                               child: IconButton(
                                 tooltip: 'Cerrar',
-                                icon: const Icon(IconosPlazoleta.close),
+                                icon: const IconoPlz(IconosPlazoleta.close),
                                 onPressed: () => Navigator.of(context).maybePop(),
                               ),
                             ),

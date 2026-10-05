@@ -42,6 +42,11 @@ enum IconoNs {
   reintentar('M20 12a8 8 0 11-2.3-5.7M20 4v5h-5'),
   papelera('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3'),
   camion('M3 6h11v10H3zM14 9h4l3 3v4h-7M7 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM17 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z'),
+  editar('M4 20h4L19 9l-4-4L4 16zM13 7l4 4'),
+  imprimir('M7 8V4h10v4M7 17H4v-7h16v7h-3M7 14h10v6H7z'),
+  reloj('M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v4l3 2'),
+  tienda('M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6'),
+  porcentaje('M6 18L18 6M7.5 6.5a1.5 1.5 0 100 .01M16.5 17.5a1.5 1.5 0 100 .01'),
   alertaCirculo('M12 8v5M12 16.5h.01M12 3a9 9 0 100 18 9 9 0 000-18z');
 
   const IconoNs(this.trazo);

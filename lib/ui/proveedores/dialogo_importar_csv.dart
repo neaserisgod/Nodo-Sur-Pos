@@ -108,7 +108,7 @@ class _DialogoImportarCsvState extends State<_DialogoImportarCsv> {
           BloqueSuave(
             child: Row(
               children: [
-                Icon(IconosPlazoleta.descripcionArchivo, color: colores.acento),
+                IconoPlz(IconosPlazoleta.descripcionArchivo, color: colores.acento),
                 const SizedBox(width: Espaciado.md),
                 Expanded(
                   child: Column(

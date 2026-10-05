@@ -116,6 +116,7 @@ Nada de esto se probó en una PC real; el mock es HTML y las cifras son de ejemp
 Respuestas del dueño: "Cobrar" azul; colores de medios como el mock; títulos en peso 500; ninguna función nueva; modales al centro.
 
 - **Aplicado:** paleta y acentos, navbar con íconos y Venta azul, Cobrar y Nueva venta azules, medios grises hasta elegirse, aro azul en
-  la línea nueva del carrito, toast oscuro. Ver `DISENO.md` (bloque del 2026-10-05).
-- **Pendiente:** íconos de trazo dentro de las pantallas; "Hola, Ana" y "Este mes" en Inicio; Historial con la disposición del mock;
-  cierre de caja en dos pasos centrados; ajuste fino pantalla por pantalla. Decidir si se hace todo o solo lo que el dueño elija.
+  la línea nueva del carrito, toast oscuro, íconos de trazo en toda la app (`IconoPlz`), "Hola, nombre" en Inicio. Ver `DISENO.md`.
+- **No se hizo, a propósito:** la franja "Este mes" del tablero (ya existe la vista "Este mes"; duplicarla repetiría una cuenta de plata).
+  Historial, cierre de caja y Configuración ya tenían la disposición del mock (pestañas, dos fases, grupos): solo cambiaron colores e íconos.
+- **Sin cambiar:** peso de los títulos (el tema ya usa 400/500), números, reglas de negocio.

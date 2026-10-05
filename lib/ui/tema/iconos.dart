@@ -13,7 +13,9 @@
 // camelCase — si un ícono no convence en la revisión visual, se corrige
 // acá, no en cada uno de los ~135 call sites que lo usaban.
 
-import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/material.dart';
+
+import '../../companion/kit/iconos_ns.dart';
 
 abstract final class IconosPlazoleta {
   static const deleteOutline = Icons.delete_outline_rounded;
@@ -101,4 +103,88 @@ abstract final class IconosPlazoleta {
   static const arrowDownward = Icons.arrow_downward_rounded;
   static const arrowForwardRounded = Icons.arrow_forward_rounded;
   static const accountBalanceWalletOutlined = Icons.account_balance_wallet_rounded;
+}
+
+/// Ícono de la PC: dibuja el trazo del mock (los mismos del celular, `IconoNs`) cuando hay uno equivalente y, si no, el
+/// Material de siempre. Se usa en lugar de `Icon(IconosPlazoleta.x)`: así toda la app se ve con un solo juego de íconos
+/// sin tocar cada pantalla (2026-10-05, mock Nodo Sur).
+class IconoPlz extends StatelessWidget {
+  const IconoPlz(this.icono, {super.key, this.size, this.color, this.semanticLabel});
+
+  final IconData icono;
+  final double? size;
+  final Color? color;
+  final String? semanticLabel;
+
+  /// Equivalencias Material → trazo. No es `const` porque `IconData` redefine `==`.
+  static final Map<IconData, IconoNs> _trazos = {
+    IconosPlazoleta.add: IconoNs.masMas,
+    IconosPlazoleta.addCircleOutline: IconoNs.masMas,
+    IconosPlazoleta.remove: IconoNs.menos,
+    IconosPlazoleta.removeCircleOutline: IconoNs.menos,
+    IconosPlazoleta.search: IconoNs.lupa,
+    IconosPlazoleta.close: IconoNs.cerrar,
+    IconosPlazoleta.clear: IconoNs.cerrar,
+    IconosPlazoleta.delete: IconoNs.papelera,
+    IconosPlazoleta.deleteOutline: IconoNs.papelera,
+    IconosPlazoleta.check: IconoNs.tilde,
+    IconosPlazoleta.checkCircle: IconoNs.tilde,
+    IconosPlazoleta.checkCircleOutline: IconoNs.tilde,
+    IconosPlazoleta.chevronRight: IconoNs.chevron,
+    IconosPlazoleta.arrowForwardIosRounded: IconoNs.chevron,
+    IconosPlazoleta.chevronLeft: IconoNs.volver,
+    IconosPlazoleta.arrowBackRounded: IconoNs.volver,
+    IconosPlazoleta.settingsOutlined: IconoNs.ajustes,
+    IconosPlazoleta.notificationsOutlined: IconoNs.campana,
+    IconosPlazoleta.paymentsOutlined: IconoNs.billetes,
+    IconosPlazoleta.creditCard: IconoNs.tarjeta,
+    IconosPlazoleta.qrCode: IconoNs.escanear,
+    IconosPlazoleta.qrCode2Outlined: IconoNs.escanear,
+    IconosPlazoleta.qrCodeScanner: IconoNs.escanear,
+    IconosPlazoleta.callSplit: IconoNs.intercambio,
+    IconosPlazoleta.swapHoriz: IconoNs.intercambio,
+    IconosPlazoleta.compareArrowsOutlined: IconoNs.intercambio,
+    IconosPlazoleta.shoppingCartOutlined: IconoNs.carrito,
+    IconosPlazoleta.shoppingCartCheckout: IconoNs.carrito,
+    IconosPlazoleta.pointOfSaleOutlined: IconoNs.carrito,
+    IconosPlazoleta.inventory2Outlined: IconoNs.producto,
+    IconosPlazoleta.refresh: IconoNs.reintentar,
+    IconosPlazoleta.printOutlined: IconoNs.imprimir,
+    IconosPlazoleta.edit: IconoNs.editar,
+    IconosPlazoleta.errorOutline: IconoNs.alertaCirculo,
+    IconosPlazoleta.lockOutline: IconoNs.candado,
+    IconosPlazoleta.computer: IconoNs.computadora,
+    IconosPlazoleta.smartphone: IconoNs.celular,
+    IconosPlazoleta.cloudOff: IconoNs.sinNube,
+    IconosPlazoleta.history: IconoNs.reloj,
+    IconosPlazoleta.calendarTodayOutlined: IconoNs.calendario,
+    IconosPlazoleta.eventOutlined: IconoNs.calendario,
+    IconosPlazoleta.accountBalanceWalletOutlined: IconoNs.billetera,
+    IconosPlazoleta.localShippingOutlined: IconoNs.camion,
+    IconosPlazoleta.receiptLongOutlined: IconoNs.portapapeles,
+    IconosPlazoleta.listAltOutlined: IconoNs.portapapeles,
+    IconosPlazoleta.saveOutlined: IconoNs.guardar,
+    IconosPlazoleta.sellOutlined: IconoNs.porcentaje,
+    IconosPlazoleta.sellActivo: IconoNs.porcentaje,
+    IconosPlazoleta.storefrontOutlined: IconoNs.tienda,
+  };
+
+  /// Hay trazo equivalente para este ícono (los tests lo usan para buscar el widget).
+  static bool tieneTrazo(IconData icono) => _trazos.containsKey(icono);
+
+  @override
+  Widget build(BuildContext context) {
+    final tamanio = size ?? IconTheme.of(context).size ?? 24;
+    final trazo = _trazos[icono];
+    if (trazo == null) return Icon(icono, size: tamanio, color: color, semanticLabel: semanticLabel);
+    final c = color ?? IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
+    // El trazo de 2 sobre una grilla de 24 se ve más grueso que un Material de 14-16 px: en tamaños chicos se afina.
+    // Igual que `Icon`: la caja es de `tamanio` pero se centra si el padre la fuerza a otro tamaño (botones de 48 px).
+    final w = SizedBox(
+      width: tamanio,
+      height: tamanio,
+      child: Center(child: IconoNsWidget(trazo, tamanio: tamanio, color: c, grosor: tamanio <= 18 ? 2.4 : 2)),
+    );
+    return semanticLabel == null ? w : Semantics(label: semanticLabel, child: w);
+  }
 }

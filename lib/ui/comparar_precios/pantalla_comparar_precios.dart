@@ -130,7 +130,7 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
           Row(
             children: [
               ActionChip(
-                avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+                avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
                 label: const Text('Proveedores'),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),

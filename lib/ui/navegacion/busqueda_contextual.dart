@@ -38,7 +38,7 @@ InputDecoration decoracionBuscadorNavbar(BuildContext context, {required String 
   );
   return InputDecoration(
     hintText: pista,
-    prefixIcon: Icon(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
+    prefixIcon: IconoPlz(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
     suffixIcon: sufijo,
     contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
     filled: true,
@@ -103,7 +103,7 @@ class _CampoBusquedaContextualState extends State<CampoBusquedaContextual> {
           pista: widget.busqueda.pista,
           sufijo: _texto.text.isEmpty
               ? null
-              : IconButton(tooltip: 'Borrar', icon: const Icon(IconosPlazoleta.close), onPressed: _limpiar),
+              : IconButton(tooltip: 'Borrar', icon: const IconoPlz(IconosPlazoleta.close), onPressed: _limpiar),
         ),
       ),
     );

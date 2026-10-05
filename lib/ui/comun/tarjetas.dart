@@ -6,6 +6,7 @@
 // formas a mano (regla del kit, ver `feedback_kit_comun`).
 
 import 'package:flutter/material.dart';
+import '../tema/iconos.dart';
 
 import '../tema/acentos.dart';
 import '../tema/presionable.dart';
@@ -261,7 +262,7 @@ class FilaSuave extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (icono != null) ...[Icon(icono, size: 20, color: colores.textoSecundario), const SizedBox(width: Espaciado.md)],
+          if (icono != null) ...[IconoPlz(icono!, size: 20, color: colores.textoSecundario), const SizedBox(width: Espaciado.md)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,7 +542,7 @@ class AvatarIniciales extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(tamanio * 0.28)),
       child: icono != null
-          ? Icon(icono, color: tinta, size: tamanio * 0.5)
+          ? IconoPlz(icono!, color: tinta, size: tamanio * 0.5)
           : Text(
               texto,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(

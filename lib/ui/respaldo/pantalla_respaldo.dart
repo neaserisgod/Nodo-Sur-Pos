@@ -183,7 +183,7 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
                                 padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
                                 child: Row(
                                   children: [
-                                    Icon(IconosPlazoleta.backup, color: context.colores.textoSecundario),
+                                    IconoPlz(IconosPlazoleta.backup, color: context.colores.textoSecundario),
                                     const SizedBox(width: Espaciado.md),
                                     Expanded(
                                       child: Column(
@@ -252,7 +252,7 @@ class _Estado extends StatelessWidget {
           BloqueSuave(
             child: Row(
               children: [
-                Icon(IconosPlazoleta.backup, color: context.colores.acento),
+                IconoPlz(IconosPlazoleta.backup, color: context.colores.acento),
                 const SizedBox(width: Espaciado.md),
                 Expanded(
                   child: Column(

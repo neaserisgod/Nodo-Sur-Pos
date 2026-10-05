@@ -29,7 +29,13 @@ variable) y **ninguna función nueva** (solo aspecto). Qué cambió en el códig
 - Venta: "Cobrar" y "Nueva venta" (Inicio) en azul; los cuatro medios son grises hasta elegirse y entonces se llenan con su color; la
   línea recién agregada del carrito lleva un aro azul de 2 px.
 - Los avisos (`SnackBar`) son el toast oscuro del mock, radio 26.
-- Sigue igual: los íconos de contenido (Material Rounded), los layouts de cada pantalla, el peso de los títulos y todos los números.
+- Íconos: `IconoPlz` (`tema/iconos.dart`) dibuja el trazo del mock (`IconoNs`, los del celular) cuando hay equivalente y, si no, el Material de
+  siempre. Se usa en lugar de `Icon(IconosPlazoleta.x)`; para sumar un ícono se agrega su trazo a `IconoNs` y su equivalencia en
+  `IconoPlz._trazos`. En los tests se buscan con `buscarIcono` (`test/ui/buscar_icono.dart`), no con `find.byIcon`.
+- Inicio: el título pasa a "Hola, <quien abrió la caja>" (sin caja abierta sigue "Inicio").
+- Sigue igual: los layouts de cada pantalla (ya coincidían con el mock: Historial con sus pestañas, cierre en dos fases, Configuración por
+  grupos), el peso de los títulos y todos los números. No se agregó la franja "Este mes" al tablero: ese resumen ya es la vista "Este mes"
+  de Inicio, y duplicarlo repetiría una cuenta de plata en dos lugares.
 
 **Estética horsepos.com / antigravity (2026-10-02/03) — vigente, manda sobre todo lo de abajo.**
 Es lo más reciente y lo que corre hoy (PR #24, #50 y `docs/ESTANDARES-GOOGLE.md`):

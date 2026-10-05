@@ -367,7 +367,7 @@ class _FilaProductoProveedor extends StatelessWidget {
               child: Row(
                 children: [
                   if (avisaStock) ...[
-                    Icon(IconosPlazoleta.errorOutline, size: 16, color: colorStock),
+                    IconoPlz(IconosPlazoleta.errorOutline, size: 16, color: colorStock),
                     const SizedBox(width: Espaciado.xs),
                   ],
                   Flexible(

@@ -6,6 +6,7 @@
 // 2026-09-19).
 
 import 'package:flutter/material.dart';
+import '../tema/iconos.dart';
 
 import '../tema/acentos.dart';
 import '../tema/presionable.dart';
@@ -50,7 +51,7 @@ class BotonDestacado extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icono != null) ...[
-              Icon(icono, color: acentos.textoSobreColor, size: 20),
+              IconoPlz(icono!, color: acentos.textoSobreColor, size: 20),
               const SizedBox(width: Espaciado.sm),
             ],
             Text(

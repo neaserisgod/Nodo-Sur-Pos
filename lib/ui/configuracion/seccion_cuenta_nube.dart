@@ -179,7 +179,7 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
       children: [
         Row(
           children: [
-            Icon(IconosPlazoleta.checkCircle, color: context.colores.acento, size: 20),
+            IconoPlz(IconosPlazoleta.checkCircle, color: context.colores.acento, size: 20),
             const SizedBox(width: Espaciado.sm),
             Expanded(child: Text('Vinculada a ${c.cuenta!.email} · ${c.cuenta!.nombreDispositivo}', key: const Key('nube_vinculada'))),
           ],

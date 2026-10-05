@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../buscar_icono.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -55,10 +56,10 @@ void main() {
     addTearDown(() => nubeApp = null);
 
     await _abrirVenta(tester, db);
-    await tester.tap(find.byIcon(IconosPlazoleta.notificationsOutlined));
+    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
     await tester.pumpAndSettle();
     expect(find.text('Sin novedades por ahora.'), findsOneWidget);
-    await tester.tap(find.byIcon(IconosPlazoleta.notificationsOutlined));
+    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
     await tester.pumpAndSettle();
 
     final hace = DateTime.now().subtract(const Duration(minutes: 30));
@@ -71,7 +72,7 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(IconosPlazoleta.notificationsOutlined));
+    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
     await tester.pumpAndSettle();
     expect(find.textContaining('Entraron \$7.777 a Mercado Pago'), findsOneWidget);
     expect(find.textContaining('Contracargo de'), findsOneWidget);

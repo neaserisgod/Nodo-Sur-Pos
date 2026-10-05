@@ -799,7 +799,7 @@ class _BotonNotificacionesState extends State<_BotonNotificaciones> {
                     child: SizedBox(
                       width: Medidas.alturaControl,
                       height: Medidas.alturaControl,
-                      child: Icon(
+                      child: IconoPlz(
                         IconosPlazoleta.notificationsOutlined,
                         size: 20,
                         color: colores.textoSecundario,
@@ -934,7 +934,7 @@ class _BotonAccion extends StatelessWidget {
             child: SizedBox(
               width: Medidas.alturaControl,
               height: Medidas.alturaControl,
-              child: Icon(icono, size: 20, color: color),
+              child: IconoPlz(icono, size: 20, color: color),
             ),
           ),
         ),

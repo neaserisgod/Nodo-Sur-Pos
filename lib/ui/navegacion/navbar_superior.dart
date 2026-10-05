@@ -277,7 +277,7 @@ class _BotonRedondo extends StatelessWidget {
           child: SizedBox(
             width: Medidas.alturaControl,
             height: Medidas.alturaControl,
-            child: Icon(icono, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
+            child: IconoPlz(icono, size: 22, color: activo ? colores.textoPrimario : colores.textoSecundario),
           ),
         ),
       ),

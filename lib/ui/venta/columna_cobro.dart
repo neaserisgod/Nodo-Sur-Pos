@@ -157,7 +157,7 @@ class PanelCobro extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      IconoPlz(
                         IconosPlazoleta.shoppingCartCheckout,
                         size: TactoVenta.icono,
                         color: habilitado ? Colors.white : colores.textoTenue,
@@ -533,7 +533,7 @@ class _BotonMedio extends StatelessWidget {
                     // Sin elegir, el círculo del ícono es del color del fondo de pantalla (mock `--paper`); elegido, blanco translúcido.
                     color: seleccionado ? Colors.white.withValues(alpha: 0.2) : colores.fondo,
                   ),
-                  child: Icon(icono, size: 14, color: colorContenido),
+                  child: IconoPlz(icono!, size: 14, color: colorContenido),
                 ),
                 const SizedBox(width: Espaciado.sm),
               ],

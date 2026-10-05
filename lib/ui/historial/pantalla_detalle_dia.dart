@@ -164,7 +164,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
         Row(
           children: [
             ActionChip(
-              avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+              avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
               label: const Text('Cierres de caja'),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
@@ -305,7 +305,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
                       Superficie(
                         child: Row(
                           children: [
-                            Icon(IconosPlazoleta.errorOutline, color: context.colores.error),
+                            IconoPlz(IconosPlazoleta.errorOutline, color: context.colores.error),
                             const SizedBox(width: Espaciado.md),
                             Expanded(
                               child: Column(
@@ -493,9 +493,9 @@ class _FilaVentaDelDia extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                IconButton(tooltip: 'Reimprimir', icon: const Icon(IconosPlazoleta.printOutlined), onPressed: alImprimir),
-                if (!v.anulada) IconButton(tooltip: 'Editar', icon: const Icon(IconosPlazoleta.editOutlined), onPressed: alEditar),
-                if (puedeAnular) IconButton(tooltip: 'Anular', icon: const Icon(IconosPlazoleta.deleteOutline), onPressed: alAnular),
+                IconButton(tooltip: 'Reimprimir', icon: const IconoPlz(IconosPlazoleta.printOutlined), onPressed: alImprimir),
+                if (!v.anulada) IconButton(tooltip: 'Editar', icon: const IconoPlz(IconosPlazoleta.editOutlined), onPressed: alEditar),
+                if (puedeAnular) IconButton(tooltip: 'Anular', icon: const IconoPlz(IconosPlazoleta.deleteOutline), onPressed: alAnular),
               ],
             ),
           ),

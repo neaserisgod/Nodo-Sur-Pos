@@ -177,7 +177,7 @@ class _PantallaEditorVentaState extends State<PantallaEditorVenta> {
         Row(
           children: [
             ActionChip(
-              avatar: const Icon(IconosPlazoleta.arrowBackRounded, size: 18),
+              avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
               label: const Text('Volver'),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
@@ -237,7 +237,7 @@ class _Lineas extends StatelessWidget {
               child: CampoTexto(
                 controller: busquedaCtrl,
                 pista: 'Agregar un producto a esta venta',
-                prefixIcon: const Icon(IconosPlazoleta.search),
+                prefixIcon: const IconoPlz(IconosPlazoleta.search),
                 sobreElFondo: true,
                 onChanged: c.buscar,
               ),
@@ -348,7 +348,7 @@ class _FilaLinea extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(tooltip: 'Restar uno', icon: const Icon(IconosPlazoleta.remove), onPressed: () => c.sumarUnidad(indice, -1)),
+                  IconButton(tooltip: 'Restar uno', icon: const IconoPlz(IconosPlazoleta.remove), onPressed: () => c.sumarUnidad(indice, -1)),
                   SizedBox(
                     width: 34,
                     child: Text(
@@ -357,7 +357,7 @@ class _FilaLinea extends StatelessWidget {
                       style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte).tabular,
                     ),
                   ),
-                  IconButton(tooltip: 'Sumar uno', icon: const Icon(IconosPlazoleta.add), onPressed: () => c.sumarUnidad(indice, 1)),
+                  IconButton(tooltip: 'Sumar uno', icon: const IconoPlz(IconosPlazoleta.add), onPressed: () => c.sumarUnidad(indice, 1)),
                 ],
               ),
             )
@@ -373,7 +373,7 @@ class _FilaLinea extends StatelessWidget {
           ),
           IconButton(
             tooltip: 'Quitar ${l.nombreProducto}',
-            icon: const Icon(IconosPlazoleta.deleteOutline),
+            icon: const IconoPlz(IconosPlazoleta.deleteOutline),
             onPressed: () => c.quitarLinea(indice),
           ),
         ],

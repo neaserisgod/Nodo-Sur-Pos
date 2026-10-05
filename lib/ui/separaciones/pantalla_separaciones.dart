@@ -652,7 +652,7 @@ class _Tilde extends StatelessWidget {
         ),
       ),
       child: marcado
-          ? Icon(IconosPlazoleta.check, size: 24, color: context.acentosPlazoleta.textoSobreColor)
+          ? IconoPlz(IconosPlazoleta.check, size: 24, color: context.acentosPlazoleta.textoSobreColor)
           : null,
     );
   }
