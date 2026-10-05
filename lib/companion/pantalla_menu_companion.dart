@@ -38,6 +38,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/caja.dart' show necesitaArqueoIntermedio;
@@ -157,10 +158,36 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// algo nuevo a la base local, en vez de esperar al chequeo de 1 minuto.
   StreamSubscription<void>? _subCambiosSync;
 
+  /// Cada cambio del menú (el servicio que se resuelve recién después de abrir, el usuario, la caja…) avisa a las
+  /// pestañas que lo leen por `AppNs`: sin esto, Productos y Vender se quedaban esperando un servicio que ya estaba.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(() {
+      fn();
+      _version++;
+    });
+    _publicar();
+  }
+
+  /// Lo mismo para las pantallas que cuelgan del navegador (ver `puenteAppNs`); si se está dibujando, al cuadro siguiente.
+  void _publicar() {
+    void poner() {
+      if (mounted) puenteAppNs.value = (controlador: this, version: _version);
+    }
+
+    final fase = SchedulerBinding.instance.schedulerPhase;
+    if (fase == SchedulerPhase.idle || fase == SchedulerPhase.postFrameCallbacks) {
+      poner();
+    } else {
+      SchedulerBinding.instance.addPostFrameCallback((_) => poner());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _publicar();
     leerUsuario().then((u) {
       if (mounted) {
         setState(() {
@@ -234,8 +261,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
-    final sync = await syncNubeDelCelular();
-    sync.conmutador.definirPc(emparejada: conexion != null);
+    try {
+      final sync = await syncNubeDelCelular();
+      sync.conmutador.definirPc(emparejada: conexion != null);
+    } catch (_) {
+      // Sin la sync por internet igual se escucha a la PC y se trabaja con la base del celular.
+    }
     if (conexion != null) {
       var escucha = escuchaPcCompanion;
       if (escucha == null || escucha.conexion.ip != conexion.ip || escucha.conexion.token != conexion.token) {
@@ -370,6 +401,9 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _tickArqueoIntermedio.cancel();
     _subCambiosSync?.cancel();
     sinConexionGlobalNs.value = false;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (puenteAppNs.value?.controlador == this) puenteAppNs.value = null;
+    });
     pendientes.dispose();
     datosDia.dispose();
     segmentoCaja.dispose();
