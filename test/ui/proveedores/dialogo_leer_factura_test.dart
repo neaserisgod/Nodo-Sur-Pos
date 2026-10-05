@@ -209,8 +209,8 @@ void main() {
       await abrir(tester, ia());
       await leer(tester);
       expect(valorDeUnidades(tester), '24');
-      expect(find.text('bulto ×'), findsOneWidget);
-      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+      expect(find.text('4 bultos × 24'), findsOneWidget);
+      expect(find.byWidgetPredicate((w) => w is Tooltip && (w.message ?? '').startsWith('Bulto de 24:')), findsOneWidget); // explica por qué
     });
 
     testWidgets('si el costo se parece al tuyo, la factura cuenta unidades sueltas y queda en 1', (tester) async {
@@ -218,7 +218,7 @@ void main() {
       await abrir(tester, ia());
       await leer(tester);
       expect(valorDeUnidades(tester), '1');
-      expect(find.text('bulto ×'), findsNothing);
+      expect(find.textContaining('bultos ×'), findsNothing);
     });
 
     testWidgets('sin costo cargado no se adivina el bulto: queda en 1 con el aviso de lo que dice la descripción', (tester) async {

@@ -4,6 +4,7 @@
 // "Copiar lectura" deja el JSON de la IA en el portapapeles. Plan en `docs/PLAN-FACTURAS.md`.
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ import '../comun/modal.dart';
 import '../comun/tarjetas.dart';
 import '../configuracion/seccion_asistente_ia.dart' show SelectorModeloIa;
 import '../tema/acentos.dart';
+import '../tema/superficie.dart';
 import '../tema/tokens.dart';
 
 /// [clienteIa] y [adjuntosIniciales] son solo para tests: el selector de archivos es nativo y no se puede manejar desde un test.
@@ -277,37 +279,36 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colores = context.colores;
+    // El contenido scrollea adentro del diálogo: se le deja casi todo el alto de la ventana (menos título y botones).
+    final alto = math.max(320.0, MediaQuery.sizeOf(context).height - 330);
     return Modal(
       titulo: 'Leer una factura (prueba)',
       subtitulo: 'Elegí fotos o PDF. La IA las lee y la vinculás con tus productos. Todavía no toca costos, stock ni deuda.',
-      ancho: 1000,
+      ancho: 1180,
       contenido: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 560),
+        constraints: BoxConstraints(maxHeight: alto),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!ClaveGemini.configurada)
-                Text('Falta la clave de la IA: cargala en Configuración › Asistente IA.', style: textTheme.bodyMedium?.copyWith(color: colores.error)),
-              // Mientras se prueba, el modelo se cambia acá mismo: es el mismo ajuste que en Configuración › Asistente IA.
-              if (ClaveGemini.configurada) Padding(padding: const EdgeInsets.only(bottom: Espaciado.sm), child: SelectorModeloIa(onCambio: () => setState(() {}))),
-              if (_nombres.isEmpty && ClaveGemini.configurada)
-                Text('Todavía no elegiste nada.', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
-              for (final n in _nombres) Text(n, style: textTheme.bodySmall),
-              if (_leyendo) const Padding(padding: EdgeInsets.only(top: Espaciado.md), child: LinearProgressIndicator()),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: Espaciado.md),
-                  child: Text(_error!, style: textTheme.bodyMedium?.copyWith(color: colores.error)),
-                ),
+              _BarraDeLectura(
+                nombres: _nombres,
+                leyendo: _leyendo,
+                error: _error,
+                onCambioModelo: () => setState(() {}),
+              ),
               if (_resultado != null) ...[
                 Padding(
-                  padding: const EdgeInsets.only(top: Espaciado.md),
-                  child: Text('Leído con ${_resultado!.modelo}', style: textTheme.bodySmall?.copyWith(color: colores.textoTenue)),
+                  padding: const EdgeInsets.only(top: Espaciado.lg),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text('Leído con ${_resultado!.modelo}', style: textTheme.bodySmall?.copyWith(color: colores.textoTenue))),
+                      // El Modal admite 3 botones como máximo: esta acción va acá y no abajo.
+                      TextButton(onPressed: _copiar, child: const Text('Copiar lectura')),
+                    ],
+                  ),
                 ),
                 for (final a in _resultado!.lectura.advertencias) Text(a, style: textTheme.bodySmall),
-                // El Modal admite 3 botones como máximo: esta acción va acá y no abajo.
-                Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: _copiar, child: const Text('Copiar lectura'))),
                 for (var i = 0; i < _facturas.length; i++)
                   _TarjetaFactura(
                     indice: i,
@@ -348,6 +349,60 @@ String _nombreDelModo(ModoImportes m) => switch (m) {
   ModoImportes.todoIncluido => 'importes finales (IVA, impuestos y percepciones ya adentro)',
 };
 
+/// Lo de arriba: qué archivos hay, con qué modelo se lee y cómo va la lectura. Una sola superficie, como las demás pantallas.
+class _BarraDeLectura extends StatelessWidget {
+  const _BarraDeLectura({required this.nombres, required this.leyendo, required this.error, required this.onCambioModelo});
+
+  final List<String> nombres;
+  final bool leyendo;
+  final String? error;
+  final VoidCallback onCambioModelo;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
+    return Superficie(
+      padding: const EdgeInsets.all(Espaciado.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!ClaveGemini.configurada)
+            Text('Falta la clave de la IA: cargala en Configuración › Asistente IA.', style: textTheme.bodyMedium?.copyWith(color: colores.error))
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: nombres.isEmpty
+                      ? Text('Todavía no elegiste nada.', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario))
+                      : Wrap(spacing: Espaciado.sm, runSpacing: Espaciado.xs, children: [for (final n in nombres) Insignia(texto: n)]),
+                ),
+                const SizedBox(width: Espaciado.lg),
+                // Mientras se prueba, el modelo se cambia acá mismo: es el mismo ajuste que en Configuración › Asistente IA.
+                SelectorModeloIa(onCambio: onCambioModelo),
+              ],
+            ),
+          if (leyendo) const Padding(padding: EdgeInsets.only(top: Espaciado.md), child: LinearProgressIndicator()),
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: Espaciado.md),
+              child: Text(error!, style: textTheme.bodyMedium?.copyWith(color: colores.error)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// Las columnas de la tabla de líneas: el encabezado y cada fila comparten estos anchos para que todo quede alineado.
+// La descripción de la factura y el producto tuyo se reparten lo que sobra.
+const double _anchoCantidad = 56;
+const double _anchoMultiplo = 92;
+const double _anchoUnidades = 92;
+const double _anchoTotal = 108;
+const double _anchoCostoUnidad = 124;
+
 class _TarjetaFactura extends StatelessWidget {
   const _TarjetaFactura({
     required this.indice,
@@ -384,8 +439,7 @@ class _TarjetaFactura extends StatelessWidget {
       costos = null; // por ejemplo, un descuento mayor que la factura: está mal leído
     }
     final control = n.control;
-    final cabecera = [
-      if (f.proveedorNombre != null) f.proveedorNombre!,
+    final detalle = [
       if (f.tipo != null) 'Factura ${f.tipo}',
       if (f.numero != null) f.numero!,
       if (f.fecha != null) '${f.fecha!.day}/${f.fecha!.month}/${f.fecha!.year}',
@@ -393,14 +447,34 @@ class _TarjetaFactura extends StatelessWidget {
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.only(top: Espaciado.lg),
-      child: Container(
-        padding: const EdgeInsets.all(Espaciado.md),
-        decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(Bento.radio)),
+      child: Superficie(
+        padding: const EdgeInsets.all(Espaciado.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(cabecera.isEmpty ? 'Factura' : cabecera, style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte)),
-            const SizedBox(height: Espaciado.xs),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(f.proveedorNombre ?? 'Factura', style: textTheme.titleLarge),
+                      if (detalle.isNotEmpty) Text(detalle, style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
+                    ],
+                  ),
+                ),
+                if (f.pie.totalCentavos != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('Total impreso', style: textTheme.labelMedium?.copyWith(color: colores.textoTenue)),
+                      Text(formatearARS(f.pie.totalCentavos!), style: textTheme.titleLarge),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: Espaciado.md),
             Wrap(
               spacing: Espaciado.sm,
               runSpacing: Espaciado.xs,
@@ -429,56 +503,72 @@ class _TarjetaFactura extends StatelessWidget {
             for (final a in f.advertencias) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(a, style: textTheme.bodySmall)),
             if (e.producto.isNotEmpty) _ResumenDeVinculos(propuestas: e.propuestas, elegidos: e.producto),
             if (e.proveedor == null) _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, proveedores: proveedores, onElegir: onProveedor),
-            if (e.consultandoIa)
-              Padding(
-                padding: const EdgeInsets.only(top: Espaciado.sm),
-                child: Text('La IA está ayudando a vincular lo que falta…', style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario)),
+            const SizedBox(height: Espaciado.md),
+            // La tabla va sobre el fondo de la ventana (blanco) para que se despegue de la tarjeta gris, como los bloques de las otras pantallas.
+            Container(
+              padding: const EdgeInsets.fromLTRB(Espaciado.lg, Espaciado.md, Espaciado.lg, Espaciado.md),
+              decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(Espaciado.xl)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _EncabezadoDeLineas(),
+                  if (costos == null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: Espaciado.md),
+                      child: Text('No se pudieron calcular los costos: revisá los importes de la factura.', style: textTheme.bodySmall?.copyWith(color: colores.error)),
+                    )
+                  else
+                    for (var i = 0; i < costos.length; i++)
+                      _FilaLinea(
+                        key: ValueKey('linea_${indice}_$i'),
+                        descripcion: n.lineas[i].descripcion,
+                        sospechosa: n.lineasSospechosas.contains(i),
+                        propuesta: i < e.propuestas.length ? e.propuestas[i] : null,
+                        elegido: i < e.producto.length ? e.producto[i] : null,
+                        unidades: i < e.multiplicador.length ? e.multiplicador[i] : 1,
+                        motivoUnidades: e.motivoUnidades[i],
+                        cantidad: n.factura.lineas[i].unidades,
+                        version: e.version,
+                        entradas: e.entradas,
+                        costo: costos[i],
+                        onProducto: (id) => onProducto(i, id),
+                        onUnidades: (u) => onUnidades(i, u),
+                      ),
+                ],
               ),
-            if (e.avisoIa != null) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(e.avisoIa!, style: textTheme.bodySmall)),
-            const SizedBox(height: Espaciado.sm),
-            if (costos == null)
-              Text('No se pudieron calcular los costos: revisá los importes de la factura.', style: textTheme.bodySmall?.copyWith(color: colores.error))
-            else
-              for (var i = 0; i < costos.length; i++)
-                _FilaLinea(
-                  key: ValueKey('linea_${indice}_$i'),
-                  descripcion: n.lineas[i].descripcion,
-                  sospechosa: n.lineasSospechosas.contains(i),
-                  propuesta: i < e.propuestas.length ? e.propuestas[i] : null,
-                  elegido: i < e.producto.length ? e.producto[i] : null,
-                  unidades: i < e.multiplicador.length ? e.multiplicador[i] : 1,
-                  motivoUnidades: e.motivoUnidades[i],
-                  cantidad: n.factura.lineas[i].unidades,
-                  version: e.version,
-                  entradas: e.entradas,
-                  costo: costos[i],
-                  onProducto: (id) => onProducto(i, id),
-                  onUnidades: (u) => onUnidades(i, u),
-                ),
-            const SizedBox(height: Espaciado.sm),
+            ),
+            const SizedBox(height: Espaciado.md),
             Row(
               children: [
                 TextButton(
                   key: ValueKey('aprender_$indice'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: colores.fondo,
+                    foregroundColor: colores.textoPrimario,
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
+                  ),
                   onPressed: e.proveedor != null && e.vinculadas > 0 ? onAprender : null,
                   child: Text('Aprender estos vínculos (${e.vinculadas})'),
                 ),
+                const SizedBox(width: Espaciado.md),
                 if (e.avisoAprendido != null) Expanded(child: Text(e.avisoAprendido!, style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario))),
               ],
             ),
+            if (e.avisoIa != null) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(e.avisoIa!, style: textTheme.bodySmall)),
+            const SizedBox(height: Espaciado.md),
             Text(
               [
                 if (f.pie.descuentoGlobalCentavos > 0) 'Descuento ${formatearARS(f.pie.descuentoGlobalCentavos)}',
                 if (f.pie.percepcionesCentavos > 0) 'Percepciones ${formatearARS(f.pie.percepcionesCentavos)}',
                 if (f.pie.internosCentavos > 0) 'Impuestos internos ${formatearARS(f.pie.internosCentavos)}',
                 if (control != null) 'Total calculado ${formatearARS(control.totalCalculadoCentavos)}',
-                if (f.pie.totalCentavos != null) 'impreso ${formatearARS(f.pie.totalCentavos!)}',
               ].join(' · '),
               style: textTheme.bodySmall?.copyWith(color: colores.textoSecundario),
             ),
             Text(
-              'El costo por unidad incluye IVA e impuestos y lo repartido del pie. Verde = ya aprendido; amarillo = una propuesta que tenés que confirmar; rojo = sin vincular. '
-              '"× unidades" son las unidades que trae cada unidad de la columna cantidad (un bulto de 6 = 6).',
+              'El costo por unidad incluye IVA e impuestos y lo repartido del pie. Verde = seguro; amarillo = confirmalo; rojo = sin vincular. '
+              '"× unid." son las unidades que trae cada unidad de la columna cantidad (un bulto de 6 = 6).',
               style: textTheme.bodySmall?.copyWith(color: colores.textoTenue),
             ),
           ],
@@ -500,13 +590,13 @@ class _ElegirProveedor extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(top: Espaciado.sm),
+      padding: const EdgeInsets.only(top: Espaciado.md),
       child: Row(
         children: [
           Expanded(
             child: Text(
               cuit == null ? 'No pude leer el CUIT del proveedor. ¿De cuál es esta factura?' : 'No conozco a este proveedor todavía (CUIT $cuit). ¿De cuál es?',
-              style: textTheme.bodySmall,
+              style: textTheme.bodyMedium,
             ),
           ),
           const SizedBox(width: Espaciado.sm),
@@ -536,16 +626,49 @@ class _ResumenDeVinculos extends StatelessWidget {
     final r = resumenDeVinculos(propuestas, elegidos);
     final reconocidas = r[EstadoDeVinculo.seguro]! + r[EstadoDeVinculo.aConfirmar]!;
     return Padding(
-      padding: const EdgeInsets.only(top: Espaciado.sm),
+      padding: const EdgeInsets.only(top: Espaciado.md),
       child: Wrap(
         spacing: Espaciado.sm,
         runSpacing: Espaciado.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Reconocí $reconocidas de ${elegidos.length} productos:', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: Pesos.fuerte)),
+          Text('Reconocí $reconocidas de ${elegidos.length} productos:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte)),
           if (r[EstadoDeVinculo.seguro]! > 0) Insignia(texto: '${r[EstadoDeVinculo.seguro]} seguros', tono: Tono.ganancia),
           if (r[EstadoDeVinculo.aConfirmar]! > 0) Insignia(texto: '${r[EstadoDeVinculo.aConfirmar]} para confirmar', tono: Tono.alerta),
           if (r[EstadoDeVinculo.sinVincular]! > 0) Insignia(texto: '${r[EstadoDeVinculo.sinVincular]} sin vincular', tono: Tono.error),
+        ],
+      ),
+    );
+  }
+}
+
+/// Los títulos de las columnas, con los mismos anchos que cada fila.
+class _EncabezadoDeLineas extends StatelessWidget {
+  const _EncabezadoDeLineas();
+
+  @override
+  Widget build(BuildContext context) {
+    final estilo = Theme.of(context).textTheme.labelMedium?.copyWith(color: context.colores.textoTenue);
+    Widget fija(double ancho, String t, {TextAlign alineacion = TextAlign.right}) =>
+        SizedBox(width: ancho, child: Text(t, style: estilo, textAlign: alineacion));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaciado.xs),
+      child: Row(
+        children: [
+          const SizedBox(width: 12 + Espaciado.md),
+          Expanded(flex: 3, child: Text('En la factura', style: estilo)),
+          const SizedBox(width: Espaciado.md),
+          Expanded(flex: 4, child: Text('Tu producto', style: estilo)),
+          const SizedBox(width: Espaciado.md),
+          fija(_anchoCantidad, 'Cant.'),
+          const SizedBox(width: Espaciado.md),
+          fija(_anchoMultiplo, '× unid.', alineacion: TextAlign.center),
+          const SizedBox(width: Espaciado.md),
+          fija(_anchoUnidades, 'Unidades'),
+          const SizedBox(width: Espaciado.md),
+          fija(_anchoTotal, 'Total'),
+          const SizedBox(width: Espaciado.md),
+          fija(_anchoCostoUnidad, 'Costo c/u'),
         ],
       ),
     );
@@ -600,29 +723,34 @@ class _FilaLinea extends StatelessWidget {
             OrigenVinculo.ia => (acentos.alerta, 'Lo sugirió la IA: confirmalo'),
             _ => (acentos.alerta, 'Parecido de nombre: confirmalo'),
           };
+    final totalUnidades = cantidad * (unidades < 1 ? 1 : unidades);
+    final esBulto = unidades > 1;
+    // Se pinta de alerta lo que hay que mirar: un bulto propuesto, o una descripción que habla de un pack sin costo con qué comparar.
+    final paraMirar = esBulto || (motivoUnidades?.startsWith('La descripción') ?? false);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Tooltip(message: ayuda, child: Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle))),
-          const SizedBox(width: Espaciado.sm),
+          const SizedBox(width: Espaciado.md),
           Expanded(
+            flex: 3,
             child: Text(
               '${sospechosa ? '⚠ ' : ''}$descripcion',
-              style: textTheme.bodySmall?.copyWith(color: sospechosa ? colores.error : null),
+              style: textTheme.bodyMedium?.copyWith(color: sospechosa ? colores.error : null),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: Espaciado.sm),
-          SizedBox(
-            width: 290,
+          const SizedBox(width: Espaciado.md),
+          Expanded(
+            flex: 4,
             child: entradas.isEmpty
                 ? Text('Sin productos para elegir', style: textTheme.bodySmall)
                 : DropdownMenu<int>(
                     key: ValueKey('producto_${version}_$descripcion'),
-                    width: 290,
+                    expandedInsets: EdgeInsets.zero,
                     initialSelection: elegido,
                     hintText: 'Elegir producto',
                     enableFilter: true,
@@ -631,20 +759,24 @@ class _FilaLinea extends StatelessWidget {
                     onSelected: onProducto,
                   ),
           ),
-          const SizedBox(width: Espaciado.sm),
+          const SizedBox(width: Espaciado.md),
+          SizedBox(width: _anchoCantidad, child: Text('$cantidad', textAlign: TextAlign.right, style: textTheme.bodyMedium)),
+          const SizedBox(width: Espaciado.md),
           SizedBox(
-            width: 70,
+            width: _anchoMultiplo,
             child: Tooltip(
               message: motivoUnidades ?? 'Unidades que trae cada unidad de la columna cantidad (un bulto de 6 = 6). 1 si la factura cuenta unidades sueltas.',
               child: TextFormField(
                 key: ValueKey('unidades_${version}_$descripcion'),
                 initialValue: '$unidades',
                 keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                  labelText: unidades > 1 ? 'bulto ×' : '× unid.',
                   isDense: true,
-                  // Un punto de color: hay algo para confirmar en bultos de esta línea.
-                  suffixIcon: motivoUnidades != null ? const Icon(Icons.info_outline, size: 14) : null,
+                  prefixText: '× ',
+                  // La casilla se pinta de alerta cuando hay algo para mirar (ver `paraMirar`).
+                  filled: paraMirar,
+                  fillColor: paraMirar ? acentos.alertaSuave : null,
                 ),
                 onChanged: (t) {
                   final n = int.tryParse(t.trim());
@@ -653,14 +785,27 @@ class _FilaLinea extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: 56, child: Text('× ${cantidad * (unidades < 1 ? 1 : unidades)}', textAlign: TextAlign.right, style: textTheme.bodySmall)),
-          SizedBox(width: 100, child: Text(formatearARS(costo.totalCentavos), textAlign: TextAlign.right, style: textTheme.bodySmall)),
+          const SizedBox(width: Espaciado.md),
           SizedBox(
-            width: 110,
+            width: _anchoUnidades,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('$totalUnidades', style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte)),
+                if (esBulto) Text('$cantidad bultos × $unidades', style: textTheme.labelSmall?.copyWith(color: acentos.alerta)),
+              ],
+            ),
+          ),
+          const SizedBox(width: Espaciado.md),
+          SizedBox(width: _anchoTotal, child: Text(formatearARS(costo.totalCentavos), textAlign: TextAlign.right, style: textTheme.bodyMedium)),
+          const SizedBox(width: Espaciado.md),
+          SizedBox(
+            width: _anchoCostoUnidad,
             child: Text(
               '${formatearARS(costo.costoUnitarioCentavos)} c/u',
               textAlign: TextAlign.right,
-              style: textTheme.bodySmall?.copyWith(fontWeight: Pesos.fuerte),
+              style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte),
             ),
           ),
         ],
