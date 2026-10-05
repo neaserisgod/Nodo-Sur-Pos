@@ -31,6 +31,11 @@ horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 - **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
   Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
 
+**Ronda 3 (05/10, la última):** el dueño pidió rapidez inmediata y cero fricción, IA siempre a mano (no escondida en Configuración),
+**Pagar proveedor** como acción principal de caja (gasto/ingreso secundario), navbar sin logo/nombre/lupa, tuerca para Configuración y
+mucha información legible. Está en la especificación (secciones 4.2, 4.5, 7.x, 8 y **15**) y en el mock sobrio; funciones nuevas a confirmar
+en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "Venta cobrada" que se cierra sola).
+
 **No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
