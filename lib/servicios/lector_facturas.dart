@@ -10,9 +10,9 @@ import 'package:http/http.dart' as http;
 import '../domain/lectura_factura.dart';
 import 'gemini.dart';
 
-/// Para leer facturas conviene un modelo más fuerte que el de las promos (tablas chicas, copias carbónicas, fotos torcidas). Si Google
-/// no lo da para esta clave (404), se usa el que le anduvo al guardarla.
-const modeloParaLeerFacturas = 'gemini-3.8-flash';
+/// Se lee con el modelo que el dueño eligió (Configuración › Asistente IA; por defecto `gemini-3.5-flash-lite`, que anduvo bien en las
+/// seis facturas reales y es el más barato — El dueño, 2026-10-05). Si ese está saturado o sin cupo, se prueba con este, más fuerte.
+const modeloDeRespaldoParaFacturas = 'gemini-3.8-flash';
 
 const instruccionesDeLecturaDeFacturas = '''
 Sos un lector de facturas de compra de un almacén de barrio en Argentina. Recibís fotos o PDF de facturas, remitos o comprobantes de proveedores. Transcribí SOLO lo que está impreso; no hagas cuentas, no corrijas y no adivines.
@@ -61,7 +61,7 @@ Future<ResultadoDeLectura> leerFacturasConGemini(
   final clave = ClaveGemini.valor;
   if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
 
-  final modelos = {modeloParaLeerFacturas, ClaveGemini.modelo ?? modeloGeminiPorDefecto};
+  final modelos = {ClaveGemini.modelo ?? modeloGeminiPorDefecto, modeloDeRespaldoParaFacturas};
   ErrorGemini? ultimo;
   for (final modelo in modelos) {
     for (var intento = 0; intento < 2; intento++) {

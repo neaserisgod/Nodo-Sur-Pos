@@ -16,6 +16,7 @@ import '../../data/repositorio_vinculos_factura.dart';
 import '../../domain/dinero.dart';
 import '../../domain/factura_compra.dart';
 import '../../domain/lectura_factura.dart';
+import '../../domain/unidades_bulto.dart';
 import '../../servicios/gemini.dart';
 import '../../servicios/lector_facturas.dart';
 import '../../domain/vinculo_factura.dart';
@@ -24,6 +25,7 @@ import '../../servicios/vinculador_ia.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../comun/tarjetas.dart';
+import '../configuracion/seccion_asistente_ia.dart' show SelectorModeloIa;
 import '../tema/acentos.dart';
 import '../tema/tokens.dart';
 
@@ -48,6 +50,9 @@ class _EstadoFactura {
   /// El producto elegido y las unidades por cantidad de cada línea (arrancan con lo propuesto).
   List<int?> producto = const [];
   List<int> multiplicador = const [];
+
+  /// Por qué se propuso ese "× unid." en las líneas donde no es lo aprendido (bulto o unidades): se le muestra al dueño para que confirme.
+  Map<int, String> motivoUnidades = {};
   List<DropdownMenuEntry<int>> entradas = const [];
 
   /// Sube cada vez que se vuelve a proponer: obliga a los campos a tomar los valores nuevos.
@@ -187,9 +192,47 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
       e.propuestas = propuestas;
       e.producto = [for (final p in propuestas) p.productoId];
       e.multiplicador = [for (final p in propuestas) p.unidadesPorCantidad];
+      e.motivoUnidades = {};
+      _sugerirUnidades(e);
       e.entradas = [for (final c in candidatos) DropdownMenuEntry<int>(value: c.id, label: c.nombre)];
       e.version++;
     });
+  }
+
+  /// Bultos vs. unidades: donde el vínculo no está aprendido, propone el "× unid." con la descripción y el costo que ya tenés cargado.
+  /// Solo propone — el dueño lo ve y lo corrige —, y lo aprendido manda siempre.
+  void _sugerirUnidades(_EstadoFactura e, {Set<int>? lineas}) {
+    final List<CostoDeLinea> base;
+    try {
+      base = costosDeFactura(e.n.factura);
+    } on ArgumentError {
+      return;
+    }
+    final porId = {for (final c in _catalogo) c.id: c};
+    for (var i = 0; i < e.n.lineas.length; i++) {
+      if (lineas != null && !lineas.contains(i)) continue;
+      final id = i < e.producto.length ? e.producto[i] : null;
+      if (id == null) continue;
+      if (i < e.propuestas.length && e.propuestas[i].origen == OrigenVinculo.aprendido && e.propuestas[i].productoId == id) continue;
+      final inferido = inferirUnidadesPorCantidad(
+        costoPorCantidadCentavos: base[i].costoUnitarioCentavos,
+        costoActualPorUnidadCentavos: porId[id]?.costoCentavos,
+        packSugerido: sugerirUnidadesPorBulto(e.n.lineas[i].descripcion),
+      );
+      if (inferido == null) {
+        // Sin costo para comparar, la descripción sola solo sirve de aviso: no se pre-llena un bulto a ciegas.
+        final pack = sugerirUnidadesPorBulto(e.n.lineas[i].descripcion);
+        e.multiplicador[i] = 1;
+        if (pack != null) {
+          e.motivoUnidades[i] = 'La descripción menciona un pack de $pack. Si la factura cuenta bultos, poné $pack en "× unid.".';
+        } else {
+          e.motivoUnidades.remove(i);
+        }
+        continue;
+      }
+      e.multiplicador[i] = inferido.unidades;
+      e.motivoUnidades[i] = inferido.unidades > 1 ? 'Bulto de ${inferido.unidades}: ${inferido.motivo}' : inferido.motivo;
+    }
   }
 
   Future<void> _elegirProveedor(_EstadoFactura e, int proveedorId) async {
@@ -246,6 +289,8 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
             children: [
               if (!ClaveGemini.configurada)
                 Text('Falta la clave de la IA: cargala en Configuración › Asistente IA.', style: textTheme.bodyMedium?.copyWith(color: colores.error)),
+              // Mientras se prueba, el modelo se cambia acá mismo: es el mismo ajuste que en Configuración › Asistente IA.
+              if (ClaveGemini.configurada) Padding(padding: const EdgeInsets.only(bottom: Espaciado.sm), child: SelectorModeloIa(onCambio: () => setState(() {}))),
               if (_nombres.isEmpty && ClaveGemini.configurada)
                 Text('Todavía no elegiste nada.', style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario)),
               for (final n in _nombres) Text(n, style: textTheme.bodySmall),
@@ -270,7 +315,12 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
                     proveedores: _proveedores,
                     nombresDeProductos: {for (final c in _catalogo) c.id: c.nombre},
                     onProveedor: (id) => _elegirProveedor(_facturas[i], id),
-                    onProducto: (linea, id) => setState(() => _facturas[i].producto[linea] = id),
+                    onProducto: (linea, id) => setState(() {
+                      _facturas[i].producto[linea] = id;
+                      // Otro producto, otro costo para comparar: se vuelve a proponer el bulto de esa línea.
+                      _sugerirUnidades(_facturas[i], lineas: {linea});
+                      _facturas[i].version++;
+                    }),
                     onUnidades: (linea, n) => setState(() => _facturas[i].multiplicador[linea] = n < 1 ? 1 : n),
                     onAprender: () => _aprender(_facturas[i]),
                   ),
@@ -396,6 +446,7 @@ class _TarjetaFactura extends StatelessWidget {
                   propuesta: i < e.propuestas.length ? e.propuestas[i] : null,
                   elegido: i < e.producto.length ? e.producto[i] : null,
                   unidades: i < e.multiplicador.length ? e.multiplicador[i] : 1,
+                  motivoUnidades: e.motivoUnidades[i],
                   cantidad: n.factura.lineas[i].unidades,
                   version: e.version,
                   entradas: e.entradas,
@@ -480,6 +531,7 @@ class _FilaLinea extends StatelessWidget {
     required this.propuesta,
     required this.elegido,
     required this.unidades,
+    required this.motivoUnidades,
     required this.cantidad,
     required this.version,
     required this.entradas,
@@ -493,6 +545,7 @@ class _FilaLinea extends StatelessWidget {
   final PropuestaDeVinculo? propuesta;
   final int? elegido;
   final int unidades;
+  final String? motivoUnidades;
 
   /// Las unidades de la línea tal como las leyó la factura (antes de multiplicar).
   final int cantidad;
@@ -552,15 +605,23 @@ class _FilaLinea extends StatelessWidget {
           const SizedBox(width: Espaciado.sm),
           SizedBox(
             width: 70,
-            child: TextFormField(
-              key: ValueKey('unidades_${version}_$descripcion'),
-              initialValue: '$unidades',
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: '× unid.', isDense: true),
-              onChanged: (t) {
-                final n = int.tryParse(t.trim());
-                if (n != null) onUnidades(n);
-              },
+            child: Tooltip(
+              message: motivoUnidades ?? 'Unidades que trae cada unidad de la columna cantidad (un bulto de 6 = 6). 1 si la factura cuenta unidades sueltas.',
+              child: TextFormField(
+                key: ValueKey('unidades_${version}_$descripcion'),
+                initialValue: '$unidades',
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: unidades > 1 ? 'bulto ×' : '× unid.',
+                  isDense: true,
+                  // Un punto de color: hay algo para confirmar en bultos de esta línea.
+                  suffixIcon: motivoUnidades != null ? const Icon(Icons.info_outline, size: 14) : null,
+                ),
+                onChanged: (t) {
+                  final n = int.tryParse(t.trim());
+                  if (n != null) onUnidades(n);
+                },
+              ),
             ),
           ),
           SizedBox(width: 56, child: Text('× ${cantidad * (unidades < 1 ? 1 : unidades)}', textAlign: TextAlign.right, style: textTheme.bodySmall)),

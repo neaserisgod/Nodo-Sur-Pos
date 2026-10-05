@@ -9,6 +9,40 @@ import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
 import '../tema/tokens.dart';
 
+/// Elige con qué modelo de Google se consulta (por defecto el más barato). Se guarda al instante; la clave no se toca. Lo usa también el
+/// lector de facturas, para probar modelos sin salir de ahí.
+class SelectorModeloIa extends StatefulWidget {
+  const SelectorModeloIa({super.key, this.onCambio});
+
+  final VoidCallback? onCambio;
+
+  @override
+  State<SelectorModeloIa> createState() => _SelectorModeloIaState();
+}
+
+class _SelectorModeloIaState extends State<SelectorModeloIa> {
+  @override
+  Widget build(BuildContext context) {
+    final actual = ClaveGemini.modelo ?? modeloGeminiPorDefecto;
+    // Un modelo guardado que ya no está en la lista (se retiró) se sigue mostrando, para poder cambiarlo.
+    final modelos = [if (!modelosGemini.contains(actual)) actual, ...modelosGemini];
+    return DropdownMenu<String>(
+      key: ValueKey('selector_modelo_$actual'),
+      width: 460,
+      label: const Text('Modelo de la IA'),
+      initialSelection: actual,
+      dropdownMenuEntries: [for (final m in modelos) DropdownMenuEntry(value: m, label: etiquetaDeModelo(m))],
+      onSelected: (m) async {
+        if (m == null || m == actual) return;
+        await ClaveGemini.elegirModelo(m);
+        if (!mounted) return;
+        setState(() {});
+        widget.onCambio?.call();
+      },
+    );
+  }
+}
+
 class SeccionAsistenteIa extends StatefulWidget {
   const SeccionAsistenteIa({super.key, this.client});
 
@@ -85,6 +119,10 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
               BotonSecundario(texto: 'Quitar clave', onPressed: _probando ? null : _quitar),
             ],
           ),
+          if (ClaveGemini.configurada) ...[
+            const SizedBox(height: Espaciado.lg),
+            SelectorModeloIa(onCambio: () => setState(() {})),
+          ],
           if (_resultado != null) ...[
             const SizedBox(height: Espaciado.md),
             Text(

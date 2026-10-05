@@ -94,6 +94,13 @@ Future<List<ProductoCandidato>> catalogoParaVincular(AppDatabase db) async {
         ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false)))
       .get();
   return [
-    for (final p in productos) ProductoCandidato(id: p.id, nombre: p.nombre, codigoBarras: p.codigoBarras, proveedorId: p.proveedorId),
+    for (final p in productos) ProductoCandidato(
+      id: p.id,
+      nombre: p.nombre,
+      codigoBarras: p.codigoBarras,
+      proveedorId: p.proveedorId,
+      // Un pesable guarda el costo por kilo, que no es comparable con el de una línea de factura por unidad.
+      costoCentavos: p.esPesable ? null : p.costoCentavos,
+    ),
   ];
 }

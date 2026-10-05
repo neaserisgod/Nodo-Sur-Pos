@@ -71,3 +71,8 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
 - **Falta**: CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión final; aplicar (costo, stock, deuda y precio sugerido) y deshacer;
   enderezar fotos de costado; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.
+
+## Bultos y unidades (2026-10-05)
+
+Cada proveedor cuenta distinto y la factura no lo aclara: Serra imprime "(12)" pero cuenta unidades (columnas BTOS/UNIDS); Manaos y Coca cobran el pack ("6X1500", "473X6"); Bebidas del Lago pone el precio por bulto de "4X6" y cuenta latas; Elpar imprime "(24)" que NO es lo comprado; Maxiconsumo trae "U. x". Por eso la app **no decide sola**: `domain/unidades_bulto.dart` propone el "× unid." con la pista de la descripción más el costo que ya tenés cargado (si cuesta parecido a tu unidad, son unidades; si cuesta unas N veces más y la descripción sugiere un pack de N, es un bulto de N), lo muestra como "bulto ×" con el motivo, y lo que confirmás con "Aprender" queda por proveedor y producto. Sin costo cargado no se pre-llena nada. Decisión completa en `DECISIONES.md`.
+

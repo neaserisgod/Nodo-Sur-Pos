@@ -12,12 +12,15 @@
 import 'normalizacion_texto.dart';
 
 class ProductoCandidato {
-  const ProductoCandidato({required this.id, required this.nombre, this.codigoBarras, this.proveedorId});
+  const ProductoCandidato({required this.id, required this.nombre, this.codigoBarras, this.proveedorId, this.costoCentavos});
 
   final int id;
   final String nombre;
   final String? codigoBarras;
   final int? proveedorId;
+
+  /// El costo por unidad que ya tiene cargado: sirve para adivinar si la factura cuenta bultos o unidades (`unidades_bulto.dart`).
+  final int? costoCentavos;
 }
 
 enum TipoClaveVinculo { codigo, descripcion }

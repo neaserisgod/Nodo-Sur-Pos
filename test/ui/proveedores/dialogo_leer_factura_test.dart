@@ -187,4 +187,50 @@ void main() {
       expect(find.textContaining('2.194'), findsNothing);
     });
   });
+
+  group('bultos y unidades', () {
+    Future<int> conCosto(int centavos) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      return db.into(db.productos).insert(ProductosCompanion.insert(nombre: 'Crema simple 200 gr', proveedorId: Value(elpar), costoCentavos: Value(centavos)));
+    }
+
+    String valorDeUnidades(WidgetTester tester) {
+      final campo = tester.widget<TextFormField>(find.byWidgetPredicate((w) => w is TextFormField && (w.key as ValueKey?)?.value.toString().startsWith('unidades_') == true));
+      return campo.initialValue!;
+    }
+
+    testWidgets('si la factura cobra unas 24 veces tu costo, propone un bulto de 24 y lo avisa', (tester) async {
+      // La factura da $2.194 por cantidad y la descripción trae "(24)": tu unidad cuesta $91.
+      await conCosto(9100);
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(valorDeUnidades(tester), '24');
+      expect(find.text('bulto ×'), findsOneWidget);
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    });
+
+    testWidgets('si el costo se parece al tuyo, la factura cuenta unidades sueltas y queda en 1', (tester) async {
+      await conCosto(210000);
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(valorDeUnidades(tester), '1');
+      expect(find.text('bulto ×'), findsNothing);
+    });
+
+    testWidgets('sin costo cargado no se adivina el bulto: queda en 1 con el aviso de lo que dice la descripción', (tester) async {
+      await conCosto(0);
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(valorDeUnidades(tester), '1');
+      expect(find.byTooltip('La descripción menciona un pack de 24. Si la factura cuenta bultos, poné 24 en "× unid.".'), findsOneWidget);
+    });
+
+    testWidgets('lo aprendido manda: no se pisa con la propuesta', (tester) async {
+      final crema = await conCosto(9100);
+      await aprenderVinculo(db, proveedorId: elpar, productoId: crema, codigo: null, descripcion: '1042 - CREMA SIMPLE X 200 GR (24)', unidadesPorCantidad: 1);
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(valorDeUnidades(tester), '1');
+    });
+  });
 }
