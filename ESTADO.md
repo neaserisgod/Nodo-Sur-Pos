@@ -79,6 +79,10 @@ del celular no se rompe ni llena el disco con pedidos basura; restaurar una copi
 órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
 esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
 
+## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 1: mock y comparación
+
+Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla. **Etapa 1 hecha: no se tocó código de Flutter.** Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en `docs/mock-pc/NodoSurPC.html` (todas las pantallas, claro/oscuro). Espera el OK del dueño y sus respuestas a las 6 preguntas del doc (azul en Cobrar, hojas inferiores en PC, fin del violeta, peso 450...) antes de la etapa 2.
+
 ## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 
 Mezclado en `main` (PR #67, #68 y #69) y publicado en estable, al 100 % (APK 2133, 2134 y 2135). El celular se rehizo para que sea el mock "Nodo Sur · App del celular" (paquete
