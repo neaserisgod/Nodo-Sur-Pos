@@ -21,73 +21,17 @@ y el detalle en `DECISIONES.md`.
 ## Rediseño de la PC v3 — mock hecho, sin aplicar al código (05/10/2026)
 
 El dueño rechazó el aspecto de la app de escritorio y pidió **rehacerla desde cero** (disposición incluida) con el lenguaje de
-horsepos.com y antigravity.google. Hay un **mock interactivo nuevo** (`docs/mock-pc/NodoSurPC-v3.html`; vivo en
-https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js) y una **especificación completa para aplicarlo al pie de la letra**:
-[`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) (tokens, movimiento con valores, componentes, cada pantalla y diálogo,
-reglas, mapeo a `lib/ui/`, plan por fases, excepciones y pendientes). Decisiones del dueño: pastilla flotante + mega-menú, Venta con
-buscador gigante + grilla + ticket alto, carácter alto en todas las pantallas. **No se tocó código de Flutter.** Reemplaza al mock y a
-la comparación de la sección siguiente; hay funciones nuevas a confirmar (sección 14.3 de la especificación) antes de construirlas.
+horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 
-## Métricas
+- **Expresiva** (primera): títulos que se tipean, partículas, mega-menú, tablero 3D, cinta de avisos, cursor-pastilla. El dueño dijo
+  que para la caja **se exageró un poco** (hay que poder leer claro y, en lo posible, **sin scroll**), **pero le gustó para la web**:
+  queda **guardada para el sitio** en [`docs/ESTILO-EXPRESIVO-WEB.md`](./docs/ESTILO-EXPRESIVO-WEB.md) y
+  `docs/mock-pc/NodoSurPC-v3-expresivo.html` (vivo: https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js). **Pendiente: llevarla al sitio**
+  (repo `NodoSurPage`, fuera de este repo).
+- **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
+  Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html`.
 
-- **Tests**: 2374 verdes (`flutter test --exclude-tags bench`, 2026-10-05). La suite completa a veces muestra 1–3 fallos que cambian de nombre
-  entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
-  runner, sin investigar.
-- **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
-- **`schemaVersion`**: **52** (`lib/data/database.dart`; las v40–v52 están comentadas en `onUpgrade`).
-- Capturas para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y
-  `test/companion/capturas_companion_test.dart` (PNG en `capturas/`, ignorada por git; no son golden tests).
-
-## Fases del roadmap
-
-Qué es cada una: `CLAUDE.md`, sección "Fases".
-
-| Fase | Contenido | Estado |
-|---|---|---|
-| 1–10 | Dominio, base, venta, cierre, productos, reposición, rentabilidad, configuración, historial, impresión y respaldo | **Cerradas** |
-| 11 | Sistema de diseño | Aplicado a toda la app (ver `DISENO.md`) |
-| 12 | Cobro por terminal Point (QR/débito) | **Cerrada** (ver abajo, Mercado Pago) |
-| 13 | Pulido visual tras el cambio de hardware | **Cerrada** (el tema automático sigue al del sistema, decisión del dueño 2026-10-03) |
-| 14 | Remake de estética basado en la companion (navbar superior, `Superficie`) | **Hecho** en todas las pantallas; luego se pasó al lenguaje "antigravity" (`DISENO.md`) |
-| — | Generalización a Nodo Sur POS (módulos, rubros, marca configurable) | **Completa** (fases 1–5 y 8–9; 6 y 7 descartadas) |
-| — | Nube: cuenta, copias, sync por sucursal, actualizaciones | **Hecha**; probar con equipos y cuentas reales sigue siendo lo que más falta |
-
-Quedó en el archivo, sin tocar a propósito: `Bloque` y los tokens viejos deprecados (Fase 6 del remake) y la vitrina de
-test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con el visto bueno visual final del dueño.
-
-## Lo que existe hoy (mapa rápido)
-
-- **PC**: menú de 6 apartados (Inicio · Venta · Proveedores · Separaciones · Historial · Configuración) con Configuración
-  como engranaje y búsqueda en lupa (Ctrl+F). Venta: carrito + cobro a la derecha, grilla de productos con "Más vendidos"
-  por defecto, ventas abiertas múltiples y persistentes (Alt+N / Alt+S), descuento sobre el total, cobro manual.
-  Proveedores: lista y detalle, cuenta corriente ("Deuda"), precio automático por ganancia, edición masiva, promos.
-  Separaciones (solo de hoy, dividido cajón/Mercado Pago), Encargues por apartado, Inicio con tablero del día y "Este mes"
-  (estado de resultados, margen necesario). Ventana propia con barra de título dibujada.
-- **Celular** (`lib/companion/`): vender y cobrar, productos y precios, conteo de stock, gastos/ingresos, arqueo y cierre,
-  historial y cierres (con PDF del día completo), pagar proveedor (necesita la PC), encargues, bienvenida y "Configurá tu
-  negocio". Sync con la PC por wifi y, si no contesta, por la nube.
-- **Sync**: motor en `repositorio_sincronizacion.dart` (`global_id` + `actualizado_en`, "gana el último en llegar"). Ya no
-  hay Supabase ni Firebase como transporte: los restos de Firestore de arriba son código muerto.
-- **Mercado Pago**: cobro QR/débito por la Orders API de la Point (`MODELO__SERIAL` como terminal; cancelar por API solo
-  funciona mientras la orden está en `created`), con token local o por el servidor de Nodo Sur (MP del negocio conectado
-  en `/negocio`). En la caja QR y Débito son un solo medio, "Mercado Pago"; el canal se guarda por pago. El cierre muestra
-  "Mercado Pago según Mercado Pago" (cobros reales, comisiones, diferencias; nunca frena el cierre). El bloque "Mercado Pago"
-  del cierre desglosa su esperado: saldo al abrir, cobrado por MP (con cuántas ventas, para compararlo con los cobros
-  de MP), gastos e ingresos por MP (2026-10-04).
-- **Distribución**: instalador Inno Setup + WinSparkle (firma DSA, `dsa_pub.pem` en el repo, la privada fuera). Publicar:
-  título del commit con `release:` o `beta:`; Android a mano con `publicar-apk.yml` y un `build` mayor al último publicado.
-  Detalle en `CONTEXTO.md` §5 y `docs/PRIMERA-VERSION.md`.
-
-## Revisión de blindaje técnico (04/10/2026)
-
-Auditoría de los dos repos (app y sitio) pedida por el dueño: "extremadamente blindado". Qué se corrigió y por qué está en
-`DECISIONES.md` ("Revisión de blindaje técnico") y `TRAMPAS.md` (las dos entradas del 2026-10-04). En una línea cada cosa:
-cobro Point directo ya no cuelga si cae internet y el reintento reutiliza la misma orden; confirmar un cobro del celular es
-idempotente y atómico con la venta; un fiado no se cobra dos veces; `registrarVenta` rechaza pagos que no suman el total; el servidor
-del celular no se rompe ni llena el disco con pedidos basura; restaurar una copia reemplaza la base de forma atómica y deja
-`.antes-de-restaurar`; el APK solo se acepta si viene de horsepos.com; en el sitio, plazos en todo pedido saliente, webhook acotado,
-órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
-esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
+**No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
 

@@ -1,10 +1,20 @@
-# Especificación de la app de PC v3 — rediseño desde cero (2026-10-05)
+# Estilo expresivo (horsepos + antigravity) — guardado para la web (2026-10-05)
+
+> **Estado de este documento (2026-10-05):** esta fue la primera versión del rediseño de la PC. El dueño la probó y dijo que **para la
+> app de caja se exageró un poco** (las pantallas tienen que ser claras de leer y, en lo posible, **sin scroll**), pero que **le gustó para
+> la web**. Por eso queda **guardada como referencia del estilo expresivo para el sitio (horsepos.com / Nodo Sur)**: títulos que se tipean,
+> campo de partículas, mega-menú, tablero 3D, cinta de avisos, cursor-pastilla, scroll suave. **No es la especificación de la PC.**
+> La de la PC (versión sobria, sin scroll de página) es [`ESPECIFICACION-PC-V3.md`](./ESPECIFICACION-PC-V3.md).
+> - Mock vivo (versión expresiva, no tocar): https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js
+> - Fuente: `docs/mock-pc/NodoSurPC-v3-expresivo.html`
+> - Las secciones de tokens, movimiento (5) y componentes (6) sirven tal cual para la web; las pantallas (7) y diálogos (8) son de la caja.
+
 
 Documento para que una IA (o una persona) lleve **al pie de la letra** el mock de escritorio v3 a la app real de Flutter.
 **Salvo las excepciones de la sección 14, todo lo que dice este documento se implementa tal cual.**
 
 - **Mock vivo (interactivo, claro/oscuro):** https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js
-- **Fuente del mock en el repo:** `docs/mock-pc/NodoSurPC-v3.html` (un solo archivo; se abre en cualquier navegador; la fuente Figtree viene de Google Fonts).
+- **Fuente del mock en el repo:** `docs/mock-pc/NodoSurPC-v3-expresivo.html` (un solo archivo; se abre en cualquier navegador; la fuente Figtree viene de Google Fonts).
   Es la **referencia visual y de comportamiento**. Si este documento y el mock difieren en un número, **gana el mock** (y este documento se corrige).
 - **Reemplaza** al mock anterior (`docs/mock-pc/NodoSurPC.html`) y a `docs/COMPARACION-MOCK-PC.md`. Aquel mock conservaba la disposición de la app; este la rehace entera.
 - Nada de lo que está acá toca `lib/domain/` ni `lib/data/`: es **solo capa de presentación** (`lib/ui/`). Las reglas de negocio no cambian (sección 11).
