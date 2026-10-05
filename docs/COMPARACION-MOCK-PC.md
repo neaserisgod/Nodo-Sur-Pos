@@ -48,8 +48,8 @@ Encargues: nuevo, entregar, cobrar deuda; Configuración: datos del comercio, se
 celular (código), cuenta, copias, categorías, colchón de reposición, asistente IA.
 
 Hay un selector "Ir a un estado…" para saltar a cualquiera de ellos. Cosas del mock que son diseño propuesto y no existen todavía en
-la app real: aplicar una factura (en la app solo hay lectura de prueba), el aviso de ≥ 50 % en la edición masiva y "Ver movimientos"
-en el modo de pago a proveedor con "Fuera de la caja" como nota. Confirmar cuáles se quieren antes de construirlas.
+la app real: aplicar una factura (en la app solo hay lectura de prueba), el aviso de ≥ 50 % en la edición masiva y el botón "Ver
+movimientos" de la cuenta corriente del proveedor. Confirmar cuáles se quieren antes de construirlas.
 
 ## 3. Por pantalla
 
