@@ -169,4 +169,34 @@ void main() {
     final r = proponerVinculos(lineas: const [LineaAVincular(descripcion: 'x')], catalogo: const []);
     expect(r.single.confianza, ConfianzaVinculo.ninguna);
   });
+
+  group('resumen de vínculos (el "reconocí 8 de 10")', () {
+    const aprendido = PropuestaDeVinculo(productoId: 1, confianza: ConfianzaVinculo.alta, origen: OrigenVinculo.aprendido);
+    const porEan = PropuestaDeVinculo(productoId: 2, confianza: ConfianzaVinculo.alta, origen: OrigenVinculo.codigoDeBarras);
+    const porNombre = PropuestaDeVinculo(productoId: 3, confianza: ConfianzaVinculo.media, origen: OrigenVinculo.nombre);
+    const porIa = PropuestaDeVinculo(productoId: 4, confianza: ConfianzaVinculo.media, origen: OrigenVinculo.ia);
+    const nada = PropuestaDeVinculo(confianza: ConfianzaVinculo.ninguna);
+
+    test('aprendido y código de barras son seguros; nombre e IA, para confirmar; sin producto, sin vincular', () {
+      expect(estadoDeVinculo(aprendido, 1), EstadoDeVinculo.seguro);
+      expect(estadoDeVinculo(porEan, 2), EstadoDeVinculo.seguro);
+      expect(estadoDeVinculo(porNombre, 3), EstadoDeVinculo.aConfirmar);
+      expect(estadoDeVinculo(porIa, 4), EstadoDeVinculo.aConfirmar);
+      expect(estadoDeVinculo(nada, null), EstadoDeVinculo.sinVincular);
+    });
+
+    test('un producto elegido a mano queda para confirmar, aunque la propuesta fuera segura', () {
+      expect(estadoDeVinculo(aprendido, 99), EstadoDeVinculo.aConfirmar);
+      expect(estadoDeVinculo(nada, 5), EstadoDeVinculo.aConfirmar);
+    });
+
+    test('si el dueño borra el producto, vuelve a sin vincular', () {
+      expect(estadoDeVinculo(aprendido, null), EstadoDeVinculo.sinVincular);
+    });
+
+    test('cuenta cada estado', () {
+      final r = resumenDeVinculos([aprendido, porEan, porNombre, porIa, nada], [1, 2, 3, 4, null]);
+      expect(r, {EstadoDeVinculo.seguro: 2, EstadoDeVinculo.aConfirmar: 2, EstadoDeVinculo.sinVincular: 1});
+    });
+  });
 }

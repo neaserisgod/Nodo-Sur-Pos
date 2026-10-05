@@ -427,6 +427,7 @@ class _TarjetaFactura extends StatelessWidget {
               ],
             ),
             for (final a in f.advertencias) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(a, style: textTheme.bodySmall)),
+            if (e.producto.isNotEmpty) _ResumenDeVinculos(propuestas: e.propuestas, elegidos: e.producto),
             if (e.proveedor == null) _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, proveedores: proveedores, onElegir: onProveedor),
             if (e.consultandoIa)
               Padding(
@@ -517,6 +518,34 @@ class _ElegirProveedor extends StatelessWidget {
               if (id != null) onElegir(id);
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Reconocí 8 de 10 productos": cuántas líneas ya están seguras (verde), cuántas hay que confirmar (amarillo) y cuántas faltan (rojo).
+class _ResumenDeVinculos extends StatelessWidget {
+  const _ResumenDeVinculos({required this.propuestas, required this.elegidos});
+
+  final List<PropuestaDeVinculo> propuestas;
+  final List<int?> elegidos;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = resumenDeVinculos(propuestas, elegidos);
+    final reconocidas = r[EstadoDeVinculo.seguro]! + r[EstadoDeVinculo.aConfirmar]!;
+    return Padding(
+      padding: const EdgeInsets.only(top: Espaciado.sm),
+      child: Wrap(
+        spacing: Espaciado.sm,
+        runSpacing: Espaciado.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text('Reconocí $reconocidas de ${elegidos.length} productos:', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: Pesos.fuerte)),
+          if (r[EstadoDeVinculo.seguro]! > 0) Insignia(texto: '${r[EstadoDeVinculo.seguro]} seguros', tono: Tono.ganancia),
+          if (r[EstadoDeVinculo.aConfirmar]! > 0) Insignia(texto: '${r[EstadoDeVinculo.aConfirmar]} para confirmar', tono: Tono.alerta),
+          if (r[EstadoDeVinculo.sinVincular]! > 0) Insignia(texto: '${r[EstadoDeVinculo.sinVincular]} sin vincular', tono: Tono.error),
         ],
       ),
     );
