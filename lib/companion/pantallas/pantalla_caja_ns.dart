@@ -20,6 +20,7 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
 import '../pantalla_movimiento_caja.dart';
+import '../servicio_companion.dart';
 import '../sync_nube_companion.dart' show syncNubeCompanion;
 import 'hoja_abrir_caja_ns.dart';
 import 'hoja_contar_caja_ns.dart';
@@ -572,12 +573,13 @@ class _VentasState extends State<_Ventas> {
     _sub = avisosCambiosCompanion.listen((_) => _cargar(silencioso: true));
   }
 
-  bool _inicio = false;
+  ServicioCompanion? _servicioCargado;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_inicio) {
-      _inicio = true;
+    final servicio = AppNs.of(context).servicio;
+    if (servicio != null && !identical(servicio, _servicioCargado)) {
+      _servicioCargado = servicio;
       _cargar();
     }
   }
