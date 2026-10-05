@@ -9,12 +9,16 @@
 // artículos sin costo.
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../data/database.dart';
 import '../../data/normalizacion_texto.dart';
 import '../../data/repositorio_productos.dart' show listarProductos;
 import '../../data/repositorio_promos.dart';
+import '../../data/repositorio_sugerencia_promos.dart';
 import '../../domain/dinero.dart';
+import '../../servicios/asistente_promos.dart';
+import '../../servicios/gemini.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
 import '../comun/modal.dart';
@@ -33,20 +37,30 @@ Future<void> mostrarDialogoPromos(
   BuildContext context, {
   required AppDatabase db,
   required int usuarioId,
+  http.Client? clienteIa,
 }) {
   return mostrarModal<void>(
     context,
-    builder: (_) => _DialogoPromos(db: db, usuarioId: usuarioId),
+    builder: (_) =>
+        _DialogoPromos(db: db, usuarioId: usuarioId, clienteIa: clienteIa),
   );
 }
+
+/// Lo que el dueño eligió crear de las sugerencias: la sugerencia y el nombre con que se muestra (el de la IA, o el simple).
+typedef _SugerenciaElegida = ({SugerenciaDePromo sugerencia, String nombre});
 
 // ─── Lista de promos ─────────────────────────────────────────────────────
 
 class _DialogoPromos extends StatefulWidget {
-  const _DialogoPromos({required this.db, required this.usuarioId});
+  const _DialogoPromos({
+    required this.db,
+    required this.usuarioId,
+    this.clienteIa,
+  });
 
   final AppDatabase db;
   final int usuarioId;
+  final http.Client? clienteIa;
 
   @override
   State<_DialogoPromos> createState() => _DialogoPromosState();
@@ -66,16 +80,29 @@ class _DialogoPromosState extends State<_DialogoPromos> {
     if (mounted) setState(() => _promos = promos);
   }
 
-  Future<void> _abrirCreador([PromoConComponentes? existente]) async {
+  Future<void> _abrirCreador([
+    PromoConComponentes? existente,
+    _SugerenciaElegida? sugerida,
+  ]) async {
     final guardo = await mostrarModal<bool>(
       context,
       builder: (_) => _DialogoCrearPromo(
         db: widget.db,
         usuarioId: widget.usuarioId,
         existente: existente,
+        sugerida: sugerida,
       ),
     );
     if (guardo == true) await _recargar();
+  }
+
+  Future<void> _abrirSugerencias() async {
+    final elegida = await mostrarModal<_SugerenciaElegida>(
+      context,
+      builder: (_) =>
+          _DialogoSugerencias(db: widget.db, clienteIa: widget.clienteIa),
+    );
+    if (elegida != null && mounted) await _abrirCreador(null, elegida);
   }
 
   Future<void> _alternarActiva(PromoConComponentes p) async {
@@ -202,7 +229,196 @@ class _DialogoPromosState extends State<_DialogoPromos> {
           texto: 'Cerrar',
           onPressed: () => Navigator.of(context).pop(),
         ),
+        BotonSecundario(texto: 'Sugerir promos', onPressed: _abrirSugerencias),
         BotonPrimario(texto: 'Nueva promo', onPressed: () => _abrirCreador()),
+      ],
+    );
+  }
+}
+
+// ─── Sugerencias ─────────────────────────────────────────────────────────
+
+/// Los pares de artículos que más se llevan juntos (`sugerirPromos`), con el precio ya calculado. Si hay clave de Gemini, la IA
+/// les pone nombre y motivo; si no, o si falla, se ven igual con "A + B".
+class _DialogoSugerencias extends StatefulWidget {
+  const _DialogoSugerencias({required this.db, this.clienteIa});
+
+  final AppDatabase db;
+  final http.Client? clienteIa;
+
+  @override
+  State<_DialogoSugerencias> createState() => _DialogoSugerenciasState();
+}
+
+class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
+  List<SugerenciaDePromo>? _sugerencias;
+  List<TextoDePromo?> _textos = const [];
+  bool _redactando = false;
+  String? _avisoIa;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    final sugerencias = await sugerirPromos(widget.db);
+    if (!mounted) return;
+    setState(() => _sugerencias = sugerencias);
+    if (sugerencias.isNotEmpty) await _redactar(sugerencias);
+  }
+
+  Future<void> _redactar(List<SugerenciaDePromo> sugerencias) async {
+    if (!ClaveGemini.configurada) {
+      setState(
+        () => _avisoIa =
+            'Cargá la clave de la IA en Configuración › Asistente IA para que les ponga nombre.',
+      );
+      return;
+    }
+    setState(() => _redactando = true);
+    final cliente = ClienteGemini(
+      apiKey: ClaveGemini.valor!,
+      client: widget.clienteIa,
+    );
+    try {
+      final textos = await redactarPromos(cliente, sugerencias);
+      if (mounted) setState(() => _textos = textos);
+    } on ErrorGemini catch (e) {
+      if (mounted) {
+        setState(() => _avisoIa = 'La IA no pudo ponerles nombre: ${e.mensaje}');
+      }
+    } finally {
+      cliente.close();
+      if (mounted) setState(() => _redactando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sugerencias = _sugerencias;
+    final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
+
+    return Modal(
+      titulo: 'Promos sugeridas',
+      subtitulo:
+          'Artículos que tus clientes ya se llevan juntos (últimos 90 días). Vos decidís cuáles crear.',
+      ancho: 720,
+      contenido: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 460),
+        child: sugerencias == null
+            ? const Center(child: CircularProgressIndicator())
+            : sugerencias.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: Espaciado.lg),
+                child: Text(
+                  'Todavía no hay nada para sugerir: hacen falta artículos que se vendan juntos al menos 3 veces, con stock, '
+                  'con costo cargado y con ganancia suficiente para descontar.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colores.textoSecundario,
+                  ),
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_redactando)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: Espaciado.sm),
+                      child: Text(
+                        'Poniéndoles nombre con la IA…',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colores.textoSecundario,
+                        ),
+                      ),
+                    ),
+                  if (_avisoIa != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: Espaciado.sm),
+                      child: Text(
+                        _avisoIa!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colores.textoSecundario,
+                        ),
+                      ),
+                    ),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: sugerencias.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: Espaciado.sm),
+                      itemBuilder: (_, i) {
+                        final s = sugerencias[i];
+                        final texto = i < _textos.length ? _textos[i] : null;
+                        final nombre = texto?.nombre ?? s.nombreSimple;
+                        return Container(
+                          padding: const EdgeInsets.all(Espaciado.md),
+                          decoration: BoxDecoration(
+                            color: colores.fondo,
+                            borderRadius: BorderRadius.circular(
+                              radioControlEscritorio,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      nombre,
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        fontWeight: Pesos.fuerte,
+                                      ),
+                                    ),
+                                    if (texto != null)
+                                      Text(
+                                        s.nombreSimple,
+                                        style: textTheme.bodySmall,
+                                      ),
+                                    Text(
+                                      texto?.motivo.isNotEmpty == true
+                                          ? texto!.motivo
+                                          : 'Se llevaron juntos en ${s.par.ventasJuntos} ventas.',
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: colores.textoSecundario,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Sueltos ${formatearARS(s.calculo.listaCentavos)} · promo ${formatearARS(s.calculo.precioCentavos)} '
+                                      '(el cliente ahorra ${formatearARS(s.ahorroCentavos)}) · te quedan ${formatearARS(s.gananciaCentavos)} por promo',
+                                      style: textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: Espaciado.sm),
+                              TextButton(
+                                onPressed: () => Navigator.of(context)
+                                    .pop<_SugerenciaElegida>((
+                                      sugerencia: s,
+                                      nombre: nombre,
+                                    )),
+                                child: const Text('Crear'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+      ),
+      botones: [
+        BotonSecundario(
+          texto: 'Cerrar',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ],
     );
   }
@@ -222,11 +438,15 @@ class _DialogoCrearPromo extends StatefulWidget {
     required this.db,
     required this.usuarioId,
     required this.existente,
+    this.sugerida,
   });
 
   final AppDatabase db;
   final int usuarioId;
   final PromoConComponentes? existente;
+
+  /// Una sugerencia que se quiere crear: llega con los artículos, el nombre y el porcentaje ya puestos, todo editable.
+  final _SugerenciaElegida? sugerida;
 
   @override
   State<_DialogoCrearPromo> createState() => _DialogoCrearPromoState();
@@ -234,16 +454,18 @@ class _DialogoCrearPromo extends StatefulWidget {
 
 class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
   late final _nombreCtrl = TextEditingController(
-    text: widget.existente?.promo.nombre ?? '',
+    text: widget.existente?.promo.nombre ?? widget.sugerida?.nombre ?? '',
   );
   final _busquedaCtrl = TextEditingController();
   late final List<_Elegido> _elegidos = [
     for (final c
-        in widget.existente?.componentes ?? const <ComponenteDePromo>[])
+        in widget.existente?.componentes ??
+            widget.sugerida?.sugerencia.componentes ??
+            const <ComponenteDePromo>[])
       _Elegido(c.producto, c.cantidad),
   ];
   List<Producto> _elegibles = const [];
-  int _bp = 3000;
+  late int _bp = widget.sugerida?.sugerencia.porcentajeBp ?? 3000;
   String? _error;
 
   @override

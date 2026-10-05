@@ -1924,3 +1924,16 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 - **`generateContent` de la API v1beta**, clave en el encabezado `x-goog-api-key` (no en la URL), modelo `gemini-2.5-flash`
   (`modeloGeminiPorDefecto`). Los modelos con cupo gratis cambian: si Google retira uno, "Probar" avisa y se cambia esa constante.
 - La IA solo sugiere: no toca caja, stock ni precios sin que el dueño lo confirme, y la app anda igual sin clave, sin cupo o sin internet.
+
+## Promos sugeridas (2026-10-05)
+
+- **Los números los calcula el código, la IA solo redacta.** Los pares salen de las ventas reales (`paresQueSeCompranJuntos`) y el
+  precio de `calcularPromo`/`precioDePromo` (Regla 3: una fórmula). Gemini recibe nombres y totales agregados — nunca clientes ni
+  fiados — y devuelve nombre y motivo; si falla o no hay clave, se muestra "A + B". Una respuesta de la IA se valida antes de usarla.
+- **Qué cuenta como "se llevan juntos"**: al menos 3 ventas en común y que vayan juntos ≥ 20 % más seguido que el azar (lift 1,2):
+  sin eso, lo que se vende en todas las ventas (una gaseosa) iría "junto" con todo. Ventas anuladas y de más de 90 días no cuentan; una venta
+  de más de 40 productos distintos (pedido grande) tampoco. Pares: de a dos artículos, una unidad de cada uno.
+- **Porcentaje de partida** (`porcentajeSugeridoDePromoBp`): la promo regala más o menos la mitad de la ganancia de los sueltos, en saltos de 5 %,
+  entre 10 % y 40 %. Si los sueltos dejan menos de 20 % de ganancia no se sugiere nada. Es solo el punto de partida: el creador lo deja cambiar.
+  **Decisión mía, no del dueño** — confirmar o ajustar.
+- No se sugiere un par que ya entra entero en una promo existente. Solo PC por ahora: el celular no tiene el apartado de promos.
