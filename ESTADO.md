@@ -36,6 +36,12 @@ horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 mucha información legible. Está en la especificación (secciones 4.2, 4.5, 7.x, 8 y **15**) y en el mock sobrio; funciones nuevas a confirmar
 en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "Venta cobrada" que se cierra sola).
 
+**Ronda 4 (05/10, la última):** el dueño pidió **eliminar redundancias** (dejar lo más práctico a mano), sacar las tarjetas de IA del medio de Inicio,
+**todo simétrico** y **avisos (toast) arriba**; y pidió un mock **aparte** porque la v3 le gusta de base. Quedó en
+[`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md) (delta sobre la v3: gana la v4) y `docs/mock-pc/NodoSurPC-v4.html`
+(vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
+"Venta cobrada" sin botón de siguiente, diálogos sin "Cancelar".
+
 **No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
