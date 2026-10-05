@@ -17,6 +17,9 @@ String kilosTextoNs(int gramos) {
 /// Stock en la unidad del producto: `48 u.` o `3,2 kg`.
 String stockTextoNs(ProductoCompanion p) => p.esPesable ? kilosTextoNs(p.stockGramos ?? 0) : '${p.stock} u.';
 
+/// Minutos a texto del mock: 135 → `2 h 15 min`, 120 → `2 h`, 45 → `45 min`.
+String duracionTextoNs(int minutos) => minutos >= 60 ? '${minutos ~/ 60} h${minutos % 60 > 0 ? ' ${minutos % 60} min' : ''}' : '$minutos min';
+
 /// Sin stock: 0 o menos.
 bool sinStockNs(ProductoCompanion p) => (p.esPesable ? (p.stockGramos ?? 0) : p.stock) <= 0;
 

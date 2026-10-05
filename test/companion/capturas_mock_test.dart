@@ -13,7 +13,7 @@ import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/domain/venta.dart';
-import 'package:la_plazoleta/companion/cliente_companion.dart' show ApartadoCompanion, ErrorCompanion;
+import 'package:la_plazoleta/companion/cliente_companion.dart' show ApartadoCompanion, ErrorCompanion, MedioGastoCompanion;
 import 'package:la_plazoleta/domain/cobro_posnet.dart';
 import 'package:la_plazoleta/domain/descuento.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
@@ -97,7 +97,8 @@ Future<void> capturarNs(
 
 /// Puerto local con una terminal Point de mentira: el estado de la orden lo elige cada captura.
 class _PuertoPosnet extends PuertoLocal {
-  _PuertoPosnet(super.base, {this.estado = ResultadoOrdenCobro.pendiente, this.nuncaCrea = false, this.falloAlCrear, this.falloAlGuardar});
+  _PuertoPosnet(super.base, {this.estado = ResultadoOrdenCobro.pendiente, this.nuncaCrea = false, this.falloAlCrear, this.falloAlGuardar, this.falloAlAnotar});
+  final Object? falloAlAnotar;
   final ResultadoOrdenCobro estado;
   final bool nuncaCrea;
   final Object? falloAlCrear;
@@ -118,6 +119,12 @@ class _PuertoPosnet extends PuertoLocal {
 
   @override
   Future<ResultadoOrdenCobro> consultarEstadoPosnet(String ordenIdMp) async => estado;
+
+  @override
+  Future<int> registrarGasto({required int sesionCajaId, required int usuarioId, required int montoCentavos, required MedioGastoCompanion medio, String? motivo}) async {
+    if (falloAlAnotar != null) throw falloAlAnotar!;
+    return super.registrarGasto(sesionCajaId: sesionCajaId, usuarioId: usuarioId, montoCentavos: montoCentavos, medio: medio, motivo: motivo);
+  }
 
   // Las líneas de las capturas no son productos de la base: la venta se da por asentada sin tocarla.
   @override
@@ -406,9 +413,9 @@ void main() {
     await terminarTest(t);
   }
 
-  Future<_PuertoPosnet> terminal(WidgetTester t, {ResultadoOrdenCobro estado = ResultadoOrdenCobro.pendiente, bool nuncaCrea = false, Object? falloAlCrear, Object? falloAlGuardar}) async {
+  Future<_PuertoPosnet> terminal(WidgetTester t, {ResultadoOrdenCobro estado = ResultadoOrdenCobro.pendiente, bool nuncaCrea = false, Object? falloAlCrear, Object? falloAlGuardar, Object? falloAlAnotar}) async {
     await servicioConCaja(t);
-    return _PuertoPosnet(baseLocalCompanion(), estado: estado, nuncaCrea: nuncaCrea, falloAlCrear: falloAlCrear, falloAlGuardar: falloAlGuardar);
+    return _PuertoPosnet(baseLocalCompanion(), estado: estado, nuncaCrea: nuncaCrea, falloAlCrear: falloAlCrear, falloAlGuardar: falloAlGuardar, falloAlAnotar: falloAlAnotar);
   }
 
   testWidgets('11b-cobro-terminal-enviando', (t) async {
@@ -483,16 +490,140 @@ void main() {
     await capturarNs(t, '31-caja-ventas', const PantallaCajaNs(), controlador: c, barra: PestaniaNs.caja);
   });
   testWidgets('18-gasto-ingreso', (t) async {
-    await capturarNs(t, '18-gasto-ingreso', const PantallaMovimientoCaja(), barra: null);
+    final servicio = await servicioConCaja(t);
+    await capturarNs(t, '18-gasto-ingreso', const PantallaMovimientoCaja(), controlador: ControladorConServicio(servicio), barra: null);
+  });
+  testWidgets('18b-gasto-lata', (t) async {
+    final servicio = await servicioConCaja(t);
+    await capturarNs(
+      t,
+      '18b-gasto-lata',
+      const PantallaMovimientoCaja(),
+      controlador: ControladorConServicio(servicio),
+      barra: null,
+      antes: (t) async {
+        await t.tap(find.text('Lata cigarrillos'));
+        await t.enterText(find.byType(TextField).first, '3500');
+        await t.pump();
+        await t.enterText(find.byType(TextField).last, 'Compra de cambio');
+        await esperar(t);
+      },
+    );
+  });
+  testWidgets('18c-gasto-caja-cerrada', (t) async {
+    final servicio = await servicioConCaja(t, abrir: false);
+    await capturarNs(
+      t,
+      '18c-gasto-caja-cerrada',
+      const PantallaMovimientoCaja(),
+      controlador: ControladorConServicio(servicio, abierta: false),
+      barra: null,
+      antes: (t) async {
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+        await esperar(t);
+        await t.enterText(find.byType(TextField).first, '30000');
+        await esperar(t);
+      },
+    );
+  });
+  testWidgets('18d-gasto-error-pc', (t) async {
+    final servicio = await terminal(t, falloAlAnotar: const ErrorCompanion(409, 'La caja ya se cerró, este gasto no se guardó'));
+    await capturarNs(
+      t,
+      '18d-gasto-error-pc',
+      const PantallaMovimientoCaja(),
+      controlador: ControladorConServicio(servicio),
+      barra: null,
+      antes: (t) async {
+        await t.enterText(find.byType(TextField).first, '3500');
+        await esperar(t);
+        await t.tap(find.text('Anotar gasto'));
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+        await esperar(t);
+      },
+    );
   });
   testWidgets('17-consultar-precio', (t) async {
     await servicioConCaja(t);
     await capturarNs(t, '17-consultar-precio', const PantallaConsultarPrecio());
   });
-  testWidgets('33-cerrar-caja-paso1', (t) async {
+  testWidgets('32b-contar-la-caja-2-horas', (t) async {
     final servicio = await servicioConCaja(t);
-    await capturarNs(t, '33-cerrar-caja-paso1', PantallaCierreNs(servicio: servicio, usuarioId: 1));
+    await capturarNs(
+      t,
+      '32b-contar-la-caja-2-horas',
+      const PantallaCajaNs(),
+      controlador: ControladorConServicio(servicio),
+      barra: PestaniaNs.caja,
+      antes: (t) async {
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+        await esperar(t);
+        await t.tap(find.text('Contar la caja'));
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+        await esperar(t);
+      },
+    );
   });
+  testWidgets('32c-contar-la-caja-cerrada', (t) async {
+    final servicio = await servicioConCaja(t, abrir: false);
+    await capturarNs(
+      t,
+      '32c-contar-la-caja-cerrada',
+      const PantallaCajaNs(),
+      controlador: ControladorConServicio(servicio, abierta: false),
+      barra: PestaniaNs.caja,
+      antes: (t) async {
+        await t.tap(find.text('Contar la caja'));
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+        await esperar(t);
+      },
+    );
+  });
+  testWidgets('33-cerrar-caja-etapa1', (t) async {
+    final servicio = await servicioConCaja(t);
+    await capturarNs(t, '33-cerrar-caja-etapa1', PantallaCierreNs(servicio: servicio, usuarioId: 1));
+  });
+  Finder campoDe(String etiqueta) => find.descendant(of: find.ancestor(of: find.text(etiqueta), matching: find.byType(CampoNs)).first, matching: find.byType(TextField));
+  Future<void> irAEtapa2(WidgetTester t) async {
+    await t.enterText(find.byType(TextField).first, '252600');
+    await esperar(t);
+    await t.tap(find.text('Confirmar conteo'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+    await esperar(t);
+  }
+  testWidgets('34-cerrar-caja-etapa2', (t) async {
+    final servicio = await servicioConCaja(t);
+    await capturarNs(t, '34-cerrar-caja-etapa2', PantallaCierreNs(servicio: servicio, usuarioId: 1), antes: (t) async {
+      await irAEtapa2(t);
+      await t.enterText(campoDe('MP contado (según la app de Mercado Pago)'), '250800');
+      await esperar(t);
+    });
+  });
+  testWidgets('34b-cerrar-caja-etapa2-resultado', (t) async {
+    final servicio = await servicioConCaja(t);
+    await capturarNs(t, '34b-cerrar-caja-etapa2-resultado', PantallaCierreNs(servicio: servicio, usuarioId: 1), antes: (t) async {
+      await irAEtapa2(t);
+      await t.enterText(campoDe('MP contado (según la app de Mercado Pago)'), '250800');
+      await t.pump();
+      await t.enterText(campoDe('Lata contada'), '42000');
+      await esperar(t);
+    });
+  });
+  testWidgets('35-cerrar-caja-cerrada', (t) async {
+    final servicio = await servicioConCaja(t);
+    await capturarNs(t, '35-cerrar-caja-cerrada', PantallaCierreNs(servicio: servicio, usuarioId: 1), antes: (t) async {
+      await irAEtapa2(t);
+      await t.enterText(campoDe('MP contado (según la app de Mercado Pago)'), '250800');
+      await t.pump();
+      await t.enterText(campoDe('Lata contada'), '42000');
+      await esperar(t);
+      await t.tap(find.text('Cerrar caja').last);
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+      await esperar(t);
+    });
+    await t.pump(const Duration(seconds: 6));
+  });
+
 
   // ───────── Productos ─────────
   Future<PuertoLocal> conCatalogo(WidgetTester t) async {

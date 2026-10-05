@@ -76,7 +76,7 @@ class _Contenido extends StatelessWidget {
         color: ns.w,
         icono: IconoNs.calculadora,
         titulo: 'Contá la caja',
-        detalle: 'Pasaron más de 2 horas desde el último conteo',
+        detalle: 'Pasaron ${duracionTextoNs(pend.minutosDesdeConteo)} desde el último conteo. Es opcional: lo que cuentes queda para el cierre.',
         onTap: () => _ir(context, () => app.ejecutarFuncion(AccionFuncion.contarCaja)),
       ));
     }

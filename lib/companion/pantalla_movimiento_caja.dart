@@ -11,7 +11,6 @@ import 'app_ns.dart';
 import 'cliente_companion.dart';
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
-import 'pantallas/hoja_abrir_caja_ns.dart';
 
 enum TipoMovimientoCaja { gasto, ingreso }
 
@@ -32,11 +31,57 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
   bool _guardando = false;
   bool _guardado = false;
   String? _error;
+  final _fondoCtrl = TextEditingController();
+  int? _lataArrastra;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _cargarSesion());
+  }
+
+  /// Con la caja cerrada: el fondo sugerido y cuánto trae la lata de antes.
+  Future<void> _cargarSesion() async {
+    final app = AppNs.of(context);
+    if (app.cajaAbierta || app.servicio == null) return;
+    try {
+      final sesion = await app.servicio!.sesion();
+      if (!mounted) return;
+      setState(() {
+        _lataArrastra = sesion.lataQueSeArrastraCentavos;
+        if (sesion.fondoInicialSugeridoCentavos != null && _fondoCtrl.text.isEmpty) _fondoCtrl.text = '${sesion.fondoInicialSugeridoCentavos! ~/ centavosPorPeso}';
+      });
+    } catch (_) {
+      // Sin la sesión a mano igual se puede abrir.
+    }
+  }
+
+  Future<void> _abrirCaja(ControladorAppNs app) async {
+    final servicio = app.servicio;
+    final usuario = app.usuarioId;
+    if (servicio == null || usuario == null) return;
+    final centavos = (int.tryParse(_fondoCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    try {
+      await servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: centavos);
+      if (!mounted) return;
+      mostrarAvisoNs(context, 'Caja abierta con ${plataNs(centavos)}');
+      await app.refrescar();
+    } catch (e) {
+      if (mounted) setState(() => _error = mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
 
   @override
   void dispose() {
     _montoCtrl.dispose();
     _motivoCtrl.dispose();
+    _fondoCtrl.dispose();
     super.dispose();
   }
 
@@ -85,8 +130,8 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     final listo = _montoCentavos > 0 && !_guardando;
     final cajas = [
       ('Cajón normal', MedioGastoCompanion.cajonNormal),
-      ('Mercado Pago', MedioGastoCompanion.mercadoPago),
       ('Lata cigarrillos', MedioGastoCompanion.lata),
+      ('Mercado Pago', MedioGastoCompanion.mercadoPago),
     ];
     return Scaffold(
       backgroundColor: ns.paper,
@@ -103,19 +148,26 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                 if (!app.cajaAbierta)
                   Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Para anotar movimientos primero abrí la caja.', style: estiloNs(16, color: ns.mute)),
+                        Expanded(
+                          child: ListView(
+                            padding: EdgeInsets.zero,
+                            children: [
+                              const InfoNs('No hay caja abierta en la PC ahora mismo.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w600),
+                              const SizedBox(height: 10),
+                              CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondoCtrl, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+                              if (_lataArrastra != null)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                                  child: Text('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(_lataArrastra!)} de antes — no hace falta contarla ahora.', style: estiloNs(14, altura: 1.4, color: ns.mute)),
+                                ),
+                              if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 14),
-                        BotonNs.primario(context, 'Abrir caja', () async {
-                          final servicio = app.servicio;
-                          final usuario = app.usuarioId;
-                          if (servicio == null || usuario == null) return;
-                          await mostrarHojaAbrirCaja(context, servicio: servicio, usuarioId: usuario);
-                          await app.refrescar();
-                          if (mounted) setState(() {});
-                        }),
+                        BotonNs.primario(context, _guardando ? 'Abriendo…' : 'Abrir caja y continuar', _guardando ? null : () => _abrirCaja(app), alto: 64, tamanio: 18, habilitado: !_guardando),
                       ],
                     ),
                   )
@@ -181,7 +233,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                         if (_error != null) ...[InfoNs(_error!, tono: TonoNs.bad), const SizedBox(height: 14)],
                         if (_guardado) ...[EntradaNs(child: InfoNs('Listo: el movimiento quedó anotado en la caja.', tono: TonoNs.good, peso: FontWeight.w600, tamanio: 15)), const SizedBox(height: 14)],
                         BotonNs(
-                          texto: gasto ? 'Guardar gasto' : 'Guardar ingreso',
+                          texto: gasto ? 'Anotar gasto' : 'Anotar ingreso',
                           onTap: _guardar,
                           alto: 64,
                           tamanio: 18,

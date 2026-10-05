@@ -989,3 +989,52 @@ class HeroHojaNs extends StatelessWidget {
     );
   }
 }
+
+/// Fila de 64 con nombre, una línea de detalle y un valor a la derecha (mock `B.row`): lista de proveedores, productos sin datos.
+/// Con [onTap] se puede tildar; [apagada] la deja a media luz (ya revisada).
+class FilaProductoNs extends StatelessWidget {
+  const FilaProductoNs({super.key, required this.nombre, this.detalle, this.valor, this.onTap, this.apagada = false, this.tildable = false});
+  final String nombre;
+  final String? detalle;
+  final String? valor;
+  final VoidCallback? onTap;
+  final bool apagada;
+
+  /// Si la fila se puede tildar (proveedores a separar): lo avisa a los lectores de pantalla.
+  final bool tildable;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final contenido = Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, track: -0.02, altura: 1.2, color: ns.ink)),
+                if (detalle != null && detalle!.isNotEmpty) Text(detalle!, style: estiloNs(13, altura: 1.3, color: ns.ink)),
+              ],
+            ),
+          ),
+          if (valor != null) ...[
+            const SizedBox(width: 12),
+            Text(valor!, style: estiloNs(18, peso: FontWeight.w500, track: -0.03, color: ns.ink, tabular: true)),
+          ],
+        ],
+      ),
+    );
+    final opaca = Opacity(opacity: apagada ? 0.55 : 1, child: contenido);
+    if (onTap == null) return opaca;
+    return Semantics(
+      button: true,
+      checked: tildable ? apagada : null,
+      child: PresionNs(onTap: onTap, etiqueta: nombre, child: opaca),
+    );
+  }
+}

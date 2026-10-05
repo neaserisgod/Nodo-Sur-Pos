@@ -86,14 +86,14 @@ class _HojaAbrirCajaState extends State<_HojaAbrirCaja> {
   Widget build(BuildContext context) {
     return HojaNs(
       titulo: 'Abrir caja',
-      texto: 'La caja está cerrada. Anotá con cuánta plata arrancás hoy.',
+      texto: 'No hay caja abierta en la PC ahora mismo.',
       bloques: [
-        CampoNs(etiqueta: 'Plata con la que arrancás (en el cajón)', controller: _fondo, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs),
-        if (widget.lataCentavos != null) InfoNs('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(widget.lataCentavos!)} de antes. No hace falta contarla ahora.'),
+        CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondo, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs),
+        if (widget.lataCentavos != null) InfoNs('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(widget.lataCentavos!)} de antes — no hace falta contarla ahora.'),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad),
       ],
       botones: [
-        BotonNs.primario(context, _abriendo ? 'Abriendo…' : 'Abrir caja', _abriendo ? null : _abrir, habilitado: !_abriendo),
+        BotonNs.primario(context, _abriendo ? 'Abriendo…' : 'Abrir caja y continuar', _abriendo ? null : _abrir, habilitado: !_abriendo),
         BotonNs.secundario(context, 'Cancelar', () => Navigator.of(context).pop(false)),
       ],
     );

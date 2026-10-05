@@ -147,6 +147,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// true si pasaron 2hs desde el último arqueo — muestra el aviso (no
   /// bloqueante, el dueño 2026-09-15) en "Inicio", nunca abre nada solo.
   bool _arqueoIntermedioVencido = false;
+  int _minutosDesdeArqueo = 0;
   late final Timer _tickArqueoIntermedio;
 
   /// El dueño, 2026-09-18: "no hay nada que actualice la app cuando se
@@ -314,6 +315,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     if (!sesion.abierta) return false;
     final desde = sesion.fechaUltimoArqueoIntermedio ?? sesion.fechaApertura;
     if (desde == null) return false;
+    _minutosDesdeArqueo = DateTime.now().difference(desde).inMinutes;
     return necesitaArqueoIntermedio(desde: desde, ahora: DateTime.now());
   }
 
@@ -560,6 +562,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         sinStock: sinStock,
         hayActualizacion: _hayActualizacion,
         arqueoVencido: _arqueoIntermedioVencido,
+        minutosDesdeConteo: _minutosDesdeArqueo,
       );
       setState(() => _version++);
     } catch (_) {
@@ -669,6 +672,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           sinStock: p.sinStock,
           hayActualizacion: _hayActualizacion,
           arqueoVencido: p.arqueoVencido,
+          minutosDesdeConteo: p.minutosDesdeConteo,
         );
       }
     } catch (_) {

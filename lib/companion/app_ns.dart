@@ -15,7 +15,7 @@ import 'servicio_companion.dart';
 
 /// Lo que hay para hacer, calculado de los datos reales (docs/02 §3.8).
 class PendientesNs {
-  const PendientesNs({this.faltaSepararCentavos = 0, this.proveedoresPendientes = 0, this.proveedoresTotal = 0, this.sinStock = 0, this.hayActualizacion = false, this.arqueoVencido = false});
+  const PendientesNs({this.faltaSepararCentavos = 0, this.proveedoresPendientes = 0, this.proveedoresTotal = 0, this.sinStock = 0, this.hayActualizacion = false, this.arqueoVencido = false, this.minutosDesdeConteo = 0});
 
   /// Plata del día que todavía no se separó para proveedores.
   final int faltaSepararCentavos;
@@ -26,6 +26,9 @@ class PendientesNs {
 
   /// Pasaron 2 horas desde el último conteo de la caja (aviso no bloqueante).
   final bool arqueoVencido;
+
+  /// Cuánto hace del último conteo (o de la apertura): "Hace 2 h 15 min".
+  final int minutosDesdeConteo;
 
   int get proveedoresSeparados => proveedoresTotal - proveedoresPendientes;
   bool get haySeparar => proveedoresPendientes > 0;

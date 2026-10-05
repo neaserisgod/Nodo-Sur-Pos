@@ -158,7 +158,15 @@ class _ResumenState extends State<_Resumen> {
               children: [
                 Expanded(child: _Accion(icono: IconoNs.intercambio, titulo: 'Gasto o ingreso', detalle: 'Plata que sale o entra', onTap: () => app.irA((_) => const PantallaMovimientoCaja()))),
                 const SizedBox(width: 10),
-                Expanded(child: _Accion(icono: IconoNs.calculadora, titulo: 'Contar la caja', detalle: 'Sin cerrar el día', onTap: () => _contar(context, app))),
+                Expanded(
+                  child: _Accion(
+                    icono: IconoNs.calculadora,
+                    titulo: 'Contar la caja',
+                    detalle: !abierta ? 'Caja cerrada' : (pend.arqueoVencido ? 'Hace ${duracionTextoNs(pend.minutosDesdeConteo)}' : 'Sin cerrar el día'),
+                    ambar: abierta && pend.arqueoVencido,
+                    onTap: () => _contar(context, app),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 22),
@@ -225,10 +233,6 @@ class _ResumenState extends State<_Resumen> {
   }
 
   Future<void> _contar(BuildContext context, ControladorAppNs app) async {
-    if (!app.cajaAbierta) {
-      mostrarAvisoNs(context, 'Para contar la caja primero hay que abrirla');
-      return;
-    }
     final s = app.servicio;
     final u = app.usuarioId;
     if (s == null || u == null) return;
@@ -238,7 +242,8 @@ class _ResumenState extends State<_Resumen> {
 }
 
 class _Accion extends StatelessWidget {
-  const _Accion({required this.icono, required this.titulo, required this.detalle, required this.onTap});
+  const _Accion({required this.icono, required this.titulo, required this.detalle, required this.onTap, this.ambar = false});
+  final bool ambar;
   final IconoNs icono;
   final String titulo;
   final String detalle;
@@ -253,19 +258,19 @@ class _Accion extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 76),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(26)),
+        decoration: BoxDecoration(color: ambar ? ns.wbg : ns.s, borderRadius: BorderRadius.circular(26)),
         child: Row(
           children: [
-            Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.paper, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(icono, tamanio: 20, color: ns.ink)),
+            Container(width: 44, height: 44, decoration: BoxDecoration(color: ns.paper, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(icono, tamanio: 20, color: ambar ? ns.w : ns.ink)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(titulo, style: estiloNs(15, peso: FontWeight.w600, track: -0.015, altura: 1.15, color: ns.ink)),
+                  Text(titulo, style: estiloNs(15, peso: FontWeight.w600, track: -0.015, altura: 1.15, color: ambar ? ns.w : ns.ink)),
                   const SizedBox(height: 2),
-                  Text(detalle, style: estiloNs(12, altura: 1.25, color: ns.mute)),
+                  Text(detalle, style: estiloNs(12, altura: 1.25, color: ambar ? ns.w : ns.mute)),
                 ],
               ),
             ),

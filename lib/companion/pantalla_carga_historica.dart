@@ -536,43 +536,17 @@ class SeccionProductosSinDatos extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: Espaciado.lg),
-        Text(
-          'Vendido sin proveedor o costo — completalo para números más claros',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: Espaciado.sm),
-        for (final p in productos)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Espaciado.sm),
-            child: Superficie(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          p.nombreProducto,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          [
-                            if (p.sinProveedor) 'sin proveedor',
-                            if (p.sinCosto) 'sin costo',
-                          ].join(' · '),
-                          style: TextStyle(
-                            color: context.colores.textoSecundario,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(formatearARS(p.vendidoCentavos)),
-                ],
-              ),
-            ),
+        const SizedBox(height: 18),
+        const SeccionNs('Vendido sin proveedor o costo — completalo para números más claros'),
+        const SizedBox(height: 10),
+        for (final p in productos) ...[
+          FilaProductoNs(
+            nombre: p.nombreProducto,
+            detalle: [if (p.sinProveedor) 'sin proveedor', if (p.sinCosto) 'sin costo'].join(' · '),
+            valor: plataNs(p.vendidoCentavos),
           ),
+          const SizedBox(height: 10),
+        ],
       ],
     );
   }

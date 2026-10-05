@@ -11,7 +11,7 @@ import 'package:la_plazoleta/domain/venta.dart';
 
 class ControladorFalsoNs implements ControladorAppNs {
   ControladorFalsoNs({this.abierta = true, this.sinConex = false, PendientesNs? pend, DatosDiaNs? dia})
-      : pendientes = ValueNotifier(pend ?? const PendientesNs(faltaSepararCentavos: 18140000, proveedoresPendientes: 4, proveedoresTotal: 4, sinStock: 3, hayActualizacion: true)),
+      : pendientes = ValueNotifier(pend ?? const PendientesNs(faltaSepararCentavos: 18140000, proveedoresPendientes: 4, proveedoresTotal: 4, sinStock: 3, hayActualizacion: true, arqueoVencido: true, minutosDesdeConteo: 135)),
         datosDia = ValueNotifier(dia ?? const DatosDiaNs(vendidoCentavos: 48230000, gananciaCentavos: 16890000, efectivoCentavos: 23150000, mpCentavos: 25080000, ventas: 6));
 
   final bool abierta;
@@ -104,7 +104,7 @@ class ControladorFalsoNs implements ControladorAppNs {
 
 /// El controlador de mentira, pero con un servicio real (base de test) para las pantallas que lo usan.
 class ControladorConServicio extends ControladorFalsoNs {
-  ControladorConServicio(this._servicio);
+  ControladorConServicio(this._servicio, {super.abierta, super.sinConex});
   final ServicioCompanion _servicio;
 
   @override

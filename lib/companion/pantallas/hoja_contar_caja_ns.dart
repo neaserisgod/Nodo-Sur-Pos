@@ -9,18 +9,42 @@ import 'package:flutter/material.dart';
 import '../../domain/dinero.dart';
 import '../cliente_companion.dart' show EstadoArqueoIntermedioCompanion;
 import '../debounce.dart';
+import '../app_ns.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
+import 'hoja_abrir_caja_ns.dart';
 import '../servicio_companion.dart';
 
-/// Devuelve `true` si el conteo quedó guardado.
+/// Devuelve `true` si el conteo quedó guardado. Con la caja cerrada no hay nada que contar: la hoja lo dice y ofrece abrirla.
 Future<bool> mostrarHojaContarCaja(BuildContext context, {required ServicioCompanion servicio, required int usuarioId}) async {
-  final guardado = await mostrarHojaNs<bool>(context, builder: (_) => _HojaContarCaja(servicio: servicio, usuarioId: usuarioId));
+  final app = AppNs.of(context);
+  if (!app.cajaAbierta) {
+    final abrir = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Contar la caja',
+        texto: 'No hay caja abierta en la PC ahora mismo. Para contar, primero abrí la caja.',
+        bloques: const [InfoNs('Caja cerrada', tono: TonoNs.warn)],
+        botones: [
+          BotonNs.primario(ctx, 'Abrir caja', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cerrar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (abrir == true && context.mounted) await mostrarHojaAbrirCaja(context, servicio: servicio, usuarioId: usuarioId);
+    return false;
+  }
+  final pend = app.pendientes.value;
+  final guardado = await mostrarHojaNs<bool>(
+    context,
+    builder: (_) => _HojaContarCaja(servicio: servicio, usuarioId: usuarioId, vencidoHace: pend.arqueoVencido ? duracionTextoNs(pend.minutosDesdeConteo) : null),
+  );
   return guardado ?? false;
 }
 
 class _HojaContarCaja extends StatefulWidget {
-  const _HojaContarCaja({required this.servicio, required this.usuarioId});
+  const _HojaContarCaja({required this.servicio, required this.usuarioId, this.vencidoHace});
+  final String? vencidoHace;
   final ServicioCompanion servicio;
   final int usuarioId;
 
@@ -75,7 +99,7 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
 
   Future<void> _guardar() async {
     if (!_completo) {
-      mostrarAvisoNs(context, 'Contá el efectivo, el Mercado Pago y la lata antes de guardar');
+      mostrarAvisoNs(context, 'Falta el efectivo contado, el MP contado o la lata contada');
       return;
     }
     final overlay = Overlay.of(context, rootOverlay: true);
@@ -105,27 +129,24 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
   Widget build(BuildContext context) {
     final ns = context.ns;
     final e = _estado;
-    final dif = e?.diferenciaCentavos;
+    final dif = e == null || _centavos(_efectivo) == null ? null : _centavos(_efectivo)! - e.efectivoEsperadoCentavos;
     return HojaNs(
       titulo: 'Contar la caja',
-      texto: 'Contá el efectivo del cajón, cigarrillos incluidos. No cierra la caja: lo que cuentes queda precargado para el cierre.',
+      texto: 'Contá el efectivo del cajón, cigarrillos incluidos. Es opcional: lo que cuentes queda precargado en el cierre.',
       bloques: [
-        _Esperado(clave: 'Efectivo esperado', valor: e == null ? '…' : plataNs(e.efectivoEsperadoCentavos)),
-        _Esperado(clave: 'Mercado Pago esperado', valor: e == null ? '…' : plataNs(e.mpEsperadoCentavos)),
-        _Esperado(clave: 'Lata esperada', valor: e == null ? '…' : plataNs(e.lataEsperadoCentavos)),
+        if (widget.vencidoHace != null) InfoNs('Pasaron ${widget.vencidoHace} desde el último conteo.', tono: TonoNs.warn),
+        FilaClaveValorNs(clave: 'Caja esperada', valor: e == null ? '…' : plataNs(e.efectivoEsperadoCentavos)),
+        FilaClaveValorNs(clave: 'MP esperado', valor: e == null ? '…' : plataNs(e.mpEsperadoCentavos)),
+        FilaClaveValorNs(clave: 'Lata esperada', valor: e == null ? '…' : plataNs(e.lataEsperadoCentavos)),
         CampoNs(etiqueta: 'Efectivo contado', controller: _efectivo, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
-        CampoNs(etiqueta: 'Mercado Pago contado', controller: _mp, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
+        CampoNs(etiqueta: 'MP contado (según la app de Mercado Pago)', controller: _mp, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
         CampoNs(etiqueta: 'Lata contada', controller: _lata, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
         if (_completo && dif != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            decoration: BoxDecoration(color: dif == 0 ? ns.gbg : ns.bbg, borderRadius: BorderRadius.circular(22)),
-            child: Row(
-              children: [
-                Expanded(child: Text('Diferencia en efectivo', style: estiloNs(15, color: dif == 0 ? ns.g : ns.b))),
-                Text(dif == 0 ? 'Cuadró' : (dif < 0 ? 'Faltan ${plataNs(-dif)}' : 'Sobran ${plataNs(dif)}'), style: estiloNs(17, peso: FontWeight.w600, color: dif == 0 ? ns.g : ns.b, tabular: true)),
-              ],
-            ),
+          FilaClaveValorNs(
+            clave: 'Diferencia en efectivo',
+            valor: dif == 0 ? 'Cuadró' : (dif < 0 ? 'Faltan ${plataNs(-dif)}' : 'Sobran ${plataNs(dif)}'),
+            colorValor: dif == 0 ? ns.g : ns.b,
+            sinLinea: true,
           ),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad),
       ],
@@ -147,26 +168,5 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
   void _alCambiar() {
     setState(() {});
     _debouncer.ejecutar(_calcular);
-  }
-}
-
-class _Esperado extends StatelessWidget {
-  const _Esperado({required this.clave, required this.valor});
-  final String clave;
-  final String valor;
-
-  @override
-  Widget build(BuildContext context) {
-    final ns = context.ns;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(22)),
-      child: Row(
-        children: [
-          Expanded(child: Text(clave, style: estiloNs(15, color: ns.mute))),
-          Text(valor, style: estiloNs(19, peso: FontWeight.w600, color: ns.ink, tabular: true)),
-        ],
-      ),
-    );
   }
 }
