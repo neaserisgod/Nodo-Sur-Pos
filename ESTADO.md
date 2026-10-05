@@ -81,7 +81,7 @@ esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tes
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 1: mock y comparación
 
-Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla. **Etapa 1 hecha: no se tocó código de Flutter.** Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en `docs/mock-pc/NodoSurPC.html` (todas las pantallas, claro/oscuro). Espera el OK del dueño y sus respuestas a las 6 preguntas del doc (azul en Cobrar, hojas inferiores en PC, fin del violeta, peso 450...) antes de la etapa 2.
+Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla. **Etapa 1 hecha: no se tocó código de Flutter.** Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en `docs/mock-pc/NodoSurPC.html` (todas las pantallas y hojas, claro/oscuro; v2 del 05/10 con Movimientos, Cierres, Encargues, búsqueda global y el detalle de cada botón). Espera el OK del dueño y sus respuestas a las 6 preguntas del doc (azul en Cobrar, hojas inferiores en PC, fin del violeta, peso 450...) antes de la etapa 2.
 
 ## Celular calcado del mock (04–05/10/2026) — publicado, APK 2135
 

@@ -34,6 +34,23 @@ de eso: tiene el lenguaje antigravity del 2026-10-03 pero no lo que el celular a
 | Listas | Filas sueltas | Lista agrupada: un bloque con líneas finas de 1 px (`gap:1` sobre fondo hairline) |
 | Interruptores | Material Switch | Pista 56×32, perilla 26 |
 
+## 2b. Qué cubre el mock (v2, 2026-10-05)
+
+Pantallas: Venta, Inicio, Proveedores, Separaciones, Historial (Ventas · Movimientos · Cierres), Encargues y deudas, Cierre de caja
+(contar → resultado → "Caja cerrada") y Configuración (5 grupos). Búsqueda global con la lupa (Ctrl+F) fuera de Venta.
+
+Hojas: cobro en efectivo, QR/tarjeta (débito o crédito en 1 pago), terminal con sus estados (esperando, cliente confirma, aprobado,
+rechazado, venció, sin conexión), mixto, venta cobrada, descuento ($ o %), ventas abiertas, cambiar de turno, Varios, gasto o
+ingreso, contar la caja, abrir caja, cantidad exacta; Proveedores: nuevo, editar, pagar (con origen de la plata), cuenta corriente,
+edición masiva (con aviso de ≥ 50 %), importar CSV, promos con sugerencias, comparar precios, leer una factura, editar producto;
+Separaciones: ganancia del día, retirar plata, productos sin costo; Historial: editar y anular venta, cargar día histórico;
+Encargues: nuevo, entregar, cobrar deuda; Configuración: datos del comercio, secciones del menú, ticket, impresión y terminal,
+celular (código), cuenta, copias, categorías, colchón de reposición, asistente IA.
+
+Hay un selector "Ir a un estado…" para saltar a cualquiera de ellos. Cosas del mock que son diseño propuesto y no existen todavía en
+la app real: aplicar una factura (en la app solo hay lectura de prueba), el aviso de ≥ 50 % en la edición masiva y "Ver movimientos"
+en el modo de pago a proveedor con "Fuera de la caja" como nota. Confirmar cuáles se quieren antes de construirlas.
+
 ## 3. Por pantalla
 
 **Venta** — se conserva el layout (grilla con "Más vendidos" por defecto + carrito y cobro fijos a la derecha; búsqueda, total y
