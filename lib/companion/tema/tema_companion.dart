@@ -7,6 +7,7 @@
 // este tema en vez de `TemaPlazoleta`; el escritorio no importa este
 // archivo, así que no hay forma de que esto se filtre para el otro lado.
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 import '../../ui/tema/tokens.dart';
@@ -43,11 +44,7 @@ abstract final class TemaCompanion {
       brightness: brillo,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colores.fondo,
-      // Transición propia (El dueño, 2026-09-18: "una app moderna") — el zoom
-      // de Android de fábrica es genérico, el mismo de cualquier app sin
-      // tema. Entra deslizando desde abajo con fade, sale más rápido que
-      // entra (Material Motion: "exit-faster-than-enter" se siente más
-      // responsive).
+      // Transición propia (El dueño, 2026-10-05: "fundido cruzado"): la misma al abrir pantallas y al cambiar de pestaña.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: _TransicionCompanion(),
@@ -230,8 +227,8 @@ abstract final class TemaCompanion {
 /// pulgar, no compartidos con la densidad de un mostrador con mouse.
 const double alturaControlCompanion = 56;
 
-/// Entrada de pantalla del mock (`.scr`, 0,55 s): fade y subida de 14 px con
-/// la curva `cubic-bezier(.2,.7,.1,1)`. Al salir solo se desvanece.
+/// Fundido cruzado de Material Motion ("fade through") para abrir y cerrar pantallas: la que sale se desvanece y la que
+/// entra aparece con un leve zoom. Sin movimiento si el sistema pidió reducirlo.
 class _TransicionCompanion extends PageTransitionsBuilder {
   const _TransicionCompanion();
 
@@ -244,16 +241,11 @@ class _TransicionCompanion extends PageTransitionsBuilder {
     Widget child,
   ) {
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
-    final t = CurvedAnimation(parent: animation, curve: const Cubic(.2, .7, .1, 1));
-    return FadeTransition(
-      opacity: t,
-      child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 14 / 844), end: Offset.zero).animate(t),
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 1, end: 0).animate(CurvedAnimation(parent: secondaryAnimation, curve: const Interval(0, 0.4))),
-          child: child,
-        ),
-      ),
+    return FadeThroughTransition(
+      animation: animation,
+      secondaryAnimation: secondaryAnimation,
+      fillColor: Theme.of(context).scaffoldBackgroundColor,
+      child: child,
     );
   }
 }

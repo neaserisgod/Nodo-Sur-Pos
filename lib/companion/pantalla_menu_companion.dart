@@ -739,7 +739,9 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           // El contenido pasa por debajo de la barra flotante: cada pestaña suma
           // `BarraInferiorNs.espacioReservado` de aire abajo.
           extendBody: true,
-          body: IndexedStack(
+          body: CambioDePestanaNs(
+            indice: _pestania.index,
+            child: IndexedStack(
             index: _pestania.index,
             children: [
               const PantallaInicioNs(),
@@ -756,6 +758,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
               const PantallaCajaNs(),
               PantallaMasNs(alAbrirEncargues: _abrirEncargues),
             ],
+          ),
           ),
           bottomNavigationBar: ValueListenableBuilder<bool>(
             valueListenable: ocultarBarra,
