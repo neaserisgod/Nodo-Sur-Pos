@@ -41,12 +41,12 @@ class CompanionApp extends StatelessWidget {
         // Íconos de la barra de estado claros u oscuros según el tema, y el cartel
         // "Sin conexión con la PC" arriba de todas las pantallas (docs/01 §6.15):
         // mientras se ve, todo baja 34 px.
-        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        builder: (context, navegador) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
           child: ValueListenableBuilder<bool>(
             valueListenable: sinConexionGlobalNs,
             builder: (context, sinConexion, _) {
-              if (!sinConexion) return child!;
+              if (!sinConexion) return PuenteAppNs(child: navegador!);
               final arriba = MediaQuery.paddingOf(context).top;
               return Column(
                 children: [
@@ -56,7 +56,7 @@ class CompanionApp extends StatelessWidget {
                     padding: EdgeInsets.only(top: arriba),
                     child: const CartelSinConexionNs(),
                   ),
-                  Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: child!)),
+                  Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: PuenteAppNs(child: navegador!))),
                 ],
               );
             },

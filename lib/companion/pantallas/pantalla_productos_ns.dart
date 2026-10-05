@@ -18,6 +18,7 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_conteo_stock.dart';
 import '../pantalla_formulario_producto.dart';
+import '../servicio_companion.dart';
 import 'hoja_cambiar_precio_ns.dart';
 import 'hoja_lote_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
@@ -41,6 +42,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
   bool _eligiendo = false;
   final Set<int> _marcados = {};
   bool _cargando = true;
+  ServicioCompanion? _servicioCargado;
   String? _error;
   StreamSubscription<void>? _sub;
   ControladorAppNs? _app;
@@ -55,11 +57,12 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final app = AppNs.of(context);
-    if (_app == null) {
-      _app = app;
-      _cargar();
-    } else if (_app!.servicio != app.servicio && app.servicio != null) {
-      _app = app;
+    _app = app;
+    // El servicio se resuelve después de abrir el menú: se carga apenas aparece (y de nuevo si cambia, por ejemplo al
+    // pasar de la PC a la base del celular).
+    final servicio = app.servicio;
+    if (servicio != null && !identical(servicio, _servicioCargado)) {
+      _servicioCargado = servicio;
       _cargar();
     }
   }

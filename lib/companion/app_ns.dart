@@ -125,6 +125,11 @@ class AppNs extends InheritedWidget {
   bool updateShouldNotify(AppNs old) => old.version != version || old.controlador != controlador;
 }
 
+/// El controlador del menú publicado para TODA la app: las pantallas que se abren con `Navigator.push` (Notificaciones,
+/// Buscador, Cierre, Consultar precio…) cuelgan del navegador y no del menú, así que sin esto no encuentran `AppNs`.
+/// `companion_app.dart` lo pone arriba del navegador.
+final ValueNotifier<({ControladorAppNs controlador, int version})?> puenteAppNs = ValueNotifier(null);
+
 /// Hay una PC emparejada que no contesta: el cartel "Sin conexión con la PC"
 /// se dibuja arriba de todas las pantallas (menos las de arranque).
 final ValueNotifier<bool> sinConexionGlobalNs = ValueNotifier(false);
@@ -160,4 +165,19 @@ Future<void> guardarModoTemaNs(ThemeMode modo) async {
   } catch (_) {
     // No se pudo guardar: el cambio vale hasta cerrar la app.
   }
+}
+
+/// Pone `AppNs` arriba del navegador con el controlador del menú, para que lo encuentren también las pantallas que se
+/// abren con `Navigator.push` (ver `puenteAppNs`).
+class PuenteAppNs extends StatelessWidget {
+  const PuenteAppNs({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<({ControladorAppNs controlador, int version})?>(
+        valueListenable: puenteAppNs,
+        child: child,
+        builder: (context, publicado, hijo) =>
+            publicado == null ? hijo! : AppNs(controlador: publicado.controlador, version: publicado.version, child: hijo!),
+      );
 }
