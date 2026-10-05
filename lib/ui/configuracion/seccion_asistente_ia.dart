@@ -89,7 +89,7 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
             const SizedBox(height: Espaciado.md),
             Text(
               _resultado!.isEmpty
-                  ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada.' : 'Clave quitada.')
+                  ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada (modelo ${ClaveGemini.modelo}).' : 'Clave quitada.')
                   : '$_resultado (no se guardó)',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: _resultado!.isEmpty ? colores.textoPrimario : colores.error,

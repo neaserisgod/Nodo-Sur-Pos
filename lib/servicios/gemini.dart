@@ -17,36 +17,63 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Un modelo con cupo gratis. Si Google lo retira, "Probar" en Configuración avisa que ya no existe y se cambia acá.
-const modeloGeminiPorDefecto = 'gemini-2.5-flash';
+/// Los modelos con cupo gratis, del que más conviene al que menos. Google pide usar los 3.x en proyectos nuevos y dejó los 2.5
+/// solo para cuentas que ya los usaban: con una clave nueva, `gemini-2.5-flash` contesta 404 (pasó el 2026-10-05). Por eso
+/// "Guardar y probar" recorre esta lista y se queda con el primero que le anda a la clave; sumar uno nuevo es agregarlo acá.
+const modelosGemini = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+];
+
+/// El que se usa mientras no se haya probado ninguno con la clave.
+const modeloGeminiPorDefecto = 'gemini-3.5-flash-lite';
 
 const _claveGuardada = 'gemini_api_key';
+const _modeloGuardado = 'gemini_modelo';
 const _base = 'https://generativelanguage.googleapis.com/v1beta';
 
-/// La clave de API de este equipo. Se lee una vez al arrancar ([cargar]) y después va en memoria.
+/// La clave de API de este equipo, y el modelo con el que se probó. Se leen una vez al arrancar ([cargar]) y después van en memoria.
 abstract final class ClaveGemini {
   static String? _valor;
+  static String? _modelo;
 
   static String? get valor => _valor;
   static bool get configurada => _valor != null;
 
+  /// El modelo que le anduvo a esta clave al probarla; null si todavía no se probó ninguno.
+  static String? get modelo => _modelo;
+
   static Future<void> cargar() async {
     try {
-      _valor = _limpia((await SharedPreferences.getInstance()).getString(_claveGuardada));
+      final prefs = await SharedPreferences.getInstance();
+      _valor = _limpia(prefs.getString(_claveGuardada));
+      _modelo = _valor == null ? null : _limpia(prefs.getString(_modeloGuardado));
     } catch (_) {
       _valor = null;
+      _modelo = null;
     }
   }
 
-  /// Guarda [clave]; vacía o solo espacios la borra.
-  static Future<void> guardar(String? clave) async {
+  /// Guarda [clave] y el [modelo] que anduvo con ella; una clave vacía o solo espacios borra las dos cosas.
+  static Future<void> guardar(String? clave, {String? modelo}) async {
     _valor = _limpia(clave);
+    _modelo = _valor == null ? null : _limpia(modelo);
     try {
       final prefs = await SharedPreferences.getInstance();
       if (_valor == null) {
         await prefs.remove(_claveGuardada);
+        await prefs.remove(_modeloGuardado);
       } else {
         await prefs.setString(_claveGuardada, _valor!);
+        if (_modelo == null) {
+          await prefs.remove(_modeloGuardado);
+        } else {
+          await prefs.setString(_modeloGuardado, _modelo!);
+        }
       }
     } catch (_) {
       // Sin almacenamiento vale hasta cerrar la app.
@@ -59,13 +86,19 @@ abstract final class ClaveGemini {
   }
 
   /// Solo para tests.
-  static void fijarParaTest(String? clave) => _valor = _limpia(clave);
+  static void fijarParaTest(String? clave, {String? modelo}) {
+    _valor = _limpia(clave);
+    _modelo = _limpia(modelo);
+  }
 }
 
 /// Un fallo de la consulta, con un mensaje que se le puede mostrar tal cual al dueño. Nunca lleva la clave.
 class ErrorGemini implements Exception {
-  const ErrorGemini(this.mensaje);
+  const ErrorGemini(this.mensaje, {this.estado});
   final String mensaje;
+
+  /// El código HTTP que contestó Google, si fue una respuesta de Google (null si falló antes: sin internet, demora).
+  final int? estado;
 
   @override
   String toString() => mensaje;
@@ -77,19 +110,23 @@ class ClienteGemini {
     this.modelo = modeloGeminiPorDefecto,
     http.Client? client,
     this.timeout = const Duration(seconds: 60),
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? http.Client(),
+       _propio = client == null;
 
-  /// Con la clave guardada en este equipo; [ErrorGemini] si no hay ninguna.
-  factory ClienteGemini.guardado({String modelo = modeloGeminiPorDefecto, http.Client? client}) {
+  /// Con la clave guardada en este equipo y el modelo que le anduvo; [ErrorGemini] si no hay clave.
+  factory ClienteGemini.guardado({String? modelo, http.Client? client}) {
     final clave = ClaveGemini.valor;
     if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
-    return ClienteGemini(apiKey: clave, modelo: modelo, client: client);
+    return ClienteGemini(apiKey: clave, modelo: modelo ?? ClaveGemini.modelo ?? modeloGeminiPorDefecto, client: client);
   }
 
   final String apiKey;
   final String modelo;
   final Duration timeout;
   final http.Client _client;
+
+  /// Un cliente prestado (el de un test) no se cierra: lo cierra quien lo creó.
+  final bool _propio;
 
   /// Manda [prompt] y devuelve el texto de la respuesta. [sistema] son las instrucciones fijas (rol, formato).
   /// Con [json] el modelo contesta JSON válido — usar [generarJson] para recibirlo ya decodificado.
@@ -133,7 +170,7 @@ class ClienteGemini {
       throw const ErrorGemini('No hay conexión a internet.');
     }
 
-    if (r.statusCode != 200) throw ErrorGemini(_mensajeDeError(r.statusCode, r.body, modelo));
+    if (r.statusCode != 200) throw ErrorGemini(_mensajeDeError(r.statusCode, r.body, modelo), estado: r.statusCode);
     return _textoDeRespuesta(r.body);
   }
 
@@ -157,26 +194,36 @@ class ClienteGemini {
     }
   }
 
-  void close() => _client.close();
+  void close() {
+    if (_propio) _client.close();
+  }
 }
 
 /// Lo que hacen "Guardar" en Configuración de la PC y del celular (una sola forma de cargar la clave en las dos apps):
-/// prueba [clave] contra Google y, si anda, la guarda. Devuelve null si quedó guardada, o el motivo si no — y entonces NO se
-/// guarda, para no dejar una clave rota. Una clave vacía borra la que había.
+/// prueba [clave] contra Google y, si anda, la guarda junto con el modelo que le anduvo. Devuelve null si quedó guardada, o el
+/// motivo si no — y entonces NO se guarda, para no dejar una clave rota. Una clave vacía borra la que había.
+///
+/// Recorre [modelosGemini] y salta al siguiente solo con un 404 (modelo no disponible para esta clave). Cualquier otro fallo
+/// (clave mala, sin cupo, sin internet) corta ahí: probar otro modelo no lo arregla.
 Future<String?> probarYGuardarClave(String clave, {http.Client? client}) async {
-  if (clave.trim().isEmpty) {
+  final limpia = clave.trim();
+  if (limpia.isEmpty) {
     await ClaveGemini.guardar(null);
     return null;
   }
-  final cliente = ClienteGemini(apiKey: clave.trim(), client: client);
-  try {
-    final motivo = await cliente.probar();
-    if (motivo != null) return motivo;
-    await ClaveGemini.guardar(clave);
-    return null;
-  } finally {
-    cliente.close();
+  for (final modelo in modelosGemini) {
+    final cliente = ClienteGemini(apiKey: limpia, modelo: modelo, client: client);
+    try {
+      await cliente.generarTexto('Respondé solo con la palabra: ok', temperatura: 0);
+      await ClaveGemini.guardar(limpia, modelo: modelo);
+      return null;
+    } on ErrorGemini catch (e) {
+      if (e.estado != 404) return e.mensaje;
+    } finally {
+      cliente.close();
+    }
   }
+  return 'Ningún modelo gratuito de Google está disponible con esta clave. Probá con otra clave, o creá una nueva en aistudio.google.com/apikey.';
 }
 
 String _textoDeRespuesta(String cuerpo) {
@@ -215,7 +262,7 @@ String _mensajeDeError(int estado, String cuerpo, String modelo) {
     case 403:
       return 'La clave no tiene permiso para usar la IA${_detalle(cuerpo)}';
     case 404:
-      return 'El modelo "$modelo" ya no está disponible.';
+      return 'El modelo "$modelo" no está disponible para tu clave. Tocá "Guardar y probar" en Configuración › Asistente IA para elegir otro.';
     case 429:
       return 'Se acabó el cupo gratis por ahora (hay un límite por minuto y otro por día). Probá en un rato.';
     default:

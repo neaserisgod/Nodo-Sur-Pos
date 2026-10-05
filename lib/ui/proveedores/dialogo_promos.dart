@@ -278,10 +278,7 @@ class _DialogoSugerenciasState extends State<_DialogoSugerencias> {
       return;
     }
     setState(() => _redactando = true);
-    final cliente = ClienteGemini(
-      apiKey: ClaveGemini.valor!,
-      client: widget.clienteIa,
-    );
+    final cliente = ClienteGemini.guardado(client: widget.clienteIa);
     try {
       final textos = await redactarPromos(cliente, sugerencias);
       if (mounted) setState(() => _textos = textos);
