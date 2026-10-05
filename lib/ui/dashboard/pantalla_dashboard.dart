@@ -161,7 +161,12 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
             ),
             const SizedBox(width: Espaciado.md),
           ],
-          BotonDestacado(texto: 'Ir a Venta', icono: IconosPlazoleta.pointOfSaleOutlined, onTap: () => _ir('venta')),
+          BotonDestacado(
+            texto: 'Nueva venta',
+            icono: IconosPlazoleta.pointOfSaleOutlined,
+            degrade: const [azulMarca, azulMarca],
+            onTap: () => _ir('venta'),
+          ),
         ],
       ),
       child: !verMes

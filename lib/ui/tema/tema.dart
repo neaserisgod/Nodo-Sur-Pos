@@ -100,11 +100,12 @@ abstract final class TemaPlazoleta {
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioSuperficieEscritorio)),
       ),
+      // Aviso flotante oscuro del mock (`--toast`: tinta en claro, gris azulado en oscuro), texto blanco, radio 26.
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: colores.textoPrimario,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: colores.fondo),
+        backgroundColor: brillo == Brightness.dark ? const Color(0xFF2A2E38) : const Color(0xFF121317),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white, fontWeight: Pesos.medium),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radioControlEscritorio)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: colores.fondoBloque,

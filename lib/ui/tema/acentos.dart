@@ -96,40 +96,53 @@ class AcentosPlazoleta extends ThemeExtension<AcentosPlazoleta> {
   }
 }
 
-// Rediseño "antigravity": los mismos acentos con significado que la
-// companion (`colores_companion.dart`) — efectivo ámbar, QR azul, débito
-// verde-azulado, mixto violeta — y las piezas "hero" (el total, la acción
-// principal) como el bloque negro con un velo de color de la web.
-const _heroClaro = [Color(0xFF0A0B10), Color(0xFF1B1F3A)];
-const _heroOscuro = [Color(0xFF14161C), Color(0xFF232A55)];
+// Mock "Nodo Sur" (2026-10-05, decisión del dueño): mismos acentos que el celular (`acentosPlazoletaCompanion*`):
+// efectivo verde, Mercado Pago azul de marca, tarjeta gris y mixto ámbar (sin violeta). Las piezas "hero" (el total, la
+// acción principal) son de un color plano, sin degradé.
+const _heroClaro = [Color(0xFF121317), Color(0xFF121317)];
+const _heroOscuro = [Color(0xFF1C2231), Color(0xFF1C2231)];
 
 const acentosEscritorioClaro = AcentosPlazoleta(
-  dinero: Color(0xFFB45309),
-  qr: Color(0xFF3B6CFF),
-  debito: Color(0xFF0E9F85),
-  mixto: Color(0xFF8A5CF6),
+  dinero: Color(0xFF0B7A5E),
+  qr: Color(0xFF2F5BE8),
+  debito: Color(0xFF4B5563),
+  mixto: Color(0xFFB45309),
   textoSobreColor: Color(0xFFFFFFFF),
   gradienteAcento: _heroClaro,
   gradienteDinero: _heroClaro,
-  ganancia: Color(0xFF0E7C5A),
+  ganancia: Color(0xFF0B6A52),
   gananciaSuave: Color(0xFFE3F6EF),
-  alerta: Color(0xFF9A4A06),
-  alertaSuave: Color(0xFFFFF1DC),
+  alerta: Color(0xFF7D3B03),
+  alertaSuave: Color(0xFFFDECD6),
 );
 
 const acentosEscritorioOscuro = AcentosPlazoleta(
-  dinero: Color(0xFFC26A12),
-  qr: Color(0xFF4F7CFF),
-  debito: Color(0xFF0E9F85),
-  mixto: Color(0xFF8A5CF6),
+  dinero: Color(0xFF0B7A5E),
+  qr: Color(0xFF2F5BE8),
+  debito: Color(0xFF4B5563),
+  mixto: Color(0xFFB45309),
   textoSobreColor: Color(0xFFFFFFFF),
   gradienteAcento: _heroOscuro,
   gradienteDinero: _heroOscuro,
-  ganancia: Color(0xFF6FE3B8),
-  gananciaSuave: Color(0xFF12332A),
-  alerta: Color(0xFFFFB878),
-  alertaSuave: Color(0xFF3A2410),
+  ganancia: Color(0xFF63D9B0),
+  gananciaSuave: Color(0xFF10342A),
+  alerta: Color(0xFFF5B56C),
+  alertaSuave: Color(0xFF392510),
 );
+
+/// Azul de marca del mock (`#2F5BE8`): la pestaña Venta de la navbar, "Nueva venta" y "Cobrar". No cambia con el tema.
+const Color azulMarca = Color(0xFF2F5BE8);
+
+/// El mismo azul, más oscuro: la pestaña Venta cuando es la pantalla activa.
+const Color azulMarcaOscuro = Color(0xFF1F3FA8);
+
+/// Fondo y texto de lo "seleccionado/activo" en azul claro (mock `--ibg` / `--i`): la burbuja de la sección activa de la
+/// navbar. Cambian con el tema, por eso no son constantes.
+extension AzulSuaveDelContexto on BuildContext {
+  bool get _oscuro => Theme.of(this).brightness == Brightness.dark;
+  Color get azulSuaveFondo => _oscuro ? const Color(0xFF17254F) : const Color(0xFFE0E9FF);
+  Color get azulSuaveTexto => _oscuro ? const Color(0xFFA3BCFF) : const Color(0xFF2F5BE8);
+}
 
 extension AcentosDelContexto on BuildContext {
   AcentosPlazoleta get acentosPlazoleta => Theme.of(this).extension<AcentosPlazoleta>()!;

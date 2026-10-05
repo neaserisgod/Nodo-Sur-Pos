@@ -41,6 +41,7 @@ enum IconoNs {
   sinNube('M3 3l18 18M7.5 18A4.5 4.5 0 016 9.2a6 6 0 0110.8-1M17.5 18H11'),
   reintentar('M20 12a8 8 0 11-2.3-5.7M20 4v5h-5'),
   papelera('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3'),
+  camion('M3 6h11v10H3zM14 9h4l3 3v4h-7M7 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM17 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z'),
   alertaCirculo('M12 8v5M12 16.5h.01M12 3a9 9 0 100 18 9 9 0 000-18z');
 
   const IconoNs(this.trazo);

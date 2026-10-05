@@ -141,7 +141,8 @@ class PanelCobro extends StatelessWidget {
                 // el color deshabilitado tiene que notarse en el fondo, no
                 // solo en el texto). `onPressed` es `null` solo con el
                 // carrito vacío o sin medio elegido, a propósito.
-                color: habilitado ? colores.acento : colores.fondo,
+                // Azul de marca (mock Nodo Sur, decisión del dueño 2026-10-05): vender y cobrar son el color de acción.
+                color: habilitado ? azulMarca : colores.fondo,
                 // Píldora completa, no `TactoVenta.radio` — es la única
                 // acción PRIMARIA del panel (rediseño de composición): se
                 // distingue en forma de los cuatro selectores de medio de
@@ -159,13 +160,13 @@ class PanelCobro extends StatelessWidget {
                       Icon(
                         IconosPlazoleta.shoppingCartCheckout,
                         size: TactoVenta.icono,
-                        color: habilitado ? colores.acentoTexto : colores.textoTenue,
+                        color: habilitado ? Colors.white : colores.textoTenue,
                       ),
                       const SizedBox(width: Espaciado.sm),
                       Text(
                         'Cobrar',
                         style: TextStyle(
-                          color: habilitado ? colores.acentoTexto : colores.textoTenue,
+                          color: habilitado ? Colors.white : colores.textoTenue,
                           fontSize: TamanioTexto.subtitulo,
                         ),
                       ),
