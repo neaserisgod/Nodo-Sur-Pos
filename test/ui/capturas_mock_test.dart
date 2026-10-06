@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
+import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_editor_venta.dart';
@@ -23,6 +24,7 @@ import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
+import 'package:la_plazoleta/ui/stock_proveedor/pantalla_stock_proveedor.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
@@ -253,6 +255,24 @@ void main() {
         addTearDown(b.db.close);
         final venta = (await tester.runAsync(() => (b.db.select(b.db.ventas)..limit(1)).getSingle()))!;
         await capturarMock(tester, 'editor-venta', () => PantallaEditorVenta(db: b.db, ventaId: venta.id, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio);
+      });
+
+      testWidgets('carga histórica$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'carga-historica', () => PantallaCargaHistorica(db: b.db, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          await tester.tap(find.text('2'));
+          await tester.enterText(find.byKey(const Key('campo_busqueda_carga_historica')), 'cerveza');
+          await tester.pump();
+          await tester.tap(find.text('Cerveza lata 473 ml').last);
+          await tester.pump();
+        });
+      });
+
+      testWidgets('conteo de stock$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'conteo', () => PantallaStockProveedor(db: b.db, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio);
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {

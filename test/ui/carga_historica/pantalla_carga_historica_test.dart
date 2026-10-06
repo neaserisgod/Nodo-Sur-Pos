@@ -17,9 +17,15 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _elegirFecha(WidgetTester tester, String fecha) async {
-  await tester.enterText(find.byKey(const Key('campo_fecha_carga_historica')), fecha);
-  await tester.tap(find.text('Empezar a cargar'));
+/// El calendario del mock v4: se retrocede mes a mes hasta el del día y se lo toca.
+Future<void> _elegirFecha(WidgetTester tester, DateTime dia) async {
+  final hoy = DateTime.now();
+  final meses = (hoy.year - dia.year) * 12 + hoy.month - dia.month;
+  for (var i = 0; i < meses; i++) {
+    await tester.tap(find.byTooltip('Mes anterior'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text('${dia.day}'));
   await tester.pumpAndSettle();
 }
 
@@ -35,7 +41,7 @@ void main() {
         );
 
     await _pump(tester, db, usuarioId);
-    await _elegirFecha(tester, '20/08/2026');
+    await _elegirFecha(tester, DateTime(2026, 8, 20));
 
     expect(find.textContaining('Cargando el 20/08/2026'), findsOneWidget);
 
@@ -44,7 +50,7 @@ void main() {
       'Fernet',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fernet').last);
+    await tester.tap(find.text('Fernet').last); // el chip del resultado
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Efectivo'));
@@ -52,7 +58,7 @@ void main() {
     await tester.tap(find.text('Agregar venta'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('total \$5.000'), findsOneWidget);
+    expect(find.textContaining('total \$ 5.000'), findsOneWidget);
 
     await tester.tap(find.textContaining('Guardar día'));
     await tester.pumpAndSettle();
@@ -74,7 +80,7 @@ void main() {
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _pump(tester, db, usuarioId);
-    await _elegirFecha(tester, '20/08/2026');
+    await _elegirFecha(tester, DateTime(2026, 8, 20));
 
     await tester.tap(find.textContaining('Guardar día'));
     await tester.pumpAndSettle();

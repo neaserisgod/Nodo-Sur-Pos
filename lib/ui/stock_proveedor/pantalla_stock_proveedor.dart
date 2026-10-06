@@ -6,6 +6,10 @@
 // una tabla con lo que dice el sistema, lo contado (−/+ o tipeado) y la
 // diferencia en el momento. Nada toca la base hasta "Aplicar ajustes".
 
+// Rediseño v4 (2026-10-06), desde cero como el mock (`SCR.conteo`): cuatro bloques (contados, con diferencia, lo que
+// falta a costo, "marcar todo igual"), los filtros con el buscador, la tabla (dice el sistema / contado / diferencia) y
+// "Aplicar ajustes" abajo a la derecha.
+
 import 'dart:io';
 
 import 'package:csv/csv.dart';
@@ -13,20 +17,12 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart';
-import '../../domain/dinero.dart';
 import '../comun/armazon_gestion.dart';
-import '../comun/botones.dart';
-import '../comun/tarjetas.dart';
-import '../navegacion/busqueda_contextual.dart';
-import '../tema/acentos.dart';
-import '../tema/iconos.dart';
-import '../tema/superficie.dart';
-import '../tema/tokens.dart';
+import '../comun/aviso_superior.dart';
+import '../kit/kit.dart';
 import 'stock_proveedor_controlador.dart';
-import '../tema/esqueleto.dart';
 
 class PantallaStockProveedor extends StatefulWidget {
   const PantallaStockProveedor({super.key, required this.db, required this.usuarioId});
@@ -71,211 +67,230 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
     mostrarAviso(context, 'Planilla guardada');
   }
 
+  /// "Marcar todo igual": lo que se ve y todavía no se contó queda contado con lo que dice el sistema.
+  void _marcarIgual() {
+    for (final p in _c.visibles) {
+      if (_c.contado(p) == null) _c.contar(p, _c.sistema(p));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<StockProveedorControlador>.value(
       value: _c,
       child: Consumer<StockProveedorControlador>(
-        builder: (context, c, _) => PantallaGestion(
-          db: widget.db,
-          claveActiva: 'proveedores',
-          usuarioId: widget.usuarioId,
-          titulo: 'Conteo de stock',
-          busqueda: BusquedaContextual(pista: 'Buscar o escanear producto', alCambiar: c.buscar),
-          child: c.cargando ? const EsqueletoLista() : _contenido(context, c),
-        ),
+        builder: (context, c, _) {
+          final proveedor = c.proveedores.where((p) => p.id == c.proveedorIdFiltro).firstOrNull;
+          return PantallaGestion(
+            db: widget.db,
+            claveActiva: 'proveedores',
+            usuarioId: widget.usuarioId,
+            titulo: proveedor == null ? 'Contar stock' : 'Contar stock · ${proveedor.nombre}',
+            subtitulo: 'Recorré la góndola y corregí el stock. Nada cambia hasta que apliques los ajustes.',
+            acciones: [
+              Btn('Bajar planilla', variante: VarBtn.ton, icono: Ic.down, onTap: _bajarPlanilla),
+              Btn('Volver', variante: VarBtn.ton, icono: Ic.back, onTap: () => Navigator.of(context).maybePop()),
+            ],
+            child: c.cargando ? const SizedBox.shrink() : _contenido(context, c),
+          );
+        },
       ),
     );
   }
 
   Widget _contenido(BuildContext context, StockProveedorControlador c) {
-    final textTheme = Theme.of(context).textTheme;
-    final colores = context.colores;
+    final p = context.p;
     final conDif = c.conDiferencia;
     final visibles = c.visibles;
+    final ancho = MediaQuery.sizeOf(context).width;
+
+    Widget bloque(String titulo, Widget valor, {TonoMock? tono, int orden = 0}) => Expanded(
+      child: Aparecer.revelar(
+        orden: orden,
+        child: Tarjeta(
+          tono: tono,
+          padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(titulo, style: estilo(15, 600, color: tono == null ? p.mute : tono.colores(p).$2)),
+              const SizedBox(height: 6),
+              valor,
+            ],
+          ),
+        ),
+      ),
+    );
+    final fig = estilo(36, 550, color: p.tinta, em: -.04, num: true);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            ActionChip(
-              avatar: const IconoPlz(IconosPlazoleta.arrowBackRounded, size: 18),
-              label: const Text('Proveedores'),
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-            const SizedBox(width: Espaciado.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Contá lo que hay en góndola y depósito. Nada cambia hasta que apliques los ajustes.',
-                    style: textTheme.bodyMedium?.copyWith(color: colores.textoSecundario),
-                  ),
-                ],
-              ),
-            ),
-            BotonSecundario(texto: 'Bajar planilla', onPressed: _bajarPlanilla),
-            const SizedBox(width: Espaciado.sm),
-            BotonPrimario(
-              texto: conDif.isEmpty ? 'Aplicar ajustes' : 'Aplicar ajustes (${conDif.length})',
-              onPressed: conDif.isEmpty || c.aplicando ? null : _aplicar,
-            ),
-          ],
-        ),
-        const SizedBox(height: Espaciado.lg),
-        SizedBox(
-          height: 128,
+        IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(flex: 14, child: _TarjetaAvance(contados: c.cantidadContados, total: c.productos.length)),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                flex: 10,
-                child: TarjetaIndicador(
-                  etiqueta: 'Con diferencia',
-                  valor: '${conDif.length}',
-                  tonoValor: conDif.isEmpty ? null : Tono.alerta,
-                  nota: conDif.isEmpty ? 'Todo coincide' : conDif.map((p) => p.nombre).take(3).join(', '),
+              bloque('Contados', Text('${c.cantidadContados} / ${c.productos.length}', style: fig)),
+              const SizedBox(width: 14),
+              bloque(
+                'Con diferencia',
+                Text('${conDif.length}', style: fig.copyWith(color: (conDif.isEmpty ? TonoMock.g : TonoMock.w).colores(p).$2)),
+                tono: conDif.isEmpty ? TonoMock.g : TonoMock.w,
+                orden: 1,
+              ),
+              const SizedBox(width: 14),
+              bloque('Falta, a costo', NumeroQueCuenta(valor: c.costoFaltanteCentavos, formato: pesos, estilo: fig), orden: 2),
+              const SizedBox(width: 14),
+              bloque(
+                'Tilde “está igual”',
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Btn('Marcar todo igual', tam: TamBtn.sm, variante: VarBtn.ton, sobreGris: true, onTap: c.cantidadSinContar == 0 ? null : _marcarIgual),
+                ),
+                orden: 3,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChipMock('Todos ${c.productos.length}', elegido: c.filtro == FiltroConteo.todos, onTap: () => c.elegirFiltro(FiltroConteo.todos)),
+                    const SizedBox(width: 8),
+                    ChipMock('Sin contar ${c.cantidadSinContar}', elegido: c.filtro == FiltroConteo.sinContar, onTap: () => c.elegirFiltro(FiltroConteo.sinContar)),
+                    const SizedBox(width: 8),
+                    ChipMock('Con diferencia ${conDif.length}', elegido: c.filtro == FiltroConteo.conDiferencia, onTap: () => c.elegirFiltro(FiltroConteo.conDiferencia)),
+                    Container(width: 1, height: 26, color: p.linea, margin: const EdgeInsets.symmetric(horizontal: 14)),
+                    _Desplegable<int?>(
+                      clave: const Key('filtro_proveedor'),
+                      texto: 'Proveedor: ${c.proveedores.where((x) => x.id == c.proveedorIdFiltro).firstOrNull?.nombre ?? 'todos'}',
+                      opciones: [(null, 'Todos'), for (final x in c.proveedores) (x.id, x.nombre)],
+                      onElegir: c.filtrarPorProveedor,
+                    ),
+                    const SizedBox(width: 8),
+                    _Desplegable<String>(
+                      clave: const Key('filtro_motivo'),
+                      texto: 'Motivo: ${c.motivo}',
+                      opciones: [for (final m in motivosAjusteDeStock) (m, m)],
+                      onElegir: c.elegirMotivo,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                flex: 10,
-                child: TarjetaIndicador(
-                  etiqueta: 'Sobran / faltan',
-                  valor: _signado(c.unidadesSobrantes - c.unidadesFaltantes, ' u.'),
-                  tonoValor: c.unidadesFaltantes > 0 ? Tono.error : null,
-                  nota: 'Faltan ${c.unidadesFaltantes} · sobran ${c.unidadesSobrantes}',
-                ),
-              ),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                flex: 10,
-                child: TarjetaIndicador(
-                  etiqueta: 'Costo de lo que falta',
-                  valor: formatearARS(c.costoFaltanteCentavos),
-                  nota: 'A precio de costo',
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: ancho >= 1700 ? 420 : 300,
+              child: BuscadorPagina(campoKey: const Key('busqueda_contextual'), alto: 52, pista: 'Buscar o escanear producto', onCambio: c.buscar),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Flexible(
+                child: Tabla(
+                  radio: 28,
+                  columnas: const [
+                    ColumnaTabla('Producto', flex: 5),
+                    ColumnaTabla('Dice el sistema', flex: 2, derecha: true),
+                    ColumnaTabla('Contado', ancho: 220, derecha: true),
+                    ColumnaTabla('Diferencia', ancho: 170, derecha: true),
+                  ],
+                  cantidad: visibles.length,
+                  vacio: const Vacio(texto: 'No hay productos con este filtro.', icono: null, padding: EdgeInsets.symmetric(vertical: 36)),
+                  celdas: (context, i) => _celdas(context, c, visibles[i]),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: Espaciado.lg),
-        Wrap(
-          spacing: Espaciado.sm,
-          runSpacing: Espaciado.sm,
-          children: [
-            ChipAtajo(texto: 'Todos ${c.productos.length}', elegido: c.filtro == FiltroConteo.todos, onTap: () => c.elegirFiltro(FiltroConteo.todos)),
-            ChipAtajo(
-              texto: 'Sin contar ${c.cantidadSinContar}',
-              elegido: c.filtro == FiltroConteo.sinContar,
-              onTap: () => c.elegirFiltro(FiltroConteo.sinContar),
-            ),
-            ChipAtajo(
-              texto: 'Con diferencia ${conDif.length}',
-              elegido: c.filtro == FiltroConteo.conDiferencia,
-              onTap: () => c.elegirFiltro(FiltroConteo.conDiferencia),
-            ),
-            _Desplegable<int?>(
-              clave: const Key('filtro_proveedor'),
-              texto: 'Proveedor: ${c.proveedores.where((p) => p.id == c.proveedorIdFiltro).firstOrNull?.nombre ?? 'todos'}',
-              opciones: [(null, 'Todos'), for (final p in c.proveedores) (p.id, p.nombre)],
-              onElegir: c.filtrarPorProveedor,
-            ),
-            _Desplegable<String>(
-              clave: const Key('filtro_motivo'),
-              texto: 'Motivo: ${c.motivo}',
-              opciones: [for (final m in motivosAjusteDeStock) (m, m)],
-              onElegir: c.elegirMotivo,
-            ),
-          ],
-        ),
-        const SizedBox(height: Espaciado.md),
-        Expanded(
-          child: Superficie(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.md),
-                  child: DefaultTextStyle.merge(
-                    style: textTheme.labelMedium?.copyWith(color: colores.textoSecundario),
-                    child: const Row(
-                      children: [
-                        Expanded(child: Text('Producto')),
-                        SizedBox(width: _anchoSistema, child: Text('En el sistema')),
-                        SizedBox(width: _anchoContado, child: Text('Contado')),
-                        SizedBox(width: _anchoDiferencia, child: Text('Diferencia')),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: visibles.isEmpty
-                      ? Center(child: Text('No hay productos con este filtro.', style: textTheme.bodyMedium))
-                      : ListView.builder(
-                          itemCount: visibles.length,
-                          itemBuilder: (context, i) => _FilaConteo(key: ValueKey(visibles[i].id), c: c, producto: visibles[i]),
-                        ),
-                ),
-              ],
-            ),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Btn(
+            conDif.isEmpty ? 'Aplicar ajustes' : 'Aplicar ajustes (${conDif.length})',
+            variante: VarBtn.blue,
+            tam: TamBtn.lg,
+            onTap: conDif.isEmpty || c.aplicando ? null : _aplicar,
           ),
         ),
       ],
     );
   }
+
+  List<Widget> _celdas(BuildContext context, StockProveedorControlador c, Producto producto) {
+    final p = context.p;
+    final dif = c.diferencia(producto);
+    final unidad = producto.esPesable ? ' g' : ' u.';
+    final agotado = productoAgotado(producto);
+    return [
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sin stock en rojo (Regla 8): es lo primero que hay que mirar en la góndola.
+          Text(producto.nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(16, 500, color: agotado ? p.b : p.tinta)),
+          Text(
+            [producto.codigoBarras ?? 'sin código', c.nombreProveedor(producto)].join(' · '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: estilo(13, 400, color: p.mute),
+          ),
+        ],
+      ),
+      celda(context, '${c.sistema(producto)}$unidad', num: true, color: p.mute),
+      Container(
+        key: ValueKey('contado_${producto.id}'),
+        height: 42,
+        decoration: BoxDecoration(color: p.papel, borderRadius: BorderRadius.circular(999)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Paso(icono: Ic.minus, etiqueta: 'Restar', onTap: () => c.sumar(producto, -1)),
+            SizedBox(width: 80, child: _CampoContado(key: ValueKey(producto.id), c: c, producto: producto)),
+            _Paso(icono: Ic.plus, etiqueta: 'Sumar', onTap: () => c.sumar(producto, 1)),
+          ],
+        ),
+      ),
+      switch (dif) {
+        null => const Etiqueta('Sin contar'),
+        0 => const Etiqueta('igual', tono: TonoMock.g),
+        final d => Etiqueta(_signado(d, producto.esPesable ? ' g' : ''), tono: d < 0 ? TonoMock.b : TonoMock.w),
+      },
+    ];
+  }
 }
 
 String _signado(int n, String unidad) => n == 0 ? '0$unidad' : (n > 0 ? '+$n$unidad' : '−${-n}$unidad');
 
-const double _anchoSistema = 130;
-const double _anchoContado = 230;
-const double _anchoDiferencia = 130;
-
-class _TarjetaAvance extends StatelessWidget {
-  const _TarjetaAvance({required this.contados, required this.total});
-
-  final int contados;
-  final int total;
+class _Paso extends StatelessWidget {
+  const _Paso({required this.icono, required this.etiqueta, required this.onTap});
+  final Ic icono;
+  final String etiqueta;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
-    final sobre = acentos.textoSobreColor;
-    return Superficie(
-      degrade: acentos.gradienteAcento,
-      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text('Contados', style: textTheme.labelLarge?.copyWith(color: sobre.withValues(alpha: 0.75)))),
-              Text('$contados de $total', style: textTheme.headlineSmall?.copyWith(color: sobre, fontWeight: Pesos.fuerte).tabular),
-            ],
-          ),
-          const SizedBox(height: Espaciado.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: LinearProgressIndicator(
-              minHeight: 10,
-              value: total == 0 ? 0 : contados / total,
-              backgroundColor: sobre.withValues(alpha: 0.18),
-              valueColor: AlwaysStoppedAnimation(context.colores.acento.withValues(alpha: 0.9)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Tooltip(
+    message: etiqueta,
+    child: Tocable(
+      onTap: onTap,
+      radio: 999,
+      etiqueta: etiqueta,
+      child: SizedBox(width: 40, height: 42, child: Center(child: Icono(icono, size: 14, grosor: 2.6, color: context.p.tinta))),
+    ),
+  );
 }
 
+/// Un chip con un menú: proveedor o motivo del ajuste.
 class _Desplegable<T> extends StatelessWidget {
   const _Desplegable({required this.clave, required this.texto, required this.opciones, required this.onElegir});
 
@@ -286,25 +301,26 @@ class _Desplegable<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
+    final p = context.p;
     return PopupMenuButton<T>(
       key: clave,
       tooltip: '',
       onSelected: onElegir,
-      itemBuilder: (context) => [for (final (valor, etiqueta) in opciones) PopupMenuItem(value: valor, child: Text(etiqueta))],
+      color: p.papel,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      itemBuilder: (context) => [
+        for (final (valor, etiqueta) in opciones) PopupMenuItem(value: valor, child: Text(etiqueta, style: estilo(15, 500, color: p.tinta))),
+      ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm + 2),
-        decoration: BoxDecoration(
-          color: colores.fondoBloque,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colores.borde),
-        ),
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        decoration: BoxDecoration(color: p.papel, borderRadius: BorderRadius.circular(999), border: Border.all(color: p.linea)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(texto, style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(width: Espaciado.xs),
-            const IconoPlz(IconosPlazoleta.expandMore, size: 18),
+            Text(texto, style: estilo(15, 500, color: p.tinta)),
+            const SizedBox(width: 6),
+            Icono(Ic.chevd, size: 16, color: p.mute),
           ],
         ),
       ),
@@ -312,81 +328,8 @@ class _Desplegable<T> extends StatelessWidget {
   }
 }
 
-class _FilaConteo extends StatelessWidget {
-  const _FilaConteo({super.key, required this.c, required this.producto});
-
-  final StockProveedorControlador c;
-  final Producto producto;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
-    final dif = c.diferencia(producto);
-    final unidad = producto.esPesable ? ' g' : '';
-    final agotado = productoAgotado(producto);
-    final insignia = switch (dif) {
-      null => const Insignia(texto: 'Sin contar'),
-      0 => const Insignia(texto: 'Justo', tono: Tono.ganancia),
-      final d => Insignia(texto: _signado(d, unidad), tono: d < 0 ? Tono.error : Tono.acento),
-    };
-    return Container(
-      margin: const EdgeInsets.only(bottom: Espaciado.sm),
-      decoration: BoxDecoration(
-        color: (dif ?? 0) != 0 ? acentos.alertaSuave : colores.fondo,
-        borderRadius: BorderRadius.circular(26),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.sm),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  producto.nombre,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte, color: agotado ? colores.error : null),
-                ),
-                Text(c.nombreProveedor(producto), style: textTheme.bodySmall),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: _anchoSistema,
-            child: Text('${c.sistema(producto)}$unidad', style: textTheme.titleMedium?.tabular),
-          ),
-          SizedBox(
-            width: _anchoContado,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                height: 44,
-                decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(18)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(tooltip: 'Restar', icon: const IconoPlz(IconosPlazoleta.remove), onPressed: () => c.sumar(producto, -1)),
-                    SizedBox(width: 96, child: _CampoContado(c: c, producto: producto)),
-                    IconButton(tooltip: 'Sumar', icon: const IconoPlz(IconosPlazoleta.add), onPressed: () => c.sumar(producto, 1)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: _anchoDiferencia, child: Align(alignment: Alignment.centerLeft, child: insignia)),
-        ],
-      ),
-    );
-  }
-}
-
-/// El número del medio del stepper, tipeable. Sigue al controlador cuando
-/// cambia por "−"/"+", sin pisar lo que se esté escribiendo.
 class _CampoContado extends StatefulWidget {
-  const _CampoContado({required this.c, required this.producto});
+  const _CampoContado({super.key, required this.c, required this.producto});
 
   final StockProveedorControlador c;
   final Producto producto;
@@ -416,20 +359,18 @@ class _CampoContadoState extends State<_CampoContado> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: _ctrl,
-      textAlign: TextAlign.center,
-      keyboardType: TextInputType.number,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte).tabular,
-      decoration: const InputDecoration(
-        hintText: '—',
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        filled: false,
-        isCollapsed: true,
+    final p = context.p;
+    final e = estilo(16, 600, color: p.tinta, num: true);
+    return AreaMinimaToque(
+      child: TextField(
+        controller: _ctrl,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        style: e,
+        cursorColor: p.azul,
+        decoration: decoracionSinBorde('—', e.copyWith(color: p.mute)),
+        onChanged: (v) => widget.c.contar(widget.producto, int.tryParse(v.trim())),
       ),
-      onChanged: (v) => widget.c.contar(widget.producto, int.tryParse(v.trim())),
     );
   }
 }
