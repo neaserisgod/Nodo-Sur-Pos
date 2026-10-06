@@ -24,6 +24,8 @@ void main() {
     try {
       crudo.execute('DROP TABLE vinculos_factura');
       crudo.execute('DROP TABLE cuits_proveedor');
+      // También como estaba antes de la v53 (WhatsApp del proveedor), si no esa migración choca con la columna ya creada.
+      crudo.execute('ALTER TABLE proveedores DROP COLUMN whatsapp');
       crudo.execute('PRAGMA user_version = 51');
     } finally {
       crudo.close();

@@ -4,6 +4,7 @@
 // huérfanos, o un proveedor puntual — mismo controlador para las tres, igual
 // que nivel 1 y nivel 2 ya vivían juntos acá.
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
 
 import '../../data/database.dart';
@@ -31,6 +32,7 @@ import '../../data/repositorio_productos.dart'
 import '../../data/repositorio_proveedores.dart';
 import '../../data/repositorio_reposicion.dart';
 import '../../domain/edicion_masiva_precios.dart';
+import '../../domain/pedido_whatsapp.dart' show LineaDePedido;
 import '../../domain/periodo.dart';
 import '../../domain/tablero.dart' show avisaPorStock;
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
@@ -138,6 +140,16 @@ class ProveedoresControlador extends ChangeNotifier {
       .length;
 
   int get stockBajoTotal => todosLosProductos.where(avisaStock).length;
+
+  /// Lo que hay que pedirle al proveedor elegido: sus productos que avisan por stock (el mismo criterio del filtro "Stock bajo").
+  List<LineaDePedido> get lineasParaPedir {
+    final id = seleccionado?.id;
+    if (id == null) return const [];
+    return [
+      for (final p in todosLosProductos)
+        if (p.proveedorId == id && avisaStock(p)) LineaDePedido(nombre: p.nombre, stock: p.stock, esPesable: p.esPesable),
+    ];
+  }
 
   Proveedor? seleccionado;
   ResumenReposicionProveedor? detalleSeleccionado;
@@ -471,6 +483,7 @@ class ProveedoresControlador extends ChangeNotifier {
     required String medioPago,
     bool? cajaAparte,
     int? colchonCentavos,
+    required String? whatsapp,
   }) async {
     final proveedor = seleccionado;
     if (proveedor == null) return;
@@ -485,6 +498,7 @@ class ProveedoresControlador extends ChangeNotifier {
       medioPago: medioPago,
       cajaAparte: cajaAparte,
       colchonReposicionCentavos: colchonCentavos,
+      whatsapp: Value(whatsapp),
     );
     await cargarTodo();
   }
@@ -499,6 +513,7 @@ class ProveedoresControlador extends ChangeNotifier {
     String? diaPedido,
     String? diaEntrega,
     String medioPago = 'Efectivo',
+    String? whatsapp,
   }) async {
     final id = await crearProveedor(
       db,
@@ -507,6 +522,7 @@ class ProveedoresControlador extends ChangeNotifier {
       diaPedido: diaPedido,
       diaEntrega: diaEntrega,
       medioPago: medioPago,
+      whatsapp: whatsapp,
     );
     await cargarTodo();
     await seleccionar(id);

@@ -1181,6 +1181,17 @@ class $ProveedoresTable extends Proveedores
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _whatsappMeta = const VerificationMeta(
+    'whatsapp',
+  );
+  @override
+  late final GeneratedColumn<String> whatsapp = GeneratedColumn<String>(
+    'whatsapp',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activoMeta = const VerificationMeta('activo');
   @override
   late final GeneratedColumn<bool> activo = GeneratedColumn<bool>(
@@ -1266,6 +1277,7 @@ class $ProveedoresTable extends Proveedores
     ultimoPagoFecha,
     gananciaRevisadaFecha,
     markupBp,
+    whatsapp,
     activo,
     cajaAparte,
     globalId,
@@ -1444,6 +1456,12 @@ class $ProveedoresTable extends Proveedores
         markupBp.isAcceptableOrUnknown(data['markup_bp']!, _markupBpMeta),
       );
     }
+    if (data.containsKey('whatsapp')) {
+      context.handle(
+        _whatsappMeta,
+        whatsapp.isAcceptableOrUnknown(data['whatsapp']!, _whatsappMeta),
+      );
+    }
     if (data.containsKey('activo')) {
       context.handle(
         _activoMeta,
@@ -1569,6 +1587,10 @@ class $ProveedoresTable extends Proveedores
         DriftSqlType.int,
         data['${effectivePrefix}markup_bp'],
       ),
+      whatsapp: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}whatsapp'],
+      ),
       activo: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
@@ -1687,6 +1709,10 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   /// sin porcentaje, los precios se cargan a mano. El dueño, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   final int? markupBp;
+
+  /// Teléfono de WhatsApp del proveedor, tal como lo escribió el dueño (schemaVersion 53, rediseño v4, 2026-10-06): sirve para
+  /// el botón "Pedir por WhatsApp", que abre el chat con lo de stock bajo ya escrito. Local: no se sincroniza.
+  final String? whatsapp;
   final bool activo;
 
   /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
@@ -1720,6 +1746,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     this.ultimoPagoFecha,
     this.gananciaRevisadaFecha,
     this.markupBp,
+    this.whatsapp,
     required this.activo,
     required this.cajaAparte,
     this.globalId,
@@ -1775,6 +1802,9 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     if (!nullToAbsent || markupBp != null) {
       map['markup_bp'] = Variable<int>(markupBp);
     }
+    if (!nullToAbsent || whatsapp != null) {
+      map['whatsapp'] = Variable<String>(whatsapp);
+    }
     map['activo'] = Variable<bool>(activo);
     map['caja_aparte'] = Variable<bool>(cajaAparte);
     if (!nullToAbsent || globalId != null) {
@@ -1829,6 +1859,9 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
       markupBp: markupBp == null && nullToAbsent
           ? const Value.absent()
           : Value(markupBp),
+      whatsapp: whatsapp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(whatsapp),
       activo: Value(activo),
       cajaAparte: Value(cajaAparte),
       globalId: globalId == null && nullToAbsent
@@ -1887,6 +1920,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         json['gananciaRevisadaFecha'],
       ),
       markupBp: serializer.fromJson<int?>(json['markupBp']),
+      whatsapp: serializer.fromJson<String?>(json['whatsapp']),
       activo: serializer.fromJson<bool>(json['activo']),
       cajaAparte: serializer.fromJson<bool>(json['cajaAparte']),
       globalId: serializer.fromJson<String?>(json['globalId']),
@@ -1930,6 +1964,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         gananciaRevisadaFecha,
       ),
       'markupBp': serializer.toJson<int?>(markupBp),
+      'whatsapp': serializer.toJson<String?>(whatsapp),
       'activo': serializer.toJson<bool>(activo),
       'cajaAparte': serializer.toJson<bool>(cajaAparte),
       'globalId': serializer.toJson<String?>(globalId),
@@ -1959,6 +1994,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     Value<DateTime?> ultimoPagoFecha = const Value.absent(),
     Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
     Value<int?> markupBp = const Value.absent(),
+    Value<String?> whatsapp = const Value.absent(),
     bool? activo,
     bool? cajaAparte,
     Value<String?> globalId = const Value.absent(),
@@ -2002,6 +2038,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         ? gananciaRevisadaFecha.value
         : this.gananciaRevisadaFecha,
     markupBp: markupBp.present ? markupBp.value : this.markupBp,
+    whatsapp: whatsapp.present ? whatsapp.value : this.whatsapp,
     activo: activo ?? this.activo,
     cajaAparte: cajaAparte ?? this.cajaAparte,
     globalId: globalId.present ? globalId.value : this.globalId,
@@ -2063,6 +2100,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ? data.gananciaRevisadaFecha.value
           : this.gananciaRevisadaFecha,
       markupBp: data.markupBp.present ? data.markupBp.value : this.markupBp,
+      whatsapp: data.whatsapp.present ? data.whatsapp.value : this.whatsapp,
       activo: data.activo.present ? data.activo.value : this.activo,
       cajaAparte: data.cajaAparte.present
           ? data.cajaAparte.value
@@ -2102,6 +2140,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ..write('ultimoPagoFecha: $ultimoPagoFecha, ')
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
+          ..write('whatsapp: $whatsapp, ')
           ..write('activo: $activo, ')
           ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
@@ -2133,6 +2172,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     ultimoPagoFecha,
     gananciaRevisadaFecha,
     markupBp,
+    whatsapp,
     activo,
     cajaAparte,
     globalId,
@@ -2164,6 +2204,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           other.ultimoPagoFecha == this.ultimoPagoFecha &&
           other.gananciaRevisadaFecha == this.gananciaRevisadaFecha &&
           other.markupBp == this.markupBp &&
+          other.whatsapp == this.whatsapp &&
           other.activo == this.activo &&
           other.cajaAparte == this.cajaAparte &&
           other.globalId == this.globalId &&
@@ -2192,6 +2233,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
   final Value<DateTime?> ultimoPagoFecha;
   final Value<DateTime?> gananciaRevisadaFecha;
   final Value<int?> markupBp;
+  final Value<String?> whatsapp;
   final Value<bool> activo;
   final Value<bool> cajaAparte;
   final Value<String?> globalId;
@@ -2218,6 +2260,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.ultimoPagoFecha = const Value.absent(),
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
+    this.whatsapp = const Value.absent(),
     this.activo = const Value.absent(),
     this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -2245,6 +2288,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.ultimoPagoFecha = const Value.absent(),
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
+    this.whatsapp = const Value.absent(),
     this.activo = const Value.absent(),
     this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -2273,6 +2317,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Expression<DateTime>? ultimoPagoFecha,
     Expression<DateTime>? gananciaRevisadaFecha,
     Expression<int>? markupBp,
+    Expression<String>? whatsapp,
     Expression<bool>? activo,
     Expression<bool>? cajaAparte,
     Expression<String>? globalId,
@@ -2310,6 +2355,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
       if (gananciaRevisadaFecha != null)
         'ganancia_revisada_fecha': gananciaRevisadaFecha,
       if (markupBp != null) 'markup_bp': markupBp,
+      if (whatsapp != null) 'whatsapp': whatsapp,
       if (activo != null) 'activo': activo,
       if (cajaAparte != null) 'caja_aparte': cajaAparte,
       if (globalId != null) 'global_id': globalId,
@@ -2339,6 +2385,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Value<DateTime?>? ultimoPagoFecha,
     Value<DateTime?>? gananciaRevisadaFecha,
     Value<int?>? markupBp,
+    Value<String?>? whatsapp,
     Value<bool>? activo,
     Value<bool>? cajaAparte,
     Value<String?>? globalId,
@@ -2373,6 +2420,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
       gananciaRevisadaFecha:
           gananciaRevisadaFecha ?? this.gananciaRevisadaFecha,
       markupBp: markupBp ?? this.markupBp,
+      whatsapp: whatsapp ?? this.whatsapp,
       activo: activo ?? this.activo,
       cajaAparte: cajaAparte ?? this.cajaAparte,
       globalId: globalId ?? this.globalId,
@@ -2460,6 +2508,9 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     if (markupBp.present) {
       map['markup_bp'] = Variable<int>(markupBp.value);
     }
+    if (whatsapp.present) {
+      map['whatsapp'] = Variable<String>(whatsapp.value);
+    }
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
@@ -2503,6 +2554,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
           ..write('ultimoPagoFecha: $ultimoPagoFecha, ')
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
+          ..write('whatsapp: $whatsapp, ')
           ..write('activo: $activo, ')
           ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
@@ -24727,6 +24779,7 @@ typedef $$ProveedoresTableCreateCompanionBuilder =
       Value<DateTime?> ultimoPagoFecha,
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
+      Value<String?> whatsapp,
       Value<bool> activo,
       Value<bool> cajaAparte,
       Value<String?> globalId,
@@ -24755,6 +24808,7 @@ typedef $$ProveedoresTableUpdateCompanionBuilder =
       Value<DateTime?> ultimoPagoFecha,
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
+      Value<String?> whatsapp,
       Value<bool> activo,
       Value<bool> cajaAparte,
       Value<String?> globalId,
@@ -25008,6 +25062,11 @@ class $$ProveedoresTableFilterComposer
 
   ColumnFilters<int> get markupBp => $composableBuilder(
     column: $table.markupBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get whatsapp => $composableBuilder(
+    column: $table.whatsapp,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25322,6 +25381,11 @@ class $$ProveedoresTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get whatsapp => $composableBuilder(
+    column: $table.whatsapp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get activo => $composableBuilder(
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
@@ -25445,6 +25509,9 @@ class $$ProveedoresTableAnnotationComposer
 
   GeneratedColumn<int> get markupBp =>
       $composableBuilder(column: $table.markupBp, builder: (column) => column);
+
+  GeneratedColumn<String> get whatsapp =>
+      $composableBuilder(column: $table.whatsapp, builder: (column) => column);
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
@@ -25701,6 +25768,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> ultimoPagoFecha = const Value.absent(),
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
+                Value<String?> whatsapp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -25728,6 +25796,7 @@ class $$ProveedoresTableTableManager
                 ultimoPagoFecha: ultimoPagoFecha,
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
+                whatsapp: whatsapp,
                 activo: activo,
                 cajaAparte: cajaAparte,
                 globalId: globalId,
@@ -25757,6 +25826,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> ultimoPagoFecha = const Value.absent(),
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
+                Value<String?> whatsapp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -25784,6 +25854,7 @@ class $$ProveedoresTableTableManager
                 ultimoPagoFecha: ultimoPagoFecha,
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
+                whatsapp: whatsapp,
                 activo: activo,
                 cajaAparte: cajaAparte,
                 globalId: globalId,

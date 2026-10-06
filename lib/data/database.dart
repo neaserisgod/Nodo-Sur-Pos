@@ -151,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 52;
+  int get schemaVersion => 53;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1084,6 +1084,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 52) {
         await m.createTable(vinculosFactura);
         await m.createTable(cuitsProveedor);
+      }
+      // v52 → v53 (2026-10-06, rediseño v4): WhatsApp del proveedor. Una columna nueva, nullable, sin tocar nada existente.
+      if (from < 53) {
+        await m.addColumn(proveedores, proveedores.whatsapp);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

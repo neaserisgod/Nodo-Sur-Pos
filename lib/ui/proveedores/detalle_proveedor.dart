@@ -26,6 +26,7 @@ import 'dialogo_avanzado_proveedor.dart';
 import 'dialogo_cuenta_corriente.dart';
 import 'dialogo_edicion_masiva.dart';
 import 'dialogo_editar_producto.dart';
+import 'pedir_por_whatsapp.dart';
 import 'proveedores_controlador.dart';
 import 'selector_porcentaje.dart';
 
@@ -209,6 +210,30 @@ class DetalleProveedor extends StatelessWidget {
                   elegida: c.soloStockBajo,
                   onElegir: c.cambiarSoloStockBajo,
                 ),
+                if (c.esProveedorReal) ...[
+                  const Spacer(),
+                  // Con el panel angosto (ventana de 1366 px) queda solo el ícono, con su tooltip, como la cuenta corriente.
+                  if (MediaQuery.sizeOf(context).width >= 1500)
+                    BotonSecundario(
+                      key: const Key('boton_pedir_whatsapp'),
+                      texto: 'Pedir por WhatsApp',
+                      onPressed: () => pedirPorWhatsApp(context, c),
+                    )
+                  else
+                    Tooltip(
+                      message: 'Pedir por WhatsApp',
+                      child: Presionable(
+                        key: const Key('boton_pedir_whatsapp'),
+                        radio: 999,
+                        color: context.colores.fondo,
+                        onTap: () => pedirPorWhatsApp(context, c),
+                        child: Padding(
+                          padding: const EdgeInsets.all(Espaciado.md),
+                          child: Icon(Icons.chat_outlined, size: 22, color: context.colores.textoSecundario),
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           const SizedBox(height: Espaciado.md),
