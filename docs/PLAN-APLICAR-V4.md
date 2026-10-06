@@ -53,3 +53,23 @@ No hay Windows: se prueba `flutter analyze`, los tests y la lógica; **el aspect
 | 8 Funciones nuevas | ⏸ espera decisiones | Ver abajo. |
 
 **Dos cambios de comportamiento que conviene mirar en Windows:** (1) ninguna pantalla muestra subtítulo (antes "Hoy · martes 6 de octubre" en Inicio, "Las ventas, una por una" en Historial…); (2) en Venta, los íconos "Cambiar de turno" y "Cerrar caja" ya no están: se llega por **Caja ▾**.
+
+
+## Decisiones del dueño (06/10/2026) — resuelven la sección "Decisiones pendientes"
+| # | Tema | Decisión | Qué implica |
+|---|---|---|---|
+| 1 | "Venta cobrada" y el ticket | **Queda el botón Imprimir** (no se imprime solo). | La "Venta cobrada" que se cierra sola **no se hace**: el acuse sigue en el panel del carrito. El mock v4 difiere en esto y se corrige. |
+| 2 | Seña · en qué caja entra | **En la caja con la que pagó** (efectivo → cajón, Mercado Pago → saldo de MP). | Se elige al cargar la seña. |
+| 3 | Seña · cómo cuenta | **Ingreso de caja, no venta; cuando se paga completo pasa a ser venta del día en que se completó.** Si se cancela el encargue, la seña se devuelve (por la misma caja). | Hace falta modelo + dominio + tests antes de tocar la pantalla (ver "Plan de la etapa 8"). |
+| 4 | Excluir proveedor de la reposición | **No.** | Se saca del mock y de la especificación. |
+| 5 | Asistente Ctrl+K | **Buscador de acciones, sin pregunta libre a la IA.** | Sin IA ni internet: salta a pantallas, acciones (pagar proveedor, arqueo…) y productos. |
+| 6 | Rubro y logo | **Solo el logo del ticket** (sin "Rubro"). | Imagen guardada en la base; sale en el PDF y en el ticket de la terminal. Se saca "Rubro" del mock. |
+| 7 | WhatsApp del proveedor | **Guardar el número + botón para mandarle el pedido.** | Campo nuevo (migración), botón "Pedir por WhatsApp" con el pedido armado. |
+| 8 | Sucursal y Miembros | **Mostrarlos** en Configuración › Cuenta de Nodo Sur (solo informativos). | Hay que pedirlos al servidor de Nodo Sur: falta confirmar el endpoint (repo `NodoSurPage`). |
+
+### Plan de la etapa 8 (orden propuesto; cada punto con sus tests y `flutter analyze` limpio)
+1. **Asistente Ctrl+K** (sin base ni red): paleta de acciones/pantallas/productos. Reemplaza a la lupa de las otras pantallas (que sigue hasta entonces).
+2. **WhatsApp del proveedor**: migración de esquema (campo `whatsapp`), campo en nuevo/editar proveedor, botón "Pedir por WhatsApp".
+3. **Logo del ticket**: migración (imagen en configuración del negocio), selector en Configuración › Comercio, uso en el PDF y el ticket de la terminal.
+4. **Seña de encargues** (la más delicada, toca plata): primero `domain/` con tests (seña como ingreso de caja por medio; al completar el pago, la venta se registra con la fecha de ese día y se descuenta lo ya cobrado; cancelar devuelve por el mismo medio), después base y pantalla. **Antes de codificar se muestra el plan al dueño.**
+5. **Sucursal y Miembros**: solo después de confirmar de dónde salen los datos.
