@@ -102,7 +102,8 @@ void main() {
 
       expect(find.text('Caja cerrada.'), findsNothing);
       expect(find.byType(Dialog), findsNothing);
-      expect(find.text('Vender'), findsOneWidget);
+      // Rediseño v4: Venta ya no lleva el título "Vender"; lo que la delata es el botón de pagar proveedor junto al campo único.
+      expect(find.byKey(const Key('boton_pagar_proveedor')), findsOneWidget);
 
       await _desmontar(tester);
     },
