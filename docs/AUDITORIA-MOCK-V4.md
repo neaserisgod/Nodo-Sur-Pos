@@ -1,6 +1,6 @@
 # Auditoría: ¿el mock v4 tiene todas las funciones de la app de PC real?
 
-**Fecha:** 05/10/2026 · **Respuesta corta: no, todavía no.** La estética está, la gran mayoría de las pantallas están, pero faltan funciones
+**Fecha:** 05/10/2026 (actualizada el 06/10) · **Estado al 06/10: todo lo de la sección 2 ya está en el mock v4 (ver sección 8 de `ESPECIFICACION-PC-V4.md`); lo de la sección 3 se queda por decisión del dueño.** Lo que sigue es la auditoría original. **Respuesta de entonces: no, todavía no.** La estética está, la gran mayoría de las pantallas están, pero faltan funciones
 chicas y medianas, y hay un puñado de cosas del mock que **no existen** en la app real. Esta tabla es la lista para cerrar eso **antes** de
 aplicar el diseño al código.
 
