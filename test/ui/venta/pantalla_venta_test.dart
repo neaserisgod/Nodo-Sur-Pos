@@ -5,18 +5,15 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/tema/tokens.dart';
-import 'package:la_plazoleta/ui/venta/columna_carrito.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
 import 'package:provider/provider.dart';
-import 'package:la_plazoleta/ui/tema/iconos.dart';
 import '../../helpers/base_para_tests.dart';
 
 Future<AppDatabase> _crearBaseConSesion() async {
@@ -94,7 +91,7 @@ VentaControlador _controladorDe(WidgetTester tester) {
 /// búsqueda al `ColumnaCarrito`, el único lugar que estos tests quieren
 /// mirar.
 Finder _enElCarrito(String texto) =>
-    find.descendant(of: find.byType(ColumnaCarrito), matching: find.text(texto));
+    find.descendant(of: find.byKey(const Key('carrito')), matching: find.text(texto));
 
 /// Mismo motivo: acota al dropdown de resultados de la barra de búsqueda,
 /// que también puede coincidir con un tile de la grilla.
@@ -158,10 +155,10 @@ void main() {
         // atajo en sí.
         _controladorDe(tester).elegirCanalDirecto('qr');
         await tester.pump();
-        expect(find.textContaining('Recargo QR'), findsOneWidget);
+        expect(find.textContaining('Recargo cigarrillos'), findsOneWidget);
 
         await _presionarAlt(tester, LogicalKeyboardKey.keyE);
-        expect(find.textContaining('Recargo QR'), findsNothing);
+        expect(find.textContaining('Recargo cigarrillos'), findsNothing);
       },
     );
   });
@@ -411,7 +408,7 @@ void main() {
           await tester.pump();
           expect(_enElCarrito('Coca-Cola 500ml'), findsOneWidget);
 
-          await tester.tap(buscarIcono(IconosPlazoleta.deleteOutline));
+          await tester.tap(find.byKey(const Key('quitar_0')));
           await tester.pump();
 
           expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
@@ -438,7 +435,7 @@ void main() {
         expect(_enElCarrito('Marlboro'), findsOneWidget);
 
         // Dos líneas, dos tachos — se toca el de la primera (Coca-Cola).
-        await tester.tap(buscarIcono(IconosPlazoleta.deleteOutline).first);
+        await tester.tap(find.byKey(const Key('quitar_0')));
         await tester.pump();
 
         expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
@@ -471,19 +468,19 @@ void main() {
           await tester.pump();
           await tester.testTextInput.receiveAction(TextInputAction.done);
           await tester.pump();
-          expect(find.text('x1'), findsOneWidget);
+          String cantidad() => tester.widget<Text>(find.byKey(const Key('cantidad_0'))).data!;
+          expect(cantidad(), '1');
 
-          // El último "+" del árbol es el del stepper del carrito; el primero es el de "Nueva venta" en la cabecera.
-          await tester.tap(buscarIcono(IconosPlazoleta.add).last);
+          await tester.tap(find.byKey(const Key('sumar_0')));
           await tester.pump();
-          expect(find.text('x2'), findsOneWidget);
+          expect(cantidad(), '2');
 
-          await tester.tap(buscarIcono(IconosPlazoleta.remove));
+          await tester.tap(find.byKey(const Key('restar_0')));
           await tester.pump();
-          expect(find.text('x1'), findsOneWidget);
+          expect(cantidad(), '1');
 
           // En 1, "−" saca la línea entera.
-          await tester.tap(buscarIcono(IconosPlazoleta.remove));
+          await tester.tap(find.byKey(const Key('restar_0')));
           await tester.pump();
           expect(_enElCarrito('Coca-Cola 500ml'), findsNothing);
         },
@@ -503,9 +500,9 @@ void main() {
 
           // `onDoubleTap` no tiene helper propio en `WidgetTester`: dos
           // taps rápidos sobre el mismo punto.
-          await tester.tap(find.text('x1'));
+          await tester.tap(find.byKey(const Key('cantidad_0')));
           await tester.pump(const Duration(milliseconds: 50));
-          await tester.tap(find.text('x1'));
+          await tester.tap(find.byKey(const Key('cantidad_0')));
           await tester.pumpAndSettle();
 
           expect(find.text('Cambiar cantidad'), findsOneWidget);
@@ -513,7 +510,7 @@ void main() {
           await tester.tap(find.text('Listo'));
           await tester.pumpAndSettle();
 
-          expect(find.text('x12'), findsOneWidget);
+          expect(tester.widget<Text>(find.byKey(const Key('cantidad_0'))).data, '12');
         },
       );
 
@@ -611,7 +608,7 @@ void main() {
             findsOneWidget,
           ); // el nombre entero, sin truncar
           expect(
-            find.text('3200 g'),
+            find.text('3,2 kg'),
             findsOneWidget,
           ); // stock disponible, la columna del medio
           // "/kg" es parte del mismo texto que el monto, nunca un widget aparte
@@ -640,7 +637,7 @@ void main() {
           // El stock que se muestra es lo que HAY, no lo que se está por agregar
           // — sigue siendo 3200 g, los 200 escritos no le restan nada todavía
           // (eso pasa recién al confirmar la línea).
-          expect(find.text('3200 g'), findsOneWidget);
+          expect(find.text('3,2 kg'), findsNothing, reason: 'con gramos escritos la fila muestra el subtotal, no el stock');
           // subtotalPesable(850000, 200) = 170000 centavos = $1.700 — nunca a mano.
           expect(find.textContaining('1.700'), findsOneWidget);
         },
@@ -794,7 +791,7 @@ void main() {
 
           // Quedó en el carrito, con el monto cargado, y sin la marca de stock
           // en rojo (Regla 8 no le aplica: "Varios" nunca tiene stock real).
-          expect(find.text('\$500'), findsOneWidget);
+          expect(_enElCarrito('\$ 500'), findsOneWidget);
           // `.last`: desde el rediseño v4 hay otra "Varios" a la vista (la pastilla de la grilla); la del carrito va después.
           final nombreEnCarrito = tester.widget<Text>(find.text('Varios').last);
           final colores = TemaPlazoleta.oscuro.extension<ColoresPlazoleta>()!;
@@ -846,7 +843,7 @@ void main() {
 
           expect(find.textContaining('precio por kilo'), findsOneWidget);
           expect(
-            find.text('El carrito está vacío'),
+            find.textContaining('para empezar la venta'),
             findsOneWidget,
           ); // no entró al carrito
         },
@@ -898,20 +895,22 @@ void main() {
         // bloque siempre visible a un ícono que abre un modal (mismo
         // criterio que la companion) — hay que abrirlo antes de tocar el
         // toggle $/% o el campo.
-        await tester.tap(buscarIcono(IconosPlazoleta.sellOutlined));
+        await tester.tap(find.byKey(const Key('boton_descuento')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('%'));
+        await tester.tap(find.text('Porcentaje %'));
         await tester.pump();
         await tester.enterText(find.byKey(const Key('campo_descuento')), '10');
         await tester.pump();
+        await tester.tap(find.text('Aplicar descuento'));
+        await tester.pumpAndSettle();
 
         // Coca-Cola 500ml: $1.120. 10% de descuento = $112 → $1.008.
-        expect(find.textContaining('1.008'), findsOneWidget);
+        expect(find.text('\$ 1.008'), findsOneWidget);
         // Remake de disposición (2026-09-19): el desglose pasó de líneas
         // separadas ("Descuento: -$X") a una sola línea compacta unida
         // por " · " ("Descuento -$X"), mismo criterio que la tarjeta del
         // total de la companion.
-        expect(find.textContaining('Descuento -\$112'), findsOneWidget);
+        expect(find.textContaining('Descuento −\$ 112'), findsOneWidget);
       },
     );
 

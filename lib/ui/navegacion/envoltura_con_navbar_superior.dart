@@ -1,27 +1,14 @@
-// Envuelve el contenido de una pantalla de gestión con la navbar superior
-// — reemplazo directo de `EnvolturaConBarraLateral`
-// (`envoltura_con_barra_lateral.dart`, sigue en el árbol mientras dura el
-// rollout, se borra en la Fase 6). Carga las secciones visibles y resuelve
-// la navegación — cada pantalla nueva solo pasa su propia clave activa y su
-// contenido. Ya no guarda preferencia de compactado (El dueño, rediseño
-// 2026-09-25: la navbar pasó a ser un dropdown de un solo tamaño, ver
-// `navbar_superior.dart` — no hay "compacta" que recordar).
+// Envuelve el contenido de una pantalla de gestión con la barra de navegación del mock v4 (`NavbarSuperior` con
+// `child`: la barra arriba, el mega-menú y el velo en el medio, el contenido abajo). Carga las secciones visibles y
+// resuelve a dónde ir; cada pantalla solo pasa su clave activa y su contenido.
 //
-// Suma `BarraBusquedaGlobal` junto a la navbar (El dueño, tercera pasada de
-// venta: "quiero que la barra de busqueda este en todos lados" — confirmado
-// que es para TODA la app, no solo Venta) — mismo patrón de fila que
-// `pantalla_venta.dart` ya usa para la suya: navbar a la izquierda, campo
-// de ancho fijo centrado con `LayoutBuilder`+`clamp` para no desbordar en
-// ventanas angostas. Elegir un resultado ahí NAVEGA a Venta con el texto
-// precargado (`navegarASeccionDeGestion(..., textoBusquedaPendiente: ...)`)
-// — la pantalla de Venta sigue siendo la única que agrega productos de
-// verdad, esto solo te lleva hasta ahí con el trabajo de escribir ya hecho.
+// Teclado de toda la app (El dueño, 2026-10-03, y el mock v4): Ctrl+K abre el Asistente; Ctrl+F abre la búsqueda
+// propia de la pantalla adentro de la barra, o el Asistente si la pantalla no tiene una (el mock no tiene lupa a la
+// vista: el Asistente busca productos y elegir uno vuelve a Venta con el texto cargado); la tecla Inicio vuelve a Venta,
+// salvo escribiendo en un campo.
 //
-// La pantalla de Venta NO usa este envoltorio: arma su propia
-// `NavbarSuperior`+`BarraBusquedaVenta` a mano (mismo motivo que antes con
-// `BarraLateral` — foco del campo único, atajos de teclado, "Cerrar caja"
-// en el slot de acción; `BarraBusquedaVenta`, a diferencia de
-// `BarraBusquedaGlobal`, agrega directo al carrito).
+// La pantalla de Venta NO usa este envoltorio: arma su propia barra (foco del campo único, atajos de cobro, el menú de
+// caja con lo que sabe del controlador).
 
 import 'dart:async';
 
@@ -29,11 +16,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
-import '../tema/tokens.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import 'acciones_caja.dart';
 import 'asistente.dart';
-import 'barra_busqueda_global.dart';
 import 'boton_notificaciones.dart';
 import 'busqueda_contextual.dart';
 import 'navbar_superior.dart';
@@ -129,7 +114,13 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
     );
   }
 
+  /// Ctrl+F: con búsqueda propia de la pantalla, el campo se abre adentro de la barra (`.sbar` del mock); si no, el
+  /// Asistente, que también busca productos (igual que el mock).
   void _abrirBusqueda() {
+    if (widget.busqueda == null) {
+      unawaited(_abrirAsistente());
+      return;
+    }
     setState(() => _buscando = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focoBusqueda.requestFocus();
@@ -171,16 +162,8 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
 
   @override
   Widget build(BuildContext context) {
-    final anchoAbierta = MediaQuery.sizeOf(context).width * NavbarSuperior.fraccionBusquedaAbierta;
     final campo = widget.busqueda == null
-        ? BarraBusquedaGlobal(
-            key: ValueKey('busqueda_global_$_vueltaBusqueda'),
-            db: widget.db,
-            anchoDropdown: anchoAbierta,
-            onElegir: _irAVentaConTexto,
-            foco: _focoBusqueda,
-            alSalir: _cerrarBusqueda,
-          )
+        ? null
         : CampoBusquedaContextual(
             key: ValueKey('busqueda_contextual_$_vueltaBusqueda'),
             busqueda: widget.busqueda!,
@@ -188,26 +171,18 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
             alSalir: _cerrarBusqueda,
           );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-          child: NavbarSuperior(
-            claveActiva: widget.claveActiva,
-            items: _items,
-            onSeleccionar: _seleccionar,
-            izquierda: BotonCajaDeGestion(db: widget.db),
-            onAbrirAsistente: () => unawaited(_abrirAsistente()),
-            acciones: const BotonNotificaciones(),
-            busqueda: campo,
-            buscando: _buscando,
-            onAbrirBusqueda: _abrirBusqueda,
-            onCerrarBusqueda: _cerrarBusqueda,
-          ),
-        ),
-        Expanded(child: widget.child),
-      ],
+    return NavbarSuperior(
+      claveActiva: widget.claveActiva,
+      items: _items,
+      onSeleccionar: _seleccionar,
+      izquierda: BotonCajaDeGestion(db: widget.db),
+      onAbrirAsistente: () => unawaited(_abrirAsistente()),
+      acciones: const BotonNotificaciones(),
+      busqueda: campo,
+      buscando: _buscando,
+      onAbrirBusqueda: _abrirBusqueda,
+      onCerrarBusqueda: _cerrarBusqueda,
+      child: widget.child,
     );
   }
 }

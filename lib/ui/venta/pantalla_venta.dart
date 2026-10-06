@@ -37,7 +37,6 @@ import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import 'cancelar_venta_con_deshacer.dart';
-import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
 import '../navegacion/acciones_caja.dart';
@@ -47,17 +46,14 @@ import '../navegacion/boton_notificaciones.dart';
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
-import '../tema/tokens.dart';
 import 'acciones_venta.dart';
-import 'columna_busqueda.dart';
-import 'columna_carrito.dart';
-import 'columna_cobro.dart';
 import 'dialogo_apertura_caja.dart';
 import 'dialogo_arqueo_intermedio.dart';
 import 'dialogo_movimiento_rapido.dart';
 import 'dialogo_pagar_proveedor_rapido.dart';
 import 'venta_controlador.dart';
-import '../tema/iconos.dart';
+import 'vista_venta.dart';
+import '../kit/kit.dart';
 import 'elegir_tarjeta.dart';
 
 class PantallaVenta extends StatefulWidget {
@@ -476,7 +472,12 @@ class _PantallaVentaState extends State<PantallaVenta>
           onIngreso: _abrirIngresoRapido,
           onCerrar: _irACierre,
         );
-        return BotonCaja(estado: estado, acciones: acciones);
+        return BotonCaja(
+          estado: estado,
+          nombre: c.nombreDeLaCaja,
+          detalle: sesion == null ? null : desdeCuando(sesion),
+          acciones: acciones,
+        );
       },
     );
   }
@@ -504,159 +505,36 @@ class _PantallaVentaState extends State<PantallaVenta>
         body: SafeArea(
           child: Consumer<VentaControlador>(
             builder: (context, c, _) {
-              // Primer frame, antes de que `cargarTodo()` resuelva: todavía
-              // no hay sesión (ni se sabe si hay una) para decidir entre el
-              // layout de venta o "Caja cerrada". Nada que mostrar todavía,
-              // mismo criterio que el arranque de `main.dart`.
+              // Primer cuadro, antes de que `cargarTodo()` resuelva: todavía no se sabe si hay caja abierta.
               if (c.cargando) return const SizedBox.shrink();
-
-              // La campanita va a la derecha, antes de la tuerca. El arqueo sugerido cada 2 horas es parte de los turnos; los
-              // avisos de Mercado Pago (etapa D) no, así que la campanita está siempre y cada parte decide si se muestra.
-              final campanita = BotonNotificaciones(
-                hayArqueoVencido: c.arqueoIntermedioVencido,
-                onHacerArqueo: _hacerArqueoIntermedio,
-              );
               final hayVenta = c.sesion != null && !c.sesionVencida;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // "Estética Google" (El dueño, rediseño 2026-09-25): navbar
-                  // a la izquierda, búsqueda al centro con ANCHO FIJO (no
-                  // `Expanded` — El dueño: "la barra de busqueda debe ocpar un
-                  // espacio fijo al centro, no extenderse en todos lados"),
-                  // acciones de caja al extremo derecho — mismo patrón que
-                  // la franja superior de Gmail/Drive. Sin sesión activa no
-                  // hay nada que buscar (el handler global de teclado ya
-                  // bloquea toda entrada en ese caso, ver más abajo) — la
-                  // navbar sola vuelve a quedar sin acompañantes.
-                  // Rediseño "antigravity": la barra de arriba lleva la marca,
-                  // las secciones en pastillas y las acciones de caja; la
-                  // búsqueda baja a la columna de productos, debajo del
-                  // título "Vender" (igual que el mock).
-                  // La búsqueda de Venta no se esconde detrás de la lupa: es el campo único (y el lector de códigos escribe
-                  // ahí), siempre visible en la columna de productos (CLAUDE.md, "Pantalla de venta"). Ctrl+F lo enfoca.
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                    child: NavbarSuperior(
-                      claveActiva: 'venta',
-                      items: _itemsNav,
-                      onSeleccionar: _onSeleccionarSeccion,
-                      izquierda: _construirBotonCaja(c),
-                      onAbrirAsistente: () => unawaited(_abrirAsistente()),
-                      acciones: hayVenta ? campanita : null,
-                    ),
-                  ),
-                  Expanded(
-                    child: c.sesion == null
+              return NavbarSuperior(
+                claveActiva: 'venta',
+                items: _itemsNav,
+                onSeleccionar: _onSeleccionarSeccion,
+                izquierda: _construirBotonCaja(c),
+                onAbrirAsistente: () => unawaited(_abrirAsistente()),
+                acciones: BotonNotificaciones(
+                  hayArqueoVencido: hayVenta && c.arqueoIntermedioVencido,
+                  onHacerArqueo: hayVenta ? _hacerArqueoIntermedio : null,
+                ),
+                child: c.sesion == null
+                    ? _EstadoBloqueado(
+                        titulo: 'Caja cerrada.',
+                        detalle: 'Abrí la caja con los tres montos para empezar a vender.',
+                        etiquetaBoton: 'Abrir caja',
+                        icono: Ic.cash,
+                        onPressed: _abrirCaja,
+                      )
+                    : c.sesionVencida
                         ? _EstadoBloqueado(
-                            mensaje: 'Caja cerrada.',
-                            etiquetaBoton: 'Abrir caja',
-                            onPressed: _abrirCaja,
-                          )
-                        : c.sesionVencida
-                        ? _EstadoBloqueado(
-                            mensaje:
-                                'Queda una sesión de un día anterior sin cerrar.',
+                            titulo: 'Queda una sesión de un día anterior sin cerrar.',
+                            detalle: 'Se cierra contando la caja; recién después se puede vender.',
                             etiquetaBoton: 'Cerrar caja',
+                            icono: Ic.calc,
                             onPressed: _irACierre,
                           )
-                        : Padding(
-                            padding: const EdgeInsets.all(Espaciado.lg),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // El aviso de arqueo cada 2hs ya no vive acá
-                                // (El dueño, tercera pasada: "NO QUIERO QUE
-                                // APAREZCA EL COSO DEL ARQUEO OCUPANDO
-                                // TODO... UN APARTADO NOTIFICACIONES") — se
-                                // mudó a `_BotonNotificaciones`, en la
-                                // franja superior.
-                                // Rediseño de composición (2026-09-25,
-                                // segunda pasada: El dueño mandó una
-                                // referencia de POS y contestó "1 pero
-                                // manteniendo la estructura de dropdown")
-                                // — dos zonas: izquierda la grilla navegable
-                                // por categoría (los resultados de escribir
-                                // siguen colgando de la barra, arriba, sin
-                                // relación con esto; cuarta pasada: se sacó
-                                // la tira de accesos directos de encima, la
-                                // grilla ya cubre el acceso rápido táctil);
-                                // derecha un panel FIJO con el carrito
-                                // (scroll propio si no entra completo —
-                                // regla dura vieja de "sin scroll" revisada
-                                // a propósito, ver CLAUDE.md) y el cobro al
-                                // pie.
-                                Expanded(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            // Sin título (rediseño v4): el buscador va arriba de todo, grande, y al
-                                            // lado "Pagar proveedor", lo que más se hace además de vender.
-                                            // El desplegable de resultados cuelga del campo pero mide todo el ancho de la columna
-                                            // (no solo el del campo, que se achica por el botón): si no, las filas pierden el stock.
-                                            LayoutBuilder(
-                                              builder: (context, restricciones) => Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: SizedBox(
-                                                      height: 64,
-                                                      child: BarraBusquedaVenta(anchoDropdown: restricciones.maxWidth),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: Espaciado.md),
-                                                  SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: Espaciado.lg),
-                                            const Expanded(
-                                              child: RejillaProductos(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: Espaciado.md),
-                                      SizedBox(
-                                        width: Medidas.anchoPanelCobroVenta,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Expanded(
-                                              child: ColumnaCarrito(
-                                                ventaConfirmada:
-                                                    c.ultimaVentaId,
-                                                totalConfirmadoCentavos: c
-                                                    .ultimoTotalCobradoCentavos,
-                                                onImprimir:
-                                                    _imprimirUltimoTicket,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              height: Espaciado.md,
-                                            ),
-                                            PanelCobro(
-                                              usuarioId:
-                                                  c.sesion?.usuarioAbrioId ?? 0,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-                ],
+                        : VistaVenta(onPagarProveedor: _pagarProveedor, onImprimir: _imprimirUltimoTicket),
               );
             },
           ),
@@ -666,68 +544,46 @@ class _PantallaVentaState extends State<PantallaVenta>
   }
 }
 
-/// Reemplaza el carrito cuando no se puede vender — sin sesión abierta, o
-/// con una sesión abierta pero de un día anterior (Regla 5). El resto de la
-/// pantalla (barra lateral, navegación) sigue disponible igual: El dueño,
-/// 2026-09-06, "que no salga obligatoriamente al abrir la app" — el bloqueo
-/// es solo para vender, nunca para el resto de la app.
+/// Reemplaza a la venta cuando no se puede vender (sin caja abierta, o con una de un día anterior, Regla 5). El resto
+/// de la app sigue navegable (El dueño, 2026-09-06: el bloqueo es solo para vender).
 class _EstadoBloqueado extends StatelessWidget {
   const _EstadoBloqueado({
-    required this.mensaje,
+    required this.titulo,
+    required this.detalle,
     required this.etiquetaBoton,
+    required this.icono,
     required this.onPressed,
   });
 
-  final String mensaje;
+  final String titulo;
+  final String detalle;
   final String etiquetaBoton;
+  final Ic icono;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.p;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(mensaje),
-          const SizedBox(height: 12),
-          BotonPrimario(texto: etiquetaBoton, onPressed: onPressed),
-        ],
-      ),
-    );
-  }
-}
-
-/// "Pagar proveedor · Alt+P": pastilla oscura al lado del buscador (la acción principal de caja además de vender).
-class _BotonPagarProveedor extends StatelessWidget {
-  const _BotonPagarProveedor({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Tooltip(
-      message: 'Pagar proveedor (Alt+P)',
-      child: Material(
-        key: const Key('boton_pagar_proveedor'),
-        color: colores.textoPrimario,
-        borderRadius: BorderRadius.circular(999),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconoPlz(IconosPlazoleta.localShippingOutlined, size: 22, color: colores.fondo),
-                const SizedBox(width: Espaciado.md),
-                Text('Pagar proveedor', style: textTheme.titleMedium?.copyWith(color: colores.fondo)),
-                const SizedBox(width: Espaciado.md),
-                Text('Alt+P', style: textTheme.bodySmall?.copyWith(color: colores.fondo.withValues(alpha: 0.65), fontWeight: Pesos.fuerte)),
-              ],
-            ),
+      child: Aparecer.revelar(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(color: p.s, shape: BoxShape.circle),
+                child: Center(child: Icono(icono, size: 40, color: p.mute, grosor: 1.8)),
+              ),
+              const SizedBox(height: 22),
+              Text(titulo, textAlign: TextAlign.center, style: Tipos.h2(p.tinta)),
+              const SizedBox(height: 10),
+              Text(detalle, textAlign: TextAlign.center, style: Tipos.lead(p.mute)),
+              const SizedBox(height: 26),
+              Btn(etiquetaBoton, variante: VarBtn.blue, tam: TamBtn.lg, onTap: onPressed),
+            ],
           ),
         ),
       ),

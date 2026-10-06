@@ -19,7 +19,10 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_secciones_menu.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
+import '../carga_historica/pantalla_carga_historica.dart';
+import '../comparar_precios/pantalla_comparar_precios.dart';
 import '../configuracion/pantalla_configuracion.dart';
+import '../stock_proveedor/pantalla_stock_proveedor.dart';
 import '../dashboard/pantalla_dashboard.dart';
 import '../encargues/pantalla_encargues.dart';
 import '../historial/pantalla_historial.dart';
@@ -71,7 +74,7 @@ Future<List<ItemNavbarSuperior>> itemsNavGestion(AppDatabase db) async {
 /// se salta.
 Future<void> navegarASeccionDeGestion(
   BuildContext context,
-  String clave, {
+  String destino, {
   required AppDatabase db,
   required int usuarioId,
   int? sesionCajaId,
@@ -79,6 +82,10 @@ Future<void> navegarASeccionDeGestion(
   int? encarguePendienteId,
 }) async {
   final navigator = Navigator.of(context);
+  // Destinos de los mega-menús ("historial/cierres"): la sección y, adentro, a dónde ir.
+  final partes = destino.split('/');
+  final sub = partes.length > 1 ? partes[1] : null;
+  final clave = partes.first;
   if (clave == 'venta' && ventaEsRaiz.value) {
     if (textoBusquedaPendiente != null || encarguePendienteId != null) {
       pedidoParaVenta.value = PedidoVenta(texto: textoBusquedaPendiente, encargueId: encarguePendienteId);
@@ -94,6 +101,8 @@ Future<void> navegarASeccionDeGestion(
   final Widget? pantalla = switch (clave) {
     'dashboard' => PantallaDashboard(db: db),
     'venta' => PantallaVenta(db: db, textoBusquedaPendiente: textoBusquedaPendiente, encarguePendienteId: encarguePendienteId),
+    'proveedores' when sub == 'conteo' => PantallaStockProveedor(db: db, usuarioId: usuarioId),
+    'proveedores' when sub == 'comparar' => PantallaCompararPrecios(db: db, usuarioId: usuarioId, sesionCajaId: sesionIdReal),
     'proveedores' => PantallaProveedores(
       db: db,
       usuarioId: usuarioId,
@@ -104,7 +113,8 @@ Future<void> navegarASeccionDeGestion(
       usuarioId: usuarioId,
       sesionCajaId: sesionIdReal,
     ),
-    'historial' => PantallaHistorial(db: db, usuarioId: usuarioId),
+    'historial' when sub == 'carga' => PantallaCargaHistorica(db: db, usuarioId: usuarioId),
+    'historial' => PantallaHistorial(db: db, usuarioId: usuarioId, pestanaInicial: sub),
     'encargues' => PantallaEncargues(db: db, usuarioId: usuarioId, sesionCajaId: sesionIdReal),
     'configuracion' => PantallaConfiguracion(db: db, usuarioId: usuarioId),
     _ => null,

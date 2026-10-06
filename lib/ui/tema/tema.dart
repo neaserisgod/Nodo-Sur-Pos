@@ -15,6 +15,7 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
+import '../kit/paleta.dart';
 import 'acentos.dart';
 import 'colores_escritorio.dart';
 import 'tokens.dart';
@@ -72,7 +73,7 @@ abstract final class TemaPlazoleta {
 
     return base.copyWith(
       textTheme: textTheme,
-      extensions: [colores, acentos],
+      extensions: [colores, acentos, brillo == Brightness.dark ? paletaMockOscura : paletaMockClara],
       dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: Espaciado.lg),
       appBarTheme: AppBarTheme(
         backgroundColor: colores.fondo,

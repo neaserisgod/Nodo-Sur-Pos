@@ -30,10 +30,13 @@ import '../tema/esqueleto.dart';
 enum _Vista { ventas, cierres, movimientos }
 
 class PantallaHistorial extends StatefulWidget {
-  const PantallaHistorial({super.key, required this.db, required this.usuarioId});
+  const PantallaHistorial({super.key, required this.db, required this.usuarioId, this.pestanaInicial});
 
   final AppDatabase db;
   final int usuarioId;
+
+  /// Con qué pestaña abre ('movimientos', 'cierres'); null = ventas. La usan los mega-menús de la barra.
+  final String? pestanaInicial;
 
   @override
   State<PantallaHistorial> createState() => _PantallaHistorialState();
@@ -44,7 +47,11 @@ class _PantallaHistorialState extends State<PantallaHistorial> with RefrescoPorC
   void alCambiarDesdeElCelular() => _c.cargarTodo();
 
   late final HistorialControlador _c;
-  _Vista _vista = _Vista.ventas;
+  late _Vista _vista = switch (widget.pestanaInicial) {
+    'movimientos' => _Vista.movimientos,
+    'cierres' => _Vista.cierres,
+    _ => _Vista.ventas,
+  };
 
   /// Buscador de arriba (contextual): lo que busca depende de la pestaña.
   String _busqueda = '';

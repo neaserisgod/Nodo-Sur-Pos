@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/ic.dart';
 import 'package:la_plazoleta/ui/navegacion/boton_caja.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 
@@ -12,7 +13,7 @@ void main() {
     for (final (estado, texto) in [
       (EstadoCajaNavbar.abierta, 'Caja abierta'),
       (EstadoCajaNavbar.cerrada, 'Caja cerrada'),
-      (EstadoCajaNavbar.deAyerSinCerrar, 'Caja de ayer'),
+      (EstadoCajaNavbar.deAyerSinCerrar, 'Caja de ayer sin cerrar'),
     ]) {
       await tester.pumpWidget(_app(BotonCaja(estado: estado, acciones: const [])));
       expect(find.text(texto), findsOneWidget);
@@ -27,9 +28,9 @@ void main() {
           estado: EstadoCajaNavbar.abierta,
           detalle: 'desde las 8:02',
           acciones: [
-            AccionMenuCaja(clave: 'arqueo', etiqueta: 'Hacer arqueo', icono: Icons.history, nota: 'pendiente', onTap: () => hechas.add('arqueo')),
-            AccionMenuCaja(clave: 'gasto', etiqueta: 'Gasto', icono: Icons.add, atajo: '-', onTap: () => hechas.add('gasto')),
-            AccionMenuCaja(clave: 'cerrar', etiqueta: 'Cerrar caja', icono: Icons.lock, peligro: true, separadorAntes: true, onTap: () => hechas.add('cerrar')),
+            AccionMenuCaja(clave: 'arqueo', etiqueta: 'Hacer arqueo', icono: Ic.clock, nota: 'pendiente', onTap: () => hechas.add('arqueo')),
+            AccionMenuCaja(clave: 'gasto', etiqueta: 'Gasto', icono: Ic.plus, atajo: '-', onTap: () => hechas.add('gasto')),
+            AccionMenuCaja(clave: 'cerrar', etiqueta: 'Cerrar caja', icono: Ic.calc, peligro: true, separadorAntes: true, onTap: () => hechas.add('cerrar')),
           ],
         ),
       ),
@@ -48,7 +49,7 @@ void main() {
 
   testWidgets('una fila sin acción está apagada y no hace nada', (tester) async {
     await tester.pumpWidget(
-      _app(BotonCaja(estado: EstadoCajaNavbar.cerrada, acciones: const [AccionMenuCaja(clave: 'turno', etiqueta: 'Cambiar de turno', icono: Icons.swap_horiz, onTap: null)])),
+      _app(BotonCaja(estado: EstadoCajaNavbar.cerrada, acciones: const [AccionMenuCaja(clave: 'turno', etiqueta: 'Cambiar de turno', icono: Ic.swap, onTap: null)])),
     );
     await tester.tap(find.byKey(const Key('boton_caja')));
     await tester.pumpAndSettle();

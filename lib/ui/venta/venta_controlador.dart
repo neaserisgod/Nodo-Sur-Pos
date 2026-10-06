@@ -128,6 +128,9 @@ class VentaControlador extends ChangeNotifier {
   ConfiguracionNegocio? configuracionNegocio;
   SesionCaja? sesion;
 
+  /// Quién abrió la caja ("Caja · Ana" en la barra).
+  String? nombreDeLaCaja;
+
   /// Null si la sesión abierta todavía no tuvo ningún arqueo intermedio —
   /// en ese caso el contador de 2hs corre desde `sesion.fechaApertura`.
   DateTime? _ultimoArqueoIntermedio;
@@ -201,6 +204,11 @@ class VentaControlador extends ChangeNotifier {
       return 0;
     }
   }
+
+  /// Lo que descuenta lo escrito en el campo de descuento sobre el subtotal (la vista previa del diálogo; el total real
+  /// lo calcula `calcularTotalVenta` con el medio elegido).
+  int get descuentoSobreSubtotalCentavos =>
+      calcularDescuento(baseCentavos: subtotalCentavos, tipo: tipoDescuento, valor: _valorDescuentoIngresado);
 
   /// Última venta cobrada en esta sesión de pantalla, y su total. Viven acá
   /// (no como estado local de `PantallaVenta`) porque hay DOS caminos para
@@ -345,6 +353,9 @@ class VentaControlador extends ChangeNotifier {
     configuracion = await db.select(db.configuracionTabla).getSingle();
     configuracionNegocio = await configuracionNegocioActual(db);
     sesion = await sesionAbierta(db);
+    nombreDeLaCaja = sesion == null
+        ? null
+        : (await (db.select(db.usuarios)..where((u) => u.id.equals(sesion!.usuarioAbrioId))).getSingleOrNull())?.nombre;
     await _cargarPestanas();
     _ultimoArqueoIntermedio = sesion == null
         ? null
@@ -574,6 +585,17 @@ class VentaControlador extends ChangeNotifier {
         costoPorKiloCentavos: linea.costoPorKiloCentavos,
       ),
     );
+  }
+
+  /// "−"/"+" de un pesable (mock v4, 2026-10-06: el stepper también va en los pesables, de a 50 g). Por debajo de 1 g
+  /// saca la línea, igual que restar en 1 a una línea por unidad.
+  static const pasoGramos = 50;
+
+  void ajustarGramos(int index, int delta) {
+    if (index < 0 || index >= carrito.length) return;
+    final linea = carrito[index];
+    if (linea is! LineaVentaPesable) return;
+    editarGramosExacto(index, linea.gramos + delta * pasoGramos);
   }
 
   // ─── Ventas abiertas (pestañas) ──────────────────────────────────────
