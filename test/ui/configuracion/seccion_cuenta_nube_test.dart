@@ -93,6 +93,45 @@ void main() {
     expect(tester.widget<OutlinedButton>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(OutlinedButton))).onPressed, isNotNull);
   });
 
+  group('sucursal y equipo (solo informativo)', () {
+    const equipoDueno = {
+      'org': {'id': 1, 'name': 'La Plazoleta'},
+      'branch': {'id': 2, 'name': 'Centro'},
+      'role': 'owner',
+      'members': [
+        {'name': 'Ana Gómez', 'email': 'ana@x.com', 'role': 'owner', 'allBranches': true, 'branches': <String>[]},
+        {'name': null, 'email': 'emp@x.com', 'role': 'employee', 'allBranches': false, 'branches': ['Centro']},
+      ],
+    };
+
+    Future<http.Response> servidor(http.Request r, {Map<String, dynamic>? equipo, int estadoEquipo = 200}) async =>
+        r.url.path == '/api/device/team' ? _json(equipo ?? {}, estadoEquipo) : _json(_estado());
+
+    testWidgets('el dueño ve su sucursal y todo el equipo con rol y sucursales', (tester) async {
+      await almacen.guardar(_cuenta);
+      await abrirSeccion(tester, nubeCon((r) => servidor(r, equipo: equipoDueno)));
+      expect(find.byKey(const Key('nube_equipo')), findsOneWidget);
+      expect(find.text('La Plazoleta · Sucursal: Centro · Tu rol: Dueño'), findsOneWidget);
+      expect(find.text('Ana Gómez · Dueño · todas las sucursales'), findsOneWidget);
+      expect(find.text('emp@x.com · Empleado · Centro'), findsOneWidget, reason: 'sin nombre guardado se muestra el mail');
+    });
+
+    testWidgets('un encargado ve su sucursal y no la lista del equipo', (tester) async {
+      await almacen.guardar(_cuenta);
+      await abrirSeccion(tester, nubeCon((r) => servidor(r, equipo: {'org': {'id': 1, 'name': 'La Plazoleta'}, 'branch': {'id': 2, 'name': 'Centro'}, 'role': 'manager', 'members': null})));
+      expect(find.byKey(const Key('nube_sucursal')), findsOneWidget);
+      expect(find.text('Equipo'), findsNothing);
+    });
+
+    testWidgets('un sitio que todavía no ofrece el equipo (404), o que falla, no muestra nada ni cuenta como error', (tester) async {
+      await almacen.guardar(_cuenta);
+      await abrirSeccion(tester, nubeCon((r) => servidor(r, estadoEquipo: 404)));
+      expect(find.byKey(const Key('nube_equipo')), findsNothing);
+      expect(find.byKey(const Key('nube_error')), findsNothing);
+      expect(find.byKey(const Key('nube_vinculada')), findsOneWidget);
+    });
+  });
+
   testWidgets('si la sync quedó atrás de la nube, lo dice y ofrece volver a bajar todo (sin mandar a restaurar)', (tester) async {
     await almacen.guardar(_cuenta);
     final nube = nubeCon((r) async => _json(_estado(copias: [_copia])), conSync: true);

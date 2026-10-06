@@ -33,7 +33,7 @@ Cosas que están en el mock pero **no existen en la app real**. Cada una necesit
 2. **Excluir un proveedor de la reposición** — hoy el "a separar" de cada día es una fórmula única (`domain/reposicion.dart`); excluir un proveedor cambia el total a separar y el cierre.
 3. **Rubro y logo del ticket** — el rubro ya existe como plantillas (`plantillas_rubro.dart`); el logo necesita guardarse y entrar al PDF y al ticket de la terminal.
 4. **WhatsApp del proveedor** — es un campo nuevo; ¿para qué se usa (abrir chat, mandar el pedido)?
-5. **Sucursal y Miembros** — la app no tiene sucursales ni miembros; ¿se saca del mock o es para la cuenta de Nodo Sur?
+5. **Sucursal y Miembros** — **HECHO del lado de la PC (2026-10-06); falta publicar el endpoint en el sitio**: la lista de miembros y de sucursales del sitio solo contesta a la sesión web del dueño, no al token de la PC, así que se escribió un endpoint nuevo de solo lectura, `GET /api/device/team` (sucursal de la PC; y el equipo solo si la PC la vinculó el dueño). Está como patch probado en `docs/nodosur/` (ver `LEEME.md`) y **no está publicado**: este repo no puede subir a `NodoSurPage`. La PC lee ese endpoint y muestra una tarjeta informativa en Configuración › Cuenta de Nodo Sur (`seccion_cuenta_nube.dart`); si el sitio todavía no lo tiene (404), no muestra nada.
 6. **Asistente con pregunta libre (Ctrl+K)** — hoy la IA solo sugiere promos y lee facturas. ¿Qué puede responder? (necesita definir qué datos ve y que nunca cambie nada sola.)
 7. **"Venta cobrada" que se cierra sola** — ¿se imprime el ticket automáticamente? Hoy se imprime con el botón.
 

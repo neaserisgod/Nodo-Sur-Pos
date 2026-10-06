@@ -1,0 +1,170 @@
+From 92a77b48fda6f9141d751bc8ff61749d2e452ef0 Mon Sep 17 00:00:00 2001
+From: x <x@x>
+Date: Tue, 6 Oct 2026 13:26:52 +0000
+Subject: [PATCH] wip local
+
+---
+ README.md                         |  2 +-
+ functions/api/device/team.js      | 40 ++++++++++++++++++
+ tests/equipo_dispositivo.test.mjs | 68 +++++++++++++++++++++++++++++++
+ worker.js                         |  2 +
+ 4 files changed, 111 insertions(+), 1 deletion(-)
+ create mode 100644 functions/api/device/team.js
+ create mode 100644 tests/equipo_dispositivo.test.mjs
+
+diff --git a/README.md b/README.md
+index 3da2d05..d2dc89c 100644
+--- a/README.md
++++ b/README.md
+@@ -27,7 +27,7 @@ Hoy todo cuelga del `sub` de una persona. El modelo nuevo agrega el **negocio**
+ - **`billing_email` queda aparte del dueño**: Mercado Pago cobra por el mail del pagador y la propiedad se puede transferir.
+ - **El panel del negocio (`/negocio/`) es distinto de `/admin/`**: `/admin/` es de Nodo Sur (solo `ADMIN_EMAILS`); un cliente es dueño de su negocio y no admin de la plataforma.
+ - **Acceso por negocio (fase 2)**: `functions/_lib/access.js` decide descargas y copias. Lo paga el negocio (se verifica el `billing_email` en Mercado Pago) y cada rol hace lo que permite `permisos.js`. Quien no tiene negocio sigue entrando por la suscripción de su propio mail.
+-  - Vincular un CELULAR (`/vincular/?tipo=celular`, `tipo: 'celular'` en `/api/device/authorize`): lo vincula cada miembro (empleado, encargado o dueño) con SU cuenta, solo en una sucursal donde trabaja (`vincular_celular` en `permisos.js`). Así el celular sabe quién es: `GET /api/device/me` (token de dispositivo) devuelve `{email, name, role, orgId, branchId}` y la app toma el perfil de ahí, sin selector. El nombre sale de la cuenta de Google y queda en `devices.person_name`.
++  - Vincular un CELULAR (`/vincular/?tipo=celular`, `tipo: 'celular'` en `/api/device/authorize`): lo vincula cada miembro (empleado, encargado o dueño) con SU cuenta, solo en una sucursal donde trabaja (`vincular_celular` en `permisos.js`). Así el celular sabe quién es: `GET /api/device/me` (token de dispositivo) devuelve `{email, name, role, orgId, branchId}` y la app toma el perfil de ahí, sin selector. El nombre sale de la cuenta de Google y queda en `devices.person_name`. `GET /api/device/team` (token de dispositivo, solo lectura) le da a la PC el nombre de su sucursal y, si la vinculó el dueño, el equipo del negocio (nombre, mail, rol y sucursales; nunca invitaciones): la PC lo muestra en Configuración → Cuenta de Nodo Sur. Un encargado o un empleado recibe `members: null`.
+   - Vincular una PC (`/api/device/authorize`, opcionales `orgId` y `branchId`): solo el dueño. La primera vez crea su negocio y su "Sucursal principal" y pasa a ese negocio sus PC y copias anteriores. Una PC deja de valer si quien la vinculó deja de ser miembro activo.
+   - Copias: cada una queda en la sucursal de su PC y se rotan **las últimas 5 por sucursal**. La web muestra todas al dueño y solo las asignadas a un encargado; un empleado no ve ninguna. Un id de otro negocio devuelve 404.
+   - El barrido de cuentas inactivas no marca a quien está cubierto por la suscripción de su negocio. El cron diario corre `backfillOrgs` (idempotente) para completar lo anterior al modelo.
+diff --git a/functions/api/device/team.js b/functions/api/device/team.js
+new file mode 100644
+index 0000000..3577a8f
+--- /dev/null
++++ b/functions/api/device/team.js
+@@ -0,0 +1,40 @@
++import { json } from '../../_lib/util.js';
++import { actorOf } from '../../_lib/actor.js';
++import { hasDB } from '../../_lib/db.js';
++import { getMembership, listBranches, getOrg } from '../../_lib/orgs.js';
++
++// El equipo del negocio visto desde la PC (solo lectura, con el token de dispositivo): en qué sucursal está esta PC y, si quien la
++// vinculó es el dueño, quiénes trabajan en el negocio con su rol y sus sucursales. La PC lo muestra en Configuración → Cuenta.
++// Las listas completas (/api/org/members, /api/org/branches) siguen siendo solo de la sesión web del dueño: acá no se puede
++// cambiar nada. Un encargado o un empleado ve su sucursal y nada del resto del equipo.
++export async function onRequestGet({ request, env }) {
++  const a = await actorOf(request, env);
++  if (!a || a.via !== 'device') return json({ error: 'no_device' }, 401);
++  const orgId = a.device.owner_org;
++  if (!hasDB(env) || !orgId) return json({ org: null, branch: null, role: null, members: null });
++
++  const yo = await getMembership(env, orgId, a.sub);
++  const role = yo && yo.status === 'active' ? yo.role : null;
++  const org = await getOrg(env, orgId);
++  const sucursales = await listBranches(env, orgId);
++  const mia = sucursales.find((b) => Number(b.id) === Number(a.device.branch_id));
++  const cuerpo = {
++    org: org ? { id: org.id, name: org.name } : null,
++    branch: mia ? { id: mia.id, name: mia.name } : null,
++    role,
++    members: null,
++  };
++  if (role !== 'owner') return json(cuerpo);
++
++  const nombres = new Map(sucursales.map((b) => [Number(b.id), b.name]));
++  const filas = (await env.DB.prepare(
++    `SELECT m.id, m.email, m.role, m.all_branches, u.name AS user_name FROM memberships m LEFT JOIN users u ON u.sub = m.user_sub
++     WHERE m.org_id = ?1 AND m.status = 'active' ORDER BY CASE m.role WHEN 'owner' THEN 0 ELSE 1 END, m.id`).bind(orgId).all()).results;
++  cuerpo.members = [];
++  for (const m of filas) {
++    const ramas = (await env.DB.prepare('SELECT branch_id FROM membership_branches WHERE membership_id = ?1 ORDER BY branch_id').bind(m.id).all()).results
++      .map((r) => nombres.get(Number(r.branch_id))).filter(Boolean);
++    cuerpo.members.push({ name: m.user_name || null, email: m.email, role: m.role, allBranches: Boolean(m.all_branches), branches: ramas });
++  }
++  return json(cuerpo);
++}
+diff --git a/tests/equipo_dispositivo.test.mjs b/tests/equipo_dispositivo.test.mjs
+new file mode 100644
+index 0000000..de0958c
+--- /dev/null
++++ b/tests/equipo_dispositivo.test.mjs
+@@ -0,0 +1,68 @@
++// /api/device/team: la PC lee su sucursal y (si la vinculó el dueño) el equipo del negocio. Solo lectura, con el token de dispositivo.
++import assert from 'node:assert/strict';
++import { createOrg, ensureOrgTables } from '../functions/_lib/orgs.js';
++import { upsertDevice, signDeviceToken } from '../functions/_lib/devices.js';
++import * as team from '../functions/api/device/team.js';
++import { mkEnv, addUser, sess, req, nowS } from './helpers-nube.mjs';
++
++let pass = 0; const t = async (n, f) => { await f(); pass++; console.log('ok  ', n); };
++const bearer = (tok) => ({ Authorization: `Bearer ${tok}` });
++
++async function negocio(env) {
++  await ensureOrgTables(env); addUser(env, 'duena@x.com', 'sd');
++  const r = await createOrg(env, { sub: 'sd', email: 'duena@x.com', name: 'Dueña', orgName: 'La Plazoleta' });
++  const b2 = env.DB.raw.prepare("INSERT INTO branches (org_id, name, active, created_at) VALUES (?, 'Centro', 1, ?)").run(r.org.id, nowS());
++  return { org: r.org, a: r.branch.id, b: Number(b2.lastInsertRowid) };
++}
++function miembro(env, n, email, sub, role, { all = 0, branches = [], status = 'active' } = {}) {
++  addUser(env, email, sub);
++  const m = env.DB.raw.prepare('INSERT INTO memberships (org_id, user_sub, email, role, status, all_branches, created_at) VALUES (?,?,?,?,?,?,?)').run(n.org.id, sub, email, role, status, all, nowS());
++  for (const b of branches) env.DB.raw.prepare('INSERT INTO membership_branches (membership_id, branch_id) VALUES (?,?)').run(m.lastInsertRowid, b);
++}
++async function pc(env, n, branch, sub, email, id) {
++  await upsertDevice(env, { id, sub, email, name: 'PC', orgId: n.org.id, branchId: branch });
++  return signDeviceToken(env, { sub, email, deviceId: id });
++}
++const pedir = (env, tok) => team.onRequestGet({ request: req('/api/device/team', { headers: tok ? bearer(tok) : {} }), env });
++const ID = (c) => `pc-${c}-0123456789abcdefghij`;
++
++await t('la PC de la dueña ve su sucursal y todo el equipo con rol y sucursales', async () => {
++  const env = mkEnv(); const n = await negocio(env);
++  miembro(env, n, 'enc@x.com', 'se', 'manager', { all: 1 }); miembro(env, n, 'emp@x.com', 'sm', 'employee', { branches: [n.b] });
++  const tok = await pc(env, n, n.b, 'sd', 'duena@x.com', ID('a'));
++  const j = await (await pedir(env, tok)).json();
++  assert.deepEqual(j.org, { id: n.org.id, name: 'La Plazoleta' });
++  assert.deepEqual(j.branch, { id: n.b, name: 'Centro' });
++  assert.equal(j.role, 'owner');
++  assert.deepEqual(j.members.map((m) => [m.email, m.role, m.allBranches, m.branches]), [
++    ['duena@x.com', 'owner', true, []],
++    ['enc@x.com', 'manager', true, []],
++    ['emp@x.com', 'employee', false, ['Centro']],
++  ]);
++});
++await t('un miembro quitado no aparece, y la invitación pendiente tampoco', async () => {
++  const env = mkEnv(); const n = await negocio(env);
++  miembro(env, n, 'fuera@x.com', 'sf', 'manager', { all: 1, status: 'removed' });
++  const tok = await pc(env, n, n.a, 'sd', 'duena@x.com', ID('a'));
++  const j = await (await pedir(env, tok)).json();
++  assert.deepEqual(j.members.map((m) => m.email), ['duena@x.com']);
++});
++await t('un encargado ve su sucursal pero NO la lista del equipo', async () => {
++  const env = mkEnv(); const n = await negocio(env); miembro(env, n, 'enc@x.com', 'se', 'manager', { branches: [n.a] });
++  const tok = await pc(env, n, n.a, 'se', 'enc@x.com', ID('e'));
++  const j = await (await pedir(env, tok)).json();
++  assert.equal(j.role, 'manager'); assert.equal(j.members, null); assert.equal(j.branch.name, 'Sucursal principal');
++});
++await t('sin token de dispositivo, con token roto o con la sesión web: 401', async () => {
++  const env = mkEnv(); await negocio(env);
++  assert.equal((await pedir(env, null)).status, 401);
++  assert.equal((await pedir(env, 'basura')).status, 401);
++  assert.equal((await team.onRequestGet({ request: req('/api/device/team', { cookie: await sess(env, 'duena@x.com', 'sd') }), env })).status, 401, 'es solo para la PC');
++});
++await t('quitada del negocio, la PC deja de valer', async () => {
++  const env = mkEnv(); const n = await negocio(env); miembro(env, n, 'enc@x.com', 'se', 'manager', { all: 1 });
++  const tok = await pc(env, n, n.a, 'se', 'enc@x.com', ID('e'));
++  env.DB.raw.prepare("UPDATE memberships SET status = 'removed' WHERE user_sub = 'se'").run();
++  assert.equal((await pedir(env, tok)).status, 401);
++});
++console.log(`\n${pass} pruebas OK (equipo desde la PC)`);
+diff --git a/worker.js b/worker.js
+index 100d9fe..e5585fb 100644
+--- a/worker.js
++++ b/worker.js
+@@ -23,6 +23,7 @@ import * as deviceAuthorize from './functions/api/device/authorize.js';
+ import * as deviceToken from './functions/api/device/token.js';
+ import * as devicePing from './functions/api/device/ping.js';
+ import * as deviceMe from './functions/api/device/me.js';
++import * as deviceTeam from './functions/api/device/team.js';
+ import * as devicePcLocal from './functions/api/device/pc_local.js';
+ import * as mpConexion from './functions/api/mp/conexion.js';
+ import * as mpOrden from './functions/api/mp/orden.js';
+@@ -65,6 +66,7 @@ const ROUTES = {
+   'POST /api/device/token': deviceToken.onRequestPost,
+   'POST /api/device/ping': devicePing.onRequestPost,
+   'GET /api/device/me': deviceMe.onRequestGet,
++  'GET /api/device/team': deviceTeam.onRequestGet,
+   'POST /api/device/pc-local': devicePcLocal.onRequestPost,
+   'GET /api/device/pc-local': devicePcLocal.onRequestGet,
+   'POST /api/device/revoke': devices.onRequestRevoke,
+-- 
+2.43.0
+
