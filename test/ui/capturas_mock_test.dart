@@ -14,6 +14,7 @@ import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
+import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
@@ -164,6 +165,36 @@ void main() {
             final lista = tester.widget<ListaProveedores>(find.byType(ListaProveedores));
             await tester.runAsync(() => lista.controlador.seleccionar(b.proveedores['quilmes']!));
             await tester.pump();
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+          },
+        );
+      });
+
+      testWidgets('separaciones$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(
+          tester,
+          'separaciones',
+          () => PantallaSeparaciones(db: b.db, usuarioId: b.usuarioId, sesionCajaId: b.sesionId),
+          oscuro: oscuro,
+          tamanio: tamanio,
+        );
+      });
+
+      testWidgets('separaciones ganancia$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(
+          tester,
+          'separaciones-ganancia',
+          () => PantallaSeparaciones(db: b.db, usuarioId: b.usuarioId, sesionCajaId: b.sesionId),
+          oscuro: oscuro,
+          tamanio: tamanio,
+          antes: () async {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+            await tester.pump();
+            await tester.tap(find.byKey(const Key('boton_ganancia')));
             await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
           },
         );

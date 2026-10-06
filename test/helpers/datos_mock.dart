@@ -146,5 +146,6 @@ Future<BaseMock> baseDelMock({bool conVentas = true}) async {
     await cargarDeuda(db, proveedorId: provs[id]!, montoCentavos: monto * 100, fecha: DateTime.now(), usuarioId: usuarioId);
   }
   await (db.update(db.proveedores)..where((p) => p.id.equals(provs['cigs']!))).write(const ProveedoresCompanion(cajaAparte: Value(true)));
+  await db.update(db.configuracionTabla).write(const ConfiguracionTablaCompanion(reservaDiariaFijosCentavos: Value(1200000)));
   return BaseMock(db, usuarioId, sesionId, prods, provs);
 }

@@ -1,19 +1,16 @@
-// "Separaciones" — rediseño sobre el mock de el dueño (2026-09-26, después de
-// una tabla de ocho columnas que "se ve nefasto, tenés que mover mucho la
-// cabeza para leerlo"). Todo se lee de arriba a abajo dentro de una
-// tarjeta, nunca a lo ancho de la pantalla:
+// "Separaciones", hecha desde cero como el mock v4 (`SCR.separaciones`, 2026-10-06):
 //
-// - Arriba, tres tarjetas de caja: Efectivo, Mercado Pago y Total — cobrado
-//   hoy, cuánto separar (grande) y cuánto te queda.
-// - Una tarjeta por proveedor, de mayor a menor: cuánto separar y de qué
-//   caja (dos chips). El tilde la marca separada (queda apagada, borde de
-//   acento); destildarla lo deshace.
-// - Al final, una tarjeta de progreso: cuántos van, cuánto falta por caja,
-//   "Marcar todo" / "Desmarcar todo".
+// - Arriba, cuatro bloques: a separar del cajón (negro), a separar de Mercado Pago (azul), la reserva diaria de fijos
+//   (amarillo) y lo que te queda (verde).
+// - Debajo, "A separar por proveedor": una fila por proveedor con su tilde, de dónde sale la plata, el monto y "Pagar".
+//   El tilde lo marca separado; destildarlo lo deshace (salvo que ya esté pagado). Arriba a la derecha, el avance.
 //
-// "Lo vendido" muestra, con el mismo esquema, vendido / costo / ganancia de
-// hoy, la semana o el mes. Sin "Pagar" a propósito (El dueño: "innecesario")
-// — pagar sigue en Proveedores → Avanzado.
+// "Qué separar" es siempre de hoy: la separación es diaria. Semana y Mes (y "Ganancia" para hoy) muestran lo vendido
+// por proveedor — vendido, reposición y ganancia —, que es lo que el mock llama "Ganancia". "Retirar plata" lleva a la
+// ganancia sin revisar de cada proveedor (Regla 13: se retira por proveedor, no un monto suelto).
+//
+// "Pagar" vuelve a estar en cada fila (el mock v4 del dueño, 2026-10-05, es más nuevo que el "innecesario" del
+// 2026-09-26): abre el pago rápido con el proveedor ya elegido.
 
 import 'dart:async';
 
@@ -22,21 +19,14 @@ import 'package:provider/provider.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_reposicion.dart' show SeparacionDelDia;
-import '../../domain/dinero.dart';
 import '../../domain/modulos.dart';
-import '../../servicios/modulos_activos.dart';
 import '../../domain/periodo.dart';
+import '../../servicios/modulos_activos.dart';
 import '../comun/armazon_gestion.dart';
-import '../navegacion/busqueda_contextual.dart';
+import '../kit/kit.dart';
 import '../navegacion/refresco_por_celular.dart';
-import '../comun/tarjetas.dart';
-import '../comun/estado_vacio.dart';
 import '../navegacion/route_observer.dart';
-import '../tema/acentos.dart';
-import '../tema/iconos.dart';
-import '../tema/presionable.dart';
-import '../tema/tema.dart';
-import '../tema/tokens.dart';
+import '../venta/dialogo_pagar_proveedor_rapido.dart';
 import 'dialogo_ganancia_proveedor.dart';
 import 'dialogo_sin_costo.dart';
 import 'separaciones_controlador.dart';
@@ -46,9 +36,6 @@ import 'separaciones_controlador.dart';
 /// del escritorio (El dueño, 2026-09-26: "como si tuviese que abrir y cerrar
 /// para que aparezca"). La base es chica: recargar cuesta nada.
 const _intervaloRecarga = Duration(seconds: 15);
-
-const double _anchoMaximoTarjeta = 340;
-const double _altoTarjeta = 232;
 
 class PantallaSeparaciones extends StatefulWidget {
   const PantallaSeparaciones({
@@ -66,8 +53,7 @@ class PantallaSeparaciones extends StatefulWidget {
   State<PantallaSeparaciones> createState() => _PantallaSeparacionesState();
 }
 
-class _PantallaSeparacionesState extends State<PantallaSeparaciones>
-    with RouteAware, RefrescoPorCelular {
+class _PantallaSeparacionesState extends State<PantallaSeparaciones> with RouteAware, RefrescoPorCelular {
   @override
   void alCambiarDesdeElCelular() => _c.cargarTodo();
 
@@ -76,10 +62,7 @@ class _PantallaSeparacionesState extends State<PantallaSeparaciones>
     usuarioId: widget.usuarioId,
     sesionCajaId: widget.sesionCajaId,
   )..cargarTodo();
-  late final Timer _recarga = Timer.periodic(
-    _intervaloRecarga,
-    (_) => _c.cargarTodo(),
-  );
+  late final Timer _recarga = Timer.periodic(_intervaloRecarga, (_) => _c.cargarTodo());
 
   @override
   void initState() {
@@ -107,64 +90,79 @@ class _PantallaSeparacionesState extends State<PantallaSeparaciones>
     super.dispose();
   }
 
+  /// Hoy = qué separar; Semana y Mes = lo vendido en ese período.
+  Future<void> _elegirPeriodo(PeriodoResumen p) async {
+    _c.cambiarVista(p == PeriodoResumen.hoy ? VistaSeparaciones.queSeparar : VistaSeparaciones.loVendido);
+    await _c.cambiarPeriodo(p);
+  }
+
+  /// "Ganancia": lo vendido de hoy (o volver a qué separar si ya se está mirando).
+  Future<void> _alternarGanancia() async {
+    if (_c.vista == VistaSeparaciones.loVendido && _c.periodo == PeriodoResumen.hoy) {
+      _c.cambiarVista(VistaSeparaciones.queSeparar);
+      return;
+    }
+    _c.cambiarVista(VistaSeparaciones.loVendido);
+    await _c.cambiarPeriodo(PeriodoResumen.hoy);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<SeparacionesControlador>.value(
       value: _c,
       child: Consumer<SeparacionesControlador>(
-        builder: (context, c, _) => PantallaGestion(
-          db: widget.db,
-          claveActiva: 'separaciones',
-          usuarioId: widget.usuarioId,
-          sesionCajaId: widget.sesionCajaId,
-          titulo: 'Separaciones',
-          busqueda: BusquedaContextual(pista: 'Buscar un proveedor…', alCambiar: c.buscar),
-          subtitulo: _subtitulo(c),
-          accion: _Selectores(controlador: c),
-          child: c.cargando
-              ? const SizedBox.shrink()
-              : c.vista == VistaSeparaciones.queSeparar
-              ? const _VistaQueSeparar()
-              : const _VistaLoVendido(),
-        ),
+        builder: (context, c, _) {
+          final viendoGanancia = c.vista == VistaSeparaciones.loVendido && c.periodo == PeriodoResumen.hoy;
+          return PantallaGestion(
+            db: widget.db,
+            claveActiva: 'separaciones',
+            usuarioId: widget.usuarioId,
+            sesionCajaId: widget.sesionCajaId,
+            titulo: 'Separaciones',
+            subtitulo: _subtitulo(c),
+            acciones: [
+              Seg<PeriodoResumen>(
+                opciones: const [
+                  (PeriodoResumen.hoy, 'Hoy'),
+                  (PeriodoResumen.semana, 'Semana'),
+                  (PeriodoResumen.mes, 'Mes'),
+                ],
+                valor: c.vista == VistaSeparaciones.queSeparar ? PeriodoResumen.hoy : c.periodo,
+                onCambio: _elegirPeriodo,
+              ),
+              Btn(
+                'Ganancia',
+                key: const Key('boton_ganancia'),
+                variante: viendoGanancia ? VarBtn.dark : VarBtn.ton,
+                onTap: _alternarGanancia,
+              ),
+              if (moduloActivo(Modulo.retiroGanancias))
+                Btn('Retirar plata', key: const Key('boton_retirar_plata'), variante: VarBtn.dark, onTap: () => _retirarPlata(context, c)),
+            ],
+            child: c.cargando
+                ? const SizedBox.shrink()
+                : c.vista == VistaSeparaciones.queSeparar
+                ? const _VistaQueSeparar()
+                : const _VistaLoVendido(),
+          );
+        },
       ),
     );
   }
 }
 
-String _plata(int centavos) => formatearARS(centavos);
-
-const _dias = [
-  'lunes',
-  'martes',
-  'miércoles',
-  'jueves',
-  'viernes',
-  'sábado',
-  'domingo',
-];
+const _dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const _meses = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', //
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ];
 
-String _fechaLarga(DateTime f) =>
-    '${_dias[f.weekday - 1]} ${f.day} de ${_meses[f.month - 1]}';
+String _fechaLarga(DateTime f) => '${_dias[f.weekday - 1]} ${f.day} de ${_meses[f.month - 1]}';
 
+/// Solo para lectores de pantalla (el mock no muestra subtítulo).
 String _subtitulo(SeparacionesControlador c) {
   final hoy = DateTime.now();
-  if (c.vista == VistaSeparaciones.queSeparar ||
-      c.periodo == PeriodoResumen.hoy) {
+  if (c.vista == VistaSeparaciones.queSeparar || c.periodo == PeriodoResumen.hoy) {
     return 'Hoy · ${_fechaLarga(hoy)}';
   }
   final inicio = inicioDePeriodo(c.periodo, hoy)!;
@@ -173,42 +171,137 @@ String _subtitulo(SeparacionesControlador c) {
       : 'Este mes · ${_meses[hoy.month - 1]}';
 }
 
-// ─── Selectores (arriba a la derecha) ──────────────────────────────────────
+/// "Retirar plata": la ganancia sin revisar de cada proveedor; elegir uno abre su ganancia (retener o retirar).
+Future<void> _retirarPlata(BuildContext context, SeparacionesControlador c) {
+  final pendientes = c.gananciaSinRevisar.values.where((g) => g.gananciaCentavos > 0).toList()
+    ..sort((a, b) => b.gananciaCentavos.compareTo(a.gananciaCentavos));
+  return mostrarModalMock<void>(
+    context,
+    builder: (contextoModal) => ModalMock(
+      titulo: 'Retirar plata',
+      subtitulo: 'La ganancia se retira por proveedor: elegí de cuál.',
+      ancho: AnchoModal.angosto,
+      cuerpo: [
+        if (pendientes.isEmpty)
+          const Vacio(texto: 'No hay ganancia sin revisar')
+        else
+          Lista(filas: [
+            for (final g in pendientes)
+              Kv(
+                g.proveedor.nombre,
+                pesos(g.gananciaCentavos),
+                colorValor: contextoModal.p.g,
+                onTap: () {
+                  Navigator.of(contextoModal).pop();
+                  mostrarDialogoGananciaProveedor(context, controlador: c, proveedorId: g.proveedor.id);
+                },
+              ),
+          ]),
+        const Nota(texto: 'Lo que no se retira se puede retener como colchón del proveedor. Todo queda anotado.'),
+      ],
+    ),
+  );
+}
 
-class _Selectores extends StatelessWidget {
-  const _Selectores({required this.controlador});
+void _verSinCosto(BuildContext context, SeparacionesControlador c, {required DateTime desde, required String periodo, String? soloProveedor}) {
+  mostrarDialogoSinCosto(
+    context,
+    usuarioId: c.usuarioId,
+    alGuardar: c.cargarTodo,
+    db: c.db,
+    desde: desde,
+    periodo: periodo,
+    soloProveedor: soloProveedor,
+  );
+}
 
-  final SeparacionesControlador controlador;
+// ─── Bloques de arriba ─────────────────────────────────────────────────────
+
+/// Un bloque de cifra del mock (`.hero` / `.hero.blue` / `.card.w` / `.card`): título chico y el número grande.
+class _Bloque extends StatelessWidget {
+  const _Bloque({required this.titulo, required this.valor, required this.tipo, this.pie});
+
+  final String titulo;
+  final int valor;
+  final _EstiloBloque tipo;
+  final String? pie;
 
   @override
   Widget build(BuildContext context) {
-    final c = controlador;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GrupoPildoras<VistaSeparaciones>(
-          opciones: const [
-            (VistaSeparaciones.queSeparar, 'Qué separar'),
-            (VistaSeparaciones.loVendido, 'Lo vendido'),
-          ],
-          elegida: c.vista,
-          oscura: true,
-          onElegir: c.cambiarVista,
-        ),
-        if (c.vista == VistaSeparaciones.loVendido) ...[
-          const SizedBox(width: Espaciado.md),
-          GrupoPildoras<PeriodoResumen>(
-            opciones: const [
-              (PeriodoResumen.hoy, 'Hoy'),
-              (PeriodoResumen.semana, 'Semana'),
-              (PeriodoResumen.mes, 'Mes'),
-            ],
-            elegida: c.periodo,
-            oscura: false,
-            onElegir: c.cambiarPeriodo,
+    final p = context.p;
+    final (fondo, colorTitulo, colorValor) = switch (tipo) {
+      _EstiloBloque.negro => (p.hero, p.heroSub, p.sobreHero),
+      _EstiloBloque.azul => (p.azul, Colors.white.withValues(alpha: .75), Colors.white),
+      _EstiloBloque.amarillo => (p.wbg, p.w, p.w),
+      _EstiloBloque.verde => (p.s, p.mute, valor < 0 ? p.b : p.g),
+      _EstiloBloque.gris => (p.s, p.mute, p.tinta),
+    };
+    return Container(
+      padding: const EdgeInsets.fromLTRB(30, 22, 30, 22),
+      decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(34)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: _e(14, 600, colorTitulo)),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: NumeroQueCuenta(
+              valor: valor,
+              formato: pesos,
+              estilo: estilo(42, 550, color: colorValor, em: -.04, num: true),
+            ),
           ),
+          if (pie != null) ...[
+            const SizedBox(height: 4),
+            Text(pie!, maxLines: 1, overflow: TextOverflow.ellipsis, style: _e(13.5, 400, colorTitulo)),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+TextStyle _e(double tamanio, double peso, Color color) => estilo(tamanio, peso, color: color);
+
+enum _EstiloBloque { negro, azul, amarillo, verde, gris }
+
+Widget _filaDeBloques(List<Widget> bloques) => IntrinsicHeight(
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final (i, b) in bloques.indexed) ...[
+        if (i > 0) const SizedBox(width: 14),
+        Expanded(child: Aparecer.revelar(orden: i, child: b)),
       ],
+    ],
+  ),
+);
+
+/// `.list` del mock, pero con filas a demanda (lista larga: `ListView`).
+class _ListaFilas extends StatelessWidget {
+  const _ListaFilas({required this.cantidad, required this.fila});
+
+  final int cantidad;
+  final Widget Function(BuildContext context, int i) fila;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: ColoredBox(
+        color: p.s,
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          itemCount: cantidad,
+          separatorBuilder: (_, _) => ColoredBox(color: p.pelo, child: const SizedBox(height: 1)),
+          itemBuilder: (context, i) => Aparecer.tarjeta(orden: i, child: fila(context, i)),
+        ),
+      ),
     );
   }
 }
@@ -221,414 +314,239 @@ class _VistaQueSeparar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.watch<SeparacionesControlador>();
-    final acentos = context.acentosPlazoleta;
+    final p = context.p;
     final tarjetas = c.tarjetasVisibles;
-    final avisos = [
+    final total = c.tarjetas.fold(0, (a, t) => a + t.totalCentavos);
+    final separado = c.tarjetas.where((t) => t.separada).fold(0, (a, t) => a + t.totalCentavos);
+    final avisos = <(String, TonoMock, Key?)>[
       if (c.ajuste.corridoAMpCentavos > 0)
-        'No alcanza el efectivo del cajón: ${_plata(c.ajuste.corridoAMpCentavos)} se separan de Mercado Pago.',
+        ('No alcanza el efectivo del cajón: ${pesos(c.ajuste.corridoAMpCentavos)} se separan de Mercado Pago.', TonoMock.i, null),
       if (c.ajuste.corridoAMpCentavos < 0)
-        'No alcanza Mercado Pago: ${_plata(-c.ajuste.corridoAMpCentavos)} se separan del cajón.',
+        ('No alcanza Mercado Pago: ${pesos(-c.ajuste.corridoAMpCentavos)} se separan del cajón.', TonoMock.i, null),
+      if (c.ajuste.faltanteCentavos > 0)
+        ('No alcanza entre las dos cajas: faltan ${pesos(c.ajuste.faltanteCentavos)}.', TonoMock.b, const Key('aviso_faltante')),
     ];
-
-    // Rediseño "antigravity" (igual que el mock): a la izquierda los
-    // proveedores como filas con su tilde; a la derecha el resumen — el total
-    // a separar en el bloque negro, efectivo y Mercado Pago debajo, los
-    // avisos y el avance.
-    final resumen = Column(
+    final lata = c.cobrado.cigarrillosCentavos;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TarjetaCaja(
-          titulo: 'Total',
-          cobrado: c.cobrado.efectivoCentavos + c.cobrado.mpCentavos,
-          separar: c.separarEfectivoCentavos + c.separarMpCentavos,
-          queda: c.quedaEfectivoCentavos + c.quedaMpCentavos,
-          lata: c.cobrado.cigarrillosCentavos,
-          invertida: true,
-        ),
-        const SizedBox(height: Espaciado.md),
-        _TarjetaCaja(
-          titulo: 'Efectivo',
-          colorPunto: acentos.dinero,
-          cobrado: c.cobrado.efectivoCentavos,
-          separar: c.separarEfectivoCentavos,
-          queda: c.quedaEfectivoCentavos,
-          lata: c.cobrado.cigarrillosCentavos,
-        ),
-        const SizedBox(height: Espaciado.md),
-        _TarjetaCaja(
-          titulo: 'Mercado Pago',
-          colorPunto: acentos.qr,
-          cobrado: c.cobrado.mpCentavos,
-          separar: c.separarMpCentavos,
-          queda: c.quedaMpCentavos,
-        ),
-        for (final aviso in avisos) ...[
-          const SizedBox(height: Espaciado.sm),
-          Text(
-            aviso,
-            style: TextStyle(
-              color: context.colores.textoSecundario,
-              fontWeight: FontWeight.w600,
-            ),
+        _filaDeBloques([
+          _Bloque(
+            titulo: 'A separar del cajón',
+            valor: c.separarEfectivoCentavos,
+            tipo: _EstiloBloque.negro,
+            pie: lata > 0 ? 'Aparte, la lata se lleva ${pesos(lata)}' : null,
           ),
-        ],
-        if (c.vendidoSinCostoHoyCentavos > 0) ...[
-          const SizedBox(height: Espaciado.sm),
-          _AvisoSinCosto(
-            claveTocable: const Key('aviso_sin_costo'),
-            texto:
-                'Hoy se vendieron ${_plata(c.vendidoSinCostoHoyCentavos)} sin costo cargado: no entran acá.',
-            onTap: () => mostrarDialogoSinCosto(
-              context,
-              usuarioId: c.usuarioId,
-              alGuardar: c.cargarTodo,
-              db: c.db,
-              desde: c.inicioDeHoy,
-              periodo: 'hoy',
-            ),
+          _Bloque(titulo: 'A separar de Mercado Pago', valor: c.separarMpCentavos, tipo: _EstiloBloque.azul),
+          if (c.reservaDiariaCentavos != null)
+            _Bloque(titulo: 'Reserva diaria de fijos', valor: c.reservaDiariaCentavos!, tipo: _EstiloBloque.amarillo),
+          _Bloque(
+            titulo: 'Te queda',
+            valor: c.quedaEfectivoCentavos + c.quedaMpCentavos,
+            tipo: _EstiloBloque.verde,
+            pie: 'Efectivo ${pesos(c.quedaEfectivoCentavos)} · MP ${pesos(c.quedaMpCentavos)}',
           ),
+        ]),
+        for (final (texto, tono, clave) in avisos) ...[
+          const SizedBox(height: 10),
+          Nota(key: clave, texto: texto, tono: tono, icono: Ic.warn),
         ],
-        if (c.ajuste.faltanteCentavos > 0) ...[
-          const SizedBox(height: Espaciado.sm),
-          Text(
-            'No alcanza entre las dos cajas: faltan ${_plata(c.ajuste.faltanteCentavos)}.',
-            key: const Key('aviso_faltante'),
-            style: TextStyle(
-              color: context.colores.error,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-        if (tarjetas.isNotEmpty) ...[
-          const SizedBox(height: Espaciado.md),
-          const SizedBox(height: _altoTarjeta, child: _TarjetaProgreso()),
-        ],
-      ],
-    );
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Sec('A separar por proveedor'),
+            if (c.vendidoSinCostoHoyCentavos > 0) ...[
+              const SizedBox(width: 14),
+              Flexible(
+                child: _ChipSinCosto(
+                  texto: '${pesos(c.vendidoSinCostoHoyCentavos)} vendidos sin costo',
+                  onTap: () => _verSinCosto(context, c, desde: c.inicioDeHoy, periodo: 'hoy'),
+                ),
+              ),
+            ],
+            const Spacer(),
+            if (c.tarjetas.isNotEmpty) ...[
+              Text(
+                '${c.cantidadSeparadas} de ${c.tarjetas.length} separados',
+                key: const Key('progreso_separados'),
+                style: estilo(15, 600, color: p.mute),
+              ),
+              // A 1366 no entra todo en la fila: queda la cuenta de separados.
+              if (MediaQuery.sizeOf(context).width >= 1700) ...[
+                const SizedBox(width: 6),
+                Text('· Separaste ${pesos(separado)} de ${pesos(total)}', style: estilo(15, 600, color: p.mute)),
+              ],
+              const SizedBox(width: 14),
+              Btn('Marcar todo', tam: TamBtn.xs, variante: VarBtn.ton, onTap: c.procesando.isEmpty && c.hayPorSeparar ? c.marcarTodo : null),
+              const SizedBox(width: 6),
+              Btn('Desmarcar todo', tam: TamBtn.xs, variante: VarBtn.ton, onTap: c.procesando.isEmpty && c.hayParaDesmarcar ? c.desmarcarTodo : null),
+            ],
+          ],
+        ),
+        const SizedBox(height: 12),
         Expanded(
           child: tarjetas.isEmpty
-              ? EstadoVacio(mensaje: c.busqueda.isEmpty ? 'Hoy no hay nada para separar' : 'Ningún proveedor coincide con "${c.busqueda}"')
-              : ListView.separated(
-                  itemCount: tarjetas.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: Espaciado.sm),
-                  itemBuilder: (context, i) => _FilaProveedorSeparar(tarjeta: tarjetas[i]),
+              ? Vacio(texto: c.busqueda.isEmpty ? 'Hoy no hay nada para separar' : 'Ningún proveedor coincide con "${c.busqueda}"')
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      child: _ListaFilas(
+                        cantidad: tarjetas.length,
+                        fila: (context, i) => _FilaSeparar(tarjeta: tarjetas[i], total: total),
+                      ),
+                    ),
+                  ],
                 ),
         ),
-        const SizedBox(width: Espaciado.lg),
-        SizedBox(width: 460, child: SingleChildScrollView(child: resumen)),
       ],
     );
   }
 }
 
-/// Un proveedor como fila (en vez de tarjeta): tilde, nombre, cuánto sale de
-/// cada caja y el total a separar. Tocar la fila lo marca o desmarca.
-class _FilaProveedorSeparar extends StatelessWidget {
-  const _FilaProveedorSeparar({required this.tarjeta});
+/// El chip amarillo "N sin costo" del mock: abre qué se vendió sin costo cargado.
+class _ChipSinCosto extends StatelessWidget {
+  const _ChipSinCosto({required this.texto, required this.onTap});
+  final String texto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return Tocable(
+      key: const Key('aviso_sin_costo'),
+      onTap: onTap,
+      radio: 999,
+      etiqueta: '$texto. Ver cuáles',
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(color: p.wbg, borderRadius: BorderRadius.circular(999)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icono(Ic.warn, size: 16, color: p.w),
+            const SizedBox(width: 8),
+            Flexible(child: Text(texto, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(14.5, 500, color: p.w))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Una fila del mock: tilde redondo, nombre (tachado si ya está separado), días y de qué caja sale, la etiqueta de la
+/// caja, el monto y "Pagar". Tocar la fila (o el tilde) la marca o desmarca.
+class _FilaSeparar extends StatelessWidget {
+  const _FilaSeparar({required this.tarjeta, required this.total});
 
   final TarjetaSeparacion tarjeta;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
     final c = context.read<SeparacionesControlador>();
-    final procesando = context.select<SeparacionesControlador, bool>(
-      (c) => c.procesando.contains(tarjeta.proveedorId),
-    );
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final procesando = context.select<SeparacionesControlador, bool>((c) => c.procesando.contains(tarjeta.proveedorId));
+    final p = context.p;
     final t = tarjeta;
-    final apagada = t.separada;
-    final colorTexto = apagada ? colores.textoTenue : colores.textoPrimario;
-    final estado = t.bloqueada
-        ? 'Separado — ya pagado'
-        : (t.separada ? 'Separado' : 'A separar');
-    final partes = [
-      if (t.efectivoCentavos > 0) 'Efectivo ${_plata(t.efectivoCentavos)}',
-      if (t.mpCentavos > 0) 'Mercado Pago ${_plata(t.mpCentavos)}',
-    ];
-    return Opacity(
-      opacity: apagada ? 0.6 : 1,
-      child: Presionable(
-        radio: 999,
-        color: colores.fondoBloque,
-        onTap: procesando || t.bloqueada ? null : () => c.alternar(t),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
-          child: Row(
-            children: [
-              _Tilde(marcado: t.separada, bloqueado: t.bloqueada),
-              const SizedBox(width: Espaciado.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final prov = t.fila.proveedor!;
+    final deuda = c.deudaPorProveedor[prov.id] ?? 0;
+    final estado = t.bloqueada ? 'Separado — ya pagado' : (t.separada ? 'Separado' : 'A separar');
+    final detalle = [
+      if (prov.diaPedido != null) 'Pedido ${prov.diaPedido!.toLowerCase()}',
+      if (prov.diaEntrega != null) 'entrega ${prov.diaEntrega!.toLowerCase()}',
+      if (total > 0) '${(t.totalCentavos * 100 / total).round()} % del total',
+      if (t.efectivoCentavos > 0 && t.mpCentavos > 0) 'cajón ${pesos(t.efectivoCentavos)} · MP ${pesos(t.mpCentavos)}',
+      if (deuda > 0) 'le debés ${pesos(deuda)}',
+    ].join(' · ');
+    final alternar = procesando || t.bloqueada ? null : () => c.alternar(t);
+    return AlPasar(
+      builder: (encima) => AnimatedContainer(
+        duration: ms(200),
+        constraints: const BoxConstraints(minHeight: 58),
+        color: encima ? p.s2 : p.s,
+        padding: const EdgeInsets.fromLTRB(24, 8, 20, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Tocable(
+                onTap: alternar,
+                radio: 18,
+                etiqueta: '${prov.nombre}: $estado',
+                seleccionado: t.separada,
+                child: Row(
                   children: [
-                    Text(
-                      t.fila.nombre,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(color: colorTexto),
-                    ),
-                    Row(
-                      children: [
-                        Text(estado, style: textTheme.bodySmall),
-                        if (partes.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              ' · ${partes.join(' · ')}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.bodySmall,
+                    _Tilde(marcado: t.separada, bloqueado: t.bloqueada),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            t.fila.nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: estilo(17.5, 550, color: t.separada ? p.mute : p.tinta).copyWith(
+                              decoration: t.separada ? TextDecoration.lineThrough : null,
+                              decorationColor: p.mute,
                             ),
                           ),
-                      ],
+                          const SizedBox(height: 1),
+                          Text(
+                            detalle.isEmpty ? estado : '$estado · $detalle',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: estilo(13, 400, color: p.mute),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: Espaciado.md),
-              Text(
-                _plata(t.totalCentavos),
-                style: textTheme.headlineMedium?.copyWith(color: colorTexto).tabular,
+            ),
+            const SizedBox(width: 14),
+            if (t.efectivoCentavos > 0) const Etiqueta('Cajón', tono: TonoMock.g),
+            if (t.efectivoCentavos > 0 && t.mpCentavos > 0) const SizedBox(width: 6),
+            if (t.mpCentavos > 0) const Etiqueta('Mercado Pago', tono: TonoMock.i),
+            const SizedBox(width: 14),
+            SizedBox(
+              width: 130,
+              child: Text(
+                pesos(t.totalCentavos),
+                textAlign: TextAlign.right,
+                style: estilo(19, 550, color: t.separada ? p.mute : p.tinta, num: true),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 14),
+            Btn(
+              'Pagar',
+              tam: TamBtn.xs,
+              variante: VarBtn.dark,
+              icono: Ic.truck,
+              etiqueta: 'Pagar a ${prov.nombre}',
+              onTap: c.sesionCajaId == null
+                  ? null
+                  : () async {
+                      await pagarProveedorYAvisar(
+                        context,
+                        db: c.db,
+                        usuarioId: c.usuarioId,
+                        sesionCajaId: c.sesionCajaId!,
+                        proveedorIdInicial: prov.id,
+                      );
+                      await c.cargarTodo();
+                    },
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Aviso de lo vendido sin costo, con "Ver cuáles" — abre la lista de
-/// productos (`dialogo_sin_costo.dart`).
-class _AvisoSinCosto extends StatelessWidget {
-  const _AvisoSinCosto({
-    this.claveTocable,
-    required this.texto,
-    required this.onTap,
-    this.chico = false,
-  });
-
-  /// Va en lo que se toca (el texto), no en el renglón entero — el renglón
-  /// ocupa todo el ancho y tocarlo al medio no abre nada.
-  final Key? claveTocable;
-  final String texto;
-  final VoidCallback onTap;
-
-  /// La versión de una línea dentro de una tarjeta.
-  final bool chico;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final base =
-        (chico
-                ? Theme.of(context).textTheme.bodySmall
-                : Theme.of(context).textTheme.bodyMedium)
-            ?.copyWith(
-              color: colores.textoSecundario,
-              fontWeight: chico ? null : FontWeight.w600,
-            );
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          key: claveTocable,
-          onTap: onTap,
-          child: Text.rich(
-            TextSpan(
-              text: '$texto ',
-              style: base,
-              children: [
-                TextSpan(
-                  text: 'Ver cuáles',
-                  style: base?.copyWith(
-                    color: colores.acento,
-                    fontWeight: FontWeight.w400,
-                    decoration: TextDecoration.underline,
-                    decorationColor: colores.acento,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tarjeta de caja de arriba: cobrado a la derecha del título, cuánto
-/// separar en una caja destacada, y cuánto te queda abajo.
-class _TarjetaCaja extends StatelessWidget {
-  const _TarjetaCaja({
-    required this.titulo,
-    required this.cobrado,
-    required this.separar,
-    required this.queda,
-    this.colorPunto,
-    this.lata = 0,
-    this.invertida = false,
-  });
-
-  final String titulo;
-  final Color? colorPunto;
-  final int cobrado;
-  final int separar;
-  final int queda;
-
-  /// Lo que se lleva la lata al cierre — se resta de "te queda" del
-  /// efectivo; se muestra para que la cuenta cierre a la vista.
-  final int lata;
-
-  /// La del total: la caja destacada en el color inverso.
-  final bool invertida;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    final fondoCaja = invertida
-        ? colores.textoPrimario
-        : (colorPunto ?? colores.acento).withValues(alpha: 0.12);
-    final textoCaja = invertida ? colores.fondo : colores.textoPrimario;
-
-    return Container(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      decoration: BoxDecoration(
-        color: colores.fondoBloque,
-        borderRadius: BorderRadius.circular(radioSuperficieEscritorio),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: colorPunto ?? colores.textoPrimario,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: Espaciado.sm),
-              Expanded(
-                child: Text(
-                  titulo,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Text(
-                'Cobrado ',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colores.textoSecundario,
-                ),
-              ),
-              Text(
-                _plata(cobrado),
-                style: textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)
-                    .tabular,
-              ),
-            ],
-          ),
-          const SizedBox(height: Espaciado.md),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espaciado.lg,
-              vertical: Espaciado.md,
-            ),
-            decoration: BoxDecoration(
-              color: fondoCaja,
-              borderRadius: BorderRadius.circular(radioControlEscritorio),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  'Separar',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: textoCaja,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: Espaciado.md),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      _plata(separar),
-                      style: textTheme.headlineMedium
-                          ?.copyWith(
-                            color: textoCaja,
-                            fontWeight: FontWeight.w800,
-                          )
-                          .tabular,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Espaciado.md),
-          // Siempre ocupa su lugar (invisible si no hay lata), para que las
-          // tres tarjetas de caja midan lo mismo.
-          Visibility(
-            visible: lata > 0,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: Row(
-              children: [
-                Text(
-                  'Se lleva la lata',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colores.textoSecundario,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '− ${_plata(lata)}',
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colores.textoSecundario)
-                      .tabular,
-                ),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              Text(
-                'Te queda',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colores.textoSecundario,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _plata(queda),
-                style: textTheme.titleLarge
-                    ?.copyWith(
-                      color: queda < 0 ? colores.error : context.acentosPlazoleta.ganancia,
-                      fontWeight: FontWeight.w800,
-                    )
-                    .tabular,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// `.sep-ck`: círculo con borde; separado = verde lleno con el tilde blanco (más apagado si ya está pagado).
 class _Tilde extends StatelessWidget {
   const _Tilde({required this.marcado, required this.bloqueado});
 
@@ -637,247 +555,22 @@ class _Tilde extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    return Container(
-      width: 40,
-      height: 40,
+    final p = context.p;
+    return AnimatedContainer(
+      duration: ms(250),
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
-        color: marcado
-            ? context.acentosPlazoleta.ganancia.withValues(alpha: bloqueado ? 0.45 : 1)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: marcado ? Colors.transparent : colores.textoTenue,
-          width: 2,
-        ),
+        shape: BoxShape.circle,
+        color: marcado ? p.g.withValues(alpha: bloqueado ? .5 : 1) : Colors.transparent,
+        border: marcado ? null : Border.all(color: p.linea, width: 2),
       ),
-      child: marcado
-          ? IconoPlz(IconosPlazoleta.check, size: 24, color: context.acentosPlazoleta.textoSobreColor)
-          : null,
+      child: marcado ? Pop(valor: true, alMontar: true, child: const Icono(Ic.check, size: 20, color: Colors.white, grosor: 3)) : null,
     );
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.etiqueta,
-    required this.color,
-    required this.monto,
-  });
-
-  final String etiqueta;
-  final Color color;
-  final int monto;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Espaciado.md,
-        vertical: Espaciado.sm,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: Espaciado.sm),
-          Expanded(
-            child: Text(
-              etiqueta,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodySmall?.copyWith(
-                color: colores.textoSecundario,
-              ),
-            ),
-          ),
-          const SizedBox(width: Espaciado.sm),
-          _MontoQueSeAchica(
-            texto: _plata(monto),
-            estilo: textTheme.titleSmall
-                ?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colores.textoPrimario,
-                )
-                .tabular,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Un monto que se achica antes que cortarse o desbordar, si la tarjeta es
-/// angosta o el número es muy largo — nunca un "$1.2…" truncado.
-class _MontoQueSeAchica extends StatelessWidget {
-  const _MontoQueSeAchica({required this.texto, required this.estilo});
-
-  final String texto;
-  final TextStyle? estilo;
-
-  @override
-  Widget build(BuildContext context) => Flexible(
-    flex: 0,
-    child: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerRight,
-      child: Text(texto, style: estilo),
-    ),
-  );
-}
-
-/// Última tarjeta: cuántos van, cuánto falta por caja, y marcar/desmarcar
-/// todo.
-class _TarjetaProgreso extends StatelessWidget {
-  const _TarjetaProgreso();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.watch<SeparacionesControlador>();
-    final colores = context.colores;
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
-    final total = c.tarjetas.length;
-    final hechas = c.cantidadSeparadas;
-    final fondo = colores.textoPrimario;
-    final texto = colores.fondo;
-
-    Widget fila(String etiqueta, Color punto, int monto) => Padding(
-      padding: const EdgeInsets.only(top: Espaciado.xs),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: punto, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: Espaciado.sm),
-          Expanded(
-            child: Text(
-              etiqueta,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(color: texto),
-            ),
-          ),
-          const SizedBox(width: Espaciado.sm),
-          _MontoQueSeAchica(
-            texto: _plata(monto),
-            estilo: textTheme.titleMedium
-                ?.copyWith(color: texto, fontWeight: FontWeight.w800)
-                .tabular,
-          ),
-        ],
-      ),
-    );
-
-    Widget boton(
-      String etiqueta,
-      VoidCallback? onTap, {
-      required bool relleno,
-    }) => Expanded(
-      child: Presionable(
-        radio: radioControlEscritorio,
-        onTap: onTap,
-        color: relleno && onTap != null ? texto : Colors.transparent,
-        child: Container(
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radioControlEscritorio),
-            border: Border.all(
-              color: texto.withValues(alpha: onTap == null ? 0.25 : 0.6),
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              etiqueta,
-              style: textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: onTap == null
-                    ? texto.withValues(alpha: 0.4)
-                    : (relleno ? fondo : texto),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final libre = c.procesando.isEmpty;
-    return Container(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      decoration: BoxDecoration(
-        color: fondo,
-        borderRadius: BorderRadius.circular(radioSuperficieEscritorio),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            '$hechas de $total separados',
-            key: const Key('progreso_separados'),
-            style: textTheme.titleMedium?.copyWith(
-              color: texto,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: Espaciado.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : hechas / total,
-              minHeight: 8,
-              backgroundColor: texto.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation(acentos.ganancia),
-            ),
-          ),
-          const SizedBox(height: Espaciado.md),
-          Text(
-            'Falta separar',
-            style: textTheme.bodySmall?.copyWith(
-              color: texto.withValues(alpha: 0.7),
-            ),
-          ),
-          fila('Efectivo', acentos.dinero, c.faltaEfectivoCentavos),
-          fila('Mercado Pago', acentos.qr, c.faltaMpCentavos),
-          const Spacer(),
-          Row(
-            children: [
-              boton(
-                'Marcar todo',
-                libre && c.hayPorSeparar ? c.marcarTodo : null,
-                relleno: true,
-              ),
-              const SizedBox(width: Espaciado.sm),
-              boton(
-                'Desmarcar todo',
-                libre && c.hayParaDesmarcar ? c.desmarcarTodo : null,
-                relleno: false,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Lo vendido ────────────────────────────────────────────────────────────
+// ─── Lo vendido (Ganancia, Semana, Mes) ────────────────────────────────────
 
 class _VistaLoVendido extends StatelessWidget {
   const _VistaLoVendido();
@@ -885,69 +578,66 @@ class _VistaLoVendido extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.watch<SeparacionesControlador>();
-    final acentos = context.acentosPlazoleta;
+    final p = context.p;
     final vendidos = c.vendidosVisibles;
+    final retiro = moduloActivo(Modulo.retiroGanancias);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _filaDeBloques([
+          _Bloque(titulo: 'Vendido', valor: c.vendidoCentavos, tipo: _EstiloBloque.negro),
+          _Bloque(titulo: 'Reposición (costo)', valor: c.costoCentavos, tipo: _EstiloBloque.gris),
+          _Bloque(
+            titulo: 'Ganancia',
+            valor: c.gananciaCentavos,
+            tipo: _EstiloBloque.verde,
+            pie: c.vendidoCentavos > 0 ? '${(c.gananciaCentavos * 100 / c.vendidoCentavos).round()} % de lo vendido' : null,
+          ),
+        ]),
+        const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
-              child: _TarjetaCifra(
-                titulo: 'Vendido',
-                monto: c.vendidoCentavos,
-                colorPunto: acentos.qr,
+            Sec('Por proveedor · ${c.nombrePeriodo}'),
+            if (c.vendidoSinCostoCentavos > 0) ...[
+              const SizedBox(width: 14),
+              Flexible(
+                child: _ChipSinCosto(
+                  texto: '${pesos(c.vendidoSinCostoCentavos)} sin costo: no suman a la reposición',
+                  onTap: () => _verSinCosto(context, c, desde: c.inicioDelPeriodo, periodo: c.nombrePeriodo),
+                ),
               ),
-            ),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: _TarjetaCifra(
-                titulo: 'Reposición (costo)',
-                monto: c.costoCentavos,
-                colorPunto: acentos.dinero,
-              ),
-            ),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: _TarjetaCifra(
-                titulo: 'Ganancia',
-                monto: c.gananciaCentavos,
-                invertida: true,
-              ),
-            ),
+            ],
+            const Spacer(),
+            if (retiro && MediaQuery.sizeOf(context).width >= 1500)
+              Text('Tocá un proveedor para ver su ganancia sin revisar', style: estilo(14, 400, color: p.mute)),
           ],
         ),
-        if (c.vendidoSinCostoCentavos > 0) ...[
-          const SizedBox(height: Espaciado.sm),
-          _AvisoSinCosto(
-            claveTocable: const Key('aviso_sin_costo'),
-            texto:
-                'Vendido incluye ${_plata(c.vendidoSinCostoCentavos)} sin costo cargado: '
-                'no suma a la reposición ni a la ganancia.',
-            onTap: () => mostrarDialogoSinCosto(
-              context,
-              usuarioId: c.usuarioId,
-              alGuardar: c.cargarTodo,
-              db: c.db,
-              desde: c.inicioDelPeriodo,
-              periodo: c.nombrePeriodo,
-            ),
-          ),
-        ],
-        const SizedBox(height: Espaciado.md),
+        const SizedBox(height: 12),
         Expanded(
           child: vendidos.isEmpty
-              ? EstadoVacio(mensaje: c.busqueda.isEmpty ? 'Sin ventas en este período' : 'Ningún proveedor coincide con "${c.busqueda}"')
-              : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: _anchoMaximoTarjeta,
-                    mainAxisExtent: _altoTarjeta,
-                    mainAxisSpacing: Espaciado.md,
-                    crossAxisSpacing: Espaciado.md,
-                  ),
-                  itemCount: vendidos.length,
-                  itemBuilder: (context, i) =>
-                      _TarjetaVendido(fila: vendidos[i]),
+              ? Vacio(texto: c.busqueda.isEmpty ? 'Sin ventas en este período' : 'Ningún proveedor coincide con "${c.busqueda}"')
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      child: Tabla(
+                        columnas: const [
+                          ColumnaTabla('Proveedor', flex: 4),
+                          ColumnaTabla('Vendido', flex: 2, derecha: true),
+                          ColumnaTabla('Costo', flex: 2, derecha: true),
+                          ColumnaTabla('Ganancia', flex: 2, derecha: true),
+                        ],
+                        cantidad: vendidos.length,
+                        onTapFila: retiro
+                            ? (i) {
+                                final prov = vendidos[i].proveedor;
+                                if (prov != null) mostrarDialogoGananciaProveedor(context, controlador: c, proveedorId: prov.id);
+                              }
+                            : null,
+                        celdas: (context, i) => _celdasVendido(context, c, vendidos[i]),
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ],
@@ -955,164 +645,25 @@ class _VistaLoVendido extends StatelessWidget {
   }
 }
 
-class _TarjetaCifra extends StatelessWidget {
-  const _TarjetaCifra({
-    required this.titulo,
-    required this.monto,
-    this.colorPunto,
-    this.invertida = false,
-  });
-
-  final String titulo;
-  final int monto;
-  final Color? colorPunto;
-  final bool invertida;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    final texto = invertida ? colores.fondo : colores.textoPrimario;
-    return Container(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      decoration: BoxDecoration(
-        color: invertida ? colores.textoPrimario : colores.fondoBloque,
-        borderRadius: BorderRadius.circular(radioSuperficieEscritorio),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: colorPunto ?? colores.acento,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: Espaciado.sm),
-              Text(
-                titulo,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: texto,
-                ),
-              ),
-            ],
+List<Widget> _celdasVendido(BuildContext context, SeparacionesControlador c, SeparacionDelDia f) {
+  final p = context.p;
+  return [
+    Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        celda(context, f.nombre, peso: 500),
+        if (f.vendidoSinCostoCentavos > 0)
+          Tocable(
+            onTap: () => _verSinCosto(context, c, desde: c.inicioDelPeriodo, periodo: c.nombrePeriodo, soloProveedor: f.proveedor?.nombre),
+            radio: 8,
+            etiqueta: 'Ver lo vendido sin costo de ${f.nombre}',
+            child: Text('incluye ${pesos(f.vendidoSinCostoCentavos)} sin costo · ver cuáles', style: estilo(13, 400, color: p.w)),
           ),
-          const SizedBox(height: Espaciado.md),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              _plata(monto),
-              style: textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w800, color: texto)
-                  .tabular,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TarjetaVendido extends StatelessWidget {
-  const _TarjetaVendido({required this.fila});
-
-  final SeparacionDelDia fila;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
-    final f = fila;
-    final proveedor = f.proveedor;
-    // Tocar la tarjeta abre la ganancia de ese proveedor para retenerla o
-    // retirarla (antes en Reportes). "Sin proveedor" no tiene a quién.
-    return Container(
-      decoration: BoxDecoration(
-        color: colores.fondoBloque,
-        borderRadius: BorderRadius.circular(radioSuperficieEscritorio),
-      ),
-      child: Presionable(
-        radio: radioSuperficieEscritorio,
-        onTap: proveedor == null || !moduloActivo(Modulo.retiroGanancias)
-            ? null
-            : () => mostrarDialogoGananciaProveedor(
-                context,
-                controlador: context.read<SeparacionesControlador>(),
-                proveedorId: proveedor.id,
-              ),
-        child: Padding(
-          padding: const EdgeInsets.all(Espaciado.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                f.nombre,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: Espaciado.sm),
-              Text(
-                'Vendido',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colores.textoSecundario,
-                ),
-              ),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _plata(f.vendidoCentavos),
-                  style: textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)
-                      .tabular,
-                ),
-              ),
-              if (f.vendidoSinCostoCentavos > 0)
-                Builder(
-                  builder: (context) {
-                    final c = context.read<SeparacionesControlador>();
-                    return _AvisoSinCosto(
-                      texto:
-                          'incluye ${_plata(f.vendidoSinCostoCentavos)} sin costo',
-                      chico: true,
-                      onTap: () => mostrarDialogoSinCosto(
-                        context,
-                        usuarioId: c.usuarioId,
-                        alGuardar: c.cargarTodo,
-                        db: c.db,
-                        desde: c.inicioDelPeriodo,
-                        periodo: c.nombrePeriodo,
-                        soloProveedor: f.proveedor?.nombre,
-                      ),
-                    );
-                  },
-                ),
-              const Spacer(),
-              _Chip(
-                etiqueta: 'Costo',
-                color: acentos.dinero,
-                monto: f.costoCentavos,
-              ),
-              const SizedBox(height: Espaciado.xs),
-              _Chip(
-                etiqueta: 'Ganancia',
-                color: acentos.ganancia,
-                monto: f.gananciaCentavos,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      ],
+    ),
+    celda(context, pesos(f.vendidoCentavos), num: true),
+    celda(context, pesos(f.costoCentavos), num: true, color: p.mute),
+    celda(context, pesos(f.gananciaCentavos), num: true, color: p.g, peso: 600),
+  ];
 }
