@@ -601,19 +601,21 @@ class _PantallaVentaState extends State<PantallaVenta>
                                           children: [
                                             // Sin título (rediseño v4): el buscador va arriba de todo, grande, y al
                                             // lado "Pagar proveedor", lo que más se hace además de vender.
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: LayoutBuilder(
-                                                    builder: (context, restricciones) => SizedBox(
+                                            // El desplegable de resultados cuelga del campo pero mide todo el ancho de la columna
+                                            // (no solo el del campo, que se achica por el botón): si no, las filas pierden el stock.
+                                            LayoutBuilder(
+                                              builder: (context, restricciones) => Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: SizedBox(
                                                       height: 64,
                                                       child: BarraBusquedaVenta(anchoDropdown: restricciones.maxWidth),
                                                     ),
                                                   ),
-                                                ),
-                                                const SizedBox(width: Espaciado.md),
-                                                SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
-                                              ],
+                                                  const SizedBox(width: Espaciado.md),
+                                                  SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
+                                                ],
+                                              ),
                                             ),
                                             const SizedBox(height: Espaciado.lg),
                                             const Expanded(
