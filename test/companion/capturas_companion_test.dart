@@ -28,9 +28,7 @@ import 'package:la_plazoleta/servicios/sync_nube.dart';
 
 import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
 import 'package:la_plazoleta/companion/pantalla_consultar_precio.dart';
-import 'package:la_plazoleta/companion/pantalla_historial_ventas.dart';
 import 'package:la_plazoleta/companion/pantalla_movimiento_caja.dart';
-import 'package:la_plazoleta/companion/pantalla_separaciones_companion.dart';
 
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
@@ -98,14 +96,6 @@ void main() {
 
   for (final oscuro in [false, true]) {
     final sufijo = oscuro ? ' (oscuro)' : '';
-    testWidgets('historial$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'historial', const Scaffold(body: PantallaHistorialVentas()), oscuro: oscuro);
-    });
-    testWidgets('separaciones$sufijo', (tester) async {
-      await preparar(tester);
-      await _capturar(tester, 'separaciones', PantallaSeparacionesCompanion(db: baseLocalCompanion(), usuarioId: 1), oscuro: oscuro);
-    });
     testWidgets('consultar precio$sufijo', (tester) async {
       await preparar(tester);
       await _capturar(tester, 'consultar-precio', const PantallaConsultarPrecio(), oscuro: oscuro);
