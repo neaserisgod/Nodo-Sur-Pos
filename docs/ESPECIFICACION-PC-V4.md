@@ -103,3 +103,10 @@ Se agregó **todo lo de la auditoría (`AUDITORIA-MOCK-V4.md`, sección 2)** al 
 | **Configuración** | Usuarios **Activar/Desactivar**. Respaldo: **Copias a conservar (7/14/30)**, **Elegir carpeta**, **Importar una base** (.sqlite/.gz). Cuenta: **Guardar una copia ahora**, **Copias en tu cuenta + Restaurar**, **Volver a bajar todo**, Desvincular. Impresión: **estado de Mercado Pago** (conectado/terminal), **Access Token**, **Terminal que imprime / cobra**, imprimir en la terminal al cobrar, **Reimprimir una venta por N°**. Celular: **QR para instalar la app**, IP de la PC, **Desconectar los celulares**. IA: **Quitar clave** y aviso de privacidad. |
 
 **Todavía sin llevar al mock (prioridad C de la auditoría):** modelo de la IA en Configuración, algunos textos de error de red, y el detalle de cómo el cierre trata las ventas abiertas al reabrir. No cambian la forma de ninguna pantalla.
+
+
+## 9. Ajustes por las decisiones del dueño (06/10/2026)
+- **Sacado del mock:** "Rubro" en Configuración › Comercio y "Excluir de la reposición" en Proveedor › Avanzado.
+- **Venta cobrada:** en la app real **no se cierra sola ni se imprime sola**: el acuse queda en el panel del carrito con "Imprimir ticket". El modal de "Venta cobrada" del mock queda solo como referencia visual.
+- **Seña de encargues:** entra en la caja con la que se pagó; es ingreso de caja (no venta) y, al pagar completo, pasa a venta del día en que se completó; si se cancela, se devuelve. **Asistente Ctrl+K:** buscador de acciones, sin pregunta libre a la IA. **Logo del ticket:** sí. **WhatsApp del proveedor:** número + botón para mandar el pedido. **Sucursal y Miembros:** se muestran (informativos).
+Detalle y orden de implementación en `docs/PLAN-APLICAR-V4.md`.
