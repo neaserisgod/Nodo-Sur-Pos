@@ -17,6 +17,7 @@ import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
+import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_editor_venta.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
@@ -273,6 +274,12 @@ void main() {
         final b = (await tester.runAsync(baseDelMock))!;
         addTearDown(b.db.close);
         await capturarMock(tester, 'conteo', () => PantallaStockProveedor(db: b.db, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio);
+      });
+
+      testWidgets('encargues$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'encargues', () => PantallaEncargues(db: b.db, usuarioId: b.usuarioId, sesionCajaId: b.sesionId), oscuro: oscuro, tamanio: tamanio);
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {

@@ -46,7 +46,7 @@ void main() {
     await abrir(tester);
     final tarjeta = find.byKey(Key('encargue_$id'));
     expect(tarjeta, findsOneWidget);
-    expect(find.descendant(of: tarjeta, matching: find.text('María')), findsOneWidget);
+    expect(find.descendant(of: tarjeta, matching: find.text('Encargue de María')), findsOneWidget);
     expect(find.descendant(of: tarjeta, matching: find.text('3 × Galletitas')), findsOneWidget);
     expect(find.descendant(of: tarjeta, matching: find.text('Entregar')), findsOneWidget);
     expect(find.descendant(of: tarjeta, matching: find.text('Cancelar')), findsOneWidget);
