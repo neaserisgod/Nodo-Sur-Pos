@@ -85,6 +85,22 @@ Future<int> fijosPagadosDelMes(AppDatabase db, String mesAnio) async {
   return fila.read(db.movimientosDeCaja.montoCentavos.sum()) ?? 0;
 }
 
+/// Lo pagado del mes por cada concepto fijo (id del concepto → centavos).
+Future<Map<int, int>> pagadoPorConceptoDelMes(AppDatabase db, String mesAnio) async {
+  final (inicio, fin) = _rangoMes(mesAnio);
+  final suma = db.movimientosDeCaja.montoCentavos.sum();
+  final filas = await (db.selectOnly(db.movimientosDeCaja)
+        ..addColumns([db.movimientosDeCaja.gastoFijoId, suma])
+        ..where(
+          db.movimientosDeCaja.gastoFijoId.isNotNull() &
+              db.movimientosDeCaja.fecha.isBiggerOrEqualValue(inicio) &
+              db.movimientosDeCaja.fecha.isSmallerThanValue(fin),
+        )
+        ..groupBy([db.movimientosDeCaja.gastoFijoId]))
+      .get();
+  return {for (final f in filas) f.read(db.movimientosDeCaja.gastoFijoId)!: f.read(suma) ?? 0};
+}
+
 Future<ResultadoGananciaBruta> gananciaBrutaDelMes(AppDatabase db, String mesAnio) async {
   final (inicio, fin) = _rangoMes(mesAnio);
   final filas = await (db.select(db.lineasDeVenta).join([

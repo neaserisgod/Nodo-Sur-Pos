@@ -132,5 +132,13 @@ Future<BaseMock> baseDelMock({bool conVentas = true}) async {
   await crearFiado(db, nombreLibre: 'Carlos', montoCentavos: 1420000, usuarioId: usuarioId);
   await crearEncargue(db, nombreLibre: 'Lucía', descripcion: 'Pedido de almacén', usuarioId: usuarioId);
   await crearFiado(db, nombreLibre: 'Elena', montoCentavos: 680000, usuarioId: usuarioId);
+  // Fijos del mes como en el mock (uno sin cargar, para que se vea "Falta cargar").
+  final mes = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
+  for (final (nombre, monto) in [('Alquiler del local', 420000), ('Luz y gas', 86000), ('Internet y sistema', 38000), ('Contador', null)]) {
+    final id = await db.into(db.gastosFijos).insert(GastosFijosCompanion.insert(nombre: nombre));
+    if (monto != null) {
+      await db.into(db.gastosFijosMontos).insert(GastosFijosMontosCompanion.insert(gastoFijoId: id, mesAnio: mes, montoCentavos: monto * 100));
+    }
+  }
   return BaseMock(db, usuarioId, sesionId, prods, provs);
 }

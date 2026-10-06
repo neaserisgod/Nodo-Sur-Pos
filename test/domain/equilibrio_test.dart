@@ -191,4 +191,19 @@ void main() {
       expect(reservaDiariaFijosCentavos(fijosMensualesCentavos: 0), 0);
     });
   });
+
+  group('estadoDelFijo (mock v4: "Pagado", "Pendiente", "Falta cargar")', () {
+    test('sin monto cargado del mes: falta cargar, aunque haya pagos', () {
+      expect(estadoDelFijo(montoCentavos: null, pagadoCentavos: 0), EstadoFijo.faltaCargar);
+      expect(estadoDelFijo(montoCentavos: null, pagadoCentavos: 500), EstadoFijo.faltaCargar);
+    });
+    test('pagado completo o de más: pagado', () {
+      expect(estadoDelFijo(montoCentavos: 1000, pagadoCentavos: 1000), EstadoFijo.pagado);
+      expect(estadoDelFijo(montoCentavos: 1000, pagadoCentavos: 1200), EstadoFijo.pagado);
+    });
+    test('pago parcial o ninguno: pendiente', () {
+      expect(estadoDelFijo(montoCentavos: 1000, pagadoCentavos: 400), EstadoFijo.pendiente);
+      expect(estadoDelFijo(montoCentavos: 1000, pagadoCentavos: 0), EstadoFijo.pendiente);
+    });
+  });
 }

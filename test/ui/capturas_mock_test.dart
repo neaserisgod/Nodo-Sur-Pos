@@ -63,6 +63,11 @@ Future<void> capturarMock(
     await antes();
     await tester.pump(const Duration(milliseconds: 600));
   }
+  // Lo que lee la base de verdad (drift) no avanza con el reloj falso: se le da tiempo real y se vuelve a dibujar.
+  for (var i = 0; i < 3; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+    await tester.pump(const Duration(milliseconds: 400));
+  }
   await tester.pump(const Duration(seconds: 1));
   await tester.runAsync(() async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -132,6 +137,14 @@ void main() {
         final b = (await tester.runAsync(baseDelMock))!;
         addTearDown(b.db.close);
         await capturarMock(tester, 'inicio', () => PantallaDashboard(db: b.db), oscuro: oscuro, tamanio: tamanio);
+      });
+
+      testWidgets('inicio este mes$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'inicio-mes', () => PantallaDashboard(db: b.db), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          await tester.tap(find.text('Este mes'));
+        });
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {

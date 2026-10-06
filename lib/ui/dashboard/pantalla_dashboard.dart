@@ -164,13 +164,11 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
               onVerPendientes: () => _ir('encargues'),
               conPendientes: modulos.estaActivo(Modulo.fiado),
             )
-          : SingleChildScrollView(
-              child: ContenidoEquilibrio(
-                key: ValueKey(_version),
-                db: widget.db,
-                usuarioId: sesion?.usuarioAbrioId ?? 0,
-                sesionCajaId: sesion?.id,
-              ),
+          : ContenidoEquilibrio(
+              key: ValueKey(_version),
+              db: widget.db,
+              usuarioId: sesion?.usuarioAbrioId ?? 0,
+              sesionCajaId: sesion?.id,
             ),
     );
   }
