@@ -2137,7 +2137,7 @@ M.anularMov=function(d){
   b:F.note(pago?'La deuda vuelve a subir '+$(r.m)+'.':'La deuda baja '+$(-r.m)+'.')+(pago&&r.c?F.note('Para anular un pago que salió de la caja hace falta la caja abierta.','w'):''),
   f:F.foot('Anular','anmok','Volver','mclose','red')};
 };
-A.anmok=function(){var x=px(),r=movs(x.id)[+MS.d.arg||0];r.x=1;x.deuda=Math.max(0,x.deuda-r.m);closeM();toast('Movimiento anulado');refreshDet()};
+A.anmok=function(){var x=px(),r=movs(x.id)[+MS.d.arg||0];r.x=1;x.deuda=Math.max(0,x.deuda+r.m);closeM();toast('Movimiento anulado');refreshDet()};
 
 /* ---- ver lata (proveedor de caja aparte) ---- */
 M.lata=function(){
