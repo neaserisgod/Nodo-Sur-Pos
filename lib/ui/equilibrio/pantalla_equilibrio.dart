@@ -63,7 +63,9 @@ class _ContenidoEquilibrioState extends State<ContenidoEquilibrio> {
           // `inicioMes` del mock v4: tres cifras arriba (150 px) y tres tarjetas que scrollean cada una por su cuenta.
           return LayoutBuilder(
             builder: (context, limites) {
-              final entra = limites.maxHeight >= 560;
+              // Sin alto acotado (adentro de otro scroll) no hay "resto" que repartir: va con alto fijo y sin scroll propio.
+              final acotado = limites.hasBoundedHeight;
+              final entra = acotado && limites.maxHeight >= 560;
               const abajo = Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -82,7 +84,7 @@ class _ContenidoEquilibrioState extends State<ContenidoEquilibrio> {
                   if (entra) const Expanded(child: abajo) else const SizedBox(height: 560, child: abajo),
                 ],
               );
-              return entra ? contenido : SingleChildScrollView(child: contenido);
+              return entra || !acotado ? contenido : SingleChildScrollView(child: contenido);
             },
           );
         },

@@ -231,7 +231,8 @@ class _Bloque extends StatelessWidget {
     final p = context.p;
     final (fondo, colorTitulo, colorValor) = switch (tipo) {
       _EstiloBloque.negro => (p.hero, p.heroSub, p.sobreHero),
-      _EstiloBloque.azul => (p.azul, Colors.white.withValues(alpha: .75), Colors.white),
+      // Título en blanco pleno: al 75 % quedaba en 3,4:1 sobre el azul (contraste medido, DISENO.md).
+      _EstiloBloque.azul => (p.azul, Colors.white, Colors.white),
       _EstiloBloque.amarillo => (p.wbg, p.w, p.w),
       _EstiloBloque.verde => (p.s, p.mute, valor < 0 ? p.b : p.g),
       _EstiloBloque.gris => (p.s, p.mute, p.tinta),

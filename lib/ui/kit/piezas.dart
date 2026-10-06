@@ -77,7 +77,8 @@ class Btn extends StatelessWidget {
       VarBtn.dark => (p.tinta, p.tinta, p.papel, const Color(0x33121317), false),
       VarBtn.ton => (sobreGris ? p.papel : p.s, p.s2, p.tinta, null, false),
       VarBtn.out => (Colors.transparent, p.s, p.tinta, null, true),
-      VarBtn.ai => (p.azulClaro, Color.alphaBlend(p.azul.withValues(alpha: .18), p.azulClaro), p.azul, null, false),
+      // En oscuro el azul sobre su fondo azul oscuro no llega a 4,5:1: la letra va más clara.
+      VarBtn.ai => (p.azulClaro, Color.alphaBlend(p.azul.withValues(alpha: .18), p.azulClaro), p.oscuro ? Color.lerp(p.azul, Colors.white, .45)! : p.azul, null, false),
       VarBtn.red => (p.bbg, p.bbg, p.b, null, false),
     };
     final altura = alto ?? h;
@@ -1099,7 +1100,8 @@ class Tabla extends StatelessWidget {
             if (i == 0 && cabeceraPrimera != null)
               cabeceraPrimera!
             else
-              Text(c.titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(13, 600, color: p.soft)),
+              // `--soft` en el mock, pero sobre el gris de la cabecera no llega a 4,5:1 a 13 px: va `mute` (contraste medido, DISENO.md).
+              Text(c.titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(13, 600, color: p.mute)),
         ],
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
       ),

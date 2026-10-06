@@ -258,7 +258,8 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
                     ColumnaTabla('Detalle', flex: 5),
                     ColumnaTabla('Medio', flex: 2),
                     ColumnaTabla('Total', flex: 2, derecha: true),
-                    ColumnaTabla('', ancho: 270, derecha: true),
+                    // Reimprimir + Editar + Anular (con el día abierto) piden ~320 con el relleno de la celda.
+                    ColumnaTabla('', ancho: 330, derecha: true),
                   ],
                   cantidad: visibles.length,
                   vacio: const Vacio(texto: 'No hubo ventas este día', icono: null, padding: EdgeInsets.symmetric(vertical: 36)),
