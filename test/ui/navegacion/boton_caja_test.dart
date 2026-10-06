@@ -12,7 +12,7 @@ void main() {
     for (final (estado, texto) in [
       (EstadoCajaNavbar.abierta, 'Caja abierta'),
       (EstadoCajaNavbar.cerrada, 'Caja cerrada'),
-      (EstadoCajaNavbar.deAyerSinCerrar, 'Caja de ayer sin cerrar'),
+      (EstadoCajaNavbar.deAyerSinCerrar, 'Caja de ayer'),
     ]) {
       await tester.pumpWidget(_app(BotonCaja(estado: estado, acciones: const [])));
       expect(find.text(texto), findsOneWidget);

@@ -1,6 +1,6 @@
 # Plan para aplicar el diseño v4 al código de Flutter
 
-**Fecha:** 06/10/2026 · **Estado:** etapa 1 en curso · Pedido del dueño: "empezá a aplicarlo al código de Flutter".
+**Fecha:** 06/10/2026 · **Estado:** etapa 1 hecha a medias (avisos arriba, "Caja ▾" en toda la app, navbar y barra de ventana en tres zonas; falta la campanita en todas las pantallas) · Pedido del dueño: "empezá a aplicarlo al código de Flutter".
 Reglas que se respetan (`CLAUDE.md`): una etapa por vez y se prueba antes de la siguiente · plan primero y ambigüedades de negocio marcadas, no
 resueltas solas · tests primero en `domain/` · una fórmula vive en un solo lugar · montos en centavos enteros · migraciones versionadas si se toca la base.
 
@@ -17,7 +17,7 @@ estas etapas es **sobre todo de forma** (disposición, componentes, avisos), no 
 |---|---|---|---|
 | 0 | **Entorno** | SDK de Flutter 3.47, `flutter pub get`, línea de base de `analyze` y tests. | Ninguno |
 | 1 | **Carcasa** | Barra de la ventana en 3 zonas · navbar simétrica en 3 zonas con **Caja ▾** (arqueo, turno, gasto, ingreso, retirar, cerrar) y campanita en todas las pantallas · **avisos arriba** (reemplazo único de los `SnackBar`) · sin título/lupa repetidos. | Medio: toca todas las pantallas |
-| 2 | **Venta** | Buscador gigante + "Pagar proveedor" · una sola fila de categorías + Varios · pestañas de venta con ✕ · diálogos de cobro sin total repetido ni "Cancelar" · "Venta cobrada" que se cierra sola. | Alto: es el 80 % del uso |
+| 2 | **Venta** (en curso: título, Pagar proveedor, Varios hechos; falta "Venta cobrada" y diálogos sin total/Cancelar, esperan la decisión 7) | Buscador gigante + "Pagar proveedor" · una sola fila de categorías + Varios · pestañas de venta con ✕ · diálogos de cobro sin total repetido ni "Cancelar" · "Venta cobrada" que se cierra sola. | Alto: es el 80 % del uso |
 | 3 | **Inicio** | Tres columnas iguales, sin tarjetas de IA ni "Nueva venta", fijos con resumen. | Bajo |
 | 4 | **Proveedores** | Ficha en mitades iguales, cifras por período, selección masiva, "Todos / Sin proveedor". | Medio |
 | 5 | **Separaciones e Historial** | Períodos Hoy/Semana/Mes y Hoy/Ayer/Este mes, filtros, editor de venta. | Medio |

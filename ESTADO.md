@@ -42,6 +42,12 @@ en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "V
 (vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
 "Venta cobrada" sin botón de siguiente, diálogos sin "Cancelar".
 
+**Aplicación al código (06/10, etapa 1 en curso):** se empezó a llevar el diseño v4 a Flutter, con el plan en [`docs/PLAN-APLICAR-V4.md`](./docs/PLAN-APLICAR-V4.md).
+Hecho y probado con `flutter analyze` + tests: **avisos arriba** (`mostrarAviso`, reemplaza a todos los `SnackBar` de la PC), botón **"Caja ▾"** (menú de caja en Venta y en el
+resto de las pantallas), **navbar y barra de la ventana en tres costados simétricos**. **Sin probar en Windows real** (aspecto, rendimiento, terminal). Falta de la etapa 1: campanita en
+todas las pantallas. **Etapa 2 (Venta) empezada**: sin título "Vender", buscador grande con **Pagar proveedor (Alt+P)** al lado (diálogo rápido nuevo, usa `pagarDeuda`), pastilla **Varios**.
+Todavía NO se tocó "Venta cobrada" ni los diálogos de cobro (hay una decisión pendiente, ver el plan). Siguen Inicio, Proveedores, etc.
+
 **Ronda 5 (06/10):** el dueño pidió implementar en el mock **todo lo que existe en la app real y faltaba** y **dejar lo que solo está en el mock** (son funciones útiles que quiere conservar).
 Hecho: ~35 funciones agregadas al mock v4 (imprimir ticket, quién abre, caja de ayer, cerrar el sistema, reabrir, cifras y selección en Proveedores, cuenta corriente, edición masiva completa, promos, comparar con los súper,
 períodos y filtros, devolución por Mercado Pago, editor y carga histórica completos, cierre completo, Configuración). Detalle en la sección 8 de [`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md). **Sigue sin tocarse el código de Flutter.**

@@ -30,6 +30,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
 import '../tema/tokens.dart';
+import 'acciones_caja.dart';
 import 'barra_busqueda_global.dart';
 import 'busqueda_contextual.dart';
 import 'navbar_superior.dart';
@@ -176,6 +177,7 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
             claveActiva: widget.claveActiva,
             items: _items,
             onSeleccionar: _seleccionar,
+            izquierda: BotonCajaDeGestion(db: widget.db),
             busqueda: campo,
             buscando: _buscando,
             onAbrirBusqueda: _abrirBusqueda,

@@ -40,10 +40,12 @@ import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import 'cancelar_venta_con_deshacer.dart';
+import '../../data/repositorio_deuda_proveedores.dart' show anularMovimientoDeuda;
+import '../comun/aviso_superior.dart';
 import '../comun/botones.dart';
-import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
+import '../navegacion/acciones_caja.dart';
 import '../navegacion/boton_caja.dart';
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
@@ -58,6 +60,7 @@ import 'columna_cobro.dart';
 import 'dialogo_apertura_caja.dart';
 import 'dialogo_arqueo_intermedio.dart';
 import 'dialogo_movimiento_rapido.dart';
+import 'dialogo_pagar_proveedor_rapido.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 import 'elegir_tarjeta.dart';
@@ -268,6 +271,8 @@ class _PantallaVentaState extends State<PantallaVenta>
             _abrirGastoRapido();
           case 'i':
             _abrirIngresoRapido();
+          case 'p':
+            _pagarProveedor();
           case 'n':
             c.nuevaVenta();
           case 's':
@@ -317,6 +322,35 @@ class _PantallaVentaState extends State<PantallaVenta>
       sesionCajaId: sesion.id,
       usuarioId: sesion.usuarioAbrioId,
     );
+  }
+
+  /// "Pagar proveedor" (Alt+P, rediseño v4): el pago más común del día en un par de teclas. Al terminar avisa arriba y,
+  /// si se puede, ofrece Deshacer (anula el movimiento: la plata vuelve a su caja y la deuda a lo que era).
+  Future<void> _pagarProveedor() async {
+    final sesion = _controlador.sesion;
+    if (sesion == null) return;
+    final hecho = await mostrarDialogoPagarProveedorRapido(
+      context,
+      db: widget.db,
+      usuarioId: sesion.usuarioAbrioId,
+      sesionCajaId: sesion.id,
+    );
+    if (hecho == null || !mounted) return;
+    mostrarAviso(
+      context,
+      hecho.texto,
+      textoAccion: hecho.deshacible ? 'Deshacer' : null,
+      alAccionar: hecho.deshacible ? () => _deshacerPago(hecho, sesion.id, sesion.usuarioAbrioId) : null,
+    );
+  }
+
+  Future<void> _deshacerPago(PagoProveedorHecho hecho, int sesionId, int usuarioId) async {
+    try {
+      await anularMovimientoDeuda(widget.db, movimientoId: hecho.movimientoId, usuarioId: usuarioId, sesionCajaId: sesionId);
+      if (mounted) mostrarAviso(context, 'Pago deshecho · ${hecho.proveedorNombre}');
+    } on Object catch (e) {
+      if (mounted) mostrarAviso(context, 'No se pudo deshacer: ${e is ArgumentError ? e.message : e}');
+    }
   }
 
   Future<void> _abrirIngresoRapido() async {
@@ -434,35 +468,17 @@ class _PantallaVentaState extends State<PantallaVenta>
       valueListenable: modulosActuales,
       builder: (context, modulos, _) {
         final hayTurnos = modulos.estaActivo(Modulo.turnos);
-        final acciones = switch (estado) {
-          EstadoCajaNavbar.cerrada => [
-            AccionMenuCaja(clave: 'abrir', etiqueta: 'Abrir caja', icono: IconosPlazoleta.paymentsOutlined, onTap: _abrirCaja),
-          ],
-          EstadoCajaNavbar.deAyerSinCerrar => [
-            AccionMenuCaja(clave: 'cerrar', etiqueta: 'Cerrar caja', icono: IconosPlazoleta.lockOutline, onTap: _irACierre, peligro: true),
-          ],
-          EstadoCajaNavbar.abierta => [
-            if (hayTurnos)
-              AccionMenuCaja(
-                clave: 'arqueo',
-                etiqueta: 'Hacer arqueo',
-                icono: IconosPlazoleta.history,
-                nota: c.arqueoIntermedioVencido ? 'pendiente' : null,
-                onTap: _hacerArqueoIntermedio,
-              ),
-            if (hayTurnos) AccionMenuCaja(clave: 'turno', etiqueta: 'Cambiar de turno', icono: IconosPlazoleta.swapHoriz, onTap: _cambiarTurno),
-            AccionMenuCaja(clave: 'gasto', etiqueta: 'Gasto', icono: IconosPlazoleta.addCircleOutline, atajo: '-', onTap: _abrirGastoRapido),
-            AccionMenuCaja(clave: 'ingreso', etiqueta: 'Ingreso', icono: IconosPlazoleta.addCircleOutline, atajo: 'Alt+I', onTap: _abrirIngresoRapido),
-            AccionMenuCaja(
-              clave: 'cerrar',
-              etiqueta: 'Cerrar caja',
-              icono: IconosPlazoleta.lockOutline,
-              onTap: _irACierre,
-              peligro: true,
-              separadorAntes: true,
-            ),
-          ],
-        };
+        final acciones = armarAccionesMenuCaja(
+          estado: estado,
+          hayTurnos: hayTurnos,
+          arqueoVencido: c.arqueoIntermedioVencido,
+          onAbrir: _abrirCaja,
+          onArqueo: _hacerArqueoIntermedio,
+          onTurno: _cambiarTurno,
+          onGasto: _abrirGastoRapido,
+          onIngreso: _abrirIngresoRapido,
+          onCerrar: _irACierre,
+        );
         return BotonCaja(estado: estado, acciones: acciones);
       },
     );
@@ -583,30 +599,23 @@ class _PantallaVentaState extends State<PantallaVenta>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
-                                            const EncabezadoPantalla(
-                                              titulo: 'Vender',
-                                              subtitulo:
-                                                  'Escribí, escaneá o tocá un producto',
+                                            // Sin título (rediseño v4): el buscador va arriba de todo, grande, y al
+                                            // lado "Pagar proveedor", lo que más se hace además de vender.
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: LayoutBuilder(
+                                                    builder: (context, restricciones) => SizedBox(
+                                                      height: 64,
+                                                      child: BarraBusquedaVenta(anchoDropdown: restricciones.maxWidth),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: Espaciado.md),
+                                                SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
+                                              ],
                                             ),
-                                            const SizedBox(
-                                              height: Espaciado.lg,
-                                            ),
-                                            LayoutBuilder(
-                                              builder:
-                                                  (context, restricciones) =>
-                                                      SizedBox(
-                                                        height: 60,
-                                                        child:
-                                                            BarraBusquedaVenta(
-                                                              anchoDropdown:
-                                                                  restricciones
-                                                                      .maxWidth,
-                                                            ),
-                                                      ),
-                                            ),
-                                            const SizedBox(
-                                              height: Espaciado.lg,
-                                            ),
+                                            const SizedBox(height: Espaciado.lg),
                                             const Expanded(
                                               child: RejillaProductos(),
                                             ),
@@ -886,6 +895,44 @@ class _AvisoMpEnPanel extends StatelessWidget {
         const SizedBox(height: Espaciado.sm),
         BotonSecundario(texto: 'Visto', onPressed: onVisto),
       ],
+    );
+  }
+}
+
+/// "Pagar proveedor · Alt+P": pastilla oscura al lado del buscador (la acción principal de caja además de vender).
+class _BotonPagarProveedor extends StatelessWidget {
+  const _BotonPagarProveedor({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    return Tooltip(
+      message: 'Pagar proveedor (Alt+P)',
+      child: Material(
+        key: const Key('boton_pagar_proveedor'),
+        color: colores.textoPrimario,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconoPlz(IconosPlazoleta.localShippingOutlined, size: 22, color: colores.fondo),
+                const SizedBox(width: Espaciado.md),
+                Text('Pagar proveedor', style: textTheme.titleMedium?.copyWith(color: colores.fondo)),
+                const SizedBox(width: Espaciado.md),
+                Text('Alt+P', style: textTheme.bodySmall?.copyWith(color: colores.fondo.withValues(alpha: 0.65), fontWeight: Pesos.fuerte)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

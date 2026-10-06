@@ -57,7 +57,15 @@ class BotonCaja extends StatelessWidget {
   final String? detalle;
   final List<AccionMenuCaja> acciones;
 
+  /// Lo que dice el botón. Corto a propósito: la columna de la izquierda de la navbar no es ancha (en una ventana de
+  /// 1366 px, "Caja de ayer sin cerrar" no entra); el detalle completo va en la cabecera del menú.
   String get _etiqueta => switch (estado) {
+    EstadoCajaNavbar.abierta => 'Caja abierta',
+    EstadoCajaNavbar.cerrada => 'Caja cerrada',
+    EstadoCajaNavbar.deAyerSinCerrar => 'Caja de ayer',
+  };
+
+  String get _titularMenu => switch (estado) {
     EstadoCajaNavbar.abierta => 'Caja abierta',
     EstadoCajaNavbar.cerrada => 'Caja cerrada',
     EstadoCajaNavbar.deAyerSinCerrar => 'Caja de ayer sin cerrar',
@@ -93,7 +101,7 @@ class BotonCaja extends StatelessWidget {
               _Punto(color: colorPunto, tamanio: 9),
               const SizedBox(width: Espaciado.sm),
               Text(
-                detalle == null ? _etiqueta : '$_etiqueta · $detalle',
+                detalle == null ? _titularMenu : '$_titularMenu · $detalle',
                 style: estilo.copyWith(color: colores.textoSecundario, fontSize: 13, fontWeight: Pesos.fuerte),
               ),
             ],
@@ -123,7 +131,14 @@ class BotonCaja extends StatelessWidget {
               children: [
                 _Punto(color: colorPunto),
                 const SizedBox(width: Espaciado.sm),
-                Text(_etiqueta, style: estilo.copyWith(fontWeight: Pesos.fuerte, color: colores.textoPrimario, letterSpacing: -0.16)),
+                Flexible(
+                  child: Text(
+                    _etiqueta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: estilo.copyWith(fontWeight: Pesos.fuerte, color: colores.textoPrimario, letterSpacing: -0.16),
+                  ),
+                ),
                 const SizedBox(width: Espaciado.xs),
                 IconoPlz(IconosPlazoleta.expandMore, size: 18, color: colores.textoSecundario),
               ],

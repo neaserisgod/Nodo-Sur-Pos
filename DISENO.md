@@ -688,6 +688,16 @@ definición para las tres, no una por pantalla:
 
 ## Navegación: navbar superior (remake 2026-09-19)
 
+**Rediseño v4 (2026-10-05, aplicado en la etapa 1 del plan `docs/PLAN-APLICAR-V4.md`)** — gana sobre lo de abajo si se contradice:
+la barra tiene **tres costados simétricos** (izquierda y derecha ocupan lo mismo, así las pastillas quedan en el centro de la ventana):
+**"Caja ▾"** a la izquierda (`BotonCaja`, `lib/ui/navegacion/boton_caja.dart`; estado de la caja a la vista y menú con arqueo, turno,
+gasto, ingreso y cerrar, o "Abrir caja"; las filas salen de `armarAccionesMenuCaja` en `acciones_caja.dart` para que Venta y el resto
+ofrezcan lo mismo), las **pastillas** en el centro y, a la derecha, la **campanita y después la tuerca**. Reemplaza a los íconos sueltos "Cambiar
+de turno" y "Cerrar caja". La barra de la ventana también tiene tres zonas: marca y nombre / estado del día (respaldo de hoy o "Caja de ayer sin
+cerrar") / botones; el estado de la caja abierta ya no se repite ahí. **Avisos arriba**: la pastilla oscura de `mostrarAviso`
+(`lib/ui/comun/aviso_superior.dart`) reemplaza a los `SnackBar`; no tapa el cobro. **Pendiente de la etapa 1**: la campanita todavía solo está en
+Venta; la lupa de búsqueda sigue en las otras pantallas hasta que exista el Asistente (etapa 8).
+
 **Cómo es HOY (2026-10-03)** — lo de más abajo es la historia del remake y
 algunas partes ya no aplican (vidrio, compacta/expandida, íconos): la barra
 es la marca (insignia con iniciales + nombre del comercio), las secciones

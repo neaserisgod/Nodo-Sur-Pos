@@ -272,6 +272,13 @@ acá y la tecla Inicio vuelve acá; el tablero ("Inicio") es una sección más.
 - Derecha: Configuración como engranaje, y en Venta la campanita y
   "Cambiar de turno" / "Cerrar caja" (detalle abajo).
 
+**Rediseño v4 (2026-10-05)** — gana sobre lo de abajo si se contradice: Venta ya no
+lleva el título "Vender"; el campo único va arriba de todo, grande, con el botón
+**Pagar proveedor · Alt+P** al lado; la fila de categorías termina con la pastilla
+**Varios · Alt+V**; los avisos salen **arriba** (`mostrarAviso`) y el estado/menú de
+la caja vive en el botón **Caja ▾** de la navbar (arqueo, turno, gasto, ingreso, cerrar).
+Ver `docs/PLAN-APLICAR-V4.md` y `docs/ESPECIFICACION-PC-V4.md`.
+
 **Búsqueda** — rediseño "antigravity": ya no comparte fila con la navbar.
 Vive en la columna de productos, debajo del título "Vender" y arriba de la
 grilla (`BarraBusquedaVenta` en `pantalla_venta.dart`):
@@ -423,6 +430,10 @@ no de cobrar: `Ctrl+F` busca (en Venta enfoca el campo único) y la tecla
   rediseño)
 - `Alt+I` ingreso rápido (espejo de gasto rápido: mismas tres cajas — cajón
   normal, lata, Mercado Pago —, pero suma en vez de restar)
+- `Alt+P` **pagar proveedor** (El dueño, 2026-10-05, rediseño v4: "lo principal es
+  pagar proveedor"): diálogo rápido — se escribe parte del nombre, Enter elige, el
+  monto viene con toda la deuda, Enter paga; avisa arriba y ofrece Deshacer.
+  Registra con el mismo `pagarDeuda` que la cuenta corriente del proveedor.
 
 El recargo de cigarrillos **no tiene tecla**: se calcula solo según el medio de pago.
 

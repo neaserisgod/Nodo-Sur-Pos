@@ -42,6 +42,8 @@ const Map<String, String> teclasReservadas = {
   // nueva sin perder la actual; Alt+S pasa a la siguiente abierta.
   'n': 'nueva venta',
   's': 'siguiente venta abierta',
+  // Rediseño v4 (El dueño, 2026-10-05): "lo principal es pagar proveedor" — abre el pago rápido desde Venta.
+  'p': 'pagar proveedor',
 };
 
 /// Alt+X: abre el campo aparte para la parte en efectivo de un pago mixto.
