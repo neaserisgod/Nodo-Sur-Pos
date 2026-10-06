@@ -4,6 +4,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_pendientes.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 
@@ -58,6 +59,7 @@ const _top = ['cerveza', 'pan', 'coca', 'jamon', 'marlboro', 'alfajor', 'leche',
 Future<BaseMock> baseDelMock({bool conVentas = true}) async {
   final db = AppDatabase(NativeDatabase.memory());
   final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Ana'));
+  await db.update(db.configuracionNegocioTabla).write(const ConfiguracionNegocioTablaCompanion(nombreComercio: Value('La Plazoleta')));
   final cats = <String, int>{};
   for (final c in _categorias) {
     cats[c] = await db.into(db.categorias).insert(CategoriasCompanion.insert(nombre: c));
@@ -103,6 +105,17 @@ Future<BaseMock> baseDelMock({bool conVentas = true}) async {
         );
       }
     }
+    // Algunas por Mercado Pago, para que "Hoy vendiste" tenga los dos medios.
+    for (final id in ['coca', 'fernet', 'marlboro', 'yerba']) {
+      await registrarVentaSegunMedio(
+        db,
+        lineas: [lineaDesdeProducto(prods[id]!, cantidad: 2)],
+        medio: ComposicionPago.virtual,
+        canal: 'qr',
+        sesionCajaId: sesionId,
+        usuarioId: usuarioId,
+      );
+    }
     // Volver a leer los productos: las ventas les bajaron el stock; se reponen a lo del mock.
     for (final (id, _, _, _, stock, _, kg, _, _) in _productos) {
       await (db.update(db.productos)..where((p) => p.id.equals(prods[id]!.id))).write(
@@ -111,5 +124,13 @@ Future<BaseMock> baseDelMock({bool conVentas = true}) async {
       prods[id] = await (db.select(db.productos)..where((p) => p.id.equals(prods[id]!.id))).getSingle();
     }
   }
+  // Stock mínimo para que "Stock bajo" tenga qué mostrar, y los encargues y deudas del mock.
+  for (final (id, minimo) in [('pan', 20), ('fernet', 12), ('yerba', 25), ('leche', 30)]) {
+    await (db.update(db.productos)..where((p) => p.id.equals(prods[id]!.id))).write(ProductosCompanion(stockMinimo: Value(minimo)));
+  }
+  await crearEncargue(db, nombreLibre: 'Marta', descripcion: 'Tortas ×2 · para las 18:00', usuarioId: usuarioId);
+  await crearFiado(db, nombreLibre: 'Carlos', montoCentavos: 1420000, usuarioId: usuarioId);
+  await crearEncargue(db, nombreLibre: 'Lucía', descripcion: 'Pedido de almacén', usuarioId: usuarioId);
+  await crearFiado(db, nombreLibre: 'Elena', montoCentavos: 680000, usuarioId: usuarioId);
   return BaseMock(db, usuarioId, sesionId, prods, provs);
 }

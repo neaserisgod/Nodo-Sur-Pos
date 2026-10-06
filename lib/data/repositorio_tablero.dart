@@ -19,14 +19,20 @@ class ProductoConStockBajo {
     required this.proveedor,
     required this.esPesable,
     required this.stock,
+    this.categoria,
+    this.diasQueAlcanza,
   });
 
   final String nombre;
   final String? proveedor;
+  final String? categoria;
   final bool esPesable;
 
   /// Unidades, o gramos si [esPesable].
   final int stock;
+
+  /// Al ritmo de los últimos 30 días (`domain/tablero.dart`); null sin ventas en ese tiempo.
+  final int? diasQueAlcanza;
 }
 
 /// Un fiado o encargue pendiente, listo para mostrar (el tablero lo pone
@@ -49,6 +55,7 @@ class TableroDelDia {
     required this.ventaConCostoCentavos,
     required this.vendidoSinCostoCentavos,
     required this.tickets,
+    this.unidadesVendidas = 0,
     required this.efectivoCentavos,
     required this.mpCentavos,
     required this.porHora,
@@ -66,6 +73,7 @@ class TableroDelDia {
   final int ventaConCostoCentavos;
   final int vendidoSinCostoCentavos;
   final int tickets;
+  final int unidadesVendidas;
   final int efectivoCentavos;
   final int mpCentavos;
   final Map<int, int> porHora;
@@ -121,6 +129,7 @@ Future<TableroDelDia> tableroDelDia(AppDatabase db, {DateTime? ahora}) async {
     ventaConCostoCentavos: ganancia.ventaConCostoCentavos,
     vendidoSinCostoCentavos: ganancia.vendidoSinCostoCentavos,
     tickets: ventas.length,
+    unidadesVendidas: unidadesVendidas(lineas.map((l) => (esPesable: l.esPesable, cantidad: l.cantidad ?? 1))),
     efectivoCentavos: cobrado.efectivoCentavos,
     mpCentavos: cobrado.mpCentavos,
     porHora: ventasPorHora(ventas.map((v) => (fecha: v.fecha, totalCentavos: v.totalCentavos))),
@@ -148,15 +157,19 @@ Future<TableroDelDia> tableroDelDia(AppDatabase db, {DateTime? ahora}) async {
 /// para separar un producto que se trabaja de uno que quedó en 0 hace meses.
 Future<List<ProductoConStockBajo>> _stockQueAvisa(AppDatabase db, DateTime momento) async {
   final desde = _inicioDelDia(momento).subtract(const Duration(days: 30));
+  final cantidad = db.lineasDeVenta.cantidad.sum();
+  final gramos = db.lineasDeVenta.gramos.sum();
   final vendidos = await (db.selectOnly(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
   ])
-        ..addColumns([db.lineasDeVenta.productoId])
+        ..addColumns([db.lineasDeVenta.productoId, cantidad, gramos])
         ..where(db.ventas.fecha.isBiggerOrEqualValue(desde) & db.ventas.anuladaEn.isNull())
         ..groupBy([db.lineasDeVenta.productoId]))
-      .map((f) => f.read(db.lineasDeVenta.productoId))
+      .map((f) => (id: f.read(db.lineasDeVenta.productoId), cantidad: f.read(cantidad) ?? 0, gramos: f.read(gramos) ?? 0))
       .get();
-  final vendidosIds = vendidos.whereType<int>().toSet();
+  final vendidosIds = vendidos.map((v) => v.id).whereType<int>().toSet();
+  final vendidoPorProducto = {for (final v in vendidos) if (v.id != null) v.id!: v};
+  final nombresCategoria = {for (final c in await db.select(db.categorias).get()) c.id: c.nombre};
 
   final productos = await (db.select(db.productos)
         ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false)))
@@ -168,11 +181,14 @@ Future<List<ProductoConStockBajo>> _stockQueAvisa(AppDatabase db, DateTime momen
     final stock = p.esPesable ? (p.stockGramos ?? 0) : p.stock;
     final minimo = p.esPesable ? p.stockMinimoGramos : p.stockMinimo;
     if (!avisaPorStock(stock: stock, minimo: minimo, vendidoHacePoco: vendidosIds.contains(p.id))) continue;
+    final v = vendidoPorProducto[p.id];
     lista.add(ProductoConStockBajo(
       nombre: p.nombre,
       proveedor: p.proveedorId == null ? null : nombresProveedor[p.proveedorId],
+      categoria: p.categoriaId == null ? null : nombresCategoria[p.categoriaId],
       esPesable: p.esPesable,
       stock: stock,
+      diasQueAlcanza: diasQueAlcanza(stock: stock, vendido30Dias: v == null ? 0 : (p.esPesable ? v.gramos : v.cantidad)),
     ));
   }
   // Los agotados primero: son los que ya no aparecen en Venta.

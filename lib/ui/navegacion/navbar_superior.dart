@@ -306,7 +306,6 @@ class _NavbarSuperiorState extends State<NavbarSuperior> {
             color: levantada ? p.navbg2 : p.navbg,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: p.navline),
-            boxShadow: levantada ? const [BoxShadow(color: Color(0x1A0D1017), blurRadius: 40, offset: Offset(0, 10))] : null,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(999),
@@ -568,7 +567,7 @@ class _CapaMega extends StatelessWidget {
                 onExit: (_) => onExit(),
                 child: Container(
                   key: Key('mega_$clave'),
-                  padding: EdgeInsets.fromLTRB(lateral, 92 + 14, lateral, 40),
+                  padding: EdgeInsets.fromLTRB(lateral, 92, lateral, 40),
                   decoration: BoxDecoration(
                     color: p.papel,
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),

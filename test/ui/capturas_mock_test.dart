@@ -6,10 +6,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
+import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
@@ -103,6 +105,33 @@ void main() {
             c.elegirMedio(ComposicionPago.efectivo);
           },
         );
+      });
+
+      testWidgets('mega-menú de Historial$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'venta-mega', () => PantallaVenta(db: b.db), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+          await mouse.addPointer(location: Offset.zero);
+          addTearDown(mouse.removePointer);
+          await mouse.moveTo(tester.getCenter(find.text('Historial')));
+          await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump(const Duration(milliseconds: 600));
+        });
+      });
+
+      testWidgets('menú de caja$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'venta-caja', () => PantallaVenta(db: b.db), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          await tester.tap(find.byKey(const Key('boton_caja')));
+        });
+      });
+
+      testWidgets('inicio$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'inicio', () => PantallaDashboard(db: b.db), oscuro: oscuro, tamanio: tamanio);
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {
