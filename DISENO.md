@@ -18,7 +18,7 @@ Para saber qué pantallas ya tienen esto aplicado y cuáles no, ver
 
 **PC pasada al lenguaje del mock del celular (2026-10-05) — vigente, manda sobre lo de abajo.** El dueño pidió que la PC siga el
 mock "Nodo Sur" (mismo del celular) más horsepos.com/antigravity. Mock de escritorio en `docs/mock-pc/NodoSurPC.html` y comparación en
-`docs/COMPARACION-MOCK-PC.md`. Decisiones del dueño: **modales al centro** (no hojas inferiores), **"Cobrar" azul**, **colores de medios
+`docs/archivo/COMPARACION-MOCK-PC.md`. Decisiones del dueño: **modales al centro** (no hojas inferiores), **"Cobrar" azul**, **colores de medios
 como el mock** (efectivo verde, Mercado Pago azul, tarjeta gris, mixto ámbar, sin violeta), **títulos en peso 500** (no se suma Figtree
 variable) y **ninguna función nueva** (solo aspecto). Qué cambió en el código:
 

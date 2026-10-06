@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/capturas.dart';
 import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/bienvenida/pantalla_bienvenida.dart';
@@ -94,7 +95,7 @@ void main() {
     usarBaseLocalDeTest(db!);
   }
 
-  for (final oscuro in [false, true]) {
+  for (final oscuro in temasDeCaptura) {
     final sufijo = oscuro ? ' (oscuro)' : '';
     testWidgets('consultar precio$sufijo', (tester) async {
       await preparar(tester);

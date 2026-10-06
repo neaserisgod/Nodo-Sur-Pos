@@ -27,5 +27,7 @@ jobs:
       # frena el PR en vez de acumularse.
       - name: Análisis (sin avisos)
         run: flutter analyze
+      # Sin el benchmark de 60.000 ventas (`@Tags(['bench'])`): mide rendimiento, no correctitud, y se corre aparte con
+      # `flutter test --tags bench`. Las capturas van en su versión corta (claro, 1366; `test/helpers/capturas.dart`).
       - name: Tests
-        run: flutter test
+        run: flutter test --exclude-tags bench

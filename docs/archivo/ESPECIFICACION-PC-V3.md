@@ -11,7 +11,7 @@ Documento para que una IA (o una persona) lleve **al pie de la letra** el mock d
   [`ESTILO-EXPRESIVO-WEB.md`](./ESTILO-EXPRESIVO-WEB.md) y `docs/mock-pc/NodoSurPC-v3-expresivo.html`
   (vivo: https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js). **No se aplica a la PC.**
 - **Ronda 3 (2026-10-05, la más reciente):** el dueño pidió **rapidez inmediata y cero fricción**, la **IA siempre a mano**, **Pagar proveedor** como acción principal de caja (gasto/ingreso pasa a secundario), **navbar sin logo ni nombre del local ni lupa**, la **tuerca** de vuelta para Configuración, y mucha información a la vista **sin perder claridad**. Está incorporada en todo este documento y resumida en la **sección 15**.
-- **Reemplaza** al mock anterior (`docs/mock-pc/NodoSurPC.html`) y a `docs/COMPARACION-MOCK-PC.md`.
+- **Reemplaza** al mock anterior (`docs/mock-pc/NodoSurPC.html`) y a `docs/archivo/COMPARACION-MOCK-PC.md`.
 - Nada de esto toca `lib/domain/` ni `lib/data/`: es **solo capa de presentación** (`lib/ui/`). Las reglas de negocio no cambian (sección 11).
 
 ---

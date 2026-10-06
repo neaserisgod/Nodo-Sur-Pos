@@ -12,6 +12,95 @@ sobre el motivo, revisar cuál quedó desactualizado.
 
 ---
 
+## Índice por tema
+
+Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir directo a la que hace falta.
+
+**Caja, cierre y arqueo**
+
+- ["Fijos pendientes" es fijos menos pagados, sin acumulador de reserva diaria](#fijos-pendientes-es-fijos-menos-pagados-sin-acumulador-de-reserva-diaria)
+- [La separación de cigarrillos es posterior al arqueo, fuera de la fórmula de diferencia](#la-separación-de-cigarrillos-es-posterior-al-arqueo-fuera-de-la-fórmula-de-diferencia)
+- [El redondeo va después del recargo de cigarrillos, no antes](#el-redondeo-va-después-del-recargo-de-cigarrillos-no-antes)
+- [Mercado Pago se arquea como una caja más, pero nunca es una fila de `Cajas`](#mercado-pago-se-arquea-como-una-caja-más-pero-nunca-es-una-fila-de-cajas)
+- [Un turno es una sesión de caja completa, no una tabla nueva](#un-turno-es-una-sesión-de-caja-completa-no-una-tabla-nueva)
+- [El retiro semanal no resta los fijos pendientes por default](#el-retiro-semanal-no-resta-los-fijos-pendientes-por-default)
+- [`registrarPagoFijo` acepta una fecha explícita, igual que `cerrarSesion`](#registrarpagofijo-acepta-una-fecha-explícita-igual-que-cerrarsesion)
+- [Regla 13: el retiro de ganancia es diario, en la apertura, y el colchón es ganancia retenida](#regla-13-el-retiro-de-ganancia-es-diario-en-la-apertura-y-el-colchón-es-ganancia-retenida)
+- [Arqueos del turno opcionales, y lo contado precarga el cierre (2026-09-28)](#arqueos-del-turno-opcionales-y-lo-contado-precarga-el-cierre-2026-09-28)
+
+**Reposición, separaciones y proveedores**
+
+- [Los cigarrillos quedan fuera de la reposición](#los-cigarrillos-quedan-fuera-de-la-reposición)
+- [El corte de reposición es al separar/pagar, no al recibir mercadería](#el-corte-de-reposición-es-al-separarpagar-no-al-recibir-mercadería)
+- [Separación de fondos por proveedor: separado se suma, nunca se reemplaza](#separación-de-fondos-por-proveedor-separado-se-suma-nunca-se-reemplaza)
+- [El costo de una línea de venta es nullable, nunca cero](#el-costo-de-una-línea-de-venta-es-nullable-nunca-cero)
+- [Stock por proveedor es una pantalla nueva, no un agregado a Productos](#stock-por-proveedor-es-una-pantalla-nueva-no-un-agregado-a-productos)
+- [El catálogo real de proveedores reemplaza al placeholder de 7](#el-catálogo-real-de-proveedores-reemplaza-al-placeholder-de-7)
+- [Proveedores reemplaza a Reposición (fase 13)](#proveedores-reemplaza-a-reposición-fase-13)
+- [Corrección post-revisión de fase 13 (Venta y Proveedores)](#corrección-post-revisión-de-fase-13-venta-y-proveedores)
+- [Segunda corrección post-revisión de fase 13 (Proveedores)](#segunda-corrección-post-revisión-de-fase-13-proveedores)
+- [Lo separado se divide entre cajón y Mercado Pago (2026-09-26)](#lo-separado-se-divide-entre-cajón-y-mercado-pago-2026-09-26)
+- [Apartado "Separaciones" (2026-09-26)](#apartado-separaciones-2026-09-26)
+- [Ventas anuladas fuera de reposición, ganancia y vendido (2026-09-26)](#ventas-anuladas-fuera-de-reposición-ganancia-y-vendido-2026-09-26)
+- [Separaciones es del día y mira la plata de ahora (2026-09-26)](#separaciones-es-del-día-y-mira-la-plata-de-ahora-2026-09-26)
+- [Cargar un costo completa las ventas que quedaron sin costo (2026-09-26)](#cargar-un-costo-completa-las-ventas-que-quedaron-sin-costo-2026-09-26)
+- [Separaciones rehecha sobre un mock de el dueño (2026-09-26)](#separaciones-rehecha-sobre-un-mock-de-el-dueño-2026-09-26)
+- [Pagar proveedor: un solo camino, y también sin deuda previa (2026-10-02)](#pagar-proveedor-un-solo-camino-y-también-sin-deuda-previa-2026-10-02)
+
+**Venta e historial**
+
+- [`Venta` no guarda el medio de pago adentro](#venta-no-guarda-el-medio-de-pago-adentro)
+- [Los días históricos se cargan del más viejo al más nuevo](#los-días-históricos-se-cargan-del-más-viejo-al-más-nuevo)
+- [La pantalla de venta al 100% (ítem 4): seis arreglos, todos chicos](#la-pantalla-de-venta-al-100-ítem-4-seis-arreglos-todos-chicos)
+- [Historial → Movimientos (2026-09-28)](#historial--movimientos-2026-09-28)
+- [Buscador de arriba contextual (2026-09-28)](#buscador-de-arriba-contextual-2026-09-28)
+- [Encargues por apartado (2026-10-02)](#encargues-por-apartado-2026-10-02)
+
+**Mercado Pago y cobro con terminal**
+
+- [Cobrar con la terminal por el servidor, con el Mercado Pago del negocio (2026-10-02)](#cobrar-con-la-terminal-por-el-servidor-con-el-mercado-pago-del-negocio-2026-10-02)
+- [Interruptor "Cobrar e imprimir por Nodo Sur" (2026-10-02)](#interruptor-cobrar-e-imprimir-por-nodo-sur-2026-10-02)
+- [Integración de la Point con Mercado Pago: qué se puede y qué eligió el dueño (2026-10-04)](#integración-de-la-point-con-mercado-pago-qué-se-puede-y-qué-eligió-el-dueño-2026-10-04)
+
+**Celular, sincronización y nube**
+
+- [Sync instantánea por wifi, sin depender de Supabase (2026-09-28)](#sync-instantánea-por-wifi-sin-depender-de-supabase-2026-09-28)
+- [APK de la companion por el sitio (2026-10-01)](#apk-de-la-companion-por-el-sitio-2026-10-01)
+- [Primitivas compartidas entre PC y celular (2026-10-02)](#primitivas-compartidas-entre-pc-y-celular-2026-10-02)
+- [Companion: mock completo del celular (2026-10-02)](#companion-mock-completo-del-celular-2026-10-02)
+- [Sync PC / celular / nube: sin callejones sin salida (2026-10-02)](#sync-pc--celular--nube-sin-callejones-sin-salida-2026-10-02)
+- [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
+- [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
+- [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
+- [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
+
+**Diseño y pantallas**
+
+- [La planilla al 100% (ítem 3): qué vuelve del papel viejo y por qué](#la-planilla-al-100-ítem-3-qué-vuelve-del-papel-viejo-y-por-qué)
+- [Tres correcciones de el dueño después de revisar el `demo_planilla.pdf`](#tres-correcciones-de-el-dueño-después-de-revisar-el-demo_planillapdf)
+- [Menú de secciones rehecho, y de 11 apartados a 6 (2026-09-26)](#menú-de-secciones-rehecho-y-de-11-apartados-a-6-2026-09-26)
+- ["Lenguaje de diseño": mocks de el dueño aplicados a toda la app (2026-09-26/28)](#lenguaje-de-diseño-mocks-de-el-dueño-aplicados-a-toda-la-app-2026-09-2628)
+- [Renombre visible a "Nodo Sur POS" (2026-10-01)](#renombre-visible-a-nodo-sur-pos-2026-10-01)
+- [Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")](#rediseño-del-lector-de-facturas-con-el-lenguaje-de-la-pc-el-dueño-2026-10-05-se-ve-horrible)
+
+**Producto, instalación y publicación**
+
+- [Instalador y actualización automática (2026-09-30)](#instalador-y-actualización-automática-2026-09-30)
+- [Generalización del producto (2026-09-30)](#generalización-del-producto-2026-09-30)
+- [Se publica solo cuando se pide (2026-10-03)](#se-publica-solo-cuando-se-pide-2026-10-03)
+
+**IA (promos y facturas) y blindaje técnico**
+
+- [Revisión de blindaje técnico (2026-10-04)](#revisión-de-blindaje-técnico-2026-10-04)
+- [IA de Google (Gemini) con clave personal gratuita (2026-10-05)](#ia-de-google-gemini-con-clave-personal-gratuita-2026-10-05)
+- [Promos sugeridas (2026-10-05)](#promos-sugeridas-2026-10-05)
+- [Facturas de compra con IA (2026-10-05)](#facturas-de-compra-con-ia-2026-10-05)
+- [Bultos y unidades en las facturas (El dueño, 2026-10-05: "necesito discriminarlos")](#bultos-y-unidades-en-las-facturas-el-dueño-2026-10-05-necesito-discriminarlos)
+- [Selector de modelo de la IA; las facturas se leen con el elegido (El dueño, 2026-10-05)](#selector-de-modelo-de-la-ia-las-facturas-se-leen-con-el-elegido-el-dueño-2026-10-05)
+- [Resumen "reconocí X de Y" en el lector de facturas (El dueño, 2026-10-05)](#resumen-reconocí-x-de-y-en-el-lector-de-facturas-el-dueño-2026-10-05)
+
+---
+
 ## Los cigarrillos quedan fuera de la reposición
 
 `lib/domain/reposicion.dart` (`LineaParaReposicion.esCigarrillo`).

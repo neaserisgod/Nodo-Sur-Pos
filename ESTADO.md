@@ -2,7 +2,7 @@
 
 **Fuente de verdad de cómo está el proyecto HOY.** Corto a propósito: lo que ya se resolvió vive en `DECISIONES.md`
 (por qué se hizo así) y `TRAMPAS.md` (bugs que no hay que repetir); el detalle cronológico anterior al 2026-10-03 está en
-[`docs/ESTADO-ARCHIVO.md`](./docs/ESTADO-ARCHIVO.md). Si algo de acá contradice al código o a `git log`, gana el código y
+[`docs/archivo/ESTADO-ARCHIVO.md`](./docs/archivo/ESTADO-ARCHIVO.md). Si algo de acá contradice al código o a `git log`, gana el código y
 se corrige este archivo. Para retomar desde cero: `CONTEXTO.md`.
 
 Se actualiza al cerrar cada sesión de trabajo. **No agregar acá historias de "Resuelto"**: una línea en "Últimos cambios"
@@ -25,11 +25,11 @@ horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 
 - **Expresiva** (primera): títulos que se tipean, partículas, mega-menú, tablero 3D, cinta de avisos, cursor-pastilla. El dueño dijo
   que para la caja **se exageró un poco** (hay que poder leer claro y, en lo posible, **sin scroll**), **pero le gustó para la web**:
-  queda **guardada para el sitio** en [`docs/ESTILO-EXPRESIVO-WEB.md`](./docs/ESTILO-EXPRESIVO-WEB.md) y
+  queda **guardada para el sitio** en [`docs/archivo/ESTILO-EXPRESIVO-WEB.md`](./docs/archivo/ESTILO-EXPRESIVO-WEB.md) y
   `docs/mock-pc/NodoSurPC-v3-expresivo.html` (vivo: https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js). **Pendiente: llevarla al sitio**
   (repo `NodoSurPage`, fuera de este repo).
 - **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
-  Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
+  Especificación para aplicarla: [`docs/archivo/ESPECIFICACION-PC-V3.md`](./docs/archivo/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
 
 **Ronda 3 (05/10, la última):** el dueño pidió rapidez inmediata y cero fricción, IA siempre a mano (no escondida en Configuración),
 **Pagar proveedor** como acción principal de caja (gasto/ingreso secundario), navbar sin logo/nombre/lupa, tuerca para Configuración y
@@ -53,14 +53,14 @@ Hecho: ~35 funciones agregadas al mock v4 (imprimir ticket, quién abre, caja de
 períodos y filtros, devolución por Mercado Pago, editor y carga histórica completos, cierre completo, Configuración). Detalle en la sección 8 de [`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md). **Sigue sin tocarse el código de Flutter.**
 
 **Auditoría del mock v4 (05/10):** se comparó contra la app real y **no tiene todas las funciones**: faltan ~35 (unas 15 de prioridad alta) y hay 7 cosas
-inventadas que no existen en la real. Detalle y orden para cerrar en [`docs/AUDITORIA-MOCK-V4.md`](./docs/AUDITORIA-MOCK-V4.md). **Antes de aplicar el diseño al código hay que cerrar esa lista.**
+inventadas que no existen en la real. Detalle y orden para cerrar en [`docs/archivo/AUDITORIA-MOCK-V4.md`](./docs/archivo/AUDITORIA-MOCK-V4.md). **Antes de aplicar el diseño al código hay que cerrar esa lista.**
 
 **No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
 
 Pedido del dueño: revisar el mock del celular, la web (horsepos.com) y antigravity.google, comparar con la app de PC y rehacerla.
-Comparación en [`docs/COMPARACION-MOCK-PC.md`](./docs/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en
+Comparación en [`docs/archivo/COMPARACION-MOCK-PC.md`](./docs/archivo/COMPARACION-MOCK-PC.md); mock de escritorio interactivo en
 `docs/mock-pc/NodoSurPC.html` (todas las pantallas y modales, claro/oscuro). Decisiones del dueño (05/10): modales al centro, "Cobrar"
 azul, colores de medios como el mock, títulos en peso 500, ninguna función nueva.
 
