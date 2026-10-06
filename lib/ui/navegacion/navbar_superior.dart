@@ -6,7 +6,9 @@
 // al pasar el mouse; a la derecha el Asistente (Ctrl+K), la campanita y la tuerca de Configuración.
 //
 // Con [child], la barra arma toda la pantalla: el contenido abajo, el velo y el mega-menú en el medio y la cápsula
-// arriba de todo (el mega-menú sale DE ATRÁS de la cápsula, como en el mock). Sin [child] es solo la cápsula.
+// arriba de todo. El mega-menú nace de la cápsula: cuelga justo debajo, con su mismo ancho (El dueño, 2026-10-06: "no
+// nace desde la navbar sino desde la ventana" — antes era una hoja de todo el ancho pegada al borde de arriba). Sin
+// [child] es solo la cápsula.
 //
 // Ctrl+F en una pantalla con búsqueda propia ([busqueda]) abre el campo dentro de la cápsula (`.sbar` del mock): las
 // secciones se desvanecen y el campo ocupa la barra. El mock no tiene lupa a la vista: se llega con el teclado.
@@ -34,6 +36,9 @@ const double altoNavbarSuperior = 68;
 /// Donde termina la barra: 14 de margen arriba + 68 de cápsula.
 const double finNavbarSuperior = 14 + altoNavbarSuperior;
 
+/// El mismo `Hero` en la barra de todas las pantallas: al cambiar de apartado la barra no se mueve.
+const Object tagNavbarSuperior = 'navbar_superior';
+
 /// Margen lateral de la barra y del contenido (el mismo que `.page`).
 double margenLateralNavbar(double anchoVentana) => margenLateral(anchoVentana);
 
@@ -56,27 +61,26 @@ class MegaMenu {
 
 /// Los mega-menús del mock (`MEGA` en `p3_core.js`). Comparar precios solo con su módulo prendido.
 Map<String, MegaMenu> megaMenusDeLaApp(ModulosNegocio modulos) => {
-      'proveedores': MegaMenu(
-        titulo: 'Proveedores y productos',
-        texto: 'Lista, cuenta corriente, precios por ganancia y stock.',
-        items: [
-          const ItemMegaMenu(icono: Ic.truck, titulo: 'Proveedores y productos', destino: 'proveedores'),
-          const ItemMegaMenu(icono: Ic.list, titulo: 'Contar stock por góndola', destino: 'proveedores/conteo', pista: 'conteo físico'),
-          if (modulos.estaActivo(Modulo.compararPrecios))
-            const ItemMegaMenu(icono: Ic.percent, titulo: 'Comparar precios', destino: 'proveedores/comparar'),
-        ],
-      ),
-      'historial': const MegaMenu(
-        titulo: 'Lo que pasó en la caja',
-        texto: 'Ventas, movimientos y cierres; editá o anulá lo ya cobrado.',
-        items: [
-          ItemMegaMenu(icono: Ic.clip, titulo: 'Ventas', destino: 'historial'),
-          ItemMegaMenu(icono: Ic.swap, titulo: 'Movimientos', destino: 'historial/movimientos'),
-          ItemMegaMenu(icono: Ic.lock, titulo: 'Cierres', destino: 'historial/cierres', pista: 'con detalle del día'),
-          ItemMegaMenu(icono: Ic.cal, titulo: 'Cargar un día histórico', destino: 'historial/carga'),
-        ],
-      ),
-    };
+  'proveedores': MegaMenu(
+    titulo: 'Proveedores y productos',
+    texto: 'Lista, cuenta corriente, precios por ganancia y stock.',
+    items: [
+      const ItemMegaMenu(icono: Ic.truck, titulo: 'Proveedores y productos', destino: 'proveedores'),
+      const ItemMegaMenu(icono: Ic.list, titulo: 'Contar stock por góndola', destino: 'proveedores/conteo', pista: 'conteo físico'),
+      if (modulos.estaActivo(Modulo.compararPrecios)) const ItemMegaMenu(icono: Ic.percent, titulo: 'Comparar precios', destino: 'proveedores/comparar'),
+    ],
+  ),
+  'historial': const MegaMenu(
+    titulo: 'Lo que pasó en la caja',
+    texto: 'Ventas, movimientos y cierres; editá o anulá lo ya cobrado.',
+    items: [
+      ItemMegaMenu(icono: Ic.clip, titulo: 'Ventas', destino: 'historial'),
+      ItemMegaMenu(icono: Ic.swap, titulo: 'Movimientos', destino: 'historial/movimientos'),
+      ItemMegaMenu(icono: Ic.lock, titulo: 'Cierres', destino: 'historial/cierres', pista: 'con detalle del día'),
+      ItemMegaMenu(icono: Ic.cal, titulo: 'Cargar un día histórico', destino: 'historial/carga'),
+    ],
+  ),
+};
 
 class NavbarSuperior extends StatefulWidget {
   const NavbarSuperior({
@@ -175,7 +179,17 @@ class _NavbarSuperiorState extends State<NavbarSuperior> {
     );
     final ancho = MediaQuery.sizeOf(context).width;
     final m = margenLateral(ancho);
-    final barra = Padding(padding: EdgeInsets.fromLTRB(m, 14, m, 0), child: SizedBox(height: altoNavbarSuperior, child: capsula));
+    // Cada apartado es una pantalla entera con su propia barra: sin el `Hero`, el fundido de la transición se llevaba
+    // también la barra y parecía que se recargaba todo (El dueño, 2026-10-06). Con el mismo `Hero` en todas, la barra
+    // queda quieta y solo cambia lo de abajo.
+    final barra = Hero(
+      tag: tagNavbarSuperior,
+      flightShuttleBuilder: (context, animacion, direccion, desde, hacia) => Material(type: MaterialType.transparency, child: (hacia.widget as Hero).child),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(m, 14, m, 0),
+        child: SizedBox(height: altoNavbarSuperior, child: capsula),
+      ),
+    );
     if (widget.child == null) return barra;
 
     final mega = ValueListenableBuilder<ModulosNegocio>(
@@ -183,13 +197,7 @@ class _NavbarSuperiorState extends State<NavbarSuperior> {
       builder: (context, modulos, _) {
         final megas = megaMenusDeLaApp(modulos);
         final abierto = _megaAbierto == null ? null : megas[_megaAbierto];
-        return _CapaMega(
-          menu: abierto,
-          clave: _megaAbierto,
-          onEnter: _seguirAbierto,
-          onExit: _pedirCerrar,
-          onElegir: _ir,
-        );
+        return _CapaMega(margen: m, menu: abierto, clave: _megaAbierto, onEnter: _seguirAbierto, onExit: _pedirCerrar, onElegir: _ir);
       },
     );
     final abierto = _megaAbierto != null;
@@ -238,12 +246,7 @@ class _NavbarSuperiorState extends State<NavbarSuperior> {
           children: [
             for (final item in secciones)
               item.clave == 'venta'
-                  ? _BotonVenta(
-                      etiqueta: item.etiqueta,
-                      activa: widget.claveActiva == 'venta',
-                      onTap: () => _ir('venta'),
-                      onEnter: _pedirCerrar,
-                    )
+                  ? _BotonVenta(etiqueta: item.etiqueta, activa: widget.claveActiva == 'venta', onTap: () => _ir('venta'), onEnter: _pedirCerrar)
                   : _EnlaceNav(
                       etiqueta: item.etiqueta,
                       activa: widget.claveActiva == item.clave,
@@ -366,9 +369,9 @@ class _Desvanecer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
-        ignoring: oculto,
-        child: AnimatedOpacity(opacity: oculto ? 0 : 1, duration: ms(250), curve: curvaEase, child: child),
-      );
+    ignoring: oculto,
+    child: AnimatedOpacity(opacity: oculto ? 0 : 1, duration: ms(250), curve: curvaEase, child: child),
+  );
 }
 
 /// `.nl.vbtn`: Venta, la píldora azul con el carrito.
@@ -536,8 +539,10 @@ class _BotonAsistente extends StatelessWidget {
 /// `.mega`: el panel blanco a todo el ancho que baja desde atrás de la cápsula. Entra en 240 ms con `--quart` y sus filas
 /// llegan escalonadas (25 ms cada una).
 class _CapaMega extends StatelessWidget {
-  const _CapaMega({required this.menu, required this.clave, required this.onEnter, required this.onExit, required this.onElegir});
+  const _CapaMega({required this.margen, required this.menu, required this.clave, required this.onEnter, required this.onExit, required this.onElegir});
 
+  /// El margen lateral de la cápsula: el panel tiene su mismo ancho.
+  final double margen;
   final MegaMenu? menu;
   final String? clave;
   final VoidCallback onEnter;
@@ -548,70 +553,78 @@ class _CapaMega extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.p;
     final abierto = menu != null;
-    final ancho = MediaQuery.sizeOf(context).width;
-    final lateral = ancho >= 1700 ? 120.0 : 64.0;
     return IgnorePointer(
       ignoring: !abierto,
       child: TweenAnimationBuilder<double>(
         tween: Tween(end: abierto ? 1 : 0),
         duration: hayMovimiento(context) ? ms(240) : Duration.zero,
         curve: curvaQuart,
+        // Baja desde la barra: entra un poco más arriba y apenas más chico, anclado al borde de arriba.
         builder: (context, k, hijo) => Opacity(
           opacity: k.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, -14 * (1 - k)), child: k == 0 ? const SizedBox.shrink() : hijo),
+          child: Transform.translate(
+            offset: Offset(0, -10 * (1 - k)),
+            child: Transform.scale(scale: .98 + .02 * k, alignment: Alignment.topCenter, child: k == 0 ? const SizedBox.shrink() : hijo),
+          ),
         ),
         child: menu == null
             ? const SizedBox.shrink()
-            : MouseRegion(
-                onEnter: (_) => onEnter(),
-                onExit: (_) => onExit(),
-                child: Container(
-                  key: Key('mega_$clave'),
-                  padding: EdgeInsets.fromLTRB(lateral, 92, lateral, 40),
-                  decoration: BoxDecoration(
-                    color: p.papel,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),
-                    boxShadow: const [BoxShadow(color: Color(0x1F0D1017), blurRadius: 60, offset: Offset(0, 30))],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 40),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(menu!.titulo, style: Tipos.h2(p.tinta, tamanio: 36).copyWith(height: 1.05)),
-                              const SizedBox(height: 18),
-                              Text(menu!.texto, style: estilo(16, 400, color: p.mute, alto: 1.5)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 34),
-                          decoration: BoxDecoration(border: Border(left: BorderSide(color: p.pelo))),
-                          child: Column(
-                            key: ValueKey(clave),
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (final (i, it) in menu!.items.indexed) ...[
-                                if (i > 0) const SizedBox(height: 4),
-                                Aparecer(
-                                  dy: 10,
-                                  duracion: ms(400),
-                                  curva: curvaQuart,
-                                  demora: ms(i * 25 + 30),
-                                  child: _FilaMega(item: it, onTap: () => onElegir(it.destino)),
-                                ),
+            : Padding(
+                padding: EdgeInsets.fromLTRB(margen, finNavbarSuperior + 10, margen, 0),
+                child: MouseRegion(
+                  onEnter: (_) => onEnter(),
+                  onExit: (_) => onExit(),
+                  child: Container(
+                    key: Key('mega_$clave'),
+                    padding: const EdgeInsets.fromLTRB(44, 36, 44, 36),
+                    decoration: BoxDecoration(
+                      color: p.papel,
+                      borderRadius: BorderRadius.circular(36),
+                      border: Border.all(color: p.navline),
+                      boxShadow: const [],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 40),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(menu!.titulo, style: Tipos.h2(p.tinta, tamanio: 36).copyWith(height: 1.05)),
+                                const SizedBox(height: 18),
+                                Text(menu!.texto, style: estilo(16, 400, color: p.mute, alto: 1.5)),
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 34),
+                            decoration: BoxDecoration(
+                              border: Border(left: BorderSide(color: p.pelo)),
+                            ),
+                            child: Column(
+                              key: ValueKey(clave),
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final (i, it) in menu!.items.indexed) ...[
+                                  if (i > 0) const SizedBox(height: 4),
+                                  Aparecer(
+                                    dy: 10,
+                                    duracion: ms(400),
+                                    curva: curvaQuart,
+                                    demora: ms(i * 25 + 30),
+                                    child: _FilaMega(item: it, onTap: () => onElegir(it.destino)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -643,7 +656,9 @@ class _FilaMega extends StatelessWidget {
               children: [
                 Icono(item.icono, size: 22, color: p.mute, grosor: 1.9),
                 const SizedBox(width: 14),
-                Expanded(child: Text(item.titulo, style: estilo(18, 450, color: p.tinta))),
+                Expanded(
+                  child: Text(item.titulo, style: estilo(18, 450, color: p.tinta)),
+                ),
                 if (item.pista != null) Text(item.pista!, style: estilo(13, 500, color: p.soft)),
               ],
             ),

@@ -49,8 +49,12 @@ class EnvolturaConNavbarSuperior extends StatefulWidget {
   State<EnvolturaConNavbarSuperior> createState() => _EnvolturaConNavbarSuperiorState();
 }
 
+/// La última lista de secciones leída de cada base: la barra de una pantalla nueva arranca con ella en vez de con
+/// "Venta" sola (las demás pastillas aparecían de golpe un instante después, El dueño 2026-10-06). Igual se vuelve a leer.
+final _ultimosItems = Expando<List<ItemNavbarSuperior>>();
+
 class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior> {
-  List<ItemNavbarSuperior> _items = const [ItemNavbarSuperior(clave: 'venta', etiqueta: 'Venta')];
+  late List<ItemNavbarSuperior> _items = _ultimosItems[widget.db] ?? const [ItemNavbarSuperior(clave: 'venta', etiqueta: 'Venta')];
 
   /// Búsqueda de la navbar: cerrada es una lupa; abierta, el campo ocupa la barra.
   bool _buscando = false;
@@ -75,6 +79,7 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
 
   Future<void> _cargar() async {
     final items = await itemsNavGestion(widget.db);
+    _ultimosItems[widget.db] = items;
     if (mounted) setState(() => _items = items);
   }
 

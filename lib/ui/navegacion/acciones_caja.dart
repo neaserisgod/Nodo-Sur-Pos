@@ -147,8 +147,12 @@ class BotonCajaDeGestion extends StatefulWidget {
   State<BotonCajaDeGestion> createState() => _BotonCajaDeGestionState();
 }
 
+/// Lo último que se leyó de la caja en cada base: el "Caja ▾" de una pantalla nueva arranca mostrándolo en vez de
+/// parpadear hasta terminar de leer (El dueño, 2026-10-06: al cambiar de apartado "se recarga la navbar").
+final _ultimaCaja = Expando<({SesionCaja? sesion, String? nombre})>();
+
 class _BotonCajaDeGestionState extends State<BotonCajaDeGestion> {
-  SesionCaja? _sesion;
+  late SesionCaja? _sesion = _ultimaCaja[widget.db]?.sesion;
   StreamSubscription<int>? _cambios;
 
   AppDatabase get db => widget.db;
@@ -166,11 +170,12 @@ class _BotonCajaDeGestionState extends State<BotonCajaDeGestion> {
     super.dispose();
   }
 
-  String? _nombre;
+  late String? _nombre = _ultimaCaja[widget.db]?.nombre;
 
   Future<void> _leer() async {
     final sesion = await sesionAbierta(db);
     final nombre = sesion == null ? null : await nombreDeQuienAbrio(db, sesion);
+    _ultimaCaja[db] = (sesion: sesion, nombre: nombre);
     if (mounted) {
       setState(() {
         _sesion = sesion;

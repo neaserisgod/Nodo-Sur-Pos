@@ -27,10 +27,10 @@ Las copias no incluyen el token de Mercado Pago ni el del celular. El servidor e
 | [`CLAUDE.md`](./CLAUDE.md) | Cómo está armado el código: stack, arquitectura de carpetas, convenciones que no se rompen, qué es cada fase del roadmap, el flujo de trabajo (plan antes de código, ambigüedades marcadas, tests primero), la restricción de hardware, y la especificación completa de la pantalla de venta. |
 | [`REGLAS-NEGOCIO.md`](./REGLAS-NEGOCIO.md) | El dominio del negocio: qué hace la app y por qué, regla por regla (dinero, cigarrillos, reposición, fiado, retiro, etc.), y qué módulo activa cada una. Si el código contradice esto, el código está mal. |
 | [`docs/perfiles/la-plazoleta.md`](./docs/perfiles/la-plazoleta.md) | El comercio de origen: cómo está configurado y qué nombres de archivo no se pueden cambiar. |
-| [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL, corto: qué está publicado, métricas, qué existe, qué no se probó en real y qué falta. Se actualiza al cerrar cada sesión. El detalle histórico (hasta 2026-10-03) está en [`docs/ESTADO-ARCHIVO.md`](./docs/ESTADO-ARCHIVO.md). |
-| [`docs/PLAN.md`](./docs/PLAN.md) | El plan vigente por fases (0 a 7) y, arriba, "Dónde quedamos": qué está hecho y qué sigue, para retomar con otra cuenta. |
+| [`ESTADO.md`](./ESTADO.md) | El estado ACTUAL, corto: qué está publicado, métricas, qué existe, qué no se probó en real y qué falta. Se actualiza al cerrar cada sesión. El detalle histórico (hasta 2026-10-03) está en [`docs/archivo/ESTADO-ARCHIVO.md`](./docs/archivo/ESTADO-ARCHIVO.md). |
+| [`docs/PLAN.md`](./docs/PLAN.md) | El plan v2 por fases (0 a 7, 2026-10-03) y las decisiones del dueño que lo ordenan. Su "Dónde quedamos" quedó viejo: lo de hoy está en `ESTADO.md` y `docs/ESTADO-FIDELIDAD-MOCK.md`. |
 | [`docs/ESTANDARES-GOOGLE.md`](./docs/ESTANDARES-GOOGLE.md) | Estética horsepos/antigravity y estándar de diseño y funcionamiento de Google, medido contra el código. |
-| [`docs/REVISION-FRICCIONES.md`](./docs/REVISION-FRICCIONES.md) | Fricciones encontradas pantalla por pantalla (PC y celular). |
+| [`docs/archivo/`](./docs/archivo/) | **Historia, no se lee para trabajar**: el estado viejo (hasta 2026-10-03), la especificación v3, el estilo expresivo (guardado para la web), la comparación y la auditoría del mock, la revisión de fricciones del 03/10 y la guía de la primera versión. Sirve para saber cómo se llegó a algo, nunca como fuente de lo que hay que hacer. |
 | [`DECISIONES.md`](./DECISIONES.md) | El PORQUÉ de decisiones de dominio y de arquitectura que sin el motivo parecen arbitrarias (por qué los cigarrillos quedan fuera de la reposición, por qué el costo es nullable, por qué el redondeo va después del recargo, etc.). |
 | [`TRAMPAS.md`](./TRAMPAS.md) | Bugs y comportamientos inesperados ya encontrados y resueltos — para no volver a pisar el mismo palo (orden de `sesionCerradaAnterior`, el hang de `dart:io` en `testWidgets`, etc.). |
 | [`DISENO.md`](./DISENO.md) | El sistema de diseño completo: escalas de espaciado y tipografía, colores, el acento único y sus tres usos, reglas de alineación y simetría, y las restricciones visuales por hardware. |
@@ -62,7 +62,8 @@ dart run build_runner build
 # Análisis estático — tiene que dar "No issues found!" (CI lo exige)
 flutter analyze
 
-# Toda la suite de tests (~2016 al 2026-10-04), sin los benchmarks de 60.000 ventas
+# Toda la suite de tests (~2.550 al 2026-10-06, ~5 min), sin los benchmarks de 60.000 ventas.
+# Las capturas van en versión corta (claro, 1366); todas: --dart-define=CAPTURAS=todas
 flutter test --exclude-tags bench
 # Los benchmarks, aparte
 flutter test --tags bench

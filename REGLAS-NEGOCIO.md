@@ -398,7 +398,7 @@ siguiente reviso ese cierre"*.
     prorrata) — no es una adivinanza para el dueño, ya viene calculado. Los
     dos montos quedan editables por si la sugerencia no es exacta (un
     mixto de varios productos no tiene atribución exacta por línea, ver
-    "Otros pendientes sueltos" en `docs/ESTADO-ARCHIVO.md` (y "Pendientes técnicos" en `ESTADO.md`)) o porque el dueño decide otra
+    "Otros pendientes sueltos" en `docs/archivo/ESTADO-ARCHIVO.md` (y "Pendientes técnicos" en `ESTADO.md`)) o porque el dueño decide otra
     cosa. Lo que no se retira de los dos campos queda como colchón
     automáticamente — no hace falta confirmarlo aparte.
 - **Lo que se retira sale del negocio ese mismo día**: el efectivo va a su

@@ -16,7 +16,7 @@ Documento para que una IA (o una persona) lleve **al pie de la letra** el mock d
 - **Mock vivo (interactivo, claro/oscuro):** https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js
 - **Fuente del mock en el repo:** `docs/mock-pc/NodoSurPC-v3-expresivo.html` (un solo archivo; se abre en cualquier navegador; la fuente Figtree viene de Google Fonts).
   Es la **referencia visual y de comportamiento**. Si este documento y el mock difieren en un número, **gana el mock** (y este documento se corrige).
-- **Reemplaza** al mock anterior (`docs/mock-pc/NodoSurPC.html`) y a `docs/COMPARACION-MOCK-PC.md`. Aquel mock conservaba la disposición de la app; este la rehace entera.
+- **Reemplaza** al mock anterior (`docs/mock-pc/NodoSurPC.html`) y a `docs/archivo/COMPARACION-MOCK-PC.md`. Aquel mock conservaba la disposición de la app; este la rehace entera.
 - Nada de lo que está acá toca `lib/domain/` ni `lib/data/`: es **solo capa de presentación** (`lib/ui/`). Las reglas de negocio no cambian (sección 11).
 
 ---

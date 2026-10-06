@@ -1,6 +1,6 @@
 # Especificación PC v4 — delta sobre la v3
 
-**Qué es:** la v3 sobria ([`ESPECIFICACION-PC-V3.md`](./ESPECIFICACION-PC-V3.md)) con **menos redundancias, todo simétrico y los avisos arriba**.
+**Qué es:** la v3 sobria ([`archivo/ESPECIFICACION-PC-V3.md`](./archivo/ESPECIFICACION-PC-V3.md)) con **menos redundancias, todo simétrico y los avisos arriba**.
 **Regla de lectura:** se aplica la v3 y encima esto. **Si algo choca, gana la v4.** Lo que acá no se menciona queda igual que en la v3.
 **Mock vivo:** https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh · archivo `docs/mock-pc/NodoSurPC-v4.html`.
 La v3 sigue publicada como base (https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj) por si el dueño prefiere volver.
@@ -90,7 +90,7 @@ Con la caja cerrada, el único ítem es **Abrir caja**. Cierra con Esc, clic afu
 ## 8. Ronda 5 (06/10/2026): funciones de la app real que faltaban en el mock — ya agregadas
 
 Pedido del dueño: *"lo que sí está [en la app real], implementalo; lo que no está [en la real, pero sí en el mock], que se quede igual porque son funciones útiles"*.
-Se agregó **todo lo de la auditoría (`AUDITORIA-MOCK-V4.md`, sección 2)** al mock y **no se sacó nada** de lo inventado (sección 3 de la auditoría: Rubro/Logo, Sucursal/Miembros, WhatsApp, "Excluir de la reposición", Seña, comparar costos entre proveedores, Caja ▾, Alt+P, asistente).
+Se agregó **todo lo de la auditoría (`archivo/AUDITORIA-MOCK-V4.md`, sección 2)** al mock y **no se sacó nada** de lo inventado (sección 3 de la auditoría: Rubro/Logo, Sucursal/Miembros, WhatsApp, "Excluir de la reposición", Seña, comparar costos entre proveedores, Caja ▾, Alt+P, asistente).
 
 | Zona | Agregado (comportamiento) |
 |---|---|

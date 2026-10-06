@@ -112,7 +112,7 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
   veces la misma versión a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
   `flutter pub get`, `flutter analyze` (tiene que dar "No issues found!", CI lo exige) y
-  `flutter test --exclude-tags bench` (~2016 tests, ~5 minutos).
+  `flutter test --exclude-tags bench` (~2.550 tests, ~5 minutos; las capturas en versión corta, ver `test/helpers/capturas.dart`).
 
 ## 6. Estado al 2026-10-03
 
@@ -156,7 +156,7 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
 4. Ofrecido y no pedido: hacer obligatorio el motivo de cada gasto.
 5. Limpieza: `.gitignore` no ignora `android/build` ni `android/app/build` (en una PC que compila el APK aparecen miles
    de cambios). (Los restos de Firestore/Supabase que se listaban acá ya no existen en el código.)
-   (`ESTADO.md` ya se resumió el 2026-10-03; el detalle viejo está en `docs/ESTADO-ARCHIVO.md`.)
+   (`ESTADO.md` ya se resumió el 2026-10-03; el detalle viejo está en `docs/archivo/ESTADO-ARCHIVO.md`.)
 
 ## 8. Datos útiles
 

@@ -250,12 +250,12 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
   sistema?" al primer arranque (`pantalla_elegir_modo.dart`, `modo_uso.dart`, `flujo_modo_uso.dart`), "PC y celular" o
   "solo celular", cambiable desde Gestión; las instalaciones viejas conservan el modo que ya tenían. Suite de las áreas
   tocadas: 346 verdes. El rediseño de la companion (P41 #23, 2026-10-02) ya está en `main`; la rama de la sync lo mezcló y las pantallas nuevas (Cuenta, Elegir modo) usan sus piezas (`EncabezadoCompanion`, `BloqueHero`, bloques grises).
-- **Camino a la primera versión**: `docs/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
+- **Camino a la primera versión**: `docs/archivo/PRIMERA-VERSION.md` (paso a paso: preparar la PC, beta, instalar, probar la cuenta, publicar).
   `tool/publicar_release.ps1` ahora acepta `-Canal beta` (solo la ven las cuentas de administrador). Nuevo: Configuración → Respaldo →
   "Importar una base" (acepta `.sqlite` o `.gz` de una versión actual o anterior, rechaza las más nuevas o ajenas). `.gitignore` ya no
   ignora `test/capturas/` (`/capturas/`). Nuevo `.github/workflows/tests.yml` (análisis y tests en cada PR; sin probar en GitHub todavía
   y en rojo mientras falte `test/capturas/`). Suite: 1387 verdes + 4 que no compilan por `test/capturas/`.
-- **Beta desde GitHub**: `.github/workflows/publicar-beta.yml` (manual) compila en Windows, firma y publica en el canal beta; la beta se descarga en horsepos.com/descargar/ con cuenta de administrador (PR del sitio). Secretos y pasos en `docs/PRIMERA-VERSION.md`. Sin probar en GitHub todavía (hace falta cargar los secretos).
+- **Beta desde GitHub**: `.github/workflows/publicar-beta.yml` (manual) compila en Windows, firma y publica en el canal beta; la beta se descarga en horsepos.com/descargar/ con cuenta de administrador (PR del sitio). Secretos y pasos en `docs/archivo/PRIMERA-VERSION.md`. Sin probar en GitHub todavía (hace falta cargar los secretos).
 - **Copias sin secretos**: la copia de la nube ya no lleva `mp_access_token` ni `companion_token` (vaciados con `secure_delete` + `VACUUM`; el respaldo local sigue completo). Tras restaurar se vuelven a cargar. Documentado en `DECISIONES.md`, `README.md` y `CLAUDE.md`. Suite: 1377 verdes + 4 que no compilan por `test/capturas/`.
 
 ---

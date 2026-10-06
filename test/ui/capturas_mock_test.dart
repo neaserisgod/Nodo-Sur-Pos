@@ -1,6 +1,7 @@
 // Capturas de la PC con los datos del mock v4, a 1920×1040 (el área útil del mock: 1920×1080 menos la barra de la
 // ventana), para compararlas a ojo contra `capturas-mock/k_*.png`. Guardan PNG en `capturas/mock/` (ignorada por git).
-// No comprueban píxeles: solo que cada pantalla se dibuje sin errores, en claro y en oscuro, y a 1366×768.
+// No comprueban píxeles: solo que cada pantalla se dibuje sin errores. Por defecto, solo en claro a 1366×728 (lo que
+// encuentra lo que no entra); con `--dart-define=CAPTURAS=todas`, también en oscuro y a 1920 (`helpers/capturas.dart`).
 
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -12,6 +13,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/capturas.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -99,8 +101,8 @@ Future<void> capturarMock(
 void main() {
   setUpAll(_cargarFuentes);
 
-  for (final oscuro in [false, true]) {
-    for (final tamanio in [const Size(1920, 1040), const Size(1366, 728)]) {
+  for (final oscuro in temasDeCaptura) {
+    for (final tamanio in tamaniosDeCapturaPc) {
       final sufijo = '${oscuro ? ' (oscuro)' : ''} ${tamanio.width.toInt()}';
 
       testWidgets('venta con carrito$sufijo', (tester) async {

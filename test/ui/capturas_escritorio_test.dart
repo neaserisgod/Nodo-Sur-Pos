@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../helpers/capturas.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -141,7 +142,7 @@ Future<void> _capturar(
 void main() {
   setUpAll(_cargarFigtree);
 
-  for (final oscuro in [false, true]) {
+  for (final oscuro in temasDeCaptura) {
     final sufijo = oscuro ? ' (oscuro)' : '';
 
     testWidgets('venta$sufijo', (tester) async {

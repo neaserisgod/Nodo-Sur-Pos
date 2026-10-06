@@ -252,42 +252,26 @@ real por pantalla en `ESTADO.md`.
 
 ## Pantalla de venta
 
-Rediseño de composición 2026-09-25 (tres pasadas, ver `DECISIONES.md`):
-primero se sacó la columna izquierda vieja (los resultados de escribir
-pasaron a colgar de la barra de búsqueda misma, como un dropdown flotante);
-después el dueño mandó una referencia de POS y pidió volver a un panel fijo
-de carrito/cobro a la derecha, "manteniendo la estructura de dropdown"
-(navbar + búsqueda); una tercera pasada corrigió cinco cosas puntuales de
-esa versión (notificaciones, la búsqueda en el resto de la app, nombres
-largos del carrito, el default de la grilla, los botones de cobro). La
-composición actual:
+Composición actual: rediseño v4 (2026-10-05/06), hecho 1:1 con el mock (`docs/ESPECIFICACION-PC-V4.md`,
+`docs/ESTADO-FIDELIDAD-MOCK.md`). Cómo se llegó (las pasadas del 2026-09-25, el panel fijo de cobro, el dropdown
+anclado) está en `DECISIONES.md`.
 
 **Venta es la pantalla principal** (El dueño, 2026-10-03): la app arranca
 acá y la tecla Inicio vuelve acá; el tablero ("Inicio") es una sección más.
 
-**Franja superior** — navbar y acciones de caja, en una fila (2026-10-03):
-- Centro: las secciones como pastillas (la activa con fondo), centradas en
-  la ventana y sin la marca (el nombre del comercio ya está en la barra de
-  la ventana). No hay sidebar ni dropdown.
-- Derecha: Configuración como engranaje, y en Venta la campanita y
-  "Cambiar de turno" / "Cerrar caja" (detalle abajo).
+**Barra de arriba** — una fila: a la izquierda **Caja ▾** (quién tiene la caja, y el menú de caja: arqueo, cambiar de
+turno, gasto, ingreso, cerrar caja); al centro las secciones como pastillas (Venta en azul), sin la marca (el nombre
+del comercio ya está en la barra de la ventana); a la derecha el Asistente (Ctrl+K), la campanita y Configuración como
+engranaje. No hay sidebar.
 
-**Rediseño v4 (2026-10-05)** — gana sobre lo de abajo si se contradice: Venta ya no
-lleva el título "Vender"; el campo único va arriba de todo, grande, con el botón
-**Pagar proveedor · Alt+P** al lado; la fila de categorías termina con la pastilla
-**Varios · Alt+V**; los avisos salen **arriba** (`mostrarAviso`) y el estado/menú de
-la caja vive en el botón **Caja ▾** de la navbar (arqueo, turno, gasto, ingreso, cerrar).
-Ver `docs/PLAN-APLICAR-V4.md` y `docs/ESPECIFICACION-PC-V4.md`.
-
-**Búsqueda** — rediseño "antigravity": ya no comparte fila con la navbar.
-Vive en la columna de productos, debajo del título "Vender" y arriba de la
-grilla (`BarraBusquedaVenta` en `pantalla_venta.dart`):
+**Búsqueda** — el campo único va arriba de todo en Venta, grande, con **Pagar proveedor · Alt+P** al lado
+(`_FilaBuscador` en `lib/ui/venta/vista_venta.dart`). Venta ya no lleva título:
 - Campo único de texto, con foco al arrancar. Todo entra por acá. Agregar un producto (tap,
   Alt+tecla o Enter) y cobrar devuelven el foco ahí solos — es la
   continuación natural de seguir vendiendo; un diálogo secundario (Mixto,
-  Varios, gasto/ingreso rápido, arqueo intermedio, editar un acceso
-  directo, imprimir) YA NO lo hace (El dueño, 2026-09-16: "dejar de robar el
-  foco al hacer otra cosa") — se queda donde haya quedado al cerrarse.
+  Varios, gasto/ingreso rápido, arqueo intermedio, imprimir) NO lo hace
+  (El dueño, 2026-09-16: "dejar de robar el foco al hacer otra cosa") — se
+  queda donde haya quedado al cerrarse.
   - Mientras se escribe, un dropdown ANCLADO al campo mismo (no una
     columna fija de la pantalla) cuelga justo debajo con nombre, precio y
     stock por fila, 6 a 8 filas antes de scrollear. Flechas para moverse,
@@ -296,14 +280,11 @@ grilla (`BarraBusquedaVenta` en `pantalla_venta.dart`):
     y nada más — dar de alta un producto nuevo es siempre desde
     Proveedores, nunca desde acá (El dueño, 2026-09-16: se sacó la alta
     rápida de esta pantalla).
-  - En TODAS las demás pantallas de gestión la búsqueda (versión liviana,
-    `BarraBusquedaGlobal`) es una **lupa** en la navbar (2026-10-03): Ctrl+F
-    la abre y el campo se expande hasta tapar las pastillas; al cerrarla
-    vuelve vacío. Ahí no agrega nada al carrito (esas pantallas no tienen
-    uno): elegir un resultado vuelve a Venta con el texto ya cargado, y
-    desde ahí sigue el camino de siempre. En Venta, Ctrl+F enfoca el campo
-    único (que nunca se esconde detrás de la lupa).
-
+  - Las demás pantallas tienen su propio buscador grande en la cabecera (`BuscadorPagina` del kit), que filtra lo de
+    esa pantalla y no agrega nada a ningún carrito. Ctrl+F: en Venta enfoca el campo único; en una pantalla con
+    búsqueda propia en la barra (hoy solo Comparar precios) la abre; en el resto abre el Asistente, que también busca
+    productos y, al elegir uno, vuelve a Venta con el texto cargado.
+- Los avisos salen **arriba** (`mostrarAviso`), nunca tapando el cobro.
 
 **Notificaciones** — tercera pasada (El dueño: *"NO QUIERO QUE APAREZCA EL
 COSO DEL ARQUEO OCUPANDO TODO... UN APARTADO NOTIFICACIONES"*): el aviso
