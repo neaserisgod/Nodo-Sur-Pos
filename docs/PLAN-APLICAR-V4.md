@@ -22,7 +22,7 @@ estas etapas es **sobre todo de forma** (disposición, componentes, avisos), no 
 | 4 | **Proveedores** | Ficha en mitades iguales, cifras por período, selección masiva, "Todos / Sin proveedor". | Medio |
 | 5 | **Separaciones e Historial** | Períodos Hoy/Semana/Mes y Hoy/Ayer/Este mes, filtros, editor de venta. | Medio |
 | 6 | **Cierre de caja** | Paso 2 con scroll interno, arqueos del turno, nota, MP por canal. | Medio |
-| 7 | **Configuración** | Orden y contenido de las 16 secciones del mock. | Bajo |
+| 7 | **Configuración** (HECHA: lista plana de 16 secciones) | Orden y contenido de las 16 secciones del mock. | Bajo |
 | 8 | **Funciones nuevas del mock** | Asistente (Ctrl+K), Pagar proveedor rápido (Alt+P), ver "Decisiones pendientes". | Alto: negocio |
 
 Después de **cada** etapa: se actualizan `ESTADO.md` y `DISENO.md` en el mismo cambio, y se prueba a mano en Windows (esto último no se puede hacer desde acá).

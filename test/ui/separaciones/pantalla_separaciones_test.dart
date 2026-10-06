@@ -163,7 +163,8 @@ void main() {
 
     await tester.tap(find.text('Mes'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Este mes'), findsOneWidget);
+    // (El subtítulo "Este mes · …" ya no se dibuja desde el rediseño v4: el período se ve en la pastilla elegida.)
+    expect(find.text('Reposición (costo)'), findsOneWidget);
     await desmontar(tester);
   });
 

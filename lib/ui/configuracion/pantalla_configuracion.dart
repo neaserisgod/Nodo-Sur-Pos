@@ -23,7 +23,6 @@ import '../tema/tokens.dart';
 import '../navegacion/busqueda_contextual.dart';
 import 'configuracion_controlador.dart';
 import '../tema/iconos.dart';
-import '../tema/presionable.dart';
 import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
@@ -80,12 +79,6 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
     }
   }
 
-  void _irAGrupo(GrupoConfiguracion g) {
-    if (g == _c.grupoActual) return;
-    final secciones = _seccionesDe(g);
-    if (secciones.isNotEmpty) _c.irASeccion(secciones.first);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -114,8 +107,6 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
       value: _c,
       child: Consumer<ConfiguracionControlador>(
         builder: (context, c, _) {
-          final grupo = c.grupoActual;
-          final secciones = _seccionesDe(grupo);
           final textTheme = Theme.of(context).textTheme;
           return PantallaGestion(
             db: widget.db,
@@ -131,13 +122,26 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
                       ListaMaestra(
                         mensajeVacio: 'Ningún ajuste coincide',
                         items: [
-                          for (final g in _gruposVisibles)
-                            FilaLista(
+                          // Una sola lista con las 16 secciones y el nombre de su grupo arriba (rediseño v4): se llega a
+                          // cualquier ajuste con un toque, sin pasar por grupo + pastilla.
+                          for (final g in _gruposVisibles) ...[
+                            _TituloGrupo(
                               key: Key('grupo_${g.name}'),
-                              nombre: g.etiqueta,
-                              seleccionada: grupo == g,
-                              onTap: () => _irAGrupo(g),
+                              texto: g.etiqueta,
+                              // Tocar el nombre del grupo abre su primera sección.
+                              onTap: () {
+                                final primeras = _seccionesDe(g);
+                                if (primeras.isNotEmpty && !primeras.contains(c.seccionActual)) c.irASeccion(primeras.first);
+                              },
                             ),
+                            for (final s in _seccionesDe(g))
+                              FilaLista(
+                                key: Key('pastilla_${s.name}'),
+                                nombre: _etiquetaSeccion(s),
+                                seleccionada: s == c.seccionActual,
+                                onTap: () => c.irASeccion(s),
+                              ),
+                          ],
                         ],
                       ),
                       const SizedBox(width: Espaciado.lg),
@@ -145,25 +149,12 @@ class _PantallaConfiguracionState extends State<PantallaConfiguracion> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(grupo.etiqueta, style: textTheme.headlineSmall?.copyWith(fontWeight: Pesos.fuerte)),
+                            Text(_etiquetaSeccion(c.seccionActual), style: textTheme.headlineSmall?.copyWith(fontWeight: Pesos.fuerte)),
                             const SizedBox(height: Espaciado.xs),
-                            Text(grupo.descripcion, style: textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario)),
-                            if (secciones.length > 1) ...[
-                              const SizedBox(height: Espaciado.md),
-                              Wrap(
-                                spacing: Espaciado.xs,
-                                runSpacing: Espaciado.xs,
-                                children: [
-                                  for (final s in secciones)
-                                    _PastillaSeccion(
-                                      key: Key('pastilla_${s.name}'),
-                                      etiqueta: _etiquetaSeccion(s),
-                                      activa: s == c.seccionActual,
-                                      onTap: () => c.irASeccion(s),
-                                    ),
-                                ],
-                              ),
-                            ],
+                            Text(
+                              _descripcionSeccion(c.seccionActual),
+                              style: textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario),
+                            ),
                             const SizedBox(height: Espaciado.md),
                             // Respaldo e Impresión traen sus propias superficies y listas que llenan el alto: van sin el
                             // panel con scroll del resto.
@@ -281,35 +272,48 @@ String _etiquetaSeccion(SeccionConfiguracion s) => switch (s) {
   SeccionConfiguracion.actualizaciones => 'Versión',
 };
 
-class _PastillaSeccion extends StatelessWidget {
-  const _PastillaSeccion({super.key, required this.etiqueta, required this.activa, required this.onTap});
+/// El nombre de un grupo de ajustes, chico y apagado, arriba de sus secciones en la lista de la izquierda.
+class _TituloGrupo extends StatelessWidget {
+  const _TituloGrupo({super.key, required this.texto, required this.onTap});
 
-  final String etiqueta;
-  final bool activa;
+  final String texto;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    return Presionable(
-      radio: 999,
+    return InkWell(
       onTap: onTap,
-      color: activa ? colores.textoPrimario : colores.fondoBloque,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: Medidas.alturaControl),
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-        alignment: Alignment.center,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Espaciado.md, Espaciado.lg, Espaciado.md, Espaciado.xs),
         child: Text(
-          etiqueta,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: activa ? Pesos.medium : FontWeight.w500,
-            color: activa ? colores.fondo : colores.textoPrimario,
-          ),
+          texto.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: context.colores.textoTenue, fontWeight: Pesos.fuerte, letterSpacing: 0.8),
         ),
       ),
     );
   }
 }
+
+/// Una línea que dice para qué sirve cada sección (la que va bajo el título, a la derecha de la lista).
+String _descripcionSeccion(SeccionConfiguracion s) => switch (s) {
+  SeccionConfiguracion.comercio => 'Cómo se llama el local y qué dice el ticket.',
+  SeccionConfiguracion.usuarios => 'Quién atiende. Cada turno arranca con la caja contada.',
+  SeccionConfiguracion.cajaYRedondeo => 'Cuánto se redondea el efectivo y qué plata se aparta.',
+  SeccionConfiguracion.cigarrillos => 'Recargo por pago virtual en ventas con cigarrillos.',
+  SeccionConfiguracion.vuelto => 'El producto que se agrega cuando faltan \$ 100 de vuelto.',
+  SeccionConfiguracion.mediosPago => 'Cómo se cobra y a qué caja va cada cosa.',
+  SeccionConfiguracion.categorias => 'Ganancia de referencia por categoría.',
+  SeccionConfiguracion.cuentaNube => 'Tu cuenta, el negocio y la sincronización.',
+  SeccionConfiguracion.impresion => 'Ticket, impresora y terminal Point.',
+  SeccionConfiguracion.companion => 'Vinculá la app Android con esta caja.',
+  SeccionConfiguracion.asistenteIa => 'Ayuda para promos y facturas.',
+  SeccionConfiguracion.respaldo => 'Copias automáticas y cómo volver atrás.',
+  SeccionConfiguracion.actualizaciones => 'Qué versión tenés y cómo actualizarla.',
+  SeccionConfiguracion.apariencia => 'Cómo se ve y cómo se mueve.',
+  SeccionConfiguracion.menu => 'Qué secciones se ven y en qué orden.',
+  SeccionConfiguracion.modulos => 'Qué partes del sistema están prendidas.',
+};
 
 class _SeccionModulos extends StatelessWidget {
   const _SeccionModulos({required this.c});
