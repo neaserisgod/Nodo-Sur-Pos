@@ -51,15 +51,22 @@ class _GraficoPorHoraState extends State<GraficoPorHora> {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Ventas por hora', style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte))),
+            Expanded(
+              child: Text('Ventas por hora', maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte)),
+            ),
             if (mostrada != null) ...[
-              Text(
-                '${_elegida == null ? 'Pico · ' : ''}$mostrada a ${mostrada + 1} h',
-                style: textTheme.bodySmall,
+              Flexible(
+                child: Text(
+                  '${_elegida == null ? 'Pico · ' : ''}$mostrada a ${mostrada + 1} h',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall,
+                ),
               ),
               const SizedBox(width: Espaciado.md),
               Text(
                 formatearARS(widget.porHora[mostrada] ?? 0),
+                maxLines: 1,
                 style: textTheme.titleLarge?.tabular,
               ),
             ] else
@@ -112,13 +119,27 @@ class _GraficoPorHoraState extends State<GraficoPorHora> {
           ),
         ),
         const SizedBox(height: Espaciado.xs),
-        Row(
-          children: [
-            for (final h in horas)
-              Expanded(
-                child: Text('$h h', textAlign: TextAlign.center, style: textTheme.labelSmall),
-              ),
-          ],
+        // En una tarjeta angosta (rediseño v4: Inicio en tres columnas iguales) las etiquetas "9 h" no entran una por una:
+        // se muestran solo las horas pares y sin partirse en dos renglones.
+        LayoutBuilder(
+          builder: (context, restricciones) {
+            final angosto = restricciones.maxWidth / horas.length < 38;
+            return Row(
+              children: [
+                for (final h in horas)
+                  Expanded(
+                    child: Text(
+                      angosto && h.isOdd ? '' : '$h h',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      style: textTheme.labelSmall,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
