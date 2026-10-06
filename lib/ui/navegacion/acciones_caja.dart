@@ -15,7 +15,6 @@ import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
 import '../cierre/pantalla_cierre.dart';
-import '../comun/modal.dart';
 import '../kit/ic.dart';
 import '../venta/dialogo_apertura_caja.dart';
 import '../venta/dialogo_arqueo_intermedio.dart';
@@ -109,7 +108,7 @@ class LanzadorCaja {
       mostrarDialogoIngresoRapido(context, db: db, sesionCajaId: s.id, usuarioId: s.usuarioAbrioId);
 
   Future<void> cerrar(BuildContext context, SesionCaja s) =>
-      mostrarModal<void>(context, builder: (_) => PantallaCierre(db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId));
+      abrirCierre(context, builder: (_) => PantallaCierre(db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId));
 
   Future<void> pagarProveedor(BuildContext context, SesionCaja s) =>
       pagarProveedorYAvisar(context, db: db, usuarioId: s.usuarioAbrioId, sesionCajaId: s.id);
@@ -117,7 +116,7 @@ class LanzadorCaja {
   /// Mismo arqueo obligatorio que cerrar, pero al terminar abre la hoja de quien entra.
   Future<void> turno(BuildContext context, SesionCaja s) async {
     var cerrado = false;
-    await mostrarModal<void>(
+    await abrirCierre(
       context,
       builder: (ctx) => PantallaCierre(
         db: db,

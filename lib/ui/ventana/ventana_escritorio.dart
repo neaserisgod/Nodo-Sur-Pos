@@ -19,7 +19,6 @@ import '../../data/database.dart';
 import '../../data/repositorio_respaldo.dart';
 import '../../servicios/actualizaciones.dart';
 import '../cierre/pantalla_cierre.dart';
-import '../comun/modal.dart';
 import '../tema/acentos.dart';
 import '../tema/tokens.dart';
 import '../../domain/marca.dart';
@@ -169,7 +168,7 @@ class _MarcoVentanaState extends State<MarcoVentana> with WindowListener {
             // si se había cerrado o no. Ahora, con la caja cerrada, el botón
             // cierra el sistema (El dueño, 2026-10-03).
             var cajaCerrada = false;
-            await mostrarModal<void>(
+            await abrirCierre(
               ctx,
               builder: (_) => PantallaCierre(
                 db: widget.db,

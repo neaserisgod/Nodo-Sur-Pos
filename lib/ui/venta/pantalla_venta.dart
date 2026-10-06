@@ -37,7 +37,6 @@ import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import 'cancelar_venta_con_deshacer.dart';
-import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
 import '../navegacion/acciones_caja.dart';
 import '../navegacion/asistente.dart';
@@ -368,12 +367,13 @@ class _PantallaVentaState extends State<PantallaVenta>
   Future<void> _irACierre() async {
     final sesion = _controlador.sesion;
     if (sesion == null) return;
-    await mostrarModal<void>(
+    await abrirCierre(
       context,
       builder: (context) => PantallaCierre(
         db: widget.db,
         sesionId: sesion.id,
         usuarioId: sesion.usuarioAbrioId,
+        textoVolver: 'Volver a Venta',
       ),
     );
   }
@@ -391,12 +391,13 @@ class _PantallaVentaState extends State<PantallaVenta>
     // usar acá para eso: recién se actualiza cuando `didPopNext()` termine
     // su propio `cargarTodo()`, después de este `await`.
     var cerrado = false;
-    await mostrarModal<void>(
+    await abrirCierre(
       context,
       builder: (context) => PantallaCierre(
         db: widget.db,
         sesionId: sesion.id,
         usuarioId: sesion.usuarioAbrioId,
+        textoVolver: 'Volver a Venta',
         textoBotonFinal: 'Abrir para el que entra',
         onFinalizado: () {
           cerrado = true;

@@ -16,6 +16,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
+import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
@@ -280,6 +281,52 @@ void main() {
         final b = (await tester.runAsync(baseDelMock))!;
         addTearDown(b.db.close);
         await capturarMock(tester, 'encargues', () => PantallaEncargues(db: b.db, usuarioId: b.usuarioId, sesionCajaId: b.sesionId), oscuro: oscuro, tamanio: tamanio);
+      });
+
+      // Cierre: los dos pasos y la caja cerrada (`k_cierre`, `j_cierre2`, `j_cerrada`).
+      Future<void> contar(WidgetTester tester) async {
+        Finder campo(String k) => find.descendant(of: find.byKey(Key(k)), matching: find.byType(TextField));
+        await tester.enterText(campo('campo_efectivo_contado'), '253.000');
+        await tester.enterText(campo('campo_mp_contado'), '479.900');
+        await tester.enterText(campo('campo_lata_contada'), '58.400');
+        await tester.pump();
+      }
+
+      testWidgets('cierre paso 1$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'cierre-1', () => PantallaCierre(db: b.db, sesionId: b.sesionId, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio, antes: () => contar(tester));
+      });
+
+      testWidgets('cierre paso 2$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'cierre-2', () => PantallaCierre(db: b.db, sesionId: b.sesionId, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          await contar(tester);
+          await tester.tap(find.text('Confirmar conteo'));
+          for (var i = 0; i < 3; i++) {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+            await tester.pump(const Duration(milliseconds: 300));
+          }
+        });
+      });
+
+      testWidgets('cierre cerrada$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'cierre-cerrada', () => PantallaCierre(db: b.db, sesionId: b.sesionId, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio, antes: () async {
+          await contar(tester);
+          await tester.tap(find.text('Confirmar conteo'));
+          for (var i = 0; i < 3; i++) {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+            await tester.pump(const Duration(milliseconds: 300));
+          }
+          await tester.tap(find.text('Cerrar caja'));
+          for (var i = 0; i < 6; i++) {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+            await tester.pump(const Duration(milliseconds: 300));
+          }
+        });
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {

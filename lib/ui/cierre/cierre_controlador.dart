@@ -24,6 +24,7 @@ import '../../data/repositorio_ingresos.dart' show registrarIngresoRapido;
 import '../../data/repositorio_saldo_mp.dart';
 import '../../servicios/conciliacion_mp_nube.dart';
 import '../../data/repositorio_cobro.dart';
+import '../../data/repositorio_historial.dart' show DetalleDelDia, detalleDelDia;
 import '../../data/repositorio_respaldo.dart';
 import '../../data/repositorio_ventas_abiertas.dart';
 import '../../domain/dinero.dart';
@@ -197,6 +198,14 @@ class CierreControlador extends ChangeNotifier {
   /// importantes" en el cierre).
   ResumenDiaHistorico? resumenDia;
 
+  /// Lo vendido, los tickets y la ganancia del turno, para "Vendiste $ X en N tickets y ganaste $ Y" de la caja cerrada.
+  /// Sale de `detalleDelDia`, la misma cuenta que el detalle del día en Historial (Regla 3).
+  DetalleDelDia? detalleCerrado;
+
+  /// Hora del respaldo hecho al cerrar recién, para decirlo en la caja cerrada. Null si no se hizo (sin carpeta, falló,
+  /// o la sesión ya venía cerrada).
+  DateTime? respaldoHechoA;
+
   bool puedeReabrir = false;
   String? error;
 
@@ -272,9 +281,11 @@ class CierreControlador extends ChangeNotifier {
           lataContadoCentavos: sesion!.lataContadoCentavos,
         ),
         resumenDiaHistorico(db, sesionId),
+        detalleDelDia(db, sesionId),
       ]);
       resumen = resultados[0] as ResumenCierre;
       resumenDia = resultados[1] as ResumenDiaHistorico;
+      detalleCerrado = resultados[2] as DetalleDelDia;
       puedeReabrir = await esUltimaSesion(db, sesionId);
     }
     notifyListeners();
@@ -301,6 +312,23 @@ class CierreControlador extends ChangeNotifier {
     }
     if (mpPrecargado) mpContadoCtrl.text = formatearARS(ultimo.mpContadoCentavos, conSigno: false);
     precargadoDe = efectivoPrecargado || mpPrecargado ? ultimo : null;
+  }
+
+  /// Las cajas que se cuentan en el paso 1, todas juntas y a ciegas (mock v4, 2026-10-06): el efectivo, Mercado Pago y,
+  /// con el módulo de caja aparte, la lata. El paso 2 ya no tiene campos — para corregir se vuelve a contar — así que
+  /// sin las tres no hay con qué cerrar y el botón de confirmar no se habilita.
+  bool get conteoCompleto =>
+      _parsear(efectivoContadoCtrl.text) != null &&
+      _parsear(mpContadoCtrl.text) != null &&
+      (!moduloActivo(Modulo.cajaAparte) || _parsear(lataContadoCtrl.text) != null);
+
+  /// "Volver a contar" del paso 2: de nuevo al conteo, con lo escrito tal cual (se corrige, no se tipea de cero). Lo
+  /// revelado vuelve a taparse hasta confirmar otra vez.
+  void volverAContar() {
+    if (fase != FaseCierre.revisado) return;
+    fase = FaseCierre.conteo;
+    error = null;
+    notifyListeners();
   }
 
   /// Primera confirmación: recién acá se calcula y se revela todo junto
@@ -415,6 +443,7 @@ class CierreControlador extends ChangeNotifier {
       }
       await hacerRespaldo(db);
       ultimoRespaldoError = null;
+      respaldoHechoA = DateTime.now();
     } catch (e) {
       ultimoRespaldoError = 'No se pudo hacer el respaldo automático: $e';
     }
@@ -450,6 +479,8 @@ class CierreControlador extends ChangeNotifier {
     }
     fase = FaseCierre.conteo;
     resumen = null;
+    detalleCerrado = null;
+    respaldoHechoA = null;
     error = null;
     efectivoContadoCtrl.clear();
     mpContadoCtrl.clear();

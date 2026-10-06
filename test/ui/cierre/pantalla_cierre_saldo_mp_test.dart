@@ -1,5 +1,6 @@
-// Etapa E (2026-10-04): el botón "Traer saldo de Mercado Pago" del cierre llena el MP contado y muestra las diferencias con un
-// botón para cargarlas.
+// Etapa E (2026-10-04): el botón "Traer saldo" del cierre llena el MP contado y muestra las diferencias con un botón para
+// cargarlas. Desde el mock v4 (2026-10-06) el botón está en el paso 1, al lado del campo de Mercado Pago, y las diferencias
+// se ven en el paso 2.
 
 import 'dart:convert';
 import 'dart:io';
@@ -28,13 +29,18 @@ void main() {
     final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
     await db.into(db.productos).insert(ProductosCompanion.insert(nombre: 'Agua', precioCentavos: const Value(1000), stock: const Value(1)));
 
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    Finder campo(String llave) => find.descendant(of: find.byKey(Key(llave)), matching: find.byType(TextField));
+
     Future<void> abrirCierre() async {
       await tester.pumpWidget(const SizedBox()); // estado nuevo: el controlador toma la cuenta que haya en ese momento
       await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: PantallaCierre(db: db, sesionId: sesionId, usuarioId: usuarioId)));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, '0');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
+      await tester.enterText(campo('campo_efectivo_contado'), '0');
+      await tester.enterText(campo('campo_lata_contada'), '0');
+      await tester.pump();
     }
 
     await abrirCierre();
@@ -76,9 +82,13 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
 
-    final campo = find.descendant(of: find.byKey(const Key('campo_mp_contado')), matching: find.byType(TextField));
-    expect(tester.widget<TextField>(campo).controller!.text, '50.000', reason: 'el saldo llenó el MP contado');
+    expect(tester.widget<TextField>(campo('campo_mp_contado')).controller!.text, '50.000', reason: 'el saldo llenó el MP contado');
     expect(find.byKey(const Key('saldo_mp_total')), findsOneWidget);
+    expect(find.byKey(const Key('diferencias_saldo_mp')), findsNothing, reason: 'primero se cuenta, después se compara');
+
+    await tester.tap(find.text('Confirmar conteo'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('diferencias_saldo_mp')), findsOneWidget);
     expect(find.textContaining('Salió de Mercado Pago y no está en la app'), findsOneWidget);
 

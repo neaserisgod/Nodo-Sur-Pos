@@ -11,18 +11,41 @@ Material de referencia: el zip `mock-v4-fidelidad-1a1` (mock HTML, 100 capturas,
 
 Kit (`lib/ui/kit/`: paleta claro/oscuro, íconos, Figtree variable, piezas, modal, animaciones) · barra con Caja ▾ y
 mega-menús · Venta · Inicio (Hoy y Este mes) · Proveedores · Separaciones · Historial (ventas, movimientos, cierres) ·
-detalle del día · editor de venta · carga histórica · conteo de stock · Encargues.
+detalle del día · editor de venta · carga histórica · conteo de stock · Encargues · **Cierre de caja** (en
+`claude/serene-mendel-rrmwui`, que sale de esta rama).
 
 ## Falta (en este orden)
 
-1. **Cierre de caja** (`lib/ui/cierre/pantalla_cierre.dart`) — relevado, sin empezar. Ver abajo.
+1. ~~Cierre de caja~~ — hecho (ver "Cierre de caja — cómo quedó" abajo).
 2. **Configuración** (`SCR.config`, `p7_more.js:274`; capturas `k_config`, `j_cfgcel`, `j_cfgimp`, `j_cfgtema`).
 3. Comparar precios (`M.comparar`, `M.compararSuper`).
 4. Diálogos por familia con `ModalMock` (tabla de `03-PANTALLAS.md`), tema oscuro de todo, pasada de animaciones.
 5. Pendiente del commit de Proveedores: el vacío de la tabla desborda en una ventana baja (un test).
 6. Actualizar `ESTADO.md` cuando se cierre la tanda.
 
-## Cierre de caja — plan ya relevado
+## Cierre de caja — cómo quedó (2026-10-06)
+
+Hecho según el plan de abajo, con estas decisiones:
+
+- `abrirCierre(context, builder:)` en `pantalla_cierre.dart` empuja una ruta de pantalla completa con fundido; los 4
+  llamadores la usan. `PantallaCierre` ganó `textoVolver` ("Volver a Venta" desde Venta, "Volver" desde otra
+  pantalla: el botón sale sin cerrar y vuelve a donde se estaba). Esc también sale (pasos 1 y 2).
+- **"Confirmar conteo" pide las tres cajas** (efectivo, Mercado Pago y, con `Modulo.cajaAparte`, la lata), no solo el
+  efectivo como el mock: el paso 2 ya no tiene campos y `cerrar()` siempre exigió las tres, así que confirmar sin una
+  dejaba un cierre imposible. `CierreControlador.conteoCompleto` lo dice.
+- Sin chips de relleno rápido (ni "Cuadra justo" ni montos inventados); queda la precarga del último arqueo.
+- Paso 2: además del mock, se conserva "de qué sale" cada esperado (fondo, ventas, gastos, ingresos; saldo al abrir y
+  cobros de MP), la nota de separación parcial, los cobros Point sin resolver, los arqueos y "Vendido sin proveedor o
+  costo". "N productos" abre `mostrarDialogoSinCosto` (se cargan costos ahí y el paso 2 se recalcula).
+  "Separación de cigarrillos" se escribe "A separar a la lata" (bug real: "Separado" leía como ya hecho).
+- La tarjeta del mock "QR / Débito / Crédito" no está: `ConciliacionMp` no trae lo cobrado por canal.
+- Cerrada: "Vendiste $ X en N tickets y ganaste $ Y" sale de `detalleDelDia` (la misma cuenta que Historial); si hubo
+  ventas sin costo, lo aclara. La hora del respaldo solo si se hizo en este cierre (`respaldoHechoA`). Debajo, una
+  lista corta con las diferencias y lo separado a la lata. Botones: `textoBotonFinal` (dark) y "Reabrir caja"; no se
+  repite un tercer "Volver a Venta" (el principal ya lo es en un cierre normal). Sin partículas.
+- Capturas: `cierre-1`, `cierre-2`, `cierre-cerrada` en `test/ui/capturas_mock_test.dart`.
+
+## Cierre de caja — plan relevado (ya aplicado)
 
 Mock: `SCR.cierre` / `drawCierre` en `p7_more.js:184-262`; capturas `k_cierre.png` (paso 1), `j_cierre2.png` (paso 2),
 `j_cerrada.png` (cerrada).

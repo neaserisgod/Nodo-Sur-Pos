@@ -19,7 +19,7 @@ void main() {
     );
     await tester.pumpWidget(_app(SeccionMpReal(cargar: () async => c, mpEsperadoCentavos: 1360000, mpContadoCentavos: 1832800)));
     await tester.pumpAndSettle();
-    expect(find.text('Cobros en Mercado Pago sin venta en el sistema'), findsOneWidget);
+    expect(find.text('Cobros sin venta'), findsOneWidget);
     expect(find.textContaining('12:05'), findsOneWidget);
     expect(find.byKey(const Key('mp_real_diferencia_cobros')), findsOneWidget);
     expect(find.byKey(const Key('mp_real_diferencia')), findsOneWidget);
