@@ -38,7 +38,12 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 /// La navbar es una fila de pastillas (rediseño "antigravity"): se toca
 /// directo la del destino, dentro de la barra.
 Future<void> _navegarA(WidgetTester tester, String etiqueta) async {
-  await tester.tap(find.descendant(of: find.byType(NavbarSuperior), matching: find.text(etiqueta)).last);
+  final pastilla = find.descendant(of: find.byType(NavbarSuperior), matching: find.text(etiqueta)).last;
+  // A 1366 px las últimas pastillas quedan fuera de la ventana de la barra y se llega con scroll: sin esto el toque caía
+  // en lo que hubiera encima (antes en nada; con el botón del Asistente, en él).
+  await tester.ensureVisible(pastilla);
+  await tester.pumpAndSettle();
+  await tester.tap(pastilla);
   await tester.pumpAndSettle();
 }
 
