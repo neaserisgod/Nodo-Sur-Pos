@@ -18,7 +18,11 @@ class BuscadorPagina extends StatefulWidget {
     this.alto = 54,
     this.campoKey,
     this.focusNode,
+    this.fondo,
   });
+
+  /// Dentro de un bloque gris va blanco (como `.card .btn.ton`).
+  final Color? fondo;
 
   final String pista;
 
@@ -76,7 +80,7 @@ class _BuscadorPaginaState extends State<BuscadorPagina> {
         height: widget.alto,
         padding: const EdgeInsets.symmetric(horizontal: 22),
         decoration: BoxDecoration(
-          color: enfocado ? p.papel : p.s,
+          color: enfocado ? p.papel : (widget.fondo ?? p.s),
           borderRadius: BorderRadius.circular(999),
           boxShadow: enfocado ? const [BoxShadow(color: PaletaMock.foco, spreadRadius: 3)] : null,
         ),

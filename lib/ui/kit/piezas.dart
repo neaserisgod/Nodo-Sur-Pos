@@ -586,7 +586,7 @@ class Sec extends StatelessWidget {
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(color: p.azul, shape: BoxShape.circle)),
         const SizedBox(width: 10),
-        Text(texto, style: estilo(15, 600, color: p.mute)),
+        Flexible(child: Text(texto, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(15, 600, color: p.mute))),
         if (extra != null) ...[const SizedBox(width: 10), extra!],
       ],
     );

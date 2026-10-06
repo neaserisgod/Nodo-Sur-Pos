@@ -16,6 +16,8 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
+import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
+import 'package:la_plazoleta/ui/historial/pantalla_editor_venta.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
@@ -239,6 +241,19 @@ void main() {
           );
         });
       }
+
+      testWidgets('detalle del día$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(tester, 'detalle-dia', () => PantallaDetalleDia(db: b.db, sesionId: b.sesionId, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio);
+      });
+
+      testWidgets('editor de venta$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        final venta = (await tester.runAsync(() => (b.db.select(b.db.ventas)..limit(1)).getSingle()))!;
+        await capturarMock(tester, 'editor-venta', () => PantallaEditorVenta(db: b.db, ventaId: venta.id, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio);
+      });
 
       testWidgets('venta vacía$sufijo', (tester) async {
         final b = (await tester.runAsync(baseDelMock))!;
