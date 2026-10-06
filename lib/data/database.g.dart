@@ -9401,7 +9401,7 @@ class MovimientoCaja extends DataClass implements Insertable<MovimientoCaja> {
   final int? medioPagoId;
   final int usuarioId;
 
-  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'AJUSTE' |
+  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'DEVOLUCION_SENA' | 'AJUSTE' |
   /// 'TRASPASO_LATA'.
   final String tipo;
   final int montoCentavos;
@@ -13321,6 +13321,33 @@ class $PendientesTable extends Pendientes
       'REFERENCES ventas (id)',
     ),
   );
+  static const VerificationMeta _senaCentavosMeta = const VerificationMeta(
+    'senaCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> senaCentavos = GeneratedColumn<int>(
+    'sena_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _senaEsEfectivoMeta = const VerificationMeta(
+    'senaEsEfectivo',
+  );
+  @override
+  late final GeneratedColumn<bool> senaEsEfectivo = GeneratedColumn<bool>(
+    'sena_es_efectivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sena_es_efectivo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _fechaCreacionMeta = const VerificationMeta(
     'fechaCreacion',
   );
@@ -13406,6 +13433,8 @@ class $PendientesTable extends Pendientes
     lineasJson,
     estado,
     ventaId,
+    senaCentavos,
+    senaEsEfectivo,
     fechaCreacion,
     fechaResuelta,
     usuarioId,
@@ -13485,6 +13514,24 @@ class $PendientesTable extends Pendientes
       context.handle(
         _ventaIdMeta,
         ventaId.isAcceptableOrUnknown(data['venta_id']!, _ventaIdMeta),
+      );
+    }
+    if (data.containsKey('sena_centavos')) {
+      context.handle(
+        _senaCentavosMeta,
+        senaCentavos.isAcceptableOrUnknown(
+          data['sena_centavos']!,
+          _senaCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_es_efectivo')) {
+      context.handle(
+        _senaEsEfectivoMeta,
+        senaEsEfectivo.isAcceptableOrUnknown(
+          data['sena_es_efectivo']!,
+          _senaEsEfectivoMeta,
+        ),
       );
     }
     if (data.containsKey('fecha_creacion')) {
@@ -13582,6 +13629,14 @@ class $PendientesTable extends Pendientes
         DriftSqlType.int,
         data['${effectivePrefix}venta_id'],
       ),
+      senaCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_centavos'],
+      )!,
+      senaEsEfectivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_es_efectivo'],
+      )!,
       fechaCreacion: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}fecha_creacion'],
@@ -13646,6 +13701,12 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
   /// Cuando un fiado se cobra, entra como venta de ese día (Regla 15): acá
   /// queda la venta que lo saldó.
   final int? ventaId;
+
+  /// Seña de un encargue (schemaVersion 55, rediseño v4, 2026-10-06; ver `domain/sena.dart` y `docs/PLAN-SENA.md`): lo que el cliente
+  /// dejó adelantado. Entró a la caja como INGRESO en el momento (cajón si [senaEsEfectivo], Mercado Pago si no) y NO es una venta.
+  /// 0 = sin seña. Al cancelar vuelve por la misma caja; al entregar se aplica como pago de la venta del día de la entrega.
+  final int senaCentavos;
+  final bool senaEsEfectivo;
   final DateTime fechaCreacion;
   final DateTime? fechaResuelta;
   final int usuarioId;
@@ -13666,6 +13727,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     this.lineasJson,
     required this.estado,
     this.ventaId,
+    required this.senaCentavos,
+    required this.senaEsEfectivo,
     required this.fechaCreacion,
     this.fechaResuelta,
     required this.usuarioId,
@@ -13697,6 +13760,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     if (!nullToAbsent || ventaId != null) {
       map['venta_id'] = Variable<int>(ventaId);
     }
+    map['sena_centavos'] = Variable<int>(senaCentavos);
+    map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo);
     map['fecha_creacion'] = Variable<DateTime>(fechaCreacion);
     if (!nullToAbsent || fechaResuelta != null) {
       map['fecha_resuelta'] = Variable<DateTime>(fechaResuelta);
@@ -13737,6 +13802,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       ventaId: ventaId == null && nullToAbsent
           ? const Value.absent()
           : Value(ventaId),
+      senaCentavos: Value(senaCentavos),
+      senaEsEfectivo: Value(senaEsEfectivo),
       fechaCreacion: Value(fechaCreacion),
       fechaResuelta: fechaResuelta == null && nullToAbsent
           ? const Value.absent()
@@ -13769,6 +13836,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       lineasJson: serializer.fromJson<String?>(json['lineasJson']),
       estado: serializer.fromJson<String>(json['estado']),
       ventaId: serializer.fromJson<int?>(json['ventaId']),
+      senaCentavos: serializer.fromJson<int>(json['senaCentavos']),
+      senaEsEfectivo: serializer.fromJson<bool>(json['senaEsEfectivo']),
       fechaCreacion: serializer.fromJson<DateTime>(json['fechaCreacion']),
       fechaResuelta: serializer.fromJson<DateTime?>(json['fechaResuelta']),
       usuarioId: serializer.fromJson<int>(json['usuarioId']),
@@ -13792,6 +13861,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       'lineasJson': serializer.toJson<String?>(lineasJson),
       'estado': serializer.toJson<String>(estado),
       'ventaId': serializer.toJson<int?>(ventaId),
+      'senaCentavos': serializer.toJson<int>(senaCentavos),
+      'senaEsEfectivo': serializer.toJson<bool>(senaEsEfectivo),
       'fechaCreacion': serializer.toJson<DateTime>(fechaCreacion),
       'fechaResuelta': serializer.toJson<DateTime?>(fechaResuelta),
       'usuarioId': serializer.toJson<int>(usuarioId),
@@ -13811,6 +13882,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     Value<String?> lineasJson = const Value.absent(),
     String? estado,
     Value<int?> ventaId = const Value.absent(),
+    int? senaCentavos,
+    bool? senaEsEfectivo,
     DateTime? fechaCreacion,
     Value<DateTime?> fechaResuelta = const Value.absent(),
     int? usuarioId,
@@ -13829,6 +13902,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     lineasJson: lineasJson.present ? lineasJson.value : this.lineasJson,
     estado: estado ?? this.estado,
     ventaId: ventaId.present ? ventaId.value : this.ventaId,
+    senaCentavos: senaCentavos ?? this.senaCentavos,
+    senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
     fechaCreacion: fechaCreacion ?? this.fechaCreacion,
     fechaResuelta: fechaResuelta.present
         ? fechaResuelta.value
@@ -13861,6 +13936,12 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           : this.lineasJson,
       estado: data.estado.present ? data.estado.value : this.estado,
       ventaId: data.ventaId.present ? data.ventaId.value : this.ventaId,
+      senaCentavos: data.senaCentavos.present
+          ? data.senaCentavos.value
+          : this.senaCentavos,
+      senaEsEfectivo: data.senaEsEfectivo.present
+          ? data.senaEsEfectivo.value
+          : this.senaEsEfectivo,
       fechaCreacion: data.fechaCreacion.present
           ? data.fechaCreacion.value
           : this.fechaCreacion,
@@ -13890,6 +13971,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
           ..write('fechaCreacion: $fechaCreacion, ')
           ..write('fechaResuelta: $fechaResuelta, ')
           ..write('usuarioId: $usuarioId, ')
@@ -13911,6 +13994,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     lineasJson,
     estado,
     ventaId,
+    senaCentavos,
+    senaEsEfectivo,
     fechaCreacion,
     fechaResuelta,
     usuarioId,
@@ -13931,6 +14016,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           other.lineasJson == this.lineasJson &&
           other.estado == this.estado &&
           other.ventaId == this.ventaId &&
+          other.senaCentavos == this.senaCentavos &&
+          other.senaEsEfectivo == this.senaEsEfectivo &&
           other.fechaCreacion == this.fechaCreacion &&
           other.fechaResuelta == this.fechaResuelta &&
           other.usuarioId == this.usuarioId &&
@@ -13949,6 +14036,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
   final Value<String?> lineasJson;
   final Value<String> estado;
   final Value<int?> ventaId;
+  final Value<int> senaCentavos;
+  final Value<bool> senaEsEfectivo;
   final Value<DateTime> fechaCreacion;
   final Value<DateTime?> fechaResuelta;
   final Value<int> usuarioId;
@@ -13965,6 +14054,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
     this.fechaResuelta = const Value.absent(),
     this.usuarioId = const Value.absent(),
@@ -13982,6 +14073,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
     this.fechaResuelta = const Value.absent(),
     required int usuarioId,
@@ -14000,6 +14093,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Expression<String>? lineasJson,
     Expression<String>? estado,
     Expression<int>? ventaId,
+    Expression<int>? senaCentavos,
+    Expression<bool>? senaEsEfectivo,
     Expression<DateTime>? fechaCreacion,
     Expression<DateTime>? fechaResuelta,
     Expression<int>? usuarioId,
@@ -14017,6 +14112,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       if (lineasJson != null) 'lineas_json': lineasJson,
       if (estado != null) 'estado': estado,
       if (ventaId != null) 'venta_id': ventaId,
+      if (senaCentavos != null) 'sena_centavos': senaCentavos,
+      if (senaEsEfectivo != null) 'sena_es_efectivo': senaEsEfectivo,
       if (fechaCreacion != null) 'fecha_creacion': fechaCreacion,
       if (fechaResuelta != null) 'fecha_resuelta': fechaResuelta,
       if (usuarioId != null) 'usuario_id': usuarioId,
@@ -14036,6 +14133,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Value<String?>? lineasJson,
     Value<String>? estado,
     Value<int?>? ventaId,
+    Value<int>? senaCentavos,
+    Value<bool>? senaEsEfectivo,
     Value<DateTime>? fechaCreacion,
     Value<DateTime?>? fechaResuelta,
     Value<int>? usuarioId,
@@ -14053,6 +14152,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       lineasJson: lineasJson ?? this.lineasJson,
       estado: estado ?? this.estado,
       ventaId: ventaId ?? this.ventaId,
+      senaCentavos: senaCentavos ?? this.senaCentavos,
+      senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaResuelta: fechaResuelta ?? this.fechaResuelta,
       usuarioId: usuarioId ?? this.usuarioId,
@@ -14092,6 +14193,12 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     if (ventaId.present) {
       map['venta_id'] = Variable<int>(ventaId.value);
     }
+    if (senaCentavos.present) {
+      map['sena_centavos'] = Variable<int>(senaCentavos.value);
+    }
+    if (senaEsEfectivo.present) {
+      map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo.value);
+    }
     if (fechaCreacion.present) {
       map['fecha_creacion'] = Variable<DateTime>(fechaCreacion.value);
     }
@@ -14125,6 +14232,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
           ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
           ..write('fechaCreacion: $fechaCreacion, ')
           ..write('fechaResuelta: $fechaResuelta, ')
           ..write('usuarioId: $usuarioId, ')
@@ -36197,6 +36306,8 @@ typedef $$PendientesTableCreateCompanionBuilder =
       Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
       Value<DateTime> fechaCreacion,
       Value<DateTime?> fechaResuelta,
       required int usuarioId,
@@ -36215,6 +36326,8 @@ typedef $$PendientesTableUpdateCompanionBuilder =
       Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
       Value<DateTime> fechaCreacion,
       Value<DateTime?> fechaResuelta,
       Value<int> usuarioId,
@@ -36320,6 +36433,16 @@ class $$PendientesTableFilterComposer
 
   ColumnFilters<String> get estado => $composableBuilder(
     column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -36462,6 +36585,16 @@ class $$PendientesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get fechaCreacion => $composableBuilder(
     column: $table.fechaCreacion,
     builder: (column) => ColumnOrderings(column),
@@ -36595,6 +36728,16 @@ class $$PendientesTableAnnotationComposer
   GeneratedColumn<String> get estado =>
       $composableBuilder(column: $table.estado, builder: (column) => column);
 
+  GeneratedColumn<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get fechaCreacion => $composableBuilder(
     column: $table.fechaCreacion,
     builder: (column) => column,
@@ -36725,6 +36868,8 @@ class $$PendientesTableTableManager
                 Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
                 Value<DateTime?> fechaResuelta = const Value.absent(),
                 Value<int> usuarioId = const Value.absent(),
@@ -36741,6 +36886,8 @@ class $$PendientesTableTableManager
                 lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
                 fechaCreacion: fechaCreacion,
                 fechaResuelta: fechaResuelta,
                 usuarioId: usuarioId,
@@ -36759,6 +36906,8 @@ class $$PendientesTableTableManager
                 Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
                 Value<DateTime?> fechaResuelta = const Value.absent(),
                 required int usuarioId,
@@ -36775,6 +36924,8 @@ class $$PendientesTableTableManager
                 lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
                 fechaCreacion: fechaCreacion,
                 fechaResuelta: fechaResuelta,
                 usuarioId: usuarioId,

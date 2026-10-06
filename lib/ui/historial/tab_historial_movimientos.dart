@@ -26,6 +26,7 @@ String etiquetaTipoMovimiento(String tipo) => switch (tipo) {
   'INGRESO' => 'Ingreso',
   'PAGO_PROVEEDOR' => 'Pago a proveedor',
   'RETIRO' => 'Retiro',
+  'DEVOLUCION_SENA' => 'Devolución de seña',
   _ => tipo,
 };
 

@@ -10,12 +10,13 @@ import '../domain/medio_pago.dart';
 import '../domain/pesables.dart';
 import '../domain/promo.dart';
 import '../domain/recargo_cigarrillos.dart';
+import '../domain/sena.dart';
 import '../domain/venta.dart';
 import 'numero_venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
-import 'repositorio_encargues.dart' show liberarEncargueEntregado;
+import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
 
@@ -305,9 +306,26 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     }
     // Lo cobrado es lo que vale la venta, ni un centavo más ni menos: si no, el esperado de cada caja y la conciliación con
     // Mercado Pago quedan descuadrados para siempre sin que nadie sepa de dónde salió la diferencia.
+    // Entregar un encargue con seña: la seña ya está en la caja (entró cuando se señó), así que se aplica como un pago más de esta venta
+    // SIN mover la caja de nuevo; quien llama pasa solo lo que falta cobrar (total − seña). Se lee acá, dentro de la transacción, y no
+    // de lo que mande la pantalla: es la plata y no se confía en un número de afuera.
+    var senaAplicada = 0;
+    var senaADevolver = 0;
+    var senaEsEfectivo = true;
+    if (encargueId != null) {
+      final sena = await senaPendienteDe(db, encargueId);
+      if (sena.centavos > 0) {
+        final aplicacion = aplicarSena(totalCentavos: resultado.totalCentavos, senaCentavos: sena.centavos);
+        senaAplicada = aplicacion.aplicadaCentavos;
+        senaADevolver = aplicacion.aDevolverCentavos;
+        senaEsEfectivo = sena.esEfectivo;
+      }
+    }
     final cobrado = pagos.fold<int>(0, (suma, p) => suma + p.montoCentavos);
-    if (cobrado != resultado.totalCentavos) {
-      throw ArgumentError('Los pagos ($cobrado) no suman el total de la venta (${resultado.totalCentavos})');
+    if (cobrado + senaAplicada != resultado.totalCentavos) {
+      throw ArgumentError(
+        'Los pagos ($cobrado) más la seña ($senaAplicada) no suman el total de la venta (${resultado.totalCentavos})',
+      );
     }
     // Dentro de la transacción, igual que gastos e ingresos: si el cierre llega justo antes, la venta se rechaza en vez de
     // grabarse contra una sesión cerrada (cambiaría los totales de un cierre ya hecho).
@@ -393,6 +411,33 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
               ),
             );
       }
+    }
+
+    if (senaAplicada > 0) {
+      // El pago de la seña lleva el medio por el que entró y `canal = 'sena'`: cuenta para el historial, el ticket y el reparto del
+      // costo entre cajón y Mercado Pago, pero NO mueve la caja ni cuenta como cobro nuevo de Mercado Pago (ver `canalSena`).
+      final medioSena = await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(senaEsEfectivo))).getSingle();
+      await db.into(db.pagos).insert(
+            PagosCompanion.insert(
+              ventaId: ventaId,
+              medioPagoId: medioSena.id,
+              montoCentavos: senaAplicada,
+              canal: const Value(canalSena),
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
+              actualizadoEn: Value(DateTime.now()),
+            ),
+          );
+    }
+    if (senaADevolver > 0) {
+      await registrarDevolucionSena(
+        db,
+        sesionCajaId: sesionCajaId,
+        usuarioId: usuarioId,
+        montoCentavos: senaADevolver,
+        esEfectivo: senaEsEfectivo,
+        motivo: 'Devolución de lo que sobró de la seña (venta #$ventaId)',
+      );
     }
 
     if (ordenCobroPendienteId != null) {
@@ -781,6 +826,10 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
         final venta = await (db.select(db.ventas)..where((v) => v.id.equals(yaGrabada))).getSingle();
         return (ventaId: yaGrabada, totalCentavos: venta.totalCentavos);
       }
+    }
+    // Un encargue con seña se entrega desde la PC: el celular cobra el total entero y no sabe de la seña.
+    if (encargueId != null && (await senaPendienteDe(db, encargueId)).centavos > 0) {
+      throw const EncargueConSena('Este encargue tiene una seña: entregalo desde la PC.');
     }
     final resultado = await calcularResultadoVenta(
       db,

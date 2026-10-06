@@ -47,3 +47,7 @@ enum CajaDeSena { cajon, mercadoPago }
 
 /// En qué caja entra (y de cuál sale si se devuelve) una seña.
 CajaDeSena cajaDeLaSena({required bool esEfectivo}) => esEfectivo ? CajaDeSena.cajon : CajaDeSena.mercadoPago;
+
+/// Valor de `pagos.canal` del pago que representa la seña ya cobrada. Ese pago no mueve la caja (ya entró cuando se señó) ni cuenta como
+/// un cobro nuevo de Mercado Pago; el resto de los pagos tiene `canal` nulo o 'qr' / 'debit_card' / 'credit_card'.
+const canalSena = 'sena';

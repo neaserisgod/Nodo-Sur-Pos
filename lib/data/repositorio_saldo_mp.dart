@@ -4,6 +4,7 @@
 import 'package:drift/drift.dart';
 
 import '../domain/saldo_mp.dart';
+import '../domain/sena.dart' show canalSena;
 import 'database.dart';
 import 'repositorio_cierre.dart' show tiposEgresoDeCaja;
 
@@ -18,7 +19,7 @@ Future<MovimientosMpDelTurno> movimientosMpDelTurno(AppDatabase db, int sesionId
   final anuladas = await (db.select(db.pagos).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId)),
     innerJoin(db.mediosDePago, db.mediosDePago.id.equalsExp(db.pagos.medioPagoId)),
-  ])..where(db.ventas.sesionCajaId.equals(sesionId) & db.ventas.anuladaEn.isNotNull() & db.mediosDePago.esEfectivo.equals(false))).get();
+  ])..where(db.ventas.sesionCajaId.equals(sesionId) & db.ventas.anuladaEn.isNotNull() & db.mediosDePago.esEfectivo.equals(false) & (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not()))).get();
 
   return (
     enApp: [

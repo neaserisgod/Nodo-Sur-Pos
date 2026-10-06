@@ -12,7 +12,7 @@ import 'database.dart';
 import 'repositorio_cierre.dart' show tiposEgresoDeCaja;
 
 /// Los tipos que se listan — todo lo de `movimientos_de_caja` menos 'VENTA'.
-const tiposMovimientoVisible = ['GASTO', 'INGRESO', 'PAGO_PROVEEDOR', 'RETIRO'];
+const tiposMovimientoVisible = ['GASTO', 'INGRESO', 'PAGO_PROVEEDOR', 'RETIRO', 'DEVOLUCION_SENA'];
 
 class MovimientoDeCaja {
   const MovimientoDeCaja({

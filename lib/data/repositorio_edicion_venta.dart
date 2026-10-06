@@ -19,6 +19,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../domain/sena.dart' show canalSena;
 import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
@@ -118,6 +119,15 @@ Future<void> _revertirLinea(
   }
 }
 
+/// Una venta que aplicó la seña de un encargue no se edita ni se anula desde el historial: hacerlo tendría que decidir qué pasa con la
+/// plata que el cliente dejó adelantado (devolverla o no), y esa decisión es del dueño, caso por caso.
+Future<void> _exigirSinSena(AppDatabase db, int ventaId) async {
+  final conSena = await (db.select(db.pagos)..where((p) => p.ventaId.equals(ventaId) & p.canal.equals(canalSena))).get();
+  if (conSena.isNotEmpty) {
+    throw ArgumentError('La venta #$ventaId incluye la seña de un encargue: no se puede editar ni anular desde acá.');
+  }
+}
+
 Future<void> editarVenta(
   AppDatabase db, {
   required int ventaId,
@@ -137,6 +147,7 @@ Future<void> editarVenta(
     if (ventaVieja.anuladaEn != null) {
       throw ArgumentError('La venta #$ventaId está anulada, no se puede editar.');
     }
+    await _exigirSinSena(db, ventaId);
     final lineasViejas = await (db.select(db.lineasDeVenta)..where((l) => l.ventaId.equals(ventaId))).get();
     final pagosViejos = await (db.select(db.pagos)..where((p) => p.ventaId.equals(ventaId))).get();
 
@@ -251,6 +262,7 @@ Future<void> anularVenta(
     if (venta.anuladaEn != null) {
       throw ArgumentError('La venta #$ventaId ya está anulada.');
     }
+    await _exigirSinSena(db, ventaId);
     final sesion = await (db.select(
       db.sesionesDeCaja,
     )..where((s) => s.id.equals(venta.sesionCajaId))).getSingle();

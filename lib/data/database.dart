@@ -151,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 54;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1103,6 +1103,15 @@ class AppDatabase extends _$AppDatabase {
         if (!columnas.contains('logo_ticket')) {
           await m.addColumn(configuracionTabla, configuracionTabla.logoTicket);
         }
+      }
+      // v54 → v55 (2026-10-06, rediseño v4): seña de los encargues. Dos columnas nuevas en `pendientes`; los encargues que ya había
+      // quedan sin seña (0). Con chequeo de columna, como v44→v45.
+      if (from < 55) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('pendientes')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('sena_centavos')) await m.addColumn(pendientes, pendientes.senaCentavos);
+        if (!columnas.contains('sena_es_efectivo')) await m.addColumn(pendientes, pendientes.senaEsEfectivo);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

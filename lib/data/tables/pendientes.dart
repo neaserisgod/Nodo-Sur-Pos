@@ -39,6 +39,12 @@ class Pendientes extends Table {
   /// queda la venta que lo saldó.
   IntColumn get ventaId => integer().nullable().references(Ventas, #id)();
 
+  /// Seña de un encargue (schemaVersion 55, rediseño v4, 2026-10-06; ver `domain/sena.dart` y `docs/PLAN-SENA.md`): lo que el cliente
+  /// dejó adelantado. Entró a la caja como INGRESO en el momento (cajón si [senaEsEfectivo], Mercado Pago si no) y NO es una venta.
+  /// 0 = sin seña. Al cancelar vuelve por la misma caja; al entregar se aplica como pago de la venta del día de la entrega.
+  IntColumn get senaCentavos => integer().withDefault(const Constant(0))();
+  BoolColumn get senaEsEfectivo => boolean().withDefault(const Constant(true))();
+
   DateTimeColumn get fechaCreacion =>
       dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get fechaResuelta => dateTime().nullable()();
