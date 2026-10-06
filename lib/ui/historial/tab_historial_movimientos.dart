@@ -3,23 +3,20 @@
 // Gastos, ingresos, pagos a proveedores y retiros, uno por uno: cuándo, de
 // qué caja, por qué medio, quién. Las ventas no, ya tienen su pestaña.
 // Solo lectura: un movimiento de caja es un registro, no se edita.
+//
+// Rediseño v4 (2026-10-06), como el mock: una tabla (hora, tipo, motivo, caja, monto) con lo que salió y entró del
+// período en la fila de filtros.
 
 import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_movimientos_caja.dart';
-import '../../domain/dinero.dart';
-import '../comun/estado_vacio.dart';
 import '../comun/fechas.dart';
-import '../comun/tarjetas.dart';
+import '../kit/kit.dart';
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
 import '../navegacion/refresco_por_celular.dart';
-import '../tema/acentos.dart';
-import '../tema/superficie.dart';
-import '../tema/tokens.dart';
+import 'pantalla_historial.dart' show FilaFiltrosHistorial;
 import 'periodo_historial.dart';
-import '../tema/esqueleto.dart';
-import '../tema/movimiento.dart';
 
 String etiquetaTipoMovimiento(String tipo) => switch (tipo) {
   'GASTO' => 'Gasto',
@@ -31,12 +28,13 @@ String etiquetaTipoMovimiento(String tipo) => switch (tipo) {
 };
 
 class TabHistorialMovimientos extends StatefulWidget {
-  const TabHistorialMovimientos({super.key, required this.db, this.busqueda = ''});
+  const TabHistorialMovimientos({super.key, required this.db, this.busqueda = '', required this.buscador});
 
   final AppDatabase db;
 
-  /// Buscador de arriba: motivo, proveedor o quién lo hizo.
+  /// Buscador de la fila de filtros: motivo, proveedor o quién lo hizo.
   final String busqueda;
+  final Widget buscador;
 
   @override
   State<TabHistorialMovimientos> createState() => _TabHistorialMovimientosState();
@@ -81,155 +79,78 @@ class _TabHistorialMovimientosState extends State<TabHistorialMovimientos> with 
 
   @override
   Widget build(BuildContext context) {
+    final p = context.p;
     final lista = _movimientos;
     final visibles = _visibles;
     final salio = visibles.where((m) => m.esSalida).fold(0, (a, m) => a + m.montoCentavos);
     final entro = visibles.where((m) => !m.esSalida).fold(0, (a, m) => a + m.montoCentavos);
-    final porMp = visibles.where((m) => m.esSalida && m.esMercadoPago).fold(0, (a, m) => a + m.montoCentavos);
-    final deLata = visibles.where((m) => m.esSalida && m.esLata).fold(0, (a, m) => a + m.montoCentavos);
+    final variosDias = _periodo != PeriodoHistorial.hoy && _periodo != PeriodoHistorial.ayer;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: Espaciado.md,
-          runSpacing: Espaciado.sm,
+        FilaFiltrosHistorial(
+          periodo: _periodo,
+          onPeriodo: _elegirPeriodo,
+          chips: [
+            for (final (t, e) in [(null, 'Todos'), for (final t in tiposMovimientoVisible) (t, etiquetaTipoMovimiento(t))])
+              ChipMock(e, chico: true, elegido: t == _tipo, onTap: () => setState(() => _tipo = t)),
+          ],
+          buscador: widget.buscador,
+        ),
+        const SizedBox(height: 16),
+        Row(
           children: [
-            GrupoPildoras<PeriodoHistorial>(
-              opciones: [for (final p in PeriodoHistorial.values) (p, p.etiqueta)],
-              elegida: _periodo,
-              onElegir: _elegirPeriodo,
-            ),
-            GrupoPildoras<String?>(
-              opciones: [(null, 'Todos'), for (final t in tiposMovimientoVisible) (t, etiquetaTipoMovimiento(t))],
-              elegida: _tipo,
-              onElegir: (t) => setState(() => _tipo = t),
-            ),
+            Text('Salió ', style: estilo(15, 500, color: p.mute)),
+            Text(pesos(salio), key: const Key('movimientos_salio'), style: estilo(15, 600, color: p.b, num: true)),
+            Text('  ·  Entró ', style: estilo(15, 500, color: p.mute)),
+            Text(pesos(entro), style: estilo(15, 600, color: p.g, num: true)),
           ],
         ),
-        const SizedBox(height: Espaciado.lg),
-        SizedBox(
-          height: 128,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: TarjetaIndicador(
-                  etiqueta: 'Salió',
-                  valor: formatearARS(salio),
-                  nota: 'Gastos, pagos y retiros',
-                  destacada: true,
-                ),
-              ),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                child: TarjetaIndicador(etiqueta: 'Entró', valor: formatearARS(entro), nota: 'Ingresos', tonoValor: entro > 0 ? Tono.ganancia : null),
-              ),
-              const SizedBox(width: Espaciado.md),
-              Expanded(child: TarjetaIndicador(etiqueta: 'Salió por Mercado Pago', valor: formatearARS(porMp), nota: 'No sale del cajón')),
-              const SizedBox(width: Espaciado.md),
-              Expanded(child: TarjetaIndicador(etiqueta: 'Salió de la lata', valor: formatearARS(deLata), nota: 'Cigarrillos')),
-            ],
-          ),
-        ),
-        const SizedBox(height: Espaciado.lg),
+        const SizedBox(height: 12),
         Expanded(
           child: lista == null
-              ? const EsqueletoLista()
-              : visibles.isEmpty
-              ? const EstadoVacio(mensaje: 'Sin movimientos en este período')
-              : Superficie(padding: EdgeInsets.zero, child: _Lista(movimientos: visibles)),
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      child: Tabla(
+                        radio: 28,
+                        columnas: [
+                          ColumnaTabla(variosDias ? 'Día y hora' : 'Hora', ancho: variosDias ? 210 : 110),
+                          const ColumnaTabla('Tipo', ancho: 230),
+                          const ColumnaTabla('Motivo', flex: 5),
+                          const ColumnaTabla('Caja', flex: 2),
+                          const ColumnaTabla('Monto', flex: 2, derecha: true),
+                        ],
+                        cantidad: visibles.length,
+                        vacio: const Vacio(texto: 'Sin movimientos en este período', icono: null, padding: EdgeInsets.symmetric(vertical: 36)),
+                        celdas: (context, i) {
+                          final m = visibles[i];
+                          final caja = m.esLata ? 'Lata' : (m.esMercadoPago ? 'Mercado Pago' : 'Cajón');
+                          final motivo = m.nota ?? m.proveedor ?? etiquetaTipoMovimiento(m.tipo);
+                          return [
+                            celda(context, variosDias ? '${fechaLarga(m.fecha)} · ${horaCorta(m.fecha)}' : horaCorta(m.fecha), color: p.mute, num: true),
+                            Etiqueta(etiquetaTipoMovimiento(m.tipo), tono: m.tipo == 'INGRESO' ? TonoMock.g : TonoMock.neutro),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                celda(context, m.proveedor != null && m.nota != null ? '${m.proveedor} · $motivo' : motivo, peso: 500),
+                                Text(m.usuario, style: estilo(13, 400, color: p.mute)),
+                              ],
+                            ),
+                            celda(context, caja, color: p.mute),
+                            celda(context, '${m.esSalida ? '−' : '+'}${pesos(m.montoCentavos)}', num: true, peso: 600, color: m.esSalida ? p.b : p.g),
+                          ];
+                        },
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ],
-    );
-  }
-}
-
-class _Lista extends StatelessWidget {
-  const _Lista({required this.movimientos});
-
-  final List<MovimientoDeCaja> movimientos;
-
-  @override
-  Widget build(BuildContext context) {
-    // Filas planas: encabezado de día + sus movimientos (vienen del más nuevo
-    // al más viejo), para poder usar ListView.builder.
-    final filas = <Object>[];
-    DateTime? dia;
-    for (final m in movimientos) {
-      final d = DateTime(m.fecha.year, m.fecha.month, m.fecha.day);
-      if (d != dia) {
-        filas.add(d);
-        dia = d;
-      }
-      filas.add(m);
-    }
-    final textTheme = Theme.of(context).textTheme;
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-      itemCount: filas.length,
-      itemBuilder: (context, i) => entradaEnLista(i, Builder(builder: (context) {
-        final f = filas[i];
-        if (f is DateTime) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(Espaciado.xl, Espaciado.md, Espaciado.xl, Espaciado.xs),
-            child: Text(fechaLarga(f), style: textTheme.labelLarge?.copyWith(color: context.colores.textoSecundario)),
-          );
-        }
-        return _Fila(m: f as MovimientoDeCaja);
-      })),
-    );
-  }
-}
-
-class _Fila extends StatelessWidget {
-  const _Fila({required this.m});
-
-  final MovimientoDeCaja m;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final acentos = context.acentosPlazoleta;
-    final colores = context.colores;
-    final caja = m.esLata ? 'Lata' : 'Cajón';
-    final medio = m.esMercadoPago ? 'Mercado Pago' : 'efectivo';
-    final titulo = m.nota ?? (m.proveedor != null ? '${etiquetaTipoMovimiento(m.tipo)} · ${m.proveedor}' : etiquetaTipoMovimiento(m.tipo));
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl, vertical: Espaciado.sm),
-      child: Row(
-        children: [
-          SizedBox(width: 56, child: Text(horaCorta(m.fecha), style: textTheme.bodyMedium?.tabular)),
-          SizedBox(
-            width: 150,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Insignia(
-                texto: etiquetaTipoMovimiento(m.tipo),
-                tono: switch (m.tipo) {
-                  'INGRESO' => Tono.ganancia,
-                  'RETIRO' => Tono.acento,
-                  'PAGO_PROVEEDOR' => Tono.neutro,
-                  _ => Tono.alerta,
-                },
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.titleSmall),
-                Text('$caja · $medio · ${m.usuario}', style: textTheme.bodySmall),
-              ],
-            ),
-          ),
-          Text(
-            '${m.esSalida ? '−' : '+'} ${formatearARS(m.montoCentavos)}',
-            style: textTheme.titleMedium?.copyWith(color: m.esSalida ? colores.textoPrimario : acentos.ganancia, fontWeight: Pesos.fuerte).tabular,
-          ),
-        ],
-      ),
     );
   }
 }

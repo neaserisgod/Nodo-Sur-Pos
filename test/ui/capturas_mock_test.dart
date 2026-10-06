@@ -5,13 +5,18 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:drift/drift.dart' show Value;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
+import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
@@ -199,6 +204,41 @@ void main() {
           },
         );
       });
+
+      for (final (pestana, archivo) in [(null, 'historial'), ('movimientos', 'historial-movimientos'), ('cierres', 'historial-cierres')]) {
+        testWidgets('$archivo$sufijo', (tester) async {
+          final b = (await tester.runAsync(baseDelMock))!;
+          addTearDown(b.db.close);
+          await tester.runAsync(() async {
+            await registrarGastoRapido(b.db, sesionCajaId: b.sesionId, usuarioId: b.usuarioId, montoCentavos: 800000, medio: MedioGasto.cajonNormal, motivo: 'Flete de Quilmes');
+            await registrarGastoRapido(b.db, sesionCajaId: b.sesionId, usuarioId: b.usuarioId, montoCentavos: 350000, medio: MedioGasto.lata, motivo: 'Bolsas');
+            // Tres días cerrados como los del mock: uno cuadró, uno faltó y uno sobró.
+            for (final (dias, vendido, diferencia) in [(1, 43120000, 0), (2, 61280000, -130000), (3, 54890000, 50000)]) {
+              final apertura = DateTime.now().subtract(Duration(days: dias, hours: 6));
+              final id = await b.db.into(b.db.sesionesDeCaja).insert(SesionesDeCajaCompanion.insert(
+                    usuarioAbrioId: b.usuarioId,
+                    fondoInicialCentavos: 3000000,
+                    fechaApertura: Value(apertura),
+                    fechaCierre: Value(apertura.add(const Duration(hours: 13))),
+                    estado: const Value('CERRADA'),
+                    efectivoEsperadoCentavos: Value(3000000 + vendido ~/ 2),
+                    efectivoContadoCentavos: Value(3000000 + vendido ~/ 2 + diferencia),
+                    diferenciaCentavos: Value(diferencia),
+                  ));
+              final venta = await b.db.into(b.db.ventas).insert(VentasCompanion.insert(sesionCajaId: id, usuarioId: b.usuarioId, subtotalCentavos: vendido, totalCentavos: vendido, fecha: Value(apertura)));
+              final efectivo = await (b.db.select(b.db.mediosDePago)..where((m) => m.esEfectivo.equals(true))).getSingle();
+              await b.db.into(b.db.pagos).insert(PagosCompanion.insert(ventaId: venta, medioPagoId: efectivo.id, montoCentavos: vendido));
+            }
+          });
+          await capturarMock(
+            tester,
+            archivo,
+            () => PantallaHistorial(db: b.db, usuarioId: b.usuarioId, pestanaInicial: pestana),
+            oscuro: oscuro,
+            tamanio: tamanio,
+          );
+        });
+      }
 
       testWidgets('venta vacía$sufijo', (tester) async {
         final b = (await tester.runAsync(baseDelMock))!;
