@@ -1086,8 +1086,14 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(cuitsProveedor);
       }
       // v52 → v53 (2026-10-06, rediseño v4): WhatsApp del proveedor. Una columna nueva, nullable, sin tocar nada existente.
+      // Con chequeo de columna, como v44→v45: las pruebas de migración suben bases creadas con el esquema actual.
       if (from < 53) {
-        await m.addColumn(proveedores, proveedores.whatsapp);
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('proveedores')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('whatsapp')) {
+          await m.addColumn(proveedores, proveedores.whatsapp);
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
