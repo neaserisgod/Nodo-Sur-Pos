@@ -9,7 +9,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../tema/tokens.dart';
 
 class EncabezadoPantalla extends StatelessWidget {
   const EncabezadoPantalla({super.key, required this.titulo, this.subtitulo, this.accion});
@@ -40,10 +39,8 @@ class EncabezadoPantalla extends StatelessWidget {
                     style: textTheme.displayLarge?.copyWith(letterSpacing: -2.4),
                   ),
                 ),
-                if (subtitulo != null) ...[
-                  const SizedBox(height: Espaciado.xs),
-                  Text(subtitulo!, style: textTheme.bodyLarge?.copyWith(color: context.colores.textoSecundario)),
-                ],
+                // Sin subtítulo (rediseño v4, 2026-10-05: "eliminá las redundancias"): el título y el contenido ya dicen de
+                // qué es la pantalla. [subtitulo] queda en la firma para no tocar a quien lo pasa, pero no se dibuja.
               ],
             ),
           ),
