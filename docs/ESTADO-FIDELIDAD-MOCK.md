@@ -11,17 +11,37 @@ Material de referencia: el zip `mock-v4-fidelidad-1a1` (mock HTML, 100 capturas,
 
 Kit (`lib/ui/kit/`: paleta claro/oscuro, íconos, Figtree variable, piezas, modal, animaciones) · barra con Caja ▾ y
 mega-menús · Venta · Inicio (Hoy y Este mes) · Proveedores · Separaciones · Historial (ventas, movimientos, cierres) ·
-detalle del día · editor de venta · carga histórica · conteo de stock · Encargues · **Cierre de caja** (en
-`claude/serene-mendel-rrmwui`, que sale de esta rama).
+detalle del día · editor de venta · carga histórica · conteo de stock · Encargues · **Cierre de caja** y
+**Configuración** (estas dos en `claude/serene-mendel-rrmwui`, que sale de esta rama).
 
 ## Falta (en este orden)
 
 1. ~~Cierre de caja~~ — hecho (ver "Cierre de caja — cómo quedó" abajo).
-2. **Configuración** (`SCR.config`, `p7_more.js:274`; capturas `k_config`, `j_cfgcel`, `j_cfgimp`, `j_cfgtema`).
+2. ~~Configuración~~ — hecha (ver "Configuración — cómo quedó" abajo).
 3. Comparar precios (`M.comparar`, `M.compararSuper`).
 4. Diálogos por familia con `ModalMock` (tabla de `03-PANTALLAS.md`), tema oscuro de todo, pasada de animaciones.
 5. Pendiente del commit de Proveedores: el vacío de la tabla desborda en una ventana baja (un test).
 6. Actualizar `ESTADO.md` cuando se cierre la tanda.
+
+## Configuración — cómo quedó (2026-10-06)
+
+- Cabecera con el buscador grande "Buscar un ajuste…" (`BuscadorPagina`, key `busqueda_configuracion`) en vez de la
+  búsqueda de la barra, como las otras pantallas rehechas: ahí Ctrl+F abre el Asistente. Los tests de la búsqueda de la
+  barra pasaron a usar Comparar precios, la única pantalla que todavía la tiene.
+- Izquierda 320 con `.cgrp`/`.csec` (columna entera, no `ListView`: son 16 fijas); derecha h2 + lead + contenido ≤ 1000.
+- Las 16 secciones con el kit, incluidas las de otros archivos (Cuenta de Nodo Sur, Impresión y posnet, Asistente IA,
+  Respaldo). Pieza nueva del kit: `Stp` (`.stp`, la ganancia por categoría). Los campos de plata se guardan con Enter
+  o al salir del campo (el mock no tiene "Guardar" en esas secciones). Usuarios y medios se renombran/agregan en un
+  `ModalMock`; el producto del vuelto se elige en un modal con buscador.
+- **No están, a propósito** (controles sin nada detrás, o que contradicen REGLAS-NEGOCIO): "Redondear el efectivo"
+  (siempre redondea), "Día del retiro semanal" (eliminado, §13), roles de usuario, "Imprimir el logo", partículas /
+  cursor / desplazamiento suave / Movimiento (la app sigue "reducir animaciones" de Windows), canal Beta/Estable,
+  "Copia automática" (siempre al cerrar), "Usar el asistente en Proveedores", y los datos de demostración del mock
+  (ganancia fija por atado, celulares conectados, "Mercado Pago: conectado · PAX A910").
+- **Pregunta abierta para el dueño — "Reserva diaria de fijos"**: el mock la pone como campo en Caja y redondeo, pero
+  `domain/equilibrio.dart` dice que esa columna quedó vestigial (el cierre la calcula de los fijos del mes) y
+  Separaciones (rehecha) la lee igual de la columna. Son dos fuentes para el mismo número (Regla 3): hay que decidir
+  cuál vale antes de agregar el campo.
 
 ## Cierre de caja — cómo quedó (2026-10-06)
 

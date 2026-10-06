@@ -1,13 +1,11 @@
 // Configuración › Asistente IA: cargar la clave gratuita de Google (Gemini) y probar que anda. La clave queda solo en este
-// equipo (ver `servicios/gemini.dart`).
+// equipo (ver `servicios/gemini.dart`). Con el kit del mock v4 (`cfgBody('ia')`, 2026-10-06).
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../servicios/gemini.dart';
-import '../comun/botones.dart';
-import '../comun/campo_texto.dart';
-import '../tema/tokens.dart';
+import '../kit/kit.dart';
 
 /// Elige con qué modelo de Google se consulta (por defecto el más barato). Se guarda al instante; la clave no se toca. Lo usa también el
 /// lector de facturas, para probar modelos sin salir de ahí.
@@ -87,55 +85,47 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final estilo = Theme.of(context).textTheme.bodyMedium?.copyWith(color: colores.textoSecundario);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: Medidas.anchoMaximoContenido),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Asistente IA (Google Gemini)', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Espaciado.sm),
-          Text(
-            'Con una clave gratuita de Google, el sistema puede sugerir cosas (por ejemplo promos). '
-            'Se saca en aistudio.google.com/apikey con tu cuenta de Google.',
-            style: estilo,
-          ),
-          const SizedBox(height: Espaciado.sm),
-          Text(
-            'Ojo: en el plan gratis Google puede usar lo que se le manda para mejorar sus productos. '
-            'Por eso el sistema solo le manda productos, precios y totales — nunca nombres de clientes ni de fiados. '
-            'La clave queda solo en esta PC.',
-            style: estilo,
-          ),
-          const SizedBox(height: Espaciado.lg),
-          CampoTexto(controller: _clave, etiqueta: 'Clave de API', obscureText: true, onSubmitted: (_) => _probar()),
-          const SizedBox(height: Espaciado.md),
-          Wrap(
-            spacing: Espaciado.sm,
-            runSpacing: Espaciado.sm,
-            children: [
-              BotonPrimario(texto: _probando ? 'Probando…' : 'Guardar y probar', onPressed: _probando ? null : _probar),
-              BotonSecundario(texto: 'Quitar clave', onPressed: _probando ? null : _quitar),
-            ],
-          ),
-          if (ClaveGemini.configurada) ...[
-            const SizedBox(height: Espaciado.lg),
-            SelectorModeloIa(onCambio: () => setState(() {})),
+    final p = context.p;
+    final r = _resultado;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Nota(
+          texto: 'Google Gemini sugiere promos y lee facturas. Solo sugiere: no cambia nada sin que lo confirmes. La clave se '
+              'guarda solo en esta PC.',
+        ),
+        const SizedBox(height: 14),
+        Campo(etiqueta: 'Clave de la API de Google (Gemini)', controller: _clave, pista: 'AIza…', obscuro: true, onSubmitted: (_) => _probar()),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Btn(_probando ? 'Probando…' : 'Guardar y probar', variante: VarBtn.blue, onTap: _probando ? null : _probar),
+            Btn('Quitar clave', variante: VarBtn.out, onTap: _probando ? null : _quitar),
           ],
-          if (_resultado != null) ...[
-            const SizedBox(height: Espaciado.md),
-            Text(
-              _resultado!.isEmpty
-                  ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada (modelo ${ClaveGemini.modelo}).' : 'Clave quitada.')
-                  : '$_resultado (no se guardó)',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: _resultado!.isEmpty ? colores.textoPrimario : colores.error,
-              ),
-            ),
-          ],
+        ),
+        if (r != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            r.isEmpty
+                ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada (modelo ${ClaveGemini.modelo}).' : 'Clave quitada.')
+                : '$r (no se guardó)',
+            style: estilo(15, 500, color: r.isEmpty ? p.g : p.b),
+          ),
         ],
-      ),
+        const SizedBox(height: 14),
+        const Nota(
+          tono: TonoMock.w,
+          texto: 'Se saca en aistudio.google.com/apikey con tu cuenta de Google. Ojo: en el plan gratis Google puede usar lo que '
+              'se le manda para mejorar sus productos. Por eso el sistema solo le manda productos, precios y totales — nunca '
+              'nombres de clientes ni de fiados.',
+        ),
+        if (ClaveGemini.configurada) ...[
+          const SizedBox(height: 18),
+          Align(alignment: Alignment.centerLeft, child: SelectorModeloIa(onCambio: () => setState(() {}))),
+        ],
+      ],
     );
   }
 }

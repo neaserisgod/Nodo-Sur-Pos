@@ -17,6 +17,7 @@ import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/carga_historica/pantalla_carga_historica.dart';
 import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
+import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_detalle_dia.dart';
@@ -328,6 +329,19 @@ void main() {
           }
         });
       });
+
+      // Configuración: una captura por sección (`k_config`, `j_cfgcel`, `j_cfgimp`, `j_cfgtema`...).
+      for (final seccion in ['comercio', 'usuarios', 'cajaYRedondeo', 'cigarrillos', 'vuelto', 'mediosPago', 'categorias', 'cuentaNube', 'impresion', 'companion', 'asistenteIa', 'respaldo', 'actualizaciones', 'apariencia', 'menu', 'modulos']) {
+        testWidgets('configuración $seccion$sufijo', (tester) async {
+          final b = (await tester.runAsync(baseDelMock))!;
+          addTearDown(b.db.close);
+          await capturarMock(tester, 'config-$seccion', () => PantallaConfiguracion(db: b.db, usuarioId: b.usuarioId), oscuro: oscuro, tamanio: tamanio, antes: () async {
+            final pastilla = find.byKey(Key('pastilla_$seccion'));
+            await tester.ensureVisible(pastilla);
+            await tester.tap(pastilla);
+          });
+        });
+      }
 
       testWidgets('venta vacía$sufijo', (tester) async {
         final b = (await tester.runAsync(baseDelMock))!;

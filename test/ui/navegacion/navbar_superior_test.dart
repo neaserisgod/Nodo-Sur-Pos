@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
+import 'package:la_plazoleta/ui/comparar_precios/pantalla_comparar_precios.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import '../../helpers/base_para_tests.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,18 +51,20 @@ void main() {
     await t.pumpAndSettle();
   }
 
-  Future<void> configuracion(WidgetTester t) async {
+  // Una pantalla con búsqueda propia en la barra (Comparar precios). Las rehechas del mock v4 (Configuración,
+  // Proveedores...) llevan su buscador en la cabecera; ahí Ctrl+F abre el Asistente.
+  Future<void> conBusquedaEnLaBarra(WidgetTester t) async {
     t.view.physicalSize = const Size(1400, 900);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     final db = baseDeTest();
     addTearDown(db.close);
-    await t.pumpWidget(MaterialApp(theme: TemaPlazoleta.claro, home: PantallaConfiguracion(db: db, usuarioId: 1)));
+    await t.pumpWidget(MaterialApp(theme: TemaPlazoleta.claro, home: PantallaCompararPrecios(db: db, usuarioId: 1)));
     await t.pumpAndSettle();
   }
 
   testWidgets('sin lupa a la vista (mock v4): Ctrl+F abre la búsqueda adentro de la barra y la X la cierra', (t) async {
-    await configuracion(t);
+    await conBusquedaEnLaBarra(t);
     expect(find.byKey(const Key('nav_buscar')), findsNothing);
     expect(opacidadBusqueda(t), 0);
     await ctrlF(t);
@@ -74,7 +76,7 @@ void main() {
   });
 
   testWidgets('Ctrl+F abre la búsqueda con el foco en el campo y Esc vacío la cierra', (t) async {
-    await configuracion(t);
+    await conBusquedaEnLaBarra(t);
     await ctrlF(t);
     final campo = t.widget<TextField>(find.byKey(const Key('busqueda_contextual')));
     expect(campo.focusNode!.hasFocus, isTrue);
@@ -84,7 +86,7 @@ void main() {
   });
 
   testWidgets('la tecla Inicio lleva a Venta, pero no mientras se escribe en un campo', (t) async {
-    await configuracion(t);
+    await conBusquedaEnLaBarra(t);
     await ctrlF(t);
     await t.sendKeyEvent(LogicalKeyboardKey.home);
     await t.pumpAndSettle();

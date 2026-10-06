@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
@@ -29,7 +30,7 @@ void main() {
     for (final m in Modulo.values) {
       final interruptor = find.byKey(Key('modulo_${m.clave}'));
       expect(interruptor, findsOneWidget, reason: m.clave);
-      expect(tester.widget<SwitchListTile>(interruptor).value, isTrue, reason: m.clave);
+      expect(tester.widget<Interruptor>(interruptor).valor, isTrue, reason: m.clave);
     }
   });
 
@@ -38,10 +39,11 @@ void main() {
     addTearDown(db.close);
     await _pump(tester, db);
 
+    await tester.ensureVisible(find.byKey(const Key('modulo_promos')));
     await tester.tap(find.byKey(const Key('modulo_promos')));
     await tester.pumpAndSettle();
     expect((await modulosNegocioActuales(db)).estaActivo(Modulo.promos), isFalse);
-    expect(tester.widget<SwitchListTile>(find.byKey(const Key('modulo_promos'))).value, isFalse);
+    expect(tester.widget<Interruptor>(find.byKey(const Key('modulo_promos'))).valor, isFalse);
 
     await tester.tap(find.byKey(const Key('modulo_promos')));
     await tester.pumpAndSettle();

@@ -3,6 +3,9 @@
 // o directamente eliminar"). Se toca una vez cada tanto: no ocupa un lugar
 // del menú de todos los días. Este widget es solo el contenido, sin barra
 // de navegación — lo monta `pantalla_configuracion.dart`.
+//
+// Con el kit del mock v4 (`cfgBody('respaldo')`, 2026-10-06): la lista con la carpeta, la última copia y cuántas
+// conservar; los botones; "Importar una base"; y las últimas copias, cada una con su "Restaurar".
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -10,14 +13,9 @@ import 'package:provider/provider.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_respaldo.dart' show ArchivoRespaldo;
-import '../comun/botones.dart';
-import '../comun/estado_vacio.dart';
-import '../comun/tarjetas.dart';
-import '../tema/iconos.dart';
-import '../tema/tokens.dart';
+import '../kit/kit.dart';
 import 'dialogo_confirmar_restaurar.dart';
 import 'respaldo_controlador.dart';
-import '../tema/esqueleto.dart';
 
 class ContenidoRespaldo extends StatefulWidget {
   const ContenidoRespaldo({super.key, required this.db, required this.usuarioId});
@@ -69,150 +67,160 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
     );
   }
 
-  // "Lenguaje de diseño" (mock `ConfigImpresion` → Respaldo): el estado
-  // primero (¿está al día?), el botón de respaldar grande, la carpeta y las
-  // copias abajo, y la lista de respaldos al costado con su "Restaurar".
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<RespaldoControlador>.value(
       value: _c,
       child: Consumer<RespaldoControlador>(
         builder: (context, c, _) {
-          if (c.cargando) return const EsqueletoLista();
-          return Row(
+          if (c.cargando) return const SizedBox.shrink();
+          final p = context.p;
+          final ultimo = c.respaldos.isEmpty ? null : c.respaldos.last;
+          final horas = ultimo == null ? null : DateTime.now().difference(ultimo.fecha).inHours;
+          // "Al día" si hay uno de las últimas 36 h: el respaldo sale al cerrar la caja, así que el de anoche todavía
+          // cuenta como al día.
+          final estado = switch (horas) {
+            null => const Etiqueta('Sin copias', tono: TonoMock.b),
+            < 36 => const Etiqueta('Al día', tono: TonoMock.g),
+            final h => Etiqueta('Hace ${(h / 24).floor()} días', tono: TonoMock.w),
+          };
+          final copias = {7, 14, 30, c.cantidadCopias}.toList()..sort();
+          final recientes = c.respaldos.reversed.toList(); // más nuevo primero
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: ListView(
+              Lista(filas: [
+                Kv(
+                  'Carpeta de copias',
+                  '',
+                  // Una ruta larga se corta con "…" en vez de empujar la fila.
+                  valorWidget: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Text(
+                      // Dato incompleto, no un error — mismo criterio que un fijo sin cargar en Equilibrio.
+                      c.carpeta ?? 'Sin carpeta configurada',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: estilo(16, 600, color: c.carpeta == null ? p.mute : p.tinta),
+                    ),
+                  ),
+                ),
+                Kv(
+                  'Última copia',
+                  '',
+                  valorWidget: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (ultimo != null) ...[
+                        Text('${_formatearFecha(ultimo.fecha)} · ${_tamanio(ultimo.tamanioBytes)}', style: estilo(16, 600, color: p.tinta, num: true)),
+                        const SizedBox(width: 10),
+                      ],
+                      estado,
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Copias a conservar', style: estilo(17, 550, color: p.tinta)),
+                            Text('Se respalda solo al cerrar la caja de cada día. Las más viejas se borran solas.', style: estilo(14, 400, color: p.mute)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Seg<int>(
+                        key: const Key('seg_copias'),
+                        opciones: [for (final n in copias) (n, '$n')],
+                        valor: c.cantidadCopias,
+                        onCambio: c.cambiarCantidadCopias,
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Btn(
+                    c.respaldando ? 'Haciendo la copia…' : 'Hacer copia ahora',
+                    key: const Key('boton_respaldar_ahora'),
+                    variante: VarBtn.blue,
+                    onTap: c.carpeta == null || c.respaldando ? null : c.respaldarAhora,
+                  ),
+                  Btn('Elegir carpeta', variante: VarBtn.ton, onTap: _elegirCarpeta),
+                ],
+              ),
+              if (c.error != null) ...[const SizedBox(height: 10), Text(c.error!, style: estilo(15, 500, color: p.b))],
+              if (c.hayCajaAbierta) ...[
+                const SizedBox(height: 14),
+                const Nota(tono: TonoMock.w, texto: 'Hay una caja abierta: cerrala para poder restaurar una copia o importar una base.'),
+              ],
+              const SizedBox(height: 14),
+              Tarjeta(
+                linea: true,
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+                child: Row(
                   children: [
-                    _Estado(c: c),
-                    const SizedBox(height: Espaciado.md),
-                    TarjetaSeccion(
-                      titulo: 'Dónde se guarda',
+                    Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  // Dato incompleto, no un error — mismo
-                                  // criterio que un fijo sin cargar en
-                                  // Equilibrio.
-                                  c.carpeta ?? 'Sin carpeta configurada',
-                                  style: c.carpeta == null ? TextStyle(color: context.colores.textoSecundario) : null,
-                                ),
-                              ),
-                              BotonSecundario(texto: 'Elegir carpeta', onPressed: _elegirCarpeta),
-                            ],
-                          ),
-                          const SizedBox(height: Espaciado.md),
-                          Row(
-                            children: [
-                              const Expanded(child: Text('Copias a conservar')),
-                              SizedBox(
-                                width: 80,
-                                // `fillColor` explícito: este campo vive
-                                // adentro de una tarjeta — sin esto, el
-                                // relleno por default del tema
-                                // (`fondoBloque`) queda invisible contra
-                                // la tarjeta que lo contiene.
-                                child: TextFormField(
-                                  key: ValueKey(c.cantidadCopias),
-                                  initialValue: c.cantidadCopias.toString(),
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  decoration: InputDecoration(fillColor: context.colores.fondo),
-                                  onFieldSubmitted: (valor) {
-                                    final n = int.tryParse(valor);
-                                    if (n != null && n > 0) c.cambiarCantidadCopias(n);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: Espaciado.sm),
+                          Text('Importar una base', style: estilo(17, 600, color: p.tinta)),
+                          const SizedBox(height: 2),
                           Text(
-                            'Se respalda solo al cerrar la caja de cada día. Las copias más viejas se borran.',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Espaciado.md),
-                    TarjetaSeccion(
-                      titulo: 'Importar una base',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Si solo te quedó el archivo de la base (la PC se rompió, o la pasás a otra), elegilo acá: reemplaza TODOS los datos '
-                            'actuales y la app se reinicia. Si es de una versión anterior, se actualiza sola al abrirla. '
+                            'Si solo te quedó el archivo de la base (la PC se rompió, o la pasás a otra), elegilo acá: reemplaza TODOS '
+                            'los datos actuales y la app se reinicia. Si es de una versión anterior, se actualiza sola al abrirla. '
                             'Sirve el archivo .sqlite o la copia comprimida (.gz) que baja de tu cuenta.',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: Espaciado.md),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: BotonSecundario(
-                              texto: 'Importar desde un archivo…',
-                              onPressed: c.hayCajaAbierta ? null : _importar,
-                            ),
+                            style: estilo(14, 400, color: p.mute, alto: 1.45),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 16),
+                    Btn('Importar desde un archivo…', key: const Key('boton_importar_base'), variante: VarBtn.ton, onTap: c.hayCajaAbierta ? null : _importar),
                   ],
                 ),
               ),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                child: TarjetaSeccion(
-                  titulo: 'Últimos respaldos',
-                  child: Expanded(
-                    child: c.respaldos.isEmpty
-                        ? const EstadoVacio(mensaje: 'Todavía no hay respaldos')
-                        : ListView.separated(
-                            itemCount: c.respaldos.length,
-                            separatorBuilder: (_, _) => const Divider(height: 1),
-                            itemBuilder: (context, i) {
-                              // Más nuevo primero en pantalla; la lista del controlador va de viejo a nuevo.
-                              final archivo = c.respaldos[c.respaldos.length - 1 - i];
-                              final fecha = _formatearFecha(archivo.fecha);
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-                                child: Row(
-                                  children: [
-                                    IconoPlz(IconosPlazoleta.backup, color: context.colores.textoSecundario),
-                                    const SizedBox(width: Espaciado.md),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(fecha, style: Theme.of(context).textTheme.titleSmall),
-                                          Text(_tamanio(archivo.tamanioBytes), style: Theme.of(context).textTheme.bodySmall),
-                                        ],
-                                      ),
-                                    ),
-                                    BotonSecundario(
-                                      texto: 'Restaurar',
-                                      onPressed: c.hayCajaAbierta
-                                          ? null
-                                          : () => mostrarDialogoConfirmarRestaurar(
-                                              context,
-                                              db: widget.db,
-                                              archivo: archivo,
-                                              fechaFormateada: fecha,
-                                            ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+              const SizedBox(height: 14),
+              const Sec('Últimas copias'),
+              const SizedBox(height: 10),
+              if (recientes.isEmpty)
+                const Nota(texto: 'Todavía no hay copias.')
+              else
+                Lista(filas: [
+                  for (final archivo in recientes)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(_formatearFecha(archivo.fecha), style: estilo(17, 500, color: p.tinta, num: true))),
+                          Text(_tamanio(archivo.tamanioBytes), style: estilo(15, 400, color: p.mute, num: true)),
+                          const SizedBox(width: 14),
+                          Btn(
+                            'Restaurar',
+                            variante: VarBtn.ton,
+                            tam: TamBtn.xs,
+                            sobreGris: true,
+                            onTap: c.hayCajaAbierta
+                                ? null
+                                : () => mostrarDialogoConfirmarRestaurar(
+                                    context,
+                                    db: widget.db,
+                                    archivo: archivo,
+                                    fechaFormateada: _formatearFecha(archivo.fecha),
+                                  ),
                           ),
-                  ),
-                ),
-              ),
+                        ],
+                      ),
+                    ),
+                ]),
             ],
           );
         },
@@ -224,68 +232,6 @@ class _ContenidoRespaldoState extends State<ContenidoRespaldo> {
 String _tamanio(int bytes) {
   if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
   return '${(bytes / (1024 * 1024)).toStringAsFixed(1).replaceAll('.', ',')} MB';
-}
-
-class _Estado extends StatelessWidget {
-  const _Estado({required this.c});
-
-  final RespaldoControlador c;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final ultimo = c.respaldos.isEmpty ? null : c.respaldos.last;
-    final horas = ultimo == null ? null : DateTime.now().difference(ultimo.fecha).inHours;
-    // "Al día" si hay uno de las últimas 36 h: el respaldo sale al cerrar la
-    // caja, así que el de anoche todavía cuenta como al día.
-    final insignia = switch (horas) {
-      null => const Insignia(texto: 'Sin respaldos', tono: Tono.error),
-      < 36 => const Insignia(texto: 'Al día', tono: Tono.ganancia),
-      final h => Insignia(texto: 'Hace ${(h / 24).floor()} días', tono: Tono.alerta),
-    };
-    return TarjetaSeccion(
-      titulo: 'Respaldo',
-      insignia: insignia,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          BloqueSuave(
-            child: Row(
-              children: [
-                IconoPlz(IconosPlazoleta.backup, color: context.colores.acento),
-                const SizedBox(width: Espaciado.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ultimo == null ? 'Todavía no se hizo ningún respaldo' : 'Último respaldo: ${_formatearFecha(ultimo.fecha)}',
-                        style: textTheme.titleSmall,
-                      ),
-                      if (ultimo != null) Text(_tamanio(ultimo.tamanioBytes), style: textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Espaciado.md),
-          BotonPrimario(
-            texto: c.respaldando ? 'Respaldando…' : 'Respaldar ahora',
-            onPressed: c.carpeta == null || c.respaldando ? null : c.respaldarAhora,
-          ),
-          if (c.error != null) ...[const SizedBox(height: Espaciado.sm), Text(c.error!, style: TextStyle(color: context.colores.error))],
-          if (c.hayCajaAbierta) ...[
-            const SizedBox(height: Espaciado.sm),
-            Text(
-              'Hay una caja abierta: cerrala para poder restaurar un respaldo.',
-              style: TextStyle(color: context.colores.textoSecundario),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 String _formatearFecha(DateTime fecha) {

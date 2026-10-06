@@ -1201,3 +1201,53 @@ class AlPasar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Encima(builder: builder);
 }
+
+/// `.stp`: cápsula gris con − valor + (la ganancia de cada categoría en Configuración). Botones de 34 que se oscurecen
+/// al pasar; el valor en el medio, 16/600 tabular.
+class Stp extends StatelessWidget {
+  const Stp({super.key, required this.valor, required this.onMenos, required this.onMas, this.etiquetaMenos = 'Menos', this.etiquetaMas = 'Más'});
+
+  final String valor;
+  final VoidCallback? onMenos;
+  final VoidCallback? onMas;
+  final String etiquetaMenos;
+  final String etiquetaMas;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    Widget boton(Ic icono, String etiqueta, VoidCallback? onTap) => _Encima(
+          builder: (encima) => Tocable(
+            onTap: onTap,
+            radio: 17,
+            etiqueta: etiqueta,
+            tooltip: etiqueta,
+            child: AnimatedContainer(
+              duration: ms(150),
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: encima && onTap != null ? p.s3 : Colors.transparent, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: Opacity(opacity: onTap == null ? .38 : 1, child: Icono(icono, size: 14, color: p.tinta, grosor: 2.6)),
+            ),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: p.s, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          boton(Ic.minus, etiquetaMenos, onMenos),
+          const SizedBox(width: 2),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 54),
+            child: Text(valor, textAlign: TextAlign.center, style: estilo(16, 600, color: p.tinta, num: true)),
+          ),
+          const SizedBox(width: 2),
+          boton(Ic.plus, etiquetaMas, onMas),
+        ],
+      ),
+    );
+  }
+}

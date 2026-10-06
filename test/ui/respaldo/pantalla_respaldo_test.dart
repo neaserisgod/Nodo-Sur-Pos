@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/data/repositorio_respaldo.dart';
 import 'package:la_plazoleta/ui/respaldo/dialogo_confirmar_restaurar.dart';
 import 'package:la_plazoleta/ui/respaldo/pantalla_respaldo.dart';
@@ -18,12 +19,14 @@ void main() {
       final db = baseDeTest();
       addTearDown(db.close);
 
-      await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: ContenidoRespaldo(db: db, usuarioId: 1))));
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: SingleChildScrollView(child: ContenidoRespaldo(db: db, usuarioId: 1)))));
       await tester.pumpAndSettle();
 
       expect(find.text('Sin carpeta configurada'), findsOneWidget);
-      final boton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Respaldar ahora'));
-      expect(boton.onPressed, isNull);
+      expect(tester.widget<Btn>(find.byKey(const Key('boton_respaldar_ahora'))).onTap, isNull);
     });
   });
 
@@ -35,11 +38,10 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: ContenidoRespaldo(db: db, usuarioId: 1))));
+      await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: SingleChildScrollView(child: ContenidoRespaldo(db: db, usuarioId: 1)))));
       await tester.pumpAndSettle();
       expect(find.text('Importar una base'), findsOneWidget);
-      final boton = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Importar desde un archivo…'));
-      expect(boton.onPressed, isNotNull);
+      expect(tester.widget<Btn>(find.byKey(const Key('boton_importar_base'))).onTap, isNotNull);
     });
   });
 

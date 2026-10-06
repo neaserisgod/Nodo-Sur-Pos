@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -90,7 +91,7 @@ void main() {
     await abrirSeccion(tester, nubeCon((r) async => _json(_estado(copias: [_copia]))));
     expect(find.textContaining('yo@gmail.com'), findsOneWidget);
     expect(find.byKey(const Key('nube_copia_7')), findsOneWidget);
-    expect(tester.widget<OutlinedButton>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(OutlinedButton))).onPressed, isNotNull);
+    expect(tester.widget<Btn>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(Btn))).onTap, isNotNull);
   });
 
   group('sucursal y equipo (solo informativo)', () {
@@ -111,9 +112,18 @@ void main() {
       await almacen.guardar(_cuenta);
       await abrirSeccion(tester, nubeCon((r) => servidor(r, equipo: equipoDueno)));
       expect(find.byKey(const Key('nube_equipo')), findsOneWidget);
-      expect(find.text('La Plazoleta · Sucursal: Centro · Tu rol: Dueño'), findsOneWidget);
-      expect(find.text('Ana Gómez · Dueño · todas las sucursales'), findsOneWidget);
-      expect(find.text('emp@x.com · Empleado · Centro'), findsOneWidget, reason: 'sin nombre guardado se muestra el mail');
+      final sucursal = find.byKey(const Key('nube_sucursal'));
+      for (final t in ['La Plazoleta', 'Centro', 'Dueño']) {
+        expect(find.descendant(of: sucursal, matching: find.text(t)), findsOneWidget, reason: t);
+      }
+      final ana = find.byKey(const Key('nube_miembro_ana@x.com'));
+      expect(find.descendant(of: ana, matching: find.text('Ana Gómez')), findsOneWidget);
+      expect(find.descendant(of: ana, matching: find.text('Dueño')), findsOneWidget);
+      expect(find.descendant(of: ana, matching: find.text('todas las sucursales')), findsOneWidget);
+      final emp = find.byKey(const Key('nube_miembro_emp@x.com'));
+      expect(find.descendant(of: emp, matching: find.text('emp@x.com')), findsOneWidget, reason: 'sin nombre guardado se muestra el mail');
+      expect(find.descendant(of: emp, matching: find.text('Empleado')), findsOneWidget);
+      expect(find.descendant(of: emp, matching: find.text('Centro')), findsOneWidget);
     });
 
     testWidgets('un encargado ve su sucursal y no la lista del equipo', (tester) async {
@@ -152,7 +162,7 @@ void main() {
     final u = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
     await abrirSesion(db, usuarioId: u, fondoInicialCentavos: 0);
     await abrirSeccion(tester, nubeCon((r) async => _json(_estado(copias: [_copia]))));
-    expect(tester.widget<OutlinedButton>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(OutlinedButton))).onPressed, isNull);
+    expect(tester.widget<Btn>(find.descendant(of: find.byKey(const Key('nube_copia_7')), matching: find.byType(Btn))).onTap, isNull);
     expect(find.textContaining('caja abierta'), findsOneWidget);
   });
 
@@ -167,7 +177,7 @@ void main() {
     await almacen.guardar(_cuenta);
     await abrirSeccion(tester, nubeCon((r) async => _json(_estado(sube: false, copias: [_copia]))));
     expect(find.byKey(const Key('nube_sin_permiso_subir')), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Guardar una copia ahora')).onPressed, isNull);
+    expect(tester.widget<Btn>(find.byKey(const Key('nube_boton_subir'))).onTap, isNull);
   });
 
   testWidgets('"Guardar una copia ahora" sube y avisa', (tester) async {
