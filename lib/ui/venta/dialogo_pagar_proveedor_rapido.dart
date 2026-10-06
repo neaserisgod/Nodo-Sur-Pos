@@ -53,10 +53,11 @@ Future<PagoProveedorHecho?> mostrarDialogoPagarProveedorRapido(
   required AppDatabase db,
   required int usuarioId,
   int? sesionCajaId,
+  int? proveedorIdInicial,
 }) {
   return mostrarModal<PagoProveedorHecho>(
     context,
-    builder: (_) => DialogoPagarProveedorRapido(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId),
+    builder: (_) => DialogoPagarProveedorRapido(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId, proveedorIdInicial: proveedorIdInicial),
   );
 }
 
@@ -67,8 +68,15 @@ Future<void> pagarProveedorYAvisar(
   required AppDatabase db,
   required int usuarioId,
   required int sesionCajaId,
+  int? proveedorIdInicial,
 }) async {
-  final hecho = await mostrarDialogoPagarProveedorRapido(context, db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId);
+  final hecho = await mostrarDialogoPagarProveedorRapido(
+    context,
+    db: db,
+    usuarioId: usuarioId,
+    sesionCajaId: sesionCajaId,
+    proveedorIdInicial: proveedorIdInicial,
+  );
   if (hecho == null || !context.mounted) return;
   mostrarAviso(
     context,
@@ -94,11 +102,14 @@ class _ProveedorConDeuda {
 }
 
 class DialogoPagarProveedorRapido extends StatefulWidget {
-  const DialogoPagarProveedorRapido({super.key, required this.db, required this.usuarioId, this.sesionCajaId});
+  const DialogoPagarProveedorRapido({super.key, required this.db, required this.usuarioId, this.sesionCajaId, this.proveedorIdInicial});
 
   final AppDatabase db;
   final int usuarioId;
   final int? sesionCajaId;
+
+  /// Desde la cuenta de un proveedor (Proveedores → "Pagar a proveedor"): ya viene elegido, con el monto de su deuda.
+  final int? proveedorIdInicial;
 
   @override
   State<DialogoPagarProveedorRapido> createState() => _DialogoPagarProveedorRapidoState();
@@ -149,7 +160,10 @@ class _DialogoPagarProveedorRapidoState extends State<DialogoPagarProveedorRapid
         final porDeuda = b.saldoCentavos.compareTo(a.saldoCentavos);
         return porDeuda != 0 ? porDeuda : a.proveedor.nombre.compareTo(b.proveedor.nombre);
       });
-    if (mounted) setState(() => _todos = lista);
+    if (!mounted) return;
+    setState(() => _todos = lista);
+    final inicial = [for (final p in lista) if (p.proveedor.id == widget.proveedorIdInicial) p];
+    if (inicial.isNotEmpty) _elegir(inicial.first);
   }
 
   List<_ProveedorConDeuda> get _filtrados {

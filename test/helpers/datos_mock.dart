@@ -4,6 +4,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_pendientes.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -140,5 +141,10 @@ Future<BaseMock> baseDelMock({bool conVentas = true}) async {
       await db.into(db.gastosFijosMontos).insert(GastosFijosMontosCompanion.insert(gastoFijoId: id, mesAnio: mes, montoCentavos: monto * 100));
     }
   }
+  // Lo que se le debe a cada proveedor en el mock (cuenta corriente), y la caja aparte de los cigarrillos.
+  for (final (id, monto) in [('coca', 71500), ('arcor', 38200), ('quilmes', 54000), ('cigs', 40000)]) {
+    await cargarDeuda(db, proveedorId: provs[id]!, montoCentavos: monto * 100, fecha: DateTime.now(), usuarioId: usuarioId);
+  }
+  await (db.update(db.proveedores)..where((p) => p.id.equals(provs['cigs']!))).write(const ProveedoresCompanion(cajaAparte: Value(true)));
   return BaseMock(db, usuarioId, sesionId, prods, provs);
 }

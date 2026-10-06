@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
+import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
+import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import 'package:la_plazoleta/ui/venta/venta_controlador.dart';
@@ -145,6 +147,26 @@ void main() {
         await capturarMock(tester, 'inicio-mes', () => PantallaDashboard(db: b.db), oscuro: oscuro, tamanio: tamanio, antes: () async {
           await tester.tap(find.text('Este mes'));
         });
+      });
+
+      testWidgets('proveedores$sufijo', (tester) async {
+        final b = (await tester.runAsync(baseDelMock))!;
+        addTearDown(b.db.close);
+        await capturarMock(
+          tester,
+          'proveedores',
+          () => PantallaProveedores(db: b.db, usuarioId: b.usuarioId, sesionCajaId: b.sesionId),
+          oscuro: oscuro,
+          tamanio: tamanio,
+          antes: () async {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+            await tester.pump();
+            final lista = tester.widget<ListaProveedores>(find.byType(ListaProveedores));
+            await tester.runAsync(() => lista.controlador.seleccionar(b.proveedores['quilmes']!));
+            await tester.pump();
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+          },
+        );
       });
 
       testWidgets('venta vacía$sufijo', (tester) async {

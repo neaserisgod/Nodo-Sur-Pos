@@ -340,7 +340,7 @@ class Etiqueta extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icono != null) ...[Icono(icono!, size: 15, color: texto_, grosor: 2.2), const SizedBox(width: 6)],
-          Text(texto, maxLines: 1, softWrap: false, style: estilo(tamanioTexto, 600, color: texto_)),
+          Flexible(child: Text(texto, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: estilo(tamanioTexto, 600, color: texto_))),
         ],
       ),
     );
@@ -1050,9 +1050,17 @@ class Tabla extends StatelessWidget {
     this.encogerse = true,
     this.radio = 30,
     this.vacio,
+    this.cabeceraPrimera,
+    this.dentroDeScroll = false,
   });
 
+  /// Adentro de algo que ya scrollea (una pantalla baja de 1366×768): la tabla mide todas sus filas y no scrollea sola.
+  final bool dentroDeScroll;
+
   final List<ColumnaTabla> columnas;
+
+  /// Algo en vez del título de la primera columna (el casillero de "seleccionar todos").
+  final Widget? cabeceraPrimera;
   final int cantidad;
 
   /// Las celdas de la fila [i], una por columna.
@@ -1086,14 +1094,27 @@ class Tabla extends StatelessWidget {
     final cabecera = Container(
       color: p.s,
       child: _fila(
-        [for (final c in columnas) Text(c.titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(13, 600, color: p.soft))],
+        [
+          for (final (i, c) in columnas.indexed)
+            if (i == 0 && cabeceraPrimera != null)
+              cabeceraPrimera!
+            else
+              Text(c.titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: estilo(13, 600, color: p.soft)),
+        ],
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
       ),
     );
     final cuerpo = cantidad == 0 && vacio != null
-        ? ColoredBox(color: p.s, child: vacio!)
+        // En una lista de un solo elemento: si el alto no alcanza, se corta en vez de desbordar.
+        ? ListView(
+            shrinkWrap: encogerse || dentroDeScroll,
+            physics: dentroDeScroll ? const NeverScrollableScrollPhysics() : null,
+            padding: EdgeInsets.zero,
+            children: [ColoredBox(color: p.s, child: vacio!)],
+          )
         : ListView.builder(
-            shrinkWrap: encogerse,
+            shrinkWrap: encogerse || dentroDeScroll,
+            physics: dentroDeScroll ? const NeverScrollableScrollPhysics() : null,
             padding: EdgeInsets.zero,
             itemCount: cantidad,
             itemExtent: altoFila,
@@ -1107,9 +1128,17 @@ class Tabla extends StatelessWidget {
       child: ColoredBox(
         color: p.s,
         child: Column(
-          mainAxisSize: encogerse ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisSize: encogerse || dentroDeScroll ? MainAxisSize.min : MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [cabecera, if (encogerse) Flexible(child: cuerpo) else Expanded(child: cuerpo)],
+          children: [
+            cabecera,
+            if (dentroDeScroll)
+              cuerpo
+            else if (encogerse)
+              Flexible(child: cuerpo)
+            else
+              Expanded(child: cuerpo),
+          ],
         ),
       ),
     );

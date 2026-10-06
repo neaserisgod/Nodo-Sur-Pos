@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/servicios/modulos_activos.dart';
-import 'package:la_plazoleta/ui/comun/boton_destacado.dart';
 import 'package:la_plazoleta/ui/proveedores/detalle_proveedor.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
 import 'package:la_plazoleta/ui/proveedores/pantalla_proveedores.dart';
@@ -49,7 +48,7 @@ Finder _campo(String llave) => find.descendant(
 /// opción del menú solo existe con `verDetalle` — ver
 /// `pantalla_proveedores.dart::_AccionesProveedores`).
 Future<void> _abrirNuevoProveedor(WidgetTester tester) async {
-  await tester.tap(find.text('+ Nuevo proveedor'));
+  await tester.tap(find.byKey(const Key('boton_nuevo_proveedor')));
   await tester.pumpAndSettle();
 }
 
@@ -61,7 +60,7 @@ Future<void> _entrarAProveedor(WidgetTester tester, String etiqueta) async {
   final fila = find.descendant(of: lista, matching: find.text(etiqueta));
   // La lista es perezosa (`ListView`): "Sin proveedor" va al final y puede
   // no estar construida todavía.
-  await tester.scrollUntilVisible(fila, 200, scrollable: find.descendant(of: lista, matching: find.byType(Scrollable)));
+  await tester.scrollUntilVisible(fila, 200, scrollable: find.descendant(of: lista, matching: find.byType(Scrollable)).last);
   await tester.tap(fila);
   await tester.pumpAndSettle();
 }
@@ -94,7 +93,7 @@ void main() {
       expect(find.descendant(of: lista, matching: find.text('Distribuidora')), findsOneWidget);
 
       final detalle = find.byType(DetalleProveedor);
-      expect(find.descendant(of: detalle, matching: find.text('Todos')), findsOneWidget);
+      expect(find.descendant(of: detalle, matching: find.text('Todos los productos')), findsOneWidget);
       expect(find.descendant(of: detalle, matching: find.text('Stock a precio')), findsOneWidget);
       // "Separado" solo existe con un proveedor real (no hay reposición de
       // "Todos"): ni siquiera se muestra la caja.
@@ -126,7 +125,7 @@ void main() {
         final detalle = find.byType(DetalleProveedor);
         expect(
           find.descendant(of: detalle, matching: find.text('Ganancia')),
-          findsOneWidget,
+          findsWidgets, // la cifra del período y la columna de la tabla
         );
 
         await tester.tap(find.text('Avanzado'));
@@ -506,7 +505,7 @@ void main() {
 
         await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
         await _entrarAProveedor(tester, 'Distribuidora');
-        await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+        await tester.tap(find.byKey(const Key('boton_nuevo_producto')));
         await tester.pumpAndSettle();
 
         // El botón de atrás y el título del modal.
@@ -797,24 +796,19 @@ void main() {
       expect(find.text('Ver lata'), findsOneWidget);
     });
 
-    testWidgets('con los módulos Promos y Comparador apagados, el menú "Más acciones" no los ofrece', (tester) async {
+    testWidgets('con los módulos Promos y Comparador apagados, no se ofrecen sus botones', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
       final p = await preparar(db);
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
 
-      await tester.tap(find.byTooltip('Más acciones'));
-      await tester.pumpAndSettle();
       expect(find.text('Promos'), findsOneWidget);
       expect(find.text('Comparar precios'), findsOneWidget);
-      await tester.tapAt(const Offset(5, 5));
-      await tester.pumpAndSettle();
 
       modulosActuales.value = ModulosNegocio.todosActivos
           .conModulo(Modulo.promos, activo: false)
           .conModulo(Modulo.compararPrecios, activo: false);
       addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
-      await tester.tap(find.byTooltip('Más acciones'));
       await tester.pumpAndSettle();
       expect(find.text('Promos'), findsNothing);
       expect(find.text('Comparar precios'), findsNothing);
@@ -829,7 +823,7 @@ void main() {
       await _pump(tester, db, usuarioId: p.usuarioId, sesionCajaId: p.sesionId);
       await _entrarAProveedor(tester, 'Distribuidora');
 
-      await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+      await tester.tap(find.byKey(const Key('boton_nuevo_producto')));
       await tester.pumpAndSettle();
       expect(find.text('Es pesable (se carga por gramos)'), findsOneWidget);
       expect(find.text('Cigarrillo'), findsOneWidget);
@@ -839,7 +833,7 @@ void main() {
       modulosActuales.value = ModulosNegocio.todosActivos
           .conModulo(Modulo.pesables, activo: false)
           .conModulo(Modulo.cajaAparte, activo: false);
-      await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+      await tester.tap(find.byKey(const Key('boton_nuevo_producto')));
       await tester.pumpAndSettle();
       expect(find.text('Es pesable (se carga por gramos)'), findsNothing);
       expect(find.text('Cigarrillo'), findsNothing);

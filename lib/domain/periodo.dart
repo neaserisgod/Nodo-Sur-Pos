@@ -35,3 +35,13 @@ DateTime? inicioDePeriodo(
     PeriodoResumen.desdeUltimoPago => ultimoPago,
   };
 }
+
+const _nombresDias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+/// "Pedir hoy" de la lista de Proveedores: el día de pedido es texto libre ("Martes", "martes", "Miércoles", "Miercoles"),
+/// así que se compara sin mayúsculas ni acentos contra el día de [ahora].
+bool tocaPedirHoy(String? diaPedido, DateTime ahora) {
+  if (diaPedido == null) return false;
+  final d = diaPedido.trim().toLowerCase().replaceAll('é', 'e').replaceAll('á', 'a');
+  return d == _nombresDias[ahora.weekday - 1];
+}

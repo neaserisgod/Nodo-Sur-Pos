@@ -17,6 +17,7 @@ import '../comun/campo_texto.dart';
 import '../comun/modal.dart';
 import '../comun/tarjetas.dart';
 import '../tema/tokens.dart';
+import '../kit/kit.dart';
 import 'proveedores_controlador.dart';
 
 /// Porcentajes a un toque, en basis points. El resto se carga con "Otro".
@@ -62,42 +63,33 @@ class SelectorPorcentajeProveedor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
+    final p = context.p;
     final bp = controlador.seleccionado?.markupBp;
     final esAtajo = bp == null || _atajos.contains(bp);
-
-    return Wrap(
-      spacing: Espaciado.md,
-      runSpacing: Espaciado.sm,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Ganancia sobre el precio',
-          style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.medium),
-        ),
-        GrupoPildoras<int?>(
-          opciones: [
-            (null, 'Sin %'),
-            for (final a in _atajos) (a, _porcentajeTexto(a)),
-            if (!esAtajo) (bp, _porcentajeTexto(bp)),
+        Text('Ganancia sobre el precio', style: estilo(17, 550, color: p.tinta)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (valor, texto) in [
+              (null, 'Sin %'),
+              for (final a in _atajos) (a, _porcentajeTexto(a)),
+              if (!esAtajo) (bp, _porcentajeTexto(bp)),
+            ])
+              ChipMock(texto, chico: true, elegido: valor == bp, onTap: () => controlador.guardarPorcentaje(valor)),
+            ChipMock('Otro %', chico: true, onTap: () => _otro(context)),
           ],
-          elegida: bp,
-          onElegir: controlador.guardarPorcentaje,
         ),
-        BotonSecundario(texto: 'Otro %', onPressed: () => _otro(context)),
+        const SizedBox(height: 14),
         if (bp != null)
-          BotonPrimario(
-            texto: 'Aplicar a los precios',
-            onPressed: () => _aplicar(context),
-          )
+          Btn('Aplicar a los precios', variante: VarBtn.blue, ancho: true, onTap: () => _aplicar(context))
         else
-          Text(
-            'Sin porcentaje: los precios se cargan a mano.',
-            style: textTheme.bodySmall?.copyWith(
-              color: colores.textoSecundario,
-            ),
-          ),
+          Text('Sin porcentaje: los precios se cargan a mano.', style: estilo(15, 400, color: p.mute)),
       ],
     );
   }

@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:flutter/widgets.dart' show Scrollable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
@@ -50,7 +51,10 @@ void main() {
     await tester.tap(find.descendant(of: lista, matching: find.text('Distribuidora')).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Ganancia sobre el precio'), findsOneWidget);
+    // Vive detrás del botón "Ganancia %" del proveedor (como "Avanzado" en el mock v4).
+    await tester.tap(find.text('Ganancia %'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ganancia sobre el precio'), findsWidgets);
     expect(find.text('Aplicar a los precios'), findsNothing);
 
     await tester.tap(find.text('30%'));
@@ -80,8 +84,11 @@ void main() {
       pantalla: PantallaProveedores(db: db, usuarioId: usuarioId, sesionCajaId: null),
       tema: TemaPlazoleta.claro,
     );
-    await tester.tap(find.descendant(of: find.byType(ListaProveedores), matching: find.text('Distribuidora de Cigarrillos')));
+    final lista = find.byType(ListaProveedores);
+    final fila = find.descendant(of: lista, matching: find.text('Distribuidora de Cigarrillos'));
+    await tester.scrollUntilVisible(fila, 200, scrollable: find.descendant(of: lista, matching: find.byType(Scrollable)).last);
+    await tester.tap(fila);
     await tester.pumpAndSettle();
-    expect(find.text('Ganancia sobre el precio'), findsNothing);
+    expect(find.text('Ganancia %'), findsNothing);
   });
 }

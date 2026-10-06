@@ -21,6 +21,7 @@ class PantallaGestion extends StatelessWidget {
     required this.titulo,
     this.subtitulo,
     this.accion,
+    this.acciones = const [],
     this.busqueda,
     required this.child,
   });
@@ -37,6 +38,9 @@ class PantallaGestion extends StatelessWidget {
 
   /// Acción opcional a la derecha del título (ej. "+ Nuevo").
   final Widget? accion;
+
+  /// Varias acciones (`.acts` del mock), después de [accion].
+  final List<Widget> acciones;
 
   /// Qué busca el campo de arriba en esta pantalla (ver
   /// `busqueda_contextual.dart`); null = buscar productos para vender.
@@ -58,7 +62,7 @@ class PantallaGestion extends StatelessWidget {
           busqueda: busqueda,
           child: PaginaMock(
             titulo: titulo,
-            acciones: [?accion],
+            acciones: [?accion, ...acciones],
             debajoDelTitulo: subtitulo == null ? null : Semantics(label: subtitulo, child: const SizedBox.shrink()),
             child: child,
           ),
