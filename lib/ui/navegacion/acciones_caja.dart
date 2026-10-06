@@ -20,6 +20,7 @@ import '../tema/iconos.dart';
 import '../venta/dialogo_apertura_caja.dart';
 import '../venta/dialogo_arqueo_intermedio.dart';
 import '../venta/dialogo_movimiento_rapido.dart';
+import '../venta/dialogo_pagar_proveedor_rapido.dart';
 import 'boton_caja.dart';
 
 /// Las filas del menú según el estado de la caja.
@@ -74,6 +75,50 @@ bool sesionEsDeOtroDia(SesionCaja sesion, [DateTime? ahora]) {
   return f.year != hoy.year || f.month != hoy.month || f.day != hoy.day;
 }
 
+/// Lo que hace cada acción de caja, sin estado. Lo usan el botón "Caja ▾" y el Asistente (Ctrl+K) de las pantallas de
+/// gestión, para que una acción sea una sola cosa vista desde donde se la llame.
+class LanzadorCaja {
+  const LanzadorCaja(this.db);
+
+  final AppDatabase db;
+
+  Future<void> abrir(BuildContext context) => mostrarDialogoAperturaCaja(context, db: db);
+
+  Future<void> arqueo(BuildContext context, SesionCaja s) =>
+      mostrarDialogoArqueoIntermedio(context, db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId);
+
+  Future<void> gasto(BuildContext context, SesionCaja s) =>
+      mostrarDialogoGastoRapido(context, db: db, sesionCajaId: s.id, usuarioId: s.usuarioAbrioId);
+
+  Future<void> ingreso(BuildContext context, SesionCaja s) =>
+      mostrarDialogoIngresoRapido(context, db: db, sesionCajaId: s.id, usuarioId: s.usuarioAbrioId);
+
+  Future<void> cerrar(BuildContext context, SesionCaja s) =>
+      mostrarModal<void>(context, builder: (_) => PantallaCierre(db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId));
+
+  Future<void> pagarProveedor(BuildContext context, SesionCaja s) =>
+      pagarProveedorYAvisar(context, db: db, usuarioId: s.usuarioAbrioId, sesionCajaId: s.id);
+
+  /// Mismo arqueo obligatorio que cerrar, pero al terminar abre la hoja de quien entra.
+  Future<void> turno(BuildContext context, SesionCaja s) async {
+    var cerrado = false;
+    await mostrarModal<void>(
+      context,
+      builder: (ctx) => PantallaCierre(
+        db: db,
+        sesionId: s.id,
+        usuarioId: s.usuarioAbrioId,
+        textoBotonFinal: 'Abrir para el que entra',
+        onFinalizado: () {
+          cerrado = true;
+          Navigator.of(ctx).pop();
+        },
+      ),
+    );
+    if (cerrado && context.mounted) await abrir(context);
+  }
+}
+
 /// "Caja ▾" conectado a la base: sigue a la sesión abierta y ofrece las mismas acciones que en Venta.
 ///
 /// Lee la sesión con una consulta simple (no con un `watch` de drift: ese deja un temporizador al desmontarse, que los
@@ -117,39 +162,14 @@ class _BotonCajaDeGestionState extends State<BotonCajaDeGestion> {
     await _leer();
   }
 
-  Future<void> _abrir(BuildContext context) => _y(mostrarDialogoAperturaCaja(context, db: db));
+  LanzadorCaja get _l => LanzadorCaja(db);
 
-  Future<void> _arqueo(BuildContext context, SesionCaja s) =>
-      _y(mostrarDialogoArqueoIntermedio(context, db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId));
-
-  Future<void> _gasto(BuildContext context, SesionCaja s) =>
-      _y(mostrarDialogoGastoRapido(context, db: db, sesionCajaId: s.id, usuarioId: s.usuarioAbrioId));
-
-  Future<void> _ingreso(BuildContext context, SesionCaja s) =>
-      _y(mostrarDialogoIngresoRapido(context, db: db, sesionCajaId: s.id, usuarioId: s.usuarioAbrioId));
-
-  Future<void> _cerrar(BuildContext context, SesionCaja s) =>
-      _y(mostrarModal<void>(context, builder: (_) => PantallaCierre(db: db, sesionId: s.id, usuarioId: s.usuarioAbrioId)));
-
-  /// Mismo arqueo obligatorio que cerrar, pero al terminar abre la hoja de quien entra.
-  Future<void> _turno(BuildContext context, SesionCaja s) async {
-    var cerrado = false;
-    await mostrarModal<void>(
-      context,
-      builder: (ctx) => PantallaCierre(
-        db: db,
-        sesionId: s.id,
-        usuarioId: s.usuarioAbrioId,
-        textoBotonFinal: 'Abrir para el que entra',
-        onFinalizado: () {
-          cerrado = true;
-          Navigator.of(ctx).pop();
-        },
-      ),
-    );
-    await _leer();
-    if (cerrado && context.mounted) await _abrir(context);
-  }
+  Future<void> _abrir(BuildContext context) => _y(_l.abrir(context));
+  Future<void> _arqueo(BuildContext context, SesionCaja s) => _y(_l.arqueo(context, s));
+  Future<void> _gasto(BuildContext context, SesionCaja s) => _y(_l.gasto(context, s));
+  Future<void> _ingreso(BuildContext context, SesionCaja s) => _y(_l.ingreso(context, s));
+  Future<void> _cerrar(BuildContext context, SesionCaja s) => _y(_l.cerrar(context, s));
+  Future<void> _turno(BuildContext context, SesionCaja s) => _y(_l.turno(context, s));
 
   @override
   Widget build(BuildContext context) {

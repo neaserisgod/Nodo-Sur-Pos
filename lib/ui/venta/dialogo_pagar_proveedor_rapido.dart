@@ -17,6 +17,7 @@ import '../../domain/dinero.dart';
 import '../../domain/modulos.dart';
 import '../../domain/normalizacion_texto.dart';
 import '../../servicios/modulos_activos.dart';
+import '../comun/aviso_superior.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
 import '../comun/modal.dart';
@@ -57,6 +58,33 @@ Future<PagoProveedorHecho?> mostrarDialogoPagarProveedorRapido(
     context,
     builder: (_) => DialogoPagarProveedorRapido(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId),
   );
+}
+
+/// El flujo completo desde cualquier pantalla: abre el diálogo y, al pagar, avisa arriba con Deshacer (si se puede).
+/// Lo usan Venta (Alt+P y el botón) y el Asistente (Ctrl+K), para que sea una sola cosa.
+Future<void> pagarProveedorYAvisar(
+  BuildContext context, {
+  required AppDatabase db,
+  required int usuarioId,
+  required int sesionCajaId,
+}) async {
+  final hecho = await mostrarDialogoPagarProveedorRapido(context, db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId);
+  if (hecho == null || !context.mounted) return;
+  mostrarAviso(
+    context,
+    hecho.texto,
+    textoAccion: hecho.deshacible ? 'Deshacer' : null,
+    alAccionar: hecho.deshacible ? () => _deshacerPago(context, db, hecho, sesionCajaId, usuarioId) : null,
+  );
+}
+
+Future<void> _deshacerPago(BuildContext context, AppDatabase db, PagoProveedorHecho hecho, int sesionId, int usuarioId) async {
+  try {
+    await anularMovimientoDeuda(db, movimientoId: hecho.movimientoId, usuarioId: usuarioId, sesionCajaId: sesionId);
+    if (context.mounted) mostrarAviso(context, 'Pago deshecho · ${hecho.proveedorNombre}');
+  } on Object catch (e) {
+    if (context.mounted) mostrarAviso(context, 'No se pudo deshacer: ${e is ArgumentError ? e.message : e}');
+  }
 }
 
 class _ProveedorConDeuda {

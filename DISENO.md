@@ -696,7 +696,7 @@ ofrezcan lo mismo), las **pastillas** en el centro y, a la derecha, la **campani
 de turno" y "Cerrar caja". La barra de la ventana también tiene tres zonas: marca y nombre / estado del día (respaldo de hoy o "Caja de ayer sin
 cerrar") / botones; el estado de la caja abierta ya no se repite ahí. **Avisos arriba**: la pastilla oscura de `mostrarAviso`
 (`lib/ui/comun/aviso_superior.dart`) reemplaza a los `SnackBar`; no tapa el cobro. **Pendiente de la etapa 1**: la campanita todavía solo está en
-Venta; la lupa de búsqueda sigue en las otras pantallas hasta que exista el Asistente (etapa 8).
+Venta; la lupa de búsqueda sigue en las otras pantallas. El Asistente (Ctrl+K, 2026-10-06) ya existe: en ventanas de menos de ~1800 px el botón queda solo con la lupa azul para que entren campanita y engranaje.
 
 **Cómo es HOY (2026-10-03)** — lo de más abajo es la historia del remake y
 algunas partes ya no aplican (vidrio, compacta/expandida, íconos): la barra

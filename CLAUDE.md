@@ -409,6 +409,7 @@ Todos con **`Alt`**, para que nunca choquen con la escritura. Impresos en cada
 botón, en tamaño chico. Las dos excepciones (2026-10-03) son de toda la app,
 no de cobrar: `Ctrl+F` busca (en Venta enfoca el campo único) y la tecla
 `Inicio` vuelve a Venta (salvo escribiendo en un campo, donde mueve el cursor).
+`Ctrl+K` abre el **Asistente** (rediseño v4, 2026-10-06): buscador de acciones, pantallas y productos; sin IA ni red.
 
 - `Alt+E` efectivo · `Alt+Q` QR · `Alt+D` tarjeta (pregunta: `D` débito,
   `C` crédito en 1 pago) · `Alt+X` mixto · `Alt+M` cobro manual

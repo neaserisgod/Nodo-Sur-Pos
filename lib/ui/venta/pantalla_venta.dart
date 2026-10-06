@@ -37,12 +37,11 @@ import '../../data/repositorio_secciones_menu.dart';
 import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import 'cancelar_venta_con_deshacer.dart';
-import '../../data/repositorio_deuda_proveedores.dart' show anularMovimientoDeuda;
-import '../comun/aviso_superior.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
 import '../navegacion/acciones_caja.dart';
+import '../navegacion/asistente.dart';
 import '../navegacion/boton_caja.dart';
 import '../navegacion/boton_notificaciones.dart';
 import '../navegacion/navbar_superior.dart';
@@ -203,6 +202,14 @@ class _PantallaVentaState extends State<PantallaVenta>
 
     final c = _controlador;
 
+    // Ctrl+K: el Asistente funciona siempre (con la caja cerrada ofrece "Abrir caja"), por eso va antes del bloqueo de abajo.
+    if (event.logicalKey == LogicalKeyboardKey.keyK &&
+        HardwareKeyboard.instance.isControlPressed &&
+        !HardwareKeyboard.instance.isAltPressed) {
+      unawaited(_abrirAsistente());
+      return true;
+    }
+
     // Bug real (reportado por el dueño): con la caja cerrada, `ColumnaBusqueda`/
     // `ColumnaCarrito`/`ColumnaCobro` desaparecen de la pantalla ("Caja
     // cerrada.", ver `build()`), pero este handler es global — no sabe nada
@@ -325,28 +332,22 @@ class _PantallaVentaState extends State<PantallaVenta>
   Future<void> _pagarProveedor() async {
     final sesion = _controlador.sesion;
     if (sesion == null) return;
-    final hecho = await mostrarDialogoPagarProveedorRapido(
-      context,
-      db: widget.db,
-      usuarioId: sesion.usuarioAbrioId,
-      sesionCajaId: sesion.id,
-    );
-    if (hecho == null || !mounted) return;
-    mostrarAviso(
-      context,
-      hecho.texto,
-      textoAccion: hecho.deshacible ? 'Deshacer' : null,
-      alAccionar: hecho.deshacible ? () => _deshacerPago(hecho, sesion.id, sesion.usuarioAbrioId) : null,
-    );
+    await pagarProveedorYAvisar(context, db: widget.db, usuarioId: sesion.usuarioAbrioId, sesionCajaId: sesion.id);
   }
 
-  Future<void> _deshacerPago(PagoProveedorHecho hecho, int sesionId, int usuarioId) async {
-    try {
-      await anularMovimientoDeuda(widget.db, movimientoId: hecho.movimientoId, usuarioId: usuarioId, sesionCajaId: sesionId);
-      if (mounted) mostrarAviso(context, 'Pago deshecho · ${hecho.proveedorNombre}');
-    } on Object catch (e) {
-      if (mounted) mostrarAviso(context, 'No se pudo deshacer: ${e is ArgumentError ? e.message : e}');
-    }
+  /// Asistente (Ctrl+K): buscador de acciones, pantallas y productos. Elegir un producto lo deja escrito en el campo único.
+  Future<void> _abrirAsistente() async {
+    await abrirAsistente(
+      context,
+      db: widget.db,
+      sesion: _controlador.sesion,
+      irA: _onSeleccionarSeccion,
+      alElegirProducto: (texto) {
+        _controlador.campoTexto.text = texto;
+        _controlador.focoCampoPrincipal.requestFocus();
+      },
+      alTerminarAccion: _controlador.cargarTodo,
+    );
   }
 
   Future<void> _abrirIngresoRapido() async {
@@ -542,6 +543,7 @@ class _PantallaVentaState extends State<PantallaVenta>
                       items: _itemsNav,
                       onSeleccionar: _onSeleccionarSeccion,
                       izquierda: _construirBotonCaja(c),
+                      onAbrirAsistente: () => unawaited(_abrirAsistente()),
                       acciones: hayVenta ? campanita : null,
                     ),
                   ),
