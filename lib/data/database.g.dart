@@ -15392,6 +15392,17 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _logoTicketMeta = const VerificationMeta(
+    'logoTicket',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> logoTicket = GeneratedColumn<Uint8List>(
+    'logo_ticket',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -15417,6 +15428,7 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     companionToken,
     dispositivoAperturaDesignadoId,
     prefijoVentas,
+    logoTicket,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -15628,6 +15640,12 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         ),
       );
     }
+    if (data.containsKey('logo_ticket')) {
+      context.handle(
+        _logoTicketMeta,
+        logoTicket.isAcceptableOrUnknown(data['logo_ticket']!, _logoTicketMeta),
+      );
+    }
     return context;
   }
 
@@ -15728,6 +15746,10 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
       prefijoVentas: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}prefijo_ventas'],
+      ),
+      logoTicket: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}logo_ticket'],
       ),
     );
   }
@@ -15859,6 +15881,11 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// Prefijo de dos letras de este equipo para el número de venta (`ventas.numero`). Se genera solo la primera vez que
   /// se cobra y no se sincroniza: cada dispositivo tiene el suyo, por eso dos dispositivos no repiten número.
   final String? prefijoVentas;
+
+  /// Logo del ticket (schemaVersion 54, rediseño v4, 2026-10-06): un PNG chico en blanco y negro (`servicios/preparar_logo.dart`)
+  /// que va arriba del encabezado en el PDF. Está acá y no en `configuracion_negocio_tabla` a propósito: esa se sincroniza y el
+  /// logo solo hace falta en la PC que imprime. Null = sin logo.
+  final Uint8List? logoTicket;
   const Configuracion({
     required this.id,
     required this.recargoPrimerAtadoCentavos,
@@ -15883,6 +15910,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     this.companionToken,
     this.dispositivoAperturaDesignadoId,
     this.prefijoVentas,
+    this.logoTicket,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15938,6 +15966,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     if (!nullToAbsent || prefijoVentas != null) {
       map['prefijo_ventas'] = Variable<String>(prefijoVentas);
     }
+    if (!nullToAbsent || logoTicket != null) {
+      map['logo_ticket'] = Variable<Uint8List>(logoTicket);
+    }
     return map;
   }
 
@@ -15985,6 +16016,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       prefijoVentas: prefijoVentas == null && nullToAbsent
           ? const Value.absent()
           : Value(prefijoVentas),
+      logoTicket: logoTicket == null && nullToAbsent
+          ? const Value.absent()
+          : Value(logoTicket),
     );
   }
 
@@ -16041,6 +16075,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         json['dispositivoAperturaDesignadoId'],
       ),
       prefijoVentas: serializer.fromJson<String?>(json['prefijoVentas']),
+      logoTicket: serializer.fromJson<Uint8List?>(json['logoTicket']),
     );
   }
   @override
@@ -16080,6 +16115,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         dispositivoAperturaDesignadoId,
       ),
       'prefijoVentas': serializer.toJson<String?>(prefijoVentas),
+      'logoTicket': serializer.toJson<Uint8List?>(logoTicket),
     };
   }
 
@@ -16107,6 +16143,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     Value<String?> companionToken = const Value.absent(),
     Value<String?> dispositivoAperturaDesignadoId = const Value.absent(),
     Value<String?> prefijoVentas = const Value.absent(),
+    Value<Uint8List?> logoTicket = const Value.absent(),
   }) => Configuracion(
     id: id ?? this.id,
     recargoPrimerAtadoCentavos:
@@ -16152,6 +16189,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     prefijoVentas: prefijoVentas.present
         ? prefijoVentas.value
         : this.prefijoVentas,
+    logoTicket: logoTicket.present ? logoTicket.value : this.logoTicket,
   );
   Configuracion copyWithCompanion(ConfiguracionTablaCompanion data) {
     return Configuracion(
@@ -16224,6 +16262,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       prefijoVentas: data.prefijoVentas.present
           ? data.prefijoVentas.value
           : this.prefijoVentas,
+      logoTicket: data.logoTicket.present
+          ? data.logoTicket.value
+          : this.logoTicket,
     );
   }
 
@@ -16258,7 +16299,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           ..write(
             'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
-          ..write('prefijoVentas: $prefijoVentas')
+          ..write('prefijoVentas: $prefijoVentas, ')
+          ..write('logoTicket: $logoTicket')
           ..write(')'))
         .toString();
   }
@@ -16288,6 +16330,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     companionToken,
     dispositivoAperturaDesignadoId,
     prefijoVentas,
+    $driftBlobEquality.hash(logoTicket),
   ]);
   @override
   bool operator ==(Object other) =>
@@ -16318,7 +16361,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           other.companionToken == this.companionToken &&
           other.dispositivoAperturaDesignadoId ==
               this.dispositivoAperturaDesignadoId &&
-          other.prefijoVentas == this.prefijoVentas);
+          other.prefijoVentas == this.prefijoVentas &&
+          $driftBlobEquality.equals(other.logoTicket, this.logoTicket));
 }
 
 class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
@@ -16345,6 +16389,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
   final Value<String?> companionToken;
   final Value<String?> dispositivoAperturaDesignadoId;
   final Value<String?> prefijoVentas;
+  final Value<Uint8List?> logoTicket;
   const ConfiguracionTablaCompanion({
     this.id = const Value.absent(),
     this.recargoPrimerAtadoCentavos = const Value.absent(),
@@ -16369,6 +16414,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
     this.prefijoVentas = const Value.absent(),
+    this.logoTicket = const Value.absent(),
   });
   ConfiguracionTablaCompanion.insert({
     this.id = const Value.absent(),
@@ -16394,6 +16440,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
     this.prefijoVentas = const Value.absent(),
+    this.logoTicket = const Value.absent(),
   });
   static Insertable<Configuracion> custom({
     Expression<int>? id,
@@ -16419,6 +16466,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Expression<String>? companionToken,
     Expression<String>? dispositivoAperturaDesignadoId,
     Expression<String>? prefijoVentas,
+    Expression<Uint8List>? logoTicket,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -16455,6 +16503,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       if (dispositivoAperturaDesignadoId != null)
         'dispositivo_apertura_designado_id': dispositivoAperturaDesignadoId,
       if (prefijoVentas != null) 'prefijo_ventas': prefijoVentas,
+      if (logoTicket != null) 'logo_ticket': logoTicket,
     });
   }
 
@@ -16482,6 +16531,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Value<String?>? companionToken,
     Value<String?>? dispositivoAperturaDesignadoId,
     Value<String?>? prefijoVentas,
+    Value<Uint8List?>? logoTicket,
   }) {
     return ConfiguracionTablaCompanion(
       id: id ?? this.id,
@@ -16514,6 +16564,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       dispositivoAperturaDesignadoId:
           dispositivoAperturaDesignadoId ?? this.dispositivoAperturaDesignadoId,
       prefijoVentas: prefijoVentas ?? this.prefijoVentas,
+      logoTicket: logoTicket ?? this.logoTicket,
     );
   }
 
@@ -16605,6 +16656,9 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     if (prefijoVentas.present) {
       map['prefijo_ventas'] = Variable<String>(prefijoVentas.value);
     }
+    if (logoTicket.present) {
+      map['logo_ticket'] = Variable<Uint8List>(logoTicket.value);
+    }
     return map;
   }
 
@@ -16639,7 +16693,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
           ..write(
             'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
-          ..write('prefijoVentas: $prefijoVentas')
+          ..write('prefijoVentas: $prefijoVentas, ')
+          ..write('logoTicket: $logoTicket')
           ..write(')'))
         .toString();
   }
@@ -37672,6 +37727,7 @@ typedef $$ConfiguracionTablaTableCreateCompanionBuilder =
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
       Value<String?> prefijoVentas,
+      Value<Uint8List?> logoTicket,
     });
 typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
     ConfiguracionTablaCompanion Function({
@@ -37698,6 +37754,7 @@ typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
       Value<String?> prefijoVentas,
+      Value<Uint8List?> logoTicket,
     });
 
 class $$ConfiguracionTablaTableFilterComposer
@@ -37822,6 +37879,11 @@ class $$ConfiguracionTablaTableFilterComposer
 
   ColumnFilters<String> get prefijoVentas => $composableBuilder(
     column: $table.prefijoVentas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -37951,6 +38013,11 @@ class $$ConfiguracionTablaTableOrderingComposer
     column: $table.prefijoVentas,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ConfiguracionTablaTableAnnotationComposer
@@ -38076,6 +38143,11 @@ class $$ConfiguracionTablaTableAnnotationComposer
     column: $table.prefijoVentas,
     builder: (column) => column,
   );
+
+  GeneratedColumn<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
+    builder: (column) => column,
+  );
 }
 
 class $$ConfiguracionTablaTableTableManager
@@ -38143,6 +38215,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
                 Value<String?> prefijoVentas = const Value.absent(),
+                Value<Uint8List?> logoTicket = const Value.absent(),
               }) => ConfiguracionTablaCompanion(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -38167,6 +38240,7 @@ class $$ConfiguracionTablaTableTableManager
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
                 prefijoVentas: prefijoVentas,
+                logoTicket: logoTicket,
               ),
           createCompanionCallback:
               ({
@@ -38195,6 +38269,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
                 Value<String?> prefijoVentas = const Value.absent(),
+                Value<Uint8List?> logoTicket = const Value.absent(),
               }) => ConfiguracionTablaCompanion.insert(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -38219,6 +38294,7 @@ class $$ConfiguracionTablaTableTableManager
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
                 prefijoVentas: prefijoVentas,
+                logoTicket: logoTicket,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -6,8 +6,10 @@ import '../../data/repositorio_configuracion.dart';
 import '../../data/repositorio_medios_pago.dart';
 import '../../data/repositorio_productos.dart';
 import '../../data/repositorio_secciones_menu.dart';
+import '../../data/repositorio_ticket.dart' show configurarLogoTicket;
 import '../../data/repositorio_usuarios.dart';
 import '../../domain/modulos.dart';
+import '../../servicios/preparar_logo.dart';
 import '../../servidor/servidor_companion.dart';
 
 enum SeccionConfiguracion {
@@ -148,6 +150,20 @@ class ConfiguracionControlador extends ChangeNotifier {
   Future<void> guardarDatosComercio({required String nombre, required String encabezadoTicket}) async {
     await configurarNombreComercio(db, nombre);
     await configurarEncabezadoTicket(db, encabezadoTicket);
+    await cargarTodo();
+  }
+
+  /// Logo del ticket (PC). Devuelve false si [bytes] no es una imagen que se pueda abrir.
+  Future<bool> guardarLogoTicket(Uint8List bytes) async {
+    final png = prepararLogoTicket(bytes);
+    if (png == null) return false;
+    await configurarLogoTicket(db, png);
+    await cargarTodo();
+    return true;
+  }
+
+  Future<void> quitarLogoTicket() async {
+    await configurarLogoTicket(db, null);
     await cargarTodo();
   }
 

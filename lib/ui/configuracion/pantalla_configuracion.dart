@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -377,6 +378,18 @@ class _SeccionComercioState extends State<_SeccionComercio> {
 
   Future<void> _guardar() => widget.c.guardarDatosComercio(nombre: _nombreCtrl.text, encabezadoTicket: _encabezadoCtrl.text);
 
+  Future<void> _elegirLogo() async {
+    final archivo = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Imagen', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp']),
+      ],
+    );
+    if (archivo == null) return;
+    final bytes = await archivo.readAsBytes();
+    final listo = await widget.c.guardarLogoTicket(bytes);
+    if (!listo && mounted) mostrarAviso(context, 'No se pudo abrir esa imagen');
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -401,6 +414,36 @@ class _SeccionComercioState extends State<_SeccionComercio> {
             minLines: 3,
           ),
           const SizedBox(height: Espaciado.lg),
+          Text('Logo del ticket (opcional)', style: textTheme.labelMedium?.copyWith(color: context.colores.textoSecundario)),
+          const SizedBox(height: Espaciado.xs),
+          Row(
+            children: [
+              if (widget.c.configuracion?.logoTicket != null) ...[
+                Container(
+                  key: const Key('vista_logo_ticket'),
+                  padding: const EdgeInsets.all(Espaciado.sm),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(radioControlEscritorio)),
+                  child: Image.memory(widget.c.configuracion!.logoTicket!, height: 48, filterQuality: FilterQuality.medium),
+                ),
+                const SizedBox(width: Espaciado.md),
+              ],
+              BotonSecundario(
+                key: const Key('boton_elegir_logo'),
+                texto: widget.c.configuracion?.logoTicket == null ? 'Elegir imagen' : 'Cambiar',
+                onPressed: _elegirLogo,
+              ),
+              if (widget.c.configuracion?.logoTicket != null) ...[
+                const SizedBox(width: Espaciado.sm),
+                BotonSecundario(key: const Key('boton_quitar_logo'), texto: 'Quitar', onPressed: widget.c.quitarLogoTicket),
+              ],
+            ],
+          ),
+          const SizedBox(height: Espaciado.xs),
+          Text(
+            'Sale arriba del encabezado en el ticket en PDF, en blanco y negro. La terminal imprime solo texto.',
+            style: textTheme.bodySmall?.copyWith(color: context.colores.textoTenue),
+          ),
+          const SizedBox(height: Espaciado.lg),
           Text('Así sale en el ticket', style: textTheme.labelMedium?.copyWith(color: context.colores.textoSecundario)),
           const SizedBox(height: Espaciado.xs),
           AnimatedBuilder(
@@ -413,6 +456,11 @@ class _SeccionComercioState extends State<_SeccionComercio> {
                 decoration: BoxDecoration(color: context.colores.fondo, borderRadius: BorderRadius.circular(radioControlEscritorio)),
                 child: Column(
                   children: [
+                    if (widget.c.configuracion?.logoTicket != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: Espaciado.xs),
+                        child: Image.memory(widget.c.configuracion!.logoTicket!, height: 40),
+                      ),
                     for (final linea in marca.encabezadoTicketEfectivo.split('\n'))
                       Text(linea, textAlign: TextAlign.center, style: textTheme.titleSmall?.copyWith(fontWeight: Pesos.fuerte)),
                   ],

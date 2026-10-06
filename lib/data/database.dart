@@ -151,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 53;
+  int get schemaVersion => 54;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1093,6 +1093,15 @@ class AppDatabase extends _$AppDatabase {
             .toSet();
         if (!columnas.contains('whatsapp')) {
           await m.addColumn(proveedores, proveedores.whatsapp);
+        }
+      }
+      // v53 → v54 (2026-10-06, rediseño v4): logo del ticket. Una columna nueva, nullable, en la tabla local de configuración.
+      if (from < 54) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('logo_ticket')) {
+          await m.addColumn(configuracionTabla, configuracionTabla.logoTicket);
         }
       }
       if (from < 37 && !Platform.isAndroid) {
