@@ -45,7 +45,7 @@ No hay Windows: se prueba `flutter analyze`, los tests y la lógica; **el aspect
 | Etapa | Estado | Notas |
 |---|---|---|
 | 0 Entorno | ✅ | Flutter 3.47.6 instalado en la sesión de trabajo; línea de base limpia. |
-| 1 Carcasa | ✅ salvo la campanita en todas las pantallas | `mostrarAviso` (arriba, con Deshacer) reemplaza a todos los `SnackBar`; botón **Caja ▾** (Venta y resto de pantallas); navbar y barra de la ventana en tres zonas. |
+| 1 Carcasa | ✅ completa (la campanita ya está en todas las pantallas; fuera de Venta no ofrece el arqueo) | `mostrarAviso` (arriba, con Deshacer) reemplaza a todos los `SnackBar`; botón **Caja ▾** (Venta y resto de pantallas); navbar y barra de la ventana en tres zonas. |
 | 2 Venta | ✅ parcial | Sin título, **Pagar proveedor (Alt+P)** con diálogo rápido (usa `pagarDeuda`, con Deshacer), pastilla **Varios**, buscador grande. **Falta** "Venta cobrada" que se cierra sola y diálogos de cobro sin total repetido ni "Cancelar" → decisión 7. |
 | 3 Inicio | ✅ | Sin "Nueva venta", tres columnas iguales arriba y abajo. |
 | 4 Proveedores · 5 Separaciones e Historial · 6 Cierre | ➖ ya coincide | Al comparar las capturas reales con el mock se vio que la app ya tiene las cifras por período, la selección masiva, los filtros por medio y el cierre con ✕. Las diferencias que quedan son de detalle visual y solo se pueden juzgar en Windows real. |

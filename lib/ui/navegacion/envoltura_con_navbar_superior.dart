@@ -32,6 +32,7 @@ import '../../data/database.dart';
 import '../tema/tokens.dart';
 import 'acciones_caja.dart';
 import 'barra_busqueda_global.dart';
+import 'boton_notificaciones.dart';
 import 'busqueda_contextual.dart';
 import 'navbar_superior.dart';
 import 'navegacion_gestion.dart';
@@ -178,6 +179,7 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
             items: _items,
             onSeleccionar: _seleccionar,
             izquierda: BotonCajaDeGestion(db: widget.db),
+            acciones: const BotonNotificaciones(),
             busqueda: campo,
             buscando: _buscando,
             onAbrirBusqueda: _abrirBusqueda,
