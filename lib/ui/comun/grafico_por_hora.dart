@@ -86,11 +86,11 @@ class _GraficoPorHoraState extends State<GraficoPorHora> {
                     child: MouseRegion(
                       onEnter: (_) => setState(() => _elegida = h),
                       onExit: (_) => setState(() => _elegida = null),
+                      // Solo informa (al pasar el mouse o tocar muestra el monto arriba): para accesibilidad es una etiqueta, no un
+                      // botón, porque 24 barras en una tarjeta no pueden medir 48 dp de ancho cada una.
                       child: Semantics(
-                        button: true,
                         label: '$h h: ${formatearARS(widget.porHora[h] ?? 0)}',
                         excludeSemantics: true,
-                        onTap: () => setState(() => _elegida = h),
                         child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => setState(() => _elegida = h),

@@ -540,7 +540,7 @@ class _RejillaProductosState extends State<RejillaProductos> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: 44,
+          height: 48,
           child: Row(
             children: [
               Expanded(
@@ -624,7 +624,8 @@ class _PildoraVarios extends StatelessWidget {
     final c = context.read<VentaControlador>();
     return Container(
       key: const Key('pildora_varios'),
-      height: 44,
+      // 48 dp: el mínimo para un objetivo táctil.
+      height: 48,
       decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
       child: SuperficieTactil(
         borderRadius: BorderRadius.circular(999),

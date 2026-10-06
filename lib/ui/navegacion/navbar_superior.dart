@@ -243,44 +243,53 @@ class _BotonAsistente extends StatelessWidget {
     final texto = Theme.of(context).textTheme.bodyMedium!;
     return Padding(
       padding: const EdgeInsets.only(right: Espaciado.xs),
-      child: Presionable(
-        key: const Key('nav_asistente'),
-        radio: 999,
-        onTap: onTap,
-        color: context.azulSuaveFondo,
-        child: Container(
-          height: Medidas.alturaControl,
-          constraints: const BoxConstraints(minWidth: Medidas.alturaControl),
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconoPlz(
-                IconosPlazoleta.search,
-                size: 18,
-                color: context.azulSuaveTexto,
+      child: Tooltip(
+        message: 'Asistente (Ctrl+K)',
+        child: Semantics(
+          button: true,
+          label: 'Asistente (Ctrl+K)',
+          child: Presionable(
+            key: const Key('nav_asistente'),
+            radio: 999,
+            onTap: onTap,
+            color: context.azulSuaveFondo,
+            child: Container(
+              height: Medidas.alturaControl,
+              constraints: const BoxConstraints(
+                minWidth: Medidas.alturaControl,
               ),
-              if (!compacto) ...[
-                const SizedBox(width: Espaciado.sm),
-                Text(
-                  'Asistente',
-                  style: texto.copyWith(
-                    fontWeight: Pesos.fuerte,
+              padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconoPlz(
+                    IconosPlazoleta.search,
+                    size: 18,
                     color: context.azulSuaveTexto,
                   ),
-                ),
-                const SizedBox(width: Espaciado.sm),
-                Text(
-                  'Ctrl+K',
-                  style: texto.copyWith(
-                    fontSize: 12,
-                    fontWeight: Pesos.fuerte,
-                    color: context.azulSuaveTexto.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ],
+                  if (!compacto) ...[
+                    const SizedBox(width: Espaciado.sm),
+                    Text(
+                      'Asistente',
+                      style: texto.copyWith(
+                        fontWeight: Pesos.fuerte,
+                        color: context.azulSuaveTexto,
+                      ),
+                    ),
+                    const SizedBox(width: Espaciado.sm),
+                    Text(
+                      'Ctrl+K',
+                      style: texto.copyWith(
+                        fontSize: 12,
+                        fontWeight: Pesos.fuerte,
+                        color: context.azulSuaveTexto.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
