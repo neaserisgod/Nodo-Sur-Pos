@@ -14,6 +14,7 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/pdf_planilla.dart';
 import '../../data/repositorio_edicion_venta.dart';
@@ -106,7 +107,7 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
       await _cargar();
       if (mounted) await ofrecerDevolucionMp(context, widget.db, venta.id);
     } on ArgumentError catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message.toString())));
+      if (mounted) mostrarAviso(context, e.message.toString());
     }
   }
 
@@ -128,9 +129,9 @@ class _PantallaDetalleDiaState extends State<PantallaDetalleDia> {
     setState(() => _generandoPdf = true);
     try {
       final ruta = await guardarPdfPlanilla(widget.db, sesionId: widget.sesionId, carpetaDestino: carpeta);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Guardado en $ruta')));
+      if (mounted) mostrarAviso(context, 'Guardado en $ruta');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) mostrarAviso(context, 'Error: $e');
     }
     if (mounted) setState(() => _generandoPdf = false);
   }

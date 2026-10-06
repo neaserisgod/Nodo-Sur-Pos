@@ -1372,6 +1372,9 @@ Future<void> actualizarProveedorAvanzado(
   String? medioPago,
   bool? cajaAparte,
   int? colchonReposicionCentavos,
+
+  /// Ausente = no se toca; `Value(null)` lo borra.
+  Value<String?> whatsapp = const Value.absent(),
 }) {
   return (db.update(
     db.proveedores,
@@ -1387,6 +1390,7 @@ Future<void> actualizarProveedorAvanzado(
       colchonReposicionCentavos: colchonReposicionCentavos == null
           ? const Value.absent()
           : Value(colchonReposicionCentavos),
+      whatsapp: whatsapp,
     ),
   );
 }
@@ -1406,6 +1410,7 @@ Future<int> crearProveedor(
   String? diaPedido,
   String? diaEntrega,
   String medioPago = 'Efectivo',
+  String? whatsapp,
 }) {
   return db
       .into(db.proveedores)
@@ -1416,6 +1421,7 @@ Future<int> crearProveedor(
           diaPedido: Value(diaPedido),
           diaEntrega: Value(diaEntrega),
           medioPago: Value(medioPago),
+          whatsapp: Value(whatsapp),
           globalId: Value(generarGlobalId()),
           origenDispositivo: Value(idDispositivoActual),
           actualizadoEn: Value(DateTime.now()),

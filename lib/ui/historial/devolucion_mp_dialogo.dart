@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../../servicios/cuenta_nube.dart';
@@ -53,5 +54,5 @@ Future<void> ofrecerDevolucionDeCobro(
     ResultadoDevolucionMp.yaDevuelta => 'Ese cobro ya estaba devuelto en Mercado Pago.',
     _ => 'No se pudo devolver: ${r.mensaje ?? 'error desconocido'}. Podés hacerlo desde la app de Mercado Pago.',
   };
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+  mostrarAviso(context, texto);
 }

@@ -77,6 +77,17 @@ Future<void> configurarCarpetaTickets(AppDatabase db, String? valor) {
       .write(ConfiguracionTablaCompanion(rutaTicketsCarpeta: Value(valor)));
 }
 
+/// Logo del ticket ya preparado (PNG), o null si no hay. Ver `servicios/preparar_logo.dart`.
+Future<Uint8List?> logoTicketGuardado(AppDatabase db) async {
+  final fila = await db.select(db.configuracionTabla).getSingleOrNull();
+  return fila?.logoTicket;
+}
+
+/// Guarda el logo del ticket; null lo quita.
+Future<void> configurarLogoTicket(AppDatabase db, Uint8List? png) {
+  return db.update(db.configuracionTabla).write(ConfiguracionTablaCompanion(logoTicket: Value(png)));
+}
+
 /// Búsqueda mínima para reimprimir (fase 10, adelantada de la fase 9): por
 /// número de venta exacto, o por día si no se da un número. Sin ambos
 /// filtros, trae las últimas ventas nomás — para no dejar la pantalla vacía

@@ -11,17 +11,23 @@
 //    sin pagar. El stock ya estaba descontado al apartar, así que no se mueve de nuevo; el encargue pasa a ser una deuda
 //    (`tipo` 'FIADO') por el total a los precios de HOY, que se cobra después con `cobrarFiado`.
 //
+//  * Seña (dueño, 2026-10-06; `domain/sena.dart`, `docs/PLAN-SENA.md`): entra a la caja con la que se pagó como INGRESO (no es una
+//    venta); cancelar la devuelve por la misma caja; al entregar se aplica como un pago de la venta que NO vuelve a mover la caja.
+//
 // Se guarda en `pendientes` (tipo 'ENCARGUE', ya sincronizada) con las líneas en JSON por `global_id` del producto.
 
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../domain/sena.dart';
 import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
+import 'repositorio_gastos.dart' show MedioGasto;
+import 'repositorio_ingresos.dart';
 import 'repositorio_productos.dart';
-import 'repositorio_ventas.dart' show lineaDesdeProducto;
+import 'repositorio_ventas.dart' show lineaDesdeProducto, verificarSesionAbierta;
 
 /// Lo que se quiere apartar: un producto y, según sea, unidades o gramos.
 class LineaEncargueNueva {
@@ -59,11 +65,22 @@ class LineaEncargue {
 }
 
 class Encargue {
-  const Encargue({required this.id, required this.nombreCliente, required this.lineas, required this.desde});
+  const Encargue({
+    required this.id,
+    required this.nombreCliente,
+    required this.lineas,
+    required this.desde,
+    this.senaCentavos = 0,
+    this.senaEsEfectivo = true,
+  });
   final int id;
   final String nombreCliente;
   final List<LineaEncargue> lineas;
   final DateTime desde;
+
+  /// Lo que el cliente dejó de seña (0 = nada) y por qué caja entró.
+  final int senaCentavos;
+  final bool senaEsEfectivo;
 
   String get resumen => lineas.map((l) => l.texto).join(', ');
 }
@@ -74,6 +91,53 @@ class EncargueSinStock implements Exception {
   final String nombreProducto;
   @override
   String toString() => 'No alcanza el stock de $nombreProducto para apartarlo.';
+}
+
+/// Lo que se quiere hacer no se puede con un encargue que tiene seña (se explica en [mensaje]).
+class EncargueConSena implements Exception {
+  const EncargueConSena(this.mensaje);
+  final String mensaje;
+  @override
+  String toString() => mensaje;
+}
+
+/// La seña de un encargue todavía pendiente: cuánto y por qué caja entró. Un encargue que ya no está pendiente (entregado o
+/// cancelado) devuelve 0: su seña ya se aplicó o se devolvió, y volver a contarla duplicaría la plata.
+Future<({int centavos, bool esEfectivo})> senaPendienteDe(AppDatabase db, int encargueId) async {
+  final p = await (db.select(db.pendientes)..where((x) => x.id.equals(encargueId))).getSingleOrNull();
+  if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE') return (centavos: 0, esEfectivo: true);
+  return (centavos: p.senaCentavos, esEfectivo: p.senaEsEfectivo);
+}
+
+/// La seña vuelve al cliente por la caja por la que entró. Movimiento propio ('DEVOLUCION_SENA'), no un gasto: la rentabilidad y el
+/// equilibrio suman los gastos y devolver una seña no le resta ganancia al negocio.
+Future<void> registrarDevolucionSena(
+  AppDatabase db, {
+  required int sesionCajaId,
+  required int usuarioId,
+  required int montoCentavos,
+  required bool esEfectivo,
+  required String motivo,
+}) async {
+  if (montoCentavos <= 0) return;
+  await verificarSesionAbierta(db, sesionCajaId);
+  final caja = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
+  final medioId = cajaDeLaSena(esEfectivo: esEfectivo) == CajaDeSena.mercadoPago
+      ? (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id
+      : null;
+  await db.into(db.movimientosDeCaja).insert(
+        MovimientosDeCajaCompanion.insert(
+          sesionCajaId: sesionCajaId,
+          cajaId: caja.id,
+          usuarioId: usuarioId,
+          tipo: 'DEVOLUCION_SENA',
+          montoCentavos: montoCentavos,
+          medioPagoId: Value(medioId),
+          nota: Value(motivo),
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+        ),
+      );
 }
 
 List<LineaEncargue> _leerLineas(String? json) {
@@ -118,17 +182,25 @@ Future<String> _darIdentidad(AppDatabase db, Producto producto) async {
 }
 
 /// Aparta [lineas] para [nombreCliente]: baja el stock y deja el encargue pendiente. Todo o nada.
+///
+/// Con [senaCentavos] > 0 el cliente deja una seña: entra a la caja de [sesionCajaId] (cajón si [senaEsEfectivo], Mercado Pago si no)
+/// en la MISMA transacción, así no queda un encargue con seña sin plata ni plata sin encargue. Pide la caja abierta.
 Future<int> crearEncargueApartando(
   AppDatabase db, {
   required String nombreCliente,
   required List<LineaEncargueNueva> lineas,
   required int usuarioId,
+  int senaCentavos = 0,
+  bool senaEsEfectivo = true,
+  int? sesionCajaId,
 }) {
   final nombre = nombreCliente.trim();
   if (nombre.isEmpty) throw ArgumentError('El encargue necesita el nombre del cliente.');
   if (lineas.isEmpty) throw ArgumentError('El encargue necesita al menos un producto.');
+  if (senaCentavos > 0 && sesionCajaId == null) throw ArgumentError('Para tomar una seña hace falta la caja abierta.');
   return db.transaction(() async {
     final guardadas = <LineaEncargue>[];
+    final lineasDeVenta = <LineaVenta>[];
     for (final l in lineas) {
       final producto = await (db.select(db.productos)..where((p) => p.id.equals(l.productoId))).getSingle();
       final gramos = l.gramos;
@@ -146,20 +218,41 @@ Future<int> crearEncargueApartando(
         motivo: 'Apartado para $nombre',
       );
       guardadas.add(LineaEncargue(productoGlobalId: gid, nombre: producto.nombre, cantidad: unidades, gramos: gramos));
+      // Solo con seña se valorizan las líneas: un encargue común puede ser de un producto sin precio cargado y eso no lo frena.
+      if (senaCentavos > 0) lineasDeVenta.add(lineaDesdeProducto(producto, cantidad: unidades, gramos: gramos));
     }
-    return db.into(db.pendientes).insert(
+    if (senaCentavos > 0) {
+      final problema = validarSenaNueva(senaCentavos: senaCentavos, estimadoCentavos: Venta(lineas: lineasDeVenta).subtotalCentavos);
+      if (problema != null) throw ArgumentError(problema);
+    } else if (senaCentavos < 0) {
+      throw ArgumentError('La seña no puede ser negativa');
+    }
+    final id = await db.into(db.pendientes).insert(
           PendientesCompanion.insert(
             tipo: 'ENCARGUE',
             nombreLibre: Value(nombre),
             // El tablero y los encargues viejos leen `descripcion`: queda el resumen legible.
             descripcion: Value(guardadas.map((l) => l.texto).join(', ')),
             lineasJson: Value(jsonEncode([for (final l in guardadas) l.toJson()])),
+            senaCentavos: Value(senaCentavos),
+            senaEsEfectivo: Value(senaEsEfectivo),
             usuarioId: usuarioId,
             globalId: Value(generarGlobalId()),
             origenDispositivo: Value(idDispositivoActual),
             actualizadoEn: Value(DateTime.now()),
           ),
         );
+    if (senaCentavos > 0) {
+      await registrarIngresoRapido(
+        db,
+        sesionCajaId: sesionCajaId!,
+        usuarioId: usuarioId,
+        montoCentavos: senaCentavos,
+        medio: cajaDeLaSena(esEfectivo: senaEsEfectivo) == CajaDeSena.cajon ? MedioGasto.cajonNormal : MedioGasto.mercadoPago,
+        motivo: 'Seña encargue de $nombre',
+      );
+    }
+    return id;
   });
 }
 
@@ -171,7 +264,14 @@ Future<List<Encargue>> listarEnarguesPendientes(AppDatabase db) async {
       .get();
   return [
     for (final p in filas)
-      Encargue(id: p.id, nombreCliente: p.nombreLibre ?? '', lineas: _leerLineas(p.lineasJson), desde: p.fechaCreacion),
+      Encargue(
+        id: p.id,
+        nombreCliente: p.nombreLibre ?? '',
+        lineas: _leerLineas(p.lineasJson),
+        desde: p.fechaCreacion,
+        senaCentavos: p.senaCentavos,
+        senaEsEfectivo: p.senaEsEfectivo,
+      ),
   ];
 }
 
@@ -185,10 +285,24 @@ Future<void> _devolverApartado(AppDatabase db, Pendiente pendiente, {required in
 
 /// Cancela un encargue pendiente y devuelve lo apartado. Si ya no está pendiente (ya se entregó o ya se canceló) no hace
 /// nada: devolver stock dos veces, o stock que ya se vendió, lo inventaría.
-Future<void> cancelarEncargue(AppDatabase db, int id, {required int usuarioId}) {
+///
+/// Si tenía seña, se devuelve por la misma caja por la que entró: hace falta [sesionCajaId] (la caja abierta de hoy); sin ella no se
+/// cancela, porque la plata no tendría de dónde salir.
+Future<void> cancelarEncargue(AppDatabase db, int id, {required int usuarioId, int? sesionCajaId}) {
   return db.transaction(() async {
     final p = await (db.select(db.pendientes)..where((x) => x.id.equals(id))).getSingleOrNull();
     if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE') return;
+    if (p.senaCentavos > 0) {
+      if (sesionCajaId == null) throw ArgumentError('Para devolver la seña hace falta la caja abierta.');
+      await registrarDevolucionSena(
+        db,
+        sesionCajaId: sesionCajaId,
+        usuarioId: usuarioId,
+        montoCentavos: p.senaCentavos,
+        esEfectivo: p.senaEsEfectivo,
+        motivo: 'Devolución de seña, encargue de ${p.nombreLibre}',
+      );
+    }
     await _devolverApartado(db, p, usuarioId: usuarioId, motivo: 'Encargue cancelado: ${p.nombreLibre}');
     await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(
       estado: const Value('CANCELADO'),
@@ -230,6 +344,9 @@ Future<int?> entregarEncargueADeuda(AppDatabase db, int id, {required int usuari
   return db.transaction(() async {
     final p = await (db.select(db.pendientes)..where((x) => x.id.equals(id))).getSingleOrNull();
     if (p == null || p.tipo != 'ENCARGUE' || p.estado != 'PENDIENTE' || p.lineasJson == null) return null;
+    if (p.senaCentavos > 0) {
+      throw const EncargueConSena('Este encargue tiene una seña: cobralo (se descuenta la seña) o cancelalo para devolverla.');
+    }
     final lineas = _leerLineas(p.lineasJson);
     final total = Venta(lineas: await lineasParaEntregar(db, id)).subtotalCentavos;
     await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(

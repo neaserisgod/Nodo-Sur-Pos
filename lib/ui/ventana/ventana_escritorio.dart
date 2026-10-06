@@ -259,21 +259,17 @@ class _BarraVentana extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: colores.borde)),
         ),
+        // Tres costados simétricos (rediseño v4): la marca a la izquierda, el estado del día al centro y los botones a la
+        // derecha. Izquierda y derecha ocupan lo mismo, así el centro cae en el medio de la ventana. El estado de la caja
+        // ya no está acá: vive en el botón "Caja ▾" de la navbar; solo queda el aviso de la caja de ayer.
         child: Row(
           children: [
-            // Todo lo que no es un botón arrastra la ventana; doble clic
-            // maximiza o restaura (comportamiento de cualquier ventana).
+            // Todo lo que no es un botón arrastra la ventana; doble clic maximiza o restaura (comportamiento de cualquier ventana).
             Expanded(
               child: DragToMoveArea(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onDoubleTap: () async {
-                    if (await windowManager.isMaximized()) {
-                      await windowManager.unmaximize();
-                    } else {
-                      await windowManager.maximize();
-                    }
-                  },
+                  onDoubleTap: _alternarMaximizada,
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12),
                     child: Row(
@@ -286,77 +282,66 @@ class _BarraVentana extends StatelessWidget {
                           valueListenable: marcaActual,
                           builder: (context, marca, _) => Text(
                             marca.nombre,
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontSize: 14,
-                              fontWeight: Pesos.medium,
-                              color: colorTitulo,
-                            ),
+                            style: textTheme.bodyMedium?.copyWith(fontSize: 14, fontWeight: Pesos.medium, color: colorTitulo),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        if (cajaDeAyerSinCerrar)
-                          _Chip(
-                            texto: 'Caja de ayer sin cerrar',
-                            fondo: acentos.alertaSuave,
-                            color: acentos.alerta,
-                            enFoco: enFoco,
-                          )
-                        else if (cajaAbierta)
-                          _Chip(
-                            texto: 'Caja abierta',
-                            fondo: acentos.gananciaSuave,
-                            color: acentos.ganancia,
-                            enFoco: enFoco,
-                          ),
-                        if (ultimoRespaldo != null) ...[
-                          const SizedBox(width: 10),
-                          Text(
-                            'Respaldo hoy ${_hora(ultimoRespaldo!)}',
-                            style: textTheme.bodySmall?.copyWith(
-                              fontSize: 12,
-                              fontWeight: Pesos.medium,
-                              color: enFoco
-                                  ? colores.textoSecundario
-                                  : colores.textoTenue,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            const _AvisoActualizacion(),
-            _BotonVentana(
-              tooltip: 'Minimizar',
-              color: colorIconos,
-              dibujo: _Dibujo.minimizar,
-              onTap: windowManager.minimize,
+            DragToMoveArea(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onDoubleTap: _alternarMaximizada,
+                child: Center(
+                  child: cajaDeAyerSinCerrar
+                      ? _Chip(texto: 'Caja de ayer sin cerrar', fondo: acentos.alertaSuave, color: acentos.alerta, enFoco: enFoco)
+                      : (ultimoRespaldo == null
+                            ? const SizedBox.shrink()
+                            : Text(
+                                'Respaldo hoy ${_hora(ultimoRespaldo!)}',
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: Pesos.medium,
+                                  color: enFoco ? colores.textoSecundario : colores.textoTenue,
+                                ),
+                              )),
+                ),
+              ),
             ),
-            _BotonVentana(
-              tooltip: maximizada ? 'Restaurar' : 'Maximizar',
-              color: colorIconos,
-              dibujo: maximizada ? _Dibujo.restaurar : _Dibujo.maximizar,
-              onTap: () async {
-                if (await windowManager.isMaximized()) {
-                  await windowManager.unmaximize();
-                } else {
-                  await windowManager.maximize();
-                }
-              },
-            ),
-            _BotonVentana(
-              tooltip: 'Cerrar',
-              color: colorIconos,
-              dibujo: _Dibujo.cerrar,
-              esCerrar: true,
-              onTap: windowManager.close,
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const _AvisoActualizacion(),
+                    _BotonVentana(tooltip: 'Minimizar', color: colorIconos, dibujo: _Dibujo.minimizar, onTap: windowManager.minimize),
+                    _BotonVentana(
+                      tooltip: maximizada ? 'Restaurar' : 'Maximizar',
+                      color: colorIconos,
+                      dibujo: maximizada ? _Dibujo.restaurar : _Dibujo.maximizar,
+                      onTap: _alternarMaximizada,
+                    ),
+                    _BotonVentana(tooltip: 'Cerrar', color: colorIconos, dibujo: _Dibujo.cerrar, esCerrar: true, onTap: windowManager.close),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  static Future<void> _alternarMaximizada() async {
+    if (await windowManager.isMaximized()) {
+      await windowManager.unmaximize();
+    } else {
+      await windowManager.maximize();
+    }
   }
 
   static String _hora(DateTime f) =>

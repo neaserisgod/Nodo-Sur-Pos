@@ -18,66 +18,44 @@ y el detalle en `DECISIONES.md`.
   (los celulares toman la más nueva). La 2129 quedó **bloqueada** en el sitio (03/10).
 - **Sitio** (`NodoSurPage`): en producción al mezclar a `main`.
 
-## Métricas
+## Rediseño de la PC v3 — mock hecho, sin aplicar al código (05/10/2026)
 
-- **Tests**: 2374 verdes (`flutter test --exclude-tags bench`, 2026-10-05). La suite completa a veces muestra 1–3 fallos que cambian de nombre
-  entre corridas, todos en `test/ui/venta/` (hit-test warnings de Flutter); en aislamiento pasan siempre. Flakiness del
-  runner, sin investigar.
-- **`flutter analyze`**: "No issues found!" en todo el repo (2026-10-03); CI lo exige.
-- **`schemaVersion`**: **52** (`lib/data/database.dart`; las v40–v52 están comentadas en `onUpgrade`).
-- Capturas para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y
-  `test/companion/capturas_companion_test.dart` (PNG en `capturas/`, ignorada por git; no son golden tests).
+El dueño rechazó el aspecto de la app de escritorio y pidió **rehacerla desde cero** (disposición incluida) con el lenguaje de
+horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 
-## Fases del roadmap
+- **Expresiva** (primera): títulos que se tipean, partículas, mega-menú, tablero 3D, cinta de avisos, cursor-pastilla. El dueño dijo
+  que para la caja **se exageró un poco** (hay que poder leer claro y, en lo posible, **sin scroll**), **pero le gustó para la web**:
+  queda **guardada para el sitio** en [`docs/ESTILO-EXPRESIVO-WEB.md`](./docs/ESTILO-EXPRESIVO-WEB.md) y
+  `docs/mock-pc/NodoSurPC-v3-expresivo.html` (vivo: https://claude.ai/artifact/DnUi6qvYDxZpgpD3uh14js). **Pendiente: llevarla al sitio**
+  (repo `NodoSurPage`, fuera de este repo).
+- **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
+  Especificación para aplicarla: [`docs/ESPECIFICACION-PC-V3.md`](./docs/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
 
-Qué es cada una: `CLAUDE.md`, sección "Fases".
+**Ronda 3 (05/10, la última):** el dueño pidió rapidez inmediata y cero fricción, IA siempre a mano (no escondida en Configuración),
+**Pagar proveedor** como acción principal de caja (gasto/ingreso secundario), navbar sin logo/nombre/lupa, tuerca para Configuración y
+mucha información legible. Está en la especificación (secciones 4.2, 4.5, 7.x, 8 y **15**) y en el mock sobrio; funciones nuevas a confirmar
+en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "Venta cobrada" que se cierra sola).
 
-| Fase | Contenido | Estado |
-|---|---|---|
-| 1–10 | Dominio, base, venta, cierre, productos, reposición, rentabilidad, configuración, historial, impresión y respaldo | **Cerradas** |
-| 11 | Sistema de diseño | Aplicado a toda la app (ver `DISENO.md`) |
-| 12 | Cobro por terminal Point (QR/débito) | **Cerrada** (ver abajo, Mercado Pago) |
-| 13 | Pulido visual tras el cambio de hardware | **Cerrada** (el tema automático sigue al del sistema, decisión del dueño 2026-10-03) |
-| 14 | Remake de estética basado en la companion (navbar superior, `Superficie`) | **Hecho** en todas las pantallas; luego se pasó al lenguaje "antigravity" (`DISENO.md`) |
-| — | Generalización a Nodo Sur POS (módulos, rubros, marca configurable) | **Completa** (fases 1–5 y 8–9; 6 y 7 descartadas) |
-| — | Nube: cuenta, copias, sync por sucursal, actualizaciones | **Hecha**; probar con equipos y cuentas reales sigue siendo lo que más falta |
+**Ronda 4 (05/10, la última):** el dueño pidió **eliminar redundancias** (dejar lo más práctico a mano), sacar las tarjetas de IA del medio de Inicio,
+**todo simétrico** y **avisos (toast) arriba**; y pidió un mock **aparte** porque la v3 le gusta de base. Quedó en
+[`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md) (delta sobre la v3: gana la v4) y `docs/mock-pc/NodoSurPC-v4.html`
+(vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
+"Venta cobrada" sin botón de siguiente, diálogos sin "Cancelar".
 
-Quedó en el archivo, sin tocar a propósito: `Bloque` y los tokens viejos deprecados (Fase 6 del remake) y la vitrina de
-test `test/capturas/pantalla_muestra_kit.dart`. Borrarlos solo tiene sentido con el visto bueno visual final del dueño.
+**Aplicación al código (06/10, etapa 1 en curso):** se empezó a llevar el diseño v4 a Flutter, con el plan en [`docs/PLAN-APLICAR-V4.md`](./docs/PLAN-APLICAR-V4.md).
+Hecho y probado con `flutter analyze` + tests: **avisos arriba** (`mostrarAviso`, reemplaza a todos los `SnackBar` de la PC), botón **"Caja ▾"** (menú de caja en Venta y en el
+resto de las pantallas), **navbar y barra de la ventana en tres costados simétricos**. **Sin probar en Windows real** (aspecto, rendimiento, terminal). Falta de la etapa 1: campanita en
+todas las pantallas. **Etapa 2 (Venta) empezada**: sin título "Vender", buscador grande con **Pagar proveedor (Alt+P)** al lado (diálogo rápido nuevo, usa `pagarDeuda`), pastilla **Varios**.
+Todavía NO se tocó "Venta cobrada" ni los diálogos de cobro (hay una decisión pendiente, ver el plan). **Etapa 3 (Inicio) hecha**: sin "Nueva venta" y tres columnas iguales arriba (vendido, indicadores, más vendidos) y abajo (cómo te pagaron, stock bajo, encargues y deudas); el gráfico de ventas por hora se adapta a una tarjeta angosta. **Pantallas sin subtítulo** (decidido en el rediseño v4). **Configuración (etapa 7) hecha**: una sola lista con las 16 secciones y el nombre del grupo arriba de las suyas, título y descripción a la derecha, sin pastillas. Al comparar las capturas reales con el mock se vio que **Proveedores, Separaciones e Historial ya coinciden en lo funcional** (cifras por período, selección, filtros por medio); queda por ver Cierre y los diálogos (sin "Cancelar" ni total repetido), y todo lo marcado como decisión pendiente en el plan.
 
-## Lo que existe hoy (mapa rápido)
+**Ronda 5 (06/10):** el dueño pidió implementar en el mock **todo lo que existe en la app real y faltaba** y **dejar lo que solo está en el mock** (son funciones útiles que quiere conservar).
+Hecho: ~35 funciones agregadas al mock v4 (imprimir ticket, quién abre, caja de ayer, cerrar el sistema, reabrir, cifras y selección en Proveedores, cuenta corriente, edición masiva completa, promos, comparar con los súper,
+períodos y filtros, devolución por Mercado Pago, editor y carga histórica completos, cierre completo, Configuración). Detalle en la sección 8 de [`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md). **Sigue sin tocarse el código de Flutter.**
 
-- **PC**: menú de 6 apartados (Inicio · Venta · Proveedores · Separaciones · Historial · Configuración) con Configuración
-  como engranaje y búsqueda en lupa (Ctrl+F). Venta: carrito + cobro a la derecha, grilla de productos con "Más vendidos"
-  por defecto, ventas abiertas múltiples y persistentes (Alt+N / Alt+S), descuento sobre el total, cobro manual.
-  Proveedores: lista y detalle, cuenta corriente ("Deuda"), precio automático por ganancia, edición masiva, promos.
-  Separaciones (solo de hoy, dividido cajón/Mercado Pago), Encargues por apartado, Inicio con tablero del día y "Este mes"
-  (estado de resultados, margen necesario). Ventana propia con barra de título dibujada.
-- **Celular** (`lib/companion/`): vender y cobrar, productos y precios, conteo de stock, gastos/ingresos, arqueo y cierre,
-  historial y cierres (con PDF del día completo), pagar proveedor (necesita la PC), encargues, bienvenida y "Configurá tu
-  negocio". Sync con la PC por wifi y, si no contesta, por la nube.
-- **Sync**: motor en `repositorio_sincronizacion.dart` (`global_id` + `actualizado_en`, "gana el último en llegar"). Ya no
-  hay Supabase ni Firebase como transporte: los restos de Firestore de arriba son código muerto.
-- **Mercado Pago**: cobro QR/débito por la Orders API de la Point (`MODELO__SERIAL` como terminal; cancelar por API solo
-  funciona mientras la orden está en `created`), con token local o por el servidor de Nodo Sur (MP del negocio conectado
-  en `/negocio`). En la caja QR y Débito son un solo medio, "Mercado Pago"; el canal se guarda por pago. El cierre muestra
-  "Mercado Pago según Mercado Pago" (cobros reales, comisiones, diferencias; nunca frena el cierre). El bloque "Mercado Pago"
-  del cierre desglosa su esperado: saldo al abrir, cobrado por MP (con cuántas ventas, para compararlo con los cobros
-  de MP), gastos e ingresos por MP (2026-10-04).
-- **Distribución**: instalador Inno Setup + WinSparkle (firma DSA, `dsa_pub.pem` en el repo, la privada fuera). Publicar:
-  título del commit con `release:` o `beta:`; Android a mano con `publicar-apk.yml` y un `build` mayor al último publicado.
-  Detalle en `CONTEXTO.md` §5 y `docs/PRIMERA-VERSION.md`.
+**Auditoría del mock v4 (05/10):** se comparó contra la app real y **no tiene todas las funciones**: faltan ~35 (unas 15 de prioridad alta) y hay 7 cosas
+inventadas que no existen en la real. Detalle y orden para cerrar en [`docs/AUDITORIA-MOCK-V4.md`](./docs/AUDITORIA-MOCK-V4.md). **Antes de aplicar el diseño al código hay que cerrar esa lista.**
 
-## Revisión de blindaje técnico (04/10/2026)
-
-Auditoría de los dos repos (app y sitio) pedida por el dueño: "extremadamente blindado". Qué se corrigió y por qué está en
-`DECISIONES.md` ("Revisión de blindaje técnico") y `TRAMPAS.md` (las dos entradas del 2026-10-04). En una línea cada cosa:
-cobro Point directo ya no cuelga si cae internet y el reintento reutiliza la misma orden; confirmar un cobro del celular es
-idempotente y atómico con la venta; un fiado no se cobra dos veces; `registrarVenta` rechaza pagos que no suman el total; el servidor
-del celular no se rompe ni llena el disco con pedidos basura; restaurar una copia reemplaza la base de forma atómica y deja
-`.antes-de-restaurar`; el APK solo se acepta si viene de horsepos.com; en el sitio, plazos en todo pedido saliente, webhook acotado,
-órdenes de otra sucursal intocables, política de contenido sin scripts en línea y pruebas en CI. **Falta probar en real**: nada de
-esto se probó contra Mercado Pago ni contra internet cortado de verdad (los tests simulan los cortes).
+**No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
 
@@ -123,6 +101,7 @@ Distinto del mock a propósito:
 
 Pendiente / ideas (sin hacer):
 - **Pagar proveedor sin la PC**: hoy solo anda con la PC prendida y en el wifi del local, porque `movimientos_deuda` no se sincroniza al celular. Opciones: anotar el pago pendiente en el celular y que la PC lo tome, o copiar la cuenta corriente al celular.
+- **Rediseño v4, etapa 8 (2026-10-06)**: hechos el **Asistente Ctrl+K**, el **WhatsApp del proveedor** (migración v53; botón "Pedir por WhatsApp" con lo de stock bajo) y el **logo del ticket** en el PDF (migración v54, `schemaVersion` **54**). La **seña de encargues** está hecha en la PC (migración v55, `schemaVersion` **55**; ver `docs/PLAN-SENA.md`; falta probarla en una Windows real). **Sucursal y Miembros**: la PC ya los muestra (Configuración › Cuenta de Nodo Sur) pero depende de un endpoint nuevo del sitio (`GET /api/device/team`) que está como patch en `docs/nodosur/` y falta publicar en `NodoSurPage`. Detalle en `docs/PLAN-APLICAR-V4.md`.
 - **IA de Google (Gemini) y promos sugeridas, 2026-10-05**: cliente en `lib/servicios/gemini.dart`; la clave se carga en Configuración › Asistente IA de la PC y del celular (cada equipo la suya, local; `probarYGuardarClave` no guarda una clave rota y elige el modelo que le anda a la clave: la 2133 de Windows salió con `gemini-2.5-flash` fijo y daba 404 con claves nuevas, corregido después). **Sugerir promos** (solo PC, Proveedores › Promos › "Sugerir promos"): `domain/sugerencia_promos.dart` busca los pares que se llevan juntos (≥2 ventas, lift ≥ 1,2, últimos 90 días, sin anuladas), `data/repositorio_sugerencia_promos.dart` les calcula el precio con `calcularPromo`, y Gemini (`servicios/asistente_promos.dart`, que no ve precios ni costos) solo les pone nombre y motivo; cada sugerencia deja elegir el porcentaje como el creador; sin clave o sin cupo se ven igual con "A + B". "Crear" abre el creador precargado. Probado con `flutter analyze` y tests; **no probado con una clave real de Google ni en un celular**. El celular no tiene promos, así que no tiene las sugerencias. **Facturas de compra con IA**: plan en `docs/PLAN-FACTURAS.md` (decidido el 2026-10-05); hechas las cuentas (`domain/factura_compra.dart`) y la lectura con Gemini (`servicios/lector_facturas.dart`, `domain/lectura_factura.dart`, achicar la foto) con una pantalla de **prueba** en Proveedores › Más acciones › "Leer una factura" que no guarda nada; **no probada con la clave ni las facturas reales**; hechos también los vínculos con tus productos (por CUIT del proveedor, aprendido, parecido de nombre y ayuda de la IA; migración v52, `schemaVersion` **52**); **bultos vs. unidades** propuestos por la descripción y el costo que ya tenés cargado (`domain/unidades_bulto.dart`, confirmás vos y se aprende por producto); falta aplicar (costo, stock, deuda, precio sugerido) con "Deshacer".
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.

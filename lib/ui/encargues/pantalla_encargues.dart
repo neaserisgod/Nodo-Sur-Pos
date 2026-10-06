@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_encargues.dart';
 import '../../data/repositorio_pendientes.dart' show PendienteYaResueltoException, cobrarDeuda;
@@ -18,6 +19,7 @@ import '../comun/tarjetas.dart';
 import '../navegacion/busqueda_contextual.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/refresco_por_celular.dart';
+import '../tema/acentos.dart';
 import '../tema/tokens.dart';
 import 'dialogo_nuevo_encargue.dart';
 
@@ -59,7 +61,7 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
   }
 
   Future<void> _nuevo() async {
-    final creado = await mostrarDialogoNuevoEncargue(context, db: widget.db, usuarioId: widget.usuarioId);
+    final creado = await mostrarDialogoNuevoEncargue(context, db: widget.db, usuarioId: widget.usuarioId, sesionCajaId: widget.sesionCajaId);
     if (creado == true) await _cargar();
   }
 
@@ -73,11 +75,29 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       );
 
   Future<void> _cancelar(Encargue e) async {
+    final sena = e.senaCentavos;
+    if (sena > 0 && widget.sesionCajaId == null) {
+      // La seña vuelve por la caja por la que entró: sin caja abierta no tiene de dónde salir.
+      await mostrarModal<void>(
+        context,
+        builder: (context) => Modal(
+          titulo: 'No hay una caja abierta',
+          contenido: Text('${e.nombreCliente} dejó ${formatearARS(sena)} de seña. Para cancelar y devolvérsela hay que abrir la caja.'),
+          botones: [BotonPrimario(texto: 'Entendido', onPressed: () => Navigator.of(context).pop())],
+        ),
+      );
+      return;
+    }
     final confirmado = await mostrarModal<bool>(
       context,
       builder: (context) => Modal(
         titulo: '¿Cancelar el encargue de ${e.nombreCliente}?',
-        contenido: Text('Lo apartado (${e.resumen}) vuelve al stock.'),
+        contenido: Text(
+          [
+            'Lo apartado (${e.resumen}) vuelve al stock.',
+            if (sena > 0) 'Se le devuelven ${formatearARS(sena)} de seña, por ${e.senaEsEfectivo ? 'el cajón' : 'Mercado Pago'}.',
+          ].join(' '),
+        ),
         botones: [
           BotonSecundario(texto: 'Volver', onPressed: () => Navigator.of(context).pop(false)),
           BotonPrimario(texto: 'Cancelar encargue', onPressed: () => Navigator.of(context).pop(true)),
@@ -85,8 +105,14 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       ),
     );
     if (confirmado != true) return;
-    await cancelarEncargue(widget.db, e.id, usuarioId: widget.usuarioId);
+    String? aviso;
+    try {
+      await cancelarEncargue(widget.db, e.id, usuarioId: widget.usuarioId, sesionCajaId: widget.sesionCajaId);
+    } on SesionCerradaException {
+      aviso = 'La caja ya se cerró: el encargue no se canceló. Abrí la caja de nuevo.';
+    }
     await _cargar();
+    if (aviso != null && mounted) mostrarAviso(context, aviso);
   }
 
   Future<void> _entregarADeuda(Encargue e) async {
@@ -146,7 +172,7 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       aviso = 'La caja ya se cerró: el cobro no se guardó.';
     }
     await _cargar();
-    if (aviso != null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(aviso)));
+    if (aviso != null && mounted) mostrarAviso(context, aviso);
   }
 
   @override
@@ -232,8 +258,11 @@ class _TarjetaEncargue extends StatelessWidget {
         children: [
           BotonSecundario(texto: 'Cancelar', onPressed: alCancelar),
           const SizedBox(width: Espaciado.sm),
-          BotonSecundario(texto: 'Entregar y anotar deuda', onPressed: alAnotarDeuda),
-          const SizedBox(width: Espaciado.sm),
+          // Con seña no se anota deuda: la seña tiene que descontarse al cobrar la entrega (o devolverse al cancelar).
+          if (encargue.senaCentavos == 0) ...[
+            BotonSecundario(texto: 'Entregar y anotar deuda', onPressed: alAnotarDeuda),
+            const SizedBox(width: Espaciado.sm),
+          ],
           BotonPrimario(texto: 'Entregar', onPressed: alEntregar),
         ],
       ),
@@ -242,6 +271,15 @@ class _TarjetaEncargue extends StatelessWidget {
         children: [
           for (final l in encargue.lineas)
             Padding(padding: const EdgeInsets.only(bottom: Espaciado.xs), child: Text(l.texto, style: textTheme.bodyMedium)),
+          if (encargue.senaCentavos > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: Espaciado.xs),
+              child: Text(
+                'Seña ${formatearARS(encargue.senaCentavos)} · ${encargue.senaEsEfectivo ? 'efectivo' : 'Mercado Pago'}',
+                key: Key('encargue_sena_${encargue.id}'),
+                style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte, color: context.acentosPlazoleta.ganancia),
+              ),
+            ),
         ],
       ),
     );

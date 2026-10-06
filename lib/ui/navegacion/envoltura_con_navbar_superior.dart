@@ -30,7 +30,11 @@ import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
 import '../tema/tokens.dart';
+import '../../data/repositorio_ventas.dart' show sesionAbierta;
+import 'acciones_caja.dart';
+import 'asistente.dart';
 import 'barra_busqueda_global.dart';
+import 'boton_notificaciones.dart';
 import 'busqueda_contextual.dart';
 import 'navbar_superior.dart';
 import 'navegacion_gestion.dart';
@@ -95,6 +99,10 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
     if (event is! KeyDownEvent || !mounted) return false;
     if (ModalRoute.of(context)?.isCurrent == false) return false;
     final teclado = HardwareKeyboard.instance;
+    if (event.logicalKey == LogicalKeyboardKey.keyK && teclado.isControlPressed && !teclado.isAltPressed) {
+      unawaited(_abrirAsistente());
+      return true;
+    }
     if (event.logicalKey == LogicalKeyboardKey.keyF && teclado.isControlPressed && !teclado.isAltPressed) {
       _abrirBusqueda();
       return true;
@@ -106,6 +114,19 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
       return true;
     }
     return false;
+  }
+
+  /// Ctrl+K o el botón "Asistente": buscador de acciones, pantallas y productos.
+  Future<void> _abrirAsistente() async {
+    final sesion = await sesionAbierta(widget.db);
+    if (!mounted) return;
+    await abrirAsistente(
+      context,
+      db: widget.db,
+      sesion: sesion,
+      irA: _seleccionar,
+      alElegirProducto: (texto) => unawaited(_irAVentaConTexto(texto)),
+    );
   }
 
   void _abrirBusqueda() {
@@ -176,6 +197,9 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
             claveActiva: widget.claveActiva,
             items: _items,
             onSeleccionar: _seleccionar,
+            izquierda: BotonCajaDeGestion(db: widget.db),
+            onAbrirAsistente: () => unawaited(_abrirAsistente()),
+            acciones: const BotonNotificaciones(),
             busqueda: campo,
             buscando: _buscando,
             onAbrirBusqueda: _abrirBusqueda,

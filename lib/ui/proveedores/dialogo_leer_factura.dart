@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart' show listarProveedores;
 import '../../data/repositorio_vinculos_factura.dart';
@@ -272,7 +273,7 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
     if (r == null) return;
     await Clipboard.setData(ClipboardData(text: const JsonEncoder.withIndent('  ').convert(r.json)));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lectura copiada al portapapeles')));
+    mostrarAviso(context, 'Lectura copiada al portapapeles');
   }
 
   @override

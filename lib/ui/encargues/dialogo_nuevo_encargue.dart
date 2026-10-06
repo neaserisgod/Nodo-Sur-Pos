@@ -8,25 +8,32 @@ import '../../data/busqueda_productos.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_encargues.dart';
 import '../../data/repositorio_productos.dart' show listarProductos;
+import '../../data/repositorio_ventas.dart' show SesionCerradaException;
+import '../../domain/dinero.dart' show parsearARS;
 import '../comun/botones.dart';
+import '../comun/campo_texto.dart' show CampoPlata;
 import '../comun/modal.dart';
+import '../comun/tarjetas.dart' show ChipAtajo;
 import '../tema/tokens.dart';
 
 /// `true` si se creó el encargue.
-Future<bool?> mostrarDialogoNuevoEncargue(BuildContext context, {required AppDatabase db, required int usuarioId}) async {
+///
+/// [sesionCajaId]: la caja abierta; sin ella no se puede tomar una seña (la plata tiene que entrar a una caja).
+Future<bool?> mostrarDialogoNuevoEncargue(BuildContext context, {required AppDatabase db, required int usuarioId, int? sesionCajaId}) async {
   final catalogo = (await listarProductos(db)).where(tieneStock).toList();
   if (!context.mounted) return null;
   return mostrarModal<bool>(
     context,
-    builder: (_) => _DialogoNuevoEncargue(db: db, usuarioId: usuarioId, catalogo: catalogo),
+    builder: (_) => _DialogoNuevoEncargue(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId, catalogo: catalogo),
   );
 }
 
 class _DialogoNuevoEncargue extends StatefulWidget {
-  const _DialogoNuevoEncargue({required this.db, required this.usuarioId, required this.catalogo});
+  const _DialogoNuevoEncargue({required this.db, required this.usuarioId, required this.catalogo, this.sesionCajaId});
 
   final AppDatabase db;
   final int usuarioId;
+  final int? sesionCajaId;
   final List<Producto> catalogo;
 
   @override
@@ -36,6 +43,10 @@ class _DialogoNuevoEncargue extends StatefulWidget {
 class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
   final _nombre = TextEditingController();
   final _buscador = TextEditingController();
+  final _sena = TextEditingController();
+
+  /// Por qué caja entra la seña: true = cajón (efectivo), false = Mercado Pago.
+  bool _senaEnEfectivo = true;
 
   /// Lo elegido hasta ahora: producto y cantidad (unidades, o gramos si es pesable).
   final List<({Producto producto, int cantidad})> _elegidos = [];
@@ -46,6 +57,7 @@ class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
   void dispose() {
     _nombre.dispose();
     _buscador.dispose();
+    _sena.dispose();
     super.dispose();
   }
 
@@ -87,7 +99,16 @@ class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
     ).then((v) => v == null || v <= 0 ? null : v);
   }
 
+  int get _senaCentavos => _sena.text.trim().isEmpty ? 0 : parsearARS(_sena.text);
+
   Future<void> _guardar() async {
+    final int sena;
+    try {
+      sena = _senaCentavos;
+    } on FormatException {
+      setState(() => _error = 'La seña no es un monto válido.');
+      return;
+    }
     setState(() {
       _guardando = true;
       _error = null;
@@ -105,12 +126,17 @@ class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
             ),
         ],
         usuarioId: widget.usuarioId,
+        senaCentavos: sena,
+        senaEsEfectivo: _senaEnEfectivo,
+        sesionCajaId: widget.sesionCajaId,
       );
       if (mounted) Navigator.of(context).pop(true);
     } on EncargueSinStock catch (e) {
       setState(() => _error = 'No alcanza el stock de ${e.nombreProducto}.');
     } on ArgumentError catch (e) {
       setState(() => _error = '${e.message}');
+    } on SesionCerradaException {
+      setState(() => _error = 'La caja ya se cerró: abrila de nuevo para tomar la seña.');
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -167,6 +193,31 @@ class _DialogoNuevoEncargueState extends State<_DialogoNuevoEncargue> {
                 ),
               ],
             ),
+          const SizedBox(height: Espaciado.md),
+          if (widget.sesionCajaId == null)
+            Text(
+              'Para tomar una seña hay que abrir la caja: la plata entra a la caja.',
+              key: const Key('encargue_sena_sin_caja'),
+              style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+            )
+          else ...[
+            CampoPlata(key: const Key('encargue_sena'), controller: _sena, etiqueta: 'Seña (opcional)', onChanged: (_) => setState(() {})),
+            const SizedBox(height: Espaciado.sm),
+            Wrap(
+              spacing: Espaciado.sm,
+              children: [
+                ChipAtajo(key: const Key('encargue_sena_efectivo'), texto: 'Efectivo', elegido: _senaEnEfectivo, onTap: () => setState(() => _senaEnEfectivo = true)),
+                ChipAtajo(key: const Key('encargue_sena_mp'), texto: 'Mercado Pago', elegido: !_senaEnEfectivo, onTap: () => setState(() => _senaEnEfectivo = false)),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: Espaciado.xs),
+              child: Text(
+                'Entra a la caja ahora, no es una venta. Al entregar se descuenta; si se cancela, se devuelve.',
+                style: textTheme.bodySmall?.copyWith(color: context.colores.textoSecundario),
+              ),
+            ),
+          ],
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: Espaciado.sm),

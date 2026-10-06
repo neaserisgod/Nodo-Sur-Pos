@@ -125,4 +125,108 @@ void main() {
     expect(await db.select(db.ventas).get(), hasLength(1));
     expect(find.text('Deudas'), findsNothing);
   });
+
+  group('seña', () {
+    Future<void> abrirConCaja(WidgetTester tester, int sesionId) async {
+      tester.view.physicalSize = const Size(1366, 768);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(
+        theme: TemaPlazoleta.oscuro,
+        home: PantallaEncargues(db: db, usuarioId: usuarioId, sesionCajaId: sesionId),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sin caja abierta el alta no ofrece seña y lo explica', (tester) async {
+      await abrir(tester);
+      await tester.tap(find.text('Nuevo encargue'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('encargue_sena_sin_caja')), findsOneWidget);
+      expect(find.byKey(const Key('encargue_sena')), findsNothing);
+    });
+
+    testWidgets('con caja: se carga la seña, entra a la caja y la tarjeta la muestra', (tester) async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await abrirConCaja(tester, sesionId);
+      await tester.tap(find.text('Nuevo encargue'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('encargue_nombre')), 'María');
+      await tester.enterText(find.byKey(const Key('encargue_buscador')), 'galle');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('encargue_opcion_$galletitas')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '3');
+      await tester.tap(find.text('Agregar'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.descendant(of: find.byKey(const Key('encargue_sena')), matching: find.byType(TextField)), '2000');
+      await tester.tap(find.text('Apartar'));
+      await tester.pumpAndSettle();
+
+      final pendiente = await db.select(db.pendientes).getSingle();
+      expect(pendiente.senaCentavos, 200000);
+      expect(pendiente.senaEsEfectivo, isTrue);
+      expect(find.byKey(Key('encargue_sena_${pendiente.id}')), findsOneWidget);
+      expect(await db.select(db.ventas).get(), isEmpty, reason: 'la seña no es una venta');
+    });
+
+    testWidgets('una seña mayor a lo que vale se rechaza con un mensaje y no aparta nada', (tester) async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await abrirConCaja(tester, sesionId);
+      await tester.tap(find.text('Nuevo encargue'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('encargue_nombre')), 'María');
+      await tester.enterText(find.byKey(const Key('encargue_buscador')), 'galle');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('encargue_opcion_$galletitas')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '1');
+      await tester.tap(find.text('Agregar'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.descendant(of: find.byKey(const Key('encargue_sena')), matching: find.byType(TextField)), '99999');
+      await tester.tap(find.text('Apartar'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('encargue_error')), findsOneWidget);
+      expect(await db.select(db.pendientes).get(), isEmpty);
+    });
+
+    testWidgets('cancelar un encargue con seña avisa que se devuelve y la devuelve', (tester) async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: galletitas, cantidad: 3)],
+        usuarioId: usuarioId,
+        senaCentavos: 200000,
+        sesionCajaId: sesionId,
+      );
+      await abrirConCaja(tester, sesionId);
+      expect(find.text('Entregar y anotar deuda'), findsNothing, reason: 'con seña no se anota deuda');
+      await tester.tap(find.text('Cancelar').first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Se le devuelven'), findsOneWidget);
+      await tester.tap(find.text('Cancelar encargue'));
+      await tester.pumpAndSettle();
+      expect(await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('DEVOLUCION_SENA'))).get(), hasLength(1));
+      expect(find.byKey(const Key('encargues_vacio')), findsOneWidget);
+    });
+
+    testWidgets('cancelar con seña y sin caja abierta no cancela: explica que hay que abrir la caja', (tester) async {
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await crearEncargueApartando(
+        db,
+        nombreCliente: 'María',
+        lineas: [LineaEncargueNueva(productoId: galletitas, cantidad: 3)],
+        usuarioId: usuarioId,
+        senaCentavos: 200000,
+        sesionCajaId: sesionId,
+      );
+      await abrir(tester); // sin sesionCajaId
+      await tester.tap(find.text('Cancelar').first);
+      await tester.pumpAndSettle();
+      expect(find.text('No hay una caja abierta'), findsOneWidget);
+      expect(await listarEnarguesPendientes(db), hasLength(1));
+    });
+  });
 }

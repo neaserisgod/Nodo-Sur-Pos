@@ -1181,6 +1181,17 @@ class $ProveedoresTable extends Proveedores
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _whatsappMeta = const VerificationMeta(
+    'whatsapp',
+  );
+  @override
+  late final GeneratedColumn<String> whatsapp = GeneratedColumn<String>(
+    'whatsapp',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activoMeta = const VerificationMeta('activo');
   @override
   late final GeneratedColumn<bool> activo = GeneratedColumn<bool>(
@@ -1266,6 +1277,7 @@ class $ProveedoresTable extends Proveedores
     ultimoPagoFecha,
     gananciaRevisadaFecha,
     markupBp,
+    whatsapp,
     activo,
     cajaAparte,
     globalId,
@@ -1444,6 +1456,12 @@ class $ProveedoresTable extends Proveedores
         markupBp.isAcceptableOrUnknown(data['markup_bp']!, _markupBpMeta),
       );
     }
+    if (data.containsKey('whatsapp')) {
+      context.handle(
+        _whatsappMeta,
+        whatsapp.isAcceptableOrUnknown(data['whatsapp']!, _whatsappMeta),
+      );
+    }
     if (data.containsKey('activo')) {
       context.handle(
         _activoMeta,
@@ -1569,6 +1587,10 @@ class $ProveedoresTable extends Proveedores
         DriftSqlType.int,
         data['${effectivePrefix}markup_bp'],
       ),
+      whatsapp: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}whatsapp'],
+      ),
       activo: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
@@ -1687,6 +1709,10 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
   /// sin porcentaje, los precios se cargan a mano. El dueño, 2026-09-29. Los
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   final int? markupBp;
+
+  /// Teléfono de WhatsApp del proveedor, tal como lo escribió el dueño (schemaVersion 53, rediseño v4, 2026-10-06): sirve para
+  /// el botón "Pedir por WhatsApp", que abre el chat con lo de stock bajo ya escrito. Local: no se sincroniza.
+  final String? whatsapp;
   final bool activo;
 
   /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y
@@ -1720,6 +1746,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     this.ultimoPagoFecha,
     this.gananciaRevisadaFecha,
     this.markupBp,
+    this.whatsapp,
     required this.activo,
     required this.cajaAparte,
     this.globalId,
@@ -1775,6 +1802,9 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     if (!nullToAbsent || markupBp != null) {
       map['markup_bp'] = Variable<int>(markupBp);
     }
+    if (!nullToAbsent || whatsapp != null) {
+      map['whatsapp'] = Variable<String>(whatsapp);
+    }
     map['activo'] = Variable<bool>(activo);
     map['caja_aparte'] = Variable<bool>(cajaAparte);
     if (!nullToAbsent || globalId != null) {
@@ -1829,6 +1859,9 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
       markupBp: markupBp == null && nullToAbsent
           ? const Value.absent()
           : Value(markupBp),
+      whatsapp: whatsapp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(whatsapp),
       activo: Value(activo),
       cajaAparte: Value(cajaAparte),
       globalId: globalId == null && nullToAbsent
@@ -1887,6 +1920,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         json['gananciaRevisadaFecha'],
       ),
       markupBp: serializer.fromJson<int?>(json['markupBp']),
+      whatsapp: serializer.fromJson<String?>(json['whatsapp']),
       activo: serializer.fromJson<bool>(json['activo']),
       cajaAparte: serializer.fromJson<bool>(json['cajaAparte']),
       globalId: serializer.fromJson<String?>(json['globalId']),
@@ -1930,6 +1964,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         gananciaRevisadaFecha,
       ),
       'markupBp': serializer.toJson<int?>(markupBp),
+      'whatsapp': serializer.toJson<String?>(whatsapp),
       'activo': serializer.toJson<bool>(activo),
       'cajaAparte': serializer.toJson<bool>(cajaAparte),
       'globalId': serializer.toJson<String?>(globalId),
@@ -1959,6 +1994,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     Value<DateTime?> ultimoPagoFecha = const Value.absent(),
     Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
     Value<int?> markupBp = const Value.absent(),
+    Value<String?> whatsapp = const Value.absent(),
     bool? activo,
     bool? cajaAparte,
     Value<String?> globalId = const Value.absent(),
@@ -2002,6 +2038,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
         ? gananciaRevisadaFecha.value
         : this.gananciaRevisadaFecha,
     markupBp: markupBp.present ? markupBp.value : this.markupBp,
+    whatsapp: whatsapp.present ? whatsapp.value : this.whatsapp,
     activo: activo ?? this.activo,
     cajaAparte: cajaAparte ?? this.cajaAparte,
     globalId: globalId.present ? globalId.value : this.globalId,
@@ -2063,6 +2100,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ? data.gananciaRevisadaFecha.value
           : this.gananciaRevisadaFecha,
       markupBp: data.markupBp.present ? data.markupBp.value : this.markupBp,
+      whatsapp: data.whatsapp.present ? data.whatsapp.value : this.whatsapp,
       activo: data.activo.present ? data.activo.value : this.activo,
       cajaAparte: data.cajaAparte.present
           ? data.cajaAparte.value
@@ -2102,6 +2140,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           ..write('ultimoPagoFecha: $ultimoPagoFecha, ')
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
+          ..write('whatsapp: $whatsapp, ')
           ..write('activo: $activo, ')
           ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
@@ -2133,6 +2172,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
     ultimoPagoFecha,
     gananciaRevisadaFecha,
     markupBp,
+    whatsapp,
     activo,
     cajaAparte,
     globalId,
@@ -2164,6 +2204,7 @@ class Proveedor extends DataClass implements Insertable<Proveedor> {
           other.ultimoPagoFecha == this.ultimoPagoFecha &&
           other.gananciaRevisadaFecha == this.gananciaRevisadaFecha &&
           other.markupBp == this.markupBp &&
+          other.whatsapp == this.whatsapp &&
           other.activo == this.activo &&
           other.cajaAparte == this.cajaAparte &&
           other.globalId == this.globalId &&
@@ -2192,6 +2233,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
   final Value<DateTime?> ultimoPagoFecha;
   final Value<DateTime?> gananciaRevisadaFecha;
   final Value<int?> markupBp;
+  final Value<String?> whatsapp;
   final Value<bool> activo;
   final Value<bool> cajaAparte;
   final Value<String?> globalId;
@@ -2218,6 +2260,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.ultimoPagoFecha = const Value.absent(),
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
+    this.whatsapp = const Value.absent(),
     this.activo = const Value.absent(),
     this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -2245,6 +2288,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     this.ultimoPagoFecha = const Value.absent(),
     this.gananciaRevisadaFecha = const Value.absent(),
     this.markupBp = const Value.absent(),
+    this.whatsapp = const Value.absent(),
     this.activo = const Value.absent(),
     this.cajaAparte = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -2273,6 +2317,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Expression<DateTime>? ultimoPagoFecha,
     Expression<DateTime>? gananciaRevisadaFecha,
     Expression<int>? markupBp,
+    Expression<String>? whatsapp,
     Expression<bool>? activo,
     Expression<bool>? cajaAparte,
     Expression<String>? globalId,
@@ -2310,6 +2355,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
       if (gananciaRevisadaFecha != null)
         'ganancia_revisada_fecha': gananciaRevisadaFecha,
       if (markupBp != null) 'markup_bp': markupBp,
+      if (whatsapp != null) 'whatsapp': whatsapp,
       if (activo != null) 'activo': activo,
       if (cajaAparte != null) 'caja_aparte': cajaAparte,
       if (globalId != null) 'global_id': globalId,
@@ -2339,6 +2385,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     Value<DateTime?>? ultimoPagoFecha,
     Value<DateTime?>? gananciaRevisadaFecha,
     Value<int?>? markupBp,
+    Value<String?>? whatsapp,
     Value<bool>? activo,
     Value<bool>? cajaAparte,
     Value<String?>? globalId,
@@ -2373,6 +2420,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
       gananciaRevisadaFecha:
           gananciaRevisadaFecha ?? this.gananciaRevisadaFecha,
       markupBp: markupBp ?? this.markupBp,
+      whatsapp: whatsapp ?? this.whatsapp,
       activo: activo ?? this.activo,
       cajaAparte: cajaAparte ?? this.cajaAparte,
       globalId: globalId ?? this.globalId,
@@ -2460,6 +2508,9 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
     if (markupBp.present) {
       map['markup_bp'] = Variable<int>(markupBp.value);
     }
+    if (whatsapp.present) {
+      map['whatsapp'] = Variable<String>(whatsapp.value);
+    }
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
@@ -2503,6 +2554,7 @@ class ProveedoresCompanion extends UpdateCompanion<Proveedor> {
           ..write('ultimoPagoFecha: $ultimoPagoFecha, ')
           ..write('gananciaRevisadaFecha: $gananciaRevisadaFecha, ')
           ..write('markupBp: $markupBp, ')
+          ..write('whatsapp: $whatsapp, ')
           ..write('activo: $activo, ')
           ..write('cajaAparte: $cajaAparte, ')
           ..write('globalId: $globalId, ')
@@ -9349,7 +9401,7 @@ class MovimientoCaja extends DataClass implements Insertable<MovimientoCaja> {
   final int? medioPagoId;
   final int usuarioId;
 
-  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'AJUSTE' |
+  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'DEVOLUCION_SENA' | 'AJUSTE' |
   /// 'TRASPASO_LATA'.
   final String tipo;
   final int montoCentavos;
@@ -13269,6 +13321,33 @@ class $PendientesTable extends Pendientes
       'REFERENCES ventas (id)',
     ),
   );
+  static const VerificationMeta _senaCentavosMeta = const VerificationMeta(
+    'senaCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> senaCentavos = GeneratedColumn<int>(
+    'sena_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _senaEsEfectivoMeta = const VerificationMeta(
+    'senaEsEfectivo',
+  );
+  @override
+  late final GeneratedColumn<bool> senaEsEfectivo = GeneratedColumn<bool>(
+    'sena_es_efectivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sena_es_efectivo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _fechaCreacionMeta = const VerificationMeta(
     'fechaCreacion',
   );
@@ -13354,6 +13433,8 @@ class $PendientesTable extends Pendientes
     lineasJson,
     estado,
     ventaId,
+    senaCentavos,
+    senaEsEfectivo,
     fechaCreacion,
     fechaResuelta,
     usuarioId,
@@ -13433,6 +13514,24 @@ class $PendientesTable extends Pendientes
       context.handle(
         _ventaIdMeta,
         ventaId.isAcceptableOrUnknown(data['venta_id']!, _ventaIdMeta),
+      );
+    }
+    if (data.containsKey('sena_centavos')) {
+      context.handle(
+        _senaCentavosMeta,
+        senaCentavos.isAcceptableOrUnknown(
+          data['sena_centavos']!,
+          _senaCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_es_efectivo')) {
+      context.handle(
+        _senaEsEfectivoMeta,
+        senaEsEfectivo.isAcceptableOrUnknown(
+          data['sena_es_efectivo']!,
+          _senaEsEfectivoMeta,
+        ),
       );
     }
     if (data.containsKey('fecha_creacion')) {
@@ -13530,6 +13629,14 @@ class $PendientesTable extends Pendientes
         DriftSqlType.int,
         data['${effectivePrefix}venta_id'],
       ),
+      senaCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_centavos'],
+      )!,
+      senaEsEfectivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_es_efectivo'],
+      )!,
       fechaCreacion: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}fecha_creacion'],
@@ -13594,6 +13701,12 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
   /// Cuando un fiado se cobra, entra como venta de ese día (Regla 15): acá
   /// queda la venta que lo saldó.
   final int? ventaId;
+
+  /// Seña de un encargue (schemaVersion 55, rediseño v4, 2026-10-06; ver `domain/sena.dart` y `docs/PLAN-SENA.md`): lo que el cliente
+  /// dejó adelantado. Entró a la caja como INGRESO en el momento (cajón si [senaEsEfectivo], Mercado Pago si no) y NO es una venta.
+  /// 0 = sin seña. Al cancelar vuelve por la misma caja; al entregar se aplica como pago de la venta del día de la entrega.
+  final int senaCentavos;
+  final bool senaEsEfectivo;
   final DateTime fechaCreacion;
   final DateTime? fechaResuelta;
   final int usuarioId;
@@ -13614,6 +13727,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     this.lineasJson,
     required this.estado,
     this.ventaId,
+    required this.senaCentavos,
+    required this.senaEsEfectivo,
     required this.fechaCreacion,
     this.fechaResuelta,
     required this.usuarioId,
@@ -13645,6 +13760,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     if (!nullToAbsent || ventaId != null) {
       map['venta_id'] = Variable<int>(ventaId);
     }
+    map['sena_centavos'] = Variable<int>(senaCentavos);
+    map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo);
     map['fecha_creacion'] = Variable<DateTime>(fechaCreacion);
     if (!nullToAbsent || fechaResuelta != null) {
       map['fecha_resuelta'] = Variable<DateTime>(fechaResuelta);
@@ -13685,6 +13802,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       ventaId: ventaId == null && nullToAbsent
           ? const Value.absent()
           : Value(ventaId),
+      senaCentavos: Value(senaCentavos),
+      senaEsEfectivo: Value(senaEsEfectivo),
       fechaCreacion: Value(fechaCreacion),
       fechaResuelta: fechaResuelta == null && nullToAbsent
           ? const Value.absent()
@@ -13717,6 +13836,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       lineasJson: serializer.fromJson<String?>(json['lineasJson']),
       estado: serializer.fromJson<String>(json['estado']),
       ventaId: serializer.fromJson<int?>(json['ventaId']),
+      senaCentavos: serializer.fromJson<int>(json['senaCentavos']),
+      senaEsEfectivo: serializer.fromJson<bool>(json['senaEsEfectivo']),
       fechaCreacion: serializer.fromJson<DateTime>(json['fechaCreacion']),
       fechaResuelta: serializer.fromJson<DateTime?>(json['fechaResuelta']),
       usuarioId: serializer.fromJson<int>(json['usuarioId']),
@@ -13740,6 +13861,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
       'lineasJson': serializer.toJson<String?>(lineasJson),
       'estado': serializer.toJson<String>(estado),
       'ventaId': serializer.toJson<int?>(ventaId),
+      'senaCentavos': serializer.toJson<int>(senaCentavos),
+      'senaEsEfectivo': serializer.toJson<bool>(senaEsEfectivo),
       'fechaCreacion': serializer.toJson<DateTime>(fechaCreacion),
       'fechaResuelta': serializer.toJson<DateTime?>(fechaResuelta),
       'usuarioId': serializer.toJson<int>(usuarioId),
@@ -13759,6 +13882,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     Value<String?> lineasJson = const Value.absent(),
     String? estado,
     Value<int?> ventaId = const Value.absent(),
+    int? senaCentavos,
+    bool? senaEsEfectivo,
     DateTime? fechaCreacion,
     Value<DateTime?> fechaResuelta = const Value.absent(),
     int? usuarioId,
@@ -13777,6 +13902,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     lineasJson: lineasJson.present ? lineasJson.value : this.lineasJson,
     estado: estado ?? this.estado,
     ventaId: ventaId.present ? ventaId.value : this.ventaId,
+    senaCentavos: senaCentavos ?? this.senaCentavos,
+    senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
     fechaCreacion: fechaCreacion ?? this.fechaCreacion,
     fechaResuelta: fechaResuelta.present
         ? fechaResuelta.value
@@ -13809,6 +13936,12 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           : this.lineasJson,
       estado: data.estado.present ? data.estado.value : this.estado,
       ventaId: data.ventaId.present ? data.ventaId.value : this.ventaId,
+      senaCentavos: data.senaCentavos.present
+          ? data.senaCentavos.value
+          : this.senaCentavos,
+      senaEsEfectivo: data.senaEsEfectivo.present
+          ? data.senaEsEfectivo.value
+          : this.senaEsEfectivo,
       fechaCreacion: data.fechaCreacion.present
           ? data.fechaCreacion.value
           : this.fechaCreacion,
@@ -13838,6 +13971,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
           ..write('fechaCreacion: $fechaCreacion, ')
           ..write('fechaResuelta: $fechaResuelta, ')
           ..write('usuarioId: $usuarioId, ')
@@ -13859,6 +13994,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
     lineasJson,
     estado,
     ventaId,
+    senaCentavos,
+    senaEsEfectivo,
     fechaCreacion,
     fechaResuelta,
     usuarioId,
@@ -13879,6 +14016,8 @@ class Pendiente extends DataClass implements Insertable<Pendiente> {
           other.lineasJson == this.lineasJson &&
           other.estado == this.estado &&
           other.ventaId == this.ventaId &&
+          other.senaCentavos == this.senaCentavos &&
+          other.senaEsEfectivo == this.senaEsEfectivo &&
           other.fechaCreacion == this.fechaCreacion &&
           other.fechaResuelta == this.fechaResuelta &&
           other.usuarioId == this.usuarioId &&
@@ -13897,6 +14036,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
   final Value<String?> lineasJson;
   final Value<String> estado;
   final Value<int?> ventaId;
+  final Value<int> senaCentavos;
+  final Value<bool> senaEsEfectivo;
   final Value<DateTime> fechaCreacion;
   final Value<DateTime?> fechaResuelta;
   final Value<int> usuarioId;
@@ -13913,6 +14054,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
     this.fechaResuelta = const Value.absent(),
     this.usuarioId = const Value.absent(),
@@ -13930,6 +14073,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     this.lineasJson = const Value.absent(),
     this.estado = const Value.absent(),
     this.ventaId = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
     this.fechaCreacion = const Value.absent(),
     this.fechaResuelta = const Value.absent(),
     required int usuarioId,
@@ -13948,6 +14093,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Expression<String>? lineasJson,
     Expression<String>? estado,
     Expression<int>? ventaId,
+    Expression<int>? senaCentavos,
+    Expression<bool>? senaEsEfectivo,
     Expression<DateTime>? fechaCreacion,
     Expression<DateTime>? fechaResuelta,
     Expression<int>? usuarioId,
@@ -13965,6 +14112,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       if (lineasJson != null) 'lineas_json': lineasJson,
       if (estado != null) 'estado': estado,
       if (ventaId != null) 'venta_id': ventaId,
+      if (senaCentavos != null) 'sena_centavos': senaCentavos,
+      if (senaEsEfectivo != null) 'sena_es_efectivo': senaEsEfectivo,
       if (fechaCreacion != null) 'fecha_creacion': fechaCreacion,
       if (fechaResuelta != null) 'fecha_resuelta': fechaResuelta,
       if (usuarioId != null) 'usuario_id': usuarioId,
@@ -13984,6 +14133,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     Value<String?>? lineasJson,
     Value<String>? estado,
     Value<int?>? ventaId,
+    Value<int>? senaCentavos,
+    Value<bool>? senaEsEfectivo,
     Value<DateTime>? fechaCreacion,
     Value<DateTime?>? fechaResuelta,
     Value<int>? usuarioId,
@@ -14001,6 +14152,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
       lineasJson: lineasJson ?? this.lineasJson,
       estado: estado ?? this.estado,
       ventaId: ventaId ?? this.ventaId,
+      senaCentavos: senaCentavos ?? this.senaCentavos,
+      senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaResuelta: fechaResuelta ?? this.fechaResuelta,
       usuarioId: usuarioId ?? this.usuarioId,
@@ -14040,6 +14193,12 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
     if (ventaId.present) {
       map['venta_id'] = Variable<int>(ventaId.value);
     }
+    if (senaCentavos.present) {
+      map['sena_centavos'] = Variable<int>(senaCentavos.value);
+    }
+    if (senaEsEfectivo.present) {
+      map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo.value);
+    }
     if (fechaCreacion.present) {
       map['fecha_creacion'] = Variable<DateTime>(fechaCreacion.value);
     }
@@ -14073,6 +14232,8 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
           ..write('lineasJson: $lineasJson, ')
           ..write('estado: $estado, ')
           ..write('ventaId: $ventaId, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
           ..write('fechaCreacion: $fechaCreacion, ')
           ..write('fechaResuelta: $fechaResuelta, ')
           ..write('usuarioId: $usuarioId, ')
@@ -15340,6 +15501,17 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _logoTicketMeta = const VerificationMeta(
+    'logoTicket',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> logoTicket = GeneratedColumn<Uint8List>(
+    'logo_ticket',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -15365,6 +15537,7 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     companionToken,
     dispositivoAperturaDesignadoId,
     prefijoVentas,
+    logoTicket,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -15576,6 +15749,12 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         ),
       );
     }
+    if (data.containsKey('logo_ticket')) {
+      context.handle(
+        _logoTicketMeta,
+        logoTicket.isAcceptableOrUnknown(data['logo_ticket']!, _logoTicketMeta),
+      );
+    }
     return context;
   }
 
@@ -15676,6 +15855,10 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
       prefijoVentas: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}prefijo_ventas'],
+      ),
+      logoTicket: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}logo_ticket'],
       ),
     );
   }
@@ -15807,6 +15990,11 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// Prefijo de dos letras de este equipo para el número de venta (`ventas.numero`). Se genera solo la primera vez que
   /// se cobra y no se sincroniza: cada dispositivo tiene el suyo, por eso dos dispositivos no repiten número.
   final String? prefijoVentas;
+
+  /// Logo del ticket (schemaVersion 54, rediseño v4, 2026-10-06): un PNG chico en blanco y negro (`servicios/preparar_logo.dart`)
+  /// que va arriba del encabezado en el PDF. Está acá y no en `configuracion_negocio_tabla` a propósito: esa se sincroniza y el
+  /// logo solo hace falta en la PC que imprime. Null = sin logo.
+  final Uint8List? logoTicket;
   const Configuracion({
     required this.id,
     required this.recargoPrimerAtadoCentavos,
@@ -15831,6 +16019,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     this.companionToken,
     this.dispositivoAperturaDesignadoId,
     this.prefijoVentas,
+    this.logoTicket,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15886,6 +16075,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     if (!nullToAbsent || prefijoVentas != null) {
       map['prefijo_ventas'] = Variable<String>(prefijoVentas);
     }
+    if (!nullToAbsent || logoTicket != null) {
+      map['logo_ticket'] = Variable<Uint8List>(logoTicket);
+    }
     return map;
   }
 
@@ -15933,6 +16125,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       prefijoVentas: prefijoVentas == null && nullToAbsent
           ? const Value.absent()
           : Value(prefijoVentas),
+      logoTicket: logoTicket == null && nullToAbsent
+          ? const Value.absent()
+          : Value(logoTicket),
     );
   }
 
@@ -15989,6 +16184,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         json['dispositivoAperturaDesignadoId'],
       ),
       prefijoVentas: serializer.fromJson<String?>(json['prefijoVentas']),
+      logoTicket: serializer.fromJson<Uint8List?>(json['logoTicket']),
     );
   }
   @override
@@ -16028,6 +16224,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         dispositivoAperturaDesignadoId,
       ),
       'prefijoVentas': serializer.toJson<String?>(prefijoVentas),
+      'logoTicket': serializer.toJson<Uint8List?>(logoTicket),
     };
   }
 
@@ -16055,6 +16252,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     Value<String?> companionToken = const Value.absent(),
     Value<String?> dispositivoAperturaDesignadoId = const Value.absent(),
     Value<String?> prefijoVentas = const Value.absent(),
+    Value<Uint8List?> logoTicket = const Value.absent(),
   }) => Configuracion(
     id: id ?? this.id,
     recargoPrimerAtadoCentavos:
@@ -16100,6 +16298,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     prefijoVentas: prefijoVentas.present
         ? prefijoVentas.value
         : this.prefijoVentas,
+    logoTicket: logoTicket.present ? logoTicket.value : this.logoTicket,
   );
   Configuracion copyWithCompanion(ConfiguracionTablaCompanion data) {
     return Configuracion(
@@ -16172,6 +16371,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       prefijoVentas: data.prefijoVentas.present
           ? data.prefijoVentas.value
           : this.prefijoVentas,
+      logoTicket: data.logoTicket.present
+          ? data.logoTicket.value
+          : this.logoTicket,
     );
   }
 
@@ -16206,7 +16408,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           ..write(
             'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
-          ..write('prefijoVentas: $prefijoVentas')
+          ..write('prefijoVentas: $prefijoVentas, ')
+          ..write('logoTicket: $logoTicket')
           ..write(')'))
         .toString();
   }
@@ -16236,6 +16439,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     companionToken,
     dispositivoAperturaDesignadoId,
     prefijoVentas,
+    $driftBlobEquality.hash(logoTicket),
   ]);
   @override
   bool operator ==(Object other) =>
@@ -16266,7 +16470,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           other.companionToken == this.companionToken &&
           other.dispositivoAperturaDesignadoId ==
               this.dispositivoAperturaDesignadoId &&
-          other.prefijoVentas == this.prefijoVentas);
+          other.prefijoVentas == this.prefijoVentas &&
+          $driftBlobEquality.equals(other.logoTicket, this.logoTicket));
 }
 
 class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
@@ -16293,6 +16498,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
   final Value<String?> companionToken;
   final Value<String?> dispositivoAperturaDesignadoId;
   final Value<String?> prefijoVentas;
+  final Value<Uint8List?> logoTicket;
   const ConfiguracionTablaCompanion({
     this.id = const Value.absent(),
     this.recargoPrimerAtadoCentavos = const Value.absent(),
@@ -16317,6 +16523,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
     this.prefijoVentas = const Value.absent(),
+    this.logoTicket = const Value.absent(),
   });
   ConfiguracionTablaCompanion.insert({
     this.id = const Value.absent(),
@@ -16342,6 +16549,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.companionToken = const Value.absent(),
     this.dispositivoAperturaDesignadoId = const Value.absent(),
     this.prefijoVentas = const Value.absent(),
+    this.logoTicket = const Value.absent(),
   });
   static Insertable<Configuracion> custom({
     Expression<int>? id,
@@ -16367,6 +16575,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Expression<String>? companionToken,
     Expression<String>? dispositivoAperturaDesignadoId,
     Expression<String>? prefijoVentas,
+    Expression<Uint8List>? logoTicket,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -16403,6 +16612,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       if (dispositivoAperturaDesignadoId != null)
         'dispositivo_apertura_designado_id': dispositivoAperturaDesignadoId,
       if (prefijoVentas != null) 'prefijo_ventas': prefijoVentas,
+      if (logoTicket != null) 'logo_ticket': logoTicket,
     });
   }
 
@@ -16430,6 +16640,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Value<String?>? companionToken,
     Value<String?>? dispositivoAperturaDesignadoId,
     Value<String?>? prefijoVentas,
+    Value<Uint8List?>? logoTicket,
   }) {
     return ConfiguracionTablaCompanion(
       id: id ?? this.id,
@@ -16462,6 +16673,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       dispositivoAperturaDesignadoId:
           dispositivoAperturaDesignadoId ?? this.dispositivoAperturaDesignadoId,
       prefijoVentas: prefijoVentas ?? this.prefijoVentas,
+      logoTicket: logoTicket ?? this.logoTicket,
     );
   }
 
@@ -16553,6 +16765,9 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     if (prefijoVentas.present) {
       map['prefijo_ventas'] = Variable<String>(prefijoVentas.value);
     }
+    if (logoTicket.present) {
+      map['logo_ticket'] = Variable<Uint8List>(logoTicket.value);
+    }
     return map;
   }
 
@@ -16587,7 +16802,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
           ..write(
             'dispositivoAperturaDesignadoId: $dispositivoAperturaDesignadoId, ',
           )
-          ..write('prefijoVentas: $prefijoVentas')
+          ..write('prefijoVentas: $prefijoVentas, ')
+          ..write('logoTicket: $logoTicket')
           ..write(')'))
         .toString();
   }
@@ -24727,6 +24943,7 @@ typedef $$ProveedoresTableCreateCompanionBuilder =
       Value<DateTime?> ultimoPagoFecha,
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
+      Value<String?> whatsapp,
       Value<bool> activo,
       Value<bool> cajaAparte,
       Value<String?> globalId,
@@ -24755,6 +24972,7 @@ typedef $$ProveedoresTableUpdateCompanionBuilder =
       Value<DateTime?> ultimoPagoFecha,
       Value<DateTime?> gananciaRevisadaFecha,
       Value<int?> markupBp,
+      Value<String?> whatsapp,
       Value<bool> activo,
       Value<bool> cajaAparte,
       Value<String?> globalId,
@@ -25008,6 +25226,11 @@ class $$ProveedoresTableFilterComposer
 
   ColumnFilters<int> get markupBp => $composableBuilder(
     column: $table.markupBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get whatsapp => $composableBuilder(
+    column: $table.whatsapp,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25322,6 +25545,11 @@ class $$ProveedoresTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get whatsapp => $composableBuilder(
+    column: $table.whatsapp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get activo => $composableBuilder(
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
@@ -25445,6 +25673,9 @@ class $$ProveedoresTableAnnotationComposer
 
   GeneratedColumn<int> get markupBp =>
       $composableBuilder(column: $table.markupBp, builder: (column) => column);
+
+  GeneratedColumn<String> get whatsapp =>
+      $composableBuilder(column: $table.whatsapp, builder: (column) => column);
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
@@ -25701,6 +25932,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> ultimoPagoFecha = const Value.absent(),
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
+                Value<String?> whatsapp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -25728,6 +25960,7 @@ class $$ProveedoresTableTableManager
                 ultimoPagoFecha: ultimoPagoFecha,
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
+                whatsapp: whatsapp,
                 activo: activo,
                 cajaAparte: cajaAparte,
                 globalId: globalId,
@@ -25757,6 +25990,7 @@ class $$ProveedoresTableTableManager
                 Value<DateTime?> ultimoPagoFecha = const Value.absent(),
                 Value<DateTime?> gananciaRevisadaFecha = const Value.absent(),
                 Value<int?> markupBp = const Value.absent(),
+                Value<String?> whatsapp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<bool> cajaAparte = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -25784,6 +26018,7 @@ class $$ProveedoresTableTableManager
                 ultimoPagoFecha: ultimoPagoFecha,
                 gananciaRevisadaFecha: gananciaRevisadaFecha,
                 markupBp: markupBp,
+                whatsapp: whatsapp,
                 activo: activo,
                 cajaAparte: cajaAparte,
                 globalId: globalId,
@@ -36071,6 +36306,8 @@ typedef $$PendientesTableCreateCompanionBuilder =
       Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
       Value<DateTime> fechaCreacion,
       Value<DateTime?> fechaResuelta,
       required int usuarioId,
@@ -36089,6 +36326,8 @@ typedef $$PendientesTableUpdateCompanionBuilder =
       Value<String?> lineasJson,
       Value<String> estado,
       Value<int?> ventaId,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
       Value<DateTime> fechaCreacion,
       Value<DateTime?> fechaResuelta,
       Value<int> usuarioId,
@@ -36194,6 +36433,16 @@ class $$PendientesTableFilterComposer
 
   ColumnFilters<String> get estado => $composableBuilder(
     column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -36336,6 +36585,16 @@ class $$PendientesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get fechaCreacion => $composableBuilder(
     column: $table.fechaCreacion,
     builder: (column) => ColumnOrderings(column),
@@ -36469,6 +36728,16 @@ class $$PendientesTableAnnotationComposer
   GeneratedColumn<String> get estado =>
       $composableBuilder(column: $table.estado, builder: (column) => column);
 
+  GeneratedColumn<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get fechaCreacion => $composableBuilder(
     column: $table.fechaCreacion,
     builder: (column) => column,
@@ -36599,6 +36868,8 @@ class $$PendientesTableTableManager
                 Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
                 Value<DateTime?> fechaResuelta = const Value.absent(),
                 Value<int> usuarioId = const Value.absent(),
@@ -36615,6 +36886,8 @@ class $$PendientesTableTableManager
                 lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
                 fechaCreacion: fechaCreacion,
                 fechaResuelta: fechaResuelta,
                 usuarioId: usuarioId,
@@ -36633,6 +36906,8 @@ class $$PendientesTableTableManager
                 Value<String?> lineasJson = const Value.absent(),
                 Value<String> estado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
                 Value<DateTime> fechaCreacion = const Value.absent(),
                 Value<DateTime?> fechaResuelta = const Value.absent(),
                 required int usuarioId,
@@ -36649,6 +36924,8 @@ class $$PendientesTableTableManager
                 lineasJson: lineasJson,
                 estado: estado,
                 ventaId: ventaId,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
                 fechaCreacion: fechaCreacion,
                 fechaResuelta: fechaResuelta,
                 usuarioId: usuarioId,
@@ -37601,6 +37878,7 @@ typedef $$ConfiguracionTablaTableCreateCompanionBuilder =
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
       Value<String?> prefijoVentas,
+      Value<Uint8List?> logoTicket,
     });
 typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
     ConfiguracionTablaCompanion Function({
@@ -37627,6 +37905,7 @@ typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
       Value<String?> companionToken,
       Value<String?> dispositivoAperturaDesignadoId,
       Value<String?> prefijoVentas,
+      Value<Uint8List?> logoTicket,
     });
 
 class $$ConfiguracionTablaTableFilterComposer
@@ -37751,6 +38030,11 @@ class $$ConfiguracionTablaTableFilterComposer
 
   ColumnFilters<String> get prefijoVentas => $composableBuilder(
     column: $table.prefijoVentas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -37880,6 +38164,11 @@ class $$ConfiguracionTablaTableOrderingComposer
     column: $table.prefijoVentas,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ConfiguracionTablaTableAnnotationComposer
@@ -38005,6 +38294,11 @@ class $$ConfiguracionTablaTableAnnotationComposer
     column: $table.prefijoVentas,
     builder: (column) => column,
   );
+
+  GeneratedColumn<Uint8List> get logoTicket => $composableBuilder(
+    column: $table.logoTicket,
+    builder: (column) => column,
+  );
 }
 
 class $$ConfiguracionTablaTableTableManager
@@ -38072,6 +38366,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
                 Value<String?> prefijoVentas = const Value.absent(),
+                Value<Uint8List?> logoTicket = const Value.absent(),
               }) => ConfiguracionTablaCompanion(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -38096,6 +38391,7 @@ class $$ConfiguracionTablaTableTableManager
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
                 prefijoVentas: prefijoVentas,
+                logoTicket: logoTicket,
               ),
           createCompanionCallback:
               ({
@@ -38124,6 +38420,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<String?> dispositivoAperturaDesignadoId =
                     const Value.absent(),
                 Value<String?> prefijoVentas = const Value.absent(),
+                Value<Uint8List?> logoTicket = const Value.absent(),
               }) => ConfiguracionTablaCompanion.insert(
                 id: id,
                 recargoPrimerAtadoCentavos: recargoPrimerAtadoCentavos,
@@ -38148,6 +38445,7 @@ class $$ConfiguracionTablaTableTableManager
                 companionToken: companionToken,
                 dispositivoAperturaDesignadoId: dispositivoAperturaDesignadoId,
                 prefijoVentas: prefijoVentas,
+                logoTicket: logoTicket,
               ),
           withReferenceMapper: (p0) => p0
               .map(

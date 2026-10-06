@@ -47,8 +47,10 @@ pw.Widget _filaMonto(String etiqueta, int centavos, {bool negrita = false}) {
 Future<Uint8List> generarPdfTicket(
   Ticket ticket, {
   required String encabezadoNegocio,
+  Uint8List? logo,
 }) async {
   final doc = pw.Document();
+  final imagenLogo = logo == null ? null : pw.MemoryImage(logo);
 
   doc.addPage(
     pw.Page(
@@ -57,6 +59,13 @@ Future<Uint8List> generarPdfTicket(
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
+            if (imagenLogo != null)
+              pw.Center(
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4),
+                  child: pw.Image(imagenLogo, height: 50, fit: pw.BoxFit.contain),
+                ),
+              ),
             for (final linea in encabezadoNegocio.split('\n'))
               pw.Center(
                 child: pw.Text(
@@ -122,6 +131,7 @@ Future<String> guardarTicketPdf(
   final bytes = await generarPdfTicket(
     ticket,
     encabezadoNegocio: encabezadoNegocio,
+    logo: await logoTicketGuardado(db),
   );
 
   await Directory(carpetaDestino).create(recursive: true);

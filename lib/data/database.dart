@@ -151,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 52;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1084,6 +1084,34 @@ class AppDatabase extends _$AppDatabase {
       if (from < 52) {
         await m.createTable(vinculosFactura);
         await m.createTable(cuitsProveedor);
+      }
+      // v52 → v53 (2026-10-06, rediseño v4): WhatsApp del proveedor. Una columna nueva, nullable, sin tocar nada existente.
+      // Con chequeo de columna, como v44→v45: las pruebas de migración suben bases creadas con el esquema actual.
+      if (from < 53) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('proveedores')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('whatsapp')) {
+          await m.addColumn(proveedores, proveedores.whatsapp);
+        }
+      }
+      // v53 → v54 (2026-10-06, rediseño v4): logo del ticket. Una columna nueva, nullable, en la tabla local de configuración.
+      if (from < 54) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('logo_ticket')) {
+          await m.addColumn(configuracionTabla, configuracionTabla.logoTicket);
+        }
+      }
+      // v54 → v55 (2026-10-06, rediseño v4): seña de los encargues. Dos columnas nuevas en `pendientes`; los encargues que ya había
+      // quedan sin seña (0). Con chequeo de columna, como v44→v45.
+      if (from < 55) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('pendientes')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('sena_centavos')) await m.addColumn(pendientes, pendientes.senaCentavos);
+        if (!columnas.contains('sena_es_efectivo')) await m.addColumn(pendientes, pendientes.senaEsEfectivo);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

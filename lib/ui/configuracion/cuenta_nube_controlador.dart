@@ -20,6 +20,9 @@ class CuentaNubeControlador extends ChangeNotifier {
   bool subiendo = false;
   CuentaVinculada? cuenta;
   EstadoCopias? estado;
+
+  /// Sucursal y equipo del negocio (informativo). Null si todavía no se leyó, no hay o el servidor no lo ofrece.
+  EquipoDeCuenta? equipo;
   String? error;
   String? aviso;
   bool hayCajaAbierta = false;
@@ -34,6 +37,7 @@ class CuentaNubeControlador extends ChangeNotifier {
     notifyListeners();
     cuenta = await nube.almacen.leer();
     estado = null;
+    equipo = null;
     if (!conservarMensajes) {
       error = null;
       aviso = null;
@@ -45,6 +49,12 @@ class CuentaNubeControlador extends ChangeNotifier {
         estado = await nube.cliente.estado(c.token);
       } on ErrorNube catch (e) {
         error ??= e.mensaje;
+      }
+      // Solo informativo: si falla (sin red, un sitio más viejo) simplemente no se muestra, y no cuenta como error de la cuenta.
+      try {
+        equipo = await nube.cliente.equipo(c.token);
+      } catch (_) {
+        equipo = null;
       }
     }
     cargando = false;

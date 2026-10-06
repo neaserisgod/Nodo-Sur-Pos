@@ -143,4 +143,9 @@ class ConfiguracionTabla extends Table {
   /// Prefijo de dos letras de este equipo para el número de venta (`ventas.numero`). Se genera solo la primera vez que
   /// se cobra y no se sincroniza: cada dispositivo tiene el suyo, por eso dos dispositivos no repiten número.
   TextColumn get prefijoVentas => text().nullable()();
+
+  /// Logo del ticket (schemaVersion 54, rediseño v4, 2026-10-06): un PNG chico en blanco y negro (`servicios/preparar_logo.dart`)
+  /// que va arriba del encabezado en el PDF. Está acá y no en `configuracion_negocio_tabla` a propósito: esa se sincroniza y el
+  /// logo solo hace falta en la PC que imprime. Null = sin logo.
+  BlobColumn get logoTicket => blob().nullable()();
 }

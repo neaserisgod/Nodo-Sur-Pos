@@ -795,7 +795,8 @@ void main() {
           // Quedó en el carrito, con el monto cargado, y sin la marca de stock
           // en rojo (Regla 8 no le aplica: "Varios" nunca tiene stock real).
           expect(find.text('\$500'), findsOneWidget);
-          final nombreEnCarrito = tester.widget<Text>(find.text('Varios'));
+          // `.last`: desde el rediseño v4 hay otra "Varios" a la vista (la pastilla de la grilla); la del carrito va después.
+          final nombreEnCarrito = tester.widget<Text>(find.text('Varios').last);
           final colores = TemaPlazoleta.oscuro.extension<ColoresPlazoleta>()!;
           expect(nombreEnCarrito.style?.color, isNot(colores.error));
         },

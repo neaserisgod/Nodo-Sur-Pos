@@ -7,6 +7,7 @@ import 'package:clock/clock.dart';
 import 'package:drift/drift.dart';
 
 import '../domain/caja.dart';
+import '../domain/sena.dart' show canalSena;
 import '../domain/equilibrio.dart';
 import '../domain/reposicion.dart';
 import 'database.dart';
@@ -33,7 +34,9 @@ Future<MedioDePago> _medioMercadoPago(AppDatabase db) =>
 /// Regla 13) — así que toda función que suma egresos por caja usa esta
 /// misma lista, en vez de filtrar 'GASTO' sola cada una por su cuenta
 /// (Regla 3).
-const tiposEgresoDeCaja = ['GASTO', 'PAGO_PROVEEDOR', 'RETIRO'];
+// 'DEVOLUCION_SENA' (2026-10-06): la seña de un encargue que se devuelve (se canceló, o sobró al entregar). Sale de la misma caja por la
+// que entró. Es un tipo propio y no 'GASTO' porque la rentabilidad y el equilibrio suman los gastos y devolver una seña no es un gasto.
+const tiposEgresoDeCaja = ['GASTO', 'PAGO_PROVEEDOR', 'RETIRO', 'DEVOLUCION_SENA'];
 
 Future<int> _sumaMovimientos(
   AppDatabase db, {
@@ -212,7 +215,9 @@ Future<int> pagosNoEfectivoDelDia(
     ..where(
       db.ventas.sesionCajaId.equals(sesionId) &
           db.pagos.medioPagoId.equals(mp.id) &
-          db.ventas.anuladaEn.isNull(),
+          db.ventas.anuladaEn.isNull() &
+          // La seña aplicada de un encargue ya entró a Mercado Pago como ingreso cuando se señó: no es un cobro nuevo.
+          (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not()),
     );
   final fila = await query.getSingle();
   return fila.read(db.pagos.montoCentavos.sum()) ?? 0;
@@ -248,6 +253,7 @@ Future<({bool efectivo, bool mp})> cajasMovidasDesde(AppDatabase db, int sesionI
         ..where(
           db.ventas.sesionCajaId.equals(sesionId) &
               db.pagos.medioPagoId.equals(mp.id) &
+              (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not()) &
               (db.ventas.fecha.isBiggerThanValue(desde) | db.ventas.anuladaEn.isBiggerThanValue(desde)),
         )
         ..limit(1))
@@ -267,7 +273,8 @@ Future<int> cantidadVentasPorMpDelDia(AppDatabase db, int sesionId, {MedioDePago
     ..where(
       db.ventas.sesionCajaId.equals(sesionId) &
           db.pagos.medioPagoId.equals(mp.id) &
-          db.ventas.anuladaEn.isNull(),
+          db.ventas.anuladaEn.isNull() &
+          (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not()),
     );
   final fila = await query.getSingle();
   return fila.read(cantidad) ?? 0;

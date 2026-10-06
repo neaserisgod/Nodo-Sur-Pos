@@ -29,10 +29,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../navegacion/refresco_por_celular.dart';
-import '../../domain/avisos_mp.dart';
 import '../../domain/modulos.dart';
-import '../../servicios/avisos_mp_servicio.dart';
-import '../../servicios/nube.dart' show nubeApp;
 import '../../servicios/modulos_activos.dart';
 import '../../data/database.dart';
 import 'venta_en_curso.dart';
@@ -41,14 +38,15 @@ import '../../domain/medio_pago.dart';
 import '../cierre/pantalla_cierre.dart';
 import 'cancelar_venta_con_deshacer.dart';
 import '../comun/botones.dart';
-import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
+import '../navegacion/acciones_caja.dart';
+import '../navegacion/asistente.dart';
+import '../navegacion/boton_caja.dart';
+import '../navegacion/boton_notificaciones.dart';
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
-import '../tema/superficie.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'acciones_venta.dart';
 import 'columna_busqueda.dart';
@@ -57,6 +55,7 @@ import 'columna_cobro.dart';
 import 'dialogo_apertura_caja.dart';
 import 'dialogo_arqueo_intermedio.dart';
 import 'dialogo_movimiento_rapido.dart';
+import 'dialogo_pagar_proveedor_rapido.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 import 'elegir_tarjeta.dart';
@@ -203,6 +202,14 @@ class _PantallaVentaState extends State<PantallaVenta>
 
     final c = _controlador;
 
+    // Ctrl+K: el Asistente funciona siempre (con la caja cerrada ofrece "Abrir caja"), por eso va antes del bloqueo de abajo.
+    if (event.logicalKey == LogicalKeyboardKey.keyK &&
+        HardwareKeyboard.instance.isControlPressed &&
+        !HardwareKeyboard.instance.isAltPressed) {
+      unawaited(_abrirAsistente());
+      return true;
+    }
+
     // Bug real (reportado por el dueño): con la caja cerrada, `ColumnaBusqueda`/
     // `ColumnaCarrito`/`ColumnaCobro` desaparecen de la pantalla ("Caja
     // cerrada.", ver `build()`), pero este handler es global — no sabe nada
@@ -267,6 +274,8 @@ class _PantallaVentaState extends State<PantallaVenta>
             _abrirGastoRapido();
           case 'i':
             _abrirIngresoRapido();
+          case 'p':
+            _pagarProveedor();
           case 'n':
             c.nuevaVenta();
           case 's':
@@ -315,6 +324,29 @@ class _PantallaVentaState extends State<PantallaVenta>
       db: widget.db,
       sesionCajaId: sesion.id,
       usuarioId: sesion.usuarioAbrioId,
+    );
+  }
+
+  /// "Pagar proveedor" (Alt+P, rediseño v4): el pago más común del día en un par de teclas. Al terminar avisa arriba y,
+  /// si se puede, ofrece Deshacer (anula el movimiento: la plata vuelve a su caja y la deuda a lo que era).
+  Future<void> _pagarProveedor() async {
+    final sesion = _controlador.sesion;
+    if (sesion == null) return;
+    await pagarProveedorYAvisar(context, db: widget.db, usuarioId: sesion.usuarioAbrioId, sesionCajaId: sesion.id);
+  }
+
+  /// Asistente (Ctrl+K): buscador de acciones, pantallas y productos. Elegir un producto lo deja escrito en el campo único.
+  Future<void> _abrirAsistente() async {
+    await abrirAsistente(
+      context,
+      db: widget.db,
+      sesion: _controlador.sesion,
+      irA: _onSeleccionarSeccion,
+      alElegirProducto: (texto) {
+        _controlador.campoTexto.text = texto;
+        _controlador.focoCampoPrincipal.requestFocus();
+      },
+      alTerminarAccion: _controlador.cargarTodo,
     );
   }
 
@@ -421,6 +453,34 @@ class _PantallaVentaState extends State<PantallaVenta>
     const ItemNavbarSuperior(clave: 'configuracion', etiqueta: 'Configuración'),
   ];
 
+  /// "Caja ▾" (rediseño v4): el estado de la caja a la vista y, en el menú, todo lo que se hace con ella. Reemplaza a los
+  /// íconos sueltos "Cambiar de turno" y "Cerrar caja" del extremo derecho. Con la caja cerrada, el menú tiene solo "Abrir
+  /// caja"; con la de un día anterior sin cerrar, solo cerrarla.
+  Widget _construirBotonCaja(VentaControlador c) {
+    final sesion = c.sesion;
+    final EstadoCajaNavbar estado = sesion == null
+        ? EstadoCajaNavbar.cerrada
+        : (c.sesionVencida ? EstadoCajaNavbar.deAyerSinCerrar : EstadoCajaNavbar.abierta);
+    return ValueListenableBuilder<ModulosNegocio>(
+      valueListenable: modulosActuales,
+      builder: (context, modulos, _) {
+        final hayTurnos = modulos.estaActivo(Modulo.turnos);
+        final acciones = armarAccionesMenuCaja(
+          estado: estado,
+          hayTurnos: hayTurnos,
+          arqueoVencido: c.arqueoIntermedioVencido,
+          onAbrir: _abrirCaja,
+          onArqueo: _hacerArqueoIntermedio,
+          onTurno: _cambiarTurno,
+          onGasto: _abrirGastoRapido,
+          onIngreso: _abrirIngresoRapido,
+          onCerrar: _irACierre,
+        );
+        return BotonCaja(estado: estado, acciones: acciones);
+      },
+    );
+  }
+
   /// Venta es la raíz de la app (El dueño, 2026-10-03): cada sección se abre encima con la misma navegación que el
   /// resto de las pantallas, y al volver se recargan las secciones (pudieron cambiar en Configuración).
   Future<void> _onSeleccionarSeccion(String clave) async {
@@ -450,21 +510,11 @@ class _PantallaVentaState extends State<PantallaVenta>
               // mismo criterio que el arranque de `main.dart`.
               if (c.cargando) return const SizedBox.shrink();
 
-              final accionesPie = Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // El arqueo sugerido cada 2 horas es parte de los turnos; los avisos de Mercado Pago (etapa D) no, así que la
-                  // campanita está siempre y cada parte decide si se muestra.
-                  _BotonNotificaciones(
-                    hayArqueoVencido: c.arqueoIntermedioVencido,
-                    onHacerArqueo: _hacerArqueoIntermedio,
-                  ),
-                  _AccionesPie(
-                    puedeCerrarCaja: c.sesion != null,
-                    onCerrarCaja: _irACierre,
-                    onCambiarTurno: _cambiarTurno,
-                  ),
-                ],
+              // La campanita va a la derecha, antes de la tuerca. El arqueo sugerido cada 2 horas es parte de los turnos; los
+              // avisos de Mercado Pago (etapa D) no, así que la campanita está siempre y cada parte decide si se muestra.
+              final campanita = BotonNotificaciones(
+                hayArqueoVencido: c.arqueoIntermedioVencido,
+                onHacerArqueo: _hacerArqueoIntermedio,
               );
               final hayVenta = c.sesion != null && !c.sesionVencida;
 
@@ -492,7 +542,9 @@ class _PantallaVentaState extends State<PantallaVenta>
                       claveActiva: 'venta',
                       items: _itemsNav,
                       onSeleccionar: _onSeleccionarSeccion,
-                      acciones: hayVenta ? accionesPie : null,
+                      izquierda: _construirBotonCaja(c),
+                      onAbrirAsistente: () => unawaited(_abrirAsistente()),
+                      acciones: hayVenta ? campanita : null,
                     ),
                   ),
                   Expanded(
@@ -545,30 +597,25 @@ class _PantallaVentaState extends State<PantallaVenta>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
-                                            const EncabezadoPantalla(
-                                              titulo: 'Vender',
-                                              subtitulo:
-                                                  'Escribí, escaneá o tocá un producto',
-                                            ),
-                                            const SizedBox(
-                                              height: Espaciado.lg,
-                                            ),
+                                            // Sin título (rediseño v4): el buscador va arriba de todo, grande, y al
+                                            // lado "Pagar proveedor", lo que más se hace además de vender.
+                                            // El desplegable de resultados cuelga del campo pero mide todo el ancho de la columna
+                                            // (no solo el del campo, que se achica por el botón): si no, las filas pierden el stock.
                                             LayoutBuilder(
-                                              builder:
-                                                  (context, restricciones) =>
-                                                      SizedBox(
-                                                        height: 60,
-                                                        child:
-                                                            BarraBusquedaVenta(
-                                                              anchoDropdown:
-                                                                  restricciones
-                                                                      .maxWidth,
-                                                            ),
-                                                      ),
+                                              builder: (context, restricciones) => Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: SizedBox(
+                                                      height: 64,
+                                                      child: BarraBusquedaVenta(anchoDropdown: restricciones.maxWidth),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: Espaciado.md),
+                                                  SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
+                                                ],
+                                              ),
                                             ),
-                                            const SizedBox(
-                                              height: Espaciado.lg,
-                                            ),
+                                            const SizedBox(height: Espaciado.lg),
                                             const Expanded(
                                               child: RejillaProductos(),
                                             ),
@@ -650,291 +697,36 @@ class _EstadoBloqueado extends StatelessWidget {
   }
 }
 
-/// Campanita de notificaciones (El dueño, tercera pasada: *"NO QUIERO QUE
-/// APAREZCA EL COSO DEL ARQUEO OCUPANDO TODO, DEBEMOS TENER UN APARTADO
-/// NOTIFICACIONES"*) — reemplaza al banner de ancho completo
-/// (`_AvisoArqueoIntermedio`, hasta acá) que empujaba todo lo de abajo
-/// cada vez que pasaban 2hs sin arqueo. El aviso sigue siendo sugerencia,
-/// no bloqueo (El dueño, 2026-09-15): se puede seguir vendiendo con el panel
-/// cerrado; desaparece solo cuando se hace el arqueo
-/// (`_hacerArqueoIntermedio` recarga `arqueoIntermedioVencido`) o cambia de
-/// sesión.
-///
-/// Mismo mecanismo que el dropdown de resultados de búsqueda
-/// (`columna_busqueda.dart::BarraBusquedaVenta`): `CompositedTransformTarget`
-/// + `OverlayPortal` + `CompositedTransformFollower`, acá anclado a un
-/// ícono en vez de a un campo, con `UnconstrainedBox` para que el panel se
-/// mida por su contenido (mismo bug ya resuelto ahí). Queda como el único
-/// lugar de avisos que no son parte del flujo de vender — no solo para el
-/// arqueo, una base para sumar más el día que haga falta.
-class _BotonNotificaciones extends StatefulWidget {
-  const _BotonNotificaciones({
-    required this.hayArqueoVencido,
-    required this.onHacerArqueo,
-  });
+/// "Pagar proveedor · Alt+P": pastilla oscura al lado del buscador (la acción principal de caja además de vender).
+class _BotonPagarProveedor extends StatelessWidget {
+  const _BotonPagarProveedor({required this.onTap});
 
-  final bool hayArqueoVencido;
-  final VoidCallback onHacerArqueo;
-
-  @override
-  State<_BotonNotificaciones> createState() => _BotonNotificacionesState();
-}
-
-class _BotonNotificacionesState extends State<_BotonNotificaciones> {
-  final _link = LayerLink();
-  final _overlayController = OverlayPortalController();
-  bool _abierto = false;
-
-  // Avisos de Mercado Pago (etapa D, El dueño 2026-10-04): cobro que entró sin venta, contracargos y reclamos. Solo avisan, y
-  // solo en la PC (en los tests y en el celular no hay servicio y la lista queda vacía).
-  static final _sinAvisos = ValueNotifier<List<AvisoParaMostrar>>(const []);
-
-  @override
-  void initState() {
-    super.initState();
-    _overlayController.show();
-  }
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final servicio = nubeApp?.avisosMp;
-    return ValueListenableBuilder<List<AvisoParaMostrar>>(
-      valueListenable: servicio?.pendientes ?? _sinAvisos,
-      builder: (context, avisos, _) => _construir(context, colores, avisos, servicio),
-    );
-  }
-
-  Widget _construir(BuildContext context, ColoresPlazoleta colores, List<AvisoParaMostrar> avisos, ServicioAvisosMp? servicio) {
-    final hayPendiente = widget.hayArqueoVencido || avisos.isNotEmpty;
-
-    return OverlayPortal(
-      controller: _overlayController,
-      overlayChildBuilder: (context) {
-        if (!_abierto) return const SizedBox.shrink();
-        return CompositedTransformFollower(
-          link: _link,
-          targetAnchor: Alignment.bottomRight,
-          followerAnchor: Alignment.topRight,
-          offset: const Offset(0, Espaciado.sm),
-          child: UnconstrainedBox(
-            alignment: Alignment.topRight,
-            child: SizedBox(
-              width: 320,
-              child: Superficie(
-                relleno: colores.fondoBloque,
-                // Arqueo opcional (El dueño, 2026-09-28: "que los arqueos
-                // durante el turno dejen de ser obligatorios"): el botón está
-                // siempre, y a las 2hs solo se prende el punto — el aviso
-                // suave que eligió, sin panel ni banner que insista.
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 420),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final a in avisos) ...[
-                          _AvisoMpEnPanel(aviso: a, onVisto: servicio == null ? null : () => servicio.marcarVisto(a.aviso)),
-                          const SizedBox(height: Espaciado.md),
-                        ],
-                        SiModulo(
-                          Modulo.turnos,
-                          hijo: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.hayArqueoVencido
-                                    ? 'Pasaron 2 horas desde el último arqueo.'
-                                    : (avisos.isEmpty ? 'Sin novedades por ahora.' : 'Arqueo'),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: Espaciado.xs),
-                              Text(
-                                'Contar la caja es opcional. Lo que cuentes queda '
-                                'precargado en el cierre.',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: Espaciado.md),
-                              BotonSecundario(
-                                texto: 'Hacer arqueo',
-                                onPressed: () {
-                                  setState(() => _abierto = false);
-                                  widget.onHacerArqueo();
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (avisos.isEmpty && !modulosActuales.value.estaActivo(Modulo.turnos))
-                          Text('Sin novedades por ahora.', style: Theme.of(context).textTheme.titleMedium),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      child: CompositedTransformTarget(
-        link: _link,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Tooltip(
-              message: 'Notificaciones',
-              child: Semantics(
-                button: true,
-                label: hayPendiente ? 'Notificaciones: hay un aviso pendiente' : 'Notificaciones',
-                excludeSemantics: true,
-                onTap: () => setState(() => _abierto = !_abierto),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(radioControlEscritorio),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(radioControlEscritorio),
-                    onTap: () => setState(() => _abierto = !_abierto),
-                    child: SizedBox(
-                      width: Medidas.alturaControl,
-                      height: Medidas.alturaControl,
-                      child: IconoPlz(
-                        IconosPlazoleta.notificationsOutlined,
-                        size: 20,
-                        color: colores.textoSecundario,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (hayPendiente)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colores.acento,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Un aviso de Mercado Pago dentro del panel de la campanita: qué pasó, con qué venta se cruzó y "Visto" para sacarlo.
-class _AvisoMpEnPanel extends StatelessWidget {
-  const _AvisoMpEnPanel({required this.aviso, required this.onVisto});
-
-  final AvisoParaMostrar aviso;
-  final VoidCallback? onVisto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      key: ValueKey('aviso_mp_${aviso.aviso.idServidor}'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(aviso.titulo, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: Espaciado.xs),
-        Text(aviso.texto, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: Espaciado.sm),
-        BotonSecundario(texto: 'Visto', onPressed: onVisto),
-      ],
-    );
-  }
-}
-
-/// Acciones del extremo derecho de la navbar — "Cerrar caja" es una acción,
-/// no una sección (El dueño): va apartada del listado de navegación por hueco,
-/// nunca mezclada con él. "Imprimir ticket" ya no vive acá (fase 13, ítem
-/// 3): dejó de ser una acción permanente, ahora aparece junto al acuse de
-/// cobro (`ColumnaCarrito`) solo mientras hay algo reciente para imprimir.
-/// Remake 2026-09-19: pasa de pie vertical de `BarraLateral` a fila de
-/// íconos con tooltip en el slot `accion` de `NavbarSuperior` — siempre
-/// ícono solo (la navbar ya es compacta de por sí en este slot, no
-/// necesita su propio modo expandido).
-class _AccionesPie extends StatelessWidget {
-  const _AccionesPie({
-    required this.puedeCerrarCaja,
-    required this.onCerrarCaja,
-    required this.onCambiarTurno,
-  });
-
-  final bool puedeCerrarCaja;
-  final VoidCallback onCerrarCaja;
-  final VoidCallback onCambiarTurno;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Separadas a propósito (El dueño, 2026-09-12): "Cerrar caja" es el fin
-        // del día, no encadena nada después. "Cambiar de turno" es el mismo
-        // arqueo obligatorio, pero para cuando viene ayuda a mitad de
-        // sesión — al terminar, encadena directo a abrir la hoja de quien
-        // entra en vez de dejar la venta bloqueada esperando un segundo clic.
-        SiModulo(
-          Modulo.turnos,
-          hijo: _BotonAccion(
-            icono: IconosPlazoleta.swapHoriz,
-            etiqueta: 'Cambiar de turno',
-            onPressed: puedeCerrarCaja ? onCambiarTurno : null,
-          ),
-        ),
-        _BotonAccion(
-          icono: IconosPlazoleta.lockOutline,
-          etiqueta: 'Cerrar caja',
-          onPressed: puedeCerrarCaja ? onCerrarCaja : null,
-        ),
-      ],
-    );
-  }
-}
-
-class _BotonAccion extends StatelessWidget {
-  const _BotonAccion({
-    required this.icono,
-    required this.etiqueta,
-    required this.onPressed,
-  });
-
-  final IconData icono;
-  final String etiqueta;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final color = onPressed == null
-        ? colores.textoTenue
-        : colores.textoSecundario;
+    final textTheme = Theme.of(context).textTheme;
     return Tooltip(
-      message: etiqueta,
-      child: Semantics(
-        button: true,
-        enabled: onPressed != null,
-        label: etiqueta,
-        excludeSemantics: true,
-        onTap: onPressed,
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(radioControlEscritorio),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(radioControlEscritorio),
-            onTap: onPressed,
-            child: SizedBox(
-              width: Medidas.alturaControl,
-              height: Medidas.alturaControl,
-              child: IconoPlz(icono, size: 20, color: color),
+      message: 'Pagar proveedor (Alt+P)',
+      child: Material(
+        key: const Key('boton_pagar_proveedor'),
+        color: colores.textoPrimario,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconoPlz(IconosPlazoleta.localShippingOutlined, size: 22, color: colores.fondo),
+                const SizedBox(width: Espaciado.md),
+                Text('Pagar proveedor', style: textTheme.titleMedium?.copyWith(color: colores.fondo)),
+                const SizedBox(width: Espaciado.md),
+                Text('Alt+P', style: textTheme.bodySmall?.copyWith(color: colores.fondo.withValues(alpha: 0.65), fontWeight: Pesos.fuerte)),
+              ],
             ),
           ),
         ),

@@ -540,10 +540,13 @@ class _RejillaProductosState extends State<RejillaProductos> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: 44,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+          height: 48,
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
               children: [
                 _PildoraCategoria(
                   texto: 'Más vendidos',
@@ -574,6 +577,12 @@ class _RejillaProductosState extends State<RejillaProductos> {
                 ],
               ],
             ),
+                ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              // "Varios" a la vista (rediseño v4): un monto suelto para lo que no está cargado. Antes solo por Alt+V.
+              const _PildoraVarios(),
+            ],
           ),
         ),
         const SizedBox(height: Espaciado.sm),
@@ -601,6 +610,38 @@ class _RejillaProductosState extends State<RejillaProductos> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// "Varios · Alt+V" al final de la fila de categorías: no filtra nada, abre el diálogo de monto suelto.
+class _PildoraVarios extends StatelessWidget {
+  const _PildoraVarios();
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final c = context.read<VentaControlador>();
+    return Container(
+      key: const Key('pildora_varios'),
+      // 48 dp: el mínimo para un objetivo táctil.
+      height: 48,
+      decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
+      child: SuperficieTactil(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => agregarVarios(context, c),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Varios', style: TextStyle(color: colores.textoSecundario, fontWeight: Pesos.regular)),
+              const SizedBox(width: Espaciado.sm),
+              Text('Alt+V', style: TextStyle(color: colores.textoTenue, fontSize: 12, fontWeight: Pesos.fuerte)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

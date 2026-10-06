@@ -13,6 +13,7 @@ import 'package:http/testing.dart';
 import 'package:la_plazoleta/companion/carrito_venta.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_encargues.dart';
 import 'package:la_plazoleta/data/repositorio_arqueo_intermedio.dart';
 import 'package:la_plazoleta/data/repositorio_carga_historica.dart' show notaCargaHistorica;
 import 'package:la_plazoleta/data/repositorio_cierre.dart';
@@ -1209,6 +1210,38 @@ void main() {
     });
 
     group('encargues por apartado', () {
+      test('un encargue con seña: el celular lo ve, pero cobrarlo, anotar deuda o cancelarlo se hace desde la PC (409, sin tocar la caja)', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final id = await crearEncargueApartando(
+          db,
+          nombreCliente: 'María',
+          lineas: [LineaEncargueNueva(productoId: cocaId, cantidad: 3)],
+          usuarioId: usuarioId,
+          senaCentavos: 100000,
+          sesionCajaId: sesionId,
+        );
+        final lista = jsonDecode((await http.get(url('/encargues'), headers: headers())).body) as List;
+        expect((lista.single as Map)['senaCentavos'], 100000);
+
+        final cobro = await http.post(
+          url('/ventas/cobrar'),
+          headers: headers(),
+          body: jsonEncode({
+            'lineas': [lineaCoca(cocaId, cantidad: 3)],
+            'medio': 'efectivo',
+            'sesionCajaId': sesionId,
+            'usuarioId': usuarioId,
+            'encargueId': id,
+          }),
+        );
+        expect(cobro.statusCode, 409);
+        expect((await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
+        expect((await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
+        expect(await db.select(db.ventas).get(), isEmpty);
+        expect(await listarEnarguesPendientes(db), hasLength(1), reason: 'sigue apartado');
+      });
+
       test('apartar por HTTP baja el stock; el listado, las líneas y la entrega por /ventas/cobrar liberan lo apartado', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);

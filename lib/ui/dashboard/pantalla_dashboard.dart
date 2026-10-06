@@ -24,7 +24,6 @@ import '../../data/repositorio_tablero.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import '../../domain/dinero.dart';
 import '../comun/armazon_gestion.dart';
-import '../comun/boton_destacado.dart';
 import '../comun/fechas.dart';
 import '../comun/grafico_por_hora.dart';
 import '../comun/tarjetas.dart';
@@ -167,14 +166,8 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
               oscura: true,
               onElegir: (v) => setState(() => _vista = v),
             ),
-            const SizedBox(width: Espaciado.md),
           ],
-          BotonDestacado(
-            texto: 'Nueva venta',
-            icono: IconosPlazoleta.pointOfSaleOutlined,
-            degrade: const [azulMarca, azulMarca],
-            onTap: () => _ir('venta'),
-          ),
+          // Sin "Nueva venta" (rediseño v4): Venta ya está en la navbar y es la pantalla de arranque.
         ],
       ),
       child: !verMes
@@ -290,8 +283,8 @@ class _FilaIndicadores extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Tres columnas iguales (rediseño v4): lo vendido, los indicadores y los más vendidos.
         Expanded(
-          flex: 3,
           // Las tarjetas entran escalonadas (2026-10-03): lo vendido primero, después las chicas y la fila de abajo.
           child: Entrada(
             child: _HeroVendido(
@@ -314,6 +307,8 @@ class _FilaIndicadores extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: Espaciado.lg),
+        Expanded(child: Entrada(orden: 4, child: _MasVendidos(tablero: t))),
       ],
     );
   }
@@ -374,7 +369,7 @@ class _HeroVendido extends StatelessWidget {
             child: Builder(
               builder: (context) => DefaultTextStyle.merge(
                 style: TextStyle(color: context.colores.textoPrimario),
-                child: GraficoPorHora(porHora: porHora, altura: 120),
+                child: GraficoPorHora(porHora: porHora, altura: 100),
               ),
             ),
           ),
@@ -427,9 +422,7 @@ class _FilaDeAbajo extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: Entrada(orden: 4, child: _ComoTePagaron(tablero: tablero))),
-        const SizedBox(width: Espaciado.lg),
-        Expanded(child: Entrada(orden: 5, child: _MasVendidos(tablero: tablero))),
+        Expanded(child: Entrada(orden: 5, child: _ComoTePagaron(tablero: tablero))),
         const SizedBox(width: Espaciado.lg),
         Expanded(child: Entrada(orden: 6, child: _StockBajo(tablero: tablero))),
         if (conPendientes) ...[

@@ -131,6 +131,10 @@ class Proveedores extends Table {
   /// cigarrillos quedan afuera siempre (Regla 6). Local: no se sincroniza.
   IntColumn get markupBp => integer().nullable()();
 
+  /// Teléfono de WhatsApp del proveedor, tal como lo escribió el dueño (schemaVersion 53, rediseño v4, 2026-10-06): sirve para
+  /// el botón "Pedir por WhatsApp", que abre el chat con lo de stock bajo ya escrito. Local: no se sincroniza.
+  TextColumn get whatsapp => text().nullable()();
+
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
 
   /// Proveedor con caja aparte (schemaVersion 45, fase 4 de la generalización): cobra solo en efectivo y

@@ -47,12 +47,12 @@ void main() {
     await _pump(tester, db);
     await tester.tap(find.text('Este mes'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Este mes ·'), findsOneWidget);
+    expect(find.text('Ganancia bruta del mes'), findsWidgets); // la vista mensual (ya no hay subtítulo "Este mes · …")
 
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.equilibrio, activo: false);
     await tester.pumpAndSettle();
     expect(find.text('Este mes'), findsNothing);
-    expect(find.textContaining('Este mes ·'), findsNothing);
+    expect(find.text('Ganancia bruta del mes'), findsNothing);
     expect(find.text('Encargues y deudas'), findsOneWidget);
   });
 }

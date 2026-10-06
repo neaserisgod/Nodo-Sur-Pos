@@ -6,6 +6,7 @@
 // hace falta, no hay que pedirlo todo en el alta.
 
 import 'package:flutter/material.dart';
+import '../../domain/pedido_whatsapp.dart';
 
 import '../../data/repositorio_reposicion.dart' show mediosPagoProveedor;
 import '../comun/botones.dart';
@@ -37,6 +38,7 @@ class _DialogoNuevoProveedor extends StatefulWidget {
 class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
   final _nombreCtrl = TextEditingController();
   final _codigoCtrl = TextEditingController();
+  final _whatsappCtrl = TextEditingController();
   String _medioPago = mediosPagoProveedor.first;
   String? _diaPedido;
   String? _diaEntrega;
@@ -54,6 +56,11 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
       setState(() => _error = 'Falta el código');
       return;
     }
+    final whatsapp = _whatsappCtrl.text.trim();
+    if (whatsapp.isNotEmpty && normalizarWhatsapp(whatsapp) == null) {
+      setState(() => _error = 'El WhatsApp no parece un número de teléfono');
+      return;
+    }
 
     setState(() {
       _guardando = true;
@@ -66,6 +73,7 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
         medioPago: _medioPago,
         diaPedido: _diaPedido,
         diaEntrega: _diaEntrega,
+        whatsapp: whatsapp.isEmpty ? null : whatsapp,
       );
     } catch (e) {
       // Mismo criterio que dialogo_avanzado_proveedor.dart: `codigo` es
@@ -92,6 +100,7 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
   void dispose() {
     _nombreCtrl.dispose();
     _codigoCtrl.dispose();
+    _whatsappCtrl.dispose();
     super.dispose();
   }
 
@@ -99,7 +108,7 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
   // días y medio de pago de un toque, con chips, en vez de desplegables.
   // Los días siguen siendo opcionales (se completan después desde
   // "Avanzado"); el código se sigue pidiendo porque es único en la base. El
-  // WhatsApp del mock no existe en el modelo del proveedor.
+  // WhatsApp (2026-10-06) es opcional: con él, Proveedores ofrece "Pedir por WhatsApp".
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -151,6 +160,13 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
           Text('Día que entrega (opcional)', style: textTheme.labelMedium),
           const SizedBox(height: Espaciado.xs + 2),
           dias(_diaEntrega, (d) => setState(() => _diaEntrega = d)),
+          const SizedBox(height: Espaciado.md),
+          CampoTexto(
+            key: const Key('campo_whatsapp'),
+            controller: _whatsappCtrl,
+            etiqueta: 'WhatsApp (opcional)',
+            pista: 'Ej: 294 4123456',
+          ),
           const SizedBox(height: Espaciado.md),
           Text('Cómo le pagás', style: textTheme.labelMedium),
           const SizedBox(height: Espaciado.xs + 2),

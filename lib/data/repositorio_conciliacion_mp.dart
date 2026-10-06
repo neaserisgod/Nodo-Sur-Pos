@@ -5,6 +5,7 @@
 import 'package:drift/drift.dart';
 
 import '../domain/conciliacion_mp.dart';
+import '../domain/sena.dart' show canalSena;
 import 'database.dart';
 
 /// Pagos no en efectivo de las ventas no anuladas de [sesionId].
@@ -12,7 +13,7 @@ Future<List<PagoMpRegistrado>> pagosMpRegistrados(AppDatabase db, int sesionId) 
   final filas = await (db.select(db.pagos).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId)),
     innerJoin(db.mediosDePago, db.mediosDePago.id.equalsExp(db.pagos.medioPagoId)),
-  ])..where(db.ventas.sesionCajaId.equals(sesionId) & db.ventas.anuladaEn.isNull() & db.mediosDePago.esEfectivo.equals(false)))
+  ])..where(db.ventas.sesionCajaId.equals(sesionId) & db.ventas.anuladaEn.isNull() & db.mediosDePago.esEfectivo.equals(false) & (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not())))
       .get();
   return [
     for (final f in filas)

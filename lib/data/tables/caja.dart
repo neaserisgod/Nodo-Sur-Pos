@@ -139,7 +139,7 @@ class MovimientosDeCaja extends Table {
       integer().nullable().references(MediosDePago, #id)();
   IntColumn get usuarioId => integer().references(Usuarios, #id)();
 
-  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'AJUSTE' |
+  /// 'VENTA' | 'GASTO' | 'PAGO_PROVEEDOR' | 'RETIRO' | 'DEVOLUCION_SENA' | 'AJUSTE' |
   /// 'TRASPASO_LATA'.
   TextColumn get tipo => text()();
   IntColumn get montoCentavos => integer()();

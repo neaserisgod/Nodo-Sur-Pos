@@ -480,6 +480,16 @@ siguiente reviso ese cierre"*.
 - Se anota como pendiente con nombre y monto.
 - Al cobrarse, se tilda y entra como venta de ese día.
 
+### Seña de un encargue (El dueño, 2026-10-06)
+
+- La seña **entra a la caja con la que se pagó** (cajón si fue efectivo, Mercado Pago si no) como **ingreso de caja, no como venta**.
+- Cuando el encargue se **paga completo** pasa a ser **una venta del día en que se completó**, por el total a los precios de ese día. Lo ya
+  cobrado de seña es un pago de esa venta que **no vuelve a mover la caja** ni cuenta como cobro nuevo de Mercado Pago.
+- Si el encargue se **cancela**, la seña se **devuelve por la misma caja** (movimiento propio, no es un gasto). Si la seña es mayor que el
+  total (bajó un precio), la diferencia se devuelve al entregar.
+- Un encargue con seña no se anota como deuda; una venta con seña no se edita ni se anula desde el historial. Se entrega y se cancela
+  desde la PC (no desde el celular). Plan y pruebas: `docs/PLAN-SENA.md`.
+
 ## 16. Proveedores
 
 Los 15 proveedores reales, cada uno con su propio código:

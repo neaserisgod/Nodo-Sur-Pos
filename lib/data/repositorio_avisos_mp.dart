@@ -4,6 +4,7 @@
 import 'package:drift/drift.dart';
 
 import '../domain/avisos_mp.dart';
+import '../domain/sena.dart' show canalSena;
 import 'database.dart';
 
 /// Cuánto se guarda: lo mismo que en el sitio, y alcanza para cruzar un contracargo con la venta (que llega semanas después).
@@ -78,7 +79,7 @@ Future<List<AvisoParaMostrar>> avisosMpParaMostrar(AppDatabase db, {DateTime? ah
   final pagos = await (db.select(db.pagos).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.pagos.ventaId)),
     innerJoin(db.mediosDePago, db.mediosDePago.id.equalsExp(db.pagos.medioPagoId)),
-  ])..where(db.ventas.anuladaEn.isNull() & db.mediosDePago.esEfectivo.equals(false) & db.ventas.fecha.isBiggerOrEqualValue(desde)))
+  ])..where(db.ventas.anuladaEn.isNull() & db.mediosDePago.esEfectivo.equals(false) & db.ventas.fecha.isBiggerOrEqualValue(desde) & (db.pagos.canal.isNull() | db.pagos.canal.equals(canalSena).not())))
       .get();
 
   return avisosParaMostrar(

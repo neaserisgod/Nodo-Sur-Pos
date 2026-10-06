@@ -24,6 +24,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_comparacion_precios.dart';
 import '../../domain/dinero.dart';
@@ -95,7 +96,7 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
     ]);
     await _cargar();
     if (mounted && errores.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo actualizar del todo: ${errores.join(' | ')}')));
+      mostrarAviso(context, 'No se pudo actualizar del todo: ${errores.join(' | ')}');
     }
     if (mounted) setState(() => _actualizando = false);
   }

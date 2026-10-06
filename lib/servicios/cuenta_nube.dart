@@ -28,6 +28,39 @@ class PerfilDeCuenta {
   final String? rol;
 }
 
+/// Una persona del equipo del negocio, tal como la ve la PC (solo informativo).
+class MiembroDeEquipo {
+  const MiembroDeEquipo({required this.nombre, required this.email, required this.rol, required this.todasLasSucursales, required this.sucursales});
+  final String? nombre;
+  final String email;
+
+  /// 'owner' | 'manager' | 'employee'.
+  final String rol;
+  final bool todasLasSucursales;
+  final List<String> sucursales;
+}
+
+/// Lo que el servidor sabe del negocio de esta PC (`GET /api/device/team`): en qué sucursal está y, si quien la vinculó es el
+/// dueño, quiénes trabajan en el negocio. [miembros] es null para un encargado o un empleado (no ven al resto del equipo).
+class EquipoDeCuenta {
+  const EquipoDeCuenta({required this.negocio, required this.sucursal, required this.rol, required this.miembros});
+  final String? negocio;
+  final String? sucursal;
+  final String? rol;
+  final List<MiembroDeEquipo>? miembros;
+
+  /// Sin nada que mostrar (una PC de antes del modelo de negocios, sin sucursal ni equipo).
+  bool get vacio => sucursal == null && (miembros == null || miembros!.isEmpty);
+}
+
+/// 'owner' → "Dueño", etc. Para mostrar.
+String nombreDeRol(String? rol) => switch (rol) {
+  'owner' => 'Dueño',
+  'manager' => 'Encargado',
+  'employee' => 'Empleado',
+  _ => rol ?? '',
+};
+
 class CuentaVinculada {
   const CuentaVinculada({
     required this.token,
@@ -351,6 +384,32 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return PerfilDeCuenta(email: j['email'] as String, nombre: (j['name'] as String).trim(), rol: j['role'] as String?);
+  });
+
+  /// El equipo del negocio de esta PC, o null si el servidor todavía no lo ofrece (una versión anterior del sitio) o no contesta bien:
+  /// es solo informativo, nunca tiene que frenar nada.
+  Future<EquipoDeCuenta?> equipo(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/device/team'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) return null;
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    final lista = j['members'] as List?;
+    return EquipoDeCuenta(
+      negocio: (j['org'] as Map?)?['name'] as String?,
+      sucursal: (j['branch'] as Map?)?['name'] as String?,
+      rol: j['role'] as String?,
+      miembros: lista == null
+          ? null
+          : [
+              for (final m in lista.cast<Map<String, dynamic>>())
+                MiembroDeEquipo(
+                  nombre: m['name'] as String?,
+                  email: m['email'] as String,
+                  rol: m['role'] as String,
+                  todasLasSucursales: m['allBranches'] == true,
+                  sucursales: [for (final s in (m['branches'] as List? ?? const [])) '$s'],
+                ),
+            ],
+    );
   });
 
   // ─── Cobro con la terminal Point a través del servidor (el token de Mercado Pago del negocio no sale de ahí) ───

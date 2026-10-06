@@ -16,6 +16,7 @@ import '../comun/estado_mercado_pago.dart';
 import '../comun/fechas.dart';
 import '../respaldo/dialogo_confirmar_restaurar.dart';
 import '../tema/iconos.dart';
+import '../tema/tema.dart' show radioControlEscritorio;
 import '../tema/tokens.dart';
 import 'cuenta_nube_controlador.dart';
 
@@ -184,6 +185,10 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
             Expanded(child: Text('Vinculada a ${c.cuenta!.email} · ${c.cuenta!.nombreDispositivo}', key: const Key('nube_vinculada'))),
           ],
         ),
+        if (c.equipo case final equipo? when !equipo.vacio) ...[
+          const SizedBox(height: Espaciado.md),
+          _TarjetaEquipo(equipo: equipo),
+        ],
         if (c.nube.sync case final sync?)
           ValueListenableBuilder<int>(
             valueListenable: sync.alCambiarEstado,
@@ -262,6 +267,52 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
           Text('Hay una caja abierta: cerrala para poder restaurar una copia.', style: secundario),
         ],
       ],
+    );
+  }
+}
+
+/// Sucursal de esta PC y, para el dueño, el equipo del negocio: solo para mirar. Se cambia en horsepos.com/negocio.
+class _TarjetaEquipo extends StatelessWidget {
+  const _TarjetaEquipo({required this.equipo});
+
+  final EquipoDeCuenta equipo;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final secundario = TextStyle(color: context.colores.textoSecundario);
+    final miembros = equipo.miembros;
+    return Container(
+      key: const Key('nube_equipo'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(Espaciado.md),
+      decoration: BoxDecoration(color: context.colores.fondoBloque, borderRadius: BorderRadius.circular(radioControlEscritorio)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (equipo.sucursal != null)
+            Text(
+              [if (equipo.negocio != null) equipo.negocio!, 'Sucursal: ${equipo.sucursal}', if (equipo.rol != null) 'Tu rol: ${nombreDeRol(equipo.rol)}'].join(' · '),
+              key: const Key('nube_sucursal'),
+              style: textTheme.bodyMedium,
+            ),
+          if (miembros != null && miembros.isNotEmpty) ...[
+            const SizedBox(height: Espaciado.sm),
+            Text('Equipo', style: textTheme.titleSmall),
+            const SizedBox(height: Espaciado.xs),
+            for (final m in miembros)
+              Padding(
+                key: Key('nube_miembro_${m.email}'),
+                padding: const EdgeInsets.only(bottom: Espaciado.xs),
+                child: Text(
+                  '${m.nombre ?? m.email} · ${nombreDeRol(m.rol)} · ${m.todasLasSucursales ? 'todas las sucursales' : (m.sucursales.isEmpty ? 'sin sucursal' : m.sucursales.join(', '))}',
+                  style: secundario,
+                ),
+              ),
+            Text('Para sumar o sacar gente, o cambiar sucursales, entrá a horsepos.com/negocio.', style: secundario.copyWith(fontSize: 12)),
+          ],
+        ],
+      ),
     );
   }
 }

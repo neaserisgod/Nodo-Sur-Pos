@@ -18,6 +18,7 @@
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import '../../domain/pedido_whatsapp.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_reposicion.dart'
@@ -69,6 +70,9 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
   late final _diaEntregaCtrl = TextEditingController(
     text: widget.proveedor.diaEntrega ?? '',
   );
+  late final _whatsappCtrl = TextEditingController(
+    text: widget.proveedor.whatsapp ?? '',
+  );
   late bool _activo = widget.proveedor.activo;
   late String _medioPago = widget.proveedor.medioPago;
   String? _error;
@@ -89,9 +93,15 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
       setState(() => _error = 'Falta el código');
       return;
     }
+    final whatsapp = _whatsappCtrl.text.trim();
+    if (whatsapp.isNotEmpty && normalizarWhatsapp(whatsapp) == null) {
+      setState(() => _error = 'El WhatsApp no parece un número de teléfono');
+      return;
+    }
 
     try {
       await widget.controlador.guardarAvanzado(
+        whatsapp: whatsapp.isEmpty ? null : whatsapp,
         nombre: nombre,
         codigo: codigo,
         diaPedido: _diaPedidoCtrl.text.trim().isEmpty
@@ -133,6 +143,7 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
   void dispose() {
     _nombreCtrl.dispose();
     _codigoCtrl.dispose();
+    _whatsappCtrl.dispose();
     _diaPedidoCtrl.dispose();
     _diaEntregaCtrl.dispose();
     super.dispose();
@@ -185,6 +196,13 @@ class _DialogoAvanzadoProveedorState extends State<_DialogoAvanzadoProveedor> {
               key: const Key('campo_dia_entrega'),
               controller: _diaEntregaCtrl,
               etiqueta: 'Día de entrega (opcional)',
+            ),
+            const SizedBox(height: Espaciado.md),
+            CampoTexto(
+              key: const Key('campo_whatsapp'),
+              controller: _whatsappCtrl,
+              etiqueta: 'WhatsApp (opcional)',
+              pista: 'Ej: 294 4123456',
             ),
             if (!_cajaAparte) ...[
               const SizedBox(height: Espaciado.md),

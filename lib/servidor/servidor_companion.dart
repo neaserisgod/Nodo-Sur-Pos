@@ -470,6 +470,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'nombreCliente': e.nombreCliente,
           'desdeMs': e.desde.millisecondsSinceEpoch,
           'lineas': [for (final l in e.lineas) l.texto],
+          // La seña se entrega y se cancela desde la PC (toca la caja): el celular solo la muestra.
+          'senaCentavos': e.senaCentavos,
         },
     ]);
   });
@@ -500,6 +502,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
 
   router.post('/encargues/<id>/cancelar', (Request request, String id) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    // Un encargue con seña vuelve plata por la caja: se cancela desde la PC, donde está la caja abierta.
+    if ((await senaPendienteDe(db, int.parse(id))).centavos > 0) {
+      return _error(409, 'Este encargue tiene una seña: cancelalo desde la PC para devolverla.');
+    }
     await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
     return _json({'ok': true});
   });
@@ -507,7 +513,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // Entregar y anotar deuda (2026-10-03: el fiado se unificó con los encargues) y cobrar esa deuda.
   router.post('/encargues/<id>/deuda', (Request request, String id) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    final total = await entregarEncargueADeuda(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
+    final int? total;
+    try {
+      total = await entregarEncargueADeuda(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
+    } on EncargueConSena catch (e) {
+      return _error(409, e.mensaje);
+    }
     if (total == null) return _error(409, 'Ese encargue ya no está pendiente.');
     return _json({'totalCentavos': total});
   });
@@ -1394,6 +1405,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       );
     } on SesionCerradaException {
       return _error(409, 'La caja ya se cerró, esta venta no se guardó');
+    } on EncargueConSena catch (e) {
+      return _error(409, e.mensaje);
     }
     if (clave != null) _cobrosRecientes.guardar(clave, resultado);
     return _json({
@@ -1418,6 +1431,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       return _error(400, e.mensaje);
     }
 
+    // Antes de mandar nada a la terminal: un encargue con seña se entrega desde la PC (el celular cobraría el total entero y la
+    // seña ya está en la caja). Rechazar acá evita cobrarle de más al cliente.
+    final encargueId = body['encargueId'] as int?;
+    if (encargueId != null && (await senaPendienteDe(db, encargueId)).centavos > 0) {
+      return _error(409, 'Este encargue tiene una seña: entregalo desde la PC.');
+    }
     final canal = _textoRequerido(body, 'canal');
     final (tipoDescuento, valorDescuento) = _descuentoDesdeBody(body);
     final resultado = await calcularResultadoVenta(
@@ -1492,6 +1511,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       // El pago ya se cobró en la terminal: la orden queda SIN resolver a propósito, así el cierre avisa que hay un cobro
       // por QR/Débito sin venta y se revisa a mano (`ordenesSinResolverDeSesion`).
       return _error(409, 'El pago se aprobó pero la caja ya estaba cerrada: la venta no se guardó. Revisalo en Mercado Pago');
+    } on EncargueConSena catch (e) {
+      return _error(409, e.mensaje);
     }
     // Etapa C: el ticket en la terminal también para lo que cobra el celular por esta PC (el interruptor es de la PC). En
     // segundo plano y sin tocar la venta si falla.
