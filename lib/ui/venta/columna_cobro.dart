@@ -326,6 +326,16 @@ class _TotalHero extends StatelessWidget {
                     ),
                   ),
                   ),
+                  // Entrega de un encargue con seña: lo que ya dejó el cliente y lo que falta (la seña ya está en la caja).
+                  if (c.senaAplicadaCentavos > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: Espaciado.xs),
+                      child: Text(
+                        'Seña -${formatearARS(c.senaAplicadaCentavos)} · A cobrar ${formatearARS(c.aCobrarCentavos!)}',
+                        key: const Key('sena_cobro'),
+                        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: textoSobre, fontWeight: Pesos.fuerte).tabular,
+                      ),
+                    ),
                   // El desglose aparece y se va suave en vez de empujar la tarjeta de golpe.
                   AnimatedSize(
                     duration: Animaciones.corta,

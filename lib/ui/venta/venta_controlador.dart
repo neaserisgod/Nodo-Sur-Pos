@@ -21,7 +21,7 @@ import '../../data/normalizacion_texto.dart';
 import '../../data/repositorio_arqueo_intermedio.dart';
 import '../../data/repositorio_cierre.dart' show esDeOtroDia;
 import '../../data/repositorio_cobro.dart';
-import '../../data/repositorio_encargues.dart' show lineasParaEntregar;
+import '../../data/repositorio_encargues.dart' show lineasParaEntregar, senaPendienteDe;
 import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
 import '../../data/repositorio_productos.dart' show listarCategorias;
 import '../../data/repositorio_ventas.dart';
@@ -34,6 +34,7 @@ import '../../domain/promo.dart' show stockDePromo;
 import '../../domain/dinero.dart';
 import '../../domain/medio_pago.dart';
 import '../../domain/recargo_cigarrillos.dart';
+import '../../domain/sena.dart';
 import '../../domain/venta.dart';
 import '../../servicios/registro_errores.dart';
 import '../../servicios/ticket_al_cobrar.dart';
@@ -589,6 +590,39 @@ class VentaControlador extends ChangeNotifier {
   /// El encargue por apartado que la venta activa entrega (null en una venta común). Al cobrar libera lo apartado.
   int? encargueId;
 
+  /// Seña que dejó cada encargue en entrega (por id de encargue). Se lee de la base al cargar el encargue: la plata sale de
+  /// `registrarVenta`, esto es solo para mostrar y para saber cuánto falta cobrar.
+  final Map<int, int> _senaPorEncargue = {};
+
+  Future<void> _leerSenaDe(int id) async {
+    final sena = (await senaPendienteDe(db, id)).centavos;
+    if (_disposed || _senaPorEncargue[id] == sena) return;
+    _senaPorEncargue[id] = sena;
+    notifyListeners();
+  }
+
+  /// La parte del total de la venta que ya está cobrada como seña (seña de la entrega en curso, hasta el total). 0 en una venta común.
+  int get senaAplicadaCentavos {
+    final id = encargueId;
+    final total = resultado?.totalCentavos;
+    if (id == null || total == null) return 0;
+    return aplicarSena(totalCentavos: total, senaCentavos: _senaPorEncargue[id] ?? 0).aplicadaCentavos;
+  }
+
+  /// Lo que habría que cobrar si el medio fuera [medio] (para el mixto, antes de que quede elegido): su total menos la seña.
+  int _aCobrarConMedio(ComposicionPago medio) {
+    final total = _calcularCon(medio).totalCentavos;
+    final id = encargueId;
+    if (id == null) return total;
+    return total - aplicarSena(totalCentavos: total, senaCentavos: _senaPorEncargue[id] ?? 0).aplicadaCentavos;
+  }
+
+  /// Lo que todavía hay que cobrarle al cliente: el total menos la seña. Null hasta elegir un medio de pago.
+  int? get aCobrarCentavos {
+    final total = resultado?.totalCentavos;
+    return total == null ? null : total - senaAplicadaCentavos;
+  }
+
   /// Entregar un encargue: abre una venta con lo apartado a los precios de hoy, en una pestaña aparte si ya había una
   /// venta armada (no se pisa lo que se estaba cobrando). No toca stock ni caja hasta cobrar.
   Future<void> cargarEncargue(int id) async {
@@ -609,6 +643,7 @@ class VentaControlador extends ChangeNotifier {
     encargueId = id;
     indiceUltimaLinea = null;
     notifyListeners();
+    await _leerSenaDe(id);
   }
 
   final List<_Pestana> _pestanas = [_Pestana(const BorradorVenta())];
@@ -709,7 +744,7 @@ class VentaControlador extends ChangeNotifier {
   void _invalidarMixtoSiYaNoCierra() {
     final efectivo = montoEfectivoMixtoCentavos;
     if (medioElegido != ComposicionPago.mixto || efectivo == null || carrito.isEmpty) return;
-    if (efectivo < _calcularCon(ComposicionPago.mixto).totalCentavos) return;
+    if (efectivo < _aCobrarConMedio(ComposicionPago.mixto)) return;
     montoEfectivoMixtoCentavos = null;
     avisoCobro = 'El total cambió: volvé a cargar la parte en efectivo (Alt+X)';
   }
@@ -746,6 +781,7 @@ class VentaControlador extends ChangeNotifier {
       tipoDescuento = TipoDescuento.values.byName(e.tipoDescuento);
       campoDescuentoCtrl.text = e.textoDescuento;
       encargueId = e.encargueId;
+      if (encargueId != null) unawaited(_leerSenaDe(encargueId!));
       _limpiarCampo();
       _firmaGuardada = e.firma;
     } finally {
@@ -870,7 +906,7 @@ class VentaControlador extends ChangeNotifier {
   /// recargo correcto antes de cobrar, en vez de arrastrar un "mixto" que
   /// en la práctica ya no lo es.
   void confirmarMixto(int montoEfectivoCentavos, {String canalResto = 'qr'}) {
-    final totalMixto = _calcularCon(ComposicionPago.mixto).totalCentavos;
+    final totalMixto = _aCobrarConMedio(ComposicionPago.mixto);
     final medio = clasificarComposicion(
       montoEfectivoCentavos: montoEfectivoCentavos,
       totalCentavos: totalMixto,
@@ -890,8 +926,11 @@ class VentaControlador extends ChangeNotifier {
   /// algo (medio sin elegir, o mixto sin el monto en efectivo confirmado).
   List<PagoARegistrar>? construirPagos() {
     final medio = medioElegido;
-    final total = resultado?.totalCentavos;
+    // Lo que se le cobra al cliente: el total menos la seña de un encargue (ya está en la caja desde que se señó).
+    final total = aCobrarCentavos;
     if (medio == null || total == null) return null;
+    // La seña cubre todo: no hay nada que cobrar con ningún medio.
+    if (total == 0 && senaAplicadaCentavos > 0) return const [];
 
     return switch (medio) {
       ComposicionPago.efectivo => [
@@ -1022,7 +1061,7 @@ class VentaControlador extends ChangeNotifier {
   /// ESTADO.md: "sobre el total ya compuesto — recargo primero, redondeo
   /// después").
   int get montoParaPosnet {
-    final total = resultado!.totalCentavos;
+    final total = aCobrarCentavos!;
     return medioElegido == ComposicionPago.mixto
         ? total - (montoEfectivoMixtoCentavos ?? 0)
         : total;

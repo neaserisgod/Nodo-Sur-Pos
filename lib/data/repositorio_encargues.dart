@@ -65,11 +65,22 @@ class LineaEncargue {
 }
 
 class Encargue {
-  const Encargue({required this.id, required this.nombreCliente, required this.lineas, required this.desde});
+  const Encargue({
+    required this.id,
+    required this.nombreCliente,
+    required this.lineas,
+    required this.desde,
+    this.senaCentavos = 0,
+    this.senaEsEfectivo = true,
+  });
   final int id;
   final String nombreCliente;
   final List<LineaEncargue> lineas;
   final DateTime desde;
+
+  /// Lo que el cliente dejó de seña (0 = nada) y por qué caja entró.
+  final int senaCentavos;
+  final bool senaEsEfectivo;
 
   String get resumen => lineas.map((l) => l.texto).join(', ');
 }
@@ -248,7 +259,14 @@ Future<List<Encargue>> listarEnarguesPendientes(AppDatabase db) async {
       .get();
   return [
     for (final p in filas)
-      Encargue(id: p.id, nombreCliente: p.nombreLibre ?? '', lineas: _leerLineas(p.lineasJson), desde: p.fechaCreacion),
+      Encargue(
+        id: p.id,
+        nombreCliente: p.nombreLibre ?? '',
+        lineas: _leerLineas(p.lineasJson),
+        desde: p.fechaCreacion,
+        senaCentavos: p.senaCentavos,
+        senaEsEfectivo: p.senaEsEfectivo,
+      ),
   ];
 }
 

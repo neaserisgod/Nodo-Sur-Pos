@@ -1,8 +1,19 @@
 # Plan · Seña de encargues (rediseño v4, etapa 8.4)
 
-Estado al 2026-10-06: **hecho solo el dominio** (`lib/domain/sena.dart` + `test/domain/sena_test.dart`). Falta la base y la pantalla,
-y **no conviene hacerlas a medias**: una seña que entra a la caja pero que al entregar no se descuenta, o al revés, deja el
-cajón descuadrado. Se hace de una, con las pruebas de caja de abajo, y se mira en una Windows real antes de usarla.
+**Estado al 2026-10-06: hecha en la PC** (dominio, base, pantallas de Encargues y de Venta, y el servidor para el celular), con las
+pruebas de caja de abajo automatizadas. **Falta verla funcionando en una Windows real** antes de usarla con plata de verdad. Lo que
+queda afuera a propósito: entregar, cancelar o anotar deuda de un encargue con seña **desde el celular** (el servidor responde 409 y
+dice que se haga desde la PC); anular o editar una venta con seña desde el historial (se rechaza).
+
+Código: `lib/domain/sena.dart` · `lib/data/repositorio_encargues.dart` · `registrarVenta` en `lib/data/repositorio_ventas.dart` ·
+`lib/ui/encargues/` · `lib/ui/venta/venta_controlador.dart` (`senaAplicadaCentavos`, `aCobrarCentavos`) · migración v55.
+Tests: `test/domain/sena_test.dart`, `test/data/sena_encargue_test.dart`, `test/data/migracion_v55_test.dart`,
+`test/ui/venta/entrega_con_sena_test.dart`, `test/ui/encargues/pantalla_encargues_test.dart`, `test/servidor/servidor_companion_test.dart`.
+
+**Cómo quedó el cobro con seña (PC):** el panel de Venta muestra el total, "Seña −$S · A cobrar $R" y todos los medios (efectivo, QR,
+tarjeta, mixto) trabajan sobre $R; la orden a la terminal Point es por $R; con $R = 0 se cobra sin pedir nada. El redondeo del efectivo
+se calcula sobre el total como siempre y la seña se descuenta después: con una seña que no sea de pesos redondos, lo que se cobra en
+efectivo puede quedar con pesos sueltos.
 
 ## Lo que decidió el dueño (2026-10-06)
 1. La seña entra **en la caja con la que se pagó** (cajón si fue efectivo, Mercado Pago si no).
@@ -50,6 +61,5 @@ del proveedor entre cajón y Mercado Pago (la plata es del medio original).
 5. Cierre de caja con una seña de ayer y la entrega de hoy: cada día cuadra solo.
 6. Anular la venta de entrega → vuelve el stock y se revierte solo lo cobrado de más.
 
-## Por qué no se hizo ahora
-Toca la plata en ocho lugares y el cobro de la PC y del celular. Sin poder abrir la caja real en una Windows, hacerlo de golpe
-arriesga un descuadre que recién se vería en el cierre. Es la próxima tarea de esta etapa.
+## Pendiente
+Verla en una Windows real (señar, entregar, cancelar, cerrar la caja) y decidir si el celular tiene que poder entregar encargues con seña.

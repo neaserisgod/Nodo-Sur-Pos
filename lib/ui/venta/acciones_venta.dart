@@ -54,7 +54,8 @@ const Map<String, String> teclasReservadas = {
 Future<void> abrirMixto(BuildContext context, VentaControlador c) async {
   if (c.carrito.isEmpty) return;
   c.elegirMedio(ComposicionPago.mixto);
-  final total = c.resultado!.totalCentavos;
+  // Con la seña de un encargue ya cobrada, el mixto reparte solo lo que falta.
+  final total = c.aCobrarCentavos!;
   final confirmado = await mostrarDialogoMixto(context, totalCentavos: total);
   if (confirmado != null) {
     c.confirmarMixto(confirmado.monto, canalResto: confirmado.canal);
@@ -87,7 +88,8 @@ Future<void> cobrarOAbrirPosnet(
   // (ver avisoCobro) — abrir el diálogo de posnet para una venta vacía no
   // tendría sentido.
   // Sin el módulo Point no hay terminal: QR y Débito se cobran a mano, directo (el mismo camino que "Cobrar a mano").
-  if (c.carrito.isNotEmpty && c.canalElegido != null && moduloActivo(Modulo.cobroPoint)) {
+  // Con la seña cubriendo todo no hay nada que mandar a la terminal.
+  if (c.carrito.isNotEmpty && c.canalElegido != null && (c.aCobrarCentavos ?? 1) > 0 && moduloActivo(Modulo.cobroPoint)) {
     await mostrarDialogoCobroPosnet(context, controlador: c);
   } else {
     await c.cobrarActual();
