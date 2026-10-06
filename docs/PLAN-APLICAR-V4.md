@@ -1,6 +1,6 @@
 # Plan para aplicar el diseño v4 al código de Flutter
 
-**Fecha:** 06/10/2026 · **Estado:** etapa 1 hecha a medias (avisos arriba, "Caja ▾" en toda la app, navbar y barra de ventana en tres zonas; falta la campanita en todas las pantallas) · Pedido del dueño: "empezá a aplicarlo al código de Flutter".
+**Fecha:** 06/10/2026 · **Estado (06/10):** etapas 0, 1, 2 (parcial), 3 y 7 hechas y probadas (`flutter analyze` limpio y 1.700+ tests verdes); 4, 5 y 6 casi no necesitan cambios (la app real ya tiene lo del mock); quedan la campanita en todas las pantallas y las decisiones pendientes · Pedido del dueño: "empezá a aplicarlo al código de Flutter".
 Reglas que se respetan (`CLAUDE.md`): una etapa por vez y se prueba antes de la siguiente · plan primero y ambigüedades de negocio marcadas, no
 resueltas solas · tests primero en `domain/` · una fórmula vive en un solo lugar · montos en centavos enteros · migraciones versionadas si se toca la base.
 
@@ -39,3 +39,17 @@ Cosas que están en el mock pero **no existen en la app real**. Cada una necesit
 
 ## Qué NO se puede probar desde acá
 No hay Windows: se prueba `flutter analyze`, los tests y la lógica; **el aspecto en pantalla real, el rendimiento en la PC del local y la terminal Point hay que probarlos a mano** después de cada etapa.
+
+
+## Estado al 06/10/2026 (lo hecho en el código, probado con `flutter analyze` + tests; **sin probar en Windows real**)
+| Etapa | Estado | Notas |
+|---|---|---|
+| 0 Entorno | ✅ | Flutter 3.47.6 instalado en la sesión de trabajo; línea de base limpia. |
+| 1 Carcasa | ✅ salvo la campanita en todas las pantallas | `mostrarAviso` (arriba, con Deshacer) reemplaza a todos los `SnackBar`; botón **Caja ▾** (Venta y resto de pantallas); navbar y barra de la ventana en tres zonas. |
+| 2 Venta | ✅ parcial | Sin título, **Pagar proveedor (Alt+P)** con diálogo rápido (usa `pagarDeuda`, con Deshacer), pastilla **Varios**, buscador grande. **Falta** "Venta cobrada" que se cierra sola y diálogos de cobro sin total repetido ni "Cancelar" → decisión 7. |
+| 3 Inicio | ✅ | Sin "Nueva venta", tres columnas iguales arriba y abajo. |
+| 4 Proveedores · 5 Separaciones e Historial · 6 Cierre | ➖ ya coincide | Al comparar las capturas reales con el mock se vio que la app ya tiene las cifras por período, la selección masiva, los filtros por medio y el cierre con ✕. Las diferencias que quedan son de detalle visual y solo se pueden juzgar en Windows real. |
+| 7 Configuración | ✅ | Lista plana de 16 secciones (grupo arriba, título y descripción a la derecha). |
+| 8 Funciones nuevas | ⏸ espera decisiones | Ver abajo. |
+
+**Dos cambios de comportamiento que conviene mirar en Windows:** (1) ninguna pantalla muestra subtítulo (antes "Hoy · martes 6 de octubre" en Inicio, "Las ventas, una por una" en Historial…); (2) en Venta, los íconos "Cambiar de turno" y "Cerrar caja" ya no están: se llega por **Caja ▾**.
