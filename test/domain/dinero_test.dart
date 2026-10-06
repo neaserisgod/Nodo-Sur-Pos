@@ -40,6 +40,18 @@ void main() {
     });
   });
 
+  group('formatearARS separado — formato del mock v4 de la PC', () {
+    test('espacio entre el signo y el número', () {
+      expect(formatearARS(1630000, separado: true), r'$ 16.300');
+    });
+    test('negativo: el menos va antes del signo', () {
+      expect(formatearARS(-300000, separado: true), r'-$ 3.000');
+    });
+    test('sin signo no cambia nada', () {
+      expect(formatearARS(1630000, conSigno: false, separado: true), '16.300');
+    });
+  });
+
   group('parsearARS', () {
     test('formato es-AR completo "1.500,50"', () {
       expect(parsearARS('1.500,50'), 150050);

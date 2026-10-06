@@ -21,12 +21,15 @@ const int centavosPorPeso = 100;
 /// [conSigno] en `false` omite el "$" — para las líneas del carrito de la
 /// pantalla de venta (fase 11): en una columna donde todo es plata, repetir
 /// el signo en cada fila es ruido, no información.
-String formatearARS(int centavos, {bool conSigno = true}) {
+///
+/// [separado] deja un espacio entre el signo y el número (`$ 16.300`): es como escribe la plata el mock v4 de la PC
+/// (2026-10-06), y las pantallas hechas con ese mock lo piden así. El resto (tickets, PDF, celular) sigue sin espacio.
+String formatearARS(int centavos, {bool conSigno = true, bool separado = false}) {
   final negativo = centavos < 0;
   final absoluto = centavos.abs();
   final pesos = (absoluto + centavosPorPeso ~/ 2) ~/ centavosPorPeso;
   final signo = negativo ? '-' : '';
-  final simbolo = conSigno ? r'$' : '';
+  final simbolo = conSigno ? (separado ? r'$ ' : r'$') : '';
   return '$signo$simbolo${_agruparMiles(pesos)}';
 }
 

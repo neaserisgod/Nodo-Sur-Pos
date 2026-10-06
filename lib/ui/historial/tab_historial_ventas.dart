@@ -13,35 +13,29 @@
 // Anular (El dueño, 2026-09-13): solo mientras la sesión de esa venta siga
 // abierta, revirtiendo stock y caja sin borrar la fila (`anularVenta`) —
 // Regla 6, nunca se pierde el rastro.
+//
+// Rediseño v4 (2026-10-06), desde cero como el mock (`histBody`): a la izquierda el total del período en el bloque
+// negro y una fila por venta; a la derecha la venta elegida como un ticket (líneas, subtotal, ajustes, total, ganancia)
+// con Reimprimir, Editar y Anular venta.
 
 import 'package:flutter/material.dart';
 
-import '../comun/aviso_superior.dart';
-import '../navegacion/refresco_por_celular.dart';
 import '../../data/database.dart';
 import '../../data/linea_venta_reconstruccion.dart';
 import '../../data/repositorio_edicion_venta.dart';
 import '../../data/repositorio_historial.dart' show lineasDeVenta;
 import '../../data/repositorio_historial_ventas.dart';
-import '../../domain/dinero.dart';
 import '../../domain/equilibrio.dart';
-import '../comun/botones.dart';
-import '../comun/campo_texto.dart';
+import '../comun/aviso_superior.dart';
 import '../comun/fechas.dart';
-import '../comun/modal.dart';
-import '../comun/tarjetas.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
+import '../kit/kit.dart';
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
-import '../tema/acentos.dart';
-import '../tema/tema_inverso.dart';
-import '../tema/presionable.dart';
-import '../tema/superficie.dart';
-import '../tema/tokens.dart';
-import 'pantalla_editor_venta.dart';
-import 'periodo_historial.dart';
-import '../tema/esqueleto.dart';
-import '../tema/movimiento.dart';
+import '../navegacion/refresco_por_celular.dart';
 import 'devolucion_mp_dialogo.dart';
+import 'pantalla_editor_venta.dart';
+import 'pantalla_historial.dart' show FilaFiltrosHistorial;
+import 'periodo_historial.dart';
 
 extension on MedioVentaHistorial {
   String get etiqueta => switch (this) {
@@ -52,26 +46,30 @@ extension on MedioVentaHistorial {
     MedioVentaHistorial.mixto => 'Mixto',
   };
 
-  Color color(BuildContext context) {
-    final a = context.acentosPlazoleta;
-    return switch (this) {
-      MedioVentaHistorial.efectivo => a.dinero,
-      MedioVentaHistorial.qr => a.qr,
-      MedioVentaHistorial.debitCard || MedioVentaHistorial.creditCard => a.debito,
-      MedioVentaHistorial.mixto => a.mixto,
-    };
-  }
+  /// `medioTag` del mock: efectivo verde, mixto amarillo, lo demás azul.
+  TonoMock get tono => switch (this) {
+    MedioVentaHistorial.efectivo => TonoMock.g,
+    MedioVentaHistorial.mixto => TonoMock.w,
+    _ => TonoMock.i,
+  };
+
+  /// `iconoMedio` del mock.
+  Ic get icono => switch (this) {
+    MedioVentaHistorial.efectivo => Ic.cash,
+    MedioVentaHistorial.debitCard || MedioVentaHistorial.creditCard => Ic.card,
+    _ => Ic.scan,
+  };
 }
 
 class TabHistorialVentas extends StatefulWidget {
-  const TabHistorialVentas({super.key, required this.db, required this.usuarioId, this.busqueda = ''});
+  const TabHistorialVentas({super.key, required this.db, required this.usuarioId, this.busqueda = '', required this.buscador});
 
   final AppDatabase db;
   final int usuarioId;
 
-  /// Lo escrito en el buscador de arriba (contextual, 2026-09-28): número de
-  /// venta o producto. Antes era un campo propio de esta pestaña.
+  /// Lo escrito en el buscador de la fila de filtros: número de venta o producto.
   final String busqueda;
+  final Widget buscador;
 
   @override
   State<TabHistorialVentas> createState() => _TabHistorialVentasState();
@@ -132,27 +130,7 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
   }
 
   Future<void> _confirmarYAnular(VentaDelHistorial v) async {
-    final motivoCtrl = TextEditingController();
-    final motivo = await mostrarModal<String>(
-      context,
-      builder: (context) => Modal(
-        titulo: '¿Anular la venta de ${formatearARS(v.totalCentavos)}?',
-        contenido: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Se repone el stock y se revierte la caja. La venta sigue viéndose acá, marcada como anulada.'),
-            const SizedBox(height: Espaciado.md),
-            CampoTexto(etiqueta: 'Motivo', controller: motivoCtrl, autofocus: true),
-          ],
-        ),
-        botones: [
-          BotonSecundario(texto: 'Cancelar', onPressed: () => Navigator.of(context).pop()),
-          BotonPrimario(texto: 'Anular', onPressed: () => Navigator.of(context).pop(motivoCtrl.text.trim())),
-        ],
-      ),
-    );
-    motivoCtrl.dispose();
+    final motivo = await mostrarModalMock<String>(context, builder: (_) => _DialogoAnular(venta: v));
     if (motivo == null || motivo.isEmpty) return;
     try {
       await anularVenta(widget.db, ventaId: v.ventaId, usuarioId: widget.usuarioId, motivo: motivo);
@@ -179,46 +157,48 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
     final ventas = _ventas;
     final visibles = _visibles;
     final elegida = visibles.where((v) => v.ventaId == _elegida).firstOrNull ?? visibles.firstOrNull;
+    final ancho = MediaQuery.sizeOf(context).width;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: Espaciado.md,
-          runSpacing: Espaciado.sm,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            GrupoPildoras<PeriodoHistorial>(
-              opciones: [for (final p in PeriodoHistorial.values) (p, p.etiqueta)],
-              elegida: _periodo,
-              onElegir: _elegirPeriodo,
-            ),
-            GrupoPildoras<MedioVentaHistorial?>(
-              opciones: [(null, 'Todos'), for (final m in MedioVentaHistorial.values) (m, m.etiqueta)],
-              elegida: _filtroMedio,
-              onElegir: _elegirMedio,
-            ),
+        FilaFiltrosHistorial(
+          periodo: _periodo,
+          onPeriodo: _elegirPeriodo,
+          chips: [
+            for (final (m, t) in [(null, 'Todos'), for (final m in MedioVentaHistorial.values) (m, m.etiqueta)])
+              ChipMock(t, chico: true, elegido: m == _filtroMedio, onTap: () => _elegirMedio(m)),
           ],
+          buscador: widget.buscador,
         ),
-        const SizedBox(height: Espaciado.lg),
+        const SizedBox(height: 16),
         Expanded(
           child: ventas == null
-              ? const EsqueletoLista()
+              ? const SizedBox.shrink()
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(flex: 3, child: _ListaVentas(ventas: visibles, elegida: elegida?.ventaId, alElegir: (id) => setState(() => _elegida = id))),
-                    const SizedBox(width: Espaciado.lg),
+                    SizedBox(
+                      width: ancho >= 1700 ? 540 : 420,
+                      child: _ListaVentas(
+                        ventas: visibles,
+                        periodo: _periodo,
+                        elegida: elegida?.ventaId,
+                        alElegir: (id) => setState(() => _elegida = id),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
                     Expanded(
-                      flex: 2,
                       child: elegida == null
-                          ? Superficie(child: Center(child: Text('Elegí una venta para ver su detalle', style: Theme.of(context).textTheme.bodySmall)))
-                          : _DetalleVenta(
-                              key: ValueKey(elegida.ventaId),
-                              db: widget.db,
-                              venta: elegida,
-                              alAnular: () => _confirmarYAnular(elegida),
-                              alEditar: () => _editar(elegida),
+                          ? const Vacio(texto: 'Elegí una venta para ver su detalle', icono: null, padding: EdgeInsets.symmetric(vertical: 70))
+                          : SingleChildScrollView(
+                              child: _DetalleVenta(
+                                key: ValueKey(elegida.ventaId),
+                                db: widget.db,
+                                venta: elegida,
+                                alAnular: () => _confirmarYAnular(elegida),
+                                alEditar: () => _editar(elegida),
+                              ),
                             ),
                     ),
                   ],
@@ -229,147 +209,176 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
   }
 }
 
+/// "Anular venta #N" del mock: el motivo es obligatorio, con atajos.
+class _DialogoAnular extends StatefulWidget {
+  const _DialogoAnular({required this.venta});
+  final VentaDelHistorial venta;
+
+  @override
+  State<_DialogoAnular> createState() => _DialogoAnularState();
+}
+
+class _DialogoAnularState extends State<_DialogoAnular> {
+  final _motivo = TextEditingController();
+
+  @override
+  void dispose() {
+    _motivo.dispose();
+    super.dispose();
+  }
+
+  void _anular() {
+    final m = _motivo.text.trim();
+    if (m.isEmpty) return;
+    Navigator.of(context).pop(m);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ModalMock(
+      titulo: 'Anular venta ${widget.venta.etiqueta}',
+      subtitulo: 'Revierte el stock y la caja. Nunca borra la venta: queda anotada como anulada.',
+      ancho: AnchoModal.angosto,
+      cuerpo: [
+        Nota(
+          texto: 'Se anula la venta de ${pesos(widget.venta.totalCentavos)}. Solo se puede mientras la sesión de caja siga abierta.',
+          tono: TonoMock.w,
+        ),
+        Campo(etiqueta: 'Motivo (obligatorio)', controller: _motivo, pista: 'Ej: cobré de más', autofocus: true, campoKey: const Key('campo_motivo_anular'), onChanged: (_) => setState(() {}), onSubmitted: (_) => _anular()),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final m in const ['Error de carga', 'Cliente se arrepintió', 'Cobré de más', 'Producto en mal estado'])
+              ChipMock(m, chico: true, elegido: _motivo.text == m, onTap: () => setState(() => _motivo.text = m)),
+          ],
+        ),
+      ],
+      pie: [
+        Btn('Anular venta', variante: VarBtn.red, tam: TamBtn.lg, ancho: true, onTap: _motivo.text.trim().isEmpty ? null : _anular),
+        Btn('Cancelar', variante: VarBtn.out, ancho: true, onTap: () => Navigator.of(context).pop()),
+      ],
+    );
+  }
+}
+
 class _ListaVentas extends StatelessWidget {
-  const _ListaVentas({required this.ventas, required this.elegida, required this.alElegir});
+  const _ListaVentas({required this.ventas, required this.periodo, required this.elegida, required this.alElegir});
 
   final List<VentaDelHistorial> ventas;
+  final PeriodoHistorial periodo;
   final int? elegida;
   final void Function(int) alElegir;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.p;
     // Una venta anulada no suma: su plata ya se revirtió de la caja.
     final validas = ventas.where((v) => !v.anulada).toList();
     final total = validas.fold(0, (a, v) => a + v.totalCentavos);
+    final variosDias = periodo != PeriodoHistorial.hoy && periodo != PeriodoHistorial.ayer;
 
-    // Filas planas: encabezado de día + ventas de ese día (vienen de más
-    // nueva a más vieja).
+    // Filas planas: encabezado de día (si el período tiene varios) + ventas de ese día (de más nueva a más vieja).
     final filas = <Object>[];
     DateTime? diaActual;
     for (final v in ventas) {
       final dia = DateTime(v.fecha.year, v.fecha.month, v.fecha.day);
-      if (dia != diaActual) {
+      if (variosDias && dia != diaActual) {
         diaActual = dia;
         filas.add(dia);
       }
       filas.add(v);
     }
 
-    return Superficie(
-      padding: const EdgeInsets.all(Espaciado.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          decoration: BoxDecoration(color: p.hero, borderRadius: BorderRadius.circular(28)),
+          child: Row(
             children: [
-              Expanded(child: CajaCifra(etiqueta: 'Vendido', valor: formatearARS(total))),
-              const SizedBox(width: Espaciado.md),
-              Expanded(child: CajaCifra(etiqueta: 'Ventas', valor: '${validas.length}')),
-              const SizedBox(width: Espaciado.md),
               Expanded(
-                child: CajaCifra(etiqueta: 'Promedio', valor: validas.isEmpty ? '—' : formatearARS(total ~/ validas.length)),
+                child: Text(
+                  '${validas.length} venta${validas.length == 1 ? '' : 's'} · ${periodo.etiqueta.toLowerCase()}',
+                  style: estilo(16, 600, color: p.heroSub),
+                ),
               ),
+              NumeroQueCuenta(valor: total, formato: pesos, estilo: estilo(30, 550, color: p.sobreHero, em: -.04, num: true)),
             ],
           ),
-          const SizedBox(height: Espaciado.md),
-          Expanded(
-            child: ventas.isEmpty
-                ? Center(child: Text('Sin ventas en este período', style: Theme.of(context).textTheme.bodySmall))
-                : ListView.builder(
-                    itemCount: filas.length,
-                    itemBuilder: (context, i) => entradaEnLista(i, Builder(builder: (context) {
-                      final f = filas[i];
-                      if (f is DateTime) {
-                        final delDia = ventas.where((v) => !v.anulada && DateUtils.isSameDay(v.fecha, f)).fold(0, (a, v) => a + v.totalCentavos);
-                        return _EncabezadoDia(fecha: f, total: delDia);
-                      }
-                      final v = f as VentaDelHistorial;
-                      return _FilaVenta(venta: v, elegida: v.ventaId == elegida, onTap: () => alElegir(v.ventaId));
-                    })),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EncabezadoDia extends StatelessWidget {
-  const _EncabezadoDia({required this.fecha, required this.total});
-
-  final DateTime fecha;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final estilo = Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: Pesos.fuerte);
-    final dia = fechaLarga(fecha);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Espaciado.sm, Espaciado.md, Espaciado.sm, Espaciado.xs),
-      child: Row(
-        children: [
-          Expanded(child: Text(dia[0].toUpperCase() + dia.substring(1), style: estilo)),
-          Text(formatearARS(total), style: estilo?.tabular),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilaVenta extends StatelessWidget {
-  const _FilaVenta({required this.venta, required this.elegida, required this.onTap});
-
-  final VentaDelHistorial venta;
-  final bool elegida;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final inv = coloresDeFila(context, elegida);
-    final colores = inv.colores;
-    final textTheme = inv.textTheme;
-    final v = venta;
-    final apagado = v.anulada ? colores.textoTenue : null;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaciado.sm),
-      child: Presionable(
-      radio: 26,
-      onTap: onTap,
-      color: elegida ? colores.acento : colores.fondo,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
-        child: Row(
-          children: [
-            SizedBox(width: 48, child: Text(horaCorta(v.fecha), style: textTheme.bodySmall?.tabular)),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Venta ${v.etiqueta}', style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte, color: apagado)),
-                  Text(v.detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall),
-                ],
-              ),
-            ),
-            if (v.anulada) ...[const SizedBox(width: Espaciado.sm), const Insignia(texto: 'Anulada', tono: Tono.error)],
-            const SizedBox(width: Espaciado.sm),
-            PuntoColor(color: v.medio.color(context), tamanio: 8),
-            const SizedBox(width: Espaciado.xs),
-            SizedBox(width: 56, child: Text(v.medio.etiqueta, style: textTheme.bodySmall)),
-            SizedBox(
-              width: 96,
-              child: Text(
-                formatearARS(v.totalCentavos),
-                textAlign: TextAlign.right,
-                style: textTheme.bodyMedium?.copyWith(
-                  fontWeight: Pesos.fuerte,
-                  color: apagado,
-                  decoration: v.anulada ? TextDecoration.lineThrough : null,
-                ).tabular,
-              ),
-            ),
-          ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ventas.isEmpty
+              ? const Vacio(texto: 'Sin ventas en este período', icono: null, padding: EdgeInsets.symmetric(vertical: 50))
+              : ListView.separated(
+                  padding: const EdgeInsets.only(right: 4),
+                  itemCount: filas.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final f = filas[i];
+                    if (f is DateTime) {
+                      final delDia = ventas.where((v) => !v.anulada && DateUtils.isSameDay(v.fecha, f)).fold(0, (a, v) => a + v.totalCentavos);
+                      final dia = fechaLarga(f);
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(dia[0].toUpperCase() + dia.substring(1), style: estilo(14, 600, color: p.mute))),
+                            Text(pesos(delDia), style: estilo(14, 600, color: p.mute, num: true)),
+                          ],
+                        ),
+                      );
+                    }
+                    final v = f as VentaDelHistorial;
+                    return Aparecer.tarjeta(
+                      orden: i,
+                      child: Rowb(
+                        titulo: 'Venta ${v.etiqueta}',
+                        detalle: '${horaCorta(v.fecha)} · ${v.medio.etiqueta}${v.detalle.isEmpty ? '' : ' · ${v.detalle}'}',
+                        izquierda: Ibox(v.medio.icono),
+                        elegida: v.ventaId == elegida,
+                        onTap: () => alElegir(v.ventaId),
+                        derecha: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (v.anulada) ...[const Etiqueta('Anulada', tono: TonoMock.b), const SizedBox(width: 10)],
+                            Text(
+                              pesos(v.totalCentavos),
+                              style: estilo(17, 600, color: v.anulada ? p.mute : p.tinta, num: true).copyWith(
+                                decoration: v.anulada ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// `hr` del ticket: raya punteada de 2 px.
+class _Punteada extends StatelessWidget {
+  const _Punteada();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.p.linea;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: LayoutBuilder(
+        builder: (context, caja) {
+          final n = (caja.maxWidth / 10).floor();
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [for (var i = 0; i < n; i++) SizedBox(width: 5, height: 2, child: ColoredBox(color: color))],
+          );
+        },
       ),
     );
   }
@@ -414,105 +423,84 @@ class _DetalleVentaState extends State<_DetalleVenta> {
     final lineas = _lineas;
     final fila = _fila;
     final v = widget.venta;
-    final textTheme = Theme.of(context).textTheme;
-    final colores = context.colores;
-    if (lineas == null || fila == null) return const Superficie(child: SizedBox.expand());
+    final p = context.p;
+    if (lineas == null || fila == null) return const SizedBox.shrink();
 
     final ganancia = calcularGananciaBruta(lineas: lineas.map((l) => lineaParaReposicionDesde(l, venta: fila)).toList());
     final articulos = lineas.fold(0, (a, l) => a + (l.esPesable ? 1 : (l.cantidad ?? 1)));
+    final fecha = fechaLarga(v.fecha);
 
-    Widget ajuste(String etiqueta, int monto) => Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Row(
-            children: [
-              Expanded(child: Text(etiqueta, style: textTheme.bodySmall)),
-              Text(formatearARS(monto), style: textTheme.bodySmall?.tabular),
-            ],
-          ),
-        );
+    Widget ln(String izquierda, String derecha, {Color? color, Color? colorDerecha, double tamanio = 18, double peso = 400}) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(izquierda, style: estilo(tamanio, peso, color: color ?? p.tinta, num: true))),
+          const SizedBox(width: 14),
+          Text(derecha, style: estilo(tamanio, peso, color: colorDerecha ?? color ?? p.tinta, num: true)),
+        ],
+      ),
+    );
 
-    return Superficie(
-      padding: const EdgeInsets.all(Espaciado.xl),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(30, 26, 30, 26),
+      decoration: BoxDecoration(color: p.s, borderRadius: BorderRadius.circular(36)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Venta ${v.etiqueta}', style: textTheme.titleLarge),
+                    Text('Venta ${v.etiqueta}', style: estilo(30, 550, color: p.tinta, em: -.03)),
+                    const SizedBox(height: 6),
                     Text(
-                      '${fechaLarga(v.fecha)} · ${horaCorta(v.fecha)} · $articulos artículo${articulos == 1 ? '' : 's'}${fila.editadaEn != null ? ' · editada' : ''}',
-                      style: textTheme.bodySmall,
+                      '${fecha[0].toUpperCase()}${fecha.substring(1)} · ${horaCorta(v.fecha)} · $articulos artículo${articulos == 1 ? '' : 's'}${fila.editadaEn != null ? ' · editada' : ''}',
+                      style: estilo(16, 400, color: p.mute),
                     ),
                   ],
                 ),
               ),
-              if (v.anulada) ...[const Insignia(texto: 'Venta anulada', tono: Tono.error), const SizedBox(width: Espaciado.sm)],
-              FilaMedioCompacta(color: v.medio.color(context), etiqueta: v.medio.etiqueta),
+              if (v.anulada) ...[const Etiqueta('Venta anulada', tono: TonoMock.b), const SizedBox(width: 8)],
+              Etiqueta(v.medio.etiqueta, tono: v.medio.tono),
             ],
           ),
-          const SizedBox(height: Espaciado.lg),
-          Expanded(
-            child: ListView.separated(
-              itemCount: lineas.length,
-              separatorBuilder: (_, _) => Divider(height: Espaciado.md, color: colores.fondo),
-              itemBuilder: (context, i) {
-                final l = lineas[i];
-                final sub = lineaParaReposicionDesde(l).precioLineaCentavos;
-                return Row(
-                  children: [
-                    SizedBox(
-                      width: 64,
-                      child: Text(l.esPesable ? '${l.gramos} g' : '${l.cantidad ?? 1} ×', style: textTheme.bodySmall?.tabular),
-                    ),
-                    Expanded(child: Text(l.nombreProductoFoto, maxLines: 2, overflow: TextOverflow.ellipsis)),
-                    SizedBox(
-                      width: 96,
-                      child: Text(
-                        '${formatearARS(l.precioUnitarioCentavos)}${l.esPesable ? '/kg' : ''}',
-                        textAlign: TextAlign.right,
-                        style: textTheme.bodySmall?.tabular,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 96,
-                      child: Text(formatearARS(sub), textAlign: TextAlign.right, style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte).tabular),
-                    ),
-                  ],
-                );
-              },
+          const _Punteada(),
+          for (final l in lineas)
+            ln(
+              '${l.esPesable ? '${l.gramos} g' : '${l.cantidad ?? 1} ×'} ${l.nombreProductoFoto}',
+              pesos(lineaParaReposicionDesde(l).precioLineaCentavos),
             ),
+          const _Punteada(),
+          ln('Subtotal', pesos(fila.subtotalCentavos), color: p.mute),
+          if (fila.recargoCigarrillosCentavos != 0) ln('Recargo de cigarrillos', '+${pesos(fila.recargoCigarrillosCentavos)}', color: p.mute),
+          if (fila.descuentoCentavos != 0) ln('Descuento', '−${pesos(fila.descuentoCentavos)}', color: p.mute),
+          if (fila.redondeoCentavos != 0) ln('Redondeo', pesosConSigno(fila.redondeoCentavos), color: p.mute),
+          const SizedBox(height: 4),
+          ln('Total', pesos(v.totalCentavos), tamanio: 28, peso: 450),
+          ln(
+            ganancia.vendidoSinCostoCentavos > 0 ? 'Ganancia (hay productos sin costo)' : 'Ganancia de la venta',
+            pesos(ganancia.gananciaBrutaCentavos),
+            color: p.mute,
+            colorDerecha: p.g,
           ),
-          if (fila.recargoCigarrillosCentavos != 0) ajuste('Recargo de cigarrillos', fila.recargoCigarrillosCentavos),
-          if (fila.descuentoCentavos != 0) ajuste('Descuento', -fila.descuentoCentavos),
-          if (fila.redondeoCentavos != 0) ajuste('Redondeo', fila.redondeoCentavos),
-          const SizedBox(height: Espaciado.md),
-          Row(
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(child: TarjetaIndicador(etiqueta: 'Total', valor: formatearARS(v.totalCentavos), destacada: true)),
-              const SizedBox(width: Espaciado.md),
-              Expanded(
-                child: CajaCifra(
-                  etiqueta: ganancia.vendidoSinCostoCentavos > 0 ? 'Ganancia (hay productos sin costo)' : 'Ganancia de la venta',
-                  valor: formatearARS(ganancia.gananciaBrutaCentavos),
-                  tono: Tono.ganancia,
-                ),
+              Btn(
+                'Reimprimir',
+                variante: VarBtn.ton,
+                sobreGris: true,
+                icono: Ic.print,
+                onTap: () => mostrarDialogoImprimirTicket(context, db: widget.db, ventaId: v.ventaId),
               ),
-            ],
-          ),
-          const SizedBox(height: Espaciado.lg),
-          Row(
-            children: [
-              if (!v.anulada && v.sesionAbierta) BotonSecundario(texto: 'Anular venta', onPressed: widget.alAnular),
-              const Spacer(),
-              if (!v.anulada) ...[BotonSecundario(texto: 'Editar', onPressed: widget.alEditar), const SizedBox(width: Espaciado.sm)],
-              BotonSecundario(
-                texto: 'Reimprimir',
-                onPressed: () => mostrarDialogoImprimirTicket(context, db: widget.db, ventaId: v.ventaId),
-              ),
+              if (!v.anulada) Btn('Editar', variante: VarBtn.ton, sobreGris: true, icono: Ic.edit, onTap: widget.alEditar),
+              if (!v.anulada && v.sesionAbierta) Btn('Anular venta', variante: VarBtn.red, onTap: widget.alAnular),
             ],
           ),
         ],

@@ -30,6 +30,9 @@ class EquilibrioControlador extends ChangeNotifier {
   ResultadoEquilibrio? equilibrio;
   int? fijosPagadosCentavos;
   int? fijosPendientesCentavos;
+
+  /// Lo pagado de cada concepto este mes (para "Pagado / Pendiente" en la lista).
+  Map<int, int> pagadoPorConcepto = const {};
   int? ventaDiariaEquilibrio;
   int? reservaDiariaCentavos;
 
@@ -128,6 +131,7 @@ class EquilibrioControlador extends ChangeNotifier {
       fijosPagadosCentavos = await fijosPagadosDelMes(db, mesAnio);
     }
     fijosPendientesCentavos = await fijosPendientesDelMes(db, mesAnio);
+    pagadoPorConcepto = await pagadoPorConceptoDelMes(db, mesAnio);
 
     final referencias = await referenciasDiarias(db, mesAnio);
     ventaDiariaEquilibrio = referencias.ventaDiaria;

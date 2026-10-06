@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../buscar_icono.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -17,7 +16,6 @@ import 'package:la_plazoleta/servicios/copias_nube.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/nube.dart';
 import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
-import 'package:la_plazoleta/ui/tema/iconos.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import '../../helpers/base_para_tests.dart';
@@ -56,10 +54,10 @@ void main() {
     addTearDown(() => nubeApp = null);
 
     await _abrirVenta(tester, db);
-    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
+    await tester.tap(find.byTooltip('Notificaciones'));
     await tester.pumpAndSettle();
-    expect(find.text('Sin novedades por ahora.'), findsOneWidget);
-    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
+    expect(find.text('Sin novedades por ahora'), findsOneWidget);
+    await tester.tap(find.byTooltip('Notificaciones'));
     await tester.pumpAndSettle();
 
     final hace = DateTime.now().subtract(const Duration(minutes: 30));
@@ -72,11 +70,11 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    await tester.tap(buscarIcono(IconosPlazoleta.notificationsOutlined));
+    await tester.tap(find.byTooltip('Notificaciones'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Entraron \$7.777 a Mercado Pago'), findsOneWidget);
     expect(find.textContaining('Contracargo de'), findsOneWidget);
-    expect(find.text('Sin novedades por ahora.'), findsNothing);
+    expect(find.text('Sin novedades por ahora'), findsNothing);
 
     await tester.tap(find.descendant(of: find.byKey(const ValueKey('aviso_mp_1')), matching: find.text('Visto')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));

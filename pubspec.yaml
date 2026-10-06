@@ -121,6 +121,11 @@ flutter:
           weight: 600
         - asset: fonts/Figtree-Bold.ttf
           weight: 700
+    # Figtree variable (eje wght 300–900): el kit del mock v4 (`lib/ui/kit/`) pide los pesos intermedios del mock
+    # (450, 550) con `FontVariation`; los cuatro archivos fijos de arriba no los tienen. Licencia en fonts/Figtree-OFL.txt.
+    - family: FigtreeV
+      fonts:
+        - asset: fonts/FigtreeVariable.ttf
 
 # Ícono de la app (escritorio y companion) — "pos" con un punto, tinta y Figtree (opción 4 elegida por el dueño,
 # 2026-10-03; reemplaza al "P41" azul). `dart run flutter_launcher_icons` regenera

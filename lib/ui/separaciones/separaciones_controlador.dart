@@ -12,6 +12,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../data/database.dart';
+import '../../data/repositorio_deuda_proveedores.dart' show saldosDeuda;
 import '../../data/repositorio_equilibrio.dart' show mesAnioDe;
 import '../../data/repositorio_reposicion.dart';
 import '../../data/repositorio_rentabilidad.dart';
@@ -202,8 +203,16 @@ class SeparacionesControlador extends ChangeNotifier {
 
   // ─── Acciones ─────────────────────────────────────────────────────────
 
+  /// "Reserva diaria de fijos" de Configuración (null = no cargada): la tarjeta amarilla del mock v4, solo informativa.
+  int? reservaDiariaCentavos;
+
+  /// Lo que se le debe a cada proveedor (cuenta corriente), para el "le debés" de cada fila.
+  Map<int, int> deudaPorProveedor = {};
+
   Future<void> cargarTodo() async {
     _hoy = await separacionesDelDia(db);
+    reservaDiariaCentavos = (await db.select(db.configuracionTabla).getSingle()).reservaDiariaFijosCentavos;
+    deudaPorProveedor = await saldosDeuda(db);
     final sesion = sesionCajaId;
     disponible = sesion == null
         ? null

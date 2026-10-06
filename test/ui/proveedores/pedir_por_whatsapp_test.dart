@@ -21,7 +21,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId, {Size tam
 Future<void> _entrarA(WidgetTester tester, String nombre) async {
   final lista = find.byType(ListaProveedores);
   final fila = find.descendant(of: lista, matching: find.text(nombre));
-  await tester.scrollUntilVisible(fila, 200, scrollable: find.descendant(of: lista, matching: find.byType(Scrollable)));
+  await tester.scrollUntilVisible(fila, 200, scrollable: find.descendant(of: lista, matching: find.byType(Scrollable)).last);
   await tester.tap(fila);
   await tester.pumpAndSettle();
 }
@@ -124,7 +124,7 @@ void main() {
   testWidgets('un proveedor nuevo puede nacer con WhatsApp', (tester) async {
     final (db, usuarioId) = await preparar();
     await _pump(tester, db, usuarioId);
-    await tester.tap(find.text('+ Nuevo proveedor'));
+    await tester.tap(find.byKey(const Key('boton_nuevo_proveedor')));
     await tester.pumpAndSettle();
     await tester.enterText(_campo('campo_nombre'), 'Andina');
     await tester.enterText(_campo('campo_codigo'), 'AN');

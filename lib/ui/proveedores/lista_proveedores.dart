@@ -1,158 +1,112 @@
-// Columna izquierda de Proveedores ("Lenguaje de diseño", el dueño 2026-09-26,
-// mock `Proveedores.dc.html`): una tarjeta por proveedor — iniciales, nombre,
-// cuántos productos tiene y una insignia si alguno avisa por stock — con
-// "Todos" arriba y "Sin proveedor" abajo. Tocar una elige esa vista a la
-// derecha, sin salir de la pantalla. Reemplaza al picker de tarjetas grandes
-// (séptima pasada del 2026-09-25), que obligaba a entrar y salir.
+// Columna izquierda de Proveedores, hecha desde el mock v4 (`SCR.proveedores`, `provRows`): el buscador grande, los
+// filtros Todos / Con deuda, y una fila por proveedor con cuántos productos tiene, qué día se le pide, "Pedir hoy" si
+// toca, y lo que se le debe (o "Al día"). "Todos los productos" y "Sin proveedor" van arriba, como en el mock.
 
 import 'package:flutter/material.dart';
 
-import '../../domain/dinero.dart';
-import '../comun/tarjetas.dart';
-import '../tema/iconos.dart';
-import '../tema/tema_inverso.dart';
-import '../tema/presionable.dart';
-import '../tema/tema.dart';
-import '../tema/tokens.dart';
+import '../../domain/periodo.dart' show tocaPedirHoy;
+import '../kit/kit.dart';
 import 'proveedores_controlador.dart';
-import '../tema/movimiento.dart';
 
-/// Ancho de la columna: nombre, "N productos" y la insignia en una fila,
-/// sin cortar nombres de proveedor normales.
-const double anchoListaProveedores = 340;
+/// Ancho de la columna en el mock (`grid-template-columns:470px 1fr`); a 1366 se angosta para que el detalle entre.
+double anchoListaProveedores(double anchoVentana) => anchoVentana >= 1700 ? 470 : 380;
 
 String _productos(int n) => '$n producto${n == 1 ? '' : 's'}';
 
-class ListaProveedores extends StatelessWidget {
+class ListaProveedores extends StatefulWidget {
   const ListaProveedores({super.key, required this.controlador});
 
   final ProveedoresControlador controlador;
 
   @override
-  Widget build(BuildContext context) {
-    final c = controlador;
-    final filas = <Widget>[
-      _FilaProveedor(
-        nombre: 'Todos',
-        icono: IconosPlazoleta.inventory2Outlined,
-        detalle: _productos(c.todosLosProductos.length),
-        stockBajo: c.stockBajoTotal,
-        elegida: c.vista == SeleccionProveedor.todos,
-        onTap: c.seleccionarTodos,
-      ),
-      for (final r in c.resumenes.where((r) => c.proveedorVisible(r.proveedor)))
-        _FilaProveedor(
-          nombre: r.proveedor.nombre,
-          detalle: [
-            _productos(c.cantidadDeProductos(r.proveedor.id)),
-            if (r.vendidoCentavos > 0)
-              'vendió ${formatearARS(r.vendidoCentavos)}',
-            if (c.deudaDe(r.proveedor.id) > 0)
-              'le debés ${formatearARS(c.deudaDe(r.proveedor.id))}',
-          ].join(' · '),
-          stockBajo: c.stockBajoDe(r.proveedor.id),
-          apagada: r.sinMovimiento,
-          elegida:
-              c.vista == SeleccionProveedor.proveedor &&
-              c.seleccionado?.id == r.proveedor.id,
-          onTap: () => c.seleccionar(r.proveedor.id),
-        ),
-      if (c.sinProveedorVisible)
-        _FilaProveedor(
-          nombre: 'Sin proveedor',
-          icono: IconosPlazoleta.helpOutline,
-          detalle: _productos(c.cantidadDeProductos(null)),
-          stockBajo: c.stockBajoDe(null),
-          elegida: c.vista == SeleccionProveedor.sinProveedor,
-          onTap: c.seleccionarSinProveedor,
-        ),
-    ];
-    return ListView.separated(
-      itemCount: filas.length,
-      separatorBuilder: (_, _) => const SizedBox(height: Espaciado.sm),
-      itemBuilder: (_, i) => entradaEnLista(i, filas[i]),
-    );
-  }
+  State<ListaProveedores> createState() => _ListaProveedoresState();
 }
 
-class _FilaProveedor extends StatelessWidget {
-  const _FilaProveedor({
-    required this.nombre,
-    required this.detalle,
-    required this.stockBajo,
-    required this.elegida,
-    required this.onTap,
-    this.icono,
-    this.apagada = false,
-  });
-
-  final String nombre;
-  final String detalle;
-  final int stockBajo;
-  final bool elegida;
-  final VoidCallback onTap;
-
-  /// Para "Todos"/"Sin proveedor": un ícono en vez de iniciales.
-  final IconData? icono;
-
-  /// Sin movimiento en el período: el nombre en gris.
-  final bool apagada;
+class _ListaProveedoresState extends State<ListaProveedores> {
+  bool _soloConDeuda = false;
 
   @override
   Widget build(BuildContext context) {
-    final inv = coloresDeFila(context, elegida);
-    final colores = inv.colores;
-    final textTheme = inv.textTheme;
-    return Presionable(
-      radio: radioControlEscritorio + 4,
-      onTap: onTap,
-      color: elegida ? colores.acento : colores.fondoBloque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Espaciado.md,
-          vertical: Espaciado.md,
+    final c = widget.controlador;
+    final hoy = DateTime.now();
+    final filas = <Widget>[
+      if (!_soloConDeuda) ...[
+        Rowb(
+          key: const Key('proveedor_todos'),
+          titulo: 'Todos los productos',
+          detalle: _productos(c.todosLosProductos.length),
+          izquierda: const Ibox(Ic.box),
+          elegida: c.vista == SeleccionProveedor.todos,
+          onTap: c.seleccionarTodos,
         ),
-        child: Row(
-          children: [
-            AvatarIniciales(
-              texto: inicialesDe(nombre),
-              icono: icono,
-              elegido: elegida,
-            ),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: Pesos.fuerte,
-                      color: apagada && !elegida
-                          ? colores.textoSecundario
-                          : colores.textoPrimario,
-                    ),
-                  ),
-                  Text(
-                    detalle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall,
-                  ),
+        if (c.sinProveedorVisible)
+          Rowb(
+            key: const Key('proveedor_sin'),
+            titulo: 'Sin proveedor',
+            detalle: _productos(c.cantidadDeProductos(null)),
+            izquierda: const Ibox(Ic.warn),
+            elegida: c.vista == SeleccionProveedor.sinProveedor,
+            onTap: c.seleccionarSinProveedor,
+          ),
+      ],
+      for (final r in c.resumenes)
+        if (c.proveedorVisible(r.proveedor) && (!_soloConDeuda || c.deudaDe(r.proveedor.id) > 0))
+          Rowb(
+            key: Key('proveedor_${r.proveedor.id}'),
+            titulo: r.proveedor.nombre,
+            lineasTitulo: 2,
+            lineasDetalle: 2,
+            detalle: [
+              _productos(c.cantidadDeProductos(r.proveedor.id)),
+              if (r.proveedor.diaPedido != null) 'pedido ${r.proveedor.diaPedido!.toLowerCase()}',
+            ].join(' · '),
+            izquierda: const Ibox(Ic.truck),
+            elegida: c.vista == SeleccionProveedor.proveedor && c.seleccionado?.id == r.proveedor.id,
+            onTap: () => c.seleccionar(r.proveedor.id),
+            derecha: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (tocaPedirHoy(r.proveedor.diaPedido, hoy)) ...[
+                  const Etiqueta('Pedir hoy', tono: TonoMock.w),
+                  const SizedBox(height: 6),
                 ],
-              ),
+                if (c.deudaDe(r.proveedor.id) > 0)
+                  Etiqueta('Le debés ${pesos(c.deudaDe(r.proveedor.id))}', tono: TonoMock.b)
+                else
+                  const Etiqueta('Al día', tono: TonoMock.g),
+              ],
             ),
-            if (stockBajo > 0) ...[
-              const SizedBox(width: Espaciado.sm),
-              Insignia(texto: '$stockBajo', tono: Tono.alerta),
-            ],
-            const SizedBox(width: Espaciado.xs),
-            IconoPlz(IconosPlazoleta.chevronRight, color: colores.textoSecundario),
+          ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        BuscadorPagina(
+          campoKey: const Key('busqueda_contextual'),
+          pista: 'Buscar un proveedor o un producto…',
+          onCambio: c.buscar,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            ChipMock('Todos', elegido: !_soloConDeuda, onTap: () => setState(() => _soloConDeuda = false)),
+            const SizedBox(width: 8),
+            ChipMock('Con deuda', elegido: _soloConDeuda, onTap: () => setState(() => _soloConDeuda = true)),
           ],
         ),
-      ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: filas.isEmpty
+              ? const Vacio(texto: 'Sin coincidencias', icono: null, padding: EdgeInsets.symmetric(vertical: 50))
+              : ListView.separated(
+                  padding: const EdgeInsets.only(right: 4),
+                  itemCount: filas.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => Aparecer.tarjeta(orden: i < 8 ? i : 8, child: filas[i]),
+                ),
+        ),
+      ],
     );
   }
 }

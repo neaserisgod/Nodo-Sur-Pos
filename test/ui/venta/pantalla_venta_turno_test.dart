@@ -45,7 +45,7 @@ void main() {
   testWidgets('tocar "Abrir caja" abre una hoja nueva y vuelve a vender, sin reiniciar la app', (tester) async {
     await _pump(tester, db);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Abrir caja'));
+    await tester.tap(find.text('Abrir caja'));
     await tester.pumpAndSettle();
 
     // El diálogo de apertura ya sembró un usuario (fase 3, Regla 18) — se

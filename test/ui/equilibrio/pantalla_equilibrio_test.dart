@@ -1,12 +1,10 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_equilibrio.dart';
 import 'package:la_plazoleta/ui/equilibrio/pantalla_equilibrio.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
-import 'package:la_plazoleta/ui/tema/iconos.dart';
 import '../../helpers/base_para_tests.dart';
 
 /// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
@@ -15,11 +13,9 @@ import '../../helpers/base_para_tests.dart';
 Finder _campo(String llave) => find.descendant(of: find.byKey(Key(llave)), matching: find.byType(TextField));
 
 Future<void> _pump(WidgetTester tester, AppDatabase db, {required int usuarioId, int? sesionCajaId}) async {
-  // La pantalla es una columna larga de tarjetas (CLAUDE.md, fase 7): más
-  // alta que el viewport de test por defecto. Sin agrandarlo, `find` (que
-  // ignora por defecto lo que queda fuera de vista en el scroll) no
-  // encuentra las tarjetas de más abajo aunque sí existan en el árbol.
-  tester.view.physicalSize = const Size(800, 2600);
+  // Como la monta Inicio (mock v4, "Este mes"): alto acotado y ancho de la PC del local. Las tres tarjetas reparten el
+  // alto y cada una scrollea sola, así que la pantalla no va adentro de otro scroll.
+  tester.view.physicalSize = const Size(1920, 1040);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -28,9 +24,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, {required int usuarioId,
     MaterialApp(
       theme: TemaPlazoleta.oscuro,
       home: Scaffold(
-        body: SingleChildScrollView(
-          child: ContenidoEquilibrio(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId),
-        ),
+        body: ContenidoEquilibrio(db: db, usuarioId: usuarioId, sesionCajaId: sesionCajaId),
       ),
     ),
   );
@@ -44,10 +38,13 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
+      final conceptos = await db.select(db.gastosFijos).get();
       await _pump(tester, db, usuarioId: usuarioId);
 
-      expect(find.textContaining('Sin cargar este mes'), findsWidgets);
-      expect(find.text('sin cargar'), findsNWidgets(4));
+      expect(find.textContaining('Sin cargar este mes'), findsOneWidget);
+      expect(find.textContaining('Falta cargar:'), findsOneWidget, reason: 'la cifra de avance dice qué falta en vez de un %');
+      expect(find.text('—'), findsOneWidget, reason: 'sin fijos no hay venta diaria de equilibrio');
+      expect(find.text('Falta cargar'), findsNWidgets(conceptos.length));
     });
 
     testWidgets('cargar el monto de un concepto lo saca del aviso', (tester) async {
@@ -55,15 +52,16 @@ void main() {
       addTearDown(db.close);
       final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
+      final conceptos = await db.select(db.gastosFijos).get();
       await _pump(tester, db, usuarioId: usuarioId);
 
-      await tester.tap(find.ancestor(of: buscarIcono(IconosPlazoleta.edit), matching: find.byType(IconButton)).first);
+      await tester.tap(find.text('Cargar').first);
       await tester.pumpAndSettle();
       await tester.enterText(_campo('campo_monto_fijo'), '935000');
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
-      expect(find.text('sin cargar'), findsNWidgets(3));
+      expect(find.text('Falta cargar'), findsNWidgets(conceptos.length - 1));
     });
   });
 
@@ -95,7 +93,8 @@ void main() {
 
       await _pump(tester, db, usuarioId: usuarioId);
 
-      expect(find.textContaining('Ganancia 35%'), findsOneWidget);
+      expect(find.textContaining('35 % de lo vendido'), findsOneWidget);
+      expect(find.text('Ganancia bruta (35 %)'), findsOneWidget);
     });
   });
 
@@ -113,11 +112,10 @@ void main() {
       await _pump(tester, db, usuarioId: usuarioId);
 
       expect(find.text('Falta para cubrir los fijos'), findsOneWidget); // sin ganancia todavía, no cubierto
-      // Por default la opción de Configuración está apagada (El dueño: su
-      // planilla real nunca restó los fijos pendientes del retiro).
-      expect(find.textContaining('Pendiente:'), findsOneWidget);
-      expect(find.textContaining('Pendiente (lo que descuenta el retiro)'), findsNothing);
-      expect(find.textContaining('Ganancia a generar por día'), findsOneWidget);
+      expect(find.text('0 %'), findsOneWidget);
+      expect(find.textContaining('Presupuestado'), findsOneWidget);
+      expect(find.textContaining('Pendiente \$'), findsOneWidget);
+      expect(find.text('Falta cargar'), findsNothing);
     });
 
     testWidgets('registrar un pago de un fijo reduce lo pendiente', (tester) async {
@@ -135,12 +133,13 @@ void main() {
 
       await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
 
-      await tester.tap(find.text('Registrar pago').first);
+      await tester.tap(find.text('Pagar').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Registrar'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Pagado: \$250.000'), findsOneWidget);
+      expect(find.text('Pagado'), findsOneWidget, reason: 'ese concepto quedó pagado');
+      expect(find.textContaining(r'Pagado $ 250.000'), findsOneWidget);
     });
 
     testWidgets('el diálogo de pago permite elegir una fecha distinta de hoy', (tester) async {
@@ -159,7 +158,7 @@ void main() {
 
       await _pump(tester, db, usuarioId: usuarioId, sesionCajaId: sesionId);
 
-      await tester.tap(find.text('Registrar pago').first);
+      await tester.tap(find.text('Pagar').first);
       await tester.pumpAndSettle();
       // El dueño pagó el 31/07 pero lo carga recién ahora: la fecha del pago,
       // no la de carga, es la que tiene que quedar en el movimiento.

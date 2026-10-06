@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
+import 'package:la_plazoleta/ui/comparar_precios/pantalla_comparar_precios.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
 import '../../helpers/base_para_tests.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,49 +42,52 @@ void main() {
     expect(find.byKey(const Key('nav_configuracion')), findsNothing);
   });
 
-  double anchoBusqueda(WidgetTester t) => t.getSize(find.byKey(const Key('nav_busqueda_abierta'))).width;
+  double opacidadBusqueda(WidgetTester t) => t.widget<AnimatedOpacity>(find.byKey(const Key('nav_busqueda_abierta'))).opacity;
 
-  Future<void> configuracion(WidgetTester t) async {
+  Future<void> ctrlF(WidgetTester t) async {
+    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.keyF);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await t.pumpAndSettle();
+  }
+
+  // Una pantalla con búsqueda propia en la barra (Comparar precios). Las rehechas del mock v4 (Configuración,
+  // Proveedores...) llevan su buscador en la cabecera; ahí Ctrl+F abre el Asistente.
+  Future<void> conBusquedaEnLaBarra(WidgetTester t) async {
     t.view.physicalSize = const Size(1400, 900);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     final db = baseDeTest();
     addTearDown(db.close);
-    await t.pumpWidget(MaterialApp(theme: TemaPlazoleta.claro, home: PantallaConfiguracion(db: db, usuarioId: 1)));
+    await t.pumpWidget(MaterialApp(theme: TemaPlazoleta.claro, home: PantallaCompararPrecios(db: db, usuarioId: 1)));
     await t.pumpAndSettle();
   }
 
-  testWidgets('la lupa abre la búsqueda expandiéndose sobre la barra y la X la cierra', (t) async {
-    await configuracion(t);
-    final cerrada = anchoBusqueda(t);
-    await t.tap(find.byKey(const Key('nav_buscar')));
-    await t.pumpAndSettle();
-    expect(anchoBusqueda(t), greaterThan(cerrada * 5));
-    expect(find.text('Inicio'), findsOneWidget, reason: 'las pastillas siguen en el árbol, solo se desvanecen');
+  testWidgets('sin lupa a la vista (mock v4): Ctrl+F abre la búsqueda adentro de la barra y la X la cierra', (t) async {
+    await conBusquedaEnLaBarra(t);
+    expect(find.byKey(const Key('nav_buscar')), findsNothing);
+    expect(opacidadBusqueda(t), 0);
+    await ctrlF(t);
+    expect(opacidadBusqueda(t), 1);
+    expect(find.text('Inicio'), findsOneWidget, reason: 'las secciones siguen en el árbol, solo se desvanecen');
     await t.tap(find.byKey(const Key('nav_cerrar_busqueda')));
     await t.pumpAndSettle();
-    expect(anchoBusqueda(t), cerrada);
+    expect(opacidadBusqueda(t), 0);
   });
 
   testWidgets('Ctrl+F abre la búsqueda con el foco en el campo y Esc vacío la cierra', (t) async {
-    await configuracion(t);
-    final cerrada = anchoBusqueda(t);
-    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-    await t.sendKeyEvent(LogicalKeyboardKey.keyF);
-    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-    await t.pumpAndSettle();
-    expect(anchoBusqueda(t), greaterThan(cerrada));
+    await conBusquedaEnLaBarra(t);
+    await ctrlF(t);
     final campo = t.widget<TextField>(find.byKey(const Key('busqueda_contextual')));
     expect(campo.focusNode!.hasFocus, isTrue);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await t.pumpAndSettle();
-    expect(anchoBusqueda(t), cerrada);
+    expect(opacidadBusqueda(t), 0);
   });
 
   testWidgets('la tecla Inicio lleva a Venta, pero no mientras se escribe en un campo', (t) async {
-    await configuracion(t);
-    await t.tap(find.byKey(const Key('nav_buscar')));
-    await t.pumpAndSettle();
+    await conBusquedaEnLaBarra(t);
+    await ctrlF(t);
     await t.sendKeyEvent(LogicalKeyboardKey.home);
     await t.pumpAndSettle();
     expect(find.byType(PantallaVenta), findsNothing, reason: 'con el foco en la búsqueda, Inicio mueve el cursor');
@@ -95,3 +98,4 @@ void main() {
     expect(find.byType(PantallaVenta), findsOneWidget);
   });
 }
+

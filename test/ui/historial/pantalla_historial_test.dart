@@ -5,6 +5,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/historial/pantalla_historial.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
 
@@ -17,7 +18,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int usuarioId) async {
   await tester.pumpAndSettle();
   // Arranca en "Ventas" (mock de Historial, 2026-09-26); estos tests son de
   // los cierres.
-  await tester.tap(find.text('Cierres de caja'));
+  await tester.tap(find.text('Cierres'));
   await tester.pumpAndSettle();
 }
 
@@ -34,7 +35,7 @@ void main() {
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cargaHistorica, activo: false);
     await tester.pump();
     expect(find.text('Cargar día histórico'), findsNothing);
-    expect(find.text('Cierres de caja'), findsOneWidget);
+    expect(find.text('Cierres'), findsOneWidget);
   });
 
   testWidgets('sin días cerrados, avisa que no hay nada todavía', (tester) async {
@@ -62,9 +63,10 @@ void main() {
 
     await _pump(tester, db, usuarioId);
 
-    final texto = tester.widget<Text>(find.byKey(const Key('estado_cierre')));
-    final color = (texto.style?.color)!;
-    expect(color, Theme.of(tester.element(find.byType(Scaffold))).colorScheme.error);
+    // La etiqueta del estado va en rojo (tono "b" del mock) cuando faltó plata.
+    final etiqueta = tester.widget<Etiqueta>(find.byKey(const Key('estado_cierre')));
+    expect(etiqueta.tono, TonoMock.b);
+    expect(etiqueta.texto, r'Faltaron $ 5');
   });
 
   testWidgets('dos turnos del mismo día se distinguen por hora y empleado (Dueño, turnos)', (tester) async {

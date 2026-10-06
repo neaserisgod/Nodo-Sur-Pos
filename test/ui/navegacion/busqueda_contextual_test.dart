@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
-import 'package:la_plazoleta/ui/comun/lista_maestra.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/proveedores/detalle_proveedor.dart';
 import 'package:la_plazoleta/ui/proveedores/lista_proveedores.dart';
@@ -64,13 +63,13 @@ void main() {
     final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
 
     await _pump(tester, PantallaConfiguracion(db: db, usuarioId: usuarioId));
-    await tester.enterText(_buscador, 'fondo');
+    // Configuración tiene su buscador en la cabecera ("Buscar un ajuste…", mock v4), no en la barra.
+    await tester.enterText(find.byKey(const Key('busqueda_configuracion')), 'fondo');
     await tester.pumpAndSettle();
 
-    final lista = find.byType(ListaMaestra);
-    expect(find.descendant(of: lista, matching: find.text('CAJA Y COBROS')), findsOneWidget); // el grupo va en mayúsculas, chico (v4)
-    expect(find.descendant(of: lista, matching: find.text('NEGOCIO')), findsNothing);
+    expect(find.text('CAJA Y COBROS'), findsOneWidget); // el grupo va en mayúsculas, chico (v4)
+    expect(find.text('NEGOCIO'), findsNothing);
     // Se abrió sola: se ve el campo de esa sección.
-    expect(find.textContaining('Fondo fijo del cajón'), findsOneWidget);
+    expect(find.textContaining('Fondo fijo de caja'), findsOneWidget);
   });
 }

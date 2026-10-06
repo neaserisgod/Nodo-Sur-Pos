@@ -400,6 +400,32 @@ void main() {
         expect((c.carrito.single as LineaVentaPesable).gramos, 350);
       });
 
+      test('ajustarGramos suma y resta de a 50 g, y por debajo de 1 g saca la línea (mock v4)', () async {
+        final idQueso = await db
+            .into(db.productos)
+            .insert(
+              ProductosCompanion.insert(
+                nombre: 'Queso barra',
+                esPesable: const Value(true),
+                precioPorKiloCentavos: const Value(300000),
+              ),
+            );
+        await c.cargarTodo();
+        final queso = await (db.select(
+          db.productos,
+        )..where((p) => p.id.equals(idQueso))).getSingle();
+        c.campoTexto.text = '100 queso';
+        c.agregarProducto(queso);
+
+        c.ajustarGramos(0, 1);
+        expect((c.carrito.single as LineaVentaPesable).gramos, 150);
+        c.ajustarGramos(0, -1);
+        c.ajustarGramos(0, -1);
+        expect((c.carrito.single as LineaVentaPesable).gramos, 50);
+        c.ajustarGramos(0, -1);
+        expect(c.carrito, isEmpty);
+      });
+
       test('editarGramosExacto con 0 o menos saca la línea', () async {
         final idQueso = await db
             .into(db.productos)

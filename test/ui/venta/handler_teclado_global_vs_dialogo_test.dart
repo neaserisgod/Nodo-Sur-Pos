@@ -29,7 +29,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/ui/navegacion/navbar_superior.dart';
-import 'package:la_plazoleta/ui/comun/boton_destacado.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
@@ -259,9 +258,8 @@ void main() {
         await _navegarA(tester, 'Proveedores');
         expect(find.byType(PantallaVenta), findsNothing);
 
-        // "+ Nuevo proveedor" está en la fila de acciones de Proveedores,
-        // sin pasar por "Más acciones".
-        await tester.tap(find.text('+ Nuevo proveedor'));
+        // "Nuevo proveedor" está en las acciones de la cabecera de Proveedores (mock v4).
+        await tester.tap(find.byKey(const Key('boton_nuevo_proveedor')));
         await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(const Key('campo_nombre')),
@@ -271,7 +269,7 @@ void main() {
         await tester.tap(find.text('Crear proveedor'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+        await tester.tap(find.byKey(const Key('boton_nuevo_producto')));
         await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(const Key('campo_nombre')),
@@ -326,9 +324,8 @@ void main() {
         await _navegarA(tester, 'Historial');
         await _navegarA(tester, 'Proveedores');
 
-        // "+ Nuevo proveedor" está en la fila de acciones de Proveedores,
-        // sin pasar por "Más acciones".
-        await tester.tap(find.text('+ Nuevo proveedor'));
+        // "Nuevo proveedor" está en las acciones de la cabecera de Proveedores (mock v4).
+        await tester.tap(find.byKey(const Key('boton_nuevo_proveedor')));
         await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(const Key('campo_nombre')),
@@ -338,7 +335,7 @@ void main() {
         await tester.tap(find.text('Crear proveedor'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(BotonDestacado, 'Nuevo producto'));
+        await tester.tap(find.byKey(const Key('boton_nuevo_producto')));
         await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(const Key('campo_nombre')),

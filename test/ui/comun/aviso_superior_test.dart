@@ -25,7 +25,8 @@ void main() {
     // Arriba del todo (no abajo como el SnackBar) y centrado.
     expect(caja.top, lessThan(80));
     expect(caja.center.dx, closeTo(tester.view.physicalSize.width / tester.view.devicePixelRatio / 2, 1));
-    await tester.pump(duracionAvisoSimple); // vence el tiempo: empieza a irse
+    // La permanencia se cuenta desde que terminó de entrar (la entrada dura 450 ms): con eso vencido, empieza a irse.
+    await tester.pump(duracionAvisoSimple + const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
     expect(find.text('Guardado'), findsNothing);
   });

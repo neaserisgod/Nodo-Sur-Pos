@@ -6,22 +6,17 @@
 // lo que debería haber, contra lo contado) y Mercado Pago y la lata al
 // costado. Las ventas del día, su edición y el PDF siguen en
 // `PantallaDetalleDia` ("Ver las ventas de ese día").
+//
+// Rediseño v4 (2026-10-06): las filas son las del mock (día, cómo cuadró, lo vendido). El mock no tiene el detalle a la
+// derecha (iba directo a las ventas del día), pero la cuenta del efectivo es lo que se mira para saber por qué no
+// cuadró: queda en el espacio libre de la derecha, con el mismo lenguaje.
 
 import 'package:flutter/material.dart';
 
 import '../../data/repositorio_historial.dart';
-import '../../domain/dinero.dart';
-import '../comun/botones.dart';
-import '../comun/estado_vacio.dart';
 import '../comun/fechas.dart';
-import '../comun/tarjetas.dart';
+import '../kit/kit.dart';
 import '../navegacion/busqueda_contextual.dart' show coincideBusqueda;
-import '../tema/acentos.dart';
-import '../tema/tema_inverso.dart';
-import '../tema/presionable.dart';
-import '../tema/superficie.dart';
-import '../tema/tokens.dart';
-import '../tema/movimiento.dart';
 
 class VistaCierres extends StatefulWidget {
   const VistaCierres({super.key, required List<ResumenDia> dias, required this.alAbrirDia, this.busqueda = ''})
@@ -29,8 +24,7 @@ class VistaCierres extends StatefulWidget {
 
   final List<ResumenDia> _todos;
 
-  /// Buscador de arriba (contextual, 2026-09-28): día ("sábado", "26",
-  /// "septiembre") o empleado.
+  /// Buscador de la fila de filtros: día ("sábado", "26", "septiembre") o empleado.
   final String busqueda;
 
   List<ResumenDia> get dias => [
@@ -52,63 +46,29 @@ class _VistaCierresState extends State<VistaCierres> {
   Widget build(BuildContext context) {
     final dias = widget.dias;
     if (dias.isEmpty) {
-      return EstadoVacio(
-        mensaje: widget.busqueda.isEmpty ? 'Todavía no hay ningún día cerrado.' : 'Ningún cierre coincide con "${widget.busqueda}"',
+      return Vacio(
+        texto: widget.busqueda.isEmpty ? 'Todavía no hay ningún día cerrado.' : 'Ningún cierre coincide con "${widget.busqueda}"',
+        icono: null,
       );
     }
     final elegido = _elegido.clamp(0, dias.length - 1);
-    final cuadraron = dias.where((d) => d.diferenciaCentavos == 0).length;
-    final neta = dias.fold(0, (a, d) => a + d.diferenciaCentavos);
-    final textTheme = Theme.of(context).textTheme;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          flex: 2,
-          child: Superficie(
-            padding: const EdgeInsets.all(Espaciado.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${dias.length} cierre${dias.length == 1 ? '' : 's'}', style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte)),
-                          Text('$cuadraron cuadraron · ${dias.length - cuadraron} con diferencia', style: textTheme.bodySmall),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('Diferencia neta', style: textTheme.bodySmall),
-                        Text(formatearARS(neta), style: textTheme.titleMedium?.copyWith(color: _colorDiferencia(context, neta), fontWeight: Pesos.fuerte).tabular),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Espaciado.md),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: dias.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: Espaciado.xs),
-                    itemBuilder: (context, i) => entradaEnLista(i, _FilaCierre(
-                      dia: dias[i],
-                      elegida: i == elegido,
-                      onTap: () => setState(() => _elegido = i),
-                    )),
-                  ),
-                ),
-              ],
+          flex: 11,
+          child: ListView.separated(
+            padding: const EdgeInsets.only(right: 4),
+            itemCount: dias.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (context, i) => Aparecer.revelar(
+              orden: i,
+              child: _FilaCierre(dia: dias[i], elegida: i == elegido, onTap: () => setState(() => _elegido = i)),
             ),
           ),
         ),
-        const SizedBox(width: Espaciado.lg),
-        Expanded(flex: 3, child: _DetalleCierre(dia: dias[elegido], alAbrirDia: widget.alAbrirDia)),
+        const SizedBox(width: 24),
+        Expanded(flex: 8, child: SingleChildScrollView(child: _DetalleCierre(dia: dias[elegido], alAbrirDia: widget.alAbrirDia))),
       ],
     );
   }
@@ -116,13 +76,12 @@ class _VistaCierresState extends State<VistaCierres> {
 
 /// Cualquier diferencia distinta de cero es un descuadre, sobre o falte
 /// (Regla 10): faltante en rojo, sobrante en el tono de aviso, cero en verde.
-Color _colorDiferencia(BuildContext context, int diferencia) {
-  if (diferencia == 0) return context.acentosPlazoleta.ganancia;
-  return diferencia < 0 ? context.colores.error : context.acentosPlazoleta.alerta;
-}
+TonoMock _tono(int diferencia) => diferencia == 0 ? TonoMock.g : (diferencia < 0 ? TonoMock.b : TonoMock.w);
 
 String _estado(int diferencia) =>
-    diferencia == 0 ? 'Cuadró' : '${diferencia > 0 ? 'Sobraron' : 'Faltaron'} ${formatearARS(diferencia.abs())}';
+    diferencia == 0 ? 'Cuadró' : '${diferencia > 0 ? 'Sobraron' : 'Faltaron'} ${pesos(diferencia.abs())}';
+
+String _mayuscula(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 class _FilaCierre extends StatelessWidget {
   const _FilaCierre({required this.dia, required this.elegida, required this.onTap});
@@ -133,72 +92,23 @@ class _FilaCierre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inv = coloresDeFila(context, elegida);
-    final colores = inv.colores;
-    final textTheme = inv.textTheme;
+    final p = context.p;
     final apertura = dia.sesion.fechaApertura;
     final cierre = dia.sesion.fechaCierre;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaciado.sm),
-      child: Presionable(
-      radio: 26,
+    return Rowb(
+      titulo: _mayuscula(fechaLarga(apertura)),
+      // Hora y empleado, no solo la fecha (El dueño, 31/08/2026): un turno es una sesión completa, puede haber más de
+      // una el mismo día.
+      detalle: '${horaCorta(apertura)}${cierre == null ? '' : ' a ${horaCorta(cierre)}'} · ${dia.nombreEmpleado}',
+      izquierda: const Ibox(Ic.cal),
+      elegida: elegida,
       onTap: onTap,
-      color: elegida ? colores.acento : colores.fondo,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.md),
-        child: Row(
-          children: [
-            _ChipDia(fecha: apertura),
-            const SizedBox(width: Espaciado.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(formatearARS(dia.totalVendidoCentavos), style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte).tabular),
-                  // Hora y empleado, no solo la fecha (El dueño, 31/08/2026): un
-                  // turno es una sesión completa, puede haber más de una el
-                  // mismo día.
-                  Text(
-                    '${horaCorta(apertura)}${cierre == null ? '' : ' a ${horaCorta(cierre)}'} · ${dia.nombreEmpleado}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: Espaciado.sm),
-            Text(
-              _estado(dia.diferenciaCentavos),
-              key: const Key('estado_cierre'),
-              style: textTheme.bodySmall?.copyWith(color: _colorDiferencia(context, dia.diferenciaCentavos), fontWeight: Pesos.fuerte),
-            ),
-          ],
-        ),
-      ),
-      ),
-    );
-  }
-}
-
-class _ChipDia extends StatelessWidget {
-  const _ChipDia({required this.fecha});
-
-  final DateTime fecha;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(color: colores.fondo, borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      derecha: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(diasSemana[fecha.weekday - 1].substring(0, 3), style: textTheme.labelSmall?.copyWith(color: colores.textoSecundario)),
-          Text('${fecha.day}', style: textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte, height: 1.1)),
+          Etiqueta(_estado(dia.diferenciaCentavos), key: const Key('estado_cierre'), tono: _tono(dia.diferenciaCentavos)),
+          const SizedBox(width: 16),
+          Text(pesos(dia.totalVendidoCentavos), style: estilo(17, 600, color: p.tinta, num: true)),
         ],
       ),
     );
@@ -213,115 +123,102 @@ class _DetalleCierre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.p;
     final s = dia.sesion;
-    final acentos = context.acentosPlazoleta;
-    final textTheme = Theme.of(context).textTheme;
     final esperado = s.efectivoEsperadoCentavos ?? 0;
     final lata = s.lataSeparadoCentavos ?? 0;
     // Lo que no es fondo, ventas en efectivo ni lata: gastos, pagos a
     // proveedores, retiros e ingresos del turno — la diferencia que
     // completa la cuenta hasta lo esperado que calculó el cierre.
     final otros = esperado - (s.fondoInicialCentavos + dia.efectivoCentavos - lata);
+    final colorDif = switch (_tono(dia.diferenciaCentavos)) {
+      TonoMock.g => p.g,
+      TonoMock.b => p.b,
+      _ => p.w,
+    };
 
-    Widget fila(String etiqueta, int monto, {bool fuerte = false, Color? color}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
+    return Container(
+      padding: const EdgeInsets.fromLTRB(30, 26, 30, 26),
+      decoration: BoxDecoration(color: p.s, borderRadius: BorderRadius.circular(36)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text(etiqueta, style: fuerte ? textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte) : textTheme.bodyMedium)),
-              Text(
-                formatearARS(monto),
-                style: (fuerte ? textTheme.titleMedium?.copyWith(fontWeight: Pesos.fuerte) : textTheme.bodyMedium)?.copyWith(color: color).tabular,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cierre del ${fechaLarga(s.fechaApertura)}', style: estilo(26, 550, color: p.tinta, em: -.03)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Abrió ${horaCorta(s.fechaApertura)}${s.fechaCierre == null ? '' : ' · cerró ${horaCorta(s.fechaCierre!)}'} · ${dia.nombreEmpleado}',
+                      style: estilo(15.5, 400, color: p.mute),
+                    ),
+                  ],
+                ),
               ),
+              Etiqueta(_estado(dia.diferenciaCentavos), tono: _tono(dia.diferenciaCentavos)),
             ],
           ),
-        );
-
-    return Superficie(
-      padding: const EdgeInsets.all(Espaciado.xl),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+          const SizedBox(height: 18),
+          BloqueHero(
+            radio: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+            child: Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Cierre del ${fechaLarga(s.fechaApertura)}', style: textTheme.titleLarge),
-                      Text(
-                        'Abrió ${horaCorta(s.fechaApertura)}${s.fechaCierre == null ? '' : ' · cerró ${horaCorta(s.fechaCierre!)}'} · ${dia.nombreEmpleado}',
-                        style: textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                Insignia(
-                  texto: _estado(dia.diferenciaCentavos),
-                  tono: dia.diferenciaCentavos == 0 ? Tono.ganancia : (dia.diferenciaCentavos < 0 ? Tono.error : Tono.alerta),
-                ),
+                Expanded(child: Text('Vendido en el turno', style: estilo(15, 600, color: p.heroSub))),
+                Text(pesos(dia.totalVendidoCentavos), style: estilo(30, 550, color: p.sobreHero, em: -.04, num: true)),
               ],
             ),
-            const SizedBox(height: Espaciado.lg),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TarjetaSeccion(
-                    titulo: 'Efectivo en el cajón',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        fila('Fondo para el vuelto', s.fondoInicialCentavos),
-                        fila('+ Ventas en efectivo', dia.efectivoCentavos),
-                        if (lata != 0) fila('− A la lata (cigarrillos)', -lata),
-                        if (otros != 0) fila('± Gastos, pagos y retiros', otros),
-                        const Divider(),
-                        fila('= Debería haber', esperado, fuerte: true),
-                        fila('Contado al cerrar', s.efectivoContadoCentavos ?? 0),
-                        const Divider(),
-                        fila('Diferencia', dia.diferenciaCentavos, fuerte: true, color: _colorDiferencia(context, dia.diferenciaCentavos)),
-                        if ((s.nota ?? '').trim().isNotEmpty) ...[
-                          const SizedBox(height: Espaciado.sm),
-                          Text('Nota del cierre: “${s.nota!.trim()}”', style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Espaciado.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TarjetaIndicador(etiqueta: 'Vendido en el turno', valor: formatearARS(dia.totalVendidoCentavos), destacada: true),
-                      const SizedBox(height: Espaciado.md),
-                      FilaMedio(color: acentos.dinero, etiqueta: 'Efectivo', monto: formatearARS(dia.efectivoCentavos)),
-                      const SizedBox(height: Espaciado.sm),
-                      FilaMedio(color: acentos.qr, etiqueta: 'Mercado Pago', monto: formatearARS(dia.mpCentavos)),
-                      if ((s.mpContadoCentavos ?? 0) > 0) ...[
-                        const SizedBox(height: Espaciado.xs),
-                        Text(
-                          'MP contado ${formatearARS(s.mpContadoCentavos!)} · diferencia ${formatearARS(s.mpDiferenciaCentavos ?? 0)}',
-                          style: textTheme.bodySmall,
-                        ),
-                      ] else if ((s.mpEsperadoCentavos ?? 0) > 0) ...[
-                        const SizedBox(height: Espaciado.xs),
-                        Text('El saldo de Mercado Pago no se contó en este cierre', style: textTheme.bodySmall?.copyWith(color: acentos.alerta)),
-                      ],
-                      if (dia.cigarrillosCentavos > 0) ...[
-                        const SizedBox(height: Espaciado.sm),
-                        FilaMedio(color: context.colores.textoSecundario, etiqueta: 'Cigarrillos (a la lata)', monto: formatearARS(dia.cigarrillosCentavos)),
-                      ],
-                      const SizedBox(height: Espaciado.lg),
-                      BotonSecundario(texto: 'Ver las ventas de ese día', onPressed: () => alAbrirDia(s.id)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          ),
+          const SizedBox(height: 12),
+          const Sec('Efectivo en el cajón'),
+          const SizedBox(height: 10),
+          Lista(
+            color: p.papel,
+            filas: [
+              Kv('Fondo para el vuelto', pesos(s.fondoInicialCentavos)),
+              Kv('+ Ventas en efectivo', pesos(dia.efectivoCentavos)),
+              if (lata != 0) Kv('− A la lata (cigarrillos)', pesosConSigno(-lata)),
+              if (otros != 0) Kv('± Gastos, pagos y retiros', pesosConSigno(otros)),
+              Kv('= Debería haber', pesos(esperado), colorValor: p.tinta),
+              Kv('Contado al cerrar', pesos(s.efectivoContadoCentavos ?? 0)),
+              Kv('Diferencia', pesosConSigno(dia.diferenciaCentavos), colorValor: colorDif, tamanioValor: 20),
+            ],
+          ),
+          if ((s.nota ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Nota(texto: 'Nota del cierre: “${s.nota!.trim()}”'),
           ],
-        ),
+          const SizedBox(height: 14),
+          const Sec('Otros medios'),
+          const SizedBox(height: 10),
+          Lista(
+            color: p.papel,
+            filas: [
+              Kv('Efectivo', pesos(dia.efectivoCentavos)),
+              Kv('Mercado Pago', pesos(dia.mpCentavos)),
+              if (dia.cigarrillosCentavos > 0) Kv('Cigarrillos (a la lata)', pesos(dia.cigarrillosCentavos)),
+            ],
+          ),
+          if ((s.mpContadoCentavos ?? 0) > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              'MP contado ${pesos(s.mpContadoCentavos!)} · diferencia ${pesosConSigno(s.mpDiferenciaCentavos ?? 0)}',
+              style: estilo(14, 400, color: p.mute),
+            ),
+          ] else if ((s.mpEsperadoCentavos ?? 0) > 0) ...[
+            const SizedBox(height: 8),
+            Text('El saldo de Mercado Pago no se contó en este cierre', style: estilo(14, 500, color: p.w)),
+          ],
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Btn('Ver las ventas de ese día', variante: VarBtn.dark, flecha: true, onTap: () => alAbrirDia(s.id)),
+          ),
+        ],
       ),
     );
   }

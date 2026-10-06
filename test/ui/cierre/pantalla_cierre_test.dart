@@ -6,7 +6,6 @@ import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/cierre/pantalla_cierre.dart';
-import 'package:la_plazoleta/ui/tema/superficie.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
 
@@ -36,12 +35,14 @@ Future<int> _crearSesionConCigarrillos(AppDatabase db, int usuarioId) async {
   return sesionId;
 }
 
-/// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
-/// (fija, no la flotante de Material) — cada campo que un test necesita
-/// tocar tiene una `Key` propia en el widget que lo instancia.
+/// Cada campo del cierre tiene una `Key` propia en el `Campo` del kit; el `TextField` está adentro.
 Finder _campo(String llave) => find.descendant(of: find.byKey(Key(llave)), matching: find.byType(TextField));
 
+/// A 1920×1080, la pantalla para la que está hecho el mock (el tamaño de test por defecto, 800×600, no es una caja real).
 Future<void> _pump(WidgetTester tester, AppDatabase db, int sesionId, int usuarioId) async {
+  tester.view.physicalSize = const Size(1920, 1080);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
       theme: TemaPlazoleta.oscuro,
@@ -51,90 +52,123 @@ Future<void> _pump(WidgetTester tester, AppDatabase db, int sesionId, int usuari
   await tester.pumpAndSettle();
 }
 
+/// Paso 1: las tres cajas a ciegas (la lata solo con el módulo de caja aparte) y confirmar.
+Future<void> _contarYConfirmar(WidgetTester tester, {required String efectivo, String mp = '0', String? lata = '0'}) async {
+  await tester.enterText(_campo('campo_efectivo_contado'), efectivo);
+  await tester.enterText(_campo('campo_mp_contado'), mp);
+  if (lata != null) await tester.enterText(_campo('campo_lata_contada'), lata);
+  await tester.pump();
+  await tester.tap(find.text('Confirmar conteo'));
+  await tester.pumpAndSettle();
+}
+
+Future<int> _usuario(AppDatabase db) => db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+
 void main() {
   group('pantalla de cierre — oculto hasta confirmar (Regla 1 y 2)', () {
     testWidgets('al entrar, no hay ningún número de diferencia ni separación en pantalla', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
 
+      expect(find.text('¿Cuánta plata hay en cada caja?'), findsOneWidget);
+      expect(find.text('Paso 1 de 2'), findsOneWidget);
       expect(find.textContaining('Diferencia'), findsNothing);
-      expect(find.textContaining('Separado'), findsNothing);
+      expect(find.textContaining('A separar'), findsNothing);
+      expect(find.textContaining('Debería haber'), findsNothing);
       expect(find.text('Confirmar conteo'), findsOneWidget);
+    });
+
+    testWidgets('sin las tres cajas contadas no se puede confirmar: el paso 2 ya no tiene campos', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await tester.enterText(_campo('campo_efectivo_contado'), '4.500');
+      await tester.enterText(_campo('campo_mp_contado'), '0');
+      await tester.pump();
+      await tester.tap(find.text('Confirmar conteo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paso 1 de 2'), findsOneWidget, reason: 'falta la lata: el botón está apagado');
+      expect(find.textContaining('Diferencia'), findsNothing);
     });
 
     testWidgets('confirmar el conteo revela diferencia y separación juntas', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '1.000');
 
-      await tester.enterText(find.byType(TextField).first, '1.000');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Diferencia'), findsOneWidget);
+      expect(find.text('Paso 2 de 2'), findsOneWidget);
+      expect(find.text('Diferencia del cajón'), findsOneWidget);
       // "A separar", no "Separado" (bug real, el dueño: el label viejo leía
       // como si ya se hubiese hecho en vez de decir que hay que hacerlo).
-      expect(find.textContaining('A separar a la lata'), findsOneWidget);
+      expect(find.text('A separar a la lata (cigarrillos)'), findsOneWidget);
     });
 
     testWidgets(
-        'los tres totales grandes (efectivo, MP, lata) aparecen antes que nada, así solo hay que '
-        'contar y pasar plata', (tester) async {
+        'lo que tiene que haber en cada caja (efectivo, MP, lata) está a la vista, así solo hay que contar y pasar plata',
+        (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
-      await tester.enterText(find.byType(TextField).first, '4.500');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
+      await _contarYConfirmar(tester, efectivo: '4.500');
 
-      expect(find.text('Efectivo del día'), findsOneWidget);
-      expect(find.text('Mercado Pago del día'), findsOneWidget);
-      expect(find.text('A la lata de cigarrillos'), findsOneWidget);
+      expect(find.text('Debería haber en el cajón'), findsOneWidget);
+      expect(find.text('Debería haber en Mercado Pago'), findsOneWidget);
+      expect(find.text('Debería haber en la lata'), findsOneWidget);
     });
 
-    testWidgets('escribir la lata contada muestra la lata esperada y la diferencia', (tester) async {
+    testWidgets('la lata contada se compara con la esperada', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId);
 
       await _pump(tester, db, sesionId, usuarioId);
-      await tester.enterText(find.byType(TextField).first, '4.500');
+      await _contarYConfirmar(tester, efectivo: '4.500', lata: '4.400');
+
+      final esperada = find.byKey(const Key('lata_esperada'));
+      await tester.ensureVisible(esperada);
+      expect(find.descendant(of: esperada, matching: find.text(r'$ 4.500')), findsOneWidget);
+      expect(find.text(r'−$ 100'), findsOneWidget);
+      expect(find.text(r'Faltan $ 100'), findsOneWidget);
+    });
+
+    testWidgets('volver a contar tapa todo de nuevo y conserva lo escrito', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '500');
+      expect(find.text(r'Sobran $ 500 en el cajón'), findsOneWidget);
+
+      await tester.tap(find.text('Volver a contar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paso 1 de 2'), findsOneWidget);
+      expect(find.textContaining('Diferencia'), findsNothing);
+      expect(tester.widget<TextField>(_campo('campo_efectivo_contado')).controller!.text, '500');
+
+      await tester.enterText(_campo('campo_efectivo_contado'), '0');
+      await tester.pump();
       await tester.tap(find.text('Confirmar conteo'));
       await tester.pumpAndSettle();
-
-      expect(find.text('Lata esperada'), findsNothing);
-
-      final campoLataContada = _campo('campo_lata_contada');
-      await tester.ensureVisible(campoLataContada);
-      await tester.enterText(campoLataContada, '4.400');
-      await tester.pumpAndSettle();
-
-      // Etiqueta y valor son celdas separadas de una misma fila (plata
-      // alineada a la derecha, `DISENO.md`) — se verifica por estructura, no
-      // por texto concatenado. `.first` sobre el ancestro toma el `Row`
-      // angosto de la fila (etiqueta + valor), no el `Row` ancho de las dos
-      // columnas que también lo contiene — necesario porque "Separado a la
-      // lata" cae en el mismo monto que "Lata esperada" en este escenario
-      // (separación completa), y "Diferencia" se repite (Arqueo y lata).
-      final bloqueCigarrillos = find.ancestor(of: find.text('Lata esperada'), matching: find.byType(Superficie));
-
-      final filaLataEsperada = find.ancestor(of: find.text('Lata esperada'), matching: find.byType(Row)).first;
-      expect(find.descendant(of: filaLataEsperada, matching: find.text('\$4.500')), findsOneWidget);
-
-      final diferenciaDeLaLata = find.descendant(of: bloqueCigarrillos, matching: find.text('Diferencia'));
-      final filaDiferenciaLata = find.ancestor(of: diferenciaDeLaLata, matching: find.byType(Row)).first;
-      expect(find.descendant(of: filaDiferenciaLata, matching: find.text('-\$100')), findsOneWidget);
+      expect(find.text('Cuadró el cajón'), findsOneWidget);
     });
   });
 
@@ -142,14 +176,11 @@ void main() {
     testWidgets('si no alcanza el efectivo, avisa y muestra el pendiente', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await _crearSesionConCigarrillos(db, usuarioId); // $4.500 en cigarrillos
 
       await _pump(tester, db, sesionId, usuarioId);
-
-      await tester.enterText(find.byType(TextField).first, '1.000'); // mucho menos que lo vendido en cigarrillos
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
+      await _contarYConfirmar(tester, efectivo: '1.000'); // mucho menos que lo vendido en cigarrillos
 
       expect(find.textContaining('No alcanzó el efectivo'), findsOneWidget);
     });
@@ -159,33 +190,21 @@ void main() {
     testWidgets('cerrar caja muestra la pantalla final, y reabrir vuelve al conteo', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
-      final sesionId =
-          await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      final usuarioId = await _usuario(db);
+      final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       await _pump(tester, db, sesionId, usuarioId);
-
-      await tester.enterText(find.byType(TextField).first, '0');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
-
-      final campoLataContada = _campo('campo_lata_contada');
-      await tester.ensureVisible(campoLataContada);
-      await tester.enterText(campoLataContada, '0');
-
-      final campoMpContado = _campo('campo_mp_contado');
-      await tester.ensureVisible(campoMpContado);
-      await tester.enterText(campoMpContado, '0');
-      await tester.ensureVisible(find.text('Cerrar caja'));
+      await _contarYConfirmar(tester, efectivo: '0');
       await tester.tap(find.text('Cerrar caja'));
       await tester.pumpAndSettle();
 
       expect(find.text('Caja cerrada'), findsOneWidget);
+      expect(find.textContaining('Vendiste'), findsOneWidget);
 
-      await tester.tap(find.text('Reabrir'));
+      await tester.tap(find.text('Reabrir caja'));
       await tester.pumpAndSettle();
       // confirmación dentro del diálogo
-      await tester.tap(find.text('Reabrir').last);
+      await tester.tap(find.text('Reabrir'));
       await tester.pumpAndSettle();
 
       expect(find.text('Confirmar conteo'), findsOneWidget);
@@ -196,10 +215,10 @@ void main() {
   });
 
   group('desglose de Mercado Pago (El dueño, 2026-10-04)', () {
-    testWidgets('el bloque de MP muestra el saldo al abrir y lo cobrado, con la cantidad de ventas', (tester) async {
+    testWidgets('el desglose de MP muestra el saldo al abrir y lo cobrado, con la cantidad de ventas', (tester) async {
       final db = baseDeTest();
       addTearDown(db.close);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0, mpInicialCentavos: 8746000);
       final medioMpId = (await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle()).id;
       final ventaId = await db.into(db.ventas).insert(
@@ -208,16 +227,14 @@ void main() {
       await db.into(db.pagos).insert(PagosCompanion.insert(ventaId: ventaId, medioPagoId: medioMpId, montoCentavos: 1000000));
 
       await _pump(tester, db, sesionId, usuarioId);
-      await tester.enterText(find.byType(TextField).first, '0');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
+      await _contarYConfirmar(tester, efectivo: '0');
 
       final inicial = find.byKey(const Key('mp_desglose_inicial'));
       await tester.ensureVisible(inicial);
-      expect(find.descendant(of: inicial, matching: find.text(r'$87.460')), findsOneWidget);
+      expect(find.descendant(of: inicial, matching: find.text(r'$ 87.460')), findsOneWidget);
       final cobros = find.byKey(const Key('mp_desglose_cobros'));
       expect(find.descendant(of: cobros, matching: find.text('+ Cobrado por MP (1 venta)')), findsOneWidget);
-      expect(find.descendant(of: cobros, matching: find.text(r'$10.000')), findsOneWidget);
+      expect(find.descendant(of: cobros, matching: find.text(r'$ 10.000')), findsOneWidget);
       expect(find.textContaining('Lo que salió de Mercado Pago sin pasar por la app'), findsOneWidget);
     });
   });
@@ -228,22 +245,17 @@ void main() {
       addTearDown(db.close);
       addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
       modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.cajaAparte, activo: false);
-      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Dueño'));
+      final usuarioId = await _usuario(db);
       final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
 
       await _pump(tester, db, sesionId, usuarioId);
-      await tester.enterText(find.byType(TextField).first, '0');
-      await tester.tap(find.text('Confirmar conteo'));
-      await tester.pumpAndSettle();
-
       expect(find.byKey(const Key('campo_lata_contada')), findsNothing);
-      expect(find.text('A la lata de cigarrillos'), findsNothing);
-      expect(find.text('Efectivo del día'), findsOneWidget);
+      await _contarYConfirmar(tester, efectivo: '0', lata: null);
 
-      final campoMpContado = _campo('campo_mp_contado');
-      await tester.ensureVisible(campoMpContado);
-      await tester.enterText(campoMpContado, '0');
-      await tester.ensureVisible(find.text('Cerrar caja'));
+      expect(find.text('A separar a la lata (cigarrillos)'), findsNothing);
+      expect(find.text('Lata de cigarrillos'), findsNothing);
+      expect(find.text('Debería haber en el cajón'), findsOneWidget);
+
       await tester.tap(find.text('Cerrar caja'));
       await tester.pumpAndSettle();
 

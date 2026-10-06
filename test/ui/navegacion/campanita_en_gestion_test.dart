@@ -19,7 +19,7 @@ void main() {
     expect(find.byTooltip('Notificaciones'), findsOneWidget);
     await tester.tap(find.byTooltip('Notificaciones'));
     await tester.pumpAndSettle();
-    expect(find.text('Sin novedades por ahora.'), findsOneWidget);
+    expect(find.text('Sin novedades por ahora'), findsOneWidget);
     expect(find.text('Hacer arqueo'), findsNothing);
   });
 }

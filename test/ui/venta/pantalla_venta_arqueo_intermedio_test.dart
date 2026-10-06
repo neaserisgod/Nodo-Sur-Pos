@@ -94,7 +94,7 @@ void main() {
         await tester.pump();
 
         expect(find.textContaining('Pasaron 2 horas'), findsOneWidget);
-        expect(find.widgetWithText(OutlinedButton, 'Hacer arqueo'), findsOneWidget);
+        expect(find.text('Hacer arqueo'), findsOneWidget);
         // A diferencia de los otros dos bloqueos de esta pantalla (sin sesión
         // / sesión de otro día), esto es solo un aviso: se sigue vendiendo con
         // el campo de búsqueda visible al mismo tiempo.
@@ -128,7 +128,7 @@ void main() {
         await tester.tap(find.byTooltip('Notificaciones'));
         await tester.pump();
 
-        await tester.tap(find.widgetWithText(OutlinedButton, 'Hacer arqueo'));
+        await tester.tap(find.text('Hacer arqueo'));
         await tester.pumpAndSettle();
 
         // Por key, no `.first`: a diferencia de cuando esto bloqueaba, ahora

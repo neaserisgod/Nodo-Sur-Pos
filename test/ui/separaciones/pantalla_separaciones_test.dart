@@ -95,11 +95,11 @@ void main() {
     await vender(await proveedor('F'), precio: 50000, costo: 30000, porMp: true);
     await pump(tester);
 
-    expect(find.text(r'$1.000'), findsWidgets); // cobrado efectivo
-    expect(find.text(r'$600'), findsWidgets); // separar efectivo
-    expect(find.text(r'$400'), findsWidgets); // te queda efectivo
-    expect(find.text(r'$900'), findsOneWidget); // separar total
-    expect(find.text(r'$600'), findsWidgets);
+    // Rediseño v4: a separar del cajón y de Mercado Pago, y lo que queda entre las dos cajas.
+    expect(find.text(r'$ 600'), findsWidgets); // separar efectivo (y lo que queda en total)
+    expect(find.text(r'$ 300'), findsWidgets); // separar Mercado Pago
+    expect(find.textContaining(r'Efectivo $ 400 · MP $ 200'), findsOneWidget); // te queda, por caja
+    expect(find.textContaining(r'Separaste $ 0 de $ 900'), findsOneWidget);
     await desmontar(tester);
   });
 
@@ -111,7 +111,7 @@ void main() {
     final serra = tester.getTopLeft(find.text('Distribuidora'));
     final mazzota = tester.getTopLeft(find.text('Fiambrería'));
     expect(serra.dy, lessThan(mazzota.dy)); // Distribuidora ($600) va antes que Fiambrería ($300)
-    expect(find.text('A separar'), findsNWidgets(2));
+    expect(find.textContaining(RegExp(r'^A separar ·')), findsNWidgets(2));
     expect(find.byKey(const Key('progreso_separados')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('progreso_separados'))).data, '0 de 2 separados');
     await desmontar(tester);
@@ -125,13 +125,13 @@ void main() {
     await tester.tap(find.text('Distribuidora'));
     await tester.pumpAndSettle();
     expect((await (db.select(db.proveedores)..where((p) => p.id.equals(serra))).getSingle()).separadoCentavos, 60000);
-    expect(find.text('Separado'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'^Separado ·')), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('progreso_separados'))).data, '1 de 1 separados');
 
     await tester.tap(find.text('Distribuidora'));
     await tester.pumpAndSettle();
     expect((await (db.select(db.proveedores)..where((p) => p.id.equals(serra))).getSingle()).separadoCentavos, 0);
-    expect(find.text('A separar'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'^A separar ·')), findsOneWidget);
     await desmontar(tester);
   });
 
@@ -154,12 +154,12 @@ void main() {
     await vender(await proveedor('S'), precio: 100000, costo: 60000);
     await pump(tester);
 
-    await tester.tap(find.text('Lo vendido'));
+    await tester.tap(find.byKey(const Key('boton_ganancia')));
     await tester.pumpAndSettle();
     expect(find.text('Semana'), findsOneWidget);
     expect(find.text('Reposición (costo)'), findsOneWidget);
-    expect(find.text(r'$1.000'), findsWidgets);
-    expect(find.text(r'$400'), findsWidgets);
+    expect(find.text(r'$ 1.000'), findsWidgets);
+    expect(find.text(r'$ 400'), findsWidgets);
 
     await tester.tap(find.text('Mes'));
     await tester.pumpAndSettle();
@@ -201,7 +201,7 @@ void main() {
     }
     await pump(tester, tamanio: const Size(1366, 768));
     expect(tester.takeException(), isNull);
-    await tester.tap(find.text('Lo vendido'));
+    await tester.tap(find.byKey(const Key('boton_ganancia')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await desmontar(tester);
@@ -233,7 +233,7 @@ void main() {
 
     Future<void> abrirGananciaDelProveedor(WidgetTester tester) async {
       await pump(tester);
-      await tester.tap(find.text('Lo vendido'));
+      await tester.tap(find.byKey(const Key('boton_ganancia')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Distribuidora'));
       await tester.pumpAndSettle();

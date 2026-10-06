@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../buscar_icono.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:la_plazoleta/ui/tema/iconos.dart';
 import '../../helpers/base_para_tests.dart';
 
 /// El kit puso la etiqueta de `CampoTexto`/`CampoPlata` fuera del `TextField`
@@ -14,7 +12,7 @@ import '../../helpers/base_para_tests.dart';
 Finder _campo(String llave) => find.descendant(of: find.byKey(Key(llave)), matching: find.byType(TextField));
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
-  tester.view.physicalSize = const Size(1200, 900);
+  tester.view.physicalSize = const Size(1366, 1300);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -58,16 +56,18 @@ void main() {
     addTearDown(db.close);
 
     await _pump(tester, db);
-    await tester.tap(find.text('Usuarios'));
+    await tester.tap(find.byKey(const Key('pastilla_usuarios')));
     await tester.pumpAndSettle();
-    await tester.enterText(_campo('campo_nuevo_usuario'), 'Ayuda finde');
-    await tester.tap(buscarIcono(IconosPlazoleta.add));
+    await tester.tap(find.byKey(const Key('boton_agregar_usuario')));
+    await tester.pumpAndSettle();
+    await tester.enterText(_campo('campo_nombre_modal'), 'Ayuda finde');
+    await tester.tap(find.text('Agregar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Ayuda finde'), findsOneWidget);
   });
 
-  testWidgets('ocultar una sección del menú apaga su switch', (tester) async {
+  testWidgets('ocultar una sección del menú la apaga', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
 
@@ -77,9 +77,9 @@ void main() {
     await tester.tap(find.byKey(const Key('pastilla_menu')));
     await tester.pumpAndSettle();
 
-    final switches = find.byType(Switch);
-    await tester.tap(switches.first);
+    await tester.tap(find.text('Ocultar').first);
     await tester.pumpAndSettle();
+    expect(find.text('Mostrar'), findsOneWidget);
 
     final secciones = await db.select(db.seccionesMenu).get();
     expect(secciones.first.visible, isFalse);

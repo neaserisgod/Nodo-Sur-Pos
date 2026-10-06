@@ -57,4 +57,43 @@ void main() {
       expect(avisaPorStock(stock: 0, minimo: null, vendidoHacePoco: false), isFalse);
     });
   });
+
+  group('diasQueAlcanza (mock v4: "alcanza 2 días" en Stock bajo)', () {
+    test('al ritmo de los últimos 30 días', () {
+      // 60 vendidas en 30 días = 2 por día; con 9 en stock alcanza 4 días (para abajo: nunca promete de más).
+      expect(diasQueAlcanza(stock: 9, vendido30Dias: 60), 4);
+    });
+
+    test('menos de un día queda en 0 (la pantalla lo muestra como "~1 día")', () {
+      expect(diasQueAlcanza(stock: 1, vendido30Dias: 90), 0);
+    });
+
+    test('agotado: 0', () {
+      expect(diasQueAlcanza(stock: 0, vendido30Dias: 30), 0);
+      expect(diasQueAlcanza(stock: -2, vendido30Dias: 30), 0);
+    });
+
+    test('sin ventas en 30 días no hay ritmo: null', () {
+      expect(diasQueAlcanza(stock: 10, vendido30Dias: 0), isNull);
+    });
+
+    test('pesables: gramos en stock contra gramos vendidos', () {
+      expect(diasQueAlcanza(stock: 3100, vendido30Dias: 15000), 6);
+    });
+  });
+
+  group('unidadesVendidas', () {
+    test('suma las unidades y cada línea de pesable cuenta como una', () {
+      expect(
+        unidadesVendidas([
+          (esPesable: false, cantidad: 3),
+          (esPesable: true, cantidad: 0),
+          (esPesable: false, cantidad: 2),
+        ]),
+        6,
+      );
+    });
+
+    test('sin líneas: 0', () => expect(unidadesVendidas(const []), 0));
+  });
 }

@@ -764,8 +764,10 @@ cambió, solo la orientación y el look.
 **Se preserva la excepción de "flujo bloqueante"**: `pantalla_detalle_dia.dart`
 y `pantalla_editor_venta.dart` siguen con su propio `AppBar`, no son
 destino de la navbar — solo cambian sus tokens internos (paleta, radios).
-`PantallaCierre` sigue siendo un `Modal` (con el vidrio nuevo), tampoco es
-destino de navbar.
+`PantallaCierre` tampoco es destino de navbar. Desde el mock v4 (2026-10-06)
+ya no es un `Modal`: es una pantalla completa sin barra (`nonav` en el mock),
+abierta con `abrirCierre` (fundido), en dos pasos ("Paso N de 2") y la caja
+cerrada.
 
 `lib/ui/navegacion/navegacion_gestion.dart` (`itemsNavGestion`,
 `navegarASeccionDeGestion`) sigue exactamente igual en su lógica — mismo

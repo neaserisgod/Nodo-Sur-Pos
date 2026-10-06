@@ -68,3 +68,21 @@ bool avisaPorStock({required int stock, required int? minimo, required bool vend
   if (minimo != null && minimo > 0 && stock < minimo) return true;
   return stock <= 0 && vendidoHacePoco;
 }
+
+/// Cuántos días alcanza el stock al ritmo de venta de los últimos 30 días ("alcanza 2 días" en Stock bajo, mock v4).
+/// Para abajo: nunca promete más días de los que hay. 0 si está agotado o alcanza menos de un día; null si no se
+/// vendió nada en 30 días (no hay ritmo con qué medir). Pesables: gramos contra gramos.
+int? diasQueAlcanza({required int stock, required int vendido30Dias}) {
+  if (vendido30Dias <= 0) return null;
+  if (stock <= 0) return 0;
+  return (stock * 30) ~/ vendido30Dias;
+}
+
+/// Unidades vendidas del día (tarjeta de Inicio): las de las líneas por unidad, y cada línea de un pesable como una.
+int unidadesVendidas(Iterable<({bool esPesable, int cantidad})> lineas) {
+  var total = 0;
+  for (final l in lineas) {
+    total += l.esPesable ? 1 : l.cantidad;
+  }
+  return total;
+}

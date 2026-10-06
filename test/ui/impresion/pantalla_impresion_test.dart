@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/ui/impresion/pantalla_impresion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
@@ -24,7 +25,7 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: ContenidoImpresion(db: db, usuarioId: 1))));
+  await tester.pumpWidget(MaterialApp(theme: TemaPlazoleta.oscuro, home: Scaffold(body: SingleChildScrollView(child: ContenidoImpresion(db: db, usuarioId: 1)))));
   await tester.pumpAndSettle();
 }
 
@@ -35,8 +36,7 @@ void main() {
 
     await _pump(tester, db);
 
-    final boton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Ticket de prueba'));
-    expect(boton.onPressed, isNull);
+    expect(tester.widget<Btn>(find.byKey(const Key('boton_ticket_prueba'))).onTap, isNull);
     expect(find.text('Sin carpeta configurada'), findsOneWidget);
   });
 
@@ -52,8 +52,7 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
-    final boton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Ticket de prueba'));
-    expect(boton.onPressed, isNotNull);
+    expect(tester.widget<Btn>(find.byKey(const Key('boton_ticket_prueba'))).onTap, isNotNull);
   });
 
   testWidgets('buscar por número de venta lista solo esa venta', (tester) async {
@@ -102,7 +101,6 @@ void main() {
     await _pump(tester, db);
     expect(find.text('Sin carpeta configurada'), findsOneWidget);
 
-    final boton = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Guardar PDF'));
-    expect(boton.onPressed, isNotNull);
+    expect(tester.widget<Btn>(find.widgetWithText(Btn, 'Guardar PDF')).onTap, isNotNull);
   });
 }

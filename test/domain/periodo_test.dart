@@ -38,4 +38,20 @@ void main() {
       expect(inicioDePeriodo(PeriodoResumen.desdeUltimoPago, miercoles), isNull);
     });
   });
+
+  group('tocaPedirHoy', () {
+    final miercoles = DateTime(2026, 10, 7, 9);
+    test('el día de hoy, con o sin acento y mayúsculas', () {
+      expect(tocaPedirHoy('Miércoles', miercoles), isTrue);
+      expect(tocaPedirHoy('miercoles ', miercoles), isTrue);
+    });
+    test('otro día o sin día cargado: no', () {
+      expect(tocaPedirHoy('Martes', miercoles), isFalse);
+      expect(tocaPedirHoy(null, miercoles), isFalse);
+    });
+    test('sábado y domingo', () {
+      expect(tocaPedirHoy('Sábado', DateTime(2026, 10, 10)), isTrue);
+      expect(tocaPedirHoy('Domingo', DateTime(2026, 10, 11)), isTrue);
+    });
+  });
 }

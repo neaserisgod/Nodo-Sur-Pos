@@ -12,27 +12,25 @@
 // del 2026-09-25) y al picker de tarjetas grandes (séptima pasada), que
 // obligaban a abrir un menú o entrar y salir para cambiar de proveedor.
 // Editar cualquier producto sigue siendo un `Modal`.
+//
+// Rediseño v4 (2026-10-06): hecha desde cero como el mock (`SCR.proveedores`). Las acciones vuelven a estar a la vista
+// al lado del título (Leer factura, Promos, Importar CSV, Nuevo proveedor), el período pasa a las cifras del detalle, y
+// "Conteo de stock"/"Comparar precios" van con el proveedor (también están en el mega-menú de Proveedores).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../navegacion/refresco_por_celular.dart';
-import '../comparar_precios/pantalla_comparar_precios.dart';
+import '../../data/database.dart';
 import '../../domain/modulos.dart';
 import '../../servicios/modulos_activos.dart';
-import '../../data/database.dart';
 import '../comun/armazon_gestion.dart';
-import '../navegacion/busqueda_contextual.dart';
-import '../comun/botones.dart';
-import '../comun/tarjetas.dart';
-import '../../domain/periodo.dart';
-import '../stock_proveedor/pantalla_stock_proveedor.dart';
-import '../tema/tokens.dart';
+import '../kit/kit.dart';
+import '../navegacion/refresco_por_celular.dart';
 import 'detalle_proveedor.dart';
 import 'dialogo_importar_csv.dart';
 import 'dialogo_leer_factura.dart';
-import 'dialogo_promos.dart';
 import 'dialogo_nuevo_proveedor.dart';
+import 'dialogo_promos.dart';
 import 'lista_proveedores.dart';
 import 'proveedores_controlador.dart';
 
@@ -56,8 +54,7 @@ class PantallaProveedores extends StatefulWidget {
   State<PantallaProveedores> createState() => _PantallaProveedoresState();
 }
 
-class _PantallaProveedoresState extends State<PantallaProveedores>
-    with RefrescoPorCelular {
+class _PantallaProveedoresState extends State<PantallaProveedores> with RefrescoPorCelular {
   @override
   void alCambiarDesdeElCelular() => _c.cargarTodo();
 
@@ -66,11 +63,7 @@ class _PantallaProveedoresState extends State<PantallaProveedores>
   @override
   void initState() {
     super.initState();
-    _c = ProveedoresControlador(
-      widget.db,
-      usuarioId: widget.usuarioId,
-      sesionCajaId: widget.sesionCajaId,
-    );
+    _c = ProveedoresControlador(widget.db, usuarioId: widget.usuarioId, sesionCajaId: widget.sesionCajaId);
     _c.cargarTodo();
   }
 
@@ -82,145 +75,51 @@ class _PantallaProveedoresState extends State<PantallaProveedores>
 
   @override
   Widget build(BuildContext context) {
+    final db = widget.db;
+    final usuarioId = widget.usuarioId;
+    final ancho = MediaQuery.sizeOf(context).width;
+    // A 1366 los cuatro botones no entran al lado del título en tamaño grande.
+    final tam = ancho >= 1700 ? TamBtn.md : TamBtn.sm;
     return ChangeNotifierProvider<ProveedoresControlador>.value(
       value: _c,
       child: Consumer<ProveedoresControlador>(
-        builder: (context, c, _) {
-          return PantallaGestion(
-            db: widget.db,
+        // Prender o apagar Promos/Comparador en Configuración cambia los botones sin salir de la pantalla.
+        builder: (context, c, _) => ValueListenableBuilder(
+          valueListenable: modulosActuales,
+          builder: (context, _, _) => PantallaGestion(
+            db: db,
             claveActiva: 'proveedores',
-            usuarioId: widget.usuarioId,
+            usuarioId: usuarioId,
             sesionCajaId: widget.sesionCajaId,
             titulo: 'Proveedores',
-            busqueda: BusquedaContextual(
-              pista: 'Buscar producto, código o proveedor…',
-              alCambiar: c.buscar,
-            ),
-            // Cuatro botones de igual peso al lado del título eran puro
-            // ruido (El dueño, 2026-09-12: "no quiero 50 botones en cualquier
-            // lado") — queda una sola acción visible, la más frecuente
-            // ("+ Nuevo producto"); las otras tres (setup/mantenimiento, no
-            // algo que se toque seguido) se juntan detrás del menú "Más
-            // acciones", mismo patrón que ya usa la companion
-            // (`pantalla_menu_companion.dart`). De paso se cae el `Wrap` a
-            // dos líneas que hacía falta antes para que cuatro botones
-            // entraran al piso mínimo de 1366px — con dos elementos ya no
-            // hace falta.
-            accion: c.cargando
-                ? null
-                : _AccionesProveedores(
-                    controlador: c,
-                    db: widget.db,
-                    usuarioId: widget.usuarioId,
-                  ),
+            acciones: [
+              // Lectura de facturas con IA (2026-10-05): todavía es una prueba, no guarda nada.
+              Btn('Leer factura', tam: tam, variante: VarBtn.ai, icono: Ic.sparkle, onTap: () => mostrarDialogoLeerFactura(context, db: db)),
+              if (moduloActivo(Modulo.promos))
+                Btn('Promos', tam: tam, variante: VarBtn.ai, icono: Ic.sparkle, onTap: () => mostrarDialogoPromos(context, db: db, usuarioId: usuarioId)),
+              Btn('Importar CSV', tam: tam, variante: VarBtn.ton, onTap: () => mostrarDialogoImportarCsv(context, db: db, usuarioId: usuarioId)),
+              Btn(
+                'Nuevo proveedor',
+                key: const Key('boton_nuevo_proveedor'),
+                tam: tam,
+                variante: VarBtn.dark,
+                icono: Ic.plus,
+                onTap: () => mostrarDialogoNuevoProveedor(context, controlador: c),
+              ),
+            ],
             child: c.cargando
                 ? const SizedBox.shrink()
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(
-                        width: anchoListaProveedores,
-                        child: ListaProveedores(controlador: c),
-                      ),
-                      const SizedBox(width: Espaciado.lg),
+                      SizedBox(width: anchoListaProveedores(ancho), child: ListaProveedores(controlador: c)),
+                      const SizedBox(width: 24),
                       const Expanded(child: DetalleProveedor()),
                     ],
                   ),
-          );
-        },
+          ),
+        ),
       ),
-    );
-  }
-}
-
-/// Fila de acción de `EncabezadoPantalla`: el período de las cifras, "Más
-/// acciones" (lo que se toca poco) y dar de alta un proveedor. "Nuevo
-/// producto" vive en el encabezado del proveedor elegido, a la derecha.
-class _AccionesProveedores extends StatelessWidget {
-  const _AccionesProveedores({
-    required this.controlador,
-    required this.db,
-    required this.usuarioId,
-  });
-
-  final ProveedoresControlador controlador;
-  final AppDatabase db;
-  final int usuarioId;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = controlador;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GrupoPildoras<PeriodoResumen>(
-          opciones: const [
-            (PeriodoResumen.hoy, 'Hoy'),
-            (PeriodoResumen.semana, 'Semana'),
-            (PeriodoResumen.mes, 'Mes'),
-            (PeriodoResumen.desdeUltimoPago, 'Desde el último pago'),
-          ],
-          elegida: c.periodo,
-          onElegir: c.cambiarPeriodo,
-        ),
-        const SizedBox(width: Espaciado.sm),
-        PopupMenuButton<VoidCallback>(
-          tooltip: 'Más acciones',
-          onSelected: (accion) => accion(),
-          itemBuilder: (context) => [
-            if (moduloActivo(Modulo.promos))
-              PopupMenuItem(
-                value: () =>
-                    mostrarDialogoPromos(context, db: db, usuarioId: usuarioId),
-                child: const Text('Promos'),
-              ),
-            // Prueba de la lectura de facturas con IA (2026-10-05): todavía no guarda nada.
-            PopupMenuItem(
-              value: () => mostrarDialogoLeerFactura(context, db: db),
-              child: const Text('Leer una factura (prueba)'),
-            ),
-            PopupMenuItem(
-              value: () => mostrarDialogoImportarCsv(
-                context,
-                db: db,
-                usuarioId: usuarioId,
-              ),
-              child: const Text('Importar CSV'),
-            ),
-            PopupMenuItem(
-              value: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      PantallaStockProveedor(db: db, usuarioId: usuarioId),
-                ),
-              ),
-              child: const Text('Conteo de stock'),
-            ),
-            // Antes era un apartado propio del menú (2026-09-26, el dueño:
-            // "que apartados podemos resumir, agrupar"): compara los precios
-            // de los productos, que viven acá.
-            if (moduloActivo(Modulo.compararPrecios))
-              PopupMenuItem(
-                value: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PantallaCompararPrecios(
-                      db: db,
-                      usuarioId: usuarioId,
-                      sesionCajaId: c.sesionCajaId,
-                    ),
-                  ),
-                ),
-                child: const Text('Comparar precios'),
-              ),
-          ],
-        ),
-        const SizedBox(width: Espaciado.sm),
-        BotonSecundario(
-          texto: '+ Nuevo proveedor',
-          onPressed: () =>
-              mostrarDialogoNuevoProveedor(context, controlador: c),
-        ),
-      ],
     );
   }
 }

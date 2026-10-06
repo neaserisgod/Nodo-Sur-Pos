@@ -11,15 +11,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../tema/iconos.dart';
-import '../tema/tokens.dart';
+import '../kit/ic.dart';
+import '../kit/mov.dart';
+import '../kit/paleta.dart';
+import '../kit/texto.dart';
+import '../kit/tocable.dart';
 
 /// Cuánto se queda un aviso simple, y uno con acción.
 const Duration duracionAvisoSimple = Duration(milliseconds: 2600);
 const Duration duracionAvisoConAccion = Duration(seconds: 5);
 
-const Duration _entrada = Duration(milliseconds: 220);
-const Duration _salida = Duration(milliseconds: 200);
+const Duration _entrada = Duration(milliseconds: 450);
+const Duration _salida = Duration(milliseconds: 300);
 
 /// Distancia del borde de arriba del contenido (la barra de la ventana ya está arriba del `Navigator`): deja el aviso
 /// sobre la franja de la navbar, como en el mock.
@@ -103,7 +106,7 @@ class _AvisoSuperiorState extends State<_AvisoSuperior> with SingleTickerProvide
   void initState() {
     super.initState();
     _controlador = AnimationController(vsync: this, duration: _entrada, reverseDuration: _salida);
-    _aparicion = CurvedAnimation(parent: _controlador, curve: Animaciones.curva, reverseCurve: Curves.easeIn);
+    _aparicion = CurvedAnimation(parent: _controlador, curve: curvaBack, reverseCurve: Curves.easeIn);
     _controlador.addStatusListener((estado) {
       if (estado == AnimationStatus.dismissed) widget.alTerminar();
     });
@@ -128,9 +131,8 @@ class _AvisoSuperiorState extends State<_AvisoSuperior> with SingleTickerProvide
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final fondo = tema.snackBarTheme.backgroundColor ?? const Color(0xFF121317);
-    final estiloTexto = (tema.textTheme.bodyLarge ?? const TextStyle()).copyWith(color: Colors.white, fontWeight: Pesos.medium);
+    // `.toast` del mock v4: pastilla de 60 px que baja con rebote (`--back`, 450 ms), tilde + texto 17/600 y "Deshacer".
+    final p = context.p;
     return Positioned(
       top: _separacionSuperior,
       left: 0,
@@ -141,7 +143,7 @@ class _AvisoSuperiorState extends State<_AvisoSuperior> with SingleTickerProvide
           builder: (context, hijo) {
             final v = _aparicion.value;
             return Opacity(
-              opacity: v.clamp(0.0, 1.0),
+              opacity: _controlador.value.clamp(0.0, 1.0),
               child: Transform.translate(offset: Offset(0, -26 * (1 - v)), child: hijo),
             );
           },
@@ -149,41 +151,45 @@ class _AvisoSuperiorState extends State<_AvisoSuperior> with SingleTickerProvide
             liveRegion: true,
             container: true,
             label: widget.texto,
-            child: Material(
+            child: Container(
               key: const Key('aviso_superior'),
-              color: fondo,
-              elevation: 8,
-              shadowColor: Colors.black.withValues(alpha: 0.35),
-              shape: const StadiumBorder(),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 56, maxWidth: 720),
-                child: Padding(
-                  padding: EdgeInsets.only(left: Espaciado.lg, right: widget.textoAccion == null ? Espaciado.xl : Espaciado.sm),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const IconoPlz(IconosPlazoleta.check, size: 20, color: Colors.white),
-                      const SizedBox(width: Espaciado.md),
-                      Flexible(child: Text(widget.texto, style: estiloTexto, maxLines: 2, overflow: TextOverflow.ellipsis)),
-                      if (widget.textoAccion != null) ...[
-                        const SizedBox(width: Espaciado.md),
-                        TextButton(
-                          key: const Key('aviso_superior_accion'),
-                          onPressed: _accionar,
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.white.withValues(alpha: 0.16),
-                            padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
-                            minimumSize: const Size(0, 36),
-                            shape: const StadiumBorder(),
-                            textStyle: (tema.textTheme.bodyMedium ?? const TextStyle()).copyWith(fontWeight: Pesos.fuerte),
-                          ),
-                          child: Text(widget.textoAccion!),
-                        ),
-                      ],
-                    ],
+              constraints: const BoxConstraints(minHeight: 60, maxWidth: 820),
+              padding: EdgeInsets.only(left: 22, right: widget.textoAccion == null ? 30 : 12),
+              decoration: BoxDecoration(
+                color: p.toast,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 50, offset: Offset(0, 20))],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icono(Ic.check, size: 20, color: p.sobreToast, grosor: 2.6),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(widget.texto, style: estilo(17, 600, color: p.sobreToast), maxLines: 2, overflow: TextOverflow.ellipsis),
                   ),
-                ),
+                  if (widget.textoAccion != null) ...[
+                    const SizedBox(width: 22),
+                    Tocable(
+                      key: const Key('aviso_superior_accion'),
+                      onTap: _accionar,
+                      radio: 18,
+                      child: Container(
+                        height: 36,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(color: const Color(0x29FFFFFF), borderRadius: BorderRadius.circular(999)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icono(Ic.undo, size: 16, color: p.sobreToast, grosor: 2.4),
+                            const SizedBox(width: 6),
+                            Text(widget.textoAccion!, style: estilo(14, 600, color: p.sobreToast)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

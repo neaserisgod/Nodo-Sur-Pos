@@ -45,8 +45,6 @@ void main() {
       pantalla: PantallaProveedores(db: db, usuarioId: usuarioId, sesionCajaId: null),
       tema: TemaPlazoleta.claro,
     );
-    await tester.tap(find.byTooltip('Más acciones'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Promos'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Todavía no armaste ninguna'), findsOneWidget);

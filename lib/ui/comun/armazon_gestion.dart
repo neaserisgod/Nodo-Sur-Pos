@@ -9,8 +9,7 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../navegacion/busqueda_contextual.dart';
 import '../navegacion/envoltura_con_navbar_superior.dart';
-import '../tema/tokens.dart';
-import 'encabezado_pantalla.dart';
+import '../kit/pagina.dart';
 
 class PantallaGestion extends StatelessWidget {
   const PantallaGestion({
@@ -22,6 +21,7 @@ class PantallaGestion extends StatelessWidget {
     required this.titulo,
     this.subtitulo,
     this.accion,
+    this.acciones = const [],
     this.busqueda,
     required this.child,
   });
@@ -39,6 +39,9 @@ class PantallaGestion extends StatelessWidget {
   /// Acción opcional a la derecha del título (ej. "+ Nuevo").
   final Widget? accion;
 
+  /// Varias acciones (`.acts` del mock), después de [accion].
+  final List<Widget> acciones;
+
   /// Qué busca el campo de arriba en esta pantalla (ver
   /// `busqueda_contextual.dart`); null = buscar productos para vender.
   final BusquedaContextual? busqueda;
@@ -47,6 +50,8 @@ class PantallaGestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `.page` del mock v4: título grande a la izquierda y las acciones a la derecha, sin subtítulo (el mock no lo
+    // tiene); el subtítulo queda solo para lectores de pantalla.
     return Scaffold(
       body: SafeArea(
         child: EnvolturaConNavbarSuperior(
@@ -55,16 +60,11 @@ class PantallaGestion extends StatelessWidget {
           usuarioId: usuarioId,
           sesionCajaId: sesionCajaId,
           busqueda: busqueda,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(Espaciado.xxl, Espaciado.lg, Espaciado.xxl, Espaciado.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                EncabezadoPantalla(titulo: titulo, subtitulo: subtitulo, accion: accion),
-                const SizedBox(height: Espaciado.lg),
-                Expanded(child: child),
-              ],
-            ),
+          child: PaginaMock(
+            titulo: titulo,
+            acciones: [?accion, ...acciones],
+            debajoDelTitulo: subtitulo == null ? null : Semantics(label: subtitulo, child: const SizedBox.shrink()),
+            child: child,
           ),
         ),
       ),

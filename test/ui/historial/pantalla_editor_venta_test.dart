@@ -53,14 +53,14 @@ void main() {
     await _pump(tester, db, ventaId: ventaId, usuarioId: usuarioId);
 
     // 112000*2 = 224000, redondea hacia arriba al paso de 10000 configurado → 230000.
-    expect(find.text('\$2.300'), findsOneWidget);
+    expect(find.text('\$ 2.300'), findsWidgets);
 
     await tester.tap(find.byTooltip('Sumar uno'));
     await tester.pumpAndSettle();
 
     // 112000*3 = 336000 → 340000; la línea queda marcada con lo que cambió.
-    expect(find.text('\$3.400'), findsOneWidget);
-    expect(find.text('Antes \$2.300'), findsOneWidget);
+    expect(find.text('\$ 3.400'), findsWidgets);
+    expect(find.textContaining('Antes \$ 2.300'), findsOneWidget);
     expect(find.text('Cambió: 2 → 3'), findsOneWidget);
   });
 

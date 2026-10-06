@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/ui/stock_proveedor/pantalla_stock_proveedor.dart';
-import 'package:la_plazoleta/ui/tema/colores_escritorio.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import '../../helpers/base_para_tests.dart';
 
@@ -38,7 +38,7 @@ void main() {
     expect(nombres.indexOf('Agotado'), lessThan(nombres.indexOf('Con stock')));
 
     final estiloAgotado = tester.widget<Text>(find.text('Agotado')).style;
-    expect(estiloAgotado?.color, coloresEscritorioOscuro.error);
+    expect(estiloAgotado?.color, paletaMockOscura.b);
   });
 
   testWidgets('contar una fila no toca la base hasta "Aplicar ajustes", que deja un movimiento AJUSTE', (tester) async {

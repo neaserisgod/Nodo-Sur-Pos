@@ -149,3 +149,13 @@ int reservaDiariaFijosCentavos({
   if (diasDelMes <= 0) return 0;
   return (fijosMensualesCentavos / diasDelMes).round();
 }
+
+/// Estado de un gasto fijo en el mes (lista "Fijos del mes", mock v4).
+enum EstadoFijo { pagado, pendiente, faltaCargar }
+
+/// Sin monto cargado del mes no se puede saber si está pagado ("avisar antes que inventar"): falta cargar. Con monto,
+/// pagado si lo pagado lo cubre.
+EstadoFijo estadoDelFijo({required int? montoCentavos, required int pagadoCentavos}) {
+  if (montoCentavos == null) return EstadoFijo.faltaCargar;
+  return pagadoCentavos >= montoCentavos ? EstadoFijo.pagado : EstadoFijo.pendiente;
+}
