@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_encargues.dart';
 import '../../data/repositorio_pendientes.dart' show PendienteYaResueltoException, cobrarDeuda;
@@ -146,7 +147,7 @@ class _PantallaEnarguesState extends State<PantallaEncargues> with RefrescoPorCe
       aviso = 'La caja ya se cerró: el cobro no se guardó.';
     }
     await _cargar();
-    if (aviso != null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(aviso)));
+    if (aviso != null && mounted) mostrarAviso(context, aviso);
   }
 
   @override

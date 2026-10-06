@@ -44,6 +44,7 @@ import '../comun/botones.dart';
 import '../comun/encabezado_pantalla.dart';
 import '../comun/modal.dart';
 import '../impresion/dialogo_imprimir_ticket.dart';
+import '../navegacion/boton_caja.dart';
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
@@ -421,6 +422,52 @@ class _PantallaVentaState extends State<PantallaVenta>
     const ItemNavbarSuperior(clave: 'configuracion', etiqueta: 'Configuración'),
   ];
 
+  /// "Caja ▾" (rediseño v4): el estado de la caja a la vista y, en el menú, todo lo que se hace con ella. Reemplaza a los
+  /// íconos sueltos "Cambiar de turno" y "Cerrar caja" del extremo derecho. Con la caja cerrada, el menú tiene solo "Abrir
+  /// caja"; con la de un día anterior sin cerrar, solo cerrarla.
+  Widget _construirBotonCaja(VentaControlador c) {
+    final sesion = c.sesion;
+    final EstadoCajaNavbar estado = sesion == null
+        ? EstadoCajaNavbar.cerrada
+        : (c.sesionVencida ? EstadoCajaNavbar.deAyerSinCerrar : EstadoCajaNavbar.abierta);
+    return ValueListenableBuilder<ModulosNegocio>(
+      valueListenable: modulosActuales,
+      builder: (context, modulos, _) {
+        final hayTurnos = modulos.estaActivo(Modulo.turnos);
+        final acciones = switch (estado) {
+          EstadoCajaNavbar.cerrada => [
+            AccionMenuCaja(clave: 'abrir', etiqueta: 'Abrir caja', icono: IconosPlazoleta.paymentsOutlined, onTap: _abrirCaja),
+          ],
+          EstadoCajaNavbar.deAyerSinCerrar => [
+            AccionMenuCaja(clave: 'cerrar', etiqueta: 'Cerrar caja', icono: IconosPlazoleta.lockOutline, onTap: _irACierre, peligro: true),
+          ],
+          EstadoCajaNavbar.abierta => [
+            if (hayTurnos)
+              AccionMenuCaja(
+                clave: 'arqueo',
+                etiqueta: 'Hacer arqueo',
+                icono: IconosPlazoleta.history,
+                nota: c.arqueoIntermedioVencido ? 'pendiente' : null,
+                onTap: _hacerArqueoIntermedio,
+              ),
+            if (hayTurnos) AccionMenuCaja(clave: 'turno', etiqueta: 'Cambiar de turno', icono: IconosPlazoleta.swapHoriz, onTap: _cambiarTurno),
+            AccionMenuCaja(clave: 'gasto', etiqueta: 'Gasto', icono: IconosPlazoleta.addCircleOutline, atajo: '-', onTap: _abrirGastoRapido),
+            AccionMenuCaja(clave: 'ingreso', etiqueta: 'Ingreso', icono: IconosPlazoleta.addCircleOutline, atajo: 'Alt+I', onTap: _abrirIngresoRapido),
+            AccionMenuCaja(
+              clave: 'cerrar',
+              etiqueta: 'Cerrar caja',
+              icono: IconosPlazoleta.lockOutline,
+              onTap: _irACierre,
+              peligro: true,
+              separadorAntes: true,
+            ),
+          ],
+        };
+        return BotonCaja(estado: estado, acciones: acciones);
+      },
+    );
+  }
+
   /// Venta es la raíz de la app (El dueño, 2026-10-03): cada sección se abre encima con la misma navegación que el
   /// resto de las pantallas, y al volver se recargan las secciones (pudieron cambiar en Configuración).
   Future<void> _onSeleccionarSeccion(String clave) async {
@@ -450,21 +497,11 @@ class _PantallaVentaState extends State<PantallaVenta>
               // mismo criterio que el arranque de `main.dart`.
               if (c.cargando) return const SizedBox.shrink();
 
-              final accionesPie = Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // El arqueo sugerido cada 2 horas es parte de los turnos; los avisos de Mercado Pago (etapa D) no, así que la
-                  // campanita está siempre y cada parte decide si se muestra.
-                  _BotonNotificaciones(
-                    hayArqueoVencido: c.arqueoIntermedioVencido,
-                    onHacerArqueo: _hacerArqueoIntermedio,
-                  ),
-                  _AccionesPie(
-                    puedeCerrarCaja: c.sesion != null,
-                    onCerrarCaja: _irACierre,
-                    onCambiarTurno: _cambiarTurno,
-                  ),
-                ],
+              // La campanita va a la derecha, antes de la tuerca. El arqueo sugerido cada 2 horas es parte de los turnos; los
+              // avisos de Mercado Pago (etapa D) no, así que la campanita está siempre y cada parte decide si se muestra.
+              final campanita = _BotonNotificaciones(
+                hayArqueoVencido: c.arqueoIntermedioVencido,
+                onHacerArqueo: _hacerArqueoIntermedio,
               );
               final hayVenta = c.sesion != null && !c.sesionVencida;
 
@@ -492,7 +529,8 @@ class _PantallaVentaState extends State<PantallaVenta>
                       claveActiva: 'venta',
                       items: _itemsNav,
                       onSeleccionar: _onSeleccionarSeccion,
-                      acciones: hayVenta ? accionesPie : null,
+                      izquierda: _construirBotonCaja(c),
+                      acciones: hayVenta ? campanita : null,
                     ),
                   ),
                   Expanded(
@@ -848,97 +886,6 @@ class _AvisoMpEnPanel extends StatelessWidget {
         const SizedBox(height: Espaciado.sm),
         BotonSecundario(texto: 'Visto', onPressed: onVisto),
       ],
-    );
-  }
-}
-
-/// Acciones del extremo derecho de la navbar — "Cerrar caja" es una acción,
-/// no una sección (El dueño): va apartada del listado de navegación por hueco,
-/// nunca mezclada con él. "Imprimir ticket" ya no vive acá (fase 13, ítem
-/// 3): dejó de ser una acción permanente, ahora aparece junto al acuse de
-/// cobro (`ColumnaCarrito`) solo mientras hay algo reciente para imprimir.
-/// Remake 2026-09-19: pasa de pie vertical de `BarraLateral` a fila de
-/// íconos con tooltip en el slot `accion` de `NavbarSuperior` — siempre
-/// ícono solo (la navbar ya es compacta de por sí en este slot, no
-/// necesita su propio modo expandido).
-class _AccionesPie extends StatelessWidget {
-  const _AccionesPie({
-    required this.puedeCerrarCaja,
-    required this.onCerrarCaja,
-    required this.onCambiarTurno,
-  });
-
-  final bool puedeCerrarCaja;
-  final VoidCallback onCerrarCaja;
-  final VoidCallback onCambiarTurno;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Separadas a propósito (El dueño, 2026-09-12): "Cerrar caja" es el fin
-        // del día, no encadena nada después. "Cambiar de turno" es el mismo
-        // arqueo obligatorio, pero para cuando viene ayuda a mitad de
-        // sesión — al terminar, encadena directo a abrir la hoja de quien
-        // entra en vez de dejar la venta bloqueada esperando un segundo clic.
-        SiModulo(
-          Modulo.turnos,
-          hijo: _BotonAccion(
-            icono: IconosPlazoleta.swapHoriz,
-            etiqueta: 'Cambiar de turno',
-            onPressed: puedeCerrarCaja ? onCambiarTurno : null,
-          ),
-        ),
-        _BotonAccion(
-          icono: IconosPlazoleta.lockOutline,
-          etiqueta: 'Cerrar caja',
-          onPressed: puedeCerrarCaja ? onCerrarCaja : null,
-        ),
-      ],
-    );
-  }
-}
-
-class _BotonAccion extends StatelessWidget {
-  const _BotonAccion({
-    required this.icono,
-    required this.etiqueta,
-    required this.onPressed,
-  });
-
-  final IconData icono;
-  final String etiqueta;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final color = onPressed == null
-        ? colores.textoTenue
-        : colores.textoSecundario;
-    return Tooltip(
-      message: etiqueta,
-      child: Semantics(
-        button: true,
-        enabled: onPressed != null,
-        label: etiqueta,
-        excludeSemantics: true,
-        onTap: onPressed,
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(radioControlEscritorio),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(radioControlEscritorio),
-            onTap: onPressed,
-            child: SizedBox(
-              width: Medidas.alturaControl,
-              height: Medidas.alturaControl,
-              child: IconoPlz(icono, size: 20, color: color),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

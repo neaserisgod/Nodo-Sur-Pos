@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import '../../domain/dinero.dart';
 import '../../domain/venta.dart';
 import '../comun/color_categoria.dart';
+import '../comun/aviso_superior.dart';
 import '../tema/superficie.dart';
 import '../tema/tema.dart';
 import '../tema/tokens.dart';
@@ -284,26 +285,13 @@ class ColumnaCarrito extends StatelessWidget {
                                       onTap: () {
                                         final controlador = context.read<VentaControlador>();
                                         controlador.eliminarLinea(index);
-                                        // Un toque saca la línea sin confirmar, así que se
-                                        // puede deshacer. El snackbar flota a la izquierda
-                                        // para no tapar el cobro (regla dura de Venta).
-                                        final mensajero = ScaffoldMessenger.of(context);
-                                        mensajero.clearSnackBars();
-                                        mensajero.showSnackBar(
-                                          SnackBar(
-                                            behavior: SnackBarBehavior.floating,
-                                            margin: const EdgeInsets.only(
-                                              left: Espaciado.lg,
-                                              right: Medidas.anchoPanelCobroVenta + Espaciado.lg,
-                                              bottom: Espaciado.lg,
-                                            ),
-                                            duration: const Duration(seconds: 5),
-                                            content: Text('Quitaste ${linea.nombreProducto}'),
-                                            action: SnackBarAction(
-                                              label: 'Deshacer',
-                                              onPressed: () => controlador.restaurarLinea(index, linea),
-                                            ),
-                                          ),
+                                        // Un toque saca la línea sin confirmar, así que se puede deshacer
+                                        // desde el aviso de arriba (no tapa el cobro).
+                                        mostrarAviso(
+                                          context,
+                                          'Quitaste ${linea.nombreProducto}',
+                                          textoAccion: 'Deshacer',
+                                          alAccionar: () => controlador.restaurarLinea(index, linea),
                                         );
                                       },
                                     ),

@@ -13,6 +13,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart';
 import '../../domain/dinero.dart';
@@ -56,9 +57,7 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
   Future<void> _aplicar() async {
     final n = await _c.aplicarAjustes();
     if (!mounted || n == 0) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(n == 1 ? 'Se ajustó 1 producto' : 'Se ajustaron $n productos')),
-    );
+    mostrarAviso(context, n == 1 ? 'Se ajustó 1 producto' : 'Se ajustaron $n productos');
   }
 
   Future<void> _bajarPlanilla() async {
@@ -69,7 +68,7 @@ class _PantallaStockProveedorState extends State<PantallaStockProveedor> {
     if (ubicacion == null) return;
     await File(ubicacion.path).writeAsString(Csv.excel().encode(_c.filasPlanilla()));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Planilla guardada')));
+    mostrarAviso(context, 'Planilla guardada');
   }
 
   @override

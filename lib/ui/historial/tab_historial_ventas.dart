@@ -16,6 +16,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../comun/aviso_superior.dart';
 import '../navegacion/refresco_por_celular.dart';
 import '../../data/database.dart';
 import '../../data/linea_venta_reconstruccion.dart';
@@ -161,7 +162,7 @@ class _TabHistorialVentasState extends State<TabHistorialVentas> with RefrescoPo
       // "sesión ya cerrada" / "ya está anulada" — un límite de negocio, no
       // un bug.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message.toString())));
+        mostrarAviso(context, e.message.toString());
       }
     }
   }

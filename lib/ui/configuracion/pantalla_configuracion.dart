@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../comun/aviso_superior.dart';
 import '../impresion/pantalla_impresion.dart';
 import '../respaldo/pantalla_respaldo.dart';
 import '../../data/database.dart';
@@ -773,9 +774,7 @@ class _SeccionMediosPago extends StatelessWidget {
         // que `dialogo_editar_producto.dart` para un `ArgumentError` de
         // negocio, no un bug.
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(e.message.toString())));
+          mostrarAviso(context, e.message.toString());
         }
       }
     }

@@ -1,6 +1,6 @@
-// Navbar superior — rediseño "antigravity": la marca a la izquierda y las
-// secciones como una fila de pastillas (la activa con fondo gris), igual que
-// la barra de la web de Nodo Sur. Reemplaza al menú desplegable de un solo
+// Navbar superior — rediseño "antigravity": las secciones como una fila de pastillas (la activa con fondo gris), igual que
+// la barra de la web de Nodo Sur. Desde el rediseño v4 (2026-10-05) tiene tres costados simétricos: "Caja ▾" a la izquierda,
+// las pastillas en el centro y la campanita y la tuerca a la derecha. Reemplaza al menú desplegable de un solo
 // botón (2026-09-25/26): ahora se ve de un vistazo dónde se puede ir.
 //
 // Reutilizable a propósito: cada pantalla que la use arma su propia lista de
@@ -46,6 +46,7 @@ class NavbarSuperior extends StatelessWidget {
     required this.claveActiva,
     required this.items,
     required this.onSeleccionar,
+    this.izquierda,
     this.acciones,
     this.busqueda,
     this.buscando = false,
@@ -57,7 +58,11 @@ class NavbarSuperior extends StatelessWidget {
   final List<ItemNavbarSuperior> items;
   final ValueChanged<String> onSeleccionar;
 
-  /// Lo que va a la derecha después del engranaje (en Venta, las acciones de caja).
+  /// Lo que va en el costado izquierdo (rediseño v4: el botón "Caja ▾"). Los tres costados de la barra son simétricos: este
+  /// y el derecho ocupan lo mismo, así las pastillas quedan en el centro de la ventana.
+  final Widget? izquierda;
+
+  /// Lo que va a la derecha ANTES del engranaje (la campanita), para que la tuerca quede siempre en la punta.
   final Widget? acciones;
 
   /// El campo de búsqueda de la pantalla. Con valor, la barra muestra una lupa y, al abrirla ([buscando]), el campo se
@@ -91,7 +96,16 @@ class NavbarSuperior extends StatelessWidget {
           builder: (context, limites) {
             final fila = Row(
               children: [
-                const Expanded(child: SizedBox.shrink()),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: AnimatedOpacity(
+                      opacity: buscando ? 0 : 1,
+                      duration: Animaciones.corta,
+                      child: IgnorePointer(ignoring: buscando, child: izquierda ?? const SizedBox.shrink()),
+                    ),
+                  ),
+                ),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: limites.maxWidth * 0.56),
                   child: AnimatedOpacity(
@@ -133,6 +147,7 @@ class NavbarSuperior extends StatelessWidget {
                             icono: IconosPlazoleta.search,
                             onTap: onAbrirBusqueda,
                           ),
+                        if (acciones != null) Flexible(child: acciones!),
                         if (hayConfiguracion)
                           _BotonRedondo(
                             llave: const Key('nav_configuracion'),
@@ -141,10 +156,6 @@ class NavbarSuperior extends StatelessWidget {
                             activo: claveActiva == claveConfiguracion,
                             onTap: () => onSeleccionar(claveConfiguracion),
                           ),
-                        if (acciones != null) ...[
-                          const SizedBox(width: Espaciado.sm),
-                          Flexible(child: acciones!),
-                        ],
                       ],
                     ),
                   ),

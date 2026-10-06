@@ -24,7 +24,7 @@ void main() {
     return db.close();
   });
 
-  testWidgets('sin el módulo Turnos no hay "Cambiar de turno"; "Cerrar caja" sigue', (tester) async {
+  testWidgets('sin el módulo Turnos el menú Caja no tiene turno ni arqueo; "Cerrar caja" sigue', (tester) async {
     tester.view.physicalSize = const Size(1366, 768);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -35,12 +35,20 @@ void main() {
       MaterialApp(theme: TemaPlazoleta.oscuro, navigatorObservers: [routeObserver], home: PantallaVenta(db: db)),
     );
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Cambiar de turno'), findsOneWidget);
+    // Desde el rediseño v4 el turno y el cierre viven en el menú "Caja ▾".
+    await tester.tap(find.byKey(const Key('boton_caja')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('menu_caja_turno')), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5)); // cierra el menú
+    await tester.pumpAndSettle();
 
     modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.turnos, activo: false);
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Cambiar de turno'), findsNothing);
-    expect(find.byTooltip('Cerrar caja'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('boton_caja')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('menu_caja_turno')), findsNothing);
+    expect(find.byKey(const Key('menu_caja_arqueo')), findsNothing);
+    expect(find.byKey(const Key('menu_caja_cerrar')), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
   });

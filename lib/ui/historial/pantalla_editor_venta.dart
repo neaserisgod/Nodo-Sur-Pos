@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../../domain/medio_pago.dart';
@@ -135,7 +136,7 @@ class _PantallaEditorVentaState extends State<PantallaEditorVenta> {
       if (mounted) await ofrecerDevolucionMp(context, widget.db, widget.ventaId);
       if (mounted) Navigator.of(context).pop();
     } on ArgumentError catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message.toString())));
+      if (mounted) mostrarAviso(context, e.message.toString());
     }
   }
 
