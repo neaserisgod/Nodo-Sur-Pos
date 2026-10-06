@@ -131,3 +131,53 @@ class _PulsoState extends State<Pulso> with SingleTickerProviderStateMixin {
 /// Para las filas de una lista: escalonadas solo las primeras 12 (lo que se ve al abrir la pantalla). Las que aparecen
 /// al scrollear no se animan: entrar con demora mientras se baja se sentiría lento, no fluido.
 Widget entradaEnLista(int indice, Widget fila) => indice < 12 ? Entrada(orden: indice, child: fila) : fila;
+
+
+/// Un número que "cuenta" hasta su valor nuevo (`tweenNum` del mock): el total de la venta sube o baja en ~0,4 s en vez de saltar.
+/// Con "reducir animaciones" del sistema salta directo. [formato] arma el texto de cada cuadro (ej. `formatearARS`).
+class NumeroAnimado extends StatefulWidget {
+  const NumeroAnimado({super.key, required this.valor, required this.formato, this.estilo, this.duracion = const Duration(milliseconds: 420)});
+
+  final int valor;
+  final String Function(int) formato;
+  final TextStyle? estilo;
+  final Duration duracion;
+
+  @override
+  State<NumeroAnimado> createState() => _NumeroAnimadoState();
+}
+
+class _NumeroAnimadoState extends State<NumeroAnimado> with SingleTickerProviderStateMixin {
+  late final AnimationController _reloj = AnimationController(vsync: this, duration: widget.duracion);
+  late int _desde = widget.valor;
+  late int _hasta = widget.valor;
+
+  int get _actual => (_desde + (_hasta - _desde) * Curves.easeOutCubic.transform(_reloj.value)).round();
+
+  @override
+  void didUpdateWidget(NumeroAnimado anterior) {
+    super.didUpdateWidget(anterior);
+    if (anterior.valor == widget.valor) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _desde = _hasta = widget.valor;
+      return;
+    }
+    _desde = _actual;
+    _hasta = widget.valor;
+    _reloj.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _reloj.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _reloj,
+      builder: (context, _) => Text(widget.formato(_reloj.isAnimating ? _actual : widget.valor), style: widget.estilo, maxLines: 1),
+    );
+  }
+}

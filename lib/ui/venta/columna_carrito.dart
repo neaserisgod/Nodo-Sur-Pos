@@ -16,12 +16,10 @@ import 'package:provider/provider.dart';
 
 import '../../domain/dinero.dart';
 import '../../domain/venta.dart';
-import '../comun/color_categoria.dart';
 import '../comun/aviso_superior.dart';
-import '../tema/superficie.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'dialogo_editar_cantidad.dart';
+import 'columna_busqueda.dart' show TeclaAtajo;
 import 'tacto_venta.dart';
 import 'cancelar_venta_con_deshacer.dart';
 import 'venta_controlador.dart';
@@ -37,276 +35,63 @@ class ColumnaCarrito extends StatelessWidget {
     required this.onImprimir,
   });
 
-  /// Id y total de la última venta cobrada en esta pantalla (bug real:
-  /// cobrar no daba ninguna señal de que la venta había entrado). Mientras
-  /// el carrito siga vacío, ocupa el lugar de "El carrito está vacío" — deja
-  /// de mostrarse solo, sin timer, en cuanto entra la primera línea de la
-  /// venta siguiente.
+  /// Id y total de la última venta cobrada en esta pantalla (bug real: cobrar no daba ninguna señal de que la venta había entrado).
+  /// Mientras el carrito siga vacío, ocupa el lugar del texto de "empezá la venta" — deja de mostrarse solo, sin timer, en cuanto
+  /// entra la primera línea de la venta siguiente.
   final int? ventaConfirmada;
   final int? totalConfirmadoCentavos;
 
-  /// Imprimir ya no es una acción permanente de la barra lateral (fase 13,
-  /// ítem 3): aparece acá, junto al acuse, mientras hay algo reciente para
-  /// imprimir — se va con el resto del acuse en cuanto entra la primera
-  /// línea de la venta siguiente.
+  /// Imprimir aparece acá, junto al acuse, mientras hay algo reciente para imprimir.
   final VoidCallback onImprimir;
 
   @override
   Widget build(BuildContext context) {
     final c = context.watch<VentaControlador>();
 
-    // Las pestañas van arriba, sobre el canvas, como las píldoras de
-    // categoría de la grilla — no adentro del panel blanco del carrito.
+    // Las pestañas y el carrito viven adentro del panel gris de la derecha (`CuerpoVenta`): acá no hay fondo propio.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const _BarraVentasAbiertas(),
-        const SizedBox(height: Espaciado.sm),
+        const SizedBox(height: 14),
         Expanded(
-          child: Superficie(
-            child: c.carrito.isEmpty
-                ? Center(
-                    child: _EstadoVacio(
-                      ventaId: ventaConfirmada,
-                      totalCentavos: totalConfirmadoCentavos,
-                      onImprimir: onImprimir,
-                    ),
-                  )
-                : ListView.builder(
-                    // ListView.builder, no Column+scroll: el carrito de una venta
-                    // grande no puede redibujarse entero en cada línea agregada
-                    // (hardware 2008).
-                    itemCount: c.carrito.length,
-                    // Con la clave por producto, sacar una línea del medio no hace re-entrar a las de abajo (sin esto
-                    // la lista reusa las filas por posición y cada una volvería a animarse).
-                    findChildIndexCallback: (clave) {
-                      for (var i = 0; i < c.carrito.length; i++) {
-                        if (_claveLinea(c.carrito[i], i) == clave) return i;
-                      }
-                      return null;
-                    },
-                    itemBuilder: (context, index) {
-                      final linea = c.carrito[index];
-                      final esUltima = index == c.indiceUltimaLinea;
-                      final stockNegativo = _stockQuedaEnCeroONegativo(
-                        context,
-                        linea,
-                      );
-                      final textTheme = Theme.of(context).textTheme;
-                      // "Bento con carácter" (El dueño, 2026-09-16): punto de color
-                      // por rubro — null en "Varios" (sin categoría, Regla 5) o en
-                      // cualquier producto sin categoría cargada, mismo criterio
-                      // que `BarraCategoria` ya resuelve solo.
-                      final colorCat = colorCategoria(
-                        context,
-                        c.productoPorId(linea.productoId)?.categoriaId,
-                      );
-
-                      // Precio unitario: solo por unidad (El dueño, 2026-09-06,
-                      // "algo de detalle" — la fila era pobre con solo nombre,
-                      // cantidad y subtotal). Un pesable no tiene un "precio
-                      // unitario" en ese sentido (es tarifa por kilo, ya visible
-                      // en la búsqueda antes de agregar) — se deja un espacio en
-                      // blanco del mismo ancho para que el subtotal siga
-                      // alineado entre líneas mixtas (`DISENO.md`, reglas de
-                      // alineación), no se saca la columna entera.
-                      final precioUnitarioTexto = linea is LineaVentaPorUnidad
-                          ? formatearARS(
-                              linea.precioUnitarioCentavos,
-                              conSigno: false,
-                            )
-                          : null;
-
-                      // Ancho máximo, no `Expanded` hasta el borde de la columna
-                      // (regla 1, `DISENO.md`): a este ancho de columna, una fila
-                      // que llegara hasta el final obligaría al ojo a recorrer
-                      // mucho más de lo que hace falta para conectar el nombre con
-                      // su plata. `anchoFilaCarrito` (no `anchoMaximoContenido`):
-                      // más ancho que un formulario completo, pero con tope. El
-                      // resaltado de la última línea agregada acompaña ese mismo
-                      // ancho, no la columna entera.
-                      // La línea nueva entra deslizándose; cuando cambia su cantidad, late (2026-10-03).
-                      return Entrada(
-                        key: _claveLinea(linea, index),
-                        child: Pulso(
-                          valor: _descripcionCantidad(linea),
-                          escala: 1.02,
-                          alineacion: Alignment.centerLeft,
-                          child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: Medidas.anchoFilaCarrito,
-                          ),
-                          child: Container(
-                            // La línea recién agregada lleva un aro azul de marca (mock Nodo Sur), ya no un relleno gris.
-                            decoration: BoxDecoration(
-                              border: esUltima ? Border.all(color: azulMarca, width: 2) : null,
-                              borderRadius: BorderRadius.circular(
-                                radioControlEscritorio,
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Espaciado.md,
-                              vertical: Espaciado.md,
-                            ),
-                            // LayoutBuilder, no un ancho fijo de columna: a
-                            // 1920×1080 esto sobra de espacio, pero en el piso
-                            // mínimo (1366×768, DISENO.md) con la barra lateral
-                            // desplegada la columna del carrito queda en ~230px
-                            // — ahí no entran todos los datos más los íconos sin
-                            // desbordar (`RenderFlex overflowed`, encontrado por
-                            // los tests, no a simple vista). El precio unitario y
-                            // los botones "−"/"+" son lo que se saca cuando no
-                            // hay lugar — el doble clic para editar la cantidad
-                            // sigue andando igual (no ocupa ancho extra).
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final hayLugarParaDetalle =
-                                    constraints.maxWidth >= 380;
-                                final esPorUnidad =
-                                    linea is LineaVentaPorUnidad;
-                                return Row(
-                                  children: [
-                                    if (colorCat != null) ...[
-                                      BarraCategoria(color: colorCat),
-                                      const SizedBox(width: Espaciado.xs),
-                                    ],
-                                    Expanded(
-                                      child: Text(
-                                        linea.nombreProducto,
-                                        overflow: TextOverflow.ellipsis,
-                                        // 2, no 1 (El dueño, panel angosto de 560px:
-                                        // "los nombres largos no se ven bien") —
-                                        // el `Row` centra al resto de la fila
-                                        // solo, no hace falta tocar nada más.
-                                        maxLines: 2,
-                                        style: textTheme.titleMedium?.copyWith(
-                                          color: stockNegativo
-                                              ? context.colores.error
-                                              : null,
-                                        ),
-                                      ),
-                                    ),
-                                    // Stepper en cápsula, solo por unidad y con
-                                    // lugar (El dueño, 2026-09-06 + rediseño de
-                                    // composición): restar gramos de a poco no
-                                    // tiene sentido práctico, y a 1366×768 con la
-                                    // barra desplegada no entra sin desbordar —
-                                    // mismo umbral exacto que ya evitaba ese bug
-                                    // (`TRAMPAS.md`), solo cambia el envoltorio de
-                                    // los tres elementos, no cuándo aparecen. En
-                                    // 1, restar saca la línea entera
-                                    // (`ajustarCantidad`). Doble clic en el
-                                    // número: tipear el valor exacto de un tirón.
-                                    if (hayLugarParaDetalle && esPorUnidad)
-                                      _EscalonCantidad(
-                                        texto: _descripcionCantidad(linea),
-                                        onMenos: () => context
-                                            .read<VentaControlador>()
-                                            .ajustarCantidad(index, -1),
-                                        onMas: () => context
-                                            .read<VentaControlador>()
-                                            .ajustarCantidad(index, 1),
-                                        onDobleTap: () => _editarCantidad(
-                                          context,
-                                          index,
-                                          linea,
-                                        ),
-                                      )
-                                    else
-                                      GestureDetector(
-                                        onDoubleTap: () =>
-                                            linea is LineaVentaPorUnidad
-                                            ? _editarCantidad(
-                                                context,
-                                                index,
-                                                linea,
-                                              )
-                                            : _editarGramos(
-                                                context,
-                                                index,
-                                                linea as LineaVentaPesable,
-                                              ),
-                                        child: Text(
-                                          _descripcionCantidad(linea),
-                                          style: textTheme.bodyMedium,
-                                        ),
-                                      ),
-                                    const SizedBox(width: Espaciado.xs),
-                                    if (hayLugarParaDetalle) ...[
-                                      SizedBox(
-                                        width: Medidas.anchoValorListaCompacto,
-                                        child: precioUnitarioTexto == null
-                                            ? null
-                                            : Text(
-                                                precioUnitarioTexto,
-                                                textAlign: TextAlign.right,
-                                                style: textTheme
-                                                    .bodyMedium
-                                                    ?.tabular,
-                                              ),
-                                      ),
-                                      const SizedBox(width: Espaciado.sm),
-                                    ],
-                                    SizedBox(
-                                      // Más angosto cuando falta lugar (mismo
-                                      // caso que esconde precio unitario y
-                                      // "−"/"+"): el margen real en el piso
-                                      // mínimo con la barra desplegada resultó
-                                      // más justo de lo que parecía a simple
-                                      // vista — un desborde de unos pocos
-                                      // píxeles apareció recién con ciertas
-                                      // interacciones (doble clic), no en el
-                                      // primer render. `anchoValorListaCompacto`
-                                      // sigue alcanzando de sobra para cualquier
-                                      // importe real de este negocio.
-                                      width: hayLugarParaDetalle
-                                          ? Medidas.anchoValorLista
-                                          : Medidas.anchoValorListaCompacto,
-                                      child: Text(
-                                        formatearARS(
-                                          linea.subtotalCentavos,
-                                          conSigno: false,
-                                        ),
-                                        textAlign: TextAlign.right,
-                                        style: textTheme.titleMedium?.tabular,
-                                      ),
-                                    ),
-                                    // Ícono de tacho (El dueño, 2026-09-06: "con
-                                    // mouse para seleccionar el producto a
-                                    // eliminar") — sin confirmación, un tap saca
-                                    // la línea. Reemplaza al `Backspace` de
-                                    // antes, que solo sacaba la última
-                                    // (TRAMPAS.md/CLAUDE.md ya actualizados).
-                                    _IconoAccion(
-                                      icono: IconosPlazoleta.deleteOutline,
-                                      etiqueta: 'Quitar ${linea.nombreProducto}',
-                                      onTap: () {
-                                        final controlador = context.read<VentaControlador>();
-                                        controlador.eliminarLinea(index);
-                                        // Un toque saca la línea sin confirmar, así que se puede deshacer
-                                        // desde el aviso de arriba (no tapa el cobro).
-                                        mostrarAviso(
-                                          context,
-                                          'Quitaste ${linea.nombreProducto}',
-                                          textoAccion: 'Deshacer',
-                                          alAccionar: () => controlador.restaurarLinea(index, linea),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                          ),
-                        ),
-                      );
-                    },
+          child: c.carrito.isEmpty
+              ? Center(
+                  child: _EstadoVacio(
+                    ventaId: ventaConfirmada,
+                    totalCentavos: totalConfirmadoCentavos,
+                    onImprimir: onImprimir,
                   ),
-          ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  itemCount: c.carrito.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 6),
+                  // Con la clave por producto, sacar una línea del medio no hace re-entrar a las de abajo.
+                  findItemIndexCallback: (clave) {
+                    for (var i = 0; i < c.carrito.length; i++) {
+                      if (_claveLinea(c.carrito[i], i) == clave) return i;
+                    }
+                    return null;
+                  },
+                  itemBuilder: (context, index) {
+                    final linea = c.carrito[index];
+                    return Entrada(
+                      key: _claveLinea(linea, index),
+                      desplazamiento: 8,
+                      child: _LineaCarrito(
+                        linea: linea,
+                        index: index,
+                        esUltima: index == c.indiceUltimaLinea,
+                        stockNegativo: _stockQuedaEnCeroONegativo(context, linea),
+                        descripcionCantidad: _descripcionCantidad(linea),
+                        alEditar: () => linea is LineaVentaPorUnidad
+                            ? _editarCantidad(context, index, linea)
+                            : _editarGramos(context, index, linea as LineaVentaPesable),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -374,48 +159,158 @@ class ColumnaCarrito extends StatelessWidget {
   }
 }
 
-/// Ícono chico de acción para una fila de lista (tacho, "−", "+") — un
-/// `InkWell` a mano, no `IconButton`: el tap target default de `IconButton`
-/// es mucho más ancho que el ícono mismo, y en una fila con varias columnas
-/// de datos el ancho importa (ver `TRAMPAS.md`, "La fila del carrito
-/// necesita LayoutBuilder").
-class _IconoAccion extends StatelessWidget {
-  const _IconoAccion({required this.icono, required this.etiqueta, required this.onTap});
-  final IconData icono;
-  final String etiqueta;
-  final VoidCallback onTap;
+/// Una línea del carrito (`.cl` del mock): tarjeta blanca de radio 28 con el nombre y el precio unitario, el stepper en cápsula, el
+/// subtotal y el tacho. La última agregada lleva un aro azul. Los pesables también tienen stepper (de a 50 g).
+class _LineaCarrito extends StatelessWidget {
+  const _LineaCarrito({
+    required this.linea,
+    required this.index,
+    required this.esUltima,
+    required this.stockNegativo,
+    required this.descripcionCantidad,
+    required this.alEditar,
+  });
+
+  final LineaVenta linea;
+  final int index;
+  final bool esUltima;
+  final bool stockNegativo;
+  final String descripcionCantidad;
+  final VoidCallback alEditar;
+
+  static const _pasoGramos = 50;
 
   @override
   Widget build(BuildContext context) {
-    return SuperficieTactil(
-      etiqueta: etiqueta,
-      tamanoMinimo: Medidas.alturaControl,
-      borderRadius: BorderRadius.circular(TactoVenta.radio),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(Espaciado.xs),
-        child: IconoPlz(
-          icono,
-          size: TactoVenta.icono,
-          color: context.colores.textoSecundario,
+    final colores = context.colores;
+    final textTheme = Theme.of(context).textTheme;
+    final c = context.read<VentaControlador>();
+    final porUnidad = linea is LineaVentaPorUnidad;
+    final unitario = switch (linea) {
+      LineaVentaPorUnidad u => '${formatearARS(u.precioUnitarioCentavos)} c/u',
+      LineaVentaPesable p => '${formatearARS(p.precioPorKiloCentavos)} el kilo',
+    };
+    return Pulso(
+      valor: descripcionCantidad,
+      escala: 1.015,
+      alineacion: Alignment.centerLeft,
+      child: AnimatedContainer(
+        duration: Animaciones.media,
+        curve: Animaciones.curva,
+        padding: const EdgeInsets.fromLTRB(18, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: colores.fondo,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: esUltima ? azulMarca : Colors.transparent, width: 2),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    linea.nombreProducto,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontSize: 17,
+                      fontWeight: Pesos.intermedio,
+                      height: 1.2,
+                      color: stockNegativo ? colores.error : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(unitario, style: TextStyle(fontSize: 13, color: colores.textoTenue).tabular),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _EscalonCantidad(
+              texto: descripcionCantidad.startsWith('x') ? descripcionCantidad.substring(1) : descripcionCantidad,
+              onMenos: () => porUnidad
+                  ? c.ajustarCantidad(index, -1)
+                  : c.editarGramosExacto(index, (linea as LineaVentaPesable).gramos - _pasoGramos),
+              onMas: () => porUnidad
+                  ? c.ajustarCantidad(index, 1)
+                  : c.editarGramosExacto(index, (linea as LineaVentaPesable).gramos + _pasoGramos),
+              onDobleTap: alEditar,
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 96,
+              child: Text(
+                formatearARS(linea.subtotalCentavos),
+                textAlign: TextAlign.right,
+                style: textTheme.titleMedium?.copyWith(fontSize: 19, fontWeight: Pesos.medium).tabular,
+              ),
+            ),
+            const SizedBox(width: 12),
+            _IconoAccion(
+              icono: IconosPlazoleta.deleteOutline,
+              etiqueta: 'Quitar ${linea.nombreProducto}',
+              onTap: () {
+                c.eliminarLinea(index);
+                // Un toque saca la línea sin confirmar, así que se puede deshacer desde el aviso de arriba (no tapa el cobro).
+                mostrarAviso(
+                  context,
+                  'Quitaste ${linea.nombreProducto}',
+                  textoAccion: 'Deshacer',
+                  alAccionar: () => c.restaurarLinea(index, linea),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Stepper de cantidad en cápsula — "−", el número (con su propio doble
-/// clic para tipear el valor exacto) y "+" agrupados en una sola pieza en
-/// vez de tres sueltas en la fila (rediseño de composición, el dueño:
-/// "rediseño completo, no un remake que mantenga las bases" — el remake
-/// anterior solo había cambiado color/blur, dejando la misma disposición).
+/// El tacho (`.rm` del mock): círculo de 36 px, gris; al pasar el mouse se tiñe de rojo.
+class _IconoAccion extends StatefulWidget {
+  const _IconoAccion({required this.icono, required this.etiqueta, required this.onTap});
+
+  final IconData icono;
+  final String etiqueta;
+  final VoidCallback onTap;
+
+  @override
+  State<_IconoAccion> createState() => _IconoAccionState();
+}
+
+class _IconoAccionState extends State<_IconoAccion> {
+  bool _encima = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _encima = true),
+      onExit: (_) => setState(() => _encima = false),
+      child: SuperficieTactil(
+        etiqueta: widget.etiqueta,
+        tamanoMinimo: 48,
+        borderRadius: BorderRadius.circular(999),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: Animaciones.corta,
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _encima ? Color.alphaBlend(colores.error.withValues(alpha: 0.14), colores.fondo) : Colors.transparent,
+          ),
+          child: IconoPlz(widget.icono, size: 19, color: _encima ? colores.error : colores.textoTenue),
+        ),
+      ),
+    );
+  }
+}
+
+/// Stepper de cantidad (`.stp` del mock): cápsula gris con "−", el número (doble clic para tipear el valor exacto) y "+".
 class _EscalonCantidad extends StatelessWidget {
-  const _EscalonCantidad({
-    required this.texto,
-    required this.onMenos,
-    required this.onMas,
-    required this.onDobleTap,
-  });
+  const _EscalonCantidad({required this.texto, required this.onMenos, required this.onMas, required this.onDobleTap});
 
   final String texto;
   final VoidCallback onMenos;
@@ -424,24 +319,20 @@ class _EscalonCantidad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colores = context.colores;
     return Container(
-      decoration: BoxDecoration(
-        color: context.colores.fondo,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: context.colores.borde),
-      ),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _celda(context, IconosPlazoleta.remove, 'Restar uno', onMenos),
           GestureDetector(
             onDoubleTap: onDobleTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Espaciado.xs),
-              child: Text(
-                texto,
-                style: Theme.of(context).textTheme.bodyMedium?.tabular,
-              ),
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 54),
+              alignment: Alignment.center,
+              child: Text(texto, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, fontWeight: Pesos.medium).tabular),
             ),
           ),
           _celda(context, IconosPlazoleta.add, 'Sumar uno', onMas),
@@ -453,28 +344,18 @@ class _EscalonCantidad extends StatelessWidget {
   Widget _celda(BuildContext context, IconData icono, String etiqueta, VoidCallback onTap) {
     return SuperficieTactil(
       etiqueta: etiqueta,
-      tamanoMinimo: Medidas.alturaControl,
+      tamanoMinimo: 48,
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: IconoPlz(icono, size: 16, color: context.colores.textoSecundario),
-      ),
+      child: SizedBox(width: 34, height: 34, child: IconoPlz(icono, size: 14, color: context.colores.textoPrimario)),
     );
   }
 }
 
-/// Sin venta confirmada todavía: el texto neutro de siempre. Con una
-/// confirmada: número de venta y total cobrado, en `textoSecundario` — no
-/// es ninguno de los tres usos ya asignados al acento, así que no le suma
-/// un cuarto — más el botón de imprimir (fase 13, ítem 3), que solo tiene
-/// sentido mientras hay algo reciente que reimprimir.
+/// Carrito vacío (`.empty` del mock): el ícono de escanear dentro de un aro azul que late y el texto. Con una venta ya cobrada, en
+/// cambio, el acuse "Venta #N cobrada" con el botón de imprimir.
 class _EstadoVacio extends StatelessWidget {
-  const _EstadoVacio({
-    required this.ventaId,
-    required this.totalCentavos,
-    required this.onImprimir,
-  });
+  const _EstadoVacio({required this.ventaId, required this.totalCentavos, required this.onImprimir});
 
   final int? ventaId;
   final int? totalCentavos;
@@ -483,66 +364,121 @@ class _EstadoVacio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
     if (ventaId == null || totalCentavos == null) {
-      return Text('El carrito está vacío', style: textTheme.bodyMedium);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _AroPulsante(),
+          const SizedBox(height: 14),
+          Text(
+            'Escaneá un código o buscá un producto\npara empezar la venta',
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(fontSize: 19, color: colores.textoSecundario, height: 1.4),
+          ),
+        ],
+      );
     }
-    // Cada cobro entra con un tilde y un zoom leve (2026-10-03): confirma que salió, sin frenar la venta siguiente
-    // (el campo ya tiene el foco y se puede seguir escaneando mientras dura).
+    // Cada cobro entra con un tilde y un zoom leve: confirma que salió, sin frenar la venta siguiente (el campo ya tiene el foco y
+    // se puede seguir escaneando mientras dura).
     final ganancia = context.acentosPlazoleta.ganancia;
     return Entrada(
       key: ValueKey('cobrada-$ventaId'),
       escala: 0.92,
       desplazamiento: 0,
       child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(color: ganancia.withValues(alpha: 0.14), shape: BoxShape.circle),
-          child: IconoPlz(IconosPlazoleta.check, size: 15, color: ganancia),
-        ),
-        const SizedBox(width: Espaciado.sm),
-        // `Flexible`, no `Text` suelto: en el piso mínimo (1366×768,
-        // `DISENO.md`) el carrito queda bastante más angosto que a
-        // 1920×1080 — sin esto, un total de varias cifras desborda el
-        // `RenderFlex` en vez de acortarse.
-        Flexible(
-          child: Text(
-            'Venta #$ventaId cobrada · ${formatearARS(totalCentavos!)}',
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodyMedium!
-                .copyWith(color: context.colores.textoSecundario)
-                .tabular,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(color: ganancia.withValues(alpha: 0.14), shape: BoxShape.circle),
+            child: IconoPlz(IconosPlazoleta.check, size: 15, color: ganancia),
           ),
-        ),
-        const SizedBox(width: Espaciado.sm),
-        Tooltip(
-          message: 'Imprimir ticket',
-          child: SuperficieTactil(
-            borderRadius: BorderRadius.circular(TactoVenta.radio),
-            onTap: onImprimir,
-            child: Padding(
-              padding: const EdgeInsets.all(Espaciado.xs),
-              child: IconoPlz(
-                IconosPlazoleta.printOutlined,
-                size: TactoVenta.icono,
-                color: context.colores.textoSecundario,
+          const SizedBox(width: Espaciado.sm),
+          Flexible(
+            child: Text(
+              'Venta #$ventaId cobrada · ${formatearARS(totalCentavos!)}',
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium!.copyWith(color: colores.textoSecundario).tabular,
+            ),
+          ),
+          const SizedBox(width: Espaciado.sm),
+          Tooltip(
+            message: 'Imprimir ticket',
+            child: SuperficieTactil(
+              borderRadius: BorderRadius.circular(999),
+              onTap: onImprimir,
+              child: Padding(
+                padding: const EdgeInsets.all(Espaciado.xs),
+                child: IconoPlz(IconosPlazoleta.printOutlined, size: 24, color: colores.textoSecundario),
               ),
             ),
           ),
-        ),
-      ],
-    ),
+        ],
+      ),
     );
   }
 }
 
-/// Pestañas de ventas abiertas (El dueño, 2026-09-29: "que la venta permanezca
-/// y que pueda hacer más de 1 venta a la vez"). Mismo lenguaje que las
-/// píldoras de categoría de la grilla: 44px de alto, redondeadas, rellenas
-/// de acento la elegida y blancas planas las demás. "+" abre una venta
-/// nueva sin perder la actual (Alt+N).
+/// El aro azul que late alrededor del ícono de escanear (`.ringp` del mock), 1,8 s en bucle.
+class _AroPulsante extends StatefulWidget {
+  const _AroPulsante();
+
+  @override
+  State<_AroPulsante> createState() => _AroPulsanteState();
+}
+
+class _AroPulsanteState extends State<_AroPulsante> with SingleTickerProviderStateMixin {
+  late final AnimationController _reloj = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+  bool _arrancado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_arrancado) return;
+    _arrancado = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _reloj.repeat();
+  }
+
+  @override
+  void dispose() {
+    _reloj.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return SizedBox(
+      width: 96,
+      height: 96,
+      child: AnimatedBuilder(
+        animation: _reloj,
+        builder: (context, _) {
+          final t = Curves.easeOut.transform(_reloj.value);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 96 * (0.85 + 0.25 * t),
+                height: 96 * (0.85 + 0.25 * t),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: azulMarca.withValues(alpha: 0.35 * (1 - t)), width: 3),
+                ),
+              ),
+              IconoPlz(IconosPlazoleta.qrCode2Outlined, size: 44, color: colores.textoSecundario),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Pestañas de ventas abiertas (`.vtab` del mock): texto gris con el número de líneas; la elegida es una pastilla blanca con una
+/// sombrita. "+ Nueva · Alt+N" abre una venta nueva sin perder la actual.
 class _BarraVentasAbiertas extends StatelessWidget {
   const _BarraVentasAbiertas();
 
@@ -552,36 +488,35 @@ class _BarraVentasAbiertas extends StatelessWidget {
     final resumen = c.resumenPestanas;
     final puedeAbrirOtra = c.carrito.isNotEmpty;
 
-    return Row(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (var i = 0; i < resumen.length; i++) ...[
-                  if (i > 0) const SizedBox(width: Espaciado.sm),
-                  _PildoraVenta(
-                    titulo: 'Venta ${i + 1}',
-                    detalle: resumen.length == 1 || resumen[i].lineas == 0
-                        ? null
-                        : formatearARS(resumen[i].subtotalCentavos),
-                    seleccionada: i == c.pestanaActiva,
-                    puedeCerrar: i == c.pestanaActiva && resumen.length > 1,
-                    onTap: () => c.cambiarAPestana(i),
-                    onCerrar: () => cancelarVentaConDeshacer(context, c),
-                  ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var i = 0; i < resumen.length; i++) ...[
+                    _PildoraVenta(
+                      titulo: 'Venta ${i + 1}',
+                      lineas: resumen[i].lineas,
+                      seleccionada: i == c.pestanaActiva,
+                      puedeCerrar: resumen.length > 1,
+                      onTap: () => c.cambiarAPestana(i),
+                      onCerrar: () => cancelarVentaConDeshacer(context, c),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: Espaciado.sm),
-        Tooltip(
-          message: 'Nueva venta (Alt+N)',
-          child: _BotonNuevaVenta(activo: puedeAbrirOtra, onTap: c.nuevaVenta),
-        ),
-      ],
+          Tooltip(
+            message: 'Nueva venta (Alt+N)',
+            child: _BotonNuevaVenta(activo: puedeAbrirOtra, onTap: c.nuevaVenta),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -589,7 +524,7 @@ class _BarraVentasAbiertas extends StatelessWidget {
 class _PildoraVenta extends StatelessWidget {
   const _PildoraVenta({
     required this.titulo,
-    required this.detalle,
+    required this.lineas,
     required this.seleccionada,
     required this.puedeCerrar,
     required this.onTap,
@@ -597,7 +532,7 @@ class _PildoraVenta extends StatelessWidget {
   });
 
   final String titulo;
-  final String? detalle;
+  final int lineas;
   final bool seleccionada;
   final bool puedeCerrar;
   final VoidCallback onTap;
@@ -606,71 +541,57 @@ class _PildoraVenta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    final colorTexto = seleccionada
-        ? colores.acentoTexto
-        : colores.textoPrimario;
-    return Container(
-      height: Medidas.alturaControl,
-      decoration: BoxDecoration(
-        color: seleccionada ? colores.acento : colores.fondoBloque,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: SuperficieTactil(
-        etiqueta: titulo,
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(
-            left: Espaciado.lg,
-            right: Espaciado.md,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                titulo,
-                style: TextStyle(
-                  color: colorTexto,
-                  fontWeight: seleccionada ? Pesos.medium : Pesos.regular,
-                ),
-              ),
-              if (detalle != null) ...[
-                const SizedBox(width: Espaciado.sm),
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: AnimatedContainer(
+        duration: Animaciones.corta,
+        curve: Animaciones.curva,
+        height: 42,
+        decoration: BoxDecoration(
+          color: seleccionada ? colores.fondo : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: seleccionada ? [BoxShadow(color: const Color(0xFF0D1017).withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 2))] : null,
+        ),
+        child: SuperficieTactil(
+          etiqueta: titulo,
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.only(left: 18, right: puedeCerrar ? 6 : 18),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  detalle!,
-                  style: textTheme.bodySmall
-                      ?.copyWith(
-                        color: seleccionada
-                            ? colorTexto.withValues(alpha: 0.85)
-                            : colores.textoSecundario,
-                      )
-                      .tabular,
+                  titulo,
+                  style: TextStyle(fontSize: 15, fontWeight: Pesos.medium, color: seleccionada ? colores.textoPrimario : colores.textoSecundario),
                 ),
-              ],
-              if (puedeCerrar) ...[
-                const SizedBox(width: Espaciado.sm),
-                Tooltip(
-                  message: 'Cerrar $titulo',
-                  child: Semantics(
-                    button: true,
-                    label: 'Cerrar $titulo',
-                    excludeSemantics: true,
-                    onTap: onCerrar,
-                    child: InkResponse(
+                if (lineas > 0) ...[
+                  const SizedBox(width: 8),
+                  Text('$lineas', style: TextStyle(fontSize: 15, fontWeight: Pesos.intermedio, color: colores.textoSecundario)),
+                ],
+                if (puedeCerrar) ...[
+                  const SizedBox(width: 6),
+                  Tooltip(
+                    message: 'Cerrar $titulo',
+                    child: Semantics(
+                      button: true,
+                      label: 'Cerrar $titulo',
+                      excludeSemantics: true,
                       onTap: onCerrar,
-                      radius: 24,
-                      child: SizedBox(
-                        width: Medidas.alturaControl,
-                        height: Medidas.alturaControl,
-                        child: IconoPlz(IconosPlazoleta.close, size: 18, color: colorTexto),
+                      child: InkResponse(
+                        onTap: onCerrar,
+                        radius: 18,
+                        child: SizedBox(
+                          width: 28,
+                          height: 42,
+                          child: IconoPlz(IconosPlazoleta.close, size: 12, color: colores.textoTenue),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ] else
-                const SizedBox(width: Espaciado.xs),
-            ],
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -687,22 +608,22 @@ class _BotonNuevaVenta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    return Container(
-      width: Medidas.alturaControl,
-      height: Medidas.alturaControl,
-      decoration: BoxDecoration(
-        color: colores.fondoBloque,
-        shape: BoxShape.circle,
-      ),
-      child: SuperficieTactil(
-        etiqueta: 'Nueva venta',
-        borderRadius: BorderRadius.circular(999),
-        onTap: activo ? onTap : null,
-        child: Center(
-          child: IconoPlz(
-            IconosPlazoleta.add,
-            color: activo ? colores.acento : colores.textoTenue,
-          ),
+    return SuperficieTactil(
+      etiqueta: 'Nueva venta',
+      borderRadius: BorderRadius.circular(999),
+      onTap: activo ? onTap : null,
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconoPlz(IconosPlazoleta.add, size: 16, color: activo ? colores.textoSecundario : colores.textoTenue),
+            const SizedBox(width: 6),
+            Text('Nueva', style: TextStyle(fontSize: 15, fontWeight: Pesos.medium, color: activo ? colores.textoSecundario : colores.textoTenue)),
+            const SizedBox(width: 8),
+            TeclaAtajo(texto: 'Alt+N', color: colores.textoSecundario),
+          ],
         ),
       ),
     );

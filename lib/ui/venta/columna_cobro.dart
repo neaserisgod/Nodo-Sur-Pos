@@ -34,10 +34,9 @@ import '../../domain/ticket.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../tema/acentos.dart';
-import '../tema/resplandor.dart';
-import '../tema/tema.dart';
 import '../tema/tokens.dart';
 import 'acciones_venta.dart';
+import 'columna_busqueda.dart' show TeclaAtajo;
 import 'color_categoria.dart';
 import 'tacto_venta.dart';
 import 'venta_controlador.dart';
@@ -47,15 +46,20 @@ import 'elegir_tarjeta.dart';
 import '../../domain/cobro_posnet.dart' show canalCredito, canalDebito, esCanalTarjeta;
 
 class PanelCobro extends StatelessWidget {
-  const PanelCobro({super.key, required this.usuarioId});
+  const PanelCobro({super.key, required this.usuarioId, this.compacto = false});
 
   final int usuarioId;
+
+  /// Poca altura de ventana: total más bajo y botones más chicos, para que todo entre sin scroll.
+  final bool compacto;
 
   @override
   Widget build(BuildContext context) {
     final c = context.watch<VentaControlador>();
     final colores = context.colores;
     final habilitado = c.carrito.isNotEmpty && c.medioElegido != null && !c.cobrando;
+    final alturaMedio = compacto ? 56.0 : 72.0;
+    final separacion = compacto ? 10.0 : 14.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -68,61 +72,62 @@ class PanelCobro extends StatelessWidget {
           ),
           const SizedBox(height: Espaciado.sm),
         ],
-        _TotalHero(controlador: c),
-        const SizedBox(height: Espaciado.md),
-        // Grilla 2×2, no una sola fila de 4 (El dueño, panel angosto de
-        // 560px: "los botones de cobro... no se ven bien" — con el
-        // `Flexible`+ellipsis que ya tenía `_BotonMedio` la etiqueta
-        // truncaba igual, "Efectivo (Alt+E)" no entraba en ~126px). El
-        // doble de ancho por botón alcanza para la etiqueta completa;
-        // mismo orden de lectura de siempre (Efectivo, QR, Débito, Mixto).
+        _TotalHero(controlador: c, compacto: compacto),
+        SizedBox(height: separacion),
+        // Grilla 2×2 como el mock (`.medios`): cada medio con su ícono en un círculo, el nombre y el atajo debajo.
         Row(
           children: [
             Expanded(
-              child: _BotonMedio(
+              child: _BotonMedioMock(
+                alto: alturaMedio,
                 icono: IconosPlazoleta.paymentsOutlined,
-                etiqueta: 'Efectivo (Alt+E)',
+                etiqueta: 'Efectivo',
+                atajo: 'ALT+E',
                 seleccionado: c.medioElegido == ComposicionPago.efectivo,
                 colorSeleccionado: ColorMedioPago.efectivo(context),
                 onPressed: () => _elegir(context, ComposicionPago.efectivo),
               ),
             ),
-            const SizedBox(width: Espaciado.sm),
+            const SizedBox(width: 10),
             Expanded(
-              child: _BotonMedio(
+              child: _BotonMedioMock(
+                alto: alturaMedio,
                 icono: IconosPlazoleta.qrCode2Outlined,
-                etiqueta: 'QR (Alt+Q)',
-                seleccionado:
-                    c.medioElegido == ComposicionPago.virtual &&
-                    c.canalElegido == 'qr',
+                etiqueta: 'QR',
+                atajo: 'ALT+Q',
+                seleccionado: c.medioElegido == ComposicionPago.virtual && c.canalElegido == 'qr',
                 colorSeleccionado: ColorMedioPago.qr(context),
                 onPressed: () => _elegirCanal(context, 'qr'),
               ),
             ),
           ],
         ),
-        const SizedBox(height: Espaciado.sm),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
-              child: _BotonMedio(
+              child: _BotonMedioMock(
+                alto: alturaMedio,
                 icono: IconosPlazoleta.creditCardOutlined,
                 // Etapa C: "Tarjeta" pregunta Débito o Crédito (1 pago); elegido, dice cuál.
                 etiqueta: switch (c.medioElegido == ComposicionPago.virtual ? c.canalElegido : null) {
-                  canalDebito => 'Débito (Alt+D)',
-                  canalCredito => 'Crédito 1 pago (Alt+D)',
-                  _ => 'Tarjeta (Alt+D)',
+                  canalDebito => 'Débito',
+                  canalCredito => 'Crédito 1 pago',
+                  _ => 'Tarjeta',
                 },
+                atajo: 'ALT+D',
                 seleccionado: c.medioElegido == ComposicionPago.virtual && esCanalTarjeta(c.canalElegido),
                 colorSeleccionado: ColorMedioPago.debito(context),
                 onPressed: () => elegirTarjeta(context, c),
               ),
             ),
-            const SizedBox(width: Espaciado.sm),
+            const SizedBox(width: 10),
             Expanded(
-              child: _BotonMedio(
+              child: _BotonMedioMock(
+                alto: alturaMedio,
                 icono: IconosPlazoleta.callSplitOutlined,
-                etiqueta: 'Mixto (Alt+X)',
+                etiqueta: 'Mixto',
+                atajo: 'ALT+X',
                 seleccionado: c.medioElegido == ComposicionPago.mixto,
                 colorSeleccionado: ColorMedioPago.mixto(context),
                 onPressed: () => abrirMixto(context, c),
@@ -130,88 +135,18 @@ class PanelCobro extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Espaciado.md),
-        Row(
-          children: [
-            Expanded(
-              child: SuperficieTactil(
-                // Fondo explícito, no solo el color del ícono/texto
-                // (corrección post-revisión heredada: "Cobrar se ve
-                // apagado" — acá el botón entero es la superficie, así que
-                // el color deshabilitado tiene que notarse en el fondo, no
-                // solo en el texto). `onPressed` es `null` solo con el
-                // carrito vacío o sin medio elegido, a propósito.
-                // Azul de marca (mock Nodo Sur, decisión del dueño 2026-10-05): vender y cobrar son el color de acción.
-                color: habilitado ? azulMarca : colores.fondo,
-                // Píldora completa, no `TactoVenta.radio` — es la única
-                // acción PRIMARIA del panel (rediseño de composición): se
-                // distingue en forma de los cuatro selectores de medio de
-                // pago y de "A mano", que se quedan con el radio de
-                // control de siempre. Un radio para selectores, píldora
-                // solo para el CTA único — regla documentada acá, no una
-                // mezcla sin criterio.
-                borderRadius: BorderRadius.circular(TactoVenta.alturaControl / 2),
-                onTap: habilitado ? () => _cobrar(context) : null,
-                child: SizedBox(
-                  height: TactoVenta.alturaControl,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconoPlz(
-                        IconosPlazoleta.shoppingCartCheckout,
-                        size: TactoVenta.icono,
-                        color: habilitado ? Colors.white : colores.textoTenue,
-                      ),
-                      const SizedBox(width: Espaciado.sm),
-                      Text(
-                        'Cobrar',
-                        style: TextStyle(
-                          color: habilitado ? Colors.white : colores.textoTenue,
-                          fontSize: TamanioTexto.subtitulo,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // "Cobrar a mano (sin terminal)" (El dueño, 2026-09-08: "necesito
-            // cobro manual... no hay más modal para seleccionarlo") — solo
-            // con QR/Débito ya elegido (`canalElegido` puesto por
-            // `elegirCanalDirecto`/`confirmarMixto`), nunca con Efectivo
-            // puro (eso no pasa por Point). Mismo destino que "Cobrar a
-            // mano" del diálogo de Point cuando falla (`cobrarActual()`),
-            // pero elegible de entrada.
-            if (c.canalElegido != null) ...[
-              const SizedBox(width: Espaciado.sm),
-              Tooltip(
-                message: 'Cobrar a mano, sin pasar por la terminal — Alt+M',
-                child: SizedBox(
-                  height: TactoVenta.alturaControl,
-                  child: SuperficieTactil(
-                    // `fondoBloque`, no `fondo` (bug real, visto en
-                    // captura): este botón vive directo sobre el canvas de
-                    // la pantalla, no adentro de una `Superficie` como los
-                    // medios de pago — con `colores.fondo` quedaba
-                    // invisible, mismo color que lo que tiene atrás.
-                    color: colores.fondoBloque,
-                    borderRadius: BorderRadius.circular(TactoVenta.radio),
-                    onTap: () => cobrarAMano(context, c),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                      child: Center(
-                        child: Text(
-                          'A mano',
-                          style: TextStyle(color: colores.textoPrimario, fontSize: TamanioTexto.cuerpo),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+        SizedBox(height: separacion),
+        _BotonCobrar(habilitado: habilitado, alto: compacto ? 64 : 78, onTap: () => _cobrar(context)),
+        // "Cobrar a mano (sin terminal)" (El dueño, 2026-09-08): solo con QR/Débito ya elegido, nunca con Efectivo puro. En el mock
+        // ocupa siempre su lugar (44 px) para que el botón de cobrar no salte; con poca altura solo aparece cuando hace falta.
+        if (c.canalElegido != null) ...[
+          SizedBox(height: compacto ? 8 : 10),
+          Tooltip(
+            message: 'Cobrar a mano, sin pasar por la terminal — Alt+M',
+            child: _BotonAMano(onTap: () => cobrarAMano(context, c)),
+          ),
+        ] else if (!compacto)
+          const SizedBox(height: 54),
       ],
     );
   }
@@ -256,28 +191,22 @@ class PanelCobro extends StatelessWidget {
   }
 }
 
-/// El total, ancho completo — pieza "hero" de la pantalla. Rediseño de
-/// composición (El dueño: "rediseño completo, no un remake que mantenga las
-/// bases"): antes era una `Superficie` con degradé de borde a borde; ahora
-/// es un bisel doble — un marco exterior de vidrio (borde + sombra
-/// ambiente) con un hueco chico, y adentro el núcleo de color de verdad
-/// (el degradé + el glow), con su propio radio más chico y concéntrico —
-/// la misma sensación de "pieza montada en su marco" que ya describe
-/// `DISENO.md` para piezas premium, no un rectángulo pintado liso. El
-/// control de descuento sigue viviendo adentro del núcleo, como un ícono
-/// chico a la derecha — mismo lugar que `_botonDescuento` de la companion.
+/// El total (`.tot` del mock): bloque de tinta de radio 44 con "Total a cobrar" y el botón de descuento arriba, el importe enorme y debajo
+/// las cápsulas del desglose (descuento, recargo, redondeo, seña). El importe cuenta hasta su valor nuevo cuando cambia.
 class _TotalHero extends StatelessWidget {
-  const _TotalHero({required this.controlador});
+  const _TotalHero({required this.controlador, required this.compacto});
 
   final VentaControlador controlador;
+  final bool compacto;
 
   @override
   Widget build(BuildContext context) {
     final c = controlador;
     final resultado = c.resultado;
     final totalAMostrar = resultado?.totalCentavos ?? c.subtotalCentavos;
-    final textoSobre = context.acentosPlazoleta.textoSobreColor;
-
+    final acentos = context.acentosPlazoleta;
+    final textoSobre = acentos.textoSobreColor;
+    final chip = textoSobre.withValues(alpha: 0.1);
     final desglose = resultado == null
         ? const DesgloseTicket()
         : DesgloseTicket(
@@ -285,115 +214,334 @@ class _TotalHero extends StatelessWidget {
             descuentoCentavos: resultado.descuentoCentavos,
             redondeoCentavos: resultado.redondeoCentavos,
           );
+    final cipas = <String>[
+      if (desglose.descuentoCentavos > 0) 'Descuento −${formatearARS(desglose.descuentoCentavos)}',
+      if (desglose.recargoCigarrillosCentavos > 0) 'Recargo cigarrillos +${formatearARS(desglose.recargoCigarrillosCentavos)}',
+      if (desglose.redondeoCentavos > 0) 'Redondeo +${formatearARS(desglose.redondeoCentavos)}',
+    ];
+    final hayDescuento = desglose.descuentoCentavos > 0;
 
-    final radioNucleo = radioSuperficieEscritorio;
-
-    // Sin el marco de vidrio con sombra de antes: la tarjeta oscura del
-    // total ya destaca sola ("Lenguaje de diseño", 2026-09-26).
-    return SizedBox(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(radioNucleo),
-          gradient: LinearGradient(
-            colors: context.acentosPlazoleta.gradienteDinero,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Container(
+      padding: EdgeInsets.fromLTRB(30, compacto ? 14 : 20, 30, compacto ? 12 : 18),
+      decoration: BoxDecoration(color: acentos.gradienteDinero.first, borderRadius: BorderRadius.circular(compacto ? 32 : 44)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Total a cobrar',
+                  style: TextStyle(fontSize: 16, fontWeight: Pesos.medium, color: textoSobre.withValues(alpha: 0.62)),
+                ),
+              ),
+              _BotonDescuento(controlador: c, colorTexto: textoSobre, fondo: chip, cambiar: hayDescuento),
+            ],
           ),
-          boxShadow: resplandorNeon(context.acentosPlazoleta.gradienteDinero.first),
-        ),
-        padding: const EdgeInsets.all(Espaciado.lg),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          // Late cuando cambia (2026-10-03) y cuenta hasta el valor nuevo: el número nuevo ya es el real desde el primer cuadro del latido.
+          Pulso(
+            valor: totalAMostrar,
+            alineacion: Alignment.centerLeft,
+            escala: 1.02,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: compacto ? 2 : 6),
+                child: NumeroAnimado(
+                  valor: totalAMostrar,
+                  formato: formatearARS,
+                  estilo: TextStyle(
+                    fontSize: compacto ? 56 : 76,
+                    height: 1,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: compacto ? -3.4 : -4.5,
+                    color: textoSobre,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: Animaciones.corta,
+            curve: Animaciones.curva,
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: double.infinity,
+              height: cipas.isEmpty && compacto ? 0 : null,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  // FittedBox, no `overflow: ellipsis` (mismo criterio que
-                  // `Metrica`): el total partido en dos líneas es un bug
-                  // real, no solo estético — una cifra de plata cortada se
-                  // puede leer como un monto distinto.
-                  // Late cuando cambia (2026-10-03): el número nuevo ya está desde el primer cuadro.
-                  Pulso(
-                    valor: totalAMostrar,
-                    alineacion: Alignment.centerLeft,
-                    child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      formatearARS(totalAMostrar),
-                      maxLines: 1,
-                      style: Theme.of(context).textTheme.displayLarge!.copyWith(color: textoSobre).tabular,
-                    ),
-                  ),
-                  ),
-                  // Entrega de un encargue con seña: lo que ya dejó el cliente y lo que falta (la seña ya está en la caja).
-                  if (c.senaAplicadaCentavos > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: Espaciado.xs),
-                      child: Text(
-                        'Seña -${formatearARS(c.senaAplicadaCentavos)} · A cobrar ${formatearARS(c.aCobrarCentavos!)}',
-                        key: const Key('sena_cobro'),
-                        style: Theme.of(context).textTheme.titleSmall!.copyWith(color: textoSobre, fontWeight: Pesos.fuerte).tabular,
+                  for (final t in cipas)
+                    Entrada(
+                      key: ValueKey('cipa-$t'),
+                      desplazamiento: 4,
+                      child: Container(
+                        height: 30,
+                        padding: const EdgeInsets.symmetric(horizontal: 13),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: chip, borderRadius: BorderRadius.circular(999)),
+                        child: Text(t, style: TextStyle(fontSize: 13.5, fontWeight: Pesos.medium, color: textoSobre).tabular),
                       ),
                     ),
-                  // El desglose aparece y se va suave en vez de empujar la tarjeta de golpe.
-                  AnimatedSize(
-                    duration: Animaciones.corta,
-                    curve: Animaciones.curva,
-                    alignment: Alignment.topLeft,
-                    child: !desglose.tieneAlgoQueMostrar
-                        ? const SizedBox(width: double.infinity)
-                        : Entrada(
-                    key: const ValueKey('desglose'),
-                    desplazamiento: 4,
-                    child: Text(
-                      [
-                        if (desglose.recargoCigarrillosCentavos > 0)
-                          'Recargo QR ${formatearARS(desglose.recargoCigarrillosCentavos)}',
-                        if (desglose.descuentoCentavos > 0)
-                          'Descuento -${formatearARS(desglose.descuentoCentavos)}',
-                        if (desglose.redondeoCentavos > 0)
-                          'Redondeo ${formatearARS(desglose.redondeoCentavos)}',
-                      ].join(' · '),
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: textoSobre.withValues(alpha: 0.8)).tabular,
+                  // Entrega de un encargue con seña: lo que ya dejó el cliente y lo que falta (la seña ya está en la caja).
+                  if (c.senaAplicadaCentavos > 0)
+                    Container(
+                      key: const Key('sena_cobro'),
+                      height: 30,
+                      padding: const EdgeInsets.symmetric(horizontal: 13),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: chip, borderRadius: BorderRadius.circular(999)),
+                      child: Text(
+                        'Seña -${formatearARS(c.senaAplicadaCentavos)} · A cobrar ${formatearARS(c.aCobrarCentavos!)}',
+                        style: TextStyle(fontSize: 13.5, fontWeight: Pesos.medium, color: textoSobre).tabular,
+                      ),
                     ),
-                        ),
-                  ),
                 ],
               ),
             ),
-            _BotonDescuento(controlador: c, colorIcono: textoSobre),
-          ],
+          ),
+          if (cipas.isEmpty && c.senaAplicadaCentavos == 0 && !compacto) const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+}
+
+/// "% Descuento" dentro del total (`.dbtn`): cápsula translúcida; con un descuento aplicado dice "Cambiar descuento".
+class _BotonDescuento extends StatelessWidget {
+  const _BotonDescuento({required this.controlador, required this.colorTexto, required this.fondo, required this.cambiar});
+
+  final VentaControlador controlador;
+  final Color colorTexto;
+  final Color fondo;
+  final bool cambiar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Descuento',
+      child: SuperficieTactil(
+        etiqueta: 'Descuento',
+        color: fondo,
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => mostrarModal<void>(context, builder: (_) => _ModalDescuento(controlador: controlador)),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconoPlz(IconosPlazoleta.sellOutlined, size: 15, color: colorTexto),
+              const SizedBox(width: 7),
+              Text(cambiar ? 'Cambiar descuento' : 'Descuento', style: TextStyle(fontSize: 14, fontWeight: Pesos.medium, color: colorTexto)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _BotonDescuento extends StatelessWidget {
-  const _BotonDescuento({required this.controlador, required this.colorIcono});
+/// Un medio de pago como el mock (`.medio`): tarjeta blanca de radio 30 con el ícono en un círculo gris, el nombre y el atajo; elegido,
+/// se llena con el color de su medio (verde, azul, gris, ámbar) y el círculo pasa a blanco translúcido. Late una vez al elegirse.
+class _BotonMedioMock extends StatefulWidget {
+  const _BotonMedioMock({
+    required this.alto,
+    required this.icono,
+    required this.etiqueta,
+    required this.atajo,
+    required this.seleccionado,
+    required this.colorSeleccionado,
+    required this.onPressed,
+  });
 
-  final VentaControlador controlador;
-  final Color colorIcono;
+  final double alto;
+  final IconData icono;
+  final String etiqueta;
+  final String atajo;
+  final bool seleccionado;
+  final Color colorSeleccionado;
+  final VoidCallback onPressed;
 
-  bool get _hayDescuento => controlador.campoDescuentoCtrl.text.trim().isNotEmpty;
+  @override
+  State<_BotonMedioMock> createState() => _BotonMedioMockState();
+}
+
+class _BotonMedioMockState extends State<_BotonMedioMock> {
+  bool _encima = false;
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: 'Descuento',
-      onPressed: () => _abrirModalDescuento(context),
-      icon: Icon(
-        _hayDescuento ? IconosPlazoleta.sellActivo : IconosPlazoleta.sellOutlined,
-        color: colorIcono,
+    final colores = context.colores;
+    final sel = widget.seleccionado;
+    final colorContenido = sel ? context.acentosPlazoleta.textoSobreColor : colores.textoPrimario;
+    final caja = (widget.alto * 0.64).clamp(34.0, 46.0);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _encima = true),
+      onExit: (_) => setState(() => _encima = false),
+      child: Pulso(
+        valor: sel,
+        escala: 1.045,
+        child: AnimatedSlide(
+          duration: Animaciones.corta,
+          curve: Animaciones.curva,
+          offset: _encima && !sel ? const Offset(0, -0.03) : Offset.zero,
+          child: TweenAnimationBuilder<Color?>(
+            tween: ColorTween(end: sel ? widget.colorSeleccionado : colores.fondo),
+            duration: Animaciones.media,
+            curve: Animaciones.curva,
+            builder: (context, fondo, _) => SizedBox(
+              height: widget.alto,
+              child: SuperficieTactil(
+                etiqueta: '${widget.etiqueta} (${widget.atajo.replaceFirst('ALT+', 'Alt+')})',
+                color: fondo ?? colores.fondo,
+                borderRadius: BorderRadius.circular(30),
+                onTap: widget.onPressed,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: caja,
+                        height: caja,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: sel ? Colors.white.withValues(alpha: 0.22) : colores.fondoBloque,
+                        ),
+                        child: IconoPlz(widget.icono, size: 22, color: colorContenido),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.etiqueta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 20, fontWeight: Pesos.medium, letterSpacing: -0.4, color: colorContenido, height: 1.15),
+                            ),
+                            Text(
+                              widget.atajo,
+                              style: TextStyle(fontSize: 12, fontWeight: Pesos.medium, letterSpacing: 0.6, color: colorContenido.withValues(alpha: 0.55)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
+}
 
-  Future<void> _abrirModalDescuento(BuildContext context) {
-    return mostrarModal<void>(
-      context,
-      builder: (_) => _ModalDescuento(controlador: controlador),
+/// "Cobrar · Enter →" (`.cobrar` del mock): píldora azul de 78 px con una flecha en un círculo; apagada, a 38 % de opacidad.
+class _BotonCobrar extends StatefulWidget {
+  const _BotonCobrar({required this.habilitado, required this.alto, required this.onTap});
+
+  final bool habilitado;
+  final double alto;
+  final VoidCallback onTap;
+
+  @override
+  State<_BotonCobrar> createState() => _BotonCobrarState();
+}
+
+class _BotonCobrarState extends State<_BotonCobrar> {
+  bool _encima = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final habilitado = widget.habilitado;
+    final circulo = widget.alto * 0.69;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _encima = true),
+      onExit: (_) => setState(() => _encima = false),
+      child: AnimatedSlide(
+        duration: Animaciones.corta,
+        curve: Animaciones.curva,
+        offset: _encima && habilitado ? const Offset(0, -0.03) : Offset.zero,
+        child: AnimatedOpacity(
+          duration: Animaciones.corta,
+          opacity: habilitado ? 1 : 0.38,
+          child: AnimatedContainer(
+            duration: Animaciones.corta,
+            decoration: BoxDecoration(
+              color: _encima && habilitado ? azulMarcaOscuro : azulMarca,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: _encima && habilitado ? [BoxShadow(color: azulMarca.withValues(alpha: 0.35), blurRadius: 40, offset: const Offset(0, 18))] : null,
+            ),
+            child: SuperficieTactil(
+              etiqueta: 'Cobrar',
+              borderRadius: BorderRadius.circular(999),
+              onTap: habilitado ? widget.onTap : null,
+              child: SizedBox(
+                height: widget.alto,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(widget.alto * 0.49, 0, widget.alto * 0.18, 0),
+                  child: Row(
+                    children: [
+                      const Text('Cobrar', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white)),
+                      const SizedBox(width: 12),
+                      TeclaAtajo(texto: 'Enter', color: Colors.white, tamano: 13),
+                      const Spacer(),
+                      Container(
+                        width: circulo,
+                        height: circulo,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.2)),
+                        child: IconoPlz(IconosPlazoleta.arrowForwardRounded, size: 26, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Cobrar a mano, sin terminal · Alt+M" (`.btn.out.wide`): botón de contorno a todo el ancho, debajo de "Cobrar".
+class _BotonAMano extends StatelessWidget {
+  const _BotonAMano({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colores.textoPrimario.withValues(alpha: 0.12), width: 1.5),
+      ),
+      child: SuperficieTactil(
+        etiqueta: 'Cobrar a mano',
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Cobrar a mano, sin terminal', style: TextStyle(fontSize: 15, fontWeight: Pesos.medium, color: colores.textoPrimario)),
+              const SizedBox(width: 10),
+              TeclaAtajo(texto: 'Alt+M', color: colores.textoPrimario),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -462,104 +610,29 @@ class _ModalDescuento extends StatelessWidget {
   }
 }
 
-/// Los cuatro medios de pago comparten altura (`TactoVenta.alturaControl`)
-/// y ancho entre ellos (remake 2026-09-19: ya no comparten columna
-/// vertical, van los cuatro en una sola fila) — cada uno con su ícono e
-/// identificado por su propio color (`ColorMedioPago`, reconciliado con
-/// `AcentosPlazoleta`).
+/// Botón de dos estados del modal de descuento ("$" / "%"): neutro, o de acento cuando está elegido.
 class _BotonMedio extends StatelessWidget {
-  const _BotonMedio({
-    required this.etiqueta,
-    required this.seleccionado,
-    required this.onPressed,
-    this.icono,
-    this.colorSeleccionado,
-  });
+  const _BotonMedio({required this.etiqueta, required this.seleccionado, required this.onPressed});
 
   final String etiqueta;
   final bool seleccionado;
   final VoidCallback onPressed;
 
-  /// Null para los dos botones de un solo carácter (\$/%, descuento) — un
-  /// glifo tan corto ya se distingue solo, un ícono al lado sería ruido.
-  final IconData? icono;
-
-  /// Color del botón cuando está seleccionado — nulo usa `colores.acento`
-  /// (el descuento \$/%, que sigue siendo neutro). Los cuatro medios de
-  /// pago pasan su propio color (`ColorMedioPago`) en vez de compartir el
-  /// acento — texto blanco encima, mismo criterio que `colores.errorTexto`
-  /// sobre una superficie sólida.
-  final Color? colorSeleccionado;
-
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    // Sin elegir, el botón es neutro (bloque gris, texto en tinta); elegido, el color de su medio lo llena (mock Nodo
-    // Sur, 2026-10-05).
-    final colorMedio = colorSeleccionado;
-    final colorFondo = seleccionado
-        ? (colorMedio ?? colores.acento)
-        : colores.fondoBloque;
-    final colorContenido = seleccionado
-        ? (colorMedio == null ? colores.acentoTexto : context.acentosPlazoleta.textoSobreColor)
-        : colores.textoPrimario;
-    // Elegido, el color llena el botón con una transición corta y el botón late una vez (2026-10-03).
-    return Pulso(
-      valor: seleccionado,
-      escala: 1.03,
-      child: TweenAnimationBuilder<Color?>(
-      tween: ColorTween(end: colorFondo),
-      duration: Animaciones.corta,
-      curve: Animaciones.curva,
-      builder: (context, fondoAnimado, _) => SizedBox(
+    return SizedBox(
       height: TactoVenta.alturaControl,
       child: SuperficieTactil(
-        color: fondoAnimado ?? colorFondo,
+        color: seleccionado ? colores.acento : colores.fondoBloque,
         borderRadius: BorderRadius.circular(TactoVenta.radio),
         onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.sm),
-          // `mainAxisAlignment.center`, no `Center` + `mainAxisSize.min`:
-          // con el ícono, "Débito (Alt+D)"/"Mixto (Alt+X)" a veces no
-          // entran en el ancho del botón — un `Row` de ancho mínimo
-          // desborda en vez de acotarse (bug real, encontrado en los
-          // tests). `Flexible` en el texto deja que trunque con "…" en vez
-          // de romper el layout, sin afectar el caso normal.
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icono != null) ...[
-                // Ícono en su propio chip circular (rediseño de
-                // composición, mismo patrón que `ChipIcono` de la
-                // companion) en vez de suelto en la fila — cabe sin sumar
-                // alto: el botón sigue en `TactoVenta.alturaControl` (48),
-                // fijo porque el panel de cobro ya está al límite vertical
-                // en el piso mínimo (1366×768, ver `tacto_venta.dart`).
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    // Sin elegir, el círculo del ícono es del color del fondo de pantalla (mock `--paper`); elegido, blanco translúcido.
-                    color: seleccionado ? Colors.white.withValues(alpha: 0.2) : colores.fondo,
-                  ),
-                  child: IconoPlz(icono!, size: 14, color: colorContenido),
-                ),
-                const SizedBox(width: Espaciado.sm),
-              ],
-              Flexible(
-                child: Text(
-                  etiqueta,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(color: colorContenido),
-                ),
-              ),
-            ],
+        child: Center(
+          child: Text(
+            etiqueta,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(color: seleccionado ? colores.acentoTexto : colores.textoPrimario),
           ),
         ),
-      ),
-      ),
       ),
     );
   }

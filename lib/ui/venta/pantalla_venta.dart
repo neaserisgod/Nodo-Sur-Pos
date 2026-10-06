@@ -47,17 +47,13 @@ import '../navegacion/boton_notificaciones.dart';
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
-import '../tema/tokens.dart';
 import 'acciones_venta.dart';
-import 'columna_busqueda.dart';
-import 'columna_carrito.dart';
-import 'columna_cobro.dart';
+import 'cuerpo_venta.dart';
 import 'dialogo_apertura_caja.dart';
 import 'dialogo_arqueo_intermedio.dart';
 import 'dialogo_movimiento_rapido.dart';
 import 'dialogo_pagar_proveedor_rapido.dart';
 import 'venta_controlador.dart';
-import '../tema/iconos.dart';
 import 'elegir_tarjeta.dart';
 
 class PantallaVenta extends StatefulWidget {
@@ -536,17 +532,15 @@ class _PantallaVentaState extends State<PantallaVenta>
                   // título "Vender" (igual que el mock).
                   // La búsqueda de Venta no se esconde detrás de la lupa: es el campo único (y el lector de códigos escribe
                   // ahí), siempre visible en la columna de productos (CLAUDE.md, "Pantalla de venta"). Ctrl+F lo enfoca.
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-                    child: NavbarSuperior(
-                      claveActiva: 'venta',
-                      items: _itemsNav,
-                      onSeleccionar: _onSeleccionarSeccion,
-                      izquierda: _construirBotonCaja(c),
-                      onAbrirAsistente: () => unawaited(_abrirAsistente()),
-                      acciones: hayVenta ? campanita : null,
-                    ),
+                  NavbarSuperior(
+                    claveActiva: 'venta',
+                    items: _itemsNav,
+                    onSeleccionar: _onSeleccionarSeccion,
+                    izquierda: _construirBotonCaja(c),
+                    onAbrirAsistente: () => unawaited(_abrirAsistente()),
+                    acciones: hayVenta ? campanita : null,
                   ),
+                  const SizedBox(height: 4),
                   Expanded(
                     child: c.sesion == null
                         ? _EstadoBloqueado(
@@ -561,99 +555,12 @@ class _PantallaVentaState extends State<PantallaVenta>
                             etiquetaBoton: 'Cerrar caja',
                             onPressed: _irACierre,
                           )
-                        : Padding(
-                            padding: const EdgeInsets.all(Espaciado.lg),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // El aviso de arqueo cada 2hs ya no vive acá
-                                // (El dueño, tercera pasada: "NO QUIERO QUE
-                                // APAREZCA EL COSO DEL ARQUEO OCUPANDO
-                                // TODO... UN APARTADO NOTIFICACIONES") — se
-                                // mudó a `_BotonNotificaciones`, en la
-                                // franja superior.
-                                // Rediseño de composición (2026-09-25,
-                                // segunda pasada: El dueño mandó una
-                                // referencia de POS y contestó "1 pero
-                                // manteniendo la estructura de dropdown")
-                                // — dos zonas: izquierda la grilla navegable
-                                // por categoría (los resultados de escribir
-                                // siguen colgando de la barra, arriba, sin
-                                // relación con esto; cuarta pasada: se sacó
-                                // la tira de accesos directos de encima, la
-                                // grilla ya cubre el acceso rápido táctil);
-                                // derecha un panel FIJO con el carrito
-                                // (scroll propio si no entra completo —
-                                // regla dura vieja de "sin scroll" revisada
-                                // a propósito, ver CLAUDE.md) y el cobro al
-                                // pie.
-                                Expanded(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            // Sin título (rediseño v4): el buscador va arriba de todo, grande, y al
-                                            // lado "Pagar proveedor", lo que más se hace además de vender.
-                                            // El desplegable de resultados cuelga del campo pero mide todo el ancho de la columna
-                                            // (no solo el del campo, que se achica por el botón): si no, las filas pierden el stock.
-                                            LayoutBuilder(
-                                              builder: (context, restricciones) => Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: SizedBox(
-                                                      height: 64,
-                                                      child: BarraBusquedaVenta(anchoDropdown: restricciones.maxWidth),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: Espaciado.md),
-                                                  SizedBox(height: 64, child: _BotonPagarProveedor(onTap: _pagarProveedor)),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: Espaciado.lg),
-                                            const Expanded(
-                                              child: RejillaProductos(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: Espaciado.md),
-                                      SizedBox(
-                                        width: Medidas.anchoPanelCobroVenta,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Expanded(
-                                              child: ColumnaCarrito(
-                                                ventaConfirmada:
-                                                    c.ultimaVentaId,
-                                                totalConfirmadoCentavos: c
-                                                    .ultimoTotalCobradoCentavos,
-                                                onImprimir:
-                                                    _imprimirUltimoTicket,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              height: Espaciado.md,
-                                            ),
-                                            PanelCobro(
-                                              usuarioId:
-                                                  c.sesion?.usuarioAbrioId ?? 0,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                        : CuerpoVenta(
+                            onPagarProveedor: _pagarProveedor,
+                            onImprimir: _imprimirUltimoTicket,
+                            ventaConfirmada: c.ultimaVentaId,
+                            totalConfirmadoCentavos: c.ultimoTotalCobradoCentavos,
+                            usuarioId: c.sesion?.usuarioAbrioId ?? 0,
                           ),
                   ),
                 ],
@@ -692,44 +599,6 @@ class _EstadoBloqueado extends StatelessWidget {
           const SizedBox(height: 12),
           BotonPrimario(texto: etiquetaBoton, onPressed: onPressed),
         ],
-      ),
-    );
-  }
-}
-
-/// "Pagar proveedor · Alt+P": pastilla oscura al lado del buscador (la acción principal de caja además de vender).
-class _BotonPagarProveedor extends StatelessWidget {
-  const _BotonPagarProveedor({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    return Tooltip(
-      message: 'Pagar proveedor (Alt+P)',
-      child: Material(
-        key: const Key('boton_pagar_proveedor'),
-        color: colores.textoPrimario,
-        borderRadius: BorderRadius.circular(999),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconoPlz(IconosPlazoleta.localShippingOutlined, size: 22, color: colores.fondo),
-                const SizedBox(width: Espaciado.md),
-                Text('Pagar proveedor', style: textTheme.titleMedium?.copyWith(color: colores.fondo)),
-                const SizedBox(width: Espaciado.md),
-                Text('Alt+P', style: textTheme.bodySmall?.copyWith(color: colores.fondo.withValues(alpha: 0.65), fontWeight: Pesos.fuerte)),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

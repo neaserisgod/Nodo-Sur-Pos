@@ -49,9 +49,12 @@ class AccionMenuCaja {
 }
 
 class BotonCaja extends StatelessWidget {
-  const BotonCaja({super.key, required this.estado, required this.acciones, this.detalle});
+  const BotonCaja({super.key, required this.estado, required this.acciones, this.detalle, this.quien});
 
   final EstadoCajaNavbar estado;
+
+  /// Quién abrió la caja ("Caja · Ana", como el mock). Null: solo "Caja abierta".
+  final String? quien;
 
   /// Línea de arriba del menú ("desde las 8:02"). Opcional.
   final String? detalle;
@@ -60,7 +63,7 @@ class BotonCaja extends StatelessWidget {
   /// Lo que dice el botón. Corto a propósito: la columna de la izquierda de la navbar no es ancha (en una ventana de
   /// 1366 px, "Caja de ayer sin cerrar" no entra); el detalle completo va en la cabecera del menú.
   String get _etiqueta => switch (estado) {
-    EstadoCajaNavbar.abierta => 'Caja abierta',
+    EstadoCajaNavbar.abierta => quien == null ? 'Caja abierta' : 'Caja · $quien',
     EstadoCajaNavbar.cerrada => 'Caja cerrada',
     EstadoCajaNavbar.deAyerSinCerrar => 'Caja de ayer',
   };
@@ -122,25 +125,26 @@ class BotonCaja extends StatelessWidget {
           radio: 999,
           color: colores.fondoBloque,
           onTap: () => controlador.isOpen ? controlador.close() : controlador.open(),
+          // `.cajabtn` del mock: 46 px de alto, el punto con su halo, el texto en 15/600 y la flecha.
           child: Container(
             height: Medidas.alturaControl,
-            padding: const EdgeInsets.only(left: Espaciado.md, right: Espaciado.md),
+            padding: const EdgeInsets.only(left: 14, right: 12),
             alignment: Alignment.center,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _Punto(color: colorPunto),
-                const SizedBox(width: Espaciado.sm),
+                _Punto(color: colorPunto, halo: estado != EstadoCajaNavbar.cerrada),
+                const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     _etiqueta,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: estilo.copyWith(fontWeight: Pesos.fuerte, color: colores.textoPrimario, letterSpacing: -0.16),
+                    style: estilo.copyWith(fontSize: 15, fontWeight: Pesos.medium, color: colores.textoPrimario),
                   ),
                 ),
-                const SizedBox(width: Espaciado.xs),
-                IconoPlz(IconosPlazoleta.expandMore, size: 18, color: colores.textoSecundario),
+                const SizedBox(width: 6),
+                IconoPlz(IconosPlazoleta.expandMore, size: 16, color: colores.textoSecundario),
               ],
             ),
           ),
@@ -151,14 +155,24 @@ class BotonCaja extends StatelessWidget {
 }
 
 class _Punto extends StatelessWidget {
-  const _Punto({required this.color, this.tamanio = 8});
+  const _Punto({required this.color, this.tamanio = 9, this.halo = false});
 
   final Color color;
   final double tamanio;
 
+  /// El anillo suave de 4 px alrededor del punto (caja abierta).
+  final bool halo;
+
   @override
-  Widget build(BuildContext context) =>
-      Container(width: tamanio, height: tamanio, decoration: BoxDecoration(shape: BoxShape.circle, color: color));
+  Widget build(BuildContext context) => Container(
+    width: tamanio,
+    height: tamanio,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: color,
+      boxShadow: halo ? [BoxShadow(color: color.withValues(alpha: 0.22), spreadRadius: 4)] : null,
+    ),
+  );
 }
 
 class _FilaMenu extends StatelessWidget {

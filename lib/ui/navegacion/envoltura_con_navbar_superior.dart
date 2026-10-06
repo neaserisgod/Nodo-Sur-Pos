@@ -29,7 +29,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
-import '../tema/tokens.dart';
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import 'acciones_caja.dart';
 import 'asistente.dart';
@@ -191,20 +190,17 @@ class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
-          child: NavbarSuperior(
-            claveActiva: widget.claveActiva,
-            items: _items,
-            onSeleccionar: _seleccionar,
-            izquierda: BotonCajaDeGestion(db: widget.db),
-            onAbrirAsistente: () => unawaited(_abrirAsistente()),
-            acciones: const BotonNotificaciones(),
-            busqueda: campo,
-            buscando: _buscando,
-            onAbrirBusqueda: _abrirBusqueda,
-            onCerrarBusqueda: _cerrarBusqueda,
-          ),
+        NavbarSuperior(
+          claveActiva: widget.claveActiva,
+          items: _items,
+          onSeleccionar: _seleccionar,
+          izquierda: BotonCajaDeGestion(db: widget.db),
+          onAbrirAsistente: () => unawaited(_abrirAsistente()),
+          acciones: const BotonNotificaciones(),
+          busqueda: campo,
+          buscando: _buscando,
+          onAbrirBusqueda: _abrirBusqueda,
+          onCerrarBusqueda: _cerrarBusqueda,
         ),
         Expanded(child: widget.child),
       ],

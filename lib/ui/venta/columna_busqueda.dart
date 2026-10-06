@@ -40,15 +40,15 @@ import '../../data/busqueda_productos.dart';
 import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../../domain/pesables.dart';
+import '../../domain/venta.dart';
 import '../comun/color_categoria.dart';
-import '../tema/superficie.dart';
-import '../tema/tema_inverso.dart';
 import '../tema/tokens.dart';
 import 'acciones_venta.dart';
 import 'tacto_venta.dart';
 import 'venta_controlador.dart';
 import '../tema/iconos.dart';
 import '../tema/movimiento.dart';
+import '../tema/acentos.dart';
 
 /// Alto máximo del dropdown de resultados antes de scrollear — "6 a 8
 /// filas" (CLAUDE.md, especificación original de esta pantalla), sin
@@ -132,7 +132,6 @@ class _BarraBusquedaVentaState extends State<BarraBusquedaVenta> {
   Widget build(BuildContext context) {
     final c = context.watch<VentaControlador>();
     final colores = context.colores;
-    const radioPildora = 999.0;
 
     return OverlayPortal(
       controller: _overlayController,
@@ -163,21 +162,19 @@ class _BarraBusquedaVentaState extends State<BarraBusquedaVenta> {
               desplazamiento: -6,
               child: SizedBox(
               width: widget.anchoDropdown,
-              child: Superficie(
-                // Key propia: desde que la grilla de productos muestra
-                // permanentemente el mismo nombre que puede aparecer acá
-                // (`RejillaProductos`), los tests necesitan poder acotar un
-                // `find.text` a "adentro del dropdown" para no toparse con
-                // el tile de la grilla.
+              child: Container(
+                // Key propia: desde que la grilla de productos muestra permanentemente el mismo nombre que puede aparecer acá
+                // (`RejillaProductos`), los tests necesitan poder acotar un `find.text` a "adentro del dropdown".
                 key: const Key('dropdown_resultados_busqueda'),
-                // Opaco (`relleno`), no el vidrio translúcido de siempre —
-                // esto flota ENCIMA de contenido real (la tira de directos,
-                // el carrito), a diferencia del resto de `Superficie` en la
-                // app, que se apoya sobre el fondo vacío. Con el 0.72 de
-                // siempre, ese contenido se transparentaba a través del
-                // dropdown y se volvía ilegible (bug real, visto en la
-                // captura de esta misma pasada).
-                relleno: colores.fondoBloque,
+                // Como el mock (`.drop`): hoja blanca de radio 36, borde finito y una sombra grande y suave; opaca, porque flota
+                // encima del carrito y de la grilla.
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colores.fondo,
+                  borderRadius: BorderRadius.circular(36),
+                  border: Border.all(color: colores.textoPrimario.withValues(alpha: 0.07)),
+                  boxShadow: [BoxShadow(color: const Color(0xFF0D1017).withValues(alpha: 0.22), blurRadius: 80, offset: const Offset(0, 30))],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -197,35 +194,77 @@ class _BarraBusquedaVentaState extends State<BarraBusquedaVenta> {
       },
       child: CompositedTransformTarget(
         link: _link,
-        child: TextField(
-          controller: c.campoTexto,
-          focusNode: c.focoCampoPrincipal,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: 'Código, nombre o "200 nombre"',
-            prefixIcon: IconoPlz(IconosPlazoleta.search, size: TactoVenta.icono, color: colores.textoSecundario),
-            contentPadding: const EdgeInsets.symmetric(horizontal: Espaciado.lg, vertical: Espaciado.sm),
-            // Octava pasada (El dueño: "necesito que la barra de busqueda se
-            // note que es una barra de busqueda") — mismo relleno que
-            // `BarraBusquedaGlobal` (barra_busqueda_global.dart), para que
-            // las dos versiones del campo se vean igual de reconocibles.
-            filled: true,
-            fillColor: colores.fondoBloque.withValues(alpha: 0.6),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(radioPildora),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(radioPildora),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(radioPildora),
-              borderSide: BorderSide(color: colores.acento, width: Bordes.fino * 1.5),
+        child: _CampoUnico(controlador: c),
+      ),
+    );
+  }
+}
+
+/// El campo único como el mock (`.sbig`): pastilla gris de 72 px, texto de 22 px, lupa a la izquierda; al enfocarlo pasa a fondo blanco
+/// con un aro azul de 3 px. Se dibuja a mano (no con el borde de `InputDecoration`) para que el aro no mueva nada al aparecer.
+class _CampoUnico extends StatefulWidget {
+  const _CampoUnico({required this.controlador});
+
+  final VentaControlador controlador;
+
+  @override
+  State<_CampoUnico> createState() => _CampoUnicoState();
+}
+
+class _CampoUnicoState extends State<_CampoUnico> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controlador.focoCampoPrincipal.addListener(_cambioFoco);
+  }
+
+  @override
+  void dispose() {
+    widget.controlador.focoCampoPrincipal.removeListener(_cambioFoco);
+    super.dispose();
+  }
+
+  void _cambioFoco() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controlador;
+    final colores = context.colores;
+    final enfocado = c.focoCampoPrincipal.hasFocus;
+    return AnimatedContainer(
+      duration: Animaciones.corta,
+      curve: Animaciones.curva,
+      decoration: BoxDecoration(
+        color: enfocado ? colores.fondo : colores.fondoBloque,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [BoxShadow(color: enfocado ? focoMock : Colors.transparent, spreadRadius: 3)],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Row(
+        children: [
+          IconoPlz(IconosPlazoleta.search, size: 26, color: colores.textoPrimario),
+          const SizedBox(width: 16),
+          Expanded(
+            child: TextField(
+              controller: c.campoTexto,
+              focusNode: c.focoCampoPrincipal,
+              autofocus: true,
+              cursorColor: colores.textoPrimario,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22, fontWeight: Pesos.regular, letterSpacing: -0.44),
+              decoration: InputDecoration(
+                hintText: 'Escaneá un código o buscá un producto',
+                hintStyle: TextStyle(fontSize: 22, fontWeight: Pesos.regular, color: colores.textoTenue, letterSpacing: -0.44),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isCollapsed: true,
+              ),
+              onSubmitted: (_) => _onEnterBusqueda(context),
             ),
           ),
-          onSubmitted: (_) => _onEnterBusqueda(context),
-        ),
+        ],
       ),
     );
   }
@@ -288,8 +327,7 @@ class _ResultadosBusqueda extends StatelessWidget {
         // contenido, como cualquier autocomplete real.
         shrinkWrap: true,
         itemCount: c.coincidencias.length,
-        separatorBuilder: (context, index) =>
-            const SizedBox(height: Espaciado.md),
+        separatorBuilder: (context, index) => const SizedBox(height: 2),
         itemBuilder: (context, index) {
           final producto = c.coincidencias[index];
           final seleccionado = index == c.indicePreseleccionado;
@@ -345,9 +383,6 @@ class _FilaResultado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inv = coloresDeFila(context, seleccionado);
-    final colores = inv.colores;
-    final textTheme = inv.textTheme;
 
     final String stockTexto;
     final String precioTexto;
@@ -395,84 +430,68 @@ class _FilaResultado extends StatelessWidget {
 
     // Agotado: atenuado y con "Sin stock" en vez de la cantidad (El dueño, 2026-10-03).
     final agotado = !tieneStock(producto);
+    final fondo = context.colores.fondoBloque;
     return Opacity(
       opacity: agotado ? 0.5 : 1,
       child: SuperficieTactil(
-      color: seleccionado ? colores.acento : Colors.transparent,
-      borderRadius: BorderRadius.circular(TactoVenta.radio),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Espaciado.md,
-          vertical: Espaciado.lg,
-        ),
-        // LayoutBuilder, no un ancho fijo (fase 13, "mitad de pantalla",
-        // 2026-09-07): con la columna de búsqueda angosta (960px de
-        // ventana), stock+precio fijos no dejaban lugar al nombre —
-        // quedaba en blanco, un bug real encontrado en la captura de
-        // esa resolución. Mismo criterio que ya usa el carrito
-        // (`columna_carrito.dart`, "la fila del carrito necesita
-        // LayoutBuilder"): con poco lugar, se saca el stock antes que
-        // recortar el nombre a la nada.
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final mostrarStock = constraints.maxWidth >= 320;
-            // "Bento con carácter" (El dueño, 2026-09-16): mismo punto de
-            // color por rubro que ya usa el carrito — null en "Varios" o en
-            // un producto sin categoría cargada.
-            final colorCat = colorCategoria(context, producto.categoriaId);
-            return Row(
-              children: [
-                if (colorCat != null) ...[
-                  BarraCategoria(color: colorCat),
-                  const SizedBox(width: Espaciado.sm),
-                ],
-                Expanded(
-                  child: Text(
-                    producto.nombre,
-                    overflow: TextOverflow.ellipsis,
-                    // titleMedium (19), no bodyMedium (16): mismo escalón
-                    // que ya usa el precio de acá abajo — "todo se ve chico"
-                    // (El dueño, 2026-09-06) era justo esta inconsistencia, el
-                    // precio ya estaba en el tamaño grande y el resto de la
-                    // fila se quedó atrás.
-                    style: textTheme.titleMedium,
-                  ),
+        color: seleccionado ? fondo : Colors.transparent,
+        borderRadius: BorderRadius.circular(26),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+          child: Row(
+            children: [
+              AvatarProducto(producto: producto, tamano: 40),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  producto.nombre,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 21, fontWeight: Pesos.regular),
                 ),
-                if (mostrarStock) ...[
-                  const SizedBox(width: Espaciado.sm),
-                  SizedBox(
-                    width: Medidas.anchoValorListaCompacto,
-                    child: Text(
-                      agotado ? 'Sin stock' : stockTexto,
-                      textAlign: TextAlign.right,
-                      style: textTheme.bodyMedium
-                          ?.copyWith(color: colores.textoSecundario)
-                          .tabular,
-                    ),
-                  ),
-                ],
-                const SizedBox(width: Espaciado.sm),
-                SizedBox(
-                  width: Medidas.anchoValorLista,
-                  child: Text(
-                    precioTexto,
-                    textAlign: TextAlign.right,
-                    style:
-                        (precioEsTarifa
-                                ? textTheme.bodySmall?.copyWith(
-                                    color: colores.textoSecundario,
-                                  )
-                                : textTheme.titleMedium)!
-                            .tabular,
-                  ),
+              ),
+              const SizedBox(width: Espaciado.md),
+              Text(
+                agotado ? 'Sin stock' : stockTexto,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario, fontSize: 15).tabular,
+              ),
+              SizedBox(
+                width: 130,
+                child: Text(
+                  precioTexto,
+                  textAlign: TextAlign.right,
+                  style: (precioEsTarifa
+                          ? Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.colores.textoSecundario, fontSize: 15)
+                          : Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 21, fontWeight: Pesos.fuerte))!
+                      .tabular,
                 ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ),
-      ),
+    );
+  }
+}
+
+/// El círculo con la inicial del producto, teñido con el color de su rubro (`.av` del mock). Sin categoría, gris.
+class AvatarProducto extends StatelessWidget {
+  const AvatarProducto({super.key, required this.producto, this.tamano = 44});
+
+  final Producto producto;
+  final double tamano;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    final color = colorCategoria(context, producto.categoriaId) ?? colores.textoSecundario;
+    final inicial = producto.nombre.trim().isEmpty ? '?' : producto.nombre.trim().characters.first.toUpperCase();
+    return Container(
+      width: tamano,
+      height: tamano,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: Color.alphaBlend(color.withValues(alpha: 0.16), colores.fondo), shape: BoxShape.circle),
+      child: Text(inicial, style: TextStyle(fontSize: tamano * 0.39, fontWeight: Pesos.fuerte, color: color)),
     );
   }
 }
@@ -496,7 +515,10 @@ final Object _todosEnGrilla = Object();
 /// carrito ni ningún atajo) — `Stateful` local, sin pasar por
 /// `VentaControlador` (CLAUDE.md: "sin gestor de estado ceremonioso").
 class RejillaProductos extends StatefulWidget {
-  const RejillaProductos({super.key});
+  const RejillaProductos({super.key, this.altoTarjeta = 150});
+
+  /// Alto de cada tarjeta (150 en el mock; menos en ventanas de poca altura).
+  final double altoTarjeta;
 
   @override
   State<RejillaProductos> createState() => _RejillaProductosState();
@@ -540,73 +562,77 @@ class _RejillaProductosState extends State<RejillaProductos> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: 48,
+          height: 46,
           child: Row(
             children: [
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-              children: [
-                _PildoraCategoria(
-                  texto: 'Más vendidos',
-                  seleccionada: _filtro == null,
-                  onTap: () => setState(() => _filtro = null),
-                ),
-                const SizedBox(width: Espaciado.sm),
-                _PildoraCategoria(
-                  texto: 'Todos',
-                  seleccionada: identical(_filtro, _todosEnGrilla),
-                  onTap: () => setState(() => _filtro = _todosEnGrilla),
-                ),
-                for (final cat in categoriasConProductos) ...[
-                  const SizedBox(width: Espaciado.sm),
-                  _PildoraCategoria(
-                    texto: cat.nombre,
-                    seleccionada: _filtro == cat.id,
-                    onTap: () => setState(() => _filtro = cat.id),
+                    children: [
+                      _PildoraCategoria(
+                        texto: 'Más vendidos',
+                        seleccionada: _filtro == null,
+                        onTap: () => setState(() => _filtro = null),
+                      ),
+                      const SizedBox(width: 8),
+                      _PildoraCategoria(
+                        texto: 'Todos',
+                        seleccionada: identical(_filtro, _todosEnGrilla),
+                        onTap: () => setState(() => _filtro = _todosEnGrilla),
+                      ),
+                      for (final cat in categoriasConProductos) ...[
+                        const SizedBox(width: 8),
+                        _PildoraCategoria(
+                          texto: cat.nombre,
+                          seleccionada: _filtro == cat.id,
+                          onTap: () => setState(() => _filtro = cat.id),
+                        ),
+                      ],
+                      if (hayNoCategorizados) ...[
+                        const SizedBox(width: 8),
+                        _PildoraCategoria(
+                          texto: 'Otros',
+                          seleccionada: identical(_filtro, _sinCategoriaEnGrilla),
+                          onTap: () => setState(() => _filtro = _sinCategoriaEnGrilla),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-                if (hayNoCategorizados) ...[
-                  const SizedBox(width: Espaciado.sm),
-                  _PildoraCategoria(
-                    texto: 'Otros',
-                    seleccionada: identical(_filtro, _sinCategoriaEnGrilla),
-                    onTap: () => setState(() => _filtro = _sinCategoriaEnGrilla),
-                  ),
-                ],
-              ],
-            ),
                 ),
               ),
-              const SizedBox(width: Espaciado.md),
+              const SizedBox(width: 12),
               // "Varios" a la vista (rediseño v4): un monto suelto para lo que no está cargado. Antes solo por Alt+V.
               const _PildoraVarios(),
             ],
           ),
         ),
-        const SizedBox(height: Espaciado.sm),
+        const SizedBox(height: 18),
         Expanded(
           child: productos.isEmpty
               ? Align(
                   alignment: Alignment.topLeft,
                   child: Text(
-                    _filtro == null
-                        ? 'Todavía no hay historial de ventas.'
-                        : 'Sin productos en esta categoría',
+                    _filtro == null ? 'Todavía no hay historial de ventas.' : 'Sin productos en esta categoría',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )
-              : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 300,
-                    mainAxisSpacing: Espaciado.md,
-                    crossAxisSpacing: Espaciado.md,
-                    childAspectRatio: 1.55,
-                  ),
-                  itemCount: productos.length,
-                  itemBuilder: (context, index) =>
-                      _TarjetaProducto(producto: productos[index]),
+              : LayoutBuilder(
+                  builder: (context, r) {
+                    // Cinco columnas a 1920 px (como el mock); menos cuando la ventana es más angosta.
+                    final columnas = ((r.maxWidth + 14) / 214).floor().clamp(2, 6);
+                    return GridView.builder(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columnas,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        mainAxisExtent: widget.altoTarjeta,
+                      ),
+                      itemCount: productos.length,
+                      itemBuilder: (context, index) => entradaEnLista(index, _TarjetaProducto(producto: productos[index])),
+                    );
+                  },
                 ),
         ),
       ],
@@ -624,20 +650,23 @@ class _PildoraVarios extends StatelessWidget {
     final c = context.read<VentaControlador>();
     return Container(
       key: const Key('pildora_varios'),
-      // 48 dp: el mínimo para un objetivo táctil.
-      height: 48,
-      decoration: BoxDecoration(color: colores.fondoBloque, borderRadius: BorderRadius.circular(999)),
+      height: 46,
+      decoration: BoxDecoration(
+        color: colores.fondo,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colores.textoPrimario.withValues(alpha: 0.12)),
+      ),
       child: SuperficieTactil(
         borderRadius: BorderRadius.circular(999),
         onTap: () => agregarVarios(context, c),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+          padding: const EdgeInsets.symmetric(horizontal: 17),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Varios', style: TextStyle(color: colores.textoSecundario, fontWeight: Pesos.regular)),
-              const SizedBox(width: Espaciado.sm),
-              Text('Alt+V', style: TextStyle(color: colores.textoTenue, fontSize: 12, fontWeight: Pesos.fuerte)),
+              Text('Varios', style: TextStyle(color: colores.textoSecundario, fontSize: 16, fontWeight: Pesos.intermedio)),
+              const SizedBox(width: 8),
+              TeclaAtajo(texto: 'Alt+V', color: colores.textoSecundario),
             ],
           ),
         ),
@@ -646,15 +675,66 @@ class _PildoraVarios extends StatelessWidget {
   }
 }
 
-/// Pill de filtro — mismo lenguaje que el resto de piezas "píldora" de esta
-/// pantalla (el trigger del dropdown de secciones, la barra de búsqueda):
-/// vidrio cuando no está elegida, rellena de acento cuando sí.
+/// El atajo impreso en un botón (`.kbd` del mock): letra chica en una cápsula apenas teñida.
+class TeclaAtajo extends StatelessWidget {
+  const TeclaAtajo({super.key, required this.texto, required this.color, this.tamano = 12});
+
+  final String texto;
+  final Color color;
+  final double tamano;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.09), borderRadius: BorderRadius.circular(8)),
+      child: Text(
+        texto,
+        style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: tamano, fontWeight: Pesos.medium, letterSpacing: 0.24, height: 1.3),
+      ),
+    );
+  }
+}
+
+/// "Pagar proveedor · Alt+P": pastilla oscura al lado del buscador (la acción principal de caja además de vender).
+class BotonPagarProveedor extends StatelessWidget {
+  const BotonPagarProveedor({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = context.colores;
+    return Tooltip(
+      message: 'Pagar proveedor (Alt+P)',
+      child: Container(
+        key: const Key('boton_pagar_proveedor'),
+        decoration: BoxDecoration(color: colores.textoPrimario, borderRadius: BorderRadius.circular(999)),
+        child: SuperficieTactil(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconoPlz(IconosPlazoleta.localShippingOutlined, size: 22, color: colores.fondo),
+                const SizedBox(width: 10),
+                Text('Pagar proveedor', style: TextStyle(color: colores.fondo, fontSize: 17, fontWeight: Pesos.medium)),
+                const SizedBox(width: 10),
+                TeclaAtajo(texto: 'Alt+P', color: colores.fondo),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pill de filtro (`.chip` del mock): blanca con un borde finito; la elegida, de tinta con letra blanca.
 class _PildoraCategoria extends StatelessWidget {
-  const _PildoraCategoria({
-    required this.texto,
-    required this.seleccionada,
-    required this.onTap,
-  });
+  const _PildoraCategoria({required this.texto, required this.seleccionada, required this.onTap});
 
   final String texto;
   final bool seleccionada;
@@ -663,23 +743,27 @@ class _PildoraCategoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    return Container(
-      height: 44,
+    return AnimatedContainer(
+      duration: Animaciones.corta,
+      curve: Animaciones.curva,
+      height: 46,
       decoration: BoxDecoration(
-        color: seleccionada ? colores.acento : colores.fondoBloque,
+        color: seleccionada ? colores.textoPrimario : colores.fondo,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: seleccionada ? Colors.transparent : colores.textoPrimario.withValues(alpha: 0.12)),
       ),
       child: SuperficieTactil(
         borderRadius: BorderRadius.circular(999),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Espaciado.lg),
+          padding: const EdgeInsets.symmetric(horizontal: 17),
           child: Center(
             child: Text(
               texto,
               style: TextStyle(
-                color: seleccionada ? colores.acentoTexto : colores.textoPrimario,
-                fontWeight: seleccionada ? Pesos.medium : Pesos.regular,
+                color: seleccionada ? colores.fondo : colores.textoPrimario,
+                fontSize: 16,
+                fontWeight: Pesos.intermedio,
               ),
             ),
           ),
@@ -689,12 +773,8 @@ class _PildoraCategoria extends StatelessWidget {
   }
 }
 
-/// Tile de la grilla — mismo lenguaje "vidrio" que `_TileDirecto` (la
-/// referencia de el dueño solo prestó la ESTRUCTURA, la paleta "dark glass
-/// premium" ya aprobada se queda). Nombre + precio, mismo formato que
-/// `_FilaResultado` para la tarifa "/kg" de un pesable — acá nunca hay
-/// gramos escritos (es la grilla, no el campo), así que un pesable siempre
-/// muestra la tarifa, nunca un subtotal.
+/// Tarjeta de la grilla (`.tile` del mock): gris, radio 30, con la inicial de color arriba a la izquierda, el nombre y el precio abajo;
+/// con el producto en el carrito se tiñe de azul claro, lleva aro azul y un contador arriba a la derecha.
 class _TarjetaProducto extends StatelessWidget {
   const _TarjetaProducto({required this.producto});
 
@@ -703,52 +783,140 @@ class _TarjetaProducto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final colorCat = colorCategoria(context, producto.categoriaId);
+    final c = context.watch<VentaControlador>();
+    final enCarrito = c.carrito.where((l) => l.productoId == '${producto.id}').firstOrNull;
+    final agotado = !tieneStock(producto);
 
     final String precioTexto;
     if (producto.esPesable) {
       final precioPorKilo = producto.precioPorKiloCentavos;
-      precioTexto = precioPorKilo == null ? '—' : '${formatearARS(precioPorKilo)}/kg';
+      precioTexto = precioPorKilo == null ? '—' : formatearARS(precioPorKilo);
     } else {
-      precioTexto = producto.precioCentavos == null
-          ? '—'
-          : formatearARS(producto.precioCentavos!);
+      precioTexto = producto.precioCentavos == null ? '—' : formatearARS(producto.precioCentavos!);
     }
+    final minimo = producto.esPesable ? producto.stockMinimoGramos : producto.stockMinimo;
+    final stock = producto.esPesable ? (producto.stockGramos ?? 0) : producto.stock;
+    final pocoStock = !agotado && minimo != null && minimo > 0 && stock < minimo;
 
-    // Tarjeta plana, blanca sobre el canvas ("Lenguaje de diseño",
-    // 2026-09-26) — sin el vidrio, el borde y la sombra de antes.
-    return Container(
-      decoration: BoxDecoration(
-        color: colores.fondoBloque,
-        borderRadius: BorderRadius.circular(TactoVenta.radio),
-      ),
-      child: SuperficieTactil(
-        borderRadius: BorderRadius.circular(TactoVenta.radio),
-        onTap: () {
-          final c = context.read<VentaControlador>();
-          c.agregarProducto(producto);
-          c.focoCampoPrincipal.requestFocus();
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(Espaciado.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (colorCat != null) BarraCategoria(color: colorCat),
-              Text(
-                producto.nombre,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                precioTexto,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w400).tabular,
-              ),
-            ],
+    final cantidad = switch (enCarrito) {
+      LineaVentaPorUnidad u => '${u.cantidad}',
+      LineaVentaPesable p => '${p.gramos} g',
+      _ => null,
+    };
+    final azulClaro = context.azulSuaveFondo;
+
+    return Opacity(
+      opacity: agotado ? 0.45 : 1,
+      child: AnimatedContainer(
+        duration: Animaciones.media,
+        curve: Animaciones.curva,
+        decoration: BoxDecoration(
+          color: enCarrito != null ? azulClaro : colores.fondoBloque,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: enCarrito != null ? azulMarca : Colors.transparent, width: 2),
+        ),
+        child: SuperficieTactil(
+          borderRadius: BorderRadius.circular(30),
+          onTap: agotado
+              ? null
+              : () {
+                  final ctrl = context.read<VentaControlador>();
+                  ctrl.agregarProducto(producto);
+                  ctrl.focoCampoPrincipal.requestFocus();
+                },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+            child: Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AvatarProducto(producto: producto),
+                    const Spacer(),
+                    Text(
+                      producto.nombre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18, fontWeight: Pesos.intermedio, height: 1.2),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            precioTexto,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 25, fontWeight: Pesos.intermedio, letterSpacing: -0.9).tabular,
+                          ),
+                        ),
+                        if (producto.esPesable) ...[
+                          const SizedBox(width: 6),
+                          Text('/kg', style: TextStyle(fontSize: 14, fontWeight: Pesos.medium, color: colores.textoSecundario)),
+                        ],
+                        if (agotado || pocoStock) ...[
+                          const SizedBox(width: 8),
+                          _EtiquetaStock(texto: agotado ? 'Sin stock' : 'Quedan ${producto.esPesable ? '${(stock / 1000).toStringAsFixed(1).replaceAll('.', ',')} kg' : stock}', error: agotado),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                if (cantidad != null)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: _ContadorEnTarjeta(texto: cantidad),
+                  ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Quedan 14" / "Sin stock" junto al precio (`.tile .p small`).
+class _EtiquetaStock extends StatelessWidget {
+  const _EtiquetaStock({required this.texto, required this.error});
+
+  final String texto;
+  final bool error;
+
+  @override
+  Widget build(BuildContext context) {
+    final acentos = context.acentosPlazoleta;
+    final fondo = error ? Color.alphaBlend(context.colores.error.withValues(alpha: 0.14), context.colores.fondo) : acentos.alertaSuave;
+    final letra = error ? context.colores.error : acentos.alerta;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(999)),
+      child: Text(texto, style: TextStyle(fontSize: 13, fontWeight: Pesos.medium, color: letra)),
+    );
+  }
+}
+
+/// El número azul de arriba a la derecha de una tarjeta con el producto en el carrito (`.tile .cnt`): late cuando cambia.
+class _ContadorEnTarjeta extends StatelessWidget {
+  const _ContadorEnTarjeta({required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pulso(
+      valor: texto,
+      escala: 1.18,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 30),
+        height: 30,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: azulMarca, borderRadius: BorderRadius.circular(15)),
+        child: Text(texto, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
       ),
     );
   }

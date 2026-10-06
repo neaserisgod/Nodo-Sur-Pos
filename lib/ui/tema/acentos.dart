@@ -133,6 +133,9 @@ const acentosEscritorioOscuro = AcentosPlazoleta(
 /// Azul de marca del mock (`#2F5BE8`): la pestaña Venta de la navbar, "Nueva venta" y "Cobrar". No cambia con el tema.
 const Color azulMarca = Color(0xFF2F5BE8);
 
+/// Aro de foco del mock (`--focus`): el campo único de Venta y los controles enfocados.
+const Color focoMock = Color(0xFF3B6CFF);
+
 /// El mismo azul, más oscuro: la pestaña Venta cuando es la pantalla activa.
 const Color azulMarcaOscuro = Color(0xFF1F3FA8);
 

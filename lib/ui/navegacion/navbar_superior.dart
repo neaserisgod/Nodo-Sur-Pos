@@ -10,7 +10,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../companion/kit/iconos_ns.dart';
 import '../tema/acentos.dart';
 import '../tema/iconos.dart';
 import '../tema/presionable.dart';
@@ -26,19 +25,12 @@ class ItemNavbarSuperior {
   final String etiqueta;
 }
 
-/// Ícono de trazo de cada sección (mock: los mismos del celular). Una clave que no está acá (sección nueva) va sin ícono.
-IconoNs? iconoDeSeccion(String clave) => switch (clave) {
-  'dashboard' => IconoNs.inicio,
-  'venta' => IconoNs.carrito,
-  'proveedores' => IconoNs.camion,
-  'separaciones' => IconoNs.billetera,
-  'historial' => IconoNs.portapapeles,
-  'encargues' => IconoNs.calendario,
-  _ => null,
-};
+/// Alto de la cápsula (`.nav` del mock).
+const double altoNavbarSuperior = 68;
 
-/// Alto de la barra: la búsqueda que la acompaña usa el mismo.
-const double altoNavbarSuperior = 52;
+/// Margen lateral de la barra y del contenido (56 px a 1920; menos en ventanas más angostas): la barra y las pantallas comparten
+/// el mismo borde, como en el mock.
+double margenLateralNavbar(double anchoVentana) => anchoVentana >= 1700 ? 56 : (anchoVentana >= 1366 ? 32 : 24);
 
 class NavbarSuperior extends StatelessWidget {
   const NavbarSuperior({
@@ -59,8 +51,8 @@ class NavbarSuperior extends StatelessWidget {
   final List<ItemNavbarSuperior> items;
   final ValueChanged<String> onSeleccionar;
 
-  /// Lo que va en el costado izquierdo (rediseño v4: el botón "Caja ▾"). Los tres costados de la barra son simétricos: este
-  /// y el derecho ocupan lo mismo, así las pastillas quedan en el centro de la ventana.
+  /// Lo que va en el costado izquierdo (rediseño v4: el botón "Caja ▾"). Los dos costados ocupan lo mismo, así las secciones
+  /// quedan en el centro de la ventana.
   final Widget? izquierda;
 
   /// Abre el Asistente (Ctrl+K). Null: no se muestra el botón.
@@ -70,37 +62,38 @@ class NavbarSuperior extends StatelessWidget {
   final Widget? acciones;
 
   /// El campo de búsqueda de la pantalla. Con valor, la barra muestra una lupa y, al abrirla ([buscando]), el campo se
-  /// expande desde la derecha hasta tapar las pastillas y los botones (El dueño, 2026-10-03); al cerrarla vuelve igual.
+  /// expande desde la derecha hasta tapar las secciones y los botones (El dueño, 2026-10-03); al cerrarla vuelve igual.
   final Widget? busqueda;
   final bool buscando;
   final VoidCallback? onAbrirBusqueda;
   final VoidCallback? onCerrarBusqueda;
 
-  /// Configuración no es una sección más del día a día: va como engranaje a la derecha, no como pastilla
-  /// (El dueño, 2026-10-03: "simplificá lo más posible la navbar").
+  /// Configuración no es una sección más del día a día: va como engranaje a la derecha, no como pastilla.
   static const claveConfiguracion = 'configuracion';
 
-  /// Qué parte del ancho de la barra ocupa la búsqueda abierta: desde donde pueden empezar las pastillas (que van
-  /// centradas en el 56% del medio) hasta el borde derecho de los botones.
+  /// Qué parte del ancho de la barra ocupa la búsqueda abierta.
   static const fraccionBusquedaAbierta = 0.78;
 
   @override
   Widget build(BuildContext context) {
+    final colores = context.colores;
+    // Venta primero y azul (como el mock); las demás secciones en el orden que traigan.
     final secciones = [
+      ...items.where((i) => i.clave == 'venta'),
       for (final i in items)
-        if (i.clave != claveConfiguracion) i,
+        if (i.clave != claveConfiguracion && i.clave != 'venta') i,
     ];
-    final hayConfiguracion = secciones.length != items.length;
+    final hayConfiguracion = items.any((i) => i.clave == claveConfiguracion);
     final conBusqueda = busqueda != null;
-    // Las secciones van centradas en la ventana (El dueño, 2026-10-03: "quiero que esté al centro") y sin la marca: el
-    // nombre del comercio ya está en la barra de la ventana. Los dos costados ocupan lo mismo, así el centro de las
-    // pastillas es el de la ventana; si no entran, se desplazan.
+    final ancho = MediaQuery.sizeOf(context).width;
+    final margen = margenLateralNavbar(ancho);
     return Padding(
-      padding: const EdgeInsets.only(top: Espaciado.md),
+      padding: EdgeInsets.fromLTRB(margen, 14, margen, 0),
       child: SizedBox(
         height: altoNavbarSuperior,
         child: LayoutBuilder(
           builder: (context, limites) {
+            final compacto = limites.maxWidth < 1500;
             final fila = Row(
               children: [
                 Expanded(
@@ -109,42 +102,28 @@ class NavbarSuperior extends StatelessWidget {
                     child: AnimatedOpacity(
                       opacity: buscando ? 0 : 1,
                       duration: Animaciones.corta,
-                      child: IgnorePointer(
-                        ignoring: buscando,
-                        child: izquierda ?? const SizedBox.shrink(),
-                      ),
+                      child: IgnorePointer(ignoring: buscando, child: izquierda ?? const SizedBox.shrink()),
                     ),
                   ),
                 ),
                 ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: limites.maxWidth * 0.56,
-                  ),
+                  constraints: BoxConstraints(maxWidth: limites.maxWidth * 0.62),
                   child: AnimatedOpacity(
                     opacity: buscando ? 0 : 1,
                     duration: Animaciones.corta,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      // Las pastillas van sobre una cápsula gris, como la barra del mock.
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: context.colores.fondoBloque,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (final item in secciones)
-                              _Pastilla(
-                                etiqueta: item.etiqueta,
-                                icono: iconoDeSeccion(item.clave),
-                                esVenta: item.clave == 'venta',
-                                activa: item.clave == claveActiva,
-                                onTap: () => onSeleccionar(item.clave),
-                              ),
-                          ],
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final item in secciones)
+                            _EnlaceNav(
+                              etiqueta: item.etiqueta,
+                              esVenta: item.clave == 'venta',
+                              activa: item.clave == claveActiva,
+                              onTap: () => onSeleccionar(item.clave),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -155,21 +134,19 @@ class NavbarSuperior extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (conBusqueda)
+                        if (conBusqueda) ...[
                           _BotonRedondo(
                             llave: const Key('nav_buscar'),
                             tooltip: 'Buscar (Ctrl+F)',
                             icono: IconosPlazoleta.search,
                             onTap: onAbrirBusqueda,
                           ),
-                        // Con el costado angosto (ventanas de menos de ~1800 px) el asistente queda solo con la lupa: la etiqueta
-                        // y el atajo no entran junto a la campanita y el engranaje.
-                        if (onAbrirAsistente != null)
-                          _BotonAsistente(
-                            onTap: onAbrirAsistente!,
-                            compacto: limites.maxWidth * 0.22 < 400,
-                          ),
-                        if (acciones != null) Flexible(child: acciones!),
+                          const SizedBox(width: 8),
+                        ],
+                        // Con el costado angosto (ventanas de menos de ~1800 px) el asistente queda solo con la lupa: la etiqueta y
+                        // el atajo no entran junto a la campanita y el engranaje.
+                        if (onAbrirAsistente != null) _BotonAsistente(onTap: onAbrirAsistente!, compacto: compacto),
+                        if (acciones != null) Flexible(child: Padding(padding: const EdgeInsets.only(right: 8), child: acciones!)),
                         if (hayConfiguracion)
                           _BotonRedondo(
                             llave: const Key('nav_configuracion'),
@@ -184,46 +161,58 @@ class NavbarSuperior extends StatelessWidget {
                 ),
               ],
             );
-            if (!conBusqueda) return fila;
-            return Stack(
-              children: [
-                Positioned.fill(child: fila),
-                // Cerrada mide lo mismo que la lupa y el engranaje juntos y es invisible; abierta crece hacia la izquierda.
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: !buscando,
-                    child: AnimatedOpacity(
-                      opacity: buscando ? 1 : 0,
-                      duration: Animaciones.corta,
-                      child: AnimatedContainer(
-                        key: const Key('nav_busqueda_abierta'),
-                        duration: Animaciones.media,
-                        curve: Animaciones.curva,
-                        width: buscando
-                            ? limites.maxWidth * fraccionBusquedaAbierta
-                            : 88,
-                        alignment: Alignment.center,
-                        child: Row(
+            final capsula = DecoratedBox(
+              decoration: BoxDecoration(
+                color: colores.fondo.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: colores.textoPrimario.withValues(alpha: 0.08)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: conBusqueda
+                    ? LayoutBuilder(
+                        builder: (context, interior) => Stack(
                           children: [
-                            Expanded(child: busqueda!),
-                            const SizedBox(width: Espaciado.xs),
-                            _BotonRedondo(
-                              llave: const Key('nav_cerrar_busqueda'),
-                              tooltip: 'Cerrar búsqueda (Esc)',
-                              icono: IconosPlazoleta.close,
-                              onTap: onCerrarBusqueda,
+                            Positioned.fill(child: fila),
+                            // Cerrada mide lo mismo que la lupa y el engranaje juntos y es invisible; abierta crece hacia la izquierda.
+                            Positioned(
+                              top: 0,
+                              bottom: 0,
+                              right: 0,
+                              child: IgnorePointer(
+                                ignoring: !buscando,
+                                child: AnimatedOpacity(
+                                  opacity: buscando ? 1 : 0,
+                                  duration: Animaciones.corta,
+                                  child: AnimatedContainer(
+                                    key: const Key('nav_busqueda_abierta'),
+                                    duration: Animaciones.media,
+                                    curve: Animaciones.curva,
+                                    width: buscando ? interior.maxWidth * fraccionBusquedaAbierta : 88,
+                                    alignment: Alignment.center,
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: busqueda!),
+                                        const SizedBox(width: Espaciado.xs),
+                                        _BotonRedondo(
+                                          llave: const Key('nav_cerrar_busqueda'),
+                                          tooltip: 'Cerrar búsqueda (Esc)',
+                                          icono: IconosPlazoleta.close,
+                                          onTap: onCerrarBusqueda,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                      )
+                    : fila,
+              ),
             );
+            return capsula;
           },
         ),
       ),
@@ -231,7 +220,7 @@ class NavbarSuperior extends StatelessWidget {
   }
 }
 
-/// "Asistente · Ctrl+K": la pastilla azul suave que abre el buscador de acciones.
+/// "Asistente · Ctrl+K" (mock): píldora azul suave con la chispa, el nombre y el atajo.
 class _BotonAsistente extends StatelessWidget {
   const _BotonAsistente({required this.onTap, this.compacto = false});
 
@@ -240,9 +229,9 @@ class _BotonAsistente extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme.bodyMedium!;
+    final azul = azulMarca;
     return Padding(
-      padding: const EdgeInsets.only(right: Espaciado.xs),
+      padding: const EdgeInsets.only(right: 8),
       child: Tooltip(
         message: 'Asistente (Ctrl+K)',
         child: Semantics(
@@ -255,36 +244,21 @@ class _BotonAsistente extends StatelessWidget {
             color: context.azulSuaveFondo,
             child: Container(
               height: Medidas.alturaControl,
-              constraints: const BoxConstraints(
-                minWidth: Medidas.alturaControl,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
+              constraints: const BoxConstraints(minWidth: Medidas.alturaControl),
+              padding: EdgeInsets.symmetric(horizontal: compacto ? 15 : 18),
               alignment: Alignment.center,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconoPlz(
-                    IconosPlazoleta.search,
-                    size: 18,
-                    color: context.azulSuaveTexto,
-                  ),
+                  Icon(Icons.auto_awesome_rounded, size: 17, color: azul),
                   if (!compacto) ...[
-                    const SizedBox(width: Espaciado.sm),
-                    Text(
-                      'Asistente',
-                      style: texto.copyWith(
-                        fontWeight: Pesos.fuerte,
-                        color: context.azulSuaveTexto,
-                      ),
-                    ),
-                    const SizedBox(width: Espaciado.sm),
-                    Text(
-                      'Ctrl+K',
-                      style: texto.copyWith(
-                        fontSize: 12,
-                        fontWeight: Pesos.fuerte,
-                        color: context.azulSuaveTexto.withValues(alpha: 0.7),
-                      ),
+                    const SizedBox(width: 8),
+                    Text('Asistente', style: TextStyle(fontSize: 15, fontWeight: Pesos.medium, color: azul)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: azul.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                      child: Text('Ctrl+K', style: TextStyle(fontSize: 12, fontWeight: Pesos.medium, color: azul, letterSpacing: 0.24, height: 1.3)),
                     ),
                   ],
                 ],
@@ -297,71 +271,55 @@ class _BotonAsistente extends StatelessWidget {
   }
 }
 
-class _Pastilla extends StatelessWidget {
-  const _Pastilla({
-    required this.etiqueta,
-    required this.activa,
-    required this.onTap,
-    this.icono,
-    this.esVenta = false,
-  });
+/// Una sección de la barra (`.nl` del mock): texto sin fondo; al pasar el mouse o estar activa se tiñe de gris. Venta es la píldora azul.
+class _EnlaceNav extends StatefulWidget {
+  const _EnlaceNav({required this.etiqueta, required this.activa, required this.onTap, this.esVenta = false});
 
   final String etiqueta;
-  final IconoNs? icono;
-
-  /// Venta es el botón azul de marca (más oscuro cuando es la pantalla activa), como "Vender" del celular.
   final bool esVenta;
   final bool activa;
   final VoidCallback onTap;
 
   @override
+  State<_EnlaceNav> createState() => _EnlaceNavState();
+}
+
+class _EnlaceNavState extends State<_EnlaceNav> {
+  bool _encima = false;
+
+  @override
   Widget build(BuildContext context) {
     final colores = context.colores;
-    final textTheme = Theme.of(context).textTheme;
-    final Color fondo = esVenta
-        ? (activa ? azulMarcaOscuro : azulMarca)
-        : (activa
-              ? context.azulSuaveFondo
-              : colores.fondoBloque.withValues(alpha: 0));
-    final Color texto = esVenta
-        ? Colors.white
-        : (activa ? context.azulSuaveTexto : colores.textoSecundario);
-    return Padding(
-      padding: const EdgeInsets.only(right: 2),
-      child: Presionable(
-        radio: 999,
-        onTap: onTap,
-        // El fondo de la activa aparece y se va con un fundido corto en vez de saltar.
-        child: AnimatedContainer(
-          duration: Animaciones.corta,
-          curve: Animaciones.curva,
-          height: Medidas.alturaControl,
-          padding: EdgeInsets.only(
-            left: icono == null ? Espaciado.lg + 2 : Espaciado.lg,
-            right: Espaciado.lg + 2,
-          ),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: fondo,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icono != null) ...[
-                IconoNsWidget(icono!, tamanio: 20, color: texto, grosor: 2.1),
-                const SizedBox(width: Espaciado.sm),
-              ],
-              AnimatedDefaultTextStyle(
-                duration: Animaciones.corta,
-                style: textTheme.bodyMedium!.copyWith(
-                  fontWeight: (activa || esVenta) ? Pesos.fuerte : Pesos.medium,
-                  color: texto,
-                  letterSpacing: -0.16,
-                ),
-                child: Text(etiqueta, maxLines: 1),
+    final activa = widget.activa;
+    final Color fondo = widget.esVenta
+        ? (activa || _encima ? azulMarcaOscuro : azulMarca)
+        : (activa || _encima ? colores.fondoBloque : Colors.transparent);
+    final Color texto = widget.esVenta ? Colors.white : (activa ? colores.textoPrimario : (_encima ? colores.textoPrimario : colores.textoSecundario));
+    return MouseRegion(
+      onEnter: (_) => setState(() => _encima = true),
+      onExit: (_) => setState(() => _encima = false),
+      child: Padding(
+        padding: EdgeInsets.only(right: widget.esVenta ? 10 : 4),
+        child: Presionable(
+          radio: 999,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: Animaciones.corta,
+            curve: Animaciones.curva,
+            height: 46,
+            padding: EdgeInsets.symmetric(horizontal: widget.esVenta ? 24 : 20),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(999)),
+            child: AnimatedDefaultTextStyle(
+              duration: Animaciones.corta,
+              style: TextStyle(
+                fontFamily: familiaTipografica,
+                fontSize: 16,
+                fontWeight: (activa || widget.esVenta) ? Pesos.medium : Pesos.intermedio,
+                color: texto,
               ),
-            ],
+              child: Text(widget.etiqueta, maxLines: 1),
+            ),
           ),
         ),
       ),
@@ -369,6 +327,7 @@ class _Pastilla extends StatelessWidget {
   }
 }
 
+/// Círculo de 46 px gris (`.ci` del mock): la lupa, la campanita y la tuerca.
 class _BotonRedondo extends StatelessWidget {
   const _BotonRedondo({
     required this.llave,
@@ -396,15 +355,11 @@ class _BotonRedondo extends StatelessWidget {
           key: llave,
           radio: 999,
           onTap: onTap,
-          color: activo ? colores.fondoBloque : null,
+          color: activo ? colores.textoPrimario : colores.fondoBloque,
           child: SizedBox(
             width: Medidas.alturaControl,
             height: Medidas.alturaControl,
-            child: IconoPlz(
-              icono,
-              size: 22,
-              color: activo ? colores.textoPrimario : colores.textoSecundario,
-            ),
+            child: IconoPlz(icono, size: 22, color: activo ? colores.fondo : colores.textoPrimario),
           ),
         ),
       ),

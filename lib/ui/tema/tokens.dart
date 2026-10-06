@@ -293,6 +293,9 @@ const String familiaTipografica = 'Figtree';
 /// la app de una sin tocar las pantallas.
 abstract final class Pesos {
   static const FontWeight regular = FontWeight.w400;
+
+  /// 500: el peso de los nombres, chips y precios del mock v4 (entre `regular` y `medium`, que es 600).
+  static const FontWeight intermedio = FontWeight.w500;
   static const FontWeight medium = FontWeight.w600;
   static const FontWeight fuerte = FontWeight.w700;
 }
