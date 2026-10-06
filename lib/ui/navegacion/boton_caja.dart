@@ -123,7 +123,7 @@ class BotonCaja extends StatelessWidget {
           color: colores.fondoBloque,
           onTap: () => controlador.isOpen ? controlador.close() : controlador.open(),
           child: Container(
-            height: Medidas.alturaControl - 6,
+            height: Medidas.alturaControl,
             padding: const EdgeInsets.only(left: Espaciado.md, right: Espaciado.md),
             alignment: Alignment.center,
             child: Row(

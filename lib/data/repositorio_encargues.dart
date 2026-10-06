@@ -218,10 +218,15 @@ Future<int> crearEncargueApartando(
         motivo: 'Apartado para $nombre',
       );
       guardadas.add(LineaEncargue(productoGlobalId: gid, nombre: producto.nombre, cantidad: unidades, gramos: gramos));
-      lineasDeVenta.add(lineaDesdeProducto(producto, cantidad: unidades, gramos: gramos));
+      // Solo con seña se valorizan las líneas: un encargue común puede ser de un producto sin precio cargado y eso no lo frena.
+      if (senaCentavos > 0) lineasDeVenta.add(lineaDesdeProducto(producto, cantidad: unidades, gramos: gramos));
     }
-    final problema = validarSenaNueva(senaCentavos: senaCentavos, estimadoCentavos: Venta(lineas: lineasDeVenta).subtotalCentavos);
-    if (problema != null) throw ArgumentError(problema);
+    if (senaCentavos > 0) {
+      final problema = validarSenaNueva(senaCentavos: senaCentavos, estimadoCentavos: Venta(lineas: lineasDeVenta).subtotalCentavos);
+      if (problema != null) throw ArgumentError(problema);
+    } else if (senaCentavos < 0) {
+      throw ArgumentError('La seña no puede ser negativa');
+    }
     final id = await db.into(db.pendientes).insert(
           PendientesCompanion.insert(
             tipo: 'ENCARGUE',

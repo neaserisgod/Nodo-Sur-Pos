@@ -249,7 +249,8 @@ class _BotonAsistente extends StatelessWidget {
         onTap: onTap,
         color: context.azulSuaveFondo,
         child: Container(
-          height: Medidas.alturaControl - 6,
+          height: Medidas.alturaControl,
+          constraints: const BoxConstraints(minWidth: Medidas.alturaControl),
           padding: const EdgeInsets.symmetric(horizontal: Espaciado.md),
           alignment: Alignment.center,
           child: Row(
