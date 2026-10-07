@@ -1,21 +1,23 @@
 // Pagar proveedor — acceso directo del Inicio. Es el ÚNICO camino del celular
 // para pagarle a un proveedor (El dueño, 2026-10-02: "pagar proveedor es el
-// único que quiero que quede"): el pago pasa por la cuenta corriente de la PC,
-// así el gasto queda documentado con el proveedor y, si no había deuda cargada,
-// la PC anota la diferencia como "Pago sin deuda previa" (ver `pagarDeuda`).
+// único que quiero que quede"): el pago pasa por la cuenta corriente, así el
+// gasto queda documentado con el proveedor y, si no había deuda cargada, se
+// anota la diferencia como "Pago sin deuda previa" (ver `pagarDeuda`).
 //
-// Necesita la PC al alcance (se escribió cuando `movimientos_deuda` no se
-// sincronizaba). Desde la v61 la cuenta corriente sí viaja por la sync, así
-// que pagar sin la PC ya es posible; queda pendiente de que el dueño lo pida.
+// Sin la PC (El dueño, 2026-10-07: "seguí con pagar proveedor sin la PC"):
+// trabaja SIEMPRE sobre la base del celular, como Cargar factura. Desde la v61
+// la cuenta corriente se sincroniza, así que el pago y su movimiento de caja
+// llegan a la PC solos.
 
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
+import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
-import 'seleccion_servicio.dart';
+import 'puerto_local.dart';
 import 'servicio_companion.dart';
 
 /// De dónde sale la plata; las claves son las de `OrigenPagoDeuda`.
@@ -27,7 +29,10 @@ const _origenes = <({String clave, String etiqueta})>[
 ];
 
 class PantallaPagarProveedor extends StatefulWidget {
-  const PantallaPagarProveedor({super.key});
+  /// [servicio] es para tests; en la app es la base del celular.
+  const PantallaPagarProveedor({super.key, this.servicio});
+
+  final ServicioCompanion? servicio;
 
   @override
   State<PantallaPagarProveedor> createState() => _PantallaPagarProveedorState();
@@ -72,17 +77,9 @@ class _PantallaPagarProveedorState extends State<PantallaPagarProveedor> {
       _errorInicial = null;
     });
     try {
-      final conexion = await leerConexion();
       final usuario = await leerUsuario();
       if (usuario == null) throw const ErrorCompanion(0, 'Falta elegir usuario.');
-      if (conexion == null) {
-        throw const ErrorCompanion(
-          400,
-          'Pagarle a un proveedor se hace conectado a la PC del local. '
-          'Emparejá este celular con la PC y conectate al wifi del local.',
-        );
-      }
-      final servicio = await resolverServicioCompanion(conexion);
+      final servicio = widget.servicio ?? PuertoLocal(baseLocalCompanion());
       final proveedores = await servicio.proveedores();
       final saldos = await servicio.saldosProveedores();
       final sesion = await servicio.sesion();

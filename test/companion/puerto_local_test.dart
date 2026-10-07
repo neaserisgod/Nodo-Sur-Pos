@@ -12,6 +12,7 @@ import 'package:la_plazoleta/companion/carrito_venta.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import '../helpers/base_para_tests.dart';
 
@@ -248,12 +249,25 @@ void main() {
       );
     });
 
-    test('pagar a un proveedor sin la PC avisa que se hace conectado, y no graba nada', () async {
+    test('pagar a un proveedor sin la PC baja la deuda y, desde el cajón, sale de la caja', () async {
+      final sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 100000);
+      await cargarDeuda(db, proveedorId: 1, montoCentavos: 30000, fecha: DateTime(2026, 10, 7), usuarioId: usuarioId);
+
+      await puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 10000, origen: 'cajon', sesionCajaId: sesionId);
+
+      expect((await puerto.saldosProveedores())[1], 20000);
+      final caja = await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('PAGO_PROVEEDOR'))).getSingle();
+      expect(caja.montoCentavos, 10000);
+      expect(caja.globalId, isNotNull, reason: 'viaja a la PC por la sync');
+      final pago = await (db.select(db.movimientosDeuda)..where((m) => m.tipo.equals('PAGO'))).getSingle();
+      expect(pago.globalId, isNotNull);
+    });
+
+    test('pagar desde la caja con la caja ya cerrada avisa y no graba', () async {
       await expectLater(
-        puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 5000, origen: 'fuera'),
-        throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('conectado a la PC'))),
+        puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 5000, origen: 'cajon'),
+        throwsA(isA<ErrorCompanion>().having((e) => e.statusCode, 'statusCode', 409)),
       );
-      await expectLater(puerto.saldosProveedores(), throwsA(isA<ErrorCompanion>()));
       expect(await db.select(db.movimientosDeuda).get(), isEmpty);
     });
 

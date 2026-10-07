@@ -2213,3 +2213,9 @@ facturas por IA".
   PC y el APK se publican juntos.
 - **Cámara**: `image_picker`, una foto por vez (una factura larga son varias). También fotos o PDF del celular (`file_selector`).
 - **Descartado**: mandar la factura a la PC para que la aplique (deja el celular atado a la PC, lo contrario de lo pedido).
+
+## Pagar proveedor sin la PC (El dueño, 2026-10-07)
+
+"Seguí con pagar proveedor sin la PC". Con la cuenta corriente ya sincronizada (v61), `PuertoLocal` paga con `pagarDeuda` sobre la base
+del celular, con las mismas validaciones que el servidor de la PC (caja cerrada → 409, no se graba). La pantalla trabaja siempre sobre
+la base del celular, como Cargar factura: el pago y su movimiento de caja llegan a la PC por la sync.
