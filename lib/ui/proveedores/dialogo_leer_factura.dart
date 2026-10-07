@@ -31,15 +31,23 @@ import '../configuracion/seccion_asistente_ia.dart' show SelectorModeloIa;
 import '../tema/acentos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
+import '../tema/iconos.dart';
+import 'dialogo_editar_producto.dart';
+import 'proveedores_controlador.dart';
 
 /// [clienteIa] y [adjuntosIniciales] son solo para tests: el selector de archivos es nativo y no se puede manejar desde un test.
+/// [controlador] habilita "crear producto" en las líneas que no están en el catálogo (usa el mismo alta que Proveedores).
 Future<void> mostrarDialogoLeerFactura(
   BuildContext context, {
   required AppDatabase db,
+  ProveedoresControlador? controlador,
   http.Client? clienteIa,
   List<AdjuntoGemini> adjuntosIniciales = const [],
 }) {
-  return mostrarModal<void>(context, builder: (_) => _DialogoLeerFactura(db: db, clienteIa: clienteIa, adjuntosIniciales: adjuntosIniciales));
+  return mostrarModal<void>(
+    context,
+    builder: (_) => _DialogoLeerFactura(db: db, controlador: controlador, clienteIa: clienteIa, adjuntosIniciales: adjuntosIniciales),
+  );
 }
 
 /// Todo lo de una factura leída: el proveedor, la propuesta de vínculos y lo que el dueño fue eligiendo.
@@ -71,9 +79,10 @@ class _EstadoFactura {
 }
 
 class _DialogoLeerFactura extends StatefulWidget {
-  const _DialogoLeerFactura({required this.db, this.clienteIa, this.adjuntosIniciales = const []});
+  const _DialogoLeerFactura({required this.db, this.controlador, this.clienteIa, this.adjuntosIniciales = const []});
 
   final AppDatabase db;
+  final ProveedoresControlador? controlador;
   final http.Client? clienteIa;
   final List<AdjuntoGemini> adjuntosIniciales;
 
@@ -259,6 +268,39 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
     await _proponer(e, conIa: true);
   }
 
+  /// Una línea que no está en el catálogo (o que el parecido vinculó con otro producto parecido, "XB BOX" con "XB convertible BOX"): se da de
+  /// alta con el formulario de siempre, precargado con lo leído — nombre, costo por unidad, proveedor y código de barras si viene —, y la
+  /// línea queda vinculada al producto nuevo.
+  Future<void> _crearProducto(_EstadoFactura e, int linea) async {
+    final controlador = widget.controlador;
+    if (controlador == null) return;
+    final l = e.n.lineas[linea];
+    int? costo;
+    try {
+      costo = costosDeFactura(conUnidadesPorCantidad(e.n.factura, e.multiplicador))[linea].costoUnitarioCentavos;
+    } on ArgumentError {
+      costo = null; // importes mal leídos: el costo se carga a mano
+    }
+    final id = await mostrarDialogoEditarProducto(
+      context,
+      controlador: controlador,
+      proveedorIdPreseleccionado: e.proveedor?.id,
+      inicial: DatosProductoNuevo(nombre: nombreSugeridoDesdeFactura(l.descripcion), codigoBarras: codigoDeBarrasDeLinea(l.codigo), costoCentavos: costo),
+    );
+    if (id == null || !mounted) return;
+    _catalogo = await catalogoParaVincular(widget.db);
+    final nuevo = _catalogo.where((c) => c.id == id).firstOrNull;
+    if (!mounted) return;
+    setState(() {
+      e.producto[linea] = id;
+      if (nuevo != null && !e.entradas.any((x) => x.value == id)) {
+        e.entradas = [...e.entradas, DropdownMenuEntry<int>(value: id, label: nuevo.nombre)]
+          ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+      }
+      e.version++;
+    });
+  }
+
   Future<void> _aprender(_EstadoFactura e) async {
     final proveedor = e.proveedor;
     if (proveedor == null) return;
@@ -340,6 +382,7 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
                     }),
                     onUnidades: (linea, n) => setState(() => _facturas[i].multiplicador[linea] = n < 1 ? 1 : n),
                     onAprender: () => _aprender(_facturas[i]),
+                    onCrearProducto: widget.controlador == null ? null : (linea) => _crearProducto(_facturas[i], linea),
                   ),
               ],
             ],
@@ -430,6 +473,7 @@ class _TarjetaFactura extends StatelessWidget {
     required this.onProducto,
     required this.onUnidades,
     required this.onAprender,
+    this.onCrearProducto,
   });
 
   final int indice;
@@ -441,6 +485,7 @@ class _TarjetaFactura extends StatelessWidget {
   final void Function(int linea, int? productoId) onProducto;
   final void Function(int linea, int unidades) onUnidades;
   final VoidCallback onAprender;
+  final ValueChanged<int>? onCrearProducto;
 
   @override
   Widget build(BuildContext context) {
@@ -558,6 +603,7 @@ class _TarjetaFactura extends StatelessWidget {
                         costo: costos[i],
                         onProducto: (id) => onProducto(i, id),
                         onUnidades: (u) => onUnidades(i, u),
+                        onCrear: onCrearProducto == null ? null : () => onCrearProducto!(i),
                       ),
                 ],
               ),
@@ -722,6 +768,7 @@ class _FilaLinea extends StatelessWidget {
     required this.costo,
     required this.onProducto,
     required this.onUnidades,
+    this.onCrear,
   });
 
   final String descripcion;
@@ -738,6 +785,7 @@ class _FilaLinea extends StatelessWidget {
   final CostoDeLinea costo;
   final ValueChanged<int?> onProducto;
   final ValueChanged<int> onUnidades;
+  final VoidCallback? onCrear;
 
   @override
   Widget build(BuildContext context) {
@@ -791,6 +839,8 @@ class _FilaLinea extends StatelessWidget {
                     onSelected: onProducto,
                   ),
           ),
+          if (onCrear != null)
+            IconButton(key: ValueKey('crear_producto_$descripcion'), tooltip: 'No está en tu lista: crear producto con lo leído', icon: const IconoPlz(IconosPlazoleta.add), onPressed: onCrear),
           const SizedBox(width: Espaciado.md),
           SizedBox(width: _anchoCantidad, child: Text('$cantidad', textAlign: TextAlign.right, style: textTheme.bodyMedium)),
           const SizedBox(width: Espaciado.md),

@@ -9,6 +9,7 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_vinculos_factura.dart';
 import 'package:la_plazoleta/servicios/gemini.dart';
 import 'package:la_plazoleta/ui/proveedores/dialogo_leer_factura.dart';
+import 'package:la_plazoleta/ui/proveedores/proveedores_controlador.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,7 +54,7 @@ void main() {
         return http.Response(_respuesta(_factura(total)), 200);
       });
 
-  Future<void> abrir(WidgetTester tester, http.Client cliente) async {
+  Future<void> abrir(WidgetTester tester, http.Client cliente, {ProveedoresControlador? controlador}) async {
     tester.view.physicalSize = const Size(1600, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -63,7 +64,13 @@ void main() {
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () => mostrarDialogoLeerFactura(context, db: db, clienteIa: cliente, adjuntosIniciales: [AdjuntoGemini('image/jpeg', Uint8List.fromList([1, 2, 3]))]),
+              onPressed: () => mostrarDialogoLeerFactura(
+                context,
+                db: db,
+                controlador: controlador,
+                clienteIa: cliente,
+                adjuntosIniciales: [AdjuntoGemini('image/jpeg', Uint8List.fromList([1, 2, 3]))],
+              ),
               child: const Text('abrir'),
             ),
           ),
@@ -226,6 +233,40 @@ void main() {
       // 4 × 6 = 24 unidades: 8.774,21 / 24 = 365,59 → $366 c/u.
       expect(find.textContaining('366'), findsWidgets);
       expect(find.textContaining('2.194'), findsNothing);
+    });
+  });
+
+  group('crear un producto que no está en la lista (El dueño, 2026-10-07)', () {
+    testWidgets('abre el alta precargada con lo leído y la línea queda vinculada al producto nuevo', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      // El parecido vincula con el más parecido que hay ("XB BOX" con "XB convertible BOX"): se puede crear el que falta igual.
+      final parecido = await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nuevo producto'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Crema Simple X 200 gr'), findsOneWidget);
+      await tester.enterText(find.descendant(of: find.byKey(const Key('campo_precio')), matching: find.byType(TextField)), '3000');
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      final nuevo = (await db.select(db.productos).get()).singleWhere((p) => p.nombre == 'Crema Simple X 200 gr');
+      expect(nuevo.proveedorId, elpar);
+      expect(nuevo.costoCentavos, inInclusiveRange(219300, 219400), reason: 'el costo por unidad de la factura');
+      expect(nuevo.id, isNot(parecido));
+      expect(find.text('Crema Simple X 200 gr'), findsWidgets, reason: 'la línea muestra el producto nuevo');
+    });
+
+    testWidgets('sin el controlador de Proveedores no ofrece crear', (tester) async {
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(find.byTooltip('No está en tu lista: crear producto con lo leído'), findsNothing);
     });
   });
 

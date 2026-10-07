@@ -83,6 +83,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Renombre visible a "Nodo Sur POS" (2026-10-01)](#renombre-visible-a-nodo-sur-pos-2026-10-01)
 - [Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")](#rediseño-del-lector-de-facturas-con-el-lenguaje-de-la-pc-el-dueño-2026-10-05-se-ve-horrible)
 - [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
+- [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
 
@@ -2115,3 +2116,15 @@ El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas
   suma el CUIT, no se lo saca al primero.
 - **Descartadas**: preguntar siempre (un paso más en cada factura de X) y dividir una misma factura entre dos proveedores (solo tiene
   sentido si los cigarrillos vienen mezclados en la misma factura; no se pidió).
+
+## Crear un producto desde una línea de factura (El dueño, 2026-10-07)
+
+- **El pedido**: el parecido de nombre vincula con el producto que más palabras comparte ("XB BOX" con "XB convertible BOX"). El dueño
+  quiere dejarlo así (no gasta IA ni tiempo), pero poder crear el producto que falta con lo leído.
+- **Decisión**: cada línea tiene un "+" ("No está en tu lista: crear producto con lo leído") que abre **el mismo alta de Proveedores**
+  (`mostrarDialogoEditarProducto`, ahora con `DatosProductoNuevo` y devolviendo el id), precargada con el nombre limpio
+  (`nombreSugeridoDesdeFactura`: sin el código del proveedor ni el pack), el costo por unidad de la factura (con el "× unid." elegido), el
+  proveedor de la factura y el código de barras solo si el código impreso tiene forma de uno. El precio lo pone el porcentaje del
+  proveedor si tiene, o el dueño. Al guardar, la línea queda vinculada al producto nuevo; "Aprender" lo recuerda para la próxima.
+- **No cambia** el emparejamiento automático, y sigue siendo un solo lugar para dar de alta productos (Proveedores): el lector se abre
+  desde ahí. No se suma stock: eso llega con "aplicar la factura".

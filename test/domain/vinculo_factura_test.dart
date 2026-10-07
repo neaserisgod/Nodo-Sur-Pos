@@ -242,4 +242,19 @@ void main() {
       expect(elegir(const [LineaAVincular(descripcion: 'PRODUCTO DESCONOCIDO XYZ')]), isNull);
     });
   });
+
+  group('producto nuevo desde una línea (El dueño, 2026-10-07)', () {
+    test('el nombre sale sin el código del proveedor ni el pack, con mayúscula por palabra', () {
+      expect(nombreSugeridoDesdeFactura('1042 - CREMA SIMPLE X 200 GR (24)'), 'Crema Simple X 200 gr');
+      expect(nombreSugeridoDesdeFactura('BG ALF AGUILA MINITORTA DARK 69G (2'), 'Bg Alf Aguila Minitorta Dark 69g');
+      expect(nombreSugeridoDesdeFactura('  XB   CONVERTIBLE BOX  '), 'Xb Convertible Box');
+    });
+
+    test('solo un código con forma de código de barras se usa como tal', () {
+      expect(codigoDeBarrasDeLinea('7790387000013'), '7790387000013');
+      expect(codigoDeBarrasDeLinea('1042'), isNull);
+      expect(codigoDeBarrasDeLinea('AB-7790387000013'), isNull);
+      expect(codigoDeBarrasDeLinea(null), isNull);
+    });
+  });
 }

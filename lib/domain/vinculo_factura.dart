@@ -319,3 +319,30 @@ int? elegirProveedorDeFactura({
   if (orden.first.value == 0 || orden.first.value == orden[1].value) return null;
   return orden.first.key;
 }
+
+// ─── Producto nuevo desde una línea ───────────────────────────────────────
+
+/// El nombre con el que se propone dar de alta el producto de una línea que no está en el catálogo (El dueño, 2026-10-07): la descripción
+/// sin el código del proveedor adelante ("1042 - ") ni el pack del final ("(24)", a veces cortado: "(2"), y en minúsculas con mayúscula
+/// inicial por palabra, como se cargan los productos. Es solo una propuesta: el dueño la corrige en el formulario antes de guardar.
+String nombreSugeridoDesdeFactura(String descripcion) {
+  var t = descripcion.trim();
+  t = t.replaceFirst(RegExp(r'^\d+\s*-\s*'), '');
+  t = t.replaceFirst(RegExp(r'\s*\(\s*\d*\s*\)?\s*$'), '');
+  t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return t
+      .split(' ')
+      .map((p) => p.isEmpty || RegExp(r'\d').hasMatch(p) || _unidadesDeMedida.contains(p.toLowerCase())
+          ? p.toLowerCase()
+          : '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}')
+      .join(' ');
+}
+
+const _unidadesDeMedida = {'g', 'gr', 'grs', 'kg', 'ml', 'cc', 'l', 'lt', 'lts', 'cm', 'mm'};
+
+/// El código de barras de una línea, si el código impreso tiene forma de uno (8, 12, 13 o 14 dígitos); null si es un código propio del
+/// proveedor, que no sirve para escanear.
+String? codigoDeBarrasDeLinea(String? codigo) {
+  final d = _soloDigitos(codigo);
+  return {8, 12, 13, 14}.contains(d.length) && d == (codigo ?? '').trim() ? d : null;
+}
