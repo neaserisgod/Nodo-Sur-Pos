@@ -85,6 +85,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
 - [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
 - [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
+- [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
 
@@ -2160,3 +2161,13 @@ por peso no se tocan: la factura cuenta unidades y su stock va en gramos.
 Técnico: migración v57 con `facturas_compra` y `productos_factura_compra` (locales, como la cuenta corriente: no se sincronizan). El
 stock se mueve con `ajustarStockRapido` (movimiento "AJUSTE" con motivo "Compra · Factura …"): es el movimiento que viaja al celular,
 así que no hizo falta un tipo nuevo ni tocar la sincronización. Todo en una transacción (`repositorio_facturas_compra.dart`).
+
+## La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)
+
+- **El bug**: el formulario y "cambiar precio" del celular no mandan `tipoCigarrillo`, y `actualizarProducto` lo pisaba con su default
+  `'ninguno'`. Cada edición desde el celular (con o sin la PC) le borraba la marca al producto, y por sync también en la PC: el atado
+  se vendía sin recargo por pago virtual (Regla 6). Ahora `tipoCigarrillo` null = no se toca (mismo criterio que `stockMinimo`).
+- **Recuperación (pedida por el dueño)**: migración v58 (`recuperarMarcaDeCigarrillos`). La línea de venta guarda el tipo del momento,
+  así que a cada producto sin marca que alguna vez se vendió marcado se le vuelve a poner la de su última venta marcada, con
+  `actualizado_en` para que viaje al otro equipo. Riesgo aceptado: un producto desmarcado a propósito vuelve a marcarse (se desmarca
+  de nuevo a mano).

@@ -935,6 +935,38 @@ Future<int?> precioTrasCambioDeCosto(AppDatabase db, Producto producto, {require
   return automatico ?? precioHoy;
 }
 
+/// Le devuelve la marca de cigarrillo (atado o suelto) a los productos que la perdieron (El dueño, 2026-10-07). Hasta la v57, editar un
+/// producto desde el celular le borraba la marca sin avisar, y el atado se vendía sin recargo por pago virtual (Regla 6). La línea de
+/// venta guarda el tipo del momento (costo-foto), así que la última venta marcada de cada producto dice qué era. Solo toca productos
+/// que hoy no tienen marca y alguna vez se vendieron con una. Devuelve los nombres recuperados.
+Future<List<String>> recuperarMarcaDeCigarrillos(AppDatabase db) {
+  return db.transaction(() async {
+    final sinMarca = await (db.select(db.productos)
+          ..where((p) => p.tipoCigarrillo.equals('ninguno') & p.esVarios.equals(false) & p.esPesable.equals(false)))
+        .get();
+    if (sinMarca.isEmpty) return const [];
+    final consulta = db.select(db.lineasDeVenta).join([innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId))])
+      ..where(db.lineasDeVenta.productoId.isIn([for (final p in sinMarca) p.id]) & db.lineasDeVenta.tipoCigarrillo.isNotValue('ninguno'))
+      ..orderBy([OrderingTerm.desc(db.ventas.fecha), OrderingTerm.desc(db.lineasDeVenta.id)]);
+    final ultimo = <int, String>{};
+    for (final fila in await consulta.get()) {
+      final l = fila.readTable(db.lineasDeVenta);
+      ultimo.putIfAbsent(l.productoId!, () => l.tipoCigarrillo);
+    }
+    final recuperados = <String>[];
+    for (final p in sinMarca) {
+      final tipo = ultimo[p.id];
+      if (tipo == null) continue;
+      // `actualizadoEn` hace que el arreglo viaje al otro equipo por la sincronización.
+      await (db.update(db.productos)..where((t) => t.id.equals(p.id))).write(
+        ProductosCompanion(tipoCigarrillo: Value(tipo), actualizadoEn: Value(DateTime.now())),
+      );
+      recuperados.add(p.nombre);
+    }
+    return recuperados;
+  });
+}
+
 /// Fija (o saca, con null) el porcentaje de ganancia de un proveedor. No toca
 /// ningún precio: eso es [aplicarPorcentajeDeProveedor].
 Future<void> guardarPorcentajeProveedor(

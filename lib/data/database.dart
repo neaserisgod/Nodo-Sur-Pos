@@ -16,6 +16,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import 'identidad_sync.dart';
 import '../domain/modulos.dart';
+import 'repositorio_productos.dart' show recuperarMarcaDeCigarrillos;
 import 'tables/accesos_directos.dart';
 import 'tables/arqueos_intermedios.dart';
 import 'tables/avisos_mp.dart';
@@ -154,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 57;
+  int get schemaVersion => 58;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1126,6 +1127,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 57) {
         await m.createTable(facturasCompra);
         await m.createTable(productosFacturaCompra);
+      }
+      // v57 → v58 (2026-10-07): les devuelve la marca de cigarrillo a los productos que la perdieron al editarse desde el celular (la
+      // última venta marcada de cada uno dice qué eran). Solo datos, sin cambio de esquema. Ver `recuperarMarcaDeCigarrillos`.
+      if (from < 58) {
+        await recuperarMarcaDeCigarrillos(this);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
