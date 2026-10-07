@@ -250,6 +250,27 @@ void main() {
       expect(nombreSugeridoDesdeFactura('  XB   CONVERTIBLE BOX  '), 'Xb Convertible Box');
     });
 
+    test('las abreviaturas se expanden con las palabras de tus productos, con su acento', () {
+      const nombres = ['Alfajor Águila Minitorta Blanca 69g', 'Alfajor Águila Minitorta Clásica 69g', 'Alfajor Minitorta Brown 71g'];
+      expect(
+        nombreSugeridoDesdeFactura('BG ALF AGUILA MINITORTA BL 69G (2', nombresDelCatalogo: nombres),
+        'Bg Alfajor Águila Minitorta Blanca 69g',
+      );
+      expect(nombreSugeridoDesdeFactura('ALF CLAS 69G', nombresDelCatalogo: nombres), 'Alfajor Clásica 69g');
+    });
+
+    test('con dos palabras posibles parecidas no adivina, salvo que una aparezca el doble', () {
+      expect(nombreSugeridoDesdeFactura('YOGUR BL', nombresDelCatalogo: const ['Yogur Blanco', 'Queso Blanca']), 'Yogur Bl');
+      expect(
+        nombreSugeridoDesdeFactura('YOGUR BL', nombresDelCatalogo: const ['Yogur Blanco', 'Leche Blanco', 'Queso Blanca']),
+        'Yogur Blanco',
+      );
+    });
+
+    test('un catálogo en mayúsculas no impone mayúsculas', () {
+      expect(nombreSugeridoDesdeFactura('GALL OREO', nombresDelCatalogo: const ['GALLETITAS OREO 118G']), 'Galletitas Oreo');
+    });
+
     test('solo un código con forma de código de barras se usa como tal', () {
       expect(codigoDeBarrasDeLinea('7790387000013'), '7790387000013');
       expect(codigoDeBarrasDeLinea('1042'), isNull);

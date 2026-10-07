@@ -46,6 +46,7 @@ void main() {
 
   /// El mismo cliente atiende la lectura de la factura y, si hace falta, la consulta de vínculos de la IA.
   http.Client ia({String total = '8774.21', int? vinculaAlProducto, int estadoVinculos = 200}) => MockClient((req) async {
+        if (req.body.contains('Descripción en la factura')) return http.Response(_respuesta('{"nombre":"Crema de leche simple 200 gr"}'), 200);
         if (req.body.contains('Productos del comercio')) {
           if (estadoVinculos != 200) return http.Response('{}', estadoVinculos);
           final json = vinculaAlProducto == null ? '{"vinculos":[]}' : '{"vinculos":[{"i":0,"producto_id":$vinculaAlProducto}]}';
@@ -251,16 +252,47 @@ void main() {
       await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
       await tester.pumpAndSettle();
       expect(find.text('Nuevo producto'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Crema Simple X 200 gr'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Crema simple X 200 gr'), findsOneWidget);
       await tester.enterText(find.descendant(of: find.byKey(const Key('campo_precio')), matching: find.byType(TextField)), '3000');
       await tester.tap(find.text('Crear'));
       await tester.pumpAndSettle();
 
-      final nuevo = (await db.select(db.productos).get()).singleWhere((p) => p.nombre == 'Crema Simple X 200 gr');
+      final nuevo = (await db.select(db.productos).get()).singleWhere((p) => p.nombre == 'Crema simple X 200 gr');
       expect(nuevo.proveedorId, elpar);
       expect(nuevo.costoCentavos, inInclusiveRange(219300, 219400), reason: 'el costo por unidad de la factura');
       expect(nuevo.id, isNot(parecido));
-      expect(find.text('Crema Simple X 200 gr'), findsWidgets, reason: 'la línea muestra el producto nuevo');
+      expect(find.text('Crema simple X 200 gr'), findsWidgets, reason: 'la línea muestra el producto nuevo');
+    });
+
+    testWidgets('"Mejorar nombre con IA" cambia el nombre propuesto por el que arma la IA', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('mejorar_nombre_ia')));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'Crema de leche simple 200 gr'), findsOneWidget);
+    });
+
+    testWidgets('sin clave de la IA no muestra "Mejorar nombre con IA"', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+      ClaveGemini.fijarParaTest(null); // la lectura ya se hizo; se saca la clave antes de abrir el alta
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mejorar_nombre_ia')), findsNothing);
     });
 
     testWidgets('sin el controlador de Proveedores no ofrece crear', (tester) async {

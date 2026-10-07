@@ -30,11 +30,14 @@ import '../tema/iconos.dart';
 /// Lo que se precarga en el alta de un producto que viene de una línea de factura (El dueño, 2026-10-07: "que deje crear nuevos productos
 /// en base a lo leído"). El precio no viene: lo pone el porcentaje del proveedor si tiene, o el dueño.
 class DatosProductoNuevo {
-  const DatosProductoNuevo({required this.nombre, this.codigoBarras, this.costoCentavos});
+  const DatosProductoNuevo({required this.nombre, this.codigoBarras, this.costoCentavos, this.mejorarNombre});
 
   final String nombre;
   final String? codigoBarras;
   final int? costoCentavos;
+
+  /// "Mejorar nombre con IA" (solo si hay clave): devuelve el nombre propuesto, o lanza una excepción con un mensaje legible.
+  final Future<String> Function()? mejorarNombre;
 }
 
 /// [productoId] null da de alta un producto nuevo. [proveedorIdPreseleccionado]
@@ -155,6 +158,22 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
   late bool _fijo = widget.producto?.precioFijo ?? false;
   String? _motivoAjusteStock;
   String? _error;
+  bool _mejorandoNombre = false;
+
+  Future<void> _mejorarNombre() async {
+    setState(() {
+      _mejorandoNombre = true;
+      _error = null;
+    });
+    try {
+      final nombre = await widget.inicial!.mejorarNombre!();
+      if (mounted) setState(() => _nombreCtrl.text = nombre);
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _mejorandoNombre = false);
+    }
+  }
 
   bool get _esNuevo => widget.producto == null;
 
@@ -458,6 +477,15 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                 etiqueta: 'Nombre',
                 autofocus: true,
               ),
+              if (widget.inicial?.mejorarNombre != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    key: const Key('mejorar_nombre_ia'),
+                    onPressed: _mejorandoNombre ? null : _mejorarNombre,
+                    child: Text(_mejorandoNombre ? 'Pensando el nombre…' : 'Mejorar nombre con IA'),
+                  ),
+                ),
               const SizedBox(height: Espaciado.md),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,

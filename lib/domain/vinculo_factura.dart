@@ -323,19 +323,55 @@ int? elegirProveedorDeFactura({
 // ─── Producto nuevo desde una línea ───────────────────────────────────────
 
 /// El nombre con el que se propone dar de alta el producto de una línea que no está en el catálogo (El dueño, 2026-10-07): la descripción
-/// sin el código del proveedor adelante ("1042 - ") ni el pack del final ("(24)", a veces cortado: "(2"), y en minúsculas con mayúscula
-/// inicial por palabra, como se cargan los productos. Es solo una propuesta: el dueño la corrige en el formulario antes de guardar.
-String nombreSugeridoDesdeFactura(String descripcion) {
+/// sin el código del proveedor adelante ("1042 - ") ni el pack del final ("(24)", a veces cortado: "(2"), en minúsculas con mayúscula
+/// inicial por palabra, y con las abreviaturas expandidas según las palabras que ya usan los productos del comercio
+/// ([nombresDelCatalogo]): "ALF" pasa a "Alfajor" si algún producto dice "Alfajor", y "AGUILA" a "Águila" con el acento de ahí. Gratis
+/// e instantáneo; lo que no se puede deducir así lo arregla el dueño, o la IA si la pide (`servicios/nombre_producto_ia.dart`).
+String nombreSugeridoDesdeFactura(String descripcion, {Iterable<String> nombresDelCatalogo = const []}) {
   var t = descripcion.trim();
   t = t.replaceFirst(RegExp(r'^\d+\s*-\s*'), '');
   t = t.replaceFirst(RegExp(r'\s*\(\s*\d*\s*\)?\s*$'), '');
   t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
-  return t
-      .split(' ')
-      .map((p) => p.isEmpty || RegExp(r'\d').hasMatch(p) || _unidadesDeMedida.contains(p.toLowerCase())
-          ? p.toLowerCase()
-          : '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}')
-      .join(' ');
+  final vocabulario = _vocabularioDe(nombresDelCatalogo);
+  return t.split(' ').map((p) {
+    if (p.isEmpty || RegExp(r'\d').hasMatch(p) || _unidadesDeMedida.contains(p.toLowerCase())) return p.toLowerCase();
+    return _palabraDelCatalogo(p, vocabulario) ?? _conMayuscula(p);
+  }).join(' ');
+}
+
+String _conMayuscula(String p) => '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}';
+
+/// Las palabras de los productos: sin acentos ni mayúsculas → cómo se escriben ahí y cuántas veces aparece cada forma.
+Map<String, Map<String, int>> _vocabularioDe(Iterable<String> nombres) {
+  final v = <String, Map<String, int>>{};
+  for (final nombre in nombres) {
+    for (final palabra in nombre.split(RegExp(r'\s+'))) {
+      final limpia = palabra.replaceAll(RegExp(r'^[^\p{L}]+|[^\p{L}]+$', unicode: true), '');
+      if (limpia.length < 3 || RegExp(r'\d').hasMatch(limpia)) continue;
+      // Un catálogo cargado todo en mayúsculas no impone mayúsculas: se lleva a mayúscula inicial.
+      final forma = limpia == limpia.toUpperCase() ? _conMayuscula(limpia) : limpia;
+      final formas = v.putIfAbsent(normalizarTexto(limpia), () => {});
+      formas[forma] = (formas[forma] ?? 0) + 1;
+    }
+  }
+  return v;
+}
+
+/// La palabra del catálogo que corresponde a [p]: la misma palabra (para tomar su acento), o la única que empieza con ella si [p] es una
+/// abreviatura. Con dos candidatas parecidas ("BL": "Blanca" y "Blanco") gana una solo si aparece al menos el doble; si no, no adivina.
+String? _palabraDelCatalogo(String p, Map<String, Map<String, int>> vocabulario) {
+  final n = normalizarTexto(p);
+  String masUsada(Map<String, int> formas) => (formas.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).first.key;
+  final exacta = vocabulario[n];
+  if (exacta != null) return masUsada(exacta);
+  if (n.length < 2) return null;
+  final candidatas = [
+    for (final e in vocabulario.entries)
+      if (e.key.startsWith(n)) (palabra: e.key, veces: e.value.values.fold(0, (a, b) => a + b)),
+  ]..sort((a, b) => b.veces.compareTo(a.veces));
+  if (candidatas.isEmpty) return null;
+  if (candidatas.length > 1 && candidatas[0].veces < 2 * candidatas[1].veces) return null;
+  return masUsada(vocabulario[candidatas[0].palabra]!);
 }
 
 const _unidadesDeMedida = {'g', 'gr', 'grs', 'kg', 'ml', 'cc', 'l', 'lt', 'lts', 'cm', 'mm'};

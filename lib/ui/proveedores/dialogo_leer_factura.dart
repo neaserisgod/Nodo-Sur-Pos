@@ -21,6 +21,7 @@ import '../../domain/lectura_factura.dart';
 import '../../domain/unidades_bulto.dart';
 import '../../servicios/gemini.dart';
 import '../../servicios/lector_facturas.dart';
+import '../../servicios/nombre_producto_ia.dart';
 import '../../domain/vinculo_factura.dart';
 import '../../servicios/preparar_imagen.dart';
 import '../../servicios/vinculador_ia.dart';
@@ -285,7 +286,26 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
       context,
       controlador: controlador,
       proveedorIdPreseleccionado: e.proveedor?.id,
-      inicial: DatosProductoNuevo(nombre: nombreSugeridoDesdeFactura(l.descripcion), codigoBarras: codigoDeBarrasDeLinea(l.codigo), costoCentavos: costo),
+      inicial: DatosProductoNuevo(
+        nombre: nombreSugeridoDesdeFactura(l.descripcion, nombresDelCatalogo: [for (final c in _catalogo) c.nombre]),
+        codigoBarras: codigoDeBarrasDeLinea(l.codigo),
+        costoCentavos: costo,
+        mejorarNombre: !ClaveGemini.configurada
+            ? null
+            : () async {
+                // De ejemplo de estilo, primero los productos del mismo proveedor (se cargan parecido).
+                final ejemplos = [
+                  for (final c in _catalogo) if (c.proveedorId == e.proveedor?.id) c.nombre,
+                  for (final c in _catalogo) if (c.proveedorId != e.proveedor?.id) c.nombre,
+                ];
+                final cliente = ClienteGemini.guardado(client: widget.clienteIa);
+                try {
+                  return await mejorarNombreConIa(cliente, descripcion: l.descripcion, ejemplos: ejemplos);
+                } finally {
+                  cliente.close();
+                }
+              },
+      ),
     );
     if (id == null || !mounted) return;
     _catalogo = await catalogoParaVincular(widget.db);

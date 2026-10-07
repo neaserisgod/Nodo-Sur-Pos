@@ -2126,5 +2126,11 @@ El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas
   (`nombreSugeridoDesdeFactura`: sin el código del proveedor ni el pack), el costo por unidad de la factura (con el "× unid." elegido), el
   proveedor de la factura y el código de barras solo si el código impreso tiene forma de uno. El precio lo pone el porcentaje del
   proveedor si tiene, o el dueño. Al guardar, la línea queda vinculada al producto nuevo; "Aprender" lo recuerda para la próxima.
+- **El nombre** (El dueño, 2026-10-07: "¿es muy complicado que aplique un reformateo a los nombres solo?"): sale con las abreviaturas
+  expandidas según las palabras que ya usan tus productos ("ALF" → "Alfajor", "AGUILA" → "Águila"; con dos candidatas parecidas solo
+  gana una si aparece el doble, si no queda como vino) — gratis e instantáneo. Para lo que eso no deduce ("MRL" → Marlboro) hay un botón
+  **"Mejorar nombre con IA"** en el formulario, solo con clave cargada: una llamada por producto y solo si se toca
+  (`servicios/nombre_producto_ia.dart`; van la descripción y nombres de productos de ejemplo, nunca precios). Descartada una lista fija
+  de abreviaturas: hay que mantenerla a mano y varias tienen más de un significado.
 - **No cambia** el emparejamiento automático, y sigue siendo un solo lugar para dar de alta productos (Proveedores): el lector se abre
   desde ahí. No se suma stock: eso llega con "aplicar la factura".
