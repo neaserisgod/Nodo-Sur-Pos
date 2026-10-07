@@ -89,6 +89,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Pagar proveedor sin la PC (El dueño, 2026-10-07)](#pagar-proveedor-sin-la-pc-el-dueño-2026-10-07)
 - [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
 - [Cuenta corriente en el celular (El dueño, 2026-10-07)](#cuenta-corriente-en-el-celular-el-dueño-2026-10-07)
+- [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2247,3 +2248,13 @@ proveedor, el libro con cargar deuda, pagar, anular y deshacer factura — lo mi
 `saldosDeuda`, `listarMovimientosDeuda`, `cargarDeuda`, `anularMovimientoDeuda`, `movimientosDeudaConFactura` y `deshacerFactura`. "Pagar"
 reusa la pantalla Pagar proveedor del celular con el proveedor ya elegido (un solo camino para pagar, El dueño 2026-10-02). Anular un pago
 que salió de una caja devuelve la plata en la caja abierta de la base del celular, como en la PC.
+
+## Separaciones completas en el celular (El dueño, 2026-10-07)
+
+"Seguí con separaciones". El celular ya tenía Caja › Separar con el mismo `SeparacionesControlador` de la PC (qué separar con tilde y lo
+vendido por período). Se sumó lo que faltaba de Separaciones de la PC, sin lógica nueva: la reserva diaria de fijos (informativa),
+"Pagar" en cada fila (Pagar proveedor con el proveedor elegido), "Retirar plata" y tocar una tarjeta de "Lo vendido" (ganancia sin
+revisar: retener como colchón o retirar, Regla 13, con `retenerComoColchon`/`retirarGanancia`/`sugerenciaRetiro` y el aviso de
+`evaluarRetiro`), y "vendido sin costo · ver cuáles" con `vendidoSinCostoDesde` + `cargarCostoProducto` (no se inventa un costo). Las
+validaciones del retiro estaban adentro del diálogo de la PC: pasaron a `motivoParaNoRetirar` para usarlas en los dos. Respeta el
+módulo "Retiro de ganancias" como la PC.
