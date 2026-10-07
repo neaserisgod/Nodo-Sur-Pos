@@ -347,6 +347,12 @@ Fijos mensuales actuales (agosto 2026): **$2.093.000**
 | Luz (estimado alto, es variable) | 300.000 |
 | Internet | 70.000 |
 
+- **Un fijo se repite hasta que se cambia** (El dueño, 2026-10-07: "deberia de ser igual salvo que lo cambie"):
+  un mes sin monto propio usa el último cargado (y la pantalla lo aclara: "igual que agosto"). Cargarlo en un
+  mes solo cambia ese mes y los siguientes sin monto propio.
+- **Cada fijo puede tener un día de vencimiento** (El dueño, 2026-10-07), el mismo todos los meses; si el mes no
+  tiene ese día, vence el último. Equilibrio avisa en cada fijo sin pagar: rojo si venció o vence hoy, amarillo en
+  los próximos 3 días.
 - **Reserva diaria de fijos** = fijos ÷ 30 ≈ **70.000**. Configurable.
 - Margen ponderado real ≈ **30%** (almacén ~35%, cigarrillos ~20%).
 - **Punto de equilibrio ≈ 231.900 de venta diaria.**
@@ -355,6 +361,20 @@ Fijos mensuales actuales (agosto 2026): **$2.093.000**
   diaria de ese arqueo es la comisión real, medible en vez de estimada),
   bolsas, limpieza, mantenimiento. Con eso el equilibrio real ronda los
   248.500 diarios.
+
+### Faltantes del cierre: a dónde fue la plata (El dueño, 2026-10-07)
+
+Revisando la base real se vio que la ganancia de la app no mentía: entre el 13/9 y el 6/10 salieron ~$1.590.000 de
+las cajas sin anotarse (casi todo de Mercado Pago: alquiler, luz, proveedores y gastos personales pagados desde la
+cuenta del negocio). Equilibrio seguía mostrando esa plata como retirable.
+
+- Al cerrar, cada caja con un faltante desde el **mínimo configurable** (Configuración → Caja y cobros; arranca en
+  $6.000) pregunta a dónde fue: **gasto mío** (cuenta como retiro),
+  **proveedor** (baja la deuda), **fijo** (lo marca pagado; desde la lata no) u **otro gasto del negocio**. Se puede
+  anotar en partes. Debajo del mínimo no se pregunta: en Mercado Pago es la comisión diaria, y cuánto es depende de
+  cuánto venda cada comercio (por eso es configurable).
+- "Me equivoqué al contar" vuelve al conteo.
+- Nunca traba el cierre: se puede cerrar sin explicar ("No sé"), con un aviso antes.
 
 ## 13. Retiro de ganancias
 

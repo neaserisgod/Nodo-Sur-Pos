@@ -163,8 +163,9 @@ class EquilibrioControlador extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> cargarMonto({required int gastoFijoId, required int montoCentavos}) async {
+  Future<void> cargarMonto({required int gastoFijoId, required int montoCentavos, int? diaVencimiento}) async {
     await cargarMontoDelMes(db, gastoFijoId: gastoFijoId, mesAnio: mesAnio, montoCentavos: montoCentavos);
+    await configurarVencimiento(db, gastoFijoId: gastoFijoId, dia: diaVencimiento);
     await cargarTodo();
   }
 

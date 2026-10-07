@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/domain/faltantes_cierre.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import '../helpers/base_para_tests.dart';
@@ -34,6 +35,13 @@ void main() {
     expect(config.fondoFijoCentavos, 20000000);
     final negocio = await db.select(db.configuracionNegocioTabla).getSingle();
     expect(negocio.pasoRedondeoCentavos, 5000);
+  });
+
+  test('umbral de faltantes del cierre: arranca en el valor del dominio, se cambia, y negativo no se guarda', () async {
+    expect((await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos, umbralFaltantePorDefectoCentavos);
+    await configurarUmbralFaltante(db, 1500000);
+    expect((await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos, 1500000);
+    expect(() => configurarUmbralFaltante(db, -1), throwsFormatException);
   });
 
   test('default de fábrica: sin producto de vuelto configurado', () async {

@@ -42,6 +42,11 @@ class ConfiguracionTabla extends Table {
   IntColumn get fondoFijoCentavos =>
       integer().withDefault(const Constant(15000000))();
 
+  /// Desde cuánto faltante el cierre pregunta a dónde fue la plata (`domain/faltantes_cierre.dart`). Por comercio: lo
+  /// que es una comisión de Mercado Pago normal depende de cuánto se venda. El literal es
+  /// `umbralFaltantePorDefectoCentavos` (el código generado no ve el dominio; un test verifica que coincidan).
+  IntColumn get umbralFaltanteCentavos => integer().withDefault(const Constant(600000))();
+
   // ─── Fase 10: respaldo e impresión ─────────────────────────────────────
 
   /// Carpeta local (normalmente sincronizada por Drive/OneDrive) donde se

@@ -5313,8 +5313,19 @@ class $GastosFijosTable extends GastosFijos
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _diaVencimientoMeta = const VerificationMeta(
+    'diaVencimiento',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, nombre, activo];
+  late final GeneratedColumn<int> diaVencimiento = GeneratedColumn<int>(
+    'dia_vencimiento',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nombre, activo, diaVencimiento];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5344,6 +5355,15 @@ class $GastosFijosTable extends GastosFijos
         activo.isAcceptableOrUnknown(data['activo']!, _activoMeta),
       );
     }
+    if (data.containsKey('dia_vencimiento')) {
+      context.handle(
+        _diaVencimientoMeta,
+        diaVencimiento.isAcceptableOrUnknown(
+          data['dia_vencimiento']!,
+          _diaVencimientoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5365,6 +5385,10 @@ class $GastosFijosTable extends GastosFijos
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
       )!,
+      diaVencimiento: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dia_vencimiento'],
+      ),
     );
   }
 
@@ -5378,10 +5402,15 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
   final int id;
   final String nombre;
   final bool activo;
+
+  /// Día del mes en que vence (1–31; en un mes más corto vence el último día). Null = sin fecha cargada. Es fijo como
+  /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
+  final int? diaVencimiento;
   const GastoFijo({
     required this.id,
     required this.nombre,
     required this.activo,
+    this.diaVencimiento,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5389,6 +5418,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     map['id'] = Variable<int>(id);
     map['nombre'] = Variable<String>(nombre);
     map['activo'] = Variable<bool>(activo);
+    if (!nullToAbsent || diaVencimiento != null) {
+      map['dia_vencimiento'] = Variable<int>(diaVencimiento);
+    }
     return map;
   }
 
@@ -5397,6 +5429,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       id: Value(id),
       nombre: Value(nombre),
       activo: Value(activo),
+      diaVencimiento: diaVencimiento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(diaVencimiento),
     );
   }
 
@@ -5409,6 +5444,7 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       id: serializer.fromJson<int>(json['id']),
       nombre: serializer.fromJson<String>(json['nombre']),
       activo: serializer.fromJson<bool>(json['activo']),
+      diaVencimiento: serializer.fromJson<int?>(json['diaVencimiento']),
     );
   }
   @override
@@ -5418,19 +5454,31 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       'id': serializer.toJson<int>(id),
       'nombre': serializer.toJson<String>(nombre),
       'activo': serializer.toJson<bool>(activo),
+      'diaVencimiento': serializer.toJson<int?>(diaVencimiento),
     };
   }
 
-  GastoFijo copyWith({int? id, String? nombre, bool? activo}) => GastoFijo(
+  GastoFijo copyWith({
+    int? id,
+    String? nombre,
+    bool? activo,
+    Value<int?> diaVencimiento = const Value.absent(),
+  }) => GastoFijo(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,
     activo: activo ?? this.activo,
+    diaVencimiento: diaVencimiento.present
+        ? diaVencimiento.value
+        : this.diaVencimiento,
   );
   GastoFijo copyWithCompanion(GastosFijosCompanion data) {
     return GastoFijo(
       id: data.id.present ? data.id.value : this.id,
       nombre: data.nombre.present ? data.nombre.value : this.nombre,
       activo: data.activo.present ? data.activo.value : this.activo,
+      diaVencimiento: data.diaVencimiento.present
+          ? data.diaVencimiento.value
+          : this.diaVencimiento,
     );
   }
 
@@ -5439,45 +5487,52 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     return (StringBuffer('GastoFijo(')
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
-          ..write('activo: $activo')
+          ..write('activo: $activo, ')
+          ..write('diaVencimiento: $diaVencimiento')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, nombre, activo);
+  int get hashCode => Object.hash(id, nombre, activo, diaVencimiento);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is GastoFijo &&
           other.id == this.id &&
           other.nombre == this.nombre &&
-          other.activo == this.activo);
+          other.activo == this.activo &&
+          other.diaVencimiento == this.diaVencimiento);
 }
 
 class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
   final Value<int> id;
   final Value<String> nombre;
   final Value<bool> activo;
+  final Value<int?> diaVencimiento;
   const GastosFijosCompanion({
     this.id = const Value.absent(),
     this.nombre = const Value.absent(),
     this.activo = const Value.absent(),
+    this.diaVencimiento = const Value.absent(),
   });
   GastosFijosCompanion.insert({
     this.id = const Value.absent(),
     required String nombre,
     this.activo = const Value.absent(),
+    this.diaVencimiento = const Value.absent(),
   }) : nombre = Value(nombre);
   static Insertable<GastoFijo> custom({
     Expression<int>? id,
     Expression<String>? nombre,
     Expression<bool>? activo,
+    Expression<int>? diaVencimiento,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (nombre != null) 'nombre': nombre,
       if (activo != null) 'activo': activo,
+      if (diaVencimiento != null) 'dia_vencimiento': diaVencimiento,
     });
   }
 
@@ -5485,11 +5540,13 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     Value<int>? id,
     Value<String>? nombre,
     Value<bool>? activo,
+    Value<int?>? diaVencimiento,
   }) {
     return GastosFijosCompanion(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       activo: activo ?? this.activo,
+      diaVencimiento: diaVencimiento ?? this.diaVencimiento,
     );
   }
 
@@ -5505,6 +5562,9 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
+    if (diaVencimiento.present) {
+      map['dia_vencimiento'] = Variable<int>(diaVencimiento.value);
+    }
     return map;
   }
 
@@ -5513,7 +5573,8 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     return (StringBuffer('GastosFijosCompanion(')
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
-          ..write('activo: $activo')
+          ..write('activo: $activo, ')
+          ..write('diaVencimiento: $diaVencimiento')
           ..write(')'))
         .toString();
   }
@@ -15307,6 +15368,17 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     requiredDuringInsert: false,
     defaultValue: const Constant(15000000),
   );
+  static const VerificationMeta _umbralFaltanteCentavosMeta =
+      const VerificationMeta('umbralFaltanteCentavos');
+  @override
+  late final GeneratedColumn<int> umbralFaltanteCentavos = GeneratedColumn<int>(
+    'umbral_faltante_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(600000),
+  );
   static const VerificationMeta _rutaRespaldoCarpetaMeta =
       const VerificationMeta('rutaRespaldoCarpeta');
   @override
@@ -15521,6 +15593,7 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     pasoRedondeoCentavos,
     reservaDiariaFijosCentavos,
     fondoFijoCentavos,
+    umbralFaltanteCentavos,
     rutaRespaldoCarpeta,
     respaldoCantidadCopias,
     rutaTicketsCarpeta,
@@ -15605,6 +15678,15 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         fondoFijoCentavos.isAcceptableOrUnknown(
           data['fondo_fijo_centavos']!,
           _fondoFijoCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('umbral_faltante_centavos')) {
+      context.handle(
+        _umbralFaltanteCentavosMeta,
+        umbralFaltanteCentavos.isAcceptableOrUnknown(
+          data['umbral_faltante_centavos']!,
+          _umbralFaltanteCentavosMeta,
         ),
       );
     }
@@ -15792,6 +15874,10 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         DriftSqlType.int,
         data['${effectivePrefix}fondo_fijo_centavos'],
       )!,
+      umbralFaltanteCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}umbral_faltante_centavos'],
+      )!,
       rutaRespaldoCarpeta: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ruta_respaldo_carpeta'],
@@ -15898,6 +15984,11 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// conviene no llevarse nunca del cajón. Default $150.000.
   final int fondoFijoCentavos;
 
+  /// Desde cuánto faltante el cierre pregunta a dónde fue la plata (`domain/faltantes_cierre.dart`). Por comercio: lo
+  /// que es una comisión de Mercado Pago normal depende de cuánto se venda. El literal es
+  /// `umbralFaltantePorDefectoCentavos` (el código generado no ve el dominio; un test verifica que coincidan).
+  final int umbralFaltanteCentavos;
+
   /// Carpeta local (normalmente sincronizada por Drive/OneDrive) donde se
   /// guardan las copias de la base. Null hasta que se configure a mano —
   /// nunca un default silencioso, porque escribir en una carpeta que el
@@ -16003,6 +16094,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     required this.pasoRedondeoCentavos,
     required this.reservaDiariaFijosCentavos,
     required this.fondoFijoCentavos,
+    required this.umbralFaltanteCentavos,
     this.rutaRespaldoCarpeta,
     required this.respaldoCantidadCopias,
     this.rutaTicketsCarpeta,
@@ -16037,6 +16129,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       reservaDiariaFijosCentavos,
     );
     map['fondo_fijo_centavos'] = Variable<int>(fondoFijoCentavos);
+    map['umbral_faltante_centavos'] = Variable<int>(umbralFaltanteCentavos);
     if (!nullToAbsent || rutaRespaldoCarpeta != null) {
       map['ruta_respaldo_carpeta'] = Variable<String>(rutaRespaldoCarpeta);
     }
@@ -16090,6 +16183,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       pasoRedondeoCentavos: Value(pasoRedondeoCentavos),
       reservaDiariaFijosCentavos: Value(reservaDiariaFijosCentavos),
       fondoFijoCentavos: Value(fondoFijoCentavos),
+      umbralFaltanteCentavos: Value(umbralFaltanteCentavos),
       rutaRespaldoCarpeta: rutaRespaldoCarpeta == null && nullToAbsent
           ? const Value.absent()
           : Value(rutaRespaldoCarpeta),
@@ -16154,6 +16248,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         json['reservaDiariaFijosCentavos'],
       ),
       fondoFijoCentavos: serializer.fromJson<int>(json['fondoFijoCentavos']),
+      umbralFaltanteCentavos: serializer.fromJson<int>(
+        json['umbralFaltanteCentavos'],
+      ),
       rutaRespaldoCarpeta: serializer.fromJson<String?>(
         json['rutaRespaldoCarpeta'],
       ),
@@ -16204,6 +16301,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         reservaDiariaFijosCentavos,
       ),
       'fondoFijoCentavos': serializer.toJson<int>(fondoFijoCentavos),
+      'umbralFaltanteCentavos': serializer.toJson<int>(umbralFaltanteCentavos),
       'rutaRespaldoCarpeta': serializer.toJson<String?>(rutaRespaldoCarpeta),
       'respaldoCantidadCopias': serializer.toJson<int>(respaldoCantidadCopias),
       'rutaTicketsCarpeta': serializer.toJson<String?>(rutaTicketsCarpeta),
@@ -16236,6 +16334,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     int? pasoRedondeoCentavos,
     int? reservaDiariaFijosCentavos,
     int? fondoFijoCentavos,
+    int? umbralFaltanteCentavos,
     Value<String?> rutaRespaldoCarpeta = const Value.absent(),
     int? respaldoCantidadCopias,
     Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -16264,6 +16363,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     reservaDiariaFijosCentavos:
         reservaDiariaFijosCentavos ?? this.reservaDiariaFijosCentavos,
     fondoFijoCentavos: fondoFijoCentavos ?? this.fondoFijoCentavos,
+    umbralFaltanteCentavos:
+        umbralFaltanteCentavos ?? this.umbralFaltanteCentavos,
     rutaRespaldoCarpeta: rutaRespaldoCarpeta.present
         ? rutaRespaldoCarpeta.value
         : this.rutaRespaldoCarpeta,
@@ -16321,6 +16422,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       fondoFijoCentavos: data.fondoFijoCentavos.present
           ? data.fondoFijoCentavos.value
           : this.fondoFijoCentavos,
+      umbralFaltanteCentavos: data.umbralFaltanteCentavos.present
+          ? data.umbralFaltanteCentavos.value
+          : this.umbralFaltanteCentavos,
       rutaRespaldoCarpeta: data.rutaRespaldoCarpeta.present
           ? data.rutaRespaldoCarpeta.value
           : this.rutaRespaldoCarpeta,
@@ -16389,6 +16493,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('reservaDiariaFijosCentavos: $reservaDiariaFijosCentavos, ')
           ..write('fondoFijoCentavos: $fondoFijoCentavos, ')
+          ..write('umbralFaltanteCentavos: $umbralFaltanteCentavos, ')
           ..write('rutaRespaldoCarpeta: $rutaRespaldoCarpeta, ')
           ..write('respaldoCantidadCopias: $respaldoCantidadCopias, ')
           ..write('rutaTicketsCarpeta: $rutaTicketsCarpeta, ')
@@ -16423,6 +16528,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     pasoRedondeoCentavos,
     reservaDiariaFijosCentavos,
     fondoFijoCentavos,
+    umbralFaltanteCentavos,
     rutaRespaldoCarpeta,
     respaldoCantidadCopias,
     rutaTicketsCarpeta,
@@ -16453,6 +16559,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           other.pasoRedondeoCentavos == this.pasoRedondeoCentavos &&
           other.reservaDiariaFijosCentavos == this.reservaDiariaFijosCentavos &&
           other.fondoFijoCentavos == this.fondoFijoCentavos &&
+          other.umbralFaltanteCentavos == this.umbralFaltanteCentavos &&
           other.rutaRespaldoCarpeta == this.rutaRespaldoCarpeta &&
           other.respaldoCantidadCopias == this.respaldoCantidadCopias &&
           other.rutaTicketsCarpeta == this.rutaTicketsCarpeta &&
@@ -16482,6 +16589,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
   final Value<int> pasoRedondeoCentavos;
   final Value<int> reservaDiariaFijosCentavos;
   final Value<int> fondoFijoCentavos;
+  final Value<int> umbralFaltanteCentavos;
   final Value<String?> rutaRespaldoCarpeta;
   final Value<int> respaldoCantidadCopias;
   final Value<String?> rutaTicketsCarpeta;
@@ -16507,6 +16615,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.pasoRedondeoCentavos = const Value.absent(),
     this.reservaDiariaFijosCentavos = const Value.absent(),
     this.fondoFijoCentavos = const Value.absent(),
+    this.umbralFaltanteCentavos = const Value.absent(),
     this.rutaRespaldoCarpeta = const Value.absent(),
     this.respaldoCantidadCopias = const Value.absent(),
     this.rutaTicketsCarpeta = const Value.absent(),
@@ -16533,6 +16642,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.pasoRedondeoCentavos = const Value.absent(),
     this.reservaDiariaFijosCentavos = const Value.absent(),
     this.fondoFijoCentavos = const Value.absent(),
+    this.umbralFaltanteCentavos = const Value.absent(),
     this.rutaRespaldoCarpeta = const Value.absent(),
     this.respaldoCantidadCopias = const Value.absent(),
     this.rutaTicketsCarpeta = const Value.absent(),
@@ -16559,6 +16669,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Expression<int>? pasoRedondeoCentavos,
     Expression<int>? reservaDiariaFijosCentavos,
     Expression<int>? fondoFijoCentavos,
+    Expression<int>? umbralFaltanteCentavos,
     Expression<String>? rutaRespaldoCarpeta,
     Expression<int>? respaldoCantidadCopias,
     Expression<String>? rutaTicketsCarpeta,
@@ -16590,6 +16701,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       if (reservaDiariaFijosCentavos != null)
         'reserva_diaria_fijos_centavos': reservaDiariaFijosCentavos,
       if (fondoFijoCentavos != null) 'fondo_fijo_centavos': fondoFijoCentavos,
+      if (umbralFaltanteCentavos != null)
+        'umbral_faltante_centavos': umbralFaltanteCentavos,
       if (rutaRespaldoCarpeta != null)
         'ruta_respaldo_carpeta': rutaRespaldoCarpeta,
       if (respaldoCantidadCopias != null)
@@ -16624,6 +16737,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Value<int>? pasoRedondeoCentavos,
     Value<int>? reservaDiariaFijosCentavos,
     Value<int>? fondoFijoCentavos,
+    Value<int>? umbralFaltanteCentavos,
     Value<String?>? rutaRespaldoCarpeta,
     Value<int>? respaldoCantidadCopias,
     Value<String?>? rutaTicketsCarpeta,
@@ -16654,6 +16768,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       reservaDiariaFijosCentavos:
           reservaDiariaFijosCentavos ?? this.reservaDiariaFijosCentavos,
       fondoFijoCentavos: fondoFijoCentavos ?? this.fondoFijoCentavos,
+      umbralFaltanteCentavos:
+          umbralFaltanteCentavos ?? this.umbralFaltanteCentavos,
       rutaRespaldoCarpeta: rutaRespaldoCarpeta ?? this.rutaRespaldoCarpeta,
       respaldoCantidadCopias:
           respaldoCantidadCopias ?? this.respaldoCantidadCopias,
@@ -16708,6 +16824,11 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     }
     if (fondoFijoCentavos.present) {
       map['fondo_fijo_centavos'] = Variable<int>(fondoFijoCentavos.value);
+    }
+    if (umbralFaltanteCentavos.present) {
+      map['umbral_faltante_centavos'] = Variable<int>(
+        umbralFaltanteCentavos.value,
+      );
     }
     if (rutaRespaldoCarpeta.present) {
       map['ruta_respaldo_carpeta'] = Variable<String>(
@@ -16783,6 +16904,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('reservaDiariaFijosCentavos: $reservaDiariaFijosCentavos, ')
           ..write('fondoFijoCentavos: $fondoFijoCentavos, ')
+          ..write('umbralFaltanteCentavos: $umbralFaltanteCentavos, ')
           ..write('rutaRespaldoCarpeta: $rutaRespaldoCarpeta, ')
           ..write('respaldoCantidadCopias: $respaldoCantidadCopias, ')
           ..write('rutaTicketsCarpeta: $rutaTicketsCarpeta, ')
@@ -30323,12 +30445,14 @@ typedef $$GastosFijosTableCreateCompanionBuilder =
       Value<int> id,
       required String nombre,
       Value<bool> activo,
+      Value<int?> diaVencimiento,
     });
 typedef $$GastosFijosTableUpdateCompanionBuilder =
     GastosFijosCompanion Function({
       Value<int> id,
       Value<String> nombre,
       Value<bool> activo,
+      Value<int?> diaVencimiento,
     });
 
 final class $$GastosFijosTableReferences
@@ -30399,6 +30523,11 @@ class $$GastosFijosTableFilterComposer
 
   ColumnFilters<bool> get activo => $composableBuilder(
     column: $table.activo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30476,6 +30605,11 @@ class $$GastosFijosTableOrderingComposer
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GastosFijosTableAnnotationComposer
@@ -30495,6 +30629,11 @@ class $$GastosFijosTableAnnotationComposer
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
+
+  GeneratedColumn<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
+    builder: (column) => column,
+  );
 
   Expression<T> gastosFijosMontosRefs<T extends Object>(
     Expression<T> Function($$GastosFijosMontosTableAnnotationComposer a) f,
@@ -30583,17 +30722,24 @@ class $$GastosFijosTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> nombre = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
-              }) =>
-                  GastosFijosCompanion(id: id, nombre: nombre, activo: activo),
+                Value<int?> diaVencimiento = const Value.absent(),
+              }) => GastosFijosCompanion(
+                id: id,
+                nombre: nombre,
+                activo: activo,
+                diaVencimiento: diaVencimiento,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String nombre,
                 Value<bool> activo = const Value.absent(),
+                Value<int?> diaVencimiento = const Value.absent(),
               }) => GastosFijosCompanion.insert(
                 id: id,
                 nombre: nombre,
                 activo: activo,
+                diaVencimiento: diaVencimiento,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -39399,6 +39545,7 @@ typedef $$ConfiguracionTablaTableCreateCompanionBuilder =
       Value<int> pasoRedondeoCentavos,
       Value<int> reservaDiariaFijosCentavos,
       Value<int> fondoFijoCentavos,
+      Value<int> umbralFaltanteCentavos,
       Value<String?> rutaRespaldoCarpeta,
       Value<int> respaldoCantidadCopias,
       Value<String?> rutaTicketsCarpeta,
@@ -39426,6 +39573,7 @@ typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
       Value<int> pasoRedondeoCentavos,
       Value<int> reservaDiariaFijosCentavos,
       Value<int> fondoFijoCentavos,
+      Value<int> umbralFaltanteCentavos,
       Value<String?> rutaRespaldoCarpeta,
       Value<int> respaldoCantidadCopias,
       Value<String?> rutaTicketsCarpeta,
@@ -39486,6 +39634,11 @@ class $$ConfiguracionTablaTableFilterComposer
 
   ColumnFilters<int> get fondoFijoCentavos => $composableBuilder(
     column: $table.fondoFijoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -39620,6 +39773,11 @@ class $$ConfiguracionTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get rutaRespaldoCarpeta => $composableBuilder(
     column: $table.rutaRespaldoCarpeta,
     builder: (column) => ColumnOrderings(column),
@@ -39747,6 +39905,11 @@ class $$ConfiguracionTablaTableAnnotationComposer
 
   GeneratedColumn<int> get fondoFijoCentavos => $composableBuilder(
     column: $table.fondoFijoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
     builder: (column) => column,
   );
 
@@ -39885,6 +40048,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int> reservaDiariaFijosCentavos = const Value.absent(),
                 Value<int> fondoFijoCentavos = const Value.absent(),
+                Value<int> umbralFaltanteCentavos = const Value.absent(),
                 Value<String?> rutaRespaldoCarpeta = const Value.absent(),
                 Value<int> respaldoCantidadCopias = const Value.absent(),
                 Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -39912,6 +40076,7 @@ class $$ConfiguracionTablaTableTableManager
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 reservaDiariaFijosCentavos: reservaDiariaFijosCentavos,
                 fondoFijoCentavos: fondoFijoCentavos,
+                umbralFaltanteCentavos: umbralFaltanteCentavos,
                 rutaRespaldoCarpeta: rutaRespaldoCarpeta,
                 respaldoCantidadCopias: respaldoCantidadCopias,
                 rutaTicketsCarpeta: rutaTicketsCarpeta,
@@ -39939,6 +40104,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int> reservaDiariaFijosCentavos = const Value.absent(),
                 Value<int> fondoFijoCentavos = const Value.absent(),
+                Value<int> umbralFaltanteCentavos = const Value.absent(),
                 Value<String?> rutaRespaldoCarpeta = const Value.absent(),
                 Value<int> respaldoCantidadCopias = const Value.absent(),
                 Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -39966,6 +40132,7 @@ class $$ConfiguracionTablaTableTableManager
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 reservaDiariaFijosCentavos: reservaDiariaFijosCentavos,
                 fondoFijoCentavos: fondoFijoCentavos,
+                umbralFaltanteCentavos: umbralFaltanteCentavos,
                 rutaRespaldoCarpeta: rutaRespaldoCarpeta,
                 respaldoCantidadCopias: respaldoCantidadCopias,
                 rutaTicketsCarpeta: rutaTicketsCarpeta,

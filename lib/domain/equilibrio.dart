@@ -159,3 +159,12 @@ EstadoFijo estadoDelFijo({required int? montoCentavos, required int pagadoCentav
   if (montoCentavos == null) return EstadoFijo.faltaCargar;
   return pagadoCentavos >= montoCentavos ? EstadoFijo.pagado : EstadoFijo.pendiente;
 }
+
+/// Días que faltan para que venza un fijo este mes (0 = vence hoy, negativo = ya venció). Un [diaVencimiento] que el mes
+/// no tiene (31 en septiembre, 30 en febrero) vence el último día del mes: el alquiler "el 31" no se saltea un mes.
+int diasParaVencer({required int diaVencimiento, required DateTime hoy}) {
+  final ultimoDia = DateTime(hoy.year, hoy.month + 1, 0).day;
+  final dia = diaVencimiento.clamp(1, ultimoDia);
+  // Por fecha de calendario, no por horas: a la noche del día 9 un vencimiento del 10 sigue siendo "mañana".
+  return DateTime.utc(hoy.year, hoy.month, dia).difference(DateTime.utc(hoy.year, hoy.month, hoy.day)).inDays;
+}

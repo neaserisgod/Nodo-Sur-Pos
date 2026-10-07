@@ -8,6 +8,10 @@ class GastosFijos extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get nombre => text().withLength(min: 1, max: 80).unique()();
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
+
+  /// Día del mes en que vence (1–31; en un mes más corto vence el último día). Null = sin fecha cargada. Es fijo como
+  /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
+  IntColumn get diaVencimiento => integer().nullable()();
 }
 
 @DataClassName('GastoFijoMonto')

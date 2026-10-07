@@ -47,6 +47,7 @@ class _DialogoCargarMontoFijoState extends State<_DialogoCargarMontoFijo> {
   late final _montoCtrl = TextEditingController(
     text: widget.montoActualCentavos == null ? '' : formatearARS(widget.montoActualCentavos!),
   );
+  late final _diaCtrl = TextEditingController(text: widget.concepto.diaVencimiento?.toString() ?? '');
   String? _error;
 
   Future<void> _guardar() async {
@@ -62,13 +63,21 @@ class _DialogoCargarMontoFijoState extends State<_DialogoCargarMontoFijo> {
       return;
     }
 
-    await widget.controlador.cargarMonto(gastoFijoId: widget.concepto.id, montoCentavos: monto);
+    final textoDia = _diaCtrl.text.trim();
+    final dia = textoDia.isEmpty ? null : int.tryParse(textoDia);
+    if (textoDia.isNotEmpty && (dia == null || dia < 1 || dia > 31)) {
+      setState(() => _error = 'El día de vencimiento tiene que ser del 1 al 31');
+      return;
+    }
+
+    await widget.controlador.cargarMonto(gastoFijoId: widget.concepto.id, montoCentavos: monto, diaVencimiento: dia);
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   void dispose() {
     _montoCtrl.dispose();
+    _diaCtrl.dispose();
     super.dispose();
   }
 
@@ -85,6 +94,13 @@ class _DialogoCargarMontoFijoState extends State<_DialogoCargarMontoFijo> {
             controller: _montoCtrl,
             etiqueta: 'Monto de este mes',
             autofocus: true,
+            onSubmitted: (_) => _guardar(),
+          ),
+          const SizedBox(height: Espaciado.md),
+          CampoTexto(
+            key: const Key('campo_dia_vencimiento_fijo'),
+            controller: _diaCtrl,
+            etiqueta: 'Vence el día (todos los meses, opcional)',
             onSubmitted: (_) => _guardar(),
           ),
           if (_error != null) ...[

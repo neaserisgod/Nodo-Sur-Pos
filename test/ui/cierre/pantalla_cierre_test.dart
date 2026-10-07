@@ -265,4 +265,65 @@ void main() {
       expect(sesion.lataDiferenciaCentavos, 0);
     });
   });
+
+  group('faltantes: a dónde fue la plata (El dueño, 2026-10-07)', () {
+    Future<int> sesionConMp(AppDatabase db, int usuarioId) =>
+        abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0, mpInicialCentavos: 10000000, lataInicialCentavos: 0);
+
+    testWidgets('un faltante de Mercado Pago se anota como gasto mío y la caja queda en cero', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await sesionConMp(db, usuarioId);
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '0', mp: '0');
+
+      expect(find.byKey(const Key('cierre_faltantes')), findsOneWidget);
+      expect(find.text('Faltan \$ 100.000 en Mercado Pago'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('faltante_mercadoPago')));
+      await tester.pumpAndSettle();
+      expect(find.text('¿A dónde fueron?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('faltante_anotar')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('cierre_faltantes')), findsNothing);
+      final retiro = await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('RETIRO'))).getSingle();
+      expect(retiro.montoCentavos, 10000000);
+    });
+
+    testWidgets('cerrar con un faltante sin explicar avisa antes, y "No sé" cierra igual', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await sesionConMp(db, usuarioId);
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '0', mp: '0');
+      await tester.tap(find.text('Cerrar caja'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quedan \$ 100.000 sin explicar'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cerrar_sin_explicar')));
+      await tester.pumpAndSettle();
+
+      final sesion = await (db.select(db.sesionesDeCaja)..where((s) => s.id.equals(sesionId))).getSingle();
+      expect(sesion.estado, 'CERRADA');
+      expect(sesion.mpDiferenciaCentavos, -10000000);
+    });
+
+    testWidgets('con el umbral configurado más alto que el faltante, no pregunta', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await sesionConMp(db, usuarioId);
+      await db.update(db.configuracionTabla).write(const ConfiguracionTablaCompanion(umbralFaltanteCentavos: Value(20000000)));
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '0', mp: '0');
+
+      expect(find.byKey(const Key('cierre_faltantes')), findsNothing);
+    });
+  });
 }

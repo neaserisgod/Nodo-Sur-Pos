@@ -715,6 +715,12 @@ class _SeccionCajaYRedondeo extends StatelessWidget {
         centavos: c.configuracion!.fondoFijoCentavos,
         guardar: c.guardarFondoFijo,
       ),
+      _CampoPlata(
+        key: const Key('campo_umbral_faltante'),
+        etiqueta: 'Al cerrar, preguntar a dónde fue un faltante desde',
+        centavos: c.configuracion!.umbralFaltanteCentavos,
+        guardar: c.guardarUmbralFaltante,
+      ),
     ]);
   }
 }

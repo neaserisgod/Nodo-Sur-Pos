@@ -2171,3 +2171,22 @@ así que no hizo falta un tipo nuevo ni tocar la sincronización. Todo en una tr
   así que a cada producto sin marca que alguna vez se vendió marcado se le vuelve a poner la de su última venta marcada, con
   `actualizado_en` para que viaje al otro equipo. Riesgo aceptado: un producto desmarcado a propósito vuelve a marcarse (se desmarca
   de nuevo a mano).
+
+## A dónde fue la plata: faltantes del cierre, fijos que se repiten y vencimientos (El dueño, 2026-10-07)
+
+El dueño: *"vendo mucho pero no tengo un peso"*; la ganancia de Equilibrio no tenía en cuenta lo que pagó (luz, proveedores,
+gastos suyos desde la cuenta del negocio). Se revisó su base real (13/9–6/10): la cuenta de caja da **$1.663.621 esperados
+contra $74.656 reales**, ~$1.589.000 que salieron sin anotarse (~$1.480.000 de Mercado Pago, ~$156.000 de la lata; el
+efectivo sumado da $50.000 de más). Ojo al auditar: al cerrar, parte del efectivo contado pasa a la lata, así que el fondo
+del día siguiente no es el efectivo contado sino `contado − lataSeparado` (un primer análisis lo confundió).
+
+- **Cierre**: por cada caja con faltante ≥ mínimo, "¿A dónde fueron?": gasto mío (RETIRO: Equilibrio lo resta como ya
+  retirado), proveedor (`pagarDeuda`), fijo (`registrarPagoFijo`; desde la lata no) u otro gasto (`registrarGastoRapido`).
+  Reusa los registros existentes para que cuente igual que anotado en el momento. Nunca traba: "No sé, cerrar igual".
+  El mínimo es configurable por comercio (`configuracion_tabla.umbralFaltanteCentavos`, v60, arranca en $6.000: las
+  comisiones de MP del dueño van de $400 a $5.300 por día, y en otro comercio pueden ser otras).
+- **Fijos**: un mes sin monto propio usa el último cargado (se lee, no se copia: cargar un mes viejo no pisa los
+  siguientes). Equilibrio lo aclara ("igual que agosto").
+- **Vencimiento**: `gastos_fijos.diaVencimiento` (v59), igual todos los meses; un día que el mes no tiene vence el último.
+- **Descartado por ahora**: preguntar también al abrir la caja (el efectivo entre cierre y apertura cuadraba) y "separar
+  hasta una fecha" en Separaciones (pendiente de decidir con el dueño).

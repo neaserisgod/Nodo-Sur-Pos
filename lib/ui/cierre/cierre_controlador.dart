@@ -17,6 +17,8 @@ import '../../data/repositorio_arqueo_intermedio.dart' show ArqueoDelTurno, arqu
 import '../../data/repositorio_cierre.dart';
 import '../../data/repositorio_conciliacion_mp.dart';
 import '../../domain/conciliacion_mp.dart';
+import '../../domain/faltantes_cierre.dart';
+import '../../data/repositorio_faltantes.dart';
 import '../../domain/saldo_mp.dart';
 import '../../servicios/saldo_mp_nube.dart';
 import '../../data/repositorio_gastos.dart' show MedioGasto, registrarGastoRapido;
@@ -265,6 +267,7 @@ class CierreControlador extends ChangeNotifier {
     ordenesCobroSinResolver = await ordenesSinResolverDeSesion(db, sesionId);
     arqueos = await arqueosDelTurno(db, sesionId);
     ventasAbiertas = await cantidadVentasAbiertasConLineas(db, sesionId);
+    umbralFaltanteCentavos = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
     await _precargarDelUltimoArqueo();
 
     if (sesion!.estado == 'CERRADA') {
@@ -370,6 +373,58 @@ class CierreControlador extends ChangeNotifier {
     resumen = resultados[0] as ResumenCierre;
     resumenDia = resultados[1] as ResumenDiaHistorico;
     notifyListeners();
+  }
+
+  /// Lo que falta en cada caja y todavía no se dijo a dónde fue (El dueño, 2026-10-07: la plata que sale sin anotarse
+  /// es la que Equilibrio sigue contando como retirable). Vacío antes de revelar el conteo.
+  /// Desde cuánto se pregunta (Configuración → Caja y cobros). Se lee en [cargar].
+  int umbralFaltanteCentavos = umbralFaltantePorDefectoCentavos;
+
+  Map<CajaDelCierre, int> get faltantes {
+    final r = resumen;
+    if (r == null || fase != FaseCierre.revisado) return const {};
+    return faltantesPorExplicar(
+      diferenciaEfectivoCentavos: r.diferenciaCentavos,
+      diferenciaMpCentavos: r.mpDiferenciaCentavos,
+      // Sin el módulo de caja aparte la lata no se cuenta: no se pregunta por ella.
+      diferenciaLataCentavos: moduloActivo(Modulo.cajaAparte) ? r.lataDiferenciaCentavos : null,
+      umbral: umbralFaltanteCentavos,
+    );
+  }
+
+  /// Anota a dónde fue (parte de) un faltante y recalcula: si se explicó entero, la caja queda en cero y deja de
+  /// preguntarse. Devuelve el error para mostrar en el diálogo, o null si se guardó.
+  Future<String?> explicarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) async {
+    if (sesion == null || fase != FaseCierre.revisado) return 'La caja ya no está en revisión';
+    try {
+      await anotarFaltante(
+        db,
+        sesionCajaId: sesionId,
+        usuarioId: usuarioId,
+        caja: caja,
+        montoCentavos: montoCentavos,
+        destino: destino,
+        proveedorId: proveedorId,
+        gastoFijoId: gastoFijoId,
+        nota: nota,
+      );
+    } on ArgumentError catch (e) {
+      return '${e.message}';
+    } catch (e) {
+      return 'No se pudo guardar: $e';
+    }
+    final efectivo = _parsear(efectivoContadoCtrl.text);
+    if (efectivo != null) await _recalcular(efectivo);
+    await recalcularDiferenciasSaldo();
+    return null;
   }
 
   Future<void> descartarVentasAbiertasYRecargar() async {
