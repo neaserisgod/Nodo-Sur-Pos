@@ -192,6 +192,9 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'hash_mismatch' => 'La copia se dañó en el camino. Probá de nuevo.',
   'not_found' => 'Esa copia ya no existe.',
   'corrupt' => 'Esa copia no se pudo recuperar del servidor.',
+  'ia_sin_clave' => 'El negocio todavía no cargó la clave de la IA: el dueño la carga en Configuración › Asistente IA.',
+  'ia_no_configurada' => 'La IA del negocio todavía no está lista en el servidor. Probá más tarde.',
+  'solo_dueno' => 'La clave de la IA del negocio la carga el dueño.',
   'mp_no_conectado' => 'Mercado Pago todavía no está conectado: el dueño lo conecta en horsepos.com/negocio.',
   'mp_sin_terminal' => 'Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.',
   'mp_no_configurado' => 'La conexión con Mercado Pago todavía no está lista en el servidor. Probá más tarde.',
@@ -411,6 +414,47 @@ class ClienteNube {
             ],
     );
   });
+
+  // ─── IA de Google con la clave del negocio (El dueño, 2026-10-07: "la clave es por cuenta"; la clave no sale del servidor) ───
+
+  /// Si el negocio tiene clave de la IA, con qué modelo se probó y si quien vinculó este equipo la puede cambiar (el dueño).
+  Future<({bool configurada, String? modelo, bool puedeCambiar})> estadoIa(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/ia/estado'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (configurada: j['configured'] == true, modelo: j['model'] as String?, puedeCambiar: j['canChange'] == true);
+  });
+
+  /// Guarda la clave en la cuenta del negocio (solo el dueño); null la borra.
+  Future<void> guardarClaveIa(String token, String? clave, {String? modelo}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/ia/clave'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'clave': clave, 'modelo': ?modelo}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
+  /// Le pide a la IA con la clave del negocio: [cuerpo] es el JSON de `generateContent` tal cual. Devuelve el estado y la respuesta
+  /// de Google sin tocar (incluso un error de Google, para explicarlo igual que si se hubiera llamado directo); un error del sitio
+  /// (sin clave, sin permiso) tira [ErrorNube]. Leer una factura tarda: [limite] largo.
+  Future<({int estado, String cuerpo})> generarIa(String token, {required String modelo, required String cuerpo, Duration limite = const Duration(minutes: 3)}) =>
+      _conRed(() async {
+        final r = await http.post(
+          _uri('/api/ia/generar'),
+          headers: _auth(token, {'Content-Type': 'application/json'}),
+          body: jsonEncode({'modelo': modelo, 'cuerpo': cuerpo}),
+        ).timeout(limite);
+        if (r.statusCode != 200) {
+          Object? j;
+          try {
+            j = jsonDecode(r.body);
+          } catch (_) {}
+          // El sitio contesta {"error": "<código>"}; Google, {"error": {...}}.
+          if (j is Map && j['error'] is String) _falla(r.statusCode, r.body);
+        }
+        return (estado: r.statusCode, cuerpo: r.body);
+      });
 
   // ─── Cobro con la terminal Point a través del servidor (el token de Mercado Pago del negocio no sale de ahí) ───
 

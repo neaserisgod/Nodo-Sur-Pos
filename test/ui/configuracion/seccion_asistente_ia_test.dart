@@ -16,6 +16,27 @@ Future<void> _montar(WidgetTester tester, http.Client client) => tester.pumpWidg
       ),
     );
 
+/// La cuenta del negocio simulada (El dueño, 2026-10-07: "la clave es por cuenta").
+class _Cuenta implements AccesoIaCuenta {
+  _Cuenta({required this.puedeCambiar, this.configurada = false});
+  final bool puedeCambiar;
+  bool configurada;
+  String? clave;
+
+  @override
+  Future<({bool configurada, String? modelo, bool puedeCambiar})?> estado() async =>
+      (configurada: configurada, modelo: 'gemini-3.5-flash-lite', puedeCambiar: puedeCambiar);
+  @override
+  Future<void> guardarClave(String? clave, {String? modelo}) async {
+    this.clave = clave;
+    configurada = clave != null;
+  }
+
+  @override
+  Future<({int estado, String cuerpo})> generar({required String modelo, required String cuerpo, required Duration limite}) async =>
+      (estado: 200, cuerpo: _ok);
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -64,6 +85,31 @@ void main() {
       await tester.pumpAndSettle();
       expect(ClaveGemini.modelo, 'gemini-3.8-flash');
       expect(ClaveGemini.valor, 'AIza-buena');
+    });
+  });
+
+  group('clave del negocio, en la cuenta', () {
+    testWidgets('el dueño la guarda en la cuenta y lo dice', (tester) async {
+      final cuenta = _Cuenta(puedeCambiar: true);
+      await ClaveGemini.conectarCuenta(cuenta);
+      await _montar(tester, MockClient((_) async => http.Response(_ok, 200)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('la usan todos tus equipos'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'AIza-del-negocio');
+      await tester.tap(find.text('Guardar y probar'));
+      await tester.pumpAndSettle();
+      expect(cuenta.clave, 'AIza-del-negocio');
+      expect(ClaveGemini.valor, isNull);
+      expect(find.textContaining('en la cuenta del negocio'), findsOneWidget);
+    });
+
+    testWidgets('un empleado con la clave del negocio no tiene nada que cargar', (tester) async {
+      await ClaveGemini.conectarCuenta(_Cuenta(puedeCambiar: false, configurada: true));
+      await _montar(tester, MockClient((_) async => http.Response(_ok, 200)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('La carga o la cambia el dueño'), findsOneWidget);
+      expect(find.textContaining('Clave de la API'), findsNothing);
+      expect(find.text('Guardar y probar'), findsNothing);
     });
   });
 }

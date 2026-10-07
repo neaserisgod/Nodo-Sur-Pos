@@ -50,7 +50,7 @@ Future<void> main() async {
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   instalarRegistroDeErrores();
-  await ClaveGemini.cargar(); // clave de la IA de Google: solo de este equipo (PC y celular, cada uno la suya)
+  await ClaveGemini.cargar(); // clave de la IA de Google: la del negocio (en la cuenta) o, sin cuenta, la de este equipo
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
   // cliente HTTP hacia la PC (ver `companion/`). Se decide antes que

@@ -2,6 +2,8 @@
 // se habla y cómo se abre el navegador. Es global (como `servicioActualizaciones`) porque lo usan el arranque, el
 // cierre de caja y Configuración; los tests de pantalla le pasan la suya.
 
+import 'gemini.dart';
+import 'ia_nube.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -119,6 +121,8 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
     carpetaTemporal: temporal,
   );
   nubeApp = nube;
+  // La clave de la IA es del negocio: se pregunta a la cuenta si la tiene (sin esperar: no frena el arranque).
+  unawaited(ClaveGemini.conectarCuenta(AccesoIaNube(() async => (almacen: almacen, cliente: cliente))));
   avisosMp.iniciar();
   // Avisar que la PC está viva (y renovar el token) al abrir; la copia diaria y los avisos siguen solos.
   unawaited(copias

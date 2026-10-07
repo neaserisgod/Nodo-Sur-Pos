@@ -59,6 +59,15 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
   String? _resultado;
 
   @override
+  void initState() {
+    super.initState();
+    // Lo que tiene la cuenta del negocio puede haber cambiado desde otro equipo.
+    ClaveGemini.refrescarCuenta().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _clave.dispose();
     super.dispose();
@@ -75,12 +84,33 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
   }
 
   Future<void> _quitar() async {
-    await ClaveGemini.guardar(null);
+    // El dueño la quita de la cuenta (deja de andar en todos los equipos); si no, solo la de esta PC.
+    String? motivo;
+    if (ClaveGemini.puedeCambiarEnCuenta) {
+      motivo = await probarYGuardarClave('', client: widget.client);
+    } else {
+      await ClaveGemini.guardar(null);
+    }
     if (!mounted) return;
     setState(() {
       _clave.clear();
-      _resultado = null;
+      _resultado = motivo ?? '';
     });
+  }
+
+  /// Qué pasa con la clave en este equipo: la del negocio (y si la puede cambiar), o una propia de esta PC.
+  String get _explicacion {
+    if (ClaveGemini.puedeCambiarEnCuenta) {
+      return 'Google Gemini sugiere promos y lee facturas. Solo sugiere: no cambia nada sin que lo confirmes. La clave es del negocio: '
+          'se guarda en tu cuenta de Nodo Sur y la usan todos tus equipos (la PC y los celulares, también los de tus empleados) sin '
+          'que nadie la vea.${ClaveGemini.enCuenta ? ' Ya hay una guardada: escribí otra solo para cambiarla.' : ''}';
+    }
+    if (ClaveGemini.enCuenta) return 'Esta PC usa la clave de la IA del negocio. La carga o la cambia el dueño desde su PC o su celular.';
+    if (ClaveGemini.vinculadoACuenta) {
+      return 'El dueño todavía no cargó la clave de la IA del negocio. Mientras tanto podés cargar una que se guarda solo en esta PC.';
+    }
+    return 'Google Gemini sugiere promos y lee facturas. Solo sugiere: no cambia nada sin que lo confirmes. La clave se guarda solo en '
+        'esta PC (vinculala a tu cuenta para que la usen todos tus equipos).';
   }
 
   @override
@@ -90,26 +120,28 @@ class _SeccionAsistenteIaState extends State<SeccionAsistenteIa> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Nota(
-          texto: 'Google Gemini sugiere promos y lee facturas. Solo sugiere: no cambia nada sin que lo confirmes. La clave se '
-              'guarda solo en esta PC.',
-        ),
-        const SizedBox(height: 14),
-        Campo(etiqueta: 'Clave de la API de Google (Gemini)', controller: _clave, pista: 'AIza…', obscuro: true, onSubmitted: (_) => _probar()),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            Btn(_probando ? 'Probando…' : 'Guardar y probar', variante: VarBtn.blue, onTap: _probando ? null : _probar),
-            Btn('Quitar clave', variante: VarBtn.out, onTap: _probando ? null : _quitar),
-          ],
-        ),
+        Nota(texto: _explicacion),
+        // Un empleado con la clave del negocio no tiene nada que cargar: la maneja el dueño.
+        if (!ClaveGemini.enCuenta || ClaveGemini.puedeCambiarEnCuenta) ...[
+          const SizedBox(height: 14),
+          Campo(etiqueta: 'Clave de la API de Google (Gemini)', controller: _clave, pista: 'AIza…', obscuro: true, onSubmitted: (_) => _probar()),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Btn(_probando ? 'Probando…' : 'Guardar y probar', variante: VarBtn.blue, onTap: _probando ? null : _probar),
+              Btn('Quitar clave', variante: VarBtn.out, onTap: _probando ? null : _quitar),
+            ],
+          ),
+        ],
         if (r != null) ...[
           const SizedBox(height: 12),
           Text(
             r.isEmpty
-                ? (ClaveGemini.configurada ? 'Anda: la clave es válida y quedó guardada (modelo ${ClaveGemini.modelo}).' : 'Clave quitada.')
+                ? (ClaveGemini.configurada
+                    ? 'Anda: la clave es válida y quedó guardada ${ClaveGemini.enCuenta ? 'en la cuenta del negocio' : 'en esta PC'} (modelo ${ClaveGemini.modelo}).'
+                    : 'Clave quitada.')
                 : '$r (no se guardó)',
             style: estilo(15, 500, color: r.isEmpty ? p.g : p.b),
           ),

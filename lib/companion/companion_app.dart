@@ -8,6 +8,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
@@ -21,6 +23,9 @@ import 'pantalla_entrar_con_cuenta.dart';
 import 'pantalla_menu_companion.dart';
 import 'tema/tema_companion.dart';
 import '../servicios/marca_actual.dart';
+import '../servicios/cuenta_nube.dart' show AlmacenCuenta, AlmacenCuentaEnArchivo, ClienteNube;
+import '../servicios/gemini.dart' show ClaveGemini;
+import '../servicios/ia_nube.dart';
 
 class CompanionApp extends StatelessWidget {
   const CompanionApp({super.key});
@@ -75,6 +80,9 @@ class _PantallaInicial extends StatefulWidget {
   State<_PantallaInicial> createState() => _PantallaInicialState();
 }
 
+/// Un solo cliente del sitio para la IA del negocio (cada pedido no abre uno nuevo).
+final _clienteNubeIa = ClienteNube(http: http.Client());
+
 class _PantallaInicialState extends State<_PantallaInicial> {
   @override
   void initState() {
@@ -89,6 +97,12 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // sincronización, sin `PuertoLocal` en producción), pero cuando la haya
     // (fase 3) tiene que estar listo desde el primer frame.
     establecerIdDispositivo(await idDispositivoEstable());
+    // La clave de la IA es del negocio: se pregunta a la cuenta vinculada si la tiene, sin esperar (no frena el arranque). Con el
+    // mismo archivo de cuenta que la sync, pero sin levantarla.
+    unawaited(ClaveGemini.conectarCuenta(AccesoIaNube(() async {
+      final soporte = await getApplicationSupportDirectory();
+      return (almacen: AlmacenCuentaEnArchivo(soporte.path) as AlmacenCuenta, cliente: _clienteNubeIa);
+    })));
     // Emparejar con una PC por LAN ya NO es un paso obligatorio de arranque
     // (El dueño, 2026-09-18: "no debería tener que escanear ya, es
     // innecesario" — justo el objetivo de esta fase era que la companion
