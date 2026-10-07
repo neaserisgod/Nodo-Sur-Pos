@@ -5313,8 +5313,19 @@ class $GastosFijosTable extends GastosFijos
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _diaVencimientoMeta = const VerificationMeta(
+    'diaVencimiento',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, nombre, activo];
+  late final GeneratedColumn<int> diaVencimiento = GeneratedColumn<int>(
+    'dia_vencimiento',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nombre, activo, diaVencimiento];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5344,6 +5355,15 @@ class $GastosFijosTable extends GastosFijos
         activo.isAcceptableOrUnknown(data['activo']!, _activoMeta),
       );
     }
+    if (data.containsKey('dia_vencimiento')) {
+      context.handle(
+        _diaVencimientoMeta,
+        diaVencimiento.isAcceptableOrUnknown(
+          data['dia_vencimiento']!,
+          _diaVencimientoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5365,6 +5385,10 @@ class $GastosFijosTable extends GastosFijos
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
       )!,
+      diaVencimiento: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dia_vencimiento'],
+      ),
     );
   }
 
@@ -5378,10 +5402,15 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
   final int id;
   final String nombre;
   final bool activo;
+
+  /// Día del mes en que vence (1–31; en un mes más corto vence el último día). Null = sin fecha cargada. Es fijo como
+  /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
+  final int? diaVencimiento;
   const GastoFijo({
     required this.id,
     required this.nombre,
     required this.activo,
+    this.diaVencimiento,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5389,6 +5418,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     map['id'] = Variable<int>(id);
     map['nombre'] = Variable<String>(nombre);
     map['activo'] = Variable<bool>(activo);
+    if (!nullToAbsent || diaVencimiento != null) {
+      map['dia_vencimiento'] = Variable<int>(diaVencimiento);
+    }
     return map;
   }
 
@@ -5397,6 +5429,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       id: Value(id),
       nombre: Value(nombre),
       activo: Value(activo),
+      diaVencimiento: diaVencimiento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(diaVencimiento),
     );
   }
 
@@ -5409,6 +5444,7 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       id: serializer.fromJson<int>(json['id']),
       nombre: serializer.fromJson<String>(json['nombre']),
       activo: serializer.fromJson<bool>(json['activo']),
+      diaVencimiento: serializer.fromJson<int?>(json['diaVencimiento']),
     );
   }
   @override
@@ -5418,19 +5454,31 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       'id': serializer.toJson<int>(id),
       'nombre': serializer.toJson<String>(nombre),
       'activo': serializer.toJson<bool>(activo),
+      'diaVencimiento': serializer.toJson<int?>(diaVencimiento),
     };
   }
 
-  GastoFijo copyWith({int? id, String? nombre, bool? activo}) => GastoFijo(
+  GastoFijo copyWith({
+    int? id,
+    String? nombre,
+    bool? activo,
+    Value<int?> diaVencimiento = const Value.absent(),
+  }) => GastoFijo(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,
     activo: activo ?? this.activo,
+    diaVencimiento: diaVencimiento.present
+        ? diaVencimiento.value
+        : this.diaVencimiento,
   );
   GastoFijo copyWithCompanion(GastosFijosCompanion data) {
     return GastoFijo(
       id: data.id.present ? data.id.value : this.id,
       nombre: data.nombre.present ? data.nombre.value : this.nombre,
       activo: data.activo.present ? data.activo.value : this.activo,
+      diaVencimiento: data.diaVencimiento.present
+          ? data.diaVencimiento.value
+          : this.diaVencimiento,
     );
   }
 
@@ -5439,45 +5487,52 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     return (StringBuffer('GastoFijo(')
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
-          ..write('activo: $activo')
+          ..write('activo: $activo, ')
+          ..write('diaVencimiento: $diaVencimiento')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, nombre, activo);
+  int get hashCode => Object.hash(id, nombre, activo, diaVencimiento);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is GastoFijo &&
           other.id == this.id &&
           other.nombre == this.nombre &&
-          other.activo == this.activo);
+          other.activo == this.activo &&
+          other.diaVencimiento == this.diaVencimiento);
 }
 
 class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
   final Value<int> id;
   final Value<String> nombre;
   final Value<bool> activo;
+  final Value<int?> diaVencimiento;
   const GastosFijosCompanion({
     this.id = const Value.absent(),
     this.nombre = const Value.absent(),
     this.activo = const Value.absent(),
+    this.diaVencimiento = const Value.absent(),
   });
   GastosFijosCompanion.insert({
     this.id = const Value.absent(),
     required String nombre,
     this.activo = const Value.absent(),
+    this.diaVencimiento = const Value.absent(),
   }) : nombre = Value(nombre);
   static Insertable<GastoFijo> custom({
     Expression<int>? id,
     Expression<String>? nombre,
     Expression<bool>? activo,
+    Expression<int>? diaVencimiento,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (nombre != null) 'nombre': nombre,
       if (activo != null) 'activo': activo,
+      if (diaVencimiento != null) 'dia_vencimiento': diaVencimiento,
     });
   }
 
@@ -5485,11 +5540,13 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     Value<int>? id,
     Value<String>? nombre,
     Value<bool>? activo,
+    Value<int?>? diaVencimiento,
   }) {
     return GastosFijosCompanion(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       activo: activo ?? this.activo,
+      diaVencimiento: diaVencimiento ?? this.diaVencimiento,
     );
   }
 
@@ -5505,6 +5562,9 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
+    if (diaVencimiento.present) {
+      map['dia_vencimiento'] = Variable<int>(diaVencimiento.value);
+    }
     return map;
   }
 
@@ -5513,7 +5573,8 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     return (StringBuffer('GastosFijosCompanion(')
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
-          ..write('activo: $activo')
+          ..write('activo: $activo, ')
+          ..write('diaVencimiento: $diaVencimiento')
           ..write(')'))
         .toString();
   }
@@ -30323,12 +30384,14 @@ typedef $$GastosFijosTableCreateCompanionBuilder =
       Value<int> id,
       required String nombre,
       Value<bool> activo,
+      Value<int?> diaVencimiento,
     });
 typedef $$GastosFijosTableUpdateCompanionBuilder =
     GastosFijosCompanion Function({
       Value<int> id,
       Value<String> nombre,
       Value<bool> activo,
+      Value<int?> diaVencimiento,
     });
 
 final class $$GastosFijosTableReferences
@@ -30399,6 +30462,11 @@ class $$GastosFijosTableFilterComposer
 
   ColumnFilters<bool> get activo => $composableBuilder(
     column: $table.activo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30476,6 +30544,11 @@ class $$GastosFijosTableOrderingComposer
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GastosFijosTableAnnotationComposer
@@ -30495,6 +30568,11 @@ class $$GastosFijosTableAnnotationComposer
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
+
+  GeneratedColumn<int> get diaVencimiento => $composableBuilder(
+    column: $table.diaVencimiento,
+    builder: (column) => column,
+  );
 
   Expression<T> gastosFijosMontosRefs<T extends Object>(
     Expression<T> Function($$GastosFijosMontosTableAnnotationComposer a) f,
@@ -30583,17 +30661,24 @@ class $$GastosFijosTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> nombre = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
-              }) =>
-                  GastosFijosCompanion(id: id, nombre: nombre, activo: activo),
+                Value<int?> diaVencimiento = const Value.absent(),
+              }) => GastosFijosCompanion(
+                id: id,
+                nombre: nombre,
+                activo: activo,
+                diaVencimiento: diaVencimiento,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String nombre,
                 Value<bool> activo = const Value.absent(),
+                Value<int?> diaVencimiento = const Value.absent(),
               }) => GastosFijosCompanion.insert(
                 id: id,
                 nombre: nombre,
                 activo: activo,
+                diaVencimiento: diaVencimiento,
               ),
           withReferenceMapper: (p0) => p0
               .map(

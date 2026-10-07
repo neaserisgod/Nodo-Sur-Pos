@@ -206,4 +206,22 @@ void main() {
       expect(estadoDelFijo(montoCentavos: 1000, pagadoCentavos: 0), EstadoFijo.pendiente);
     });
   });
+
+  group('diasParaVencer', () {
+    test('faltan días, vence hoy, ya venció', () {
+      final hoy = DateTime(2026, 10, 7, 21);
+      expect(diasParaVencer(diaVencimiento: 10, hoy: hoy), 3);
+      expect(diasParaVencer(diaVencimiento: 7, hoy: hoy), 0);
+      expect(diasParaVencer(diaVencimiento: 5, hoy: hoy), -2);
+    });
+
+    test('un día que el mes no tiene vence el último día (el 31 en septiembre es el 30)', () {
+      expect(diasParaVencer(diaVencimiento: 31, hoy: DateTime(2026, 9, 28)), 2);
+      expect(diasParaVencer(diaVencimiento: 30, hoy: DateTime(2027, 2, 28)), 0);
+    });
+
+    test('a la noche, el vencimiento de mañana sigue siendo mañana (cuenta días de calendario, no horas)', () {
+      expect(diasParaVencer(diaVencimiento: 10, hoy: DateTime(2026, 10, 9, 23, 59)), 1);
+    });
+  });
 }

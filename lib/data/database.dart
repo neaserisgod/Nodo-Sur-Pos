@@ -155,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 58;
+  int get schemaVersion => 59;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1132,6 +1132,14 @@ class AppDatabase extends _$AppDatabase {
       // última venta marcada de cada uno dice qué eran). Solo datos, sin cambio de esquema. Ver `recuperarMarcaDeCigarrillos`.
       if (from < 58) {
         await recuperarMarcaDeCigarrillos(this);
+      }
+      // v58 → v59 (2026-10-07): día de vencimiento de cada fijo (El dueño: "alquiler x día del mes, luz también"). Columna
+      // nueva, nullable: los fijos que ya existen quedan sin fecha hasta que se cargue. Con chequeo de columna, como v44→v45.
+      if (from < 59) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('gastos_fijos')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('dia_vencimiento')) await m.addColumn(gastosFijos, gastosFijos.diaVencimiento);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

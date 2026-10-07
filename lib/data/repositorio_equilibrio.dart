@@ -152,6 +152,12 @@ Future<void> cargarMontoDelMes(
       );
 }
 
+/// Carga (o borra, con null) el día de vencimiento de un fijo. Vale para todos los meses.
+Future<void> configurarVencimiento(AppDatabase db, {required int gastoFijoId, required int? dia}) async {
+  if (dia != null && (dia < 1 || dia > 31)) throw ArgumentError('El día tiene que ser del 1 al 31');
+  await (db.update(db.gastosFijos)..where((g) => g.id.equals(gastoFijoId))).write(GastosFijosCompanion(diaVencimiento: Value(dia)));
+}
+
 Future<int> crearConcepto(AppDatabase db, String nombre) {
   return db.into(db.gastosFijos).insert(GastosFijosCompanion.insert(nombre: nombre));
 }

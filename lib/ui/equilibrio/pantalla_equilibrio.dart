@@ -488,6 +488,8 @@ class _TarjetaFijosDelMes extends StatelessWidget {
                                           : '${pesos(item.montoCentavos!)} · igual que ${_nombreMes(item.heredadoDe!)}',
                                   style: estilo(13, 400, color: p.mute, num: true),
                                 ),
+                                if (item.concepto.diaVencimiento != null && estado != EstadoFijo.pagado)
+                                  _Vencimiento(dia: item.concepto.diaVencimiento!),
                               ],
                             ),
                           ),
@@ -522,3 +524,25 @@ class _TarjetaFijosDelMes extends StatelessWidget {
 
 /// "2026-08" → "agosto".
 String _nombreMes(String mesAnio) => meses[int.parse(mesAnio.substring(5, 7)) - 1];
+
+/// "vence el 10", "vence mañana", "vence hoy", "venció hace 2 días" — solo para un fijo sin pagar. Rojo vencido o hoy,
+/// amarillo en los próximos 3 días.
+class _Vencimiento extends StatelessWidget {
+  const _Vencimiento({required this.dia});
+  final int dia;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    final faltan = diasParaVencer(diaVencimiento: dia, hoy: DateTime.now());
+    final texto = switch (faltan) {
+      < -1 => 'venció hace ${-faltan} días',
+      -1 => 'venció ayer',
+      0 => 'vence hoy',
+      1 => 'vence mañana',
+      _ => 'vence el $dia',
+    };
+    final color = faltan <= 0 ? p.b : (faltan <= 3 ? p.w : p.mute);
+    return Text(texto, key: const Key('fijo_vencimiento'), style: estilo(13, faltan <= 3 ? 600 : 400, color: color));
+  }
+}

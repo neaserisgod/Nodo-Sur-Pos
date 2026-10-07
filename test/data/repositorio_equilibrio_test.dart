@@ -129,6 +129,23 @@ void main() {
     });
   });
 
+  group('configurarVencimiento', () {
+    test('guarda el día y vale para todos los meses; null lo borra', () async {
+      await configurarVencimiento(db, gastoFijoId: alquilerId, dia: 10);
+      final r = await fijosDelMes(db, '2026-12');
+      expect(r.conceptos.firstWhere((c) => c.concepto.id == alquilerId).concepto.diaVencimiento, 10);
+
+      await configurarVencimiento(db, gastoFijoId: alquilerId, dia: null);
+      final g = await (db.select(db.gastosFijos)..where((g) => g.id.equals(alquilerId))).getSingle();
+      expect(g.diaVencimiento, isNull);
+    });
+
+    test('un día fuera de 1–31 no se guarda', () async {
+      await expectLater(configurarVencimiento(db, gastoFijoId: alquilerId, dia: 32), throwsArgumentError);
+      await expectLater(configurarVencimiento(db, gastoFijoId: alquilerId, dia: 0), throwsArgumentError);
+    });
+  });
+
   group('fijosPagadosDelMes', () {
     test('suma solo pagos con concepto de fijo asociado, del mes pedido', () async {
       final cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
