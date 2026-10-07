@@ -67,6 +67,7 @@ import '../data/repositorio_historial.dart' show listarDias;
 import '../data/repositorio_ingresos.dart';
 import '../data/repositorio_historial_ventas.dart';
 import '../data/repositorio_medios_pago.dart';
+import '../data/repositorio_promos.dart' show catalogoConStockDePromos;
 import '../data/repositorio_productos.dart';
 import '../data/repositorio_sincronizacion.dart';
 import '../data/repositorio_ticket.dart';
@@ -598,8 +599,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Cuenta corriente con proveedores: la tabla `movimientos_deuda` no se
-  // sincroniza al celular, así que el saldo y el pago pasan siempre por acá.
+  // Cuenta corriente con proveedores: Pagar proveedor del celular con la PC
+  // al alcance pasa por acá. Desde la v61 `movimientos_deuda` también viaja
+  // por la sync (Cargar factura del celular carga deuda en su propia base).
   router.get('/proveedores/saldos', (Request request) async {
     final saldos = await saldosDeuda(db);
     return _json({for (final e in saldos.entries) '${e.key}': e.value});
@@ -1344,7 +1346,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     // puede estar en 0 hoy por cualquier otro motivo, mismo criterio que
     // `repositorio_carga_historica.dart` del escritorio.
     final exigirStock = request.url.queryParameters['exigirStock'] != 'false';
-    final catalogo = await db.select(db.productos).get();
+    // Una promo muestra el stock que alcanza con sus artículos (`stockDePromo`), igual que en la venta de la PC.
+    final catalogo = await catalogoConStockDePromos(db);
     final consulta = interpretarTexto(texto);
     // "Varios" no entra en esta primera versión (decisión de el dueño) — sin
     // este filtro aparecería igual, porque `tieneStock` lo trata como que

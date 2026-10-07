@@ -5,12 +5,15 @@
 // `promo_componentes`. Al cobrarla se abre en ellos (`registrarPromoEnVenta`,
 // repositorio_ventas.dart), así descuenta el stock de cada artículo.
 
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../domain/ganancia.dart';
 import '../domain/promo.dart';
 import 'database.dart';
-import 'repositorio_productos.dart' show registrarCambioDePrecio;
+import 'identidad_sync.dart';
+import 'repositorio_productos.dart' show listarProductos, registrarCambioDePrecio;
 
 class ComponenteDePromo {
   const ComponenteDePromo({required this.producto, required this.cantidad});
@@ -153,6 +156,10 @@ Future<int> guardarPromo(
               precioFijo: const Value(true),
               precioCentavos: Value(calculo.precioCentavos),
               costoCentavos: Value(calculo.costoCentavos),
+              componentesPromo: Value(await _componentesEnJson(db, componentes)),
+              // Sin identidad de sincronización la promo no llegaba nunca al celular (antes de la v62).
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
             ),
           );
     } else {
@@ -163,6 +170,7 @@ Future<int> guardarPromo(
           precioCentavos: Value(calculo.precioCentavos),
           costoCentavos: Value(calculo.costoCentavos),
           activo: const Value(true),
+          componentesPromo: Value(await _componentesEnJson(db, componentes)),
           actualizadoEn: Value(DateTime.now()),
         ),
       );
@@ -205,4 +213,76 @@ Future<Map<int, List<({int productoId, int cantidad})>>> componentesDePromos(App
     resultado.putIfAbsent(f.promoId, () => []).add((productoId: f.productoId, cantidad: f.cantidad));
   }
   return resultado;
+}
+
+/// Los artículos de la promo como viajan por la sync (`productos.componentesPromo`): por `global_id`. Un artículo viejo sin
+/// `global_id` recibe uno (y pasa a sincronizarse), así la promo nunca apunta a algo que el otro equipo no puede encontrar.
+Future<String> _componentesEnJson(AppDatabase db, List<ComponenteDePromo> componentes) async {
+  final lista = <Map<String, Object>>[];
+  for (final c in componentes) {
+    var gid = c.producto.globalId;
+    if (gid == null) {
+      gid = generarGlobalId();
+      await (db.update(db.productos)..where((p) => p.id.equals(c.producto.id))).write(
+        ProductosCompanion(globalId: Value(gid), origenDispositivo: Value(idDispositivoActual), actualizadoEn: Value(DateTime.now())),
+      );
+    }
+    lista.add({'gid': gid, 'cantidad': c.cantidad});
+  }
+  return jsonEncode(lista);
+}
+
+/// Rehace `promo_componentes` de [promoId] desde lo que llegó por la sync en `productos.componentesPromo`. Lanza [StateError] si
+/// algún artículo todavía no llegó a esta base: la sync reintenta la fila entera más tarde (como cualquier referencia faltante).
+Future<void> reconstruirComponentesDePromo(AppDatabase db, {required int promoId, required String json}) async {
+  final lista = jsonDecode(json) as List;
+  final componentes = <({int productoId, int cantidad})>[];
+  for (final c in lista) {
+    final m = c as Map;
+    final gid = m['gid'] as String;
+    final producto = await (db.select(db.productos)..where((p) => p.globalId.equals(gid))).getSingleOrNull();
+    if (producto == null) throw StateError('Promo $promoId: todavía no llegó el artículo $gid');
+    componentes.add((productoId: producto.id, cantidad: (m['cantidad'] as num).toInt()));
+  }
+  await db.transaction(() async {
+    await (db.delete(db.promoComponentes)..where((c) => c.promoId.equals(promoId))).go();
+    for (final c in componentes) {
+      await db.into(db.promoComponentes).insert(
+            PromoComponentesCompanion.insert(promoId: promoId, productoId: c.productoId, cantidad: Value(c.cantidad)),
+          );
+    }
+  });
+}
+
+/// Los productos que pueden entrar en una promo (las reglas de [guardarPromo]): por unidad, sin cigarrillos, "Varios" ni otras
+/// promos, con costo y precio. Lo usan el creador de la PC y el del celular.
+Future<List<Producto>> productosParaPromo(AppDatabase db) async {
+  // `listarProductos` ya deja afuera "Varios" y las promos.
+  final todos = await listarProductos(db);
+  return [
+    for (final p in todos)
+      if (!p.esPesable && p.tipoCigarrillo == 'ninguno' && (p.costoCentavos ?? 0) > 0 && p.precioCentavos != null) p,
+  ];
+}
+
+/// El catálogo con el stock de cada promo calculado con el de sus artículos (`stockDePromo`): lo que la búsqueda de la venta necesita
+/// para mostrar una promo solo si alcanza (Regla 8). La pantalla de venta de la PC hace la misma cuenta en memoria
+/// (`VentaControlador`); esta es la de la búsqueda del celular, en su base o en la de la PC.
+Future<List<Producto>> catalogoConStockDePromos(AppDatabase db) async {
+  final catalogo = await db.select(db.productos).get();
+  final componentes = await componentesDePromos(db);
+  if (componentes.isEmpty) return catalogo;
+  final stockPorId = {for (final p in catalogo) p.id: p.stock};
+  return [
+    for (final p in catalogo)
+      if (!p.esPromo)
+        p
+      else
+        p.copyWith(
+          stock: stockDePromo([
+            for (final c in componentes[p.id] ?? const <({int productoId, int cantidad})>[])
+              (stock: stockPorId[c.productoId] ?? 0, cantidadPorPromo: c.cantidad),
+          ]),
+        ),
+  ];
 }

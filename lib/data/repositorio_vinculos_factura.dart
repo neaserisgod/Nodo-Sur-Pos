@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../domain/lectura_factura.dart' show cuitValido;
 import '../domain/vinculo_factura.dart';
 import 'database.dart';
+import 'identidad_sync.dart';
 
 /// Solo los dígitos de un CUIT; null si no es válido (11 dígitos y verificador correcto: `cuitValido`).
 String? cuitNormalizado(String? texto) {
@@ -31,7 +32,12 @@ Future<void> asociarCuit(AppDatabase db, {required int proveedorId, required Str
   final c = cuitNormalizado(cuit);
   if (c == null) return;
   await db.into(db.cuitsProveedor).insert(
-        CuitsProveedorCompanion.insert(cuit: c, proveedorId: proveedorId),
+        CuitsProveedorCompanion.insert(
+          cuit: c,
+          proveedorId: proveedorId,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+        ),
         mode: InsertMode.insertOrIgnore, // ya lo tenía: nada que hacer
       );
 }
@@ -75,6 +81,8 @@ Future<void> aprenderVinculo(
             productoId: productoId,
             unidadesPorCantidad: Value(unidadesPorCantidad),
             actualizadoEn: Value(DateTime.now()),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
           ),
           // La clave única es (proveedor, tipo, clave): volver a confirmar la misma línea reemplaza el producto y las unidades.
           onConflict: DoUpdate(

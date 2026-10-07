@@ -27,12 +27,36 @@ Future<bool> mostrarFormularioProducto(
   required List<CategoriaCompanion> categorias,
   ProductoCompanion? producto,
   String? codigoInicial,
+  ProductoNuevoDesdeFactura? desdeFactura,
 }) async {
   final guardado = await pushSinTeclado<bool>(
     context,
-    (_) => PantallaFormularioProducto(cliente: cliente, usuarioId: usuarioId, proveedores: proveedores, categorias: categorias, producto: producto, codigoInicial: codigoInicial),
+    (_) => PantallaFormularioProducto(
+      cliente: cliente,
+      usuarioId: usuarioId,
+      proveedores: proveedores,
+      categorias: categorias,
+      producto: producto,
+      codigoInicial: codigoInicial,
+      desdeFactura: desdeFactura,
+    ),
   );
   return guardado ?? false;
+}
+
+/// Lo que se precarga al dar de alta, desde Cargar factura, el producto que falta en una línea.
+class ProductoNuevoDesdeFactura {
+  const ProductoNuevoDesdeFactura({required this.nombre, this.codigoBarras, this.costoCentavos, this.proveedorId, this.mejorarNombre, required this.alCrear});
+  final String nombre;
+  final String? codigoBarras;
+  final int? costoCentavos;
+  final int? proveedorId;
+
+  /// "Mejorar nombre con IA"; null sin clave.
+  final Future<String> Function()? mejorarNombre;
+
+  /// Se llama con el id del producto recién creado, para vincular la línea.
+  final void Function(int id) alCrear;
 }
 
 class PantallaFormularioProducto extends StatefulWidget {
@@ -44,6 +68,7 @@ class PantallaFormularioProducto extends StatefulWidget {
     required this.categorias,
     this.producto,
     this.codigoInicial,
+    this.desdeFactura,
   });
 
   final ServicioCompanion cliente;
@@ -57,6 +82,9 @@ class PantallaFormularioProducto extends StatefulWidget {
   /// Código ya leído (al escanear algo que no existe): arranca cargado.
   final String? codigoInicial;
 
+  /// Alta desde una línea de factura (Cargar factura): viene precargada con lo leído y avisa el id del producto nuevo.
+  final ProductoNuevoDesdeFactura? desdeFactura;
+
   @override
   State<PantallaFormularioProducto> createState() => _PantallaFormularioProductoState();
 }
@@ -64,10 +92,12 @@ class PantallaFormularioProducto extends StatefulWidget {
 class _PantallaFormularioProductoState extends State<PantallaFormularioProducto> {
   static final _soloNumeros = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
 
-  late final _nombre = TextEditingController(text: widget.producto?.nombre ?? '');
-  late final _codigo = TextEditingController(text: widget.producto?.codigoBarras ?? widget.codigoInicial ?? '');
+  late final _nombre = TextEditingController(text: widget.producto?.nombre ?? widget.desdeFactura?.nombre ?? '');
+  late final _codigo = TextEditingController(text: widget.producto?.codigoBarras ?? widget.codigoInicial ?? widget.desdeFactura?.codigoBarras ?? '');
   late final _precio = TextEditingController(text: _texto(widget.producto == null ? null : (widget.producto!.esPesable ? widget.producto!.precioPorKiloCentavos : widget.producto!.precioCentavos)));
-  late final _costo = TextEditingController(text: _texto(widget.producto == null ? null : (widget.producto!.esPesable ? widget.producto!.costoPorKiloCentavos : widget.producto!.costoCentavos)));
+  late final _costo = TextEditingController(
+    text: _texto(widget.producto == null ? widget.desdeFactura?.costoCentavos : (widget.producto!.esPesable ? widget.producto!.costoPorKiloCentavos : widget.producto!.costoCentavos)),
+  );
   late final _stock = TextEditingController(text: widget.producto == null ? '' : '${widget.producto!.esPesable ? widget.producto!.stockGramos ?? 0 : widget.producto!.stock}');
 
   late bool _esPesable = widget.producto?.esPesable ?? false;
@@ -75,6 +105,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
   int? _proveedorId;
   int? _categoriaId;
   bool _guardando = false;
+  bool _mejorando = false;
   bool _sucio = false;
   String? _error;
 
@@ -83,7 +114,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
   @override
   void initState() {
     super.initState();
-    _proveedorId = widget.producto?.proveedorId;
+    _proveedorId = widget.producto?.proveedorId ?? widget.desdeFactura?.proveedorId;
     _categoriaId = widget.producto?.categoriaId;
   }
 
@@ -98,6 +129,24 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
   }
 
   void _cambio() => setState(() => _sucio = true);
+
+  /// El mismo "Mejorar nombre con IA" del alta desde factura de la PC (`servicios/nombre_producto_ia.dart`).
+  Future<void> _mejorarNombre() async {
+    final mejorar = widget.desdeFactura?.mejorarNombre;
+    if (mejorar == null) return;
+    setState(() => _mejorando = true);
+    try {
+      final nombre = await mejorar();
+      if (mounted && nombre.trim().isNotEmpty) {
+        _nombre.text = nombre.trim();
+        _sucio = true;
+      }
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _mejorando = false);
+    }
+  }
 
   /// El precio que da [g] % de ganancia sobre el costo cargado (una sola cuenta: `domain/ganancia.dart`, Regla 3).
   int _precioConGanancia(int g) => precioDesdeCostoYGanancia(_plata(_costo) ?? 0, g * 100);
@@ -166,7 +215,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
     try {
       final codigo = _codigo.text.trim().isEmpty ? null : _codigo.text.trim();
       if (esAlta) {
-        await widget.cliente.crearProducto(
+        final id = await widget.cliente.crearProducto(
           nombre: _nombre.text.trim(),
           codigoBarras: codigo,
           categoriaId: _categoriaId,
@@ -180,6 +229,7 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
           stockGramos: _esPesable ? stockTipeado : null,
           usuarioId: widget.usuarioId,
         );
+        widget.desdeFactura?.alCrear(id);
       } else {
         final p = widget.producto!;
         await widget.cliente.actualizarProducto(
@@ -248,6 +298,10 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
                         const SeccionNs('Datos básicos'),
                         const SizedBox(height: 10),
                         CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej: Alfajor triple', onChanged: (_) => _cambio()),
+                        if (esAlta && widget.desdeFactura?.mejorarNombre != null) ...[
+                          const SizedBox(height: 10),
+                          BotonNs.secundario(context, _mejorando ? 'Pensando…' : 'Mejorar nombre con IA', _mejorando ? null : _mejorarNombre, alto: 48),
+                        ],
                         const SizedBox(height: 10),
                         CampoNs(etiqueta: 'Código de barras (opcional)', controller: _codigo, placeholder: 'Escribilo o escaneá', teclado: TextInputType.number, onChanged: (_) => _cambio()),
                         const SizedBox(height: 10),

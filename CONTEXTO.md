@@ -69,7 +69,7 @@ Hay un tercer repo (`horsepospronative`) que no se tocó en estas sesiones.
 
 ```
 lib/domain/     funciones puras (dinero, caja, recargo, redondeo, separación, conciliación MP...). Tests exhaustivos.
-lib/data/       esquema drift (schemaVersion 51), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
+lib/data/       esquema drift (schemaVersion 62), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
 lib/ui/         pantallas de la PC (venta, cierre, proveedores, separaciones, historial, configuración...).
 lib/companion/  la app del celular entera.
 lib/servicios/  cuenta y sync de Nodo Sur, Mercado Pago por el servidor, actualizaciones, módulos activos.

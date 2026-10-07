@@ -13,10 +13,10 @@ import 'package:http/http.dart' as http;
 
 import '../../data/database.dart';
 import '../../data/normalizacion_texto.dart';
-import '../../data/repositorio_productos.dart' show listarProductos;
 import '../../data/repositorio_promos.dart';
 import '../../data/repositorio_sugerencia_promos.dart';
 import '../../domain/dinero.dart';
+import '../../domain/promo.dart' show atajosPorcentajePromo, porcentajePromoPorDefectoBp, textoPorcentajeBp;
 import '../../servicios/asistente_promos.dart';
 import '../../servicios/gemini.dart';
 import '../comun/botones.dart';
@@ -28,10 +28,9 @@ import '../tema/tema.dart' show radioControlEscritorio;
 import '../tema/tokens.dart';
 import 'selector_porcentaje.dart' show pedirOtroPorcentaje;
 
-const _atajosPorcentaje = [1500, 2000, 2500, 3000, 3500, 4000];
+const _atajosPorcentaje = atajosPorcentajePromo;
 
-String _pct(int bp) =>
-    '${bp % 100 == 0 ? bp ~/ 100 : (bp / 100).toStringAsFixed(1)}%';
+String _pct(int bp) => textoPorcentajeBp(bp);
 
 Future<void> mostrarDialogoPromos(
   BuildContext context, {
@@ -491,7 +490,7 @@ class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
       _Elegido(c.producto, c.cantidad),
   ];
   List<Producto> _elegibles = const [];
-  late int _bp = widget.sugerida?.bp ?? 3000;
+  late int _bp = widget.sugerida?.bp ?? porcentajePromoPorDefectoBp;
   String? _error;
 
   @override
@@ -507,22 +506,10 @@ class _DialogoCrearPromoState extends State<_DialogoCrearPromo> {
     super.dispose();
   }
 
-  /// Solo lo que puede entrar en una promo: por unidad, sin cigarrillos, con
-  /// costo y precio cargados (`listarProductos` ya deja afuera "Varios" y las
-  /// promos).
+  /// Solo lo que puede entrar en una promo (`productosParaPromo`, la misma regla que el celular).
   Future<void> _cargarElegibles() async {
-    final todos = await listarProductos(widget.db);
-    if (!mounted) return;
-    setState(() {
-      _elegibles = [
-        for (final p in todos)
-          if (!p.esPesable &&
-              p.tipoCigarrillo == 'ninguno' &&
-              (p.costoCentavos ?? 0) > 0 &&
-              p.precioCentavos != null)
-            p,
-      ];
-    });
+    final elegibles = await productosParaPromo(widget.db);
+    if (mounted) setState(() => _elegibles = elegibles);
   }
 
   List<Producto> get _resultados {

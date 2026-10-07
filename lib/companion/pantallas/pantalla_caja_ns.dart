@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 
 import '../../data/repositorio_reposicion.dart' show SeparacionDelDia;
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
+import '../../domain/modulos.dart' show Modulo;
 import '../../domain/periodo.dart' show PeriodoResumen;
+import '../../servicios/modulos_activos.dart' show moduloActivo;
 import '../../ui/historial/devolucion_mp_dialogo.dart' show ofrecerDevolucionDeCobro;
 import '../../ui/separaciones/separaciones_controlador.dart';
 import '../app_ns.dart';
@@ -20,6 +22,9 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
 import '../pantalla_movimiento_caja.dart';
+import '../pantalla_pagar_proveedor.dart';
+import '../puerto_local.dart';
+import '../separaciones_extra_ns.dart';
 import '../servicio_companion.dart';
 import '../sync_nube_companion.dart' show syncNubeCompanion;
 import 'hoja_abrir_caja_ns.dart';
@@ -354,6 +359,14 @@ class _SepararState extends State<_Separar> {
 
   bool _vendido = false;
 
+  Future<void> _pagar(int proveedorId) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => PantallaPagarProveedor(servicio: PuertoLocal(baseLocalCompanion()), proveedorId: proveedorId)),
+    );
+    await _c?.cargarTodo();
+    _app?.refrescar();
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = _c;
@@ -368,6 +381,15 @@ class _SepararState extends State<_Separar> {
             padding: const EdgeInsets.fromLTRB(margenNs, 0, margenNs, BarraInferiorNs.espacioReservado),
             children: [
               _heroSeparar(context, c, ef, mp),
+              if (c.reservaDiariaCentavos != null) ...[
+                const SizedBox(height: 10),
+                // Solo informativa, como en la PC: lo que conviene apartar por día para los fijos.
+                InfoNs('Reserva diaria de fijos: ${plataNs(c.reservaDiariaCentavos!)}', tono: TonoNs.warn),
+              ],
+              if (moduloActivo(Modulo.retiroGanancias)) ...[
+                const SizedBox(height: 10),
+                BotonNs.secundario(context, 'Retirar plata', () => mostrarRetirarPlataNs(context, c).then((_) => _app?.refrescar()), icono: IconoNs.billetes),
+              ],
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -429,6 +451,14 @@ class _SepararState extends State<_Separar> {
     return [
       Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text('Plata del día que tenés que apartar para pagarle a cada proveedor. Tocá uno cuando ya lo separaste.', style: estiloNs(15, altura: 1.4, color: ns.mute))),
       const SizedBox(height: 10),
+      if (c.vendidoSinCostoHoyCentavos > 0) ...[
+        PresionNs(
+          onTap: () => mostrarSinCostoNs(context, c, desde: c.inicioDeHoy, periodo: 'hoy'),
+          etiqueta: 'Ver lo vendido sin costo',
+          child: InfoNs('${plataNs(c.vendidoSinCostoHoyCentavos)} vendidos hoy sin costo: no se sabe cuánto separar. Tocá para ver cuáles.', tono: TonoNs.warn, icono: IconoNs.alerta),
+        ),
+        const SizedBox(height: 10),
+      ],
       SeccionNs('${c.cantidadSeparadas} de ${tarjetas.length} separados'),
       const SizedBox(height: 10),
       if (tarjetas.isEmpty)
@@ -458,7 +488,15 @@ class _SepararState extends State<_Separar> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Text(plataNs(t.totalCentavos), style: estiloNs(20, peso: peso450, track: -0.03, color: ns.ink, tabular: true)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(plataNs(t.totalCentavos), style: estiloNs(20, peso: peso450, track: -0.03, color: ns.ink, tabular: true)),
+                        const SizedBox(height: 4),
+                        // El pago rápido con el proveedor ya elegido, como la fila de la PC.
+                        BotonNs(texto: 'Pagar', onTap: () => _pagar(t.proveedorId), alto: 34, tamanio: 13, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 14),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -490,17 +528,44 @@ class _SepararState extends State<_Separar> {
       const SizedBox(height: 10),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(texto, style: estiloNs(14, altura: 1.4, color: ns.mute))),
       const SizedBox(height: 10),
+      if (c.vendidoSinCostoCentavos > 0) ...[
+        PresionNs(
+          onTap: () => mostrarSinCostoNs(context, c, desde: c.inicioDelPeriodo, periodo: c.nombrePeriodo),
+          etiqueta: 'Ver lo vendido sin costo',
+          child: InfoNs('${plataNs(c.vendidoSinCostoCentavos)} sin costo: no suman a la reposición. Tocá para ver cuáles.', tono: TonoNs.warn, icono: IconoNs.alerta),
+        ),
+        const SizedBox(height: 10),
+      ],
+      if (c.vendidos.isNotEmpty && moduloActivo(Modulo.retiroGanancias)) ...[
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text('Tocá un proveedor para ver su ganancia sin revisar.', style: estiloNs(14, color: ns.mute))),
+        const SizedBox(height: 10),
+      ],
       if (c.vendidos.isEmpty)
         Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Todavía no hay ventas en este período', style: estiloNs(16, color: ns.mute)))
       else
-        for (final f in c.vendidos) ...[_TarjetaVendidoNs(fila: f), const SizedBox(height: 8)],
+        for (final f in c.vendidos) ...[
+          _TarjetaVendidoNs(
+            fila: f,
+            onTap: f.proveedor == null || !moduloActivo(Modulo.retiroGanancias) ? null : () => mostrarGananciaProveedorNs(context, c, f.proveedor!.id).then((_) => _app?.refrescar()),
+            onSinCosto: f.vendidoSinCostoCentavos <= 0
+                ? null
+                : () => mostrarSinCostoNs(context, c, desde: c.inicioDelPeriodo, periodo: c.nombrePeriodo, soloProveedor: f.nombre),
+          ),
+          const SizedBox(height: 8),
+        ],
     ];
   }
 }
 
 class _TarjetaVendidoNs extends StatelessWidget {
-  const _TarjetaVendidoNs({required this.fila});
+  const _TarjetaVendidoNs({required this.fila, this.onTap, this.onSinCosto});
   final SeparacionDelDia fila;
+
+  /// Abre la ganancia sin revisar del proveedor (retener o retirar).
+  final VoidCallback? onTap;
+
+  /// "incluye $X sin costo · ver cuáles".
+  final VoidCallback? onSinCosto;
 
   @override
   Widget build(BuildContext context) {
@@ -519,7 +584,7 @@ class _TarjetaVendidoNs extends StatelessWidget {
         ),
       ),
     );
-    return Container(
+    final tarjeta = Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
@@ -542,9 +607,17 @@ class _TarjetaVendidoNs extends StatelessWidget {
           Text(plataNs(fila.vendidoCentavos), style: tituloNs(34, track: -0.05, altura: 1.05, color: ns.ink)),
           const SizedBox(height: 10),
           Row(children: [caja('Costo', fila.costoCentavos), const SizedBox(width: 8), caja('Ganancia', fila.gananciaCentavos, color: ns.g)]),
+          if (onSinCosto != null) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: onSinCosto,
+              child: Text('incluye ${plataNs(fila.vendidoSinCostoCentavos)} sin costo · ver cuáles', style: estiloNs(13, color: ns.w).copyWith(decoration: TextDecoration.underline)),
+            ),
+          ],
         ],
       ),
     );
+    return onTap == null ? tarjeta : PresionNs(onTap: onTap, etiqueta: 'Ganancia de ${fila.nombre}', child: tarjeta);
   }
 }
 

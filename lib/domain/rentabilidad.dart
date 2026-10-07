@@ -21,6 +21,7 @@
 // marca incompleto, nunca se completa con un 0 que haga parecer que hay más.
 
 import 'ganancia.dart';
+import 'dinero.dart';
 
 /// Los insumos del mes, ya agregados por la capa de datos.
 class DatosDelMes {
@@ -264,3 +265,11 @@ int? margenNecesarioBpDe(
       gananciaARetenerCentavos: gananciaARetenerCentavos,
       ventaEstimadaCentavos: ventaObjetivoCentavos,
     );
+
+/// Por qué no se puede retirar [efectivoCentavos] + [virtualCentavos] de una ganancia de [gananciaCentavos] (Regla 13), o null si se
+/// puede. Lo que no se retira queda como colchón. Lo usan el retiro de la PC y el del celular.
+String? motivoParaNoRetirar({required int efectivoCentavos, required int virtualCentavos, required int gananciaCentavos}) {
+  if (efectivoCentavos < 0 || virtualCentavos < 0) return 'Los montos no pueden ser negativos';
+  if (efectivoCentavos + virtualCentavos > gananciaCentavos) return 'Entre los dos no pueden superar ${formatearARS(gananciaCentavos)}';
+  return null;
+}

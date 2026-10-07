@@ -75,6 +75,9 @@ Future<int> cargarDeuda(
           fecha: fecha,
           nota: Value(_limpiar(nota)),
           usuarioId: usuarioId,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(DateTime.now()),
         ),
       );
 }
@@ -113,6 +116,9 @@ Future<int> pagarDeuda(
               fecha: hoy,
               nota: const Value('Pago sin deuda previa'),
               usuarioId: usuarioId,
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
+              actualizadoEn: Value(DateTime.now()),
             ),
           );
     }
@@ -142,6 +148,9 @@ Future<int> pagarDeuda(
             usuarioId: usuarioId,
             origenPago: Value(origen.clave),
             movimientoCajaId: Value(movimientoCajaId),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+            actualizadoEn: Value(DateTime.now()),
           ),
         );
   });
@@ -189,7 +198,7 @@ Future<void> anularMovimientoDeuda(
     }
 
     await (db.update(db.movimientosDeuda)..where((m) => m.id.equals(movimientoId))).write(
-      MovimientosDeudaCompanion(anuladoEn: Value(DateTime.now())),
+      MovimientosDeudaCompanion(anuladoEn: Value(DateTime.now()), actualizadoEn: Value(DateTime.now())),
     );
   });
 }

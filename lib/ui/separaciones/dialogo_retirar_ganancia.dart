@@ -96,15 +96,9 @@ class _DialogoRetirarGananciaState extends State<_DialogoRetirarGanancia> {
       setState(() => _error = 'Revisá los montos');
       return;
     }
-    if (efectivo < 0 || virtual < 0) {
-      setState(() => _error = 'Los montos no pueden ser negativos');
-      return;
-    }
-    if (efectivo + virtual > widget.gananciaCentavos) {
-      setState(
-        () => _error =
-            'Entre los dos no pueden superar ${formatearARS(widget.gananciaCentavos)}',
-      );
+    final motivo = motivoParaNoRetirar(efectivoCentavos: efectivo, virtualCentavos: virtual, gananciaCentavos: widget.gananciaCentavos);
+    if (motivo != null) {
+      setState(() => _error = motivo);
       return;
     }
     // Asistente contable: la ganancia bruta no es plata libre (faltan pagar

@@ -64,6 +64,7 @@ dependencies:
   clock: ^1.1.2
   auto_updater: ^1.0.0
   sqlite3: ^3.5.2
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

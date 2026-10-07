@@ -51,3 +51,12 @@ int stockDePromo(List<({int stock, int cantidadPorPromo})> componentes) {
   }
   return minimo;
 }
+
+/// Los porcentajes de ganancia que el creador de promos ofrece con un toque (PC y celular); "Otro %" para el resto.
+const atajosPorcentajePromo = [1500, 2000, 2500, 3000, 3500, 4000];
+
+/// Porcentaje de partida al armar una promo a mano.
+const porcentajePromoPorDefectoBp = 3000;
+
+/// "30%", "12.5%".
+String textoPorcentajeBp(int bp) => '${bp % 100 == 0 ? bp ~/ 100 : (bp / 100).toStringAsFixed(1)}%';

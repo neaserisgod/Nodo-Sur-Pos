@@ -22,6 +22,7 @@ import '../data/repositorio_carga_historica.dart' as repo_carga_historica;
 import '../data/repositorio_cierre.dart' as repo_cierre;
 import '../data/repositorio_cobro.dart' as repo_cobro;
 import '../data/repositorio_configuracion.dart' as repo_configuracion;
+import '../data/repositorio_deuda_proveedores.dart' as repo_deuda;
 import '../data/repositorio_edicion_venta.dart' as repo_edicion_venta;
 import '../data/repositorio_encargues.dart' as repo_encargues;
 import '../data/repositorio_gastos.dart' as repo_gastos;
@@ -30,6 +31,7 @@ import '../data/repositorio_historial_ventas.dart' as repo_historial_ventas;
 import '../data/repositorio_ingresos.dart' as repo_ingresos;
 import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
+import '../data/repositorio_promos.dart' as repo_promos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
 import '../data/repositorio_pendientes.dart' as repo_pendientes;
@@ -964,17 +966,11 @@ class PuertoLocal implements ServicioCompanion {
     MedioGastoCompanion.mercadoPago => repo_gastos.MedioGasto.mercadoPago,
   };
 
-  /// La cuenta corriente con proveedores (`movimientos_deuda`) no se
-  /// sincroniza al celular, así que sin la PC no hay saldo que mostrar ni
-  /// dónde anotar el pago: se avisa en vez de grabar algo que la PC no vería.
-  static const _soloConPcProveedores = ErrorCompanion(
-    400,
-    'Pagarle a un proveedor se hace conectado a la PC del local. '
-    'Conectate al wifi del local para anotar el pago.',
-  );
-
+  /// La cuenta corriente con proveedores, en la base del celular (El dueño, 2026-10-07: "seguí con pagar proveedor sin la PC"). Desde
+  /// la v61 `movimientos_deuda` viaja por la sync: lo que se paga acá llega a la PC, y el pago desde una caja deja su movimiento de caja
+  /// como cualquier gasto. Mismo camino (`pagarDeuda`) y mismas validaciones que `POST /proveedores/<id>/pagos` del servidor de la PC.
   @override
-  Future<Map<int, int>> saldosProveedores() async => throw _soloConPcProveedores;
+  Future<Map<int, int>> saldosProveedores() => repo_deuda.saldosDeuda(db);
 
   @override
   Future<int> pagarProveedor({
@@ -984,7 +980,30 @@ class PuertoLocal implements ServicioCompanion {
     required String origen,
     int? sesionCajaId,
     String? nota,
-  }) async => throw _soloConPcProveedores;
+  }) async {
+    final desde = repo_deuda.OrigenPagoDeuda.desde(origen);
+    try {
+      // Un pago desde una caja que ya se cerró (en otro equipo, por la sync) no se graba en esa sesión.
+      if (desde != repo_deuda.OrigenPagoDeuda.fuera && sesionCajaId != null) {
+        await repo_ventas.verificarSesionAbierta(db, sesionCajaId);
+      }
+      return await repo_deuda.pagarDeuda(
+        db,
+        proveedorId: proveedorId,
+        montoCentavos: montoCentavos,
+        origen: desde,
+        nota: nota,
+        usuarioId: usuarioId,
+        sesionCajaId: sesionCajaId,
+      );
+    } on repo_ventas.SesionCerradaException {
+      throw const ErrorCompanion(409, 'La caja ya se cerró, este pago no se guardó');
+    } on repo_deuda.SinCajaAbiertaException {
+      throw const ErrorCompanion(409, 'Hace falta una caja abierta para pagar desde la caja');
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
 
   @override
   Future<int> registrarGasto({
@@ -1030,7 +1049,8 @@ class PuertoLocal implements ServicioCompanion {
     String texto, {
     bool exigirStock = true,
   }) async {
-    final catalogo = await db.select(db.productos).get();
+    // Una promo muestra el stock que alcanza con sus artículos: sin eso figuraba en 0 y no aparecía nunca.
+    final catalogo = await repo_promos.catalogoConStockDePromos(db);
     final consulta = busqueda.interpretarTexto(texto);
     final resultados = busqueda
         .buscarProductos(catalogo: catalogo, textoBuscado: texto, exigirStock: exigirStock)

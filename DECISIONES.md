@@ -85,6 +85,11 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
 - [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
 - [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
+- [Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)](#cargar-factura-en-el-celular-sin-la-pc-el-dueño-2026-10-07)
+- [Pagar proveedor sin la PC (El dueño, 2026-10-07)](#pagar-proveedor-sin-la-pc-el-dueño-2026-10-07)
+- [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
+- [Cuenta corriente en el celular (El dueño, 2026-10-07)](#cuenta-corriente-en-el-celular-el-dueño-2026-10-07)
+- [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2190,3 +2195,66 @@ del día siguiente no es el efectivo contado sino `contado − lataSeparado` (un
 - **Vencimiento**: `gastos_fijos.diaVencimiento` (v59), igual todos los meses; un día que el mes no tiene vence el último.
 - **Descartado por ahora**: preguntar también al abrir la caja (el efectivo entre cierre y apertura cuadraba) y "separar
   hasta una fecha" en Separaciones (pendiente de decidir con el dueño).
+
+## Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)
+
+Pedido: "quiero que las funciones del sistema desktop estén disponibles para el apk, reutilizando la lógica. Empezá por la lectura de
+facturas por IA".
+
+- **Una sola lógica**: lo que hacía el diálogo de la PC (leer, reconocer el proveedor por CUIT, vincular, bultos, avisos de precio,
+  aplicar, deshacer, aprender, crear el producto que falta) vive en `servicios/flujo_factura.dart` (`FlujoFactura`, sin widgets). El
+  diálogo de la PC y `companion/pantalla_cargar_factura.dart` solo dibujan.
+- **El celular aplica en su propia base, siempre** (pregunta al dueño: con PC pero sin su wifi, ¿se aplica desde el celular? Respuesta:
+  "sí, ya que también buscamos independizar la apk de desktop"). Aunque la PC esté en el wifi no se le manda nada por HTTP: la sync
+  lleva todo.
+- **Por eso se sincronizan** (v61) `movimientos_deuda`, `facturas_compra`, `productos_factura_compra`, `vinculos_factura` y
+  `cuits_proveedor`, que eran locales de cada equipo. Así la deuda llega a los dos, una factura cargada en uno no se puede volver a
+  cargar en el otro, cualquiera la deshace y lo aprendido sirve en los dos. Las filas que ya existían toman `global_id` con su fecha real.
+- **La misma clave aprendida en dos equipos** (los dos vinculan el código 123 de Serra) no choca con la clave única: `aplicarCambios`
+  la reconoce por su clave natural (proveedor + tipo + clave; proveedor + CUIT) y se queda con una sola fila.
+- **Versiones mezcladas**: una PC sin actualizar no conoce esas tablas; la sync por wifi del celular las saltea en vez de cortarse
+  (`tablasSincronizablesV61`). Por la nube no hay arreglo barato: un equipo viejo ignora esas filas y no las vuelve a pedir. Por eso la
+  PC y el APK se publican juntos.
+- **Cámara**: `image_picker`, una foto por vez (una factura larga son varias). También fotos o PDF del celular (`file_selector`).
+- **Descartado**: mandar la factura a la PC para que la aplique (deja el celular atado a la PC, lo contrario de lo pedido).
+
+## Pagar proveedor sin la PC (El dueño, 2026-10-07)
+
+"Seguí con pagar proveedor sin la PC". Con la cuenta corriente ya sincronizada (v61), `PuertoLocal` paga con `pagarDeuda` sobre la base
+del celular, con las mismas validaciones que el servidor de la PC (caja cerrada → 409, no se graba). La pantalla trabaja siempre sobre
+la base del celular, como Cargar factura: el pago y su movimiento de caja llegan a la PC por la sync.
+
+## Promos en el celular (El dueño, 2026-10-07)
+
+"Seguí con promos". El celular tiene Más › Promos con lo mismo que la PC (lista, crear, editar, activar, sugerir con IA). Las cuentas y
+reglas no se duplicaron: `calcularPromo`, `guardarPromo`, `sugerirPromos`, `redactarPromos`; lo que estaba repetido adentro del diálogo
+de la PC (qué productos pueden entrar en una promo, los atajos de porcentaje) pasó a `productosParaPromo` y `domain/promo.dart`.
+
+- **Bug encontrado**: `guardarPromo` creaba la promo sin `global_id`, así que nunca viajaba, y sus artículos (`promo_componentes`) eran
+  locales. Ahora la promo nace con identidad de sincronización y sus artículos viajan con ella en `productos.componentes_promo`
+  (por `global_id` de cada artículo, como `pendientes.lineasJson`). Al llegar, la sync rehace `promo_componentes`, que es lo que lee la
+  venta. Se eligió viajar en la fila de la promo y no sincronizar `promo_componentes` fila por fila porque editar una promo BORRA sus
+  artículos viejos, y la sync no lleva borrados. Si un artículo todavía no llegó, la fila se reintenta. Migración v62: llena la columna y
+  da identidad a las promos (y artículos) que no la tenían.
+- **Venta en el celular**: el stock de una promo no es una columna; la búsqueda del celular (en su base y en la de la PC) lo calcula con
+  sus artículos (`catalogoConStockDePromos`, misma cuenta `stockDePromo` que la venta de la PC). Al cobrar ya se abría en sus artículos
+  (`registrarVenta`).
+- La ganancia de la promo es sobre el precio (como toda ganancia de esta app), no sobre el costo: la pantalla lo dice.
+
+## Cuenta corriente en el celular (El dueño, 2026-10-07)
+
+"Seguí con la cuenta corriente". Más › Cuenta corriente: el total que debés, los proveedores con deuda (o todos, con buscador) y, por
+proveedor, el libro con cargar deuda, pagar, anular y deshacer factura — lo mismo que el diálogo de la PC. Sin lógica nueva: llama a
+`saldosDeuda`, `listarMovimientosDeuda`, `cargarDeuda`, `anularMovimientoDeuda`, `movimientosDeudaConFactura` y `deshacerFactura`. "Pagar"
+reusa la pantalla Pagar proveedor del celular con el proveedor ya elegido (un solo camino para pagar, El dueño 2026-10-02). Anular un pago
+que salió de una caja devuelve la plata en la caja abierta de la base del celular, como en la PC.
+
+## Separaciones completas en el celular (El dueño, 2026-10-07)
+
+"Seguí con separaciones". El celular ya tenía Caja › Separar con el mismo `SeparacionesControlador` de la PC (qué separar con tilde y lo
+vendido por período). Se sumó lo que faltaba de Separaciones de la PC, sin lógica nueva: la reserva diaria de fijos (informativa),
+"Pagar" en cada fila (Pagar proveedor con el proveedor elegido), "Retirar plata" y tocar una tarjeta de "Lo vendido" (ganancia sin
+revisar: retener como colchón o retirar, Regla 13, con `retenerComoColchon`/`retirarGanancia`/`sugerenciaRetiro` y el aviso de
+`evaluarRetiro`), y "vendido sin costo · ver cuáles" con `vendidoSinCostoDesde` + `cargarCostoProducto` (no se inventa un costo). Las
+validaciones del retiro estaban adentro del diálogo de la PC: pasaron a `motivoParaNoRetirar` para usarlas en los dos. Respeta el
+módulo "Retiro de ganancias" como la PC.

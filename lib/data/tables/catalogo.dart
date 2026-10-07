@@ -267,6 +267,12 @@ class Productos extends Table {
   /// una columna: es el de sus artículos (`stockDePromo`). El dueño, 2026-09-29.
   BoolColumn get esPromo => boolean().withDefault(const Constant(false))();
 
+  /// Los artículos de una promo, para que viajen con ella por la sync (v62, El dueño, 2026-10-07: promos en el celular):
+  /// `[{"gid": <global_id del artículo>, "cantidad": n}]`. Va por `global_id` porque el id local no vale en otro equipo (mismo
+  /// criterio que `pendientes.lineasJson`). `promo_componentes` sigue siendo lo que lee la venta; al llegar una promo por la sync
+  /// se rehace desde acá (`aplicarCambios`). Null en lo que no es promo.
+  TextColumn get componentesPromo => text().nullable()();
+
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
   DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get actualizadoEn =>

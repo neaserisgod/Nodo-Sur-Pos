@@ -9,6 +9,7 @@
 // viejo hace que una base que ya pasó por él quede en un estado que ninguna
 // migración sabe describir.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -155,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 60;
+  int get schemaVersion => 62;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1038,9 +1039,9 @@ class AppDatabase extends _$AppDatabase {
       // plantilla de rubro, y por eso nunca sincronizaban (ver
       // `globalIdUsuarioInicial`). Se completa lo que falta: el primer usuario
       // y el primer "Varios" sin identidad toman el id fijo (si nadie lo tiene
-      // ya); el resto, uno al azar. Las promos quedan sin identidad a
-      // propósito: sus artículos (`promo_componentes`) no viajan, y en otro
-      // equipo se romperían al venderlas. Solo en la PC: una base de celular
+      // ya); el resto, uno al azar. Las promos quedaban sin identidad a
+      // propósito (sus artículos no viajaban); desde la v62 viajan con sus
+      // artículos y la v62 les da identidad. Solo en la PC: una base de celular
       // vieja puede tener filas sembradas de antes, que no deben subir.
       if (from < 49 && !Platform.isAndroid) {
         Future<void> completar(String tabla, String idFijo, String filtro) async {
@@ -1120,7 +1121,10 @@ class AppDatabase extends _$AppDatabase {
       // v55 → v56 (2026-10-07): un CUIT puede ser de varios proveedores (el mismo mayorista como "X" y "X cigarrillos"). La clave única
       // pasa de `cuit` a (proveedor, cuit): se rehace la tabla copiando las filas tal cual, ninguna se pierde.
       if (from < 56) {
-        await m.alterTable(TableMigration(cuitsProveedor));
+        // Las columnas de sincronización de la v61 todavía no existen en la tabla vieja: se crean vacías y v61 las completa.
+        await m.alterTable(
+          TableMigration(cuitsProveedor, newColumns: [cuitsProveedor.globalId, cuitsProveedor.origenDispositivo]),
+        );
       }
       // v56 → v57 (2026-10-07): aplicar facturas de compra. Dos tablas nuevas, locales: la factura aplicada (para no repetirla y poder
       // deshacerla) y lo que le hizo a cada producto. No tocan ninguna fila existente.
@@ -1150,6 +1154,18 @@ class AppDatabase extends _$AppDatabase {
         if (!columnas.contains('umbral_faltante_centavos')) {
           await m.addColumn(configuracionTabla, configuracionTabla.umbralFaltanteCentavos);
         }
+      }
+      // v60 → v61 (2026-10-07): la cuenta corriente y las facturas de compra se sincronizan (El dueño: "independizar la apk de
+      // desktop" — el celular carga facturas sin la PC). Las cinco tablas eran locales de cada equipo; reciben la identidad de
+      // sincronización y las filas que ya existían la completan acá, con la fecha REAL de cada una (mismo criterio que v30→v31: una
+      // fila vieja no puede parecer más nueva que una edición de ayer). Con chequeo de columna, como v44→v45.
+      if (from < 61) {
+        await _sumarIdentidadDeSyncAFacturas(this, m);
+      }
+      // v61 → v62 (2026-10-07): promos en el celular. Los artículos de cada promo viajan con ella (`productos.componentes_promo`, por
+      // `global_id`), y las promos que se crearon sin identidad de sincronización la reciben: hasta acá no llegaban nunca al celular.
+      if (from < 62) {
+        await _sumarComponentesDePromoALaSync(this, m);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -1266,6 +1282,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'usuarios',
   'configuracion_negocio_tabla',
   'medios_de_pago',
+  ...tablasDeSyncV61,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1433,5 +1450,79 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
             visible: Value(clave != 'impresion'),
           ),
         );
+  }
+}
+
+/// Las tablas que entraron a la sincronización en la v61 (cuenta corriente y facturas de compra).
+const tablasDeSyncV61 = ['movimientos_deuda', 'facturas_compra', 'productos_factura_compra', 'vinculos_factura', 'cuits_proveedor'];
+
+/// v60 → v61: columnas de identidad de sincronización en las tablas de [tablasDeSyncV61], `global_id` para cada fila que ya existía y
+/// el índice único de `global_id`.
+Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+  Future<void> sumar(TableInfo tabla, List<GeneratedColumn> nuevas) async {
+    final hay = await columnasDe(tabla.actualTableName);
+    for (final c in nuevas) {
+      if (!hay.contains(c.name)) await m.addColumn(tabla, c);
+    }
+  }
+
+  await sumar(db.movimientosDeuda, [db.movimientosDeuda.globalId, db.movimientosDeuda.origenDispositivo, db.movimientosDeuda.actualizadoEn]);
+  await sumar(db.facturasCompra, [db.facturasCompra.globalId, db.facturasCompra.origenDispositivo, db.facturasCompra.actualizadoEn]);
+  await sumar(db.productosFacturaCompra, [db.productosFacturaCompra.globalId, db.productosFacturaCompra.origenDispositivo]);
+  await sumar(db.vinculosFactura, [db.vinculosFactura.globalId, db.vinculosFactura.origenDispositivo]);
+  await sumar(db.cuitsProveedor, [db.cuitsProveedor.globalId, db.cuitsProveedor.origenDispositivo]);
+
+  // Lo que ya había lo creó este equipo: su origen es el de este proceso (la PC dice 'desktop', el celular su id propio).
+  final origen = idDispositivoActual.replaceAll("'", "''");
+  const fechaReal = {
+    'movimientos_deuda': 'COALESCE(anulado_en, creado_en)',
+    'facturas_compra': 'COALESCE(deshecha_en, aplicada_en)',
+  };
+  for (final tabla in tablasDeSyncV61) {
+    final actualizado = fechaReal[tabla];
+    await db.customStatement(
+      "UPDATE $tabla SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen'"
+      '${actualizado == null ? '' : ', actualizado_en = $actualizado'} '
+      'WHERE global_id IS NULL',
+    );
+  }
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV61);
+}
+
+/// v61 → v62: columna `productos.componentes_promo`, llenada desde `promo_componentes`, e identidad de sincronización para las promos
+/// (y sus artículos) que no la tenían. Con `actualizado_en` de ahora: tienen que subir como un cambio nuevo.
+Future<void> _sumarComponentesDePromoALaSync(AppDatabase db, Migrator m) async {
+  final columnas = (await db.customSelect("SELECT name FROM pragma_table_info('productos')").get()).map((c) => c.data['name'] as String).toSet();
+  if (!columnas.contains('componentes_promo')) await m.addColumn(db.productos, db.productos.componentesPromo);
+
+  final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  final origen = idDispositivoActual.replaceAll("'", "''");
+  // En el celular solo las que ya tienen identidad (mismo cuidado que v48→v49: una base de celular vieja puede tener filas sembradas
+  // de antes, que no deben subir; el celular recién crea promos desde la v62, y nacen con identidad).
+  final promos = await db
+      .customSelect('SELECT id FROM productos WHERE es_promo = 1${Platform.isAndroid ? ' AND global_id IS NOT NULL' : ''}')
+      .get();
+  for (final promo in promos) {
+    final promoId = promo.data['id'] as int;
+    final filas = await db
+        .customSelect('SELECT producto_id, cantidad FROM promo_componentes WHERE promo_id = ? ORDER BY id', variables: [Variable.withInt(promoId)])
+        .get();
+    final lista = <Map<String, Object>>[];
+    for (final f in [for (final f in filas) f.data]) {
+      final productoId = f['producto_id'] as int;
+      await db.customStatement(
+        "UPDATE productos SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen', actualizado_en = $ahora "
+        'WHERE id = $productoId AND global_id IS NULL',
+      );
+      final gid = (await db.customSelect('SELECT global_id FROM productos WHERE id = $productoId').getSingle()).data['global_id'] as String;
+      lista.add({'gid': gid, 'cantidad': f['cantidad'] as int});
+    }
+    await db.customStatement(
+      "UPDATE productos SET componentes_promo = ?, global_id = COALESCE(global_id, lower(hex(randomblob(16)))), "
+      "origen_dispositivo = COALESCE(origen_dispositivo, '$origen'), actualizado_en = $ahora WHERE id = $promoId",
+      [jsonEncode(lista)],
+    );
   }
 }

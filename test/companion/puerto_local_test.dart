@@ -12,6 +12,8 @@ import 'package:la_plazoleta/companion/carrito_venta.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
+import 'package:la_plazoleta/data/repositorio_promos.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 import '../helpers/base_para_tests.dart';
 
@@ -248,12 +250,45 @@ void main() {
       );
     });
 
-    test('pagar a un proveedor sin la PC avisa que se hace conectado, y no graba nada', () async {
+    test('una promo aparece en la búsqueda con el stock que alcanza y al cobrarla descuenta sus artículos', () async {
+      final sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 0);
+      Future<int> producto(String n, int stock) => db.into(db.productos).insert(
+            ProductosCompanion.insert(nombre: n, precioCentavos: const Value(300000), costoCentavos: const Value(200000), stock: Value(stock)),
+          );
+      final yerba = await producto('Yerba Promo', 5);
+      final galle = await producto('Galletitas Promo', 4);
+      await guardarPromo(db, nombre: 'Merienda Promo', articulos: [(productoId: yerba, cantidad: 1), (productoId: galle, cantidad: 2)], gananciaBp: 3000, usuarioId: usuarioId);
+
+      final encontrada = (await puerto.buscarVenta('merienda promo')).resultados.single;
+      expect(encontrada.stock, 2, reason: '4 galletitas ÷ 2 por promo');
+
+      final linea = lineaDesdeResultadoBusqueda(encontrada).linea!;
+      await puerto.cobrarEfectivo(lineas: [linea], sesionCajaId: sesionId, usuarioId: usuarioId);
+
+      Future<int> stock(int id) async => (await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle()).stock;
+      expect(await stock(yerba), 4);
+      expect(await stock(galle), 2);
+    });
+
+    test('pagar a un proveedor sin la PC baja la deuda y, desde el cajón, sale de la caja', () async {
+      final sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 100000);
+      await cargarDeuda(db, proveedorId: 1, montoCentavos: 30000, fecha: DateTime(2026, 10, 7), usuarioId: usuarioId);
+
+      await puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 10000, origen: 'cajon', sesionCajaId: sesionId);
+
+      expect((await puerto.saldosProveedores())[1], 20000);
+      final caja = await (db.select(db.movimientosDeCaja)..where((m) => m.tipo.equals('PAGO_PROVEEDOR'))).getSingle();
+      expect(caja.montoCentavos, 10000);
+      expect(caja.globalId, isNotNull, reason: 'viaja a la PC por la sync');
+      final pago = await (db.select(db.movimientosDeuda)..where((m) => m.tipo.equals('PAGO'))).getSingle();
+      expect(pago.globalId, isNotNull);
+    });
+
+    test('pagar desde la caja con la caja ya cerrada avisa y no graba', () async {
       await expectLater(
-        puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 5000, origen: 'fuera'),
-        throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('conectado a la PC'))),
+        puerto.pagarProveedor(proveedorId: 1, usuarioId: usuarioId, montoCentavos: 5000, origen: 'cajon'),
+        throwsA(isA<ErrorCompanion>().having((e) => e.statusCode, 'statusCode', 409)),
       );
-      await expectLater(puerto.saldosProveedores(), throwsA(isA<ErrorCompanion>()));
       expect(await db.select(db.movimientosDeuda).get(), isEmpty);
     });
 

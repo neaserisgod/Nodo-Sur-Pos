@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/aplicar_factura.dart';
 import 'database.dart';
+import 'identidad_sync.dart';
 import 'repositorio_deuda_proveedores.dart';
 import 'repositorio_productos.dart';
 
@@ -77,6 +78,9 @@ Future<ResultadoAplicarFactura> aplicarFactura(
             sumoStock: sumarStock,
             usuarioId: usuarioId,
             aplicadaEn: ahora,
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+            actualizadoEn: Value(ahora),
           ),
         );
 
@@ -102,6 +106,8 @@ Future<ResultadoAplicarFactura> aplicarFactura(
               unidadesSumadas: sumarStock ? a.unidades : 0,
               costoAnteriorCentavos: Value(p.costoCentavos),
               costoNuevoCentavos: a.costoUnitarioCentavos,
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
             ),
           );
       tocados++;
@@ -145,7 +151,9 @@ Future<ResultadoDeshacerFactura> deshacerFactura(AppDatabase db, {required int f
       }
       await cargarCostoProducto(db, productoId: p.id, costoCentavos: pf.costoAnteriorCentavos!, usuarioId: usuarioId);
     }
-    await (db.update(db.facturasCompra)..where((t) => t.id.equals(facturaId))).write(FacturasCompraCompanion(deshechaEn: Value(DateTime.now())));
+    await (db.update(db.facturasCompra)..where((t) => t.id.equals(facturaId))).write(
+      FacturasCompraCompanion(deshechaEn: Value(DateTime.now()), actualizadoEn: Value(DateTime.now())),
+    );
     return ResultadoDeshacerFactura(costosQueQuedaron: quedaron);
   });
 }

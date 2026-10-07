@@ -8,8 +8,9 @@ import 'catalogo.dart';
 /// cobrarla, la venta se abre en sus artículos: descuenta el stock de cada
 /// uno y cada uno cuenta su costo y su proveedor (`registrarLineaDeVenta`).
 ///
-/// Solo artículos por unidad, sin cigarrillos ni otras promos. Local: no se
-/// sincroniza.
+/// Solo artículos por unidad, sin cigarrillos ni otras promos. No se
+/// sincroniza fila por fila: viaja como `productos.componentesPromo` de la
+/// promo (v62), y al llegar se rehace esta tabla.
 @DataClassName('ComponentePromo')
 class PromoComponentes extends Table {
   IntColumn get id => integer().autoIncrement()();
