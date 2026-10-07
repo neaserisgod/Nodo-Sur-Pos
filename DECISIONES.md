@@ -86,6 +86,8 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
 - [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
 - [Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)](#cargar-factura-en-el-celular-sin-la-pc-el-dueño-2026-10-07)
+- [Pagar proveedor sin la PC (El dueño, 2026-10-07)](#pagar-proveedor-sin-la-pc-el-dueño-2026-10-07)
+- [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2219,3 +2221,20 @@ facturas por IA".
 "Seguí con pagar proveedor sin la PC". Con la cuenta corriente ya sincronizada (v61), `PuertoLocal` paga con `pagarDeuda` sobre la base
 del celular, con las mismas validaciones que el servidor de la PC (caja cerrada → 409, no se graba). La pantalla trabaja siempre sobre
 la base del celular, como Cargar factura: el pago y su movimiento de caja llegan a la PC por la sync.
+
+## Promos en el celular (El dueño, 2026-10-07)
+
+"Seguí con promos". El celular tiene Más › Promos con lo mismo que la PC (lista, crear, editar, activar, sugerir con IA). Las cuentas y
+reglas no se duplicaron: `calcularPromo`, `guardarPromo`, `sugerirPromos`, `redactarPromos`; lo que estaba repetido adentro del diálogo
+de la PC (qué productos pueden entrar en una promo, los atajos de porcentaje) pasó a `productosParaPromo` y `domain/promo.dart`.
+
+- **Bug encontrado**: `guardarPromo` creaba la promo sin `global_id`, así que nunca viajaba, y sus artículos (`promo_componentes`) eran
+  locales. Ahora la promo nace con identidad de sincronización y sus artículos viajan con ella en `productos.componentes_promo`
+  (por `global_id` de cada artículo, como `pendientes.lineasJson`). Al llegar, la sync rehace `promo_componentes`, que es lo que lee la
+  venta. Se eligió viajar en la fila de la promo y no sincronizar `promo_componentes` fila por fila porque editar una promo BORRA sus
+  artículos viejos, y la sync no lleva borrados. Si un artículo todavía no llegó, la fila se reintenta. Migración v62: llena la columna y
+  da identidad a las promos (y artículos) que no la tenían.
+- **Venta en el celular**: el stock de una promo no es una columna; la búsqueda del celular (en su base y en la de la PC) lo calcula con
+  sus artículos (`catalogoConStockDePromos`, misma cuenta `stockDePromo` que la venta de la PC). Al cobrar ya se abría en sus artículos
+  (`registrarVenta`).
+- La ganancia de la promo es sobre el precio (como toda ganancia de esta app), no sobre el costo: la pantalla lo dice.

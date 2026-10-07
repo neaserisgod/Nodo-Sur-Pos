@@ -64,7 +64,7 @@ void main() {
     await aplicarPlantillaRubro(nueva, PlantillaRubro.kiosco);
     await nueva.close();
 
-    // Como quedaba una PC nueva antes del arreglo: las tres cosas sin identidad, y una promo (que se queda así).
+    // Como quedaba una PC nueva antes del arreglo: las tres cosas sin identidad, y una promo sin artículos.
     final crudo = sqlite3.sqlite3.open(archivo.path);
     try {
       crudo.execute('UPDATE usuarios SET global_id = NULL');
@@ -81,7 +81,10 @@ void main() {
     expect((await listarUsuarios(db)).single.globalId, globalIdUsuarioInicial);
     final productos = await db.select(db.productos).get();
     expect(productos.firstWhere((p) => p.esVarios).globalId, globalIdProductoVarios);
-    expect(productos.firstWhere((p) => p.esPromo).globalId, isNull, reason: 'las promos no viajan: sus artículos no se sincronizan');
+    // Hasta la v61 las promos quedaban sin identidad (sus artículos no viajaban); desde la v62 viajan con ellos (2026-10-07).
+    final promo = productos.firstWhere((p) => p.esPromo);
+    expect(promo.globalId, isNotNull);
+    expect(promo.componentesPromo, '[]');
     final categorias = await db.select(db.categorias).get();
     expect(categorias, isNotEmpty);
     expect(categorias.every((c) => c.globalId != null), isTrue);

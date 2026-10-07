@@ -1039,9 +1039,9 @@ class AppDatabase extends _$AppDatabase {
       // plantilla de rubro, y por eso nunca sincronizaban (ver
       // `globalIdUsuarioInicial`). Se completa lo que falta: el primer usuario
       // y el primer "Varios" sin identidad toman el id fijo (si nadie lo tiene
-      // ya); el resto, uno al azar. Las promos quedan sin identidad a
-      // propósito: sus artículos (`promo_componentes`) no viajan, y en otro
-      // equipo se romperían al venderlas. Solo en la PC: una base de celular
+      // ya); el resto, uno al azar. Las promos quedaban sin identidad a
+      // propósito (sus artículos no viajaban); desde la v62 viajan con sus
+      // artículos y la v62 les da identidad. Solo en la PC: una base de celular
       // vieja puede tener filas sembradas de antes, que no deben subir.
       if (from < 49 && !Platform.isAndroid) {
         Future<void> completar(String tabla, String idFijo, String filtro) async {
@@ -1499,7 +1499,11 @@ Future<void> _sumarComponentesDePromoALaSync(AppDatabase db, Migrator m) async {
 
   final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final origen = idDispositivoActual.replaceAll("'", "''");
-  final promos = await db.customSelect('SELECT id FROM productos WHERE es_promo = 1').get();
+  // En el celular solo las que ya tienen identidad (mismo cuidado que v48→v49: una base de celular vieja puede tener filas sembradas
+  // de antes, que no deben subir; el celular recién crea promos desde la v62, y nacen con identidad).
+  final promos = await db
+      .customSelect('SELECT id FROM productos WHERE es_promo = 1${Platform.isAndroid ? ' AND global_id IS NOT NULL' : ''}')
+      .get();
   for (final promo in promos) {
     final promoId = promo.data['id'] as int;
     final filas = await db
