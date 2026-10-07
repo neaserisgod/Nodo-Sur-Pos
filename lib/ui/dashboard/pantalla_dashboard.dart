@@ -134,7 +134,11 @@ class _PantallaDashboardState extends State<PantallaDashboard> with RouteAware ,
   );
 
   Widget _construir(BuildContext context, ModulosNegocio modulos) {
-    if (_cargando) return const SizedBox.shrink();
+    // Cargando, igual va la pantalla con su barra (vacía abajo): sin barra en el primer cuadro, el `Hero` de la barra no
+    // tiene a dónde volar y al venir de Venta toda la barra entraba en el fundido (El dueño, 2026-10-07).
+    if (_cargando) {
+      return PantallaGestion(db: widget.db, claveActiva: 'dashboard', usuarioId: 0, titulo: 'Inicio', child: const SizedBox.shrink());
+    }
     final sesion = _sesion;
     final hoy = widget.ahora ?? DateTime.now();
     // Sin el módulo de equilibrio no hay vista mensual: queda solo "Hoy".

@@ -53,6 +53,10 @@ class EnvolturaConNavbarSuperior extends StatefulWidget {
 /// "Venta" sola (las demás pastillas aparecían de golpe un instante después, El dueño 2026-10-06). Igual se vuelve a leer.
 final _ultimosItems = Expando<List<ItemNavbarSuperior>>();
 
+/// Venta arma su barra aparte (no pasa por esta envoltura): avisa acá su lista para que la primera pantalla de gestión
+/// que se abra desde Venta nazca con todas las secciones.
+void recordarItemsNavbar(AppDatabase db, List<ItemNavbarSuperior> items) => _ultimosItems[db] = items;
+
 class _EnvolturaConNavbarSuperiorState extends State<EnvolturaConNavbarSuperior> {
   late List<ItemNavbarSuperior> _items = _ultimosItems[widget.db] ?? const [ItemNavbarSuperior(clave: 'venta', etiqueta: 'Venta')];
 

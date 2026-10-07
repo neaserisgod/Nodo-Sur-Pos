@@ -6,7 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:la_plazoleta/ui/comparar_precios/pantalla_comparar_precios.dart';
+import 'package:la_plazoleta/ui/dashboard/pantalla_dashboard.dart';
 import 'package:la_plazoleta/ui/encargues/pantalla_encargues.dart';
+import 'package:la_plazoleta/ui/navegacion/route_observer.dart';
 import 'package:la_plazoleta/ui/navegacion/navegacion_gestion.dart';
 import 'package:la_plazoleta/ui/separaciones/pantalla_separaciones.dart';
 import 'package:la_plazoleta/ui/venta/pantalla_venta.dart';
@@ -17,6 +19,7 @@ import 'package:la_plazoleta/ui/tema/tema.dart';
 
 void main() {
   _barraQuietaAlCambiarDeApartado();
+  _barraQuietaDeVentaAInicio();
   testWidgets('Configuración no es pastilla: es el engranaje, y tocarlo la elige', (tester) async {
     String? elegida;
     await tester.pumpWidget(MaterialApp(
@@ -144,6 +147,38 @@ void _barraQuietaAlCambiarDeApartado() {
     }
     await t.pumpAndSettle();
     expect(find.byType(PantallaEncargues), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null; // antes de que termine el test: Flutter lo exige
+  });
+}
+
+/// Bug real (El dueño, 2026-10-07): de Venta a Inicio la barra sí entraba en el fundido. Inicio, mientras cargaba, no
+/// armaba su barra, y el `Hero` no tenía a dónde volar.
+void _barraQuietaDeVentaAInicio() {
+  testWidgets('de Venta a Inicio la barra también queda quieta', (t) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    t.view.physicalSize = const Size(1920, 1080);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final db = baseDeTest();
+    addTearDown(db.close);
+    await t.pumpWidget(MaterialApp(theme: TemaPlazoleta.claro, navigatorObservers: [routeObserver], home: PantallaVenta(db: db)));
+    await t.pumpAndSettle();
+    // "Separaciones": una pastilla cuyo texto no está en ninguna de las dos pantallas.
+    final antes = t.getTopLeft(find.text('Separaciones'));
+
+    unawaited(navegarASeccionDeGestion(t.element(find.byType(PantallaVenta)), 'dashboard', db: db, usuarioId: 1));
+    for (var i = 0; i < 50 && find.byType(PantallaDashboard, skipOffstage: false).evaluate().isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await t.pump();
+    }
+    await t.pump(const Duration(milliseconds: 60));
+    final barra = find.text('Separaciones');
+    expect(barra, findsOneWidget, reason: 'una sola barra durante el cambio');
+    expect(t.getTopLeft(barra), antes, reason: 'la barra no se corre');
+    for (final f in t.widgetList<FadeTransition>(find.ancestor(of: barra, matching: find.byType(FadeTransition)))) {
+      expect(f.opacity.value, 1, reason: 'la barra no entra en el fundido de la pantalla');
+    }
+    await t.pumpAndSettle();
     debugDefaultTargetPlatformOverride = null; // antes de que termine el test: Flutter lo exige
   });
 }

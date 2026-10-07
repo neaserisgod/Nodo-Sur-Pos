@@ -42,6 +42,7 @@ import '../navegacion/acciones_caja.dart';
 import '../navegacion/asistente.dart';
 import '../navegacion/boton_caja.dart';
 import '../navegacion/boton_notificaciones.dart';
+import '../navegacion/envoltura_con_navbar_superior.dart' show recordarItemsNavbar;
 import '../navegacion/navbar_superior.dart';
 import '../navegacion/navegacion_gestion.dart';
 import '../navegacion/route_observer.dart';
@@ -117,7 +118,9 @@ class _PantallaVentaState extends State<PantallaVenta>
 
   Future<void> _cargarSecciones() async {
     final secciones = await listarSeccionesVisibles(widget.db);
-    if (mounted) setState(() => _seccionesVisibles = secciones);
+    if (!mounted) return;
+    setState(() => _seccionesVisibles = secciones);
+    recordarItemsNavbar(widget.db, _itemsNav);
   }
 
   bool _soyRaiz = false;

@@ -109,7 +109,17 @@ class _PantallaCompararPreciosState extends State<PantallaCompararPrecios> {
   // distribución, no ese modelo.
   @override
   Widget build(BuildContext context) {
-    if (_cargando) return const EsqueletoLista();
+    // Cargando, la barra va igual (el esqueleto, abajo): el `Hero` de la barra necesita encontrarla desde el primer cuadro.
+    if (_cargando) {
+      return PantallaGestion(
+        db: widget.db,
+        claveActiva: 'proveedores',
+        usuarioId: widget.usuarioId,
+        sesionCajaId: widget.sesionCajaId,
+        titulo: 'Comparar precios',
+        child: const EsqueletoLista(),
+      );
+    }
     final visibles = [
       for (final c in _comparaciones)
         if (coincideBusqueda(c.nombre, _busqueda)) c,
