@@ -151,7 +151,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 55;
+  int get schemaVersion => 56;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1112,6 +1112,11 @@ class AppDatabase extends _$AppDatabase {
             .toSet();
         if (!columnas.contains('sena_centavos')) await m.addColumn(pendientes, pendientes.senaCentavos);
         if (!columnas.contains('sena_es_efectivo')) await m.addColumn(pendientes, pendientes.senaEsEfectivo);
+      }
+      // v55 → v56 (2026-10-07): un CUIT puede ser de varios proveedores (el mismo mayorista como "X" y "X cigarrillos"). La clave única
+      // pasa de `cuit` a (proveedor, cuit): se rehace la tabla copiando las filas tal cual, ninguna se pierde.
+      if (from < 56) {
+        await m.alterTable(TableMigration(cuitsProveedor));
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

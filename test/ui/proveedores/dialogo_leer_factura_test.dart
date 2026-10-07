@@ -156,7 +156,44 @@ void main() {
       await tester.tap(find.text('Distribuidora Elpar').last);
       await tester.pumpAndSettle();
       expect(find.text('Proveedor: Distribuidora Elpar'), findsOneWidget);
-      expect((await proveedorPorCuit(db, '30708174757'))!.id, elpar);
+      expect((await proveedoresPorCuit(db, '30708174757')).map((p) => p.id), [elpar]);
+    });
+
+    group('un CUIT para dos proveedores ("X" y "X cigarrillos", El dueño, 2026-10-07)', () {
+      late int elparCigarrillos;
+      setUp(() async {
+        elparCigarrillos = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ELC', nombre: 'Elpar cigarrillos'));
+        await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+        await asociarCuit(db, proveedorId: elparCigarrillos, cuit: '30708174757');
+      });
+
+      testWidgets('elige el proveedor por los productos de la factura', (tester) async {
+        await producto('Crema simple 200 gr', proveedorId: elpar);
+        await producto('Marlboro Box 20', proveedorId: elparCigarrillos);
+        await abrir(tester, ia());
+        await leer(tester);
+        expect(find.text('Proveedor: Distribuidora Elpar'), findsOneWidget);
+      });
+
+      testWidgets('si los productos no alcanzan para decidir, pregunta nombrando a los dos', (tester) async {
+        await abrir(tester, ia());
+        await leer(tester);
+        expect(find.textContaining('Este CUIT es de Distribuidora Elpar y Elpar cigarrillos'), findsOneWidget);
+      });
+
+      testWidgets('"Cambiar proveedor" deja elegir el otro sin sacarle el CUIT al primero', (tester) async {
+        await producto('Crema simple 200 gr', proveedorId: elpar);
+        await abrir(tester, ia());
+        await leer(tester);
+        await tester.tap(find.byKey(const ValueKey('cambiar_proveedor_0')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('elegir_proveedor_0')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Elpar cigarrillos').last);
+        await tester.pumpAndSettle();
+        expect(find.text('Proveedor: Elpar cigarrillos'), findsOneWidget);
+        expect((await proveedoresPorCuit(db, '30708174757')).map((p) => p.id), [elpar, elparCigarrillos]);
+      });
     });
 
     testWidgets('lo que el parecido no resuelve se lo pide a la IA, y queda en amarillo para confirmar', (tester) async {

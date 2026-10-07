@@ -48,6 +48,9 @@ class _EstadoFactura {
 
   final FacturaNormalizada n;
   Proveedor? proveedor;
+
+  /// Los proveedores que tienen el CUIT de la factura: pueden ser varios ("X" y "X cigarrillos").
+  List<Proveedor> delCuit = const [];
   List<PropuestaDeVinculo> propuestas = const [];
 
   /// El producto elegido y las unidades por cantidad de cada línea (arrancan con lo propuesto).
@@ -143,7 +146,16 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
         _leyendo = false;
       });
       for (final e in estados) {
-        e.proveedor = await proveedorPorCuit(widget.db, e.n.leida.proveedorCuit);
+        e.delCuit = [for (final p in await proveedoresPorCuit(widget.db, e.n.leida.proveedorCuit)) if (p.activo) p];
+        final ids = [for (final p in e.delCuit) p.id];
+        // Con varios proveedores para el mismo CUIT decide lo que trae la factura; si no se puede decidir, se pregunta.
+        final elegido = elegirProveedorDeFactura(
+          candidatos: ids,
+          lineas: [for (final l in e.n.lineas) LineaAVincular(codigo: l.codigo, descripcion: l.descripcion)],
+          catalogo: _catalogo,
+          vinculosPorProveedor: await vinculosDeVarios(widget.db, ids),
+        );
+        e.proveedor = elegido == null ? null : e.delCuit.firstWhere((p) => p.id == elegido);
         await _proponer(e, conIa: true);
       }
     } on ErrorGemini catch (e) {
@@ -240,7 +252,9 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
 
   Future<void> _elegirProveedor(_EstadoFactura e, int proveedorId) async {
     final proveedor = _proveedores.firstWhere((p) => p.id == proveedorId);
+    // Se suma al CUIT, no se lo saca a otro proveedor que ya lo tenía.
     await asociarCuit(widget.db, proveedorId: proveedor.id, cuit: e.n.leida.proveedorCuit);
+    if (!e.delCuit.any((p) => p.id == proveedor.id) && cuitNormalizado(e.n.leida.proveedorCuit) != null) e.delCuit = [...e.delCuit, proveedor];
     e.proveedor = proveedor;
     await _proponer(e, conIa: true);
   }
@@ -317,6 +331,7 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
                     proveedores: _proveedores,
                     nombresDeProductos: {for (final c in _catalogo) c.id: c.nombre},
                     onProveedor: (id) => _elegirProveedor(_facturas[i], id),
+                    onCambiarProveedor: () => setState(() => _facturas[i].proveedor = null),
                     onProducto: (linea, id) => setState(() {
                       _facturas[i].producto[linea] = id;
                       // Otro producto, otro costo para comparar: se vuelve a proponer el bulto de esa línea.
@@ -411,6 +426,7 @@ class _TarjetaFactura extends StatelessWidget {
     required this.proveedores,
     required this.nombresDeProductos,
     required this.onProveedor,
+    required this.onCambiarProveedor,
     required this.onProducto,
     required this.onUnidades,
     required this.onAprender,
@@ -421,6 +437,7 @@ class _TarjetaFactura extends StatelessWidget {
   final List<Proveedor> proveedores;
   final Map<int, String> nombresDeProductos;
   final ValueChanged<int> onProveedor;
+  final VoidCallback onCambiarProveedor;
   final void Function(int linea, int? productoId) onProducto;
   final void Function(int linea, int unidades) onUnidades;
   final VoidCallback onAprender;
@@ -503,7 +520,14 @@ class _TarjetaFactura extends StatelessWidget {
             ),
             for (final a in f.advertencias) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(a, style: textTheme.bodySmall)),
             if (e.producto.isNotEmpty) _ResumenDeVinculos(propuestas: e.propuestas, elegidos: e.producto),
-            if (e.proveedor == null) _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, proveedores: proveedores, onElegir: onProveedor),
+            if (e.proveedor == null)
+              _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, delCuit: e.delCuit, proveedores: proveedores, onElegir: onProveedor)
+            else
+              // Se equivocó de proveedor (o es la otra cuenta del mismo mayorista): se puede cambiar antes de aprender.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(key: ValueKey('cambiar_proveedor_$indice'), onPressed: onCambiarProveedor, child: const Text('Cambiar proveedor')),
+              ),
             const SizedBox(height: Espaciado.md),
             // La tabla va sobre el fondo de la ventana (blanco) para que se despegue de la tarjeta gris, como los bloques de las otras pantallas.
             Container(
@@ -580,10 +604,11 @@ class _TarjetaFactura extends StatelessWidget {
 }
 
 class _ElegirProveedor extends StatelessWidget {
-  const _ElegirProveedor({required this.indice, required this.cuit, required this.proveedores, required this.onElegir});
+  const _ElegirProveedor({required this.indice, required this.cuit, required this.delCuit, required this.proveedores, required this.onElegir});
 
   final int indice;
   final String? cuit;
+  final List<Proveedor> delCuit;
   final List<Proveedor> proveedores;
   final ValueChanged<int> onElegir;
 
@@ -596,7 +621,13 @@ class _ElegirProveedor extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              cuit == null ? 'No pude leer el CUIT del proveedor. ¿De cuál es esta factura?' : 'No conozco a este proveedor todavía (CUIT $cuit). ¿De cuál es?',
+              cuit == null
+                  ? 'No pude leer el CUIT del proveedor. ¿De cuál es esta factura?'
+                  : delCuit.length > 1
+                  ? 'Este CUIT es de ${delCuit.map((p) => p.nombre).join(' y ')}, y por los productos no me doy cuenta. ¿De cuál es esta factura?'
+                  : delCuit.isEmpty
+                  ? 'No conozco a este proveedor todavía (CUIT $cuit). ¿De cuál es?'
+                  : '¿De cuál proveedor es esta factura?',
               style: textTheme.bodyMedium,
             ),
           ),

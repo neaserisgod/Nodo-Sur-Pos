@@ -82,6 +82,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - ["Lenguaje de diseño": mocks de el dueño aplicados a toda la app (2026-09-26/28)](#lenguaje-de-diseño-mocks-de-el-dueño-aplicados-a-toda-la-app-2026-09-2628)
 - [Renombre visible a "Nodo Sur POS" (2026-10-01)](#renombre-visible-a-nodo-sur-pos-2026-10-01)
 - [Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")](#rediseño-del-lector-de-facturas-con-el-lenguaje-de-la-pc-el-dueño-2026-10-05-se-ve-horrible)
+- [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
 
@@ -2073,7 +2074,7 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 ### Vincular facturas con productos (2026-10-05)
 
 - **Se aprende, no se configura**: cada vínculo confirmado (código o descripción de ese proveedor → producto, con "unidades por cantidad") se guarda y la próxima factura sale
-  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige. Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
+  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige (desde la v56 un CUIT puede ser de varios proveedores: ver "Un CUIT para varios proveedores", 2026-10-07). Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
   `proveedores` (tabla sincronizada) para no tocar el protocolo de sync.
 - **Nunca se inventa un vínculo**: el parecido de nombre propone solo con un parecido claro y una ventaja sobre el segundo; si no, queda sin vincular con alternativas. La IA solo
   elige entre los productos que se le muestran y se descarta cualquier id que no esté en esa lista. Lo de la IA o del parecido siempre queda en amarillo hasta que el dueño confirma.
@@ -2101,3 +2102,16 @@ Arriba de las líneas de cada factura, el lector dice cuántas de las líneas re
 ## Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")
 
 El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas ("bul…", "× u…"), nombres de producto truncados y un alto fijo que tapaba el selector de modelo. Se rehízo con las piezas del sistema de diseño (`Superficie`, `Insignia`, tipografía y espaciado de `tokens.dart`; claro y oscuro): una barra con los archivos y el modelo, una tarjeta por factura (proveedor y total impreso grandes, insignias de control, resumen "reconocí X de Y") y una tabla con encabezado de columnas (En la factura · Tu producto · Cant. · × unid. · Unidades · Total · Costo c/u) sobre fondo blanco. Un bulto propuesto pinta la casilla en alerta y debajo de "Unidades" dice "4 bultos × 24". El diálogo usa casi todo el alto de la ventana y scrollea adentro. Los mocks de escritorio del repo (`Lenguaje de diseño/`) no incluyen esta pantalla: se tomó su lenguaje (bloques planos, píldoras, números grandes), no una pantalla concreta.
+
+## Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)
+
+- **El caso**: el mismo mayorista trae cosas varias y cigarrillos, y el dueño lo tiene cargado como dos proveedores ("X" y "X cigarrillos",
+  para separar la lata). Con un CUIT atado a un solo proveedor, elegir "X cigarrillos" en una factura le sacaba el CUIT a "X", y la próxima
+  factura de cosas varias salía como cigarrillos.
+- **Decisión (opción A, elegida por el dueño)**: `cuits_proveedor` pasa a ser única por (proveedor, CUIT) — migración v56, que rehace la
+  tabla sin perder filas. Con varios proveedores para el CUIT, **decide lo que trae la factura** (`elegirProveedorDeFactura`,
+  `domain/vinculo_factura.dart`): línea ya aprendida de un proveedor = 2 puntos, línea parecida a un producto suyo = 1. Con empate o sin
+  nada reconocido no adivina: pregunta nombrando a los proveedores del CUIT. "Cambiar proveedor" está siempre a mano y elegir otro le
+  suma el CUIT, no se lo saca al primero.
+- **Descartadas**: preguntar siempre (un paso más en cada factura de X) y dividir una misma factura entre dos proveedores (solo tiene
+  sentido si los cigarrillos vienen mezclados en la misma factura; no se pidió).

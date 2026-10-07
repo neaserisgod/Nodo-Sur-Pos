@@ -40,6 +40,6 @@ void main() {
     // Y se pueden usar de una.
     final proveedor = (await db.select(db.proveedores).get()).firstWhere((p) => p.codigo == 'SE');
     await asociarCuit(db, proveedorId: proveedor.id, cuit: '30670378213');
-    expect((await proveedorPorCuit(db, '30670378213'))!.id, proveedor.id);
+    expect((await proveedoresPorCuit(db, '30670378213')).map((p) => p.id), [proveedor.id]);
   });
 }

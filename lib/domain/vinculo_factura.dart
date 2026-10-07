@@ -276,3 +276,46 @@ List<PropuestaDeVinculo> conSugerenciasDeIa(
       }(),
   ];
 }
+
+// ─── Proveedor de la factura ──────────────────────────────────────────────
+
+/// De cuál de los [candidatos] (los proveedores que tienen cargado el CUIT de la factura) es la factura. Un mismo CUIT puede ser de
+/// varios proveedores del comercio (El dueño, 2026-10-07: el mismo mayorista cargado como "X" y "X cigarrillos", para separar la lata),
+/// así que se decide por lo que trae: cada línea ya aprendida de un candidato le suma 2, y cada línea que se parece claramente a un
+/// producto de un candidato le suma 1. Gana el que más suma; con empate o sin nada reconocido devuelve null y se le pregunta al dueño:
+/// equivocarse de proveedor manda los vínculos aprendidos al lugar equivocado.
+int? elegirProveedorDeFactura({
+  required List<int> candidatos,
+  required List<LineaAVincular> lineas,
+  required List<ProductoCandidato> catalogo,
+  required Map<int, List<VinculoAprendido>> vinculosPorProveedor,
+}) {
+  if (candidatos.isEmpty) return null;
+  if (candidatos.length == 1) return candidatos.single;
+
+  final puntos = {for (final c in candidatos) c: 0};
+  final aprendidas = {
+    for (final c in candidatos)
+      c: proponerVinculos(lineas: lineas, catalogo: catalogo, vinculos: vinculosPorProveedor[c] ?? const []),
+  };
+  // Sin proveedor ni vínculos: el parecido de nombre solo, sin el empujón que le daría a un candidato.
+  final porNombre = proponerVinculos(lineas: lineas, catalogo: catalogo);
+  final duenoDe = {for (final p in catalogo) p.id: p.proveedorId};
+
+  for (var i = 0; i < lineas.length; i++) {
+    final conAprendido = [for (final c in candidatos) if (aprendidas[c]![i].origen == OrigenVinculo.aprendido) c];
+    if (conAprendido.isNotEmpty) {
+      for (final c in conAprendido) {
+        puntos[c] = puntos[c]! + 2;
+      }
+      continue;
+    }
+    final p = porNombre[i];
+    final dueno = p.productoId == null ? null : duenoDe[p.productoId];
+    if (p.confianza != ConfianzaVinculo.ninguna && dueno != null && puntos.containsKey(dueno)) puntos[dueno] = puntos[dueno]! + 1;
+  }
+
+  final orden = puntos.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  if (orden.first.value == 0 || orden.first.value == orden[1].value) return null;
+  return orden.first.key;
+}

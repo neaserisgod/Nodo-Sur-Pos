@@ -22808,7 +22808,6 @@ class $CuitsProveedorTable extends CuitsProveedor
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   @override
   List<GeneratedColumn> get $columns => [id, proveedorId, cuit];
@@ -22851,6 +22850,10 @@ class $CuitsProveedorTable extends CuitsProveedor
 
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {proveedorId, cuit},
+  ];
   @override
   CuitProveedor map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
