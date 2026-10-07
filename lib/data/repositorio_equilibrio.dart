@@ -47,9 +47,19 @@ class ResumenFijosDelMes {
   const ResumenFijosDelMes({required this.conceptos, required this.total, required this.faltantes});
 }
 
+/// El monto de cada concepto en [mesAnio] es el último cargado hasta ese mes
+/// inclusive (El dueño, 2026-10-07: *"el fijo ... debería de ser igual salvo
+/// que lo cambie"*): un fijo se carga una vez y sigue valiendo mes a mes
+/// hasta que se cargue otro. Cambiarlo en un mes no toca los anteriores
+/// (cada cambio es su propia fila por mes). "Falta cargar" queda solo para
+/// un concepto que nunca tuvo monto hasta ese mes.
 Future<ResumenFijosDelMes> fijosDelMes(AppDatabase db, String mesAnio) async {
   final conceptos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
-  final montos = await (db.select(db.gastosFijosMontos)..where((m) => m.mesAnio.equals(mesAnio))).get();
+  // "YYYY-MM" ordena igual como texto que como fecha.
+  final montos = await (db.select(db.gastosFijosMontos)
+        ..where((m) => m.mesAnio.isSmallerOrEqualValue(mesAnio))
+        ..orderBy([(m) => OrderingTerm.asc(m.mesAnio)]))
+      .get();
   final montoPorConcepto = {for (final m in montos) m.gastoFijoId: m.montoCentavos};
 
   final conceptosDelMes = <GastoFijoDelMes>[];

@@ -86,6 +86,32 @@ void main() {
     });
   });
 
+  group('fijosDelMes arrastra el último monto (El dueño, 2026-10-07)', () {
+    test('un fijo cargado en un mes sigue valiendo los meses siguientes sin volver a cargarlo', () async {
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-08', montoCentavos: 93500000);
+      final octubre = await fijosDelMes(db, '2026-10');
+      final alquiler = octubre.conceptos.firstWhere((c) => c.concepto.id == alquilerId);
+      expect(alquiler.montoCentavos, 93500000);
+      expect(octubre.faltantes, isNot(contains('Alquiler')));
+    });
+
+    test('cambiarlo en un mes vale desde ese mes, sin tocar los anteriores', () async {
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-08', montoCentavos: 93500000);
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-10', montoCentavos: 110000000);
+      Future<int?> alquilerEn(String mes) async =>
+          (await fijosDelMes(db, mes)).conceptos.firstWhere((c) => c.concepto.id == alquilerId).montoCentavos;
+      expect(await alquilerEn('2026-09'), 93500000);
+      expect(await alquilerEn('2026-10'), 110000000);
+      expect(await alquilerEn('2026-12'), 110000000);
+    });
+
+    test('un monto de un mes futuro no se adelanta a un mes anterior', () async {
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-10', montoCentavos: 110000000);
+      final septiembre = await fijosDelMes(db, '2026-09');
+      expect(septiembre.faltantes, contains('Alquiler'));
+    });
+  });
+
   group('fijosPagadosDelMes', () {
     test('suma solo pagos con concepto de fijo asociado, del mes pedido', () async {
       final cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();
