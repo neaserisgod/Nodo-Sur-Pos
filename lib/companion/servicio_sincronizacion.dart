@@ -88,6 +88,19 @@ bool _pedidaOtraVez = false;
 /// refrescaba las pantallas. Mismo bug y mismo arreglo que el de Supabase
 /// (2026-09-26): [filtrarYaSubidas] recuerda qué filas del borde ya pasaron
 /// (en los dos sentidos) y solo cuenta las que cambiaron.
+/// Corre [enviar] y devuelve si la PC aceptó [tabla]. Una PC con una versión anterior a la v61 no conoce las tablas de
+/// [tablasSincronizablesV61] y contesta error: esas se saltean (se mandan cuando la PC se actualice, el cursor no avanza) en vez de
+/// cortar la sincronización entera. Cualquier otro error sigue cortando como siempre.
+Future<bool> _pcConoce(String tabla, Future<void> Function() enviar) async {
+  try {
+    await enviar();
+    return true;
+  } on ErrorCompanion {
+    if (tablasSincronizablesV61.contains(tabla)) return false;
+    rethrow;
+  }
+}
+
 Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
   var trajoAlgo = false;
   {
@@ -109,7 +122,7 @@ Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
         borde: _leerBorde(prefs, 'push', tabla),
       );
       if (plan.aSubir.isNotEmpty) {
-        await cliente.enviarCambios(tabla: tabla, filas: plan.aSubir);
+        if (!await _pcConoce(tabla, () => cliente.enviarCambios(tabla: tabla, filas: plan.aSubir))) continue;
         await prefs.setInt(_claveCursor('push', tabla), plan.cursor);
         await _guardarBorde(prefs, 'push', tabla, plan.borde);
       }
@@ -128,7 +141,11 @@ Future<bool> _unaVuelta(ClienteCompanion cliente, AppDatabase? base) async {
     };
     final pulls = await Future.wait([
       for (final tabla in tablas)
-        cliente.cambiosDesde(tabla: tabla, desde: cursoresPull[tabla]!),
+        cliente.cambiosDesde(tabla: tabla, desde: cursoresPull[tabla]!).catchError(
+          (Object _) => (filas: const <Map<String, dynamic>>[], cursor: 0),
+          // Una PC sin actualizar no conoce las tablas de la v61: esas se saltean; cualquier otro error corta como siempre.
+          test: (e) => e is ErrorCompanion && tablasSincronizablesV61.contains(tabla),
+        ),
     ]);
     final diferidas = <({String tabla, PlanDeSubida plan, List<Map<String, dynamic>> noAplicadas})>[];
     for (var i = 0; i < tablas.length; i++) {

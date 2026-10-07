@@ -20843,6 +20843,41 @@ class $MovimientosDeudaTable extends MovimientosDeuda
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -20856,6 +20891,9 @@ class $MovimientosDeudaTable extends MovimientosDeuda
     movimientoCajaId,
     anuladoEn,
     creadoEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -20951,6 +20989,30 @@ class $MovimientosDeudaTable extends MovimientosDeuda
         creadoEn.isAcceptableOrUnknown(data['creado_en']!, _creadoEnMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21004,6 +21066,18 @@ class $MovimientosDeudaTable extends MovimientosDeuda
         DriftSqlType.dateTime,
         data['${effectivePrefix}creado_en'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
     );
   }
 
@@ -21040,6 +21114,12 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
   /// todo deja rastro).
   final DateTime? anuladoEn;
   final DateTime creadoEn;
+
+  /// Identidad de sincronización (v61) — ver el comentario de cabecera de la migración v29→v30 en `database.dart`.
+  /// [actualizadoEn] se pisa al anular, que es la única edición que tiene un movimiento.
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
   const MovimientoDeuda({
     required this.id,
     required this.proveedorId,
@@ -21052,6 +21132,9 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
     this.movimientoCajaId,
     this.anuladoEn,
     required this.creadoEn,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -21075,6 +21158,15 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
       map['anulado_en'] = Variable<DateTime>(anuladoEn);
     }
     map['creado_en'] = Variable<DateTime>(creadoEn);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
     return map;
   }
 
@@ -21097,6 +21189,15 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
           ? const Value.absent()
           : Value(anuladoEn),
       creadoEn: Value(creadoEn),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
     );
   }
 
@@ -21117,6 +21218,11 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
       movimientoCajaId: serializer.fromJson<int?>(json['movimientoCajaId']),
       anuladoEn: serializer.fromJson<DateTime?>(json['anuladoEn']),
       creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
     );
   }
   @override
@@ -21134,6 +21240,9 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
       'movimientoCajaId': serializer.toJson<int?>(movimientoCajaId),
       'anuladoEn': serializer.toJson<DateTime?>(anuladoEn),
       'creadoEn': serializer.toJson<DateTime>(creadoEn),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
     };
   }
 
@@ -21149,6 +21258,9 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
     Value<int?> movimientoCajaId = const Value.absent(),
     Value<DateTime?> anuladoEn = const Value.absent(),
     DateTime? creadoEn,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
   }) => MovimientoDeuda(
     id: id ?? this.id,
     proveedorId: proveedorId ?? this.proveedorId,
@@ -21163,6 +21275,13 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
         : this.movimientoCajaId,
     anuladoEn: anuladoEn.present ? anuladoEn.value : this.anuladoEn,
     creadoEn: creadoEn ?? this.creadoEn,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
   );
   MovimientoDeuda copyWithCompanion(MovimientosDeudaCompanion data) {
     return MovimientoDeuda(
@@ -21185,6 +21304,13 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
           : this.movimientoCajaId,
       anuladoEn: data.anuladoEn.present ? data.anuladoEn.value : this.anuladoEn,
       creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
     );
   }
 
@@ -21201,7 +21327,10 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
           ..write('origenPago: $origenPago, ')
           ..write('movimientoCajaId: $movimientoCajaId, ')
           ..write('anuladoEn: $anuladoEn, ')
-          ..write('creadoEn: $creadoEn')
+          ..write('creadoEn: $creadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -21219,6 +21348,9 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
     movimientoCajaId,
     anuladoEn,
     creadoEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
   );
   @override
   bool operator ==(Object other) =>
@@ -21234,7 +21366,10 @@ class MovimientoDeuda extends DataClass implements Insertable<MovimientoDeuda> {
           other.origenPago == this.origenPago &&
           other.movimientoCajaId == this.movimientoCajaId &&
           other.anuladoEn == this.anuladoEn &&
-          other.creadoEn == this.creadoEn);
+          other.creadoEn == this.creadoEn &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
 }
 
 class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
@@ -21249,6 +21384,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
   final Value<int?> movimientoCajaId;
   final Value<DateTime?> anuladoEn;
   final Value<DateTime> creadoEn;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
   const MovimientosDeudaCompanion({
     this.id = const Value.absent(),
     this.proveedorId = const Value.absent(),
@@ -21261,6 +21399,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
     this.movimientoCajaId = const Value.absent(),
     this.anuladoEn = const Value.absent(),
     this.creadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   });
   MovimientosDeudaCompanion.insert({
     this.id = const Value.absent(),
@@ -21274,6 +21415,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
     this.movimientoCajaId = const Value.absent(),
     this.anuladoEn = const Value.absent(),
     this.creadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   }) : proveedorId = Value(proveedorId),
        tipo = Value(tipo),
        montoCentavos = Value(montoCentavos),
@@ -21291,6 +21435,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
     Expression<int>? movimientoCajaId,
     Expression<DateTime>? anuladoEn,
     Expression<DateTime>? creadoEn,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -21304,6 +21451,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
       if (movimientoCajaId != null) 'movimiento_caja_id': movimientoCajaId,
       if (anuladoEn != null) 'anulado_en': anuladoEn,
       if (creadoEn != null) 'creado_en': creadoEn,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
 
@@ -21319,6 +21469,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
     Value<int?>? movimientoCajaId,
     Value<DateTime?>? anuladoEn,
     Value<DateTime>? creadoEn,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
   }) {
     return MovimientosDeudaCompanion(
       id: id ?? this.id,
@@ -21332,6 +21485,9 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
       movimientoCajaId: movimientoCajaId ?? this.movimientoCajaId,
       anuladoEn: anuladoEn ?? this.anuladoEn,
       creadoEn: creadoEn ?? this.creadoEn,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
 
@@ -21371,6 +21527,15 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
     if (creadoEn.present) {
       map['creado_en'] = Variable<DateTime>(creadoEn.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
     return map;
   }
 
@@ -21387,7 +21552,10 @@ class MovimientosDeudaCompanion extends UpdateCompanion<MovimientoDeuda> {
           ..write('origenPago: $origenPago, ')
           ..write('movimientoCajaId: $movimientoCajaId, ')
           ..write('anuladoEn: $anuladoEn, ')
-          ..write('creadoEn: $creadoEn')
+          ..write('creadoEn: $creadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -22495,6 +22663,29 @@ class $VinculosFacturaTable extends VinculosFactura
         requiredDuringInsert: false,
         defaultValue: currentDateAndTime,
       );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -22504,6 +22695,8 @@ class $VinculosFacturaTable extends VinculosFactura
     productoId,
     unidadesPorCantidad,
     actualizadoEn,
+    globalId,
+    origenDispositivo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -22573,6 +22766,21 @@ class $VinculosFacturaTable extends VinculosFactura
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -22614,6 +22822,14 @@ class $VinculosFacturaTable extends VinculosFactura
         DriftSqlType.dateTime,
         data['${effectivePrefix}actualizado_en'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
     );
   }
 
@@ -22638,6 +22854,10 @@ class VinculoFacturaFila extends DataClass
   /// Cuántas unidades del producto entran por cada unidad de la columna "cantidad" de la factura (un bulto de 6 = 6).
   final int unidadesPorCantidad;
   final DateTime actualizadoEn;
+
+  /// Identidad de sincronización (v61).
+  final String? globalId;
+  final String? origenDispositivo;
   const VinculoFacturaFila({
     required this.id,
     required this.proveedorId,
@@ -22646,6 +22866,8 @@ class VinculoFacturaFila extends DataClass
     required this.productoId,
     required this.unidadesPorCantidad,
     required this.actualizadoEn,
+    this.globalId,
+    this.origenDispositivo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -22657,6 +22879,12 @@ class VinculoFacturaFila extends DataClass
     map['producto_id'] = Variable<int>(productoId);
     map['unidades_por_cantidad'] = Variable<int>(unidadesPorCantidad);
     map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
     return map;
   }
 
@@ -22669,6 +22897,12 @@ class VinculoFacturaFila extends DataClass
       productoId: Value(productoId),
       unidadesPorCantidad: Value(unidadesPorCantidad),
       actualizadoEn: Value(actualizadoEn),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
     );
   }
 
@@ -22687,6 +22921,10 @@ class VinculoFacturaFila extends DataClass
         json['unidadesPorCantidad'],
       ),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
     );
   }
   @override
@@ -22700,6 +22938,8 @@ class VinculoFacturaFila extends DataClass
       'productoId': serializer.toJson<int>(productoId),
       'unidadesPorCantidad': serializer.toJson<int>(unidadesPorCantidad),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
     };
   }
 
@@ -22711,6 +22951,8 @@ class VinculoFacturaFila extends DataClass
     int? productoId,
     int? unidadesPorCantidad,
     DateTime? actualizadoEn,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
   }) => VinculoFacturaFila(
     id: id ?? this.id,
     proveedorId: proveedorId ?? this.proveedorId,
@@ -22719,6 +22961,10 @@ class VinculoFacturaFila extends DataClass
     productoId: productoId ?? this.productoId,
     unidadesPorCantidad: unidadesPorCantidad ?? this.unidadesPorCantidad,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
   );
   VinculoFacturaFila copyWithCompanion(VinculosFacturaCompanion data) {
     return VinculoFacturaFila(
@@ -22737,6 +22983,10 @@ class VinculoFacturaFila extends DataClass
       actualizadoEn: data.actualizadoEn.present
           ? data.actualizadoEn.value
           : this.actualizadoEn,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
     );
   }
 
@@ -22749,7 +22999,9 @@ class VinculoFacturaFila extends DataClass
           ..write('clave: $clave, ')
           ..write('productoId: $productoId, ')
           ..write('unidadesPorCantidad: $unidadesPorCantidad, ')
-          ..write('actualizadoEn: $actualizadoEn')
+          ..write('actualizadoEn: $actualizadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
@@ -22763,6 +23015,8 @@ class VinculoFacturaFila extends DataClass
     productoId,
     unidadesPorCantidad,
     actualizadoEn,
+    globalId,
+    origenDispositivo,
   );
   @override
   bool operator ==(Object other) =>
@@ -22774,7 +23028,9 @@ class VinculoFacturaFila extends DataClass
           other.clave == this.clave &&
           other.productoId == this.productoId &&
           other.unidadesPorCantidad == this.unidadesPorCantidad &&
-          other.actualizadoEn == this.actualizadoEn);
+          other.actualizadoEn == this.actualizadoEn &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo);
 }
 
 class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
@@ -22785,6 +23041,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
   final Value<int> productoId;
   final Value<int> unidadesPorCantidad;
   final Value<DateTime> actualizadoEn;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
   const VinculosFacturaCompanion({
     this.id = const Value.absent(),
     this.proveedorId = const Value.absent(),
@@ -22793,6 +23051,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
     this.productoId = const Value.absent(),
     this.unidadesPorCantidad = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   });
   VinculosFacturaCompanion.insert({
     this.id = const Value.absent(),
@@ -22802,6 +23062,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
     required int productoId,
     this.unidadesPorCantidad = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   }) : proveedorId = Value(proveedorId),
        tipoClave = Value(tipoClave),
        clave = Value(clave),
@@ -22814,6 +23076,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
     Expression<int>? productoId,
     Expression<int>? unidadesPorCantidad,
     Expression<DateTime>? actualizadoEn,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -22824,6 +23088,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
       if (unidadesPorCantidad != null)
         'unidades_por_cantidad': unidadesPorCantidad,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
     });
   }
 
@@ -22835,6 +23101,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
     Value<int>? productoId,
     Value<int>? unidadesPorCantidad,
     Value<DateTime>? actualizadoEn,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
   }) {
     return VinculosFacturaCompanion(
       id: id ?? this.id,
@@ -22844,6 +23112,8 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
       productoId: productoId ?? this.productoId,
       unidadesPorCantidad: unidadesPorCantidad ?? this.unidadesPorCantidad,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
     );
   }
 
@@ -22871,6 +23141,12 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
     if (actualizadoEn.present) {
       map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
     return map;
   }
 
@@ -22883,7 +23159,9 @@ class VinculosFacturaCompanion extends UpdateCompanion<VinculoFacturaFila> {
           ..write('clave: $clave, ')
           ..write('productoId: $productoId, ')
           ..write('unidadesPorCantidad: $unidadesPorCantidad, ')
-          ..write('actualizadoEn: $actualizadoEn')
+          ..write('actualizadoEn: $actualizadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
@@ -22931,8 +23209,37 @@ class $CuitsProveedorTable extends CuitsProveedor
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, proveedorId, cuit];
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    proveedorId,
+    cuit,
+    globalId,
+    origenDispositivo,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -22967,6 +23274,21 @@ class $CuitsProveedorTable extends CuitsProveedor
     } else if (isInserting) {
       context.missing(_cuitMeta);
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -22992,6 +23314,14 @@ class $CuitsProveedorTable extends CuitsProveedor
         DriftSqlType.string,
         data['${effectivePrefix}cuit'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
     );
   }
 
@@ -23005,10 +23335,16 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
   final int id;
   final int proveedorId;
   final String cuit;
+
+  /// Identidad de sincronización (v61).
+  final String? globalId;
+  final String? origenDispositivo;
   const CuitProveedor({
     required this.id,
     required this.proveedorId,
     required this.cuit,
+    this.globalId,
+    this.origenDispositivo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -23016,6 +23352,12 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
     map['id'] = Variable<int>(id);
     map['proveedor_id'] = Variable<int>(proveedorId);
     map['cuit'] = Variable<String>(cuit);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
     return map;
   }
 
@@ -23024,6 +23366,12 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
       id: Value(id),
       proveedorId: Value(proveedorId),
       cuit: Value(cuit),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
     );
   }
 
@@ -23036,6 +23384,10 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
       id: serializer.fromJson<int>(json['id']),
       proveedorId: serializer.fromJson<int>(json['proveedorId']),
       cuit: serializer.fromJson<String>(json['cuit']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
     );
   }
   @override
@@ -23045,15 +23397,26 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
       'id': serializer.toJson<int>(id),
       'proveedorId': serializer.toJson<int>(proveedorId),
       'cuit': serializer.toJson<String>(cuit),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
     };
   }
 
-  CuitProveedor copyWith({int? id, int? proveedorId, String? cuit}) =>
-      CuitProveedor(
-        id: id ?? this.id,
-        proveedorId: proveedorId ?? this.proveedorId,
-        cuit: cuit ?? this.cuit,
-      );
+  CuitProveedor copyWith({
+    int? id,
+    int? proveedorId,
+    String? cuit,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+  }) => CuitProveedor(
+    id: id ?? this.id,
+    proveedorId: proveedorId ?? this.proveedorId,
+    cuit: cuit ?? this.cuit,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+  );
   CuitProveedor copyWithCompanion(CuitsProveedorCompanion data) {
     return CuitProveedor(
       id: data.id.present ? data.id.value : this.id,
@@ -23061,6 +23424,10 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
           ? data.proveedorId.value
           : this.proveedorId,
       cuit: data.cuit.present ? data.cuit.value : this.cuit,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
     );
   }
 
@@ -23069,46 +23436,61 @@ class CuitProveedor extends DataClass implements Insertable<CuitProveedor> {
     return (StringBuffer('CuitProveedor(')
           ..write('id: $id, ')
           ..write('proveedorId: $proveedorId, ')
-          ..write('cuit: $cuit')
+          ..write('cuit: $cuit, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, proveedorId, cuit);
+  int get hashCode =>
+      Object.hash(id, proveedorId, cuit, globalId, origenDispositivo);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is CuitProveedor &&
           other.id == this.id &&
           other.proveedorId == this.proveedorId &&
-          other.cuit == this.cuit);
+          other.cuit == this.cuit &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo);
 }
 
 class CuitsProveedorCompanion extends UpdateCompanion<CuitProveedor> {
   final Value<int> id;
   final Value<int> proveedorId;
   final Value<String> cuit;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
   const CuitsProveedorCompanion({
     this.id = const Value.absent(),
     this.proveedorId = const Value.absent(),
     this.cuit = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   });
   CuitsProveedorCompanion.insert({
     this.id = const Value.absent(),
     required int proveedorId,
     required String cuit,
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   }) : proveedorId = Value(proveedorId),
        cuit = Value(cuit);
   static Insertable<CuitProveedor> custom({
     Expression<int>? id,
     Expression<int>? proveedorId,
     Expression<String>? cuit,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (proveedorId != null) 'proveedor_id': proveedorId,
       if (cuit != null) 'cuit': cuit,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
     });
   }
 
@@ -23116,11 +23498,15 @@ class CuitsProveedorCompanion extends UpdateCompanion<CuitProveedor> {
     Value<int>? id,
     Value<int>? proveedorId,
     Value<String>? cuit,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
   }) {
     return CuitsProveedorCompanion(
       id: id ?? this.id,
       proveedorId: proveedorId ?? this.proveedorId,
       cuit: cuit ?? this.cuit,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
     );
   }
 
@@ -23136,6 +23522,12 @@ class CuitsProveedorCompanion extends UpdateCompanion<CuitProveedor> {
     if (cuit.present) {
       map['cuit'] = Variable<String>(cuit.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
     return map;
   }
 
@@ -23144,7 +23536,9 @@ class CuitsProveedorCompanion extends UpdateCompanion<CuitProveedor> {
     return (StringBuffer('CuitsProveedorCompanion(')
           ..write('id: $id, ')
           ..write('proveedorId: $proveedorId, ')
-          ..write('cuit: $cuit')
+          ..write('cuit: $cuit, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
@@ -23308,6 +23702,41 @@ class $FacturasCompraTable extends FacturasCompra
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -23323,6 +23752,9 @@ class $FacturasCompraTable extends FacturasCompra
     usuarioId,
     aplicadaEn,
     deshechaEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -23438,6 +23870,30 @@ class $FacturasCompraTable extends FacturasCompra
         deshechaEn.isAcceptableOrUnknown(data['deshecha_en']!, _deshechaEnMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -23499,6 +23955,18 @@ class $FacturasCompraTable extends FacturasCompra
         DriftSqlType.dateTime,
         data['${effectivePrefix}deshecha_en'],
       ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
     );
   }
 
@@ -23529,6 +23997,11 @@ class FacturaCompraFila extends DataClass
   final int usuarioId;
   final DateTime aplicadaEn;
   final DateTime? deshechaEn;
+
+  /// Identidad de sincronización (v61). [actualizadoEn] se pisa al deshacerla.
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
   const FacturaCompraFila({
     required this.id,
     required this.proveedorId,
@@ -23543,6 +24016,9 @@ class FacturaCompraFila extends DataClass
     required this.usuarioId,
     required this.aplicadaEn,
     this.deshechaEn,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -23572,6 +24048,15 @@ class FacturaCompraFila extends DataClass
     if (!nullToAbsent || deshechaEn != null) {
       map['deshecha_en'] = Variable<DateTime>(deshechaEn);
     }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
     return map;
   }
 
@@ -23600,6 +24085,15 @@ class FacturaCompraFila extends DataClass
       deshechaEn: deshechaEn == null && nullToAbsent
           ? const Value.absent()
           : Value(deshechaEn),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
     );
   }
 
@@ -23624,6 +24118,11 @@ class FacturaCompraFila extends DataClass
       usuarioId: serializer.fromJson<int>(json['usuarioId']),
       aplicadaEn: serializer.fromJson<DateTime>(json['aplicadaEn']),
       deshechaEn: serializer.fromJson<DateTime?>(json['deshechaEn']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
     );
   }
   @override
@@ -23643,6 +24142,9 @@ class FacturaCompraFila extends DataClass
       'usuarioId': serializer.toJson<int>(usuarioId),
       'aplicadaEn': serializer.toJson<DateTime>(aplicadaEn),
       'deshechaEn': serializer.toJson<DateTime?>(deshechaEn),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
     };
   }
 
@@ -23660,6 +24162,9 @@ class FacturaCompraFila extends DataClass
     int? usuarioId,
     DateTime? aplicadaEn,
     Value<DateTime?> deshechaEn = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
   }) => FacturaCompraFila(
     id: id ?? this.id,
     proveedorId: proveedorId ?? this.proveedorId,
@@ -23678,6 +24183,13 @@ class FacturaCompraFila extends DataClass
     usuarioId: usuarioId ?? this.usuarioId,
     aplicadaEn: aplicadaEn ?? this.aplicadaEn,
     deshechaEn: deshechaEn.present ? deshechaEn.value : this.deshechaEn,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
   );
   FacturaCompraFila copyWithCompanion(FacturasCompraCompanion data) {
     return FacturaCompraFila(
@@ -23708,6 +24220,13 @@ class FacturaCompraFila extends DataClass
       deshechaEn: data.deshechaEn.present
           ? data.deshechaEn.value
           : this.deshechaEn,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
     );
   }
 
@@ -23726,7 +24245,10 @@ class FacturaCompraFila extends DataClass
           ..write('sumoStock: $sumoStock, ')
           ..write('usuarioId: $usuarioId, ')
           ..write('aplicadaEn: $aplicadaEn, ')
-          ..write('deshechaEn: $deshechaEn')
+          ..write('deshechaEn: $deshechaEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -23746,6 +24268,9 @@ class FacturaCompraFila extends DataClass
     usuarioId,
     aplicadaEn,
     deshechaEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
   );
   @override
   bool operator ==(Object other) =>
@@ -23763,7 +24288,10 @@ class FacturaCompraFila extends DataClass
           other.sumoStock == this.sumoStock &&
           other.usuarioId == this.usuarioId &&
           other.aplicadaEn == this.aplicadaEn &&
-          other.deshechaEn == this.deshechaEn);
+          other.deshechaEn == this.deshechaEn &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
 }
 
 class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
@@ -23780,6 +24308,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
   final Value<int> usuarioId;
   final Value<DateTime> aplicadaEn;
   final Value<DateTime?> deshechaEn;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
   const FacturasCompraCompanion({
     this.id = const Value.absent(),
     this.proveedorId = const Value.absent(),
@@ -23794,6 +24325,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
     this.usuarioId = const Value.absent(),
     this.aplicadaEn = const Value.absent(),
     this.deshechaEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   });
   FacturasCompraCompanion.insert({
     this.id = const Value.absent(),
@@ -23809,6 +24343,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
     required int usuarioId,
     required DateTime aplicadaEn,
     this.deshechaEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   }) : proveedorId = Value(proveedorId),
        totalCentavos = Value(totalCentavos),
        movimientoDeudaId = Value(movimientoDeudaId),
@@ -23829,6 +24366,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
     Expression<int>? usuarioId,
     Expression<DateTime>? aplicadaEn,
     Expression<DateTime>? deshechaEn,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -23844,6 +24384,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
       if (usuarioId != null) 'usuario_id': usuarioId,
       if (aplicadaEn != null) 'aplicada_en': aplicadaEn,
       if (deshechaEn != null) 'deshecha_en': deshechaEn,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
 
@@ -23861,6 +24404,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
     Value<int>? usuarioId,
     Value<DateTime>? aplicadaEn,
     Value<DateTime?>? deshechaEn,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
   }) {
     return FacturasCompraCompanion(
       id: id ?? this.id,
@@ -23876,6 +24422,9 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
       usuarioId: usuarioId ?? this.usuarioId,
       aplicadaEn: aplicadaEn ?? this.aplicadaEn,
       deshechaEn: deshechaEn ?? this.deshechaEn,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
 
@@ -23921,6 +24470,15 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
     if (deshechaEn.present) {
       map['deshecha_en'] = Variable<DateTime>(deshechaEn.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
     return map;
   }
 
@@ -23939,7 +24497,10 @@ class FacturasCompraCompanion extends UpdateCompanion<FacturaCompraFila> {
           ..write('sumoStock: $sumoStock, ')
           ..write('usuarioId: $usuarioId, ')
           ..write('aplicadaEn: $aplicadaEn, ')
-          ..write('deshechaEn: $deshechaEn')
+          ..write('deshechaEn: $deshechaEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -24023,6 +24584,29 @@ class $ProductosFacturaCompraTable extends ProductosFacturaCompra
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -24031,6 +24615,8 @@ class $ProductosFacturaCompraTable extends ProductosFacturaCompra
     unidadesSumadas,
     costoAnteriorCentavos,
     costoNuevoCentavos,
+    globalId,
+    origenDispositivo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -24094,6 +24680,21 @@ class $ProductosFacturaCompraTable extends ProductosFacturaCompra
     } else if (isInserting) {
       context.missing(_costoNuevoCentavosMeta);
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -24130,6 +24731,14 @@ class $ProductosFacturaCompraTable extends ProductosFacturaCompra
         DriftSqlType.int,
         data['${effectivePrefix}costo_nuevo_centavos'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
     );
   }
 
@@ -24149,6 +24758,10 @@ class ProductoFacturaCompraFila extends DataClass
   final int unidadesSumadas;
   final int? costoAnteriorCentavos;
   final int costoNuevoCentavos;
+
+  /// Identidad de sincronización (v61). Nunca se edita: viaja como log de solo-inserción.
+  final String? globalId;
+  final String? origenDispositivo;
   const ProductoFacturaCompraFila({
     required this.id,
     required this.facturaId,
@@ -24156,6 +24769,8 @@ class ProductoFacturaCompraFila extends DataClass
     required this.unidadesSumadas,
     this.costoAnteriorCentavos,
     required this.costoNuevoCentavos,
+    this.globalId,
+    this.origenDispositivo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -24168,6 +24783,12 @@ class ProductoFacturaCompraFila extends DataClass
       map['costo_anterior_centavos'] = Variable<int>(costoAnteriorCentavos);
     }
     map['costo_nuevo_centavos'] = Variable<int>(costoNuevoCentavos);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
     return map;
   }
 
@@ -24181,6 +24802,12 @@ class ProductoFacturaCompraFila extends DataClass
           ? const Value.absent()
           : Value(costoAnteriorCentavos),
       costoNuevoCentavos: Value(costoNuevoCentavos),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
     );
   }
 
@@ -24198,6 +24825,10 @@ class ProductoFacturaCompraFila extends DataClass
         json['costoAnteriorCentavos'],
       ),
       costoNuevoCentavos: serializer.fromJson<int>(json['costoNuevoCentavos']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
     );
   }
   @override
@@ -24210,6 +24841,8 @@ class ProductoFacturaCompraFila extends DataClass
       'unidadesSumadas': serializer.toJson<int>(unidadesSumadas),
       'costoAnteriorCentavos': serializer.toJson<int?>(costoAnteriorCentavos),
       'costoNuevoCentavos': serializer.toJson<int>(costoNuevoCentavos),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
     };
   }
 
@@ -24220,6 +24853,8 @@ class ProductoFacturaCompraFila extends DataClass
     int? unidadesSumadas,
     Value<int?> costoAnteriorCentavos = const Value.absent(),
     int? costoNuevoCentavos,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
   }) => ProductoFacturaCompraFila(
     id: id ?? this.id,
     facturaId: facturaId ?? this.facturaId,
@@ -24229,6 +24864,10 @@ class ProductoFacturaCompraFila extends DataClass
         ? costoAnteriorCentavos.value
         : this.costoAnteriorCentavos,
     costoNuevoCentavos: costoNuevoCentavos ?? this.costoNuevoCentavos,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
   );
   ProductoFacturaCompraFila copyWithCompanion(
     ProductosFacturaCompraCompanion data,
@@ -24248,6 +24887,10 @@ class ProductoFacturaCompraFila extends DataClass
       costoNuevoCentavos: data.costoNuevoCentavos.present
           ? data.costoNuevoCentavos.value
           : this.costoNuevoCentavos,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
     );
   }
 
@@ -24259,7 +24902,9 @@ class ProductoFacturaCompraFila extends DataClass
           ..write('productoId: $productoId, ')
           ..write('unidadesSumadas: $unidadesSumadas, ')
           ..write('costoAnteriorCentavos: $costoAnteriorCentavos, ')
-          ..write('costoNuevoCentavos: $costoNuevoCentavos')
+          ..write('costoNuevoCentavos: $costoNuevoCentavos, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
@@ -24272,6 +24917,8 @@ class ProductoFacturaCompraFila extends DataClass
     unidadesSumadas,
     costoAnteriorCentavos,
     costoNuevoCentavos,
+    globalId,
+    origenDispositivo,
   );
   @override
   bool operator ==(Object other) =>
@@ -24282,7 +24929,9 @@ class ProductoFacturaCompraFila extends DataClass
           other.productoId == this.productoId &&
           other.unidadesSumadas == this.unidadesSumadas &&
           other.costoAnteriorCentavos == this.costoAnteriorCentavos &&
-          other.costoNuevoCentavos == this.costoNuevoCentavos);
+          other.costoNuevoCentavos == this.costoNuevoCentavos &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo);
 }
 
 class ProductosFacturaCompraCompanion
@@ -24293,6 +24942,8 @@ class ProductosFacturaCompraCompanion
   final Value<int> unidadesSumadas;
   final Value<int?> costoAnteriorCentavos;
   final Value<int> costoNuevoCentavos;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
   const ProductosFacturaCompraCompanion({
     this.id = const Value.absent(),
     this.facturaId = const Value.absent(),
@@ -24300,6 +24951,8 @@ class ProductosFacturaCompraCompanion
     this.unidadesSumadas = const Value.absent(),
     this.costoAnteriorCentavos = const Value.absent(),
     this.costoNuevoCentavos = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   });
   ProductosFacturaCompraCompanion.insert({
     this.id = const Value.absent(),
@@ -24308,6 +24961,8 @@ class ProductosFacturaCompraCompanion
     required int unidadesSumadas,
     this.costoAnteriorCentavos = const Value.absent(),
     required int costoNuevoCentavos,
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
   }) : facturaId = Value(facturaId),
        productoId = Value(productoId),
        unidadesSumadas = Value(unidadesSumadas),
@@ -24319,6 +24974,8 @@ class ProductosFacturaCompraCompanion
     Expression<int>? unidadesSumadas,
     Expression<int>? costoAnteriorCentavos,
     Expression<int>? costoNuevoCentavos,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -24329,6 +24986,8 @@ class ProductosFacturaCompraCompanion
         'costo_anterior_centavos': costoAnteriorCentavos,
       if (costoNuevoCentavos != null)
         'costo_nuevo_centavos': costoNuevoCentavos,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
     });
   }
 
@@ -24339,6 +24998,8 @@ class ProductosFacturaCompraCompanion
     Value<int>? unidadesSumadas,
     Value<int?>? costoAnteriorCentavos,
     Value<int>? costoNuevoCentavos,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
   }) {
     return ProductosFacturaCompraCompanion(
       id: id ?? this.id,
@@ -24348,6 +25009,8 @@ class ProductosFacturaCompraCompanion
       costoAnteriorCentavos:
           costoAnteriorCentavos ?? this.costoAnteriorCentavos,
       costoNuevoCentavos: costoNuevoCentavos ?? this.costoNuevoCentavos,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
     );
   }
 
@@ -24374,6 +25037,12 @@ class ProductosFacturaCompraCompanion
     if (costoNuevoCentavos.present) {
       map['costo_nuevo_centavos'] = Variable<int>(costoNuevoCentavos.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
     return map;
   }
 
@@ -24385,7 +25054,9 @@ class ProductosFacturaCompraCompanion
           ..write('productoId: $productoId, ')
           ..write('unidadesSumadas: $unidadesSumadas, ')
           ..write('costoAnteriorCentavos: $costoAnteriorCentavos, ')
-          ..write('costoNuevoCentavos: $costoNuevoCentavos')
+          ..write('costoNuevoCentavos: $costoNuevoCentavos, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo')
           ..write(')'))
         .toString();
   }
@@ -42771,6 +43442,9 @@ typedef $$MovimientosDeudaTableCreateCompanionBuilder =
       Value<int?> movimientoCajaId,
       Value<DateTime?> anuladoEn,
       Value<DateTime> creadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 typedef $$MovimientosDeudaTableUpdateCompanionBuilder =
     MovimientosDeudaCompanion Function({
@@ -42785,6 +43459,9 @@ typedef $$MovimientosDeudaTableUpdateCompanionBuilder =
       Value<int?> movimientoCajaId,
       Value<DateTime?> anuladoEn,
       Value<DateTime> creadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 
 final class $$MovimientosDeudaTableReferences
@@ -42914,6 +43591,21 @@ class $$MovimientosDeudaTableFilterComposer
 
   ColumnFilters<DateTime> get creadoEn => $composableBuilder(
     column: $table.creadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43061,6 +43753,21 @@ class $$MovimientosDeudaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProveedoresTableOrderingComposer get proveedorId {
     final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -43167,6 +43874,19 @@ class $$MovimientosDeudaTableAnnotationComposer
 
   GeneratedColumn<DateTime> get creadoEn =>
       $composableBuilder(column: $table.creadoEn, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
 
   $$ProveedoresTableAnnotationComposer get proveedorId {
     final $$ProveedoresTableAnnotationComposer composer = $composerBuilder(
@@ -43310,6 +44030,9 @@ class $$MovimientosDeudaTableTableManager
                 Value<int?> movimientoCajaId = const Value.absent(),
                 Value<DateTime?> anuladoEn = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => MovimientosDeudaCompanion(
                 id: id,
                 proveedorId: proveedorId,
@@ -43322,6 +44045,9 @@ class $$MovimientosDeudaTableTableManager
                 movimientoCajaId: movimientoCajaId,
                 anuladoEn: anuladoEn,
                 creadoEn: creadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
               ({
@@ -43336,6 +44062,9 @@ class $$MovimientosDeudaTableTableManager
                 Value<int?> movimientoCajaId = const Value.absent(),
                 Value<DateTime?> anuladoEn = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => MovimientosDeudaCompanion.insert(
                 id: id,
                 proveedorId: proveedorId,
@@ -43348,6 +44077,9 @@ class $$MovimientosDeudaTableTableManager
                 movimientoCajaId: movimientoCajaId,
                 anuladoEn: anuladoEn,
                 creadoEn: creadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -44220,6 +44952,8 @@ typedef $$VinculosFacturaTableCreateCompanionBuilder =
       required int productoId,
       Value<int> unidadesPorCantidad,
       Value<DateTime> actualizadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 typedef $$VinculosFacturaTableUpdateCompanionBuilder =
     VinculosFacturaCompanion Function({
@@ -44230,6 +44964,8 @@ typedef $$VinculosFacturaTableUpdateCompanionBuilder =
       Value<int> productoId,
       Value<int> unidadesPorCantidad,
       Value<DateTime> actualizadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 
 final class $$VinculosFacturaTableReferences
@@ -44314,6 +45050,16 @@ class $$VinculosFacturaTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProveedoresTableFilterComposer get proveedorId {
     final $$ProveedoresTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -44395,6 +45141,16 @@ class $$VinculosFacturaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProveedoresTableOrderingComposer get proveedorId {
     final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -44467,6 +45223,14 @@ class $$VinculosFacturaTableAnnotationComposer
 
   GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
     column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
     builder: (column) => column,
   );
 
@@ -44554,6 +45318,8 @@ class $$VinculosFacturaTableTableManager
                 Value<int> productoId = const Value.absent(),
                 Value<int> unidadesPorCantidad = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => VinculosFacturaCompanion(
                 id: id,
                 proveedorId: proveedorId,
@@ -44562,6 +45328,8 @@ class $$VinculosFacturaTableTableManager
                 productoId: productoId,
                 unidadesPorCantidad: unidadesPorCantidad,
                 actualizadoEn: actualizadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           createCompanionCallback:
               ({
@@ -44572,6 +45340,8 @@ class $$VinculosFacturaTableTableManager
                 required int productoId,
                 Value<int> unidadesPorCantidad = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => VinculosFacturaCompanion.insert(
                 id: id,
                 proveedorId: proveedorId,
@@ -44580,6 +45350,8 @@ class $$VinculosFacturaTableTableManager
                 productoId: productoId,
                 unidadesPorCantidad: unidadesPorCantidad,
                 actualizadoEn: actualizadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -44670,12 +45442,16 @@ typedef $$CuitsProveedorTableCreateCompanionBuilder =
       Value<int> id,
       required int proveedorId,
       required String cuit,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 typedef $$CuitsProveedorTableUpdateCompanionBuilder =
     CuitsProveedorCompanion Function({
       Value<int> id,
       Value<int> proveedorId,
       Value<String> cuit,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 
 final class $$CuitsProveedorTableReferences
@@ -44723,6 +45499,16 @@ class $$CuitsProveedorTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProveedoresTableFilterComposer get proveedorId {
     final $$ProveedoresTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -44766,6 +45552,16 @@ class $$CuitsProveedorTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProveedoresTableOrderingComposer get proveedorId {
     final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -44804,6 +45600,14 @@ class $$CuitsProveedorTableAnnotationComposer
 
   GeneratedColumn<String> get cuit =>
       $composableBuilder(column: $table.cuit, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
 
   $$ProveedoresTableAnnotationComposer get proveedorId {
     final $$ProveedoresTableAnnotationComposer composer = $composerBuilder(
@@ -44862,20 +45666,28 @@ class $$CuitsProveedorTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<int> proveedorId = const Value.absent(),
                 Value<String> cuit = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => CuitsProveedorCompanion(
                 id: id,
                 proveedorId: proveedorId,
                 cuit: cuit,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required int proveedorId,
                 required String cuit,
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => CuitsProveedorCompanion.insert(
                 id: id,
                 proveedorId: proveedorId,
                 cuit: cuit,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -44960,6 +45772,9 @@ typedef $$FacturasCompraTableCreateCompanionBuilder =
       required int usuarioId,
       required DateTime aplicadaEn,
       Value<DateTime?> deshechaEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 typedef $$FacturasCompraTableUpdateCompanionBuilder =
     FacturasCompraCompanion Function({
@@ -44976,6 +45791,9 @@ typedef $$FacturasCompraTableUpdateCompanionBuilder =
       Value<int> usuarioId,
       Value<DateTime> aplicadaEn,
       Value<DateTime?> deshechaEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 
 final class $$FacturasCompraTableReferences
@@ -45122,6 +45940,21 @@ class $$FacturasCompraTableFilterComposer
 
   ColumnFilters<DateTime> get deshechaEn => $composableBuilder(
     column: $table.deshechaEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -45280,6 +46113,21 @@ class $$FacturasCompraTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProveedoresTableOrderingComposer get proveedorId {
     final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -45396,6 +46244,19 @@ class $$FacturasCompraTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deshechaEn => $composableBuilder(
     column: $table.deshechaEn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => column,
   );
 
@@ -45543,6 +46404,9 @@ class $$FacturasCompraTableTableManager
                 Value<int> usuarioId = const Value.absent(),
                 Value<DateTime> aplicadaEn = const Value.absent(),
                 Value<DateTime?> deshechaEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => FacturasCompraCompanion(
                 id: id,
                 proveedorId: proveedorId,
@@ -45557,6 +46421,9 @@ class $$FacturasCompraTableTableManager
                 usuarioId: usuarioId,
                 aplicadaEn: aplicadaEn,
                 deshechaEn: deshechaEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
               ({
@@ -45573,6 +46440,9 @@ class $$FacturasCompraTableTableManager
                 required int usuarioId,
                 required DateTime aplicadaEn,
                 Value<DateTime?> deshechaEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => FacturasCompraCompanion.insert(
                 id: id,
                 proveedorId: proveedorId,
@@ -45587,6 +46457,9 @@ class $$FacturasCompraTableTableManager
                 usuarioId: usuarioId,
                 aplicadaEn: aplicadaEn,
                 deshechaEn: deshechaEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -45730,6 +46603,8 @@ typedef $$ProductosFacturaCompraTableCreateCompanionBuilder =
       required int unidadesSumadas,
       Value<int?> costoAnteriorCentavos,
       required int costoNuevoCentavos,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 typedef $$ProductosFacturaCompraTableUpdateCompanionBuilder =
     ProductosFacturaCompraCompanion Function({
@@ -45739,6 +46614,8 @@ typedef $$ProductosFacturaCompraTableUpdateCompanionBuilder =
       Value<int> unidadesSumadas,
       Value<int?> costoAnteriorCentavos,
       Value<int> costoNuevoCentavos,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
     });
 
 final class $$ProductosFacturaCompraTableReferences
@@ -45819,6 +46696,16 @@ class $$ProductosFacturaCompraTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FacturasCompraTableFilterComposer get facturaId {
     final $$FacturasCompraTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -45895,6 +46782,16 @@ class $$ProductosFacturaCompraTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FacturasCompraTableOrderingComposer get facturaId {
     final $$FacturasCompraTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -45966,6 +46863,14 @@ class $$ProductosFacturaCompraTableAnnotationComposer
 
   GeneratedColumn<int> get costoNuevoCentavos => $composableBuilder(
     column: $table.costoNuevoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
     builder: (column) => column,
   );
 
@@ -46061,6 +46966,8 @@ class $$ProductosFacturaCompraTableTableManager
                 Value<int> unidadesSumadas = const Value.absent(),
                 Value<int?> costoAnteriorCentavos = const Value.absent(),
                 Value<int> costoNuevoCentavos = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => ProductosFacturaCompraCompanion(
                 id: id,
                 facturaId: facturaId,
@@ -46068,6 +46975,8 @@ class $$ProductosFacturaCompraTableTableManager
                 unidadesSumadas: unidadesSumadas,
                 costoAnteriorCentavos: costoAnteriorCentavos,
                 costoNuevoCentavos: costoNuevoCentavos,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           createCompanionCallback:
               ({
@@ -46077,6 +46986,8 @@ class $$ProductosFacturaCompraTableTableManager
                 required int unidadesSumadas,
                 Value<int?> costoAnteriorCentavos = const Value.absent(),
                 required int costoNuevoCentavos,
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
               }) => ProductosFacturaCompraCompanion.insert(
                 id: id,
                 facturaId: facturaId,
@@ -46084,6 +46995,8 @@ class $$ProductosFacturaCompraTableTableManager
                 unidadesSumadas: unidadesSumadas,
                 costoAnteriorCentavos: costoAnteriorCentavos,
                 costoNuevoCentavos: costoNuevoCentavos,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
               ),
           withReferenceMapper: (p0) => p0
               .map(

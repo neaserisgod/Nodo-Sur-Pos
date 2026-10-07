@@ -155,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 60;
+  int get schemaVersion => 61;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1120,7 +1120,10 @@ class AppDatabase extends _$AppDatabase {
       // v55 → v56 (2026-10-07): un CUIT puede ser de varios proveedores (el mismo mayorista como "X" y "X cigarrillos"). La clave única
       // pasa de `cuit` a (proveedor, cuit): se rehace la tabla copiando las filas tal cual, ninguna se pierde.
       if (from < 56) {
-        await m.alterTable(TableMigration(cuitsProveedor));
+        // Las columnas de sincronización de la v61 todavía no existen en la tabla vieja: se crean vacías y v61 las completa.
+        await m.alterTable(
+          TableMigration(cuitsProveedor, newColumns: [cuitsProveedor.globalId, cuitsProveedor.origenDispositivo]),
+        );
       }
       // v56 → v57 (2026-10-07): aplicar facturas de compra. Dos tablas nuevas, locales: la factura aplicada (para no repetirla y poder
       // deshacerla) y lo que le hizo a cada producto. No tocan ninguna fila existente.
@@ -1150,6 +1153,13 @@ class AppDatabase extends _$AppDatabase {
         if (!columnas.contains('umbral_faltante_centavos')) {
           await m.addColumn(configuracionTabla, configuracionTabla.umbralFaltanteCentavos);
         }
+      }
+      // v60 → v61 (2026-10-07): la cuenta corriente y las facturas de compra se sincronizan (El dueño: "independizar la apk de
+      // desktop" — el celular carga facturas sin la PC). Las cinco tablas eran locales de cada equipo; reciben la identidad de
+      // sincronización y las filas que ya existían la completan acá, con la fecha REAL de cada una (mismo criterio que v30→v31: una
+      // fila vieja no puede parecer más nueva que una edición de ayer). Con chequeo de columna, como v44→v45.
+      if (from < 61) {
+        await _sumarIdentidadDeSyncAFacturas(this, m);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -1266,6 +1276,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'usuarios',
   'configuracion_negocio_tabla',
   'medios_de_pago',
+  ...tablasDeSyncV61,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1434,4 +1445,42 @@ Future<void> _seedDatosFijos(AppDatabase db) async {
           ),
         );
   }
+}
+
+/// Las tablas que entraron a la sincronización en la v61 (cuenta corriente y facturas de compra).
+const tablasDeSyncV61 = ['movimientos_deuda', 'facturas_compra', 'productos_factura_compra', 'vinculos_factura', 'cuits_proveedor'];
+
+/// v60 → v61: columnas de identidad de sincronización en las tablas de [tablasDeSyncV61], `global_id` para cada fila que ya existía y
+/// el índice único de `global_id`.
+Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+  Future<void> sumar(TableInfo tabla, List<GeneratedColumn> nuevas) async {
+    final hay = await columnasDe(tabla.actualTableName);
+    for (final c in nuevas) {
+      if (!hay.contains(c.name)) await m.addColumn(tabla, c);
+    }
+  }
+
+  await sumar(db.movimientosDeuda, [db.movimientosDeuda.globalId, db.movimientosDeuda.origenDispositivo, db.movimientosDeuda.actualizadoEn]);
+  await sumar(db.facturasCompra, [db.facturasCompra.globalId, db.facturasCompra.origenDispositivo, db.facturasCompra.actualizadoEn]);
+  await sumar(db.productosFacturaCompra, [db.productosFacturaCompra.globalId, db.productosFacturaCompra.origenDispositivo]);
+  await sumar(db.vinculosFactura, [db.vinculosFactura.globalId, db.vinculosFactura.origenDispositivo]);
+  await sumar(db.cuitsProveedor, [db.cuitsProveedor.globalId, db.cuitsProveedor.origenDispositivo]);
+
+  // Lo que ya había lo creó este equipo: su origen es el de este proceso (la PC dice 'desktop', el celular su id propio).
+  final origen = idDispositivoActual.replaceAll("'", "''");
+  const fechaReal = {
+    'movimientos_deuda': 'COALESCE(anulado_en, creado_en)',
+    'facturas_compra': 'COALESCE(deshecha_en, aplicada_en)',
+  };
+  for (final tabla in tablasDeSyncV61) {
+    final actualizado = fechaReal[tabla];
+    await db.customStatement(
+      "UPDATE $tabla SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen'"
+      '${actualizado == null ? '' : ', actualizado_en = $actualizado'} '
+      'WHERE global_id IS NULL',
+    );
+  }
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV61);
 }

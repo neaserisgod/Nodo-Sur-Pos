@@ -57,7 +57,19 @@ const Map<String, bool> tablasSincronizables = {
   'arqueos_intermedios': false,
   'historial_de_precios': false,
   'pendientes': true,
+  // v61 (El dueño, 2026-10-07: "independizar la apk de desktop"): la cuenta corriente y las facturas de compra, para que el
+  // celular cargue una factura sin la PC y la deuda, el "ya se cargó" y lo aprendido lleguen a los dos equipos. Después de
+  // `movimientos_de_caja` (un pago apunta a su movimiento de caja) y en orden de claves foráneas entre ellas.
+  'movimientos_deuda': true,
+  'facturas_compra': true,
+  'productos_factura_compra': false,
+  'vinculos_factura': true,
+  'cuits_proveedor': false,
 };
+
+/// Las tablas que un equipo con una versión anterior a la v61 no conoce: si la PC todavía no se actualizó, le contesta error al
+/// celular por estas y la sincronización por wifi las saltea en vez de cortarse entera (`servicio_sincronizacion.dart`).
+const tablasSincronizablesV61 = {'movimientos_deuda', 'facturas_compra', 'productos_factura_compra', 'vinculos_factura', 'cuits_proveedor'};
 
 bool _tablaValida(String tabla) {
   if (!tablasSincronizables.containsKey(tabla)) {
@@ -110,6 +122,28 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
   'arqueos_intermedios': {'sesion_caja_id': 'sesiones_de_caja', 'usuario_id': 'usuarios'},
   'historial_de_precios': {'producto_id': 'productos', 'usuario_id': 'usuarios'},
   'pendientes': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
+  'movimientos_deuda': {
+    'proveedor_id': 'proveedores',
+    'usuario_id': 'usuarios',
+    'movimiento_caja_id': 'movimientos_de_caja',
+  },
+  'facturas_compra': {
+    'proveedor_id': 'proveedores',
+    'movimiento_deuda_id': 'movimientos_deuda',
+    'usuario_id': 'usuarios',
+  },
+  'productos_factura_compra': {'factura_id': 'facturas_compra', 'producto_id': 'productos'},
+  'vinculos_factura': {'proveedor_id': 'proveedores', 'producto_id': 'productos'},
+  'cuits_proveedor': {'proveedor_id': 'proveedores'},
+};
+
+/// Tablas con una clave única propia además de `global_id`: dos equipos pueden crear "la misma" fila por su cuenta (los dos aprenden
+/// que el código 123 de Serra es la Coca de 1,5 L) con distinto `global_id`, y la que llega chocaría con la local. Se trata como la
+/// misma fila: en un log de solo-inserción se ignora; en una que se edita gana la más nueva y la local adopta su `global_id`, así los
+/// dos equipos terminan con una sola fila y el mismo id.
+const Map<String, List<String>> _clavesNaturales = {
+  'vinculos_factura': ['proveedor_id', 'tipo_clave', 'clave'],
+  'cuits_proveedor': ['proveedor_id', 'cuit'],
 };
 
 /// Nombre de la columna extra (no es una columna real de [tabla], se
@@ -472,6 +506,18 @@ Future<void> _aplicarUnaFila(
     existente = await db.customSelect('SELECT * FROM $tabla ORDER BY id LIMIT 1').getSingleOrNull();
   }
 
+  var adoptarGlobalId = false;
+  final claveNatural = _clavesNaturales[tabla];
+  if (existente == null && claveNatural != null && claveNatural.every((c) => fila[c] != null)) {
+    existente = await db
+        .customSelect(
+          'SELECT * FROM $tabla WHERE ${claveNatural.map((c) => '$c = ?').join(' AND ')}',
+          variables: [for (final c in claveNatural) _variableDesde(fila[c])],
+        )
+        .getSingleOrNull();
+    adoptarGlobalId = existente != null;
+  }
+
   if (existente == null) {
     final columnas = fila.keys.where((k) => k != 'id').toList();
     await db.customInsert(
@@ -508,7 +554,7 @@ Future<void> _aplicarUnaFila(
 
   final columnasExcluidas = {
     'id',
-    'global_id',
+    if (!adoptarGlobalId) 'global_id',
     if (tabla == 'productos') ..._columnasStockDeProductos,
   };
   final columnas = fila.keys.where((k) => !columnasExcluidas.contains(k)).toList();

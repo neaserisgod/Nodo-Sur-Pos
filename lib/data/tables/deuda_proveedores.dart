@@ -16,8 +16,9 @@ import 'usuarios.dart';
 ///
 /// Un PAGO que sale de una caja (cajón, Mercado Pago o lata) genera además un
 /// `MovimientoCaja` tipo PAGO_PROVEEDOR con el `proveedorId` puesto — así el
-/// arqueo baja lo que salió y el gasto tiene dueño. Local de cada
-/// dispositivo: no se sincroniza.
+/// arqueo baja lo que salió y el gasto tiene dueño. Se sincroniza desde la
+/// v61 (El dueño, 2026-10-07: el celular carga facturas sin la PC, y la
+/// deuda que cargan tiene que llegar a los dos equipos).
 @DataClassName('MovimientoDeuda')
 class MovimientosDeuda extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -48,4 +49,10 @@ class MovimientosDeuda extends Table {
   DateTimeColumn get anuladoEn => dateTime().nullable()();
 
   DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
+
+  /// Identidad de sincronización (v61) — ver el comentario de cabecera de la migración v29→v30 en `database.dart`.
+  /// [actualizadoEn] se pisa al anular, que es la única edición que tiene un movimiento.
+  TextColumn get globalId => text().nullable()();
+  TextColumn get origenDispositivo => text().nullable()();
+  DateTimeColumn get actualizadoEn => dateTime().nullable()();
 }
