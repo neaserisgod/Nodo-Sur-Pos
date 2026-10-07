@@ -9,6 +9,7 @@
 // viejo hace que una base que ya pasó por él quede en un estado que ninguna
 // migración sabe describir.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -155,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 61;
+  int get schemaVersion => 62;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1161,6 +1162,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 61) {
         await _sumarIdentidadDeSyncAFacturas(this, m);
       }
+      // v61 → v62 (2026-10-07): promos en el celular. Los artículos de cada promo viajan con ella (`productos.componentes_promo`, por
+      // `global_id`), y las promos que se crearon sin identidad de sincronización la reciben: hasta acá no llegaban nunca al celular.
+      if (from < 62) {
+        await _sumarComponentesDePromoALaSync(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1483,4 +1489,36 @@ Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
     );
   }
   await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV61);
+}
+
+/// v61 → v62: columna `productos.componentes_promo`, llenada desde `promo_componentes`, e identidad de sincronización para las promos
+/// (y sus artículos) que no la tenían. Con `actualizado_en` de ahora: tienen que subir como un cambio nuevo.
+Future<void> _sumarComponentesDePromoALaSync(AppDatabase db, Migrator m) async {
+  final columnas = (await db.customSelect("SELECT name FROM pragma_table_info('productos')").get()).map((c) => c.data['name'] as String).toSet();
+  if (!columnas.contains('componentes_promo')) await m.addColumn(db.productos, db.productos.componentesPromo);
+
+  final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  final origen = idDispositivoActual.replaceAll("'", "''");
+  final promos = await db.customSelect('SELECT id FROM productos WHERE es_promo = 1').get();
+  for (final promo in promos) {
+    final promoId = promo.data['id'] as int;
+    final filas = await db
+        .customSelect('SELECT producto_id, cantidad FROM promo_componentes WHERE promo_id = ? ORDER BY id', variables: [Variable.withInt(promoId)])
+        .get();
+    final lista = <Map<String, Object>>[];
+    for (final f in [for (final f in filas) f.data]) {
+      final productoId = f['producto_id'] as int;
+      await db.customStatement(
+        "UPDATE productos SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen', actualizado_en = $ahora "
+        'WHERE id = $productoId AND global_id IS NULL',
+      );
+      final gid = (await db.customSelect('SELECT global_id FROM productos WHERE id = $productoId').getSingle()).data['global_id'] as String;
+      lista.add({'gid': gid, 'cantidad': f['cantidad'] as int});
+    }
+    await db.customStatement(
+      "UPDATE productos SET componentes_promo = ?, global_id = COALESCE(global_id, lower(hex(randomblob(16)))), "
+      "origen_dispositivo = COALESCE(origen_dispositivo, '$origen'), actualizado_en = $ahora WHERE id = $promoId",
+      [jsonEncode(lista)],
+    );
+  }
 }

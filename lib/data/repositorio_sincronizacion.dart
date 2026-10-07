@@ -28,6 +28,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/stock.dart';
 import 'database.dart';
+import 'repositorio_promos.dart' show reconstruirComponentesDePromo;
 
 /// Las tablas que participan de la sincronización y si comparan
 /// `actualizado_en` para decidir quién gana un conflicto (`true`) o son un
@@ -398,6 +399,10 @@ Future<List<Map<String, dynamic>>> aplicarCambios(
         comparaActualizado: comparaActualizado,
         ordenDeLlegada: ordenDeLlegada,
       );
+      // Aunque la fila no haya ganado (ya estaba igual o más nueva): si un reintento llega después de que la promo se grabó pero
+      // antes de que estuvieran sus artículos, recién acá se pueden armar.
+      final gid = fila['global_id'] as String?;
+      if (gid != null) await _rehacerPromoSiHaceFalta(db, tabla, gid);
     } catch (e) {
       // ignore: avoid_print
       print('aplicarCambios: $tabla (global_id=${fila['global_id']}) no se pudo aplicar: $e');
@@ -567,4 +572,16 @@ Future<void> _aplicarUnaFila(
       Variable.withInt((existente.data['id'] as num).toInt()),
     ],
   );
+}
+
+/// Una promo que llega por la sync trae sus artículos en `componentes_promo` (v62): se rehace `promo_componentes`, que es lo que
+/// lee la venta. Si un artículo todavía no llegó, lanza y la fila se reintenta (`aplicarCambios`).
+Future<void> _rehacerPromoSiHaceFalta(AppDatabase db, String tabla, String globalId) async {
+  if (tabla != 'productos') return;
+  final fila = await db
+      .customSelect('SELECT id, es_promo, componentes_promo FROM productos WHERE global_id = ?', variables: [Variable.withString(globalId)])
+      .getSingleOrNull();
+  final json = fila?.data['componentes_promo'] as String?;
+  if (fila == null || fila.data['es_promo'] != 1 || json == null) return;
+  await reconstruirComponentesDePromo(db, promoId: fila.data['id'] as int, json: json);
 }

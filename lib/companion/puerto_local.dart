@@ -31,6 +31,7 @@ import '../data/repositorio_historial_ventas.dart' as repo_historial_ventas;
 import '../data/repositorio_ingresos.dart' as repo_ingresos;
 import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
+import '../data/repositorio_promos.dart' as repo_promos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
 import '../data/repositorio_pendientes.dart' as repo_pendientes;
@@ -1048,7 +1049,8 @@ class PuertoLocal implements ServicioCompanion {
     String texto, {
     bool exigirStock = true,
   }) async {
-    final catalogo = await db.select(db.productos).get();
+    // Una promo muestra el stock que alcanza con sus artículos: sin eso figuraba en 0 y no aparecía nunca.
+    final catalogo = await repo_promos.catalogoConStockDePromos(db);
     final consulta = busqueda.interpretarTexto(texto);
     final resultados = busqueda
         .buscarProductos(catalogo: catalogo, textoBuscado: texto, exigirStock: exigirStock)

@@ -3915,6 +3915,17 @@ class $ProductosTable extends Productos
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _componentesPromoMeta = const VerificationMeta(
+    'componentesPromo',
+  );
+  @override
+  late final GeneratedColumn<String> componentesPromo = GeneratedColumn<String>(
+    'componentes_promo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activoMeta = const VerificationMeta('activo');
   @override
   late final GeneratedColumn<bool> activo = GeneratedColumn<bool>(
@@ -4029,6 +4040,7 @@ class $ProductosTable extends Productos
     stockMinimoGramos,
     precioFijo,
     esPromo,
+    componentesPromo,
     activo,
     creadoEn,
     actualizadoEn,
@@ -4190,6 +4202,15 @@ class $ProductosTable extends Productos
         esPromo.isAcceptableOrUnknown(data['es_promo']!, _esPromoMeta),
       );
     }
+    if (data.containsKey('componentes_promo')) {
+      context.handle(
+        _componentesPromoMeta,
+        componentesPromo.isAcceptableOrUnknown(
+          data['componentes_promo']!,
+          _componentesPromoMeta,
+        ),
+      );
+    }
     if (data.containsKey('activo')) {
       context.handle(
         _activoMeta,
@@ -4334,6 +4355,10 @@ class $ProductosTable extends Productos
         DriftSqlType.bool,
         data['${effectivePrefix}es_promo'],
       )!,
+      componentesPromo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}componentes_promo'],
+      ),
       activo: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
@@ -4436,6 +4461,12 @@ class Producto extends DataClass implements Insertable<Producto> {
   /// Promo armada con varios artículos (`promo_componentes`). Su stock no es
   /// una columna: es el de sus artículos (`stockDePromo`). El dueño, 2026-09-29.
   final bool esPromo;
+
+  /// Los artículos de una promo, para que viajen con ella por la sync (v62, El dueño, 2026-10-07: promos en el celular):
+  /// `[{"gid": <global_id del artículo>, "cantidad": n}]`. Va por `global_id` porque el id local no vale en otro equipo (mismo
+  /// criterio que `pendientes.lineasJson`). `promo_componentes` sigue siendo lo que lee la venta; al llegar una promo por la sync
+  /// se rehace desde acá (`aplicarCambios`). Null en lo que no es promo.
+  final String? componentesPromo;
   final bool activo;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
@@ -4474,6 +4505,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     this.stockMinimoGramos,
     required this.precioFijo,
     required this.esPromo,
+    this.componentesPromo,
     required this.activo,
     required this.creadoEn,
     required this.actualizadoEn,
@@ -4522,6 +4554,9 @@ class Producto extends DataClass implements Insertable<Producto> {
     }
     map['precio_fijo'] = Variable<bool>(precioFijo);
     map['es_promo'] = Variable<bool>(esPromo);
+    if (!nullToAbsent || componentesPromo != null) {
+      map['componentes_promo'] = Variable<String>(componentesPromo);
+    }
     map['activo'] = Variable<bool>(activo);
     map['creado_en'] = Variable<DateTime>(creadoEn);
     map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
@@ -4585,6 +4620,9 @@ class Producto extends DataClass implements Insertable<Producto> {
           : Value(stockMinimoGramos),
       precioFijo: Value(precioFijo),
       esPromo: Value(esPromo),
+      componentesPromo: componentesPromo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(componentesPromo),
       activo: Value(activo),
       creadoEn: Value(creadoEn),
       actualizadoEn: Value(actualizadoEn),
@@ -4636,6 +4674,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       stockMinimoGramos: serializer.fromJson<int?>(json['stockMinimoGramos']),
       precioFijo: serializer.fromJson<bool>(json['precioFijo']),
       esPromo: serializer.fromJson<bool>(json['esPromo']),
+      componentesPromo: serializer.fromJson<String?>(json['componentesPromo']),
       activo: serializer.fromJson<bool>(json['activo']),
       creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
@@ -4676,6 +4715,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       'stockMinimoGramos': serializer.toJson<int?>(stockMinimoGramos),
       'precioFijo': serializer.toJson<bool>(precioFijo),
       'esPromo': serializer.toJson<bool>(esPromo),
+      'componentesPromo': serializer.toJson<String?>(componentesPromo),
       'activo': serializer.toJson<bool>(activo),
       'creadoEn': serializer.toJson<DateTime>(creadoEn),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
@@ -4712,6 +4752,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     Value<int?> stockMinimoGramos = const Value.absent(),
     bool? precioFijo,
     bool? esPromo,
+    Value<String?> componentesPromo = const Value.absent(),
     bool? activo,
     DateTime? creadoEn,
     DateTime? actualizadoEn,
@@ -4749,6 +4790,9 @@ class Producto extends DataClass implements Insertable<Producto> {
         : this.stockMinimoGramos,
     precioFijo: precioFijo ?? this.precioFijo,
     esPromo: esPromo ?? this.esPromo,
+    componentesPromo: componentesPromo.present
+        ? componentesPromo.value
+        : this.componentesPromo,
     activo: activo ?? this.activo,
     creadoEn: creadoEn ?? this.creadoEn,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -4810,6 +4854,9 @@ class Producto extends DataClass implements Insertable<Producto> {
           ? data.precioFijo.value
           : this.precioFijo,
       esPromo: data.esPromo.present ? data.esPromo.value : this.esPromo,
+      componentesPromo: data.componentesPromo.present
+          ? data.componentesPromo.value
+          : this.componentesPromo,
       activo: data.activo.present ? data.activo.value : this.activo,
       creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
       actualizadoEn: data.actualizadoEn.present
@@ -4852,6 +4899,7 @@ class Producto extends DataClass implements Insertable<Producto> {
           ..write('stockMinimoGramos: $stockMinimoGramos, ')
           ..write('precioFijo: $precioFijo, ')
           ..write('esPromo: $esPromo, ')
+          ..write('componentesPromo: $componentesPromo, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -4886,6 +4934,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     stockMinimoGramos,
     precioFijo,
     esPromo,
+    componentesPromo,
     activo,
     creadoEn,
     actualizadoEn,
@@ -4917,6 +4966,7 @@ class Producto extends DataClass implements Insertable<Producto> {
           other.stockMinimoGramos == this.stockMinimoGramos &&
           other.precioFijo == this.precioFijo &&
           other.esPromo == this.esPromo &&
+          other.componentesPromo == this.componentesPromo &&
           other.activo == this.activo &&
           other.creadoEn == this.creadoEn &&
           other.actualizadoEn == this.actualizadoEn &&
@@ -4948,6 +4998,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
   final Value<int?> stockMinimoGramos;
   final Value<bool> precioFijo;
   final Value<bool> esPromo;
+  final Value<String?> componentesPromo;
   final Value<bool> activo;
   final Value<DateTime> creadoEn;
   final Value<DateTime> actualizadoEn;
@@ -4975,6 +5026,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.stockMinimoGramos = const Value.absent(),
     this.precioFijo = const Value.absent(),
     this.esPromo = const Value.absent(),
+    this.componentesPromo = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5003,6 +5055,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.stockMinimoGramos = const Value.absent(),
     this.precioFijo = const Value.absent(),
     this.esPromo = const Value.absent(),
+    this.componentesPromo = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5031,6 +5084,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Expression<int>? stockMinimoGramos,
     Expression<bool>? precioFijo,
     Expression<bool>? esPromo,
+    Expression<String>? componentesPromo,
     Expression<bool>? activo,
     Expression<DateTime>? creadoEn,
     Expression<DateTime>? actualizadoEn,
@@ -5061,6 +5115,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       if (stockMinimoGramos != null) 'stock_minimo_gramos': stockMinimoGramos,
       if (precioFijo != null) 'precio_fijo': precioFijo,
       if (esPromo != null) 'es_promo': esPromo,
+      if (componentesPromo != null) 'componentes_promo': componentesPromo,
       if (activo != null) 'activo': activo,
       if (creadoEn != null) 'creado_en': creadoEn,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -5094,6 +5149,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Value<int?>? stockMinimoGramos,
     Value<bool>? precioFijo,
     Value<bool>? esPromo,
+    Value<String?>? componentesPromo,
     Value<bool>? activo,
     Value<DateTime>? creadoEn,
     Value<DateTime>? actualizadoEn,
@@ -5123,6 +5179,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       stockMinimoGramos: stockMinimoGramos ?? this.stockMinimoGramos,
       precioFijo: precioFijo ?? this.precioFijo,
       esPromo: esPromo ?? this.esPromo,
+      componentesPromo: componentesPromo ?? this.componentesPromo,
       activo: activo ?? this.activo,
       creadoEn: creadoEn ?? this.creadoEn,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -5198,6 +5255,9 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     if (esPromo.present) {
       map['es_promo'] = Variable<bool>(esPromo.value);
     }
+    if (componentesPromo.present) {
+      map['componentes_promo'] = Variable<String>(componentesPromo.value);
+    }
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
@@ -5252,6 +5312,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
           ..write('stockMinimoGramos: $stockMinimoGramos, ')
           ..write('precioFijo: $precioFijo, ')
           ..write('esPromo: $esPromo, ')
+          ..write('componentesPromo: $componentesPromo, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -29413,6 +29474,7 @@ typedef $$ProductosTableCreateCompanionBuilder =
       Value<int?> stockMinimoGramos,
       Value<bool> precioFijo,
       Value<bool> esPromo,
+      Value<String?> componentesPromo,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -29442,6 +29504,7 @@ typedef $$ProductosTableUpdateCompanionBuilder =
       Value<int?> stockMinimoGramos,
       Value<bool> precioFijo,
       Value<bool> esPromo,
+      Value<String?> componentesPromo,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -29766,6 +29829,11 @@ class $$ProductosTableFilterComposer
 
   ColumnFilters<bool> get esPromo => $composableBuilder(
     column: $table.esPromo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentesPromo => $composableBuilder(
+    column: $table.componentesPromo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30174,6 +30242,11 @@ class $$ProductosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get componentesPromo => $composableBuilder(
+    column: $table.componentesPromo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get activo => $composableBuilder(
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
@@ -30338,6 +30411,11 @@ class $$ProductosTableAnnotationComposer
 
   GeneratedColumn<bool> get esPromo =>
       $composableBuilder(column: $table.esPromo, builder: (column) => column);
+
+  GeneratedColumn<String> get componentesPromo => $composableBuilder(
+    column: $table.componentesPromo,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
@@ -30709,6 +30787,7 @@ class $$ProductosTableTableManager
                 Value<int?> stockMinimoGramos = const Value.absent(),
                 Value<bool> precioFijo = const Value.absent(),
                 Value<bool> esPromo = const Value.absent(),
+                Value<String?> componentesPromo = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -30738,6 +30817,7 @@ class $$ProductosTableTableManager
                 stockMinimoGramos: stockMinimoGramos,
                 precioFijo: precioFijo,
                 esPromo: esPromo,
+                componentesPromo: componentesPromo,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
@@ -30767,6 +30847,7 @@ class $$ProductosTableTableManager
                 Value<int?> stockMinimoGramos = const Value.absent(),
                 Value<bool> precioFijo = const Value.absent(),
                 Value<bool> esPromo = const Value.absent(),
+                Value<String?> componentesPromo = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -30796,6 +30877,7 @@ class $$ProductosTableTableManager
                 stockMinimoGramos: stockMinimoGramos,
                 precioFijo: precioFijo,
                 esPromo: esPromo,
+                componentesPromo: componentesPromo,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
