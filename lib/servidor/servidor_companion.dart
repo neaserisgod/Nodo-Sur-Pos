@@ -980,7 +980,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       categoriaId: _int(body['categoriaId']),
       proveedorId: _int(body['proveedorId']),
       esPesable: body['esPesable'] as bool? ?? false,
-      tipoCigarrillo: body['tipoCigarrillo'] as String? ?? 'ninguno',
+      tipoCigarrillo: body['tipoCigarrillo'] as String?, // ausente = no se toca
       precioCentavos: _int(body['precioCentavos']),
       costoCentavos: _int(body['costoCentavos']),
       precioPorKiloCentavos: _int(body['precioPorKiloCentavos']),

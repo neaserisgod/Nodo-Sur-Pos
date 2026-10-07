@@ -289,7 +289,11 @@ Future<void> actualizarProducto(
   int? categoriaId,
   int? proveedorId,
   required bool esPesable,
-  String tipoCigarrillo = 'ninguno',
+  // Null = no se toca (mismo criterio que `stockMinimo`): el celular edita
+  // precios y stock sin saber de cigarrillos, y con un default 'ninguno' cada
+  // edición desde ahí le borraba la marca al producto — y con ella el recargo
+  // por pago virtual (Regla 6), en el celular y, por sync, en la PC.
+  String? tipoCigarrillo,
   int? precioCentavos,
   int? costoCentavos,
   int? precioPorKiloCentavos,
@@ -309,6 +313,7 @@ Future<void> actualizarProducto(
   final anterior = await (db.select(
     db.productos,
   )..where((p) => p.id.equals(id))).getSingle();
+  tipoCigarrillo ??= anterior.tipoCigarrillo;
 
   // Precio automático por proveedor (El dueño, 2026-09-29): si cambió el costo y
   // el producto sigue al porcentaje de su proveedor, el precio se recalcula
