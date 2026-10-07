@@ -359,6 +359,18 @@ Fijos mensuales actuales (agosto 2026): **$2.093.000**
   bolsas, limpieza, mantenimiento. Con eso el equilibrio real ronda los
   248.500 diarios.
 
+### Faltantes del cierre: a dónde fue la plata (El dueño, 2026-10-07)
+
+Revisando la base real se vio que la ganancia de la app no mentía: entre el 13/9 y el 6/10 salieron ~$1.590.000 de
+las cajas sin anotarse (casi todo de Mercado Pago: alquiler, luz, proveedores y gastos personales pagados desde la
+cuenta del negocio). Equilibrio seguía mostrando esa plata como retirable.
+
+- Al cerrar, cada caja con un faltante de **$6.000 o más** pregunta a dónde fue: **gasto mío** (cuenta como retiro),
+  **proveedor** (baja la deuda), **fijo** (lo marca pagado; desde la lata no) u **otro gasto del negocio**. Se puede
+  anotar en partes. Debajo de $6.000 no se pregunta: en Mercado Pago es la comisión diaria.
+- "Me equivoqué al contar" vuelve al conteo.
+- Nunca traba el cierre: se puede cerrar sin explicar ("No sé"), con un aviso antes.
+
 ## 13. Retiro de ganancias
 
 Reemplaza por completo al viejo "retiro semanal" (eliminado: la cuenta

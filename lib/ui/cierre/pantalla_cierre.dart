@@ -28,6 +28,7 @@ import '../comun/fechas.dart';
 import '../kit/kit.dart';
 import '../separaciones/dialogo_sin_costo.dart';
 import 'cierre_controlador.dart';
+import 'dialogo_faltante.dart';
 import 'dialogo_reabrir_sesion.dart';
 import 'saldo_mp_vista.dart';
 import 'seccion_mp_real.dart';
@@ -438,6 +439,28 @@ class _PasoRevisado extends StatelessWidget {
   final CierreControlador c;
   final int usuarioId;
 
+  /// Con faltantes sin explicar no se cierra de una: se avisa qué pasa si no se anotan. Nunca se traba — "no sé" es
+  /// una respuesta válida y la diferencia queda como siempre.
+  Future<void> _cerrar(BuildContext context) async {
+    final sinExplicar = c.faltantes.values.fold(0, (a, m) => a + m);
+    if (sinExplicar > 0) {
+      final cerrarIgual = await mostrarModalMock<bool>(
+        context,
+        builder: (context) => ModalMock(
+          titulo: 'Quedan ${pesos(sinExplicar)} sin explicar',
+          subtitulo: 'Si no anotás a dónde fueron, Equilibrio los sigue contando como ganancia que tenés.',
+          cuerpo: const [],
+          pie: [
+            Btn('Anotar a dónde fueron', variante: VarBtn.blue, tam: TamBtn.lg, ancho: true, onTap: () => Navigator.of(context).pop(false)),
+            Btn('No sé, cerrar igual', key: const Key('cerrar_sin_explicar'), variante: VarBtn.out, ancho: true, onTap: () => Navigator.of(context).pop(true)),
+          ],
+        ),
+      );
+      if (cerrarIgual != true) return;
+    }
+    await c.cerrar(usuarioId: usuarioId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = c.resumen;
@@ -504,7 +527,7 @@ class _PasoRevisado extends StatelessWidget {
                       Text(c.error!, style: estilo(15, 500, color: p.b)),
                     ],
                     const SizedBox(height: 12),
-                    Btn('Cerrar caja', variante: VarBtn.blue, tam: TamBtn.lg, ancho: true, onTap: () => c.cerrar(usuarioId: usuarioId)),
+                    Btn('Cerrar caja', variante: VarBtn.blue, tam: TamBtn.lg, ancho: true, onTap: () => _cerrar(context)),
                     const SizedBox(height: 12),
                     Btn('Volver a contar', variante: VarBtn.out, ancho: true, onTap: c.volverAContar),
                   ],
@@ -579,6 +602,10 @@ class _ColumnaDiferencias extends StatelessWidget {
             ],
           ),
         ),
+        if (c.faltantes.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _TarjetaFaltantes(c: c, usuarioId: usuarioId),
+        ],
         const SizedBox(height: 14),
         IntrinsicHeight(
           child: Row(
@@ -875,6 +902,48 @@ class _Cerrada extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Los faltantes del cierre que todavía no se explicaron, uno por caja, con el botón para decir a dónde fueron.
+class _TarjetaFaltantes extends StatelessWidget {
+  const _TarjetaFaltantes({required this.c, required this.usuarioId});
+  final CierreControlador c;
+  final int usuarioId;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.p;
+    return Tarjeta(
+      key: const Key('cierre_faltantes'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('¿A dónde fue esta plata?', style: estilo(17, 600, color: p.tinta)),
+          const SizedBox(height: 4),
+          Text(
+            'Lo que salió sin anotar (un proveedor, la luz, un gasto tuyo) Equilibrio lo sigue contando como ganancia.',
+            style: estilo(13.5, 400, color: p.mute, alto: 1.4),
+          ),
+          for (final MapEntry(key: caja, value: monto) in c.faltantes.entries) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: Text('Faltan ${pesos(monto)} en ${nombreCaja(caja)}', style: estilo(15.5, 500, color: p.tinta))),
+                Btn(
+                  'Anotar',
+                  key: Key('faltante_${caja.name}'),
+                  variante: VarBtn.ton,
+                  tam: TamBtn.sm,
+                  sobreGris: true,
+                  onTap: () => mostrarDialogoFaltante(context, c: c, caja: caja, faltanteCentavos: monto, usuarioId: usuarioId),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
