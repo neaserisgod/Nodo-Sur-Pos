@@ -1,5 +1,7 @@
 # Endpoint nuevo para NodoSurPage: el equipo del negocio visto desde la PC
 
+> **Ya aplicado** en `NodoSurPage` (PR #51, 2026-10-06). Este patch queda solo como referencia histórica.
+
 La PC (Configuración › Cuenta de Nodo Sur) muestra la sucursal y, al dueño, el equipo del negocio. Para eso el sitio necesita
 `GET /api/device/team`, que **todavía no está publicado**: este repo no puede subir cambios a `NodoSurPage`. Hasta que se aplique, la PC
 simplemente no muestra esa tarjeta (el sitio responde 404 y la PC lo ignora).
@@ -15,7 +17,7 @@ simplemente no muestra esa tarjeta (el sitio responde 404 y la PC lo ignora).
 ```
 git clone https://github.com/neaserisgod/NodoSurPage && cd NodoSurPage
 git checkout -b equipo-para-dispositivos
-git am /ruta/a/P41---POS-/docs/nodosur/equipo-dispositivos.patch
+git am /ruta/a/Nodo-Sur-Pos/docs/nodosur/equipo-dispositivos.patch
 node tests/equipo_dispositivo.test.mjs      # 5 pruebas
 node tests/worker.test.mjs && node tests/acceso.test.mjs
 ```
