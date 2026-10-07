@@ -85,6 +85,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
 - [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
 - [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
+- [Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)](#cargar-factura-en-el-celular-sin-la-pc-el-dueño-2026-10-07)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2190,3 +2191,25 @@ del día siguiente no es el efectivo contado sino `contado − lataSeparado` (un
 - **Vencimiento**: `gastos_fijos.diaVencimiento` (v59), igual todos los meses; un día que el mes no tiene vence el último.
 - **Descartado por ahora**: preguntar también al abrir la caja (el efectivo entre cierre y apertura cuadraba) y "separar
   hasta una fecha" en Separaciones (pendiente de decidir con el dueño).
+
+## Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)
+
+Pedido: "quiero que las funciones del sistema desktop estén disponibles para el apk, reutilizando la lógica. Empezá por la lectura de
+facturas por IA".
+
+- **Una sola lógica**: lo que hacía el diálogo de la PC (leer, reconocer el proveedor por CUIT, vincular, bultos, avisos de precio,
+  aplicar, deshacer, aprender, crear el producto que falta) vive en `servicios/flujo_factura.dart` (`FlujoFactura`, sin widgets). El
+  diálogo de la PC y `companion/pantalla_cargar_factura.dart` solo dibujan.
+- **El celular aplica en su propia base, siempre** (pregunta al dueño: con PC pero sin su wifi, ¿se aplica desde el celular? Respuesta:
+  "sí, ya que también buscamos independizar la apk de desktop"). Aunque la PC esté en el wifi no se le manda nada por HTTP: la sync
+  lleva todo.
+- **Por eso se sincronizan** (v61) `movimientos_deuda`, `facturas_compra`, `productos_factura_compra`, `vinculos_factura` y
+  `cuits_proveedor`, que eran locales de cada equipo. Así la deuda llega a los dos, una factura cargada en uno no se puede volver a
+  cargar en el otro, cualquiera la deshace y lo aprendido sirve en los dos. Las filas que ya existían toman `global_id` con su fecha real.
+- **La misma clave aprendida en dos equipos** (los dos vinculan el código 123 de Serra) no choca con la clave única: `aplicarCambios`
+  la reconoce por su clave natural (proveedor + tipo + clave; proveedor + CUIT) y se queda con una sola fila.
+- **Versiones mezcladas**: una PC sin actualizar no conoce esas tablas; la sync por wifi del celular las saltea en vez de cortarse
+  (`tablasSincronizablesV61`). Por la nube no hay arreglo barato: un equipo viejo ignora esas filas y no las vuelve a pedir. Por eso la
+  PC y el APK se publican juntos.
+- **Cámara**: `image_picker`, una foto por vez (una factura larga son varias). También fotos o PDF del celular (`file_selector`).
+- **Descartado**: mandar la factura a la PC para que la aplique (deja el celular atado a la PC, lo contrario de lo pedido).

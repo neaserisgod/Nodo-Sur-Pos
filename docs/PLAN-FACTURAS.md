@@ -71,7 +71,9 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
 - **Hecho (2026-10-07)**: un CUIT para varios proveedores (v56), crear el producto que falta desde la línea (con el nombre armado y "Mejorar
   nombre con IA"), y **aplicar la factura** (v57): stock, costo (con el precio automático del proveedor), deuda en la cuenta corriente,
   "No va", aviso de precio que queda perdiendo, no repetir la misma factura y "Deshacer" (en el aviso y en la cuenta corriente). Ver `DECISIONES.md`.
-- **Falta**: notas de crédito; enderezar fotos de costado; adjuntar la imagen a la factura aplicada; después, el celular con cámara.
+- **Hecho (2026-10-07)**: el celular con cámara (Más › Cargar factura), sobre su propia base y sin la PC; la cuenta corriente y las facturas
+  se sincronizan (v61). Ver `DECISIONES.md`, "Cargar factura en el celular, sin la PC".
+- **Falta**: notas de crédito; enderezar fotos de costado; adjuntar la imagen a la factura aplicada.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.
 
 ## Bultos y unidades (2026-10-05)

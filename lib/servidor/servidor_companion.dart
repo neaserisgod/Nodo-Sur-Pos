@@ -598,8 +598,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     ]);
   });
 
-  // Cuenta corriente con proveedores: la tabla `movimientos_deuda` no se
-  // sincroniza al celular, así que el saldo y el pago pasan siempre por acá.
+  // Cuenta corriente con proveedores: Pagar proveedor del celular con la PC
+  // al alcance pasa por acá. Desde la v61 `movimientos_deuda` también viaja
+  // por la sync (Cargar factura del celular carga deuda en su propia base).
   router.get('/proveedores/saldos', (Request request) async {
     final saldos = await saldosDeuda(db);
     return _json({for (final e in saldos.entries) '${e.key}': e.value});

@@ -964,9 +964,10 @@ class PuertoLocal implements ServicioCompanion {
     MedioGastoCompanion.mercadoPago => repo_gastos.MedioGasto.mercadoPago,
   };
 
-  /// La cuenta corriente con proveedores (`movimientos_deuda`) no se
-  /// sincroniza al celular, así que sin la PC no hay saldo que mostrar ni
-  /// dónde anotar el pago: se avisa en vez de grabar algo que la PC no vería.
+  /// Pagar proveedor sin la PC sigue avisando en vez de grabar. Desde la v61
+  /// la cuenta corriente (`movimientos_deuda`) SÍ se sincroniza (Cargar
+  /// factura la usa sin la PC), así que habilitarlo acá ya es posible: queda
+  /// pendiente de que el dueño lo pida (ESTADO.md).
   static const _soloConPcProveedores = ErrorCompanion(
     400,
     'Pagarle a un proveedor se hace conectado a la PC del local. '

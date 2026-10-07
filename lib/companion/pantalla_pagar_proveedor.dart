@@ -4,9 +4,9 @@
 // así el gasto queda documentado con el proveedor y, si no había deuda cargada,
 // la PC anota la diferencia como "Pago sin deuda previa" (ver `pagarDeuda`).
 //
-// Necesita la PC al alcance: `movimientos_deuda` no se sincroniza al celular,
-// y grabar un pago solo en el celular dejaría la cuenta corriente de la PC sin
-// enterarse. Sin PC se avisa en vez de grabar a medias.
+// Necesita la PC al alcance (se escribió cuando `movimientos_deuda` no se
+// sincronizaba). Desde la v61 la cuenta corriente sí viaja por la sync, así
+// que pagar sin la PC ya es posible; queda pendiente de que el dueño lo pida.
 
 import 'package:flutter/material.dart';
 

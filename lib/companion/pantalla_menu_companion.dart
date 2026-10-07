@@ -69,6 +69,7 @@ import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
+import 'pantalla_cargar_factura.dart';
 import 'pantalla_cierres.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_consultar_precio.dart';
@@ -549,6 +550,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         await irA((_) => const PantallaConfiguracionCompanion());
       case AccionFuncion.diasAnteriores:
         await irA((_) => const PantallaCargaHistorica());
+      case AccionFuncion.cargarFactura:
+        await irA((_) => const PantallaCargarFactura());
       case AccionFuncion.cambiarUsuario:
         await cambiarUsuario();
       case AccionFuncion.irAMas:

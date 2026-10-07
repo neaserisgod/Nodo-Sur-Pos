@@ -7,6 +7,7 @@ import '../app_ns.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
 import '../pantalla_carga_historica.dart';
+import '../pantalla_cargar_factura.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
@@ -85,6 +86,7 @@ class PantallaMasNs extends StatelessWidget {
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
                     _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id))),
+                    _Fila(icono: IconoNs.camara, titulo: 'Cargar factura', detalle: 'Foto de la factura: la IA la lee y cargás stock, costo y deuda', onTap: () => app.irA((_) => const PantallaCargarFactura())),
                     _Fila(icono: IconoNs.billetera, titulo: 'Pagar proveedor', detalle: 'Anotá lo que le pagaste a cada uno', onTap: () => app.irA((_) => const PantallaPagarProveedor())),
                     _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],
