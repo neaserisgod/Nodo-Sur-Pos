@@ -68,8 +68,10 @@ Se armó mirando 13 facturas reales de 7 proveedores (fotos del celular, algunas
   ("cierra" al centavo, y "cierra con redondeo de impresión" hasta 10 centavos por línea); (3) una línea con precio por bulto y cantidad por lata no es un error si la factura cierra: las líneas
   sospechosas solo se marcan cuando NO cierra; (4) Gemini leyó un CUIT de 12 dígitos y una fecha de 2023 (era 2026): el CUIT se valida con su dígito verificador y la fecha se marca como dudosa si
   está a más de un año; un CUIT inválido NO reconoce a ningún proveedor (se elige a mano). Casos de prueba: `test/fixtures/lectura_manaos_dos_por_foto.json` y `lectura_bebidas_del_lago_dos_por_foto.json`.
-- **Falta**: CUIT del proveedor; tabla de vínculos (migración); pantalla de revisión final; aplicar (costo, stock, deuda y precio sugerido) y deshacer;
-  enderezar fotos de costado; después, el celular con cámara.
+- **Hecho (2026-10-07)**: un CUIT para varios proveedores (v56), crear el producto que falta desde la línea (con el nombre armado y "Mejorar
+  nombre con IA"), y **aplicar la factura** (v57): stock, costo (con el precio automático del proveedor), deuda en la cuenta corriente,
+  "No va", aviso de precio que queda perdiendo, no repetir la misma factura y "Deshacer" (en el aviso y en la cuenta corriente). Ver `DECISIONES.md`.
+- **Falta**: notas de crédito; enderezar fotos de costado; adjuntar la imagen a la factura aplicada; después, el celular con cámara.
 - **Sin decidir**: tolerancia exacta del control; qué hacer con facturas de ajuste/nota de crédito.
 
 ## Bultos y unidades (2026-10-05)

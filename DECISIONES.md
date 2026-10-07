@@ -84,6 +84,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")](#rediseño-del-lector-de-facturas-con-el-lenguaje-de-la-pc-el-dueño-2026-10-05-se-ve-horrible)
 - [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
 - [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
+- [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
 
@@ -2134,3 +2135,28 @@ El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas
   de abreviaturas: hay que mantenerla a mano y varias tienen más de un significado.
 - **No cambia** el emparejamiento automático, y sigue siendo un solo lugar para dar de alta productos (Proveedores): el lector se abre
   desde ahí. No se suma stock: eso llega con "aplicar la factura".
+
+## Aplicar una factura de compra (El dueño, 2026-10-07)
+
+Decidido por el dueño con preguntas (las cuatro, la opción recomendada):
+
+- **Contado**: "Aplicar" carga la deuda en la cuenta corriente **siempre** y nada más; el pago va por el camino de siempre ("Pagar
+  proveedor" / la cuenta corriente). Para el contado aparece "Pagar ahora", que abre la cuenta corriente con la deuda recién cargada.
+  Motivo: si "Aplicar" también registrara el pago y ya se le pagó con Alt+P, el gasto quedaría contado dos veces.
+- **Precio**: con el % del proveedor, el precio se recalcula solo (el mismo `actualizarProducto` de siempre, vía `cargarCostoProducto`).
+  Precio fijo y cigarrillos no se tocan; si con el costo nuevo quedarían perdiendo plata, la línea lo avisa en rojo ANTES de aplicar
+  (`precioTrasCambioDeCosto`, que comparte la regla con `actualizarProducto` en `_precioAutomaticoSiSigueAlProveedor`).
+- **Renglones**: casilla "No va" (no es del local): entra en la deuda, no en el stock ni el costo. No se aplica mientras haya una línea
+  sin producto y sin "No va" (`motivosParaNoAplicar`). El mismo producto en dos líneas suma unidades y toma el promedio de lo pagado.
+- **Deshacer**: en el aviso al aplicar y en la cuenta corriente ("Deshacer factura" en lugar de "Anular" en ese cargo: anularlo suelto
+  dejaría el stock y el costo cambiados). Anula el cargo, resta el stock y vuelve al costo de antes salvo que se haya cambiado a mano
+  después (ese queda y se avisa). Con un pago a cuenta del cargo, primero hay que anular el pago.
+
+Lo demás, con lo que se había propuesto: la casilla "Sumar al stock" viene marcada; una factura que no cierra con su total pide
+confirmar ("Aplicar igual") y carga el total impreso; la misma factura (mismo proveedor y número, sin importar ceros ni guiones) no se
+aplica dos veces mientras no se deshaga; una nota de crédito no se aplica todavía; aplicar también aprende los vínculos. Los productos
+por peso no se tocan: la factura cuenta unidades y su stock va en gramos.
+
+Técnico: migración v57 con `facturas_compra` y `productos_factura_compra` (locales, como la cuenta corriente: no se sincronizan). El
+stock se mueve con `ajustarStockRapido` (movimiento "AJUSTE" con motivo "Compra · Factura …"): es el movimiento que viaja al celular,
+así que no hizo falta un tipo nuevo ni tocar la sincronización. Todo en una transacción (`repositorio_facturas_compra.dart`).

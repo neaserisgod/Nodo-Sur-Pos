@@ -36,6 +36,7 @@ import 'tables/ventas.dart';
 import 'tables/deuda_proveedores.dart';
 import 'tables/promos.dart';
 import 'tables/ventas_abiertas.dart';
+import 'tables/facturas_compra.dart';
 import 'tables/vinculos_factura.dart';
 
 part 'database.g.dart';
@@ -132,6 +133,8 @@ const seccionesMenuIniciales = [
     AvisosMp,
     VinculosFactura,
     CuitsProveedor,
+    FacturasCompra,
+    ProductosFacturaCompra,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -151,7 +154,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 56;
+  int get schemaVersion => 57;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1117,6 +1120,12 @@ class AppDatabase extends _$AppDatabase {
       // pasa de `cuit` a (proveedor, cuit): se rehace la tabla copiando las filas tal cual, ninguna se pierde.
       if (from < 56) {
         await m.alterTable(TableMigration(cuitsProveedor));
+      }
+      // v56 → v57 (2026-10-07): aplicar facturas de compra. Dos tablas nuevas, locales: la factura aplicada (para no repetirla y poder
+      // deshacerla) y lo que le hizo a cada producto. No tocan ninguna fila existente.
+      if (from < 57) {
+        await m.createTable(facturasCompra);
+        await m.createTable(productosFacturaCompra);
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

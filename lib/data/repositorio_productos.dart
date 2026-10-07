@@ -323,13 +323,14 @@ Future<void> actualizarProducto(
       ? anterior.costoPorKiloCentavos
       : anterior.costoCentavos;
   final costoNuevo = esPesable ? costoPorKiloCentavos : costoCentavos;
-  if (costoNuevo != costoAnterior && !(precioFijo ?? anterior.precioFijo)) {
-    final automatico = await _precioAutomatico(
+  if (costoNuevo != costoAnterior) {
+    final automatico = await _precioAutomaticoSiSigueAlProveedor(
       db,
+      anterior,
       proveedorId: proveedorId,
       tipoCigarrillo: tipoCigarrillo,
-      esVarios: anterior.esVarios,
-      costoCentavos: costoNuevo,
+      precioFijo: precioFijo,
+      costoNuevoCentavos: costoNuevo,
     );
     if (automatico != null) {
       if (esPesable) {
@@ -895,6 +896,43 @@ Future<int?> _precioAutomatico(
   final bp = proveedor?.markupBp;
   if (bp == null) return null;
   return precioConGananciaACentena(costoCentavos, bp);
+}
+
+/// El precio automático que le pone [actualizarProducto] a [anterior] cuando su costo cambia, o null si lo deja como está (precio fijo a
+/// mano, o sin precio automático que corresponda). Un solo lugar para la regla (convención 3): lo usan la edición y la vista previa
+/// de una factura ([precioTrasCambioDeCosto]).
+Future<int?> _precioAutomaticoSiSigueAlProveedor(
+  AppDatabase db,
+  Producto anterior, {
+  required int? proveedorId,
+  required String tipoCigarrillo,
+  bool? precioFijo,
+  required int? costoNuevoCentavos,
+}) async {
+  if (precioFijo ?? anterior.precioFijo) return null;
+  return _precioAutomatico(
+    db,
+    proveedorId: proveedorId,
+    tipoCigarrillo: tipoCigarrillo,
+    esVarios: anterior.esVarios,
+    costoCentavos: costoNuevoCentavos,
+  );
+}
+
+/// El precio de venta que le quedaría a [producto] si su costo pasa a [costoNuevoCentavos] (por kilo si es pesable): el automático del
+/// proveedor si lo sigue, o el de hoy. Para avisar ANTES de aplicar una factura que un producto va a quedar perdiendo plata.
+Future<int?> precioTrasCambioDeCosto(AppDatabase db, Producto producto, {required int costoNuevoCentavos}) async {
+  final precioHoy = producto.esPesable ? producto.precioPorKiloCentavos : producto.precioCentavos;
+  final costoHoy = producto.esPesable ? producto.costoPorKiloCentavos : producto.costoCentavos;
+  if (costoNuevoCentavos == costoHoy) return precioHoy;
+  final automatico = await _precioAutomaticoSiSigueAlProveedor(
+    db,
+    producto,
+    proveedorId: producto.proveedorId,
+    tipoCigarrillo: producto.tipoCigarrillo,
+    costoNuevoCentavos: costoNuevoCentavos,
+  );
+  return automatico ?? precioHoy;
 }
 
 /// Fija (o saca, con null) el porcentaje de ganancia de un proveedor. No toca

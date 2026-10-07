@@ -1,8 +1,11 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
+import 'package:la_plazoleta/data/repositorio_facturas_compra.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/domain/aplicar_factura.dart';
 import 'package:la_plazoleta/ui/proveedores/dialogo_cuenta_corriente.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 
@@ -93,5 +96,32 @@ void main() {
     await tester.tap(find.text('Registrar pago'));
     await tester.pumpAndSettle();
     expect(await tester.runAsync(() => saldoDeuda(db, proveedor.id)), 0);
+  });
+
+  testWidgets('el cargo de una factura aplicada se deshace entero: deuda, stock y costo (El dueño, 2026-10-07)', (tester) async {
+    final crema = await db.into(db.productos).insert(
+          ProductosCompanion.insert(nombre: 'Crema', proveedorId: Value(proveedor.id), precioCentavos: const Value(300000), costoCentavos: const Value(180000), stock: const Value(3)),
+        );
+    await aplicarFactura(
+      db,
+      proveedorId: proveedor.id,
+      numero: '0011-1',
+      totalImpresoCentavos: 877421,
+      lineas: [LineaParaAplicar(productoId: crema, unidades: 4, totalCentavos: 877421)],
+      sumarStock: true,
+      usuarioId: usuarioId,
+    );
+    final cargo = (await listarMovimientosDeuda(db, proveedor.id)).single;
+    await abrir(tester);
+    expect(find.text('Anular'), findsNothing, reason: 'un cargo de factura no se anula suelto');
+    await tester.tap(find.byKey(Key('deshacer_factura_${cargo.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Deshacer factura').last);
+    await tester.pumpAndSettle();
+
+    expect(await tester.runAsync(() => saldoDeuda(db, proveedor.id)), 0);
+    final p = (await tester.runAsync(() => (db.select(db.productos)..where((x) => x.id.equals(crema))).getSingle()))!;
+    expect(p.stock, 3);
+    expect(p.costoCentavos, 180000);
   });
 }

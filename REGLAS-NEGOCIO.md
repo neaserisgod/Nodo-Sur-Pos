@@ -227,7 +227,13 @@ descuadre real.
 - **Búsqueda de Venta (El dueño, 2026-10-03: "atenuados mejor"):** un producto sin stock **se ve** en la búsqueda,
   atenuado y con "Sin stock" en lugar de la cantidad, detrás de los que sí tienen. Sigue sin poder venderse: tocarlo o
   Enter avisa "sin stock, no se puede vender". La grilla de productos de Venta y el celular siguen ocultándolos.
-- No se cargan remitos de entrada por ahora, así que el stock **solo baja**.
+- **El stock sube al aplicar una factura de compra** (El dueño, 2026-10-05 y 2026-10-07; antes "no se cargan remitos de
+  entrada, el stock solo baja"): con la casilla "Sumar al stock" de la factura, cada producto suma sus unidades sueltas
+  (cantidad × unidades por bulto) y deja un movimiento "Compra · Factura …". Lo que no es del local se marca "No va": entra en
+  la deuda con el proveedor, pero no en el stock ni en el costo. Los productos por peso no se tocan (se cargan a mano). La
+  factura carga siempre la deuda en la cuenta corriente, también la de contado: el pago va por "Pagar proveedor" (un solo
+  camino). Se puede deshacer entera (deuda, stock y costo). Detalle en `DECISIONES.md`.
+- Fuera de las facturas, el stock solo sube por un ajuste a mano o un conteo.
   Puede quedar negativo igual (una venta ya cargada en el carrito antes de
   llegar a 0, o un ajuste manual) — sigue sin ser un error, pero ahora un
   producto que YA está en 0 o negativo deja de encontrarse para agregarlo

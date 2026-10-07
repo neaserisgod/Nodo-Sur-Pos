@@ -93,7 +93,7 @@ class _PantallaProveedoresState extends State<PantallaProveedores> with Refresco
             sesionCajaId: widget.sesionCajaId,
             titulo: 'Proveedores',
             acciones: [
-              // Lectura de facturas con IA (2026-10-05): todavía no toca costos, stock ni deuda; sí deja crear los productos que faltan.
+              // Facturas de compra con IA (2026-10-05): leer, vincular, crear lo que falta y aplicar (stock, costo y deuda), con Deshacer.
               Btn('Leer factura', tam: tam, variante: VarBtn.ai, icono: Ic.sparkle, onTap: () => mostrarDialogoLeerFactura(context, db: db, controlador: c)),
               if (moduloActivo(Modulo.promos))
                 Btn('Promos', tam: tam, variante: VarBtn.ai, icono: Ic.sparkle, onTap: () => mostrarDialogoPromos(context, db: db, usuarioId: usuarioId)),
