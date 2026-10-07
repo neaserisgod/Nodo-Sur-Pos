@@ -1,9 +1,10 @@
 // Cliente de la IA de Google (Gemini) con la clave gratuita del plan personal (El dueño, 2026-10-05: "integrar la IA de
 // Google gratuita del plan personal por API key").
 //
-// La clave es de ESTE equipo: vive en las preferencias locales, igual que "Cobrar e imprimir por Nodo Sur" — no en
-// `configuracion_negocio_tabla`, porque esa tabla se sincroniza a la nube y al celular, y una clave personal no puede
-// viajar con ella. Tampoco entra en las copias de la base.
+// La clave es del NEGOCIO (El dueño, 2026-10-07: "la clave es por cuenta"): el dueño la carga una vez y queda cifrada en el servidor
+// de Nodo Sur, como el token de Mercado Pago. Los equipos vinculados a la cuenta le piden a la IA por el sitio (`AccesoIaCuenta`) y
+// nunca la ven: tampoco el celular de un empleado. Un equipo sin cuenta vinculada (o una instalación vieja con su propia clave) sigue
+// usando una clave local, en las preferencias de ese equipo — nunca en `configuracion_negocio_tabla`, que se sincroniza a todos.
 //
 // Privacidad del plan gratis: Google puede usar lo que se manda para mejorar sus productos. Por eso quien arme un prompt
 // manda productos, precios y totales agregados — nunca nombres de clientes ni de fiados. Eso se decide en cada uso, no acá.
@@ -50,25 +51,101 @@ const _claveGuardada = 'gemini_api_key';
 const _modeloGuardado = 'gemini_modelo';
 const _base = 'https://generativelanguage.googleapis.com/v1beta';
 
-/// La clave de API de este equipo, y el modelo con el que se probó. Se leen una vez al arrancar ([cargar]) y después van en memoria.
+/// Por dónde sale la IA con la clave del negocio: el sitio de Nodo Sur (`servicios/ia_nube.dart`). Separado de acá para no atar este
+/// archivo a la cuenta, y para los tests.
+abstract class AccesoIaCuenta {
+  /// Si el negocio tiene clave, con qué modelo se probó y si quien vinculó este equipo la puede cambiar (el dueño). Null si el equipo
+  /// no está vinculado a ninguna cuenta.
+  Future<({bool configurada, String? modelo, bool puedeCambiar})?> estado();
+
+  /// Guarda [clave] en la cuenta del negocio (null la borra). Lanza [ErrorGemini] si no se pudo.
+  Future<void> guardarClave(String? clave, {String? modelo});
+
+  /// Manda [cuerpo] (el JSON de `generateContent`) a [modelo] con la clave del negocio y devuelve la respuesta de Google tal cual.
+  /// Lanza [ErrorGemini] si el sitio no lo pudo mandar (sin clave, sin permiso, sin internet).
+  Future<({int estado, String cuerpo})> generar({required String modelo, required String cuerpo, required Duration limite});
+}
+
+const _cuentaConfigurada = 'gemini_cuenta_configurada';
+const _cuentaModelo = 'gemini_cuenta_modelo';
+const _cuentaPuedeCambiar = 'gemini_cuenta_puede_cambiar';
+
+/// La clave de la IA: la del negocio (en la cuenta) o, si este equipo tiene una propia, esa. Se lee una vez al arrancar ([cargar]),
+/// lo de la cuenta se pregunta al sitio ([conectarCuenta]) y después va en memoria.
 abstract final class ClaveGemini {
   static String? _valor;
   static String? _modelo;
+  static AccesoIaCuenta? _cuenta;
+  static bool _enCuenta = false;
+  static String? _modeloCuenta;
+  static bool _puedeCambiarCuenta = false;
 
+  /// La clave propia de este equipo, si tiene (instalaciones de antes de la clave por cuenta, o sin cuenta vinculada).
   static String? get valor => _valor;
-  static bool get configurada => _valor != null;
 
-  /// El modelo que le anduvo a esta clave al probarla; null si todavía no se probó ninguno.
-  static String? get modelo => _modelo;
+  /// Hay IA: clave propia o la del negocio.
+  static bool get configurada => _valor != null || enCuenta;
+
+  /// Se usa la clave del negocio (este equipo no tiene una propia).
+  static bool get enCuenta => _valor == null && _cuenta != null && _enCuenta;
+
+  /// El equipo está vinculado a una cuenta: la clave se guarda ahí si es el dueño.
+  static bool get vinculadoACuenta => _cuenta != null;
+
+  /// Quien vinculó este equipo puede cambiar la clave del negocio (el dueño).
+  static bool get puedeCambiarEnCuenta => _cuenta != null && _puedeCambiarCuenta;
+
+  /// El modelo elegido en este equipo; si no eligió ninguno, el que le anduvo a la clave (la propia o la del negocio).
+  static String? get modelo => _modelo ?? (enCuenta ? _modeloCuenta : null);
 
   static Future<void> cargar() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _valor = _limpia(prefs.getString(_claveGuardada));
-      _modelo = _valor == null ? null : _limpia(prefs.getString(_modeloGuardado));
+      _modelo = _limpia(prefs.getString(_modeloGuardado));
+      // Lo último que se supo de la cuenta: así se ve configurada al arrancar sin internet (el pedido igual va a fallar sin red).
+      _enCuenta = prefs.getBool(_cuentaConfigurada) ?? false;
+      _modeloCuenta = _limpia(prefs.getString(_cuentaModelo));
+      _puedeCambiarCuenta = prefs.getBool(_cuentaPuedeCambiar) ?? false;
     } catch (_) {
       _valor = null;
       _modelo = null;
+    }
+  }
+
+  /// Engancha la cuenta del negocio y pregunta si tiene clave. Se llama al arrancar (PC y celular) y al abrir Configuración. Sin
+  /// internet queda lo último que se supo.
+  static Future<void> conectarCuenta(AccesoIaCuenta acceso) async {
+    _cuenta = acceso;
+    await refrescarCuenta();
+  }
+
+  static Future<void> refrescarCuenta() async {
+    final acceso = _cuenta;
+    if (acceso == null) return;
+    try {
+      final e = await acceso.estado();
+      await _recordarCuenta(configurada: e?.configurada ?? false, modelo: e?.modelo, puedeCambiar: e?.puedeCambiar ?? false);
+    } catch (_) {
+      // Sin red o el sitio no contestó: queda lo último que se supo.
+    }
+  }
+
+  static Future<void> _recordarCuenta({required bool configurada, String? modelo, required bool puedeCambiar}) async {
+    _enCuenta = configurada;
+    _modeloCuenta = _limpia(modelo);
+    _puedeCambiarCuenta = puedeCambiar;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_cuentaConfigurada, configurada);
+      await prefs.setBool(_cuentaPuedeCambiar, puedeCambiar);
+      if (_modeloCuenta == null) {
+        await prefs.remove(_cuentaModelo);
+      } else {
+        await prefs.setString(_cuentaModelo, _modeloCuenta!);
+      }
+    } catch (_) {
+      // Sin almacenamiento vale hasta cerrar la app.
     }
   }
 
@@ -94,9 +171,10 @@ abstract final class ClaveGemini {
     }
   }
 
-  /// Cambia solo el modelo (la clave queda como está): el selector de Configuración y del lector de facturas. Sin clave no hace nada.
+  /// Cambia solo el modelo de ESTE equipo (la clave queda como está): el selector de Configuración y del lector de facturas. Sin IA
+  /// no hace nada.
   static Future<void> elegirModelo(String modelo) async {
-    if (_valor == null) return;
+    if (!configurada) return;
     _modelo = _limpia(modelo);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -116,9 +194,13 @@ abstract final class ClaveGemini {
   }
 
   /// Solo para tests.
-  static void fijarParaTest(String? clave, {String? modelo}) {
+  static void fijarParaTest(String? clave, {String? modelo, AccesoIaCuenta? cuenta, bool enCuenta = false, bool puedeCambiar = false, String? modeloCuenta}) {
     _valor = _limpia(clave);
     _modelo = _limpia(modelo);
+    _cuenta = cuenta;
+    _enCuenta = enCuenta;
+    _puedeCambiarCuenta = puedeCambiar;
+    _modeloCuenta = _limpia(modeloCuenta);
   }
 }
 
@@ -145,22 +227,28 @@ class ErrorGemini implements Exception {
 }
 
 class ClienteGemini {
+  /// Con [apiKey] le habla directo a Google; sin ella, por [cuenta] (la clave del negocio, en el sitio).
   ClienteGemini({
-    required this.apiKey,
+    this.apiKey,
+    this.cuenta,
     this.modelo = modeloGeminiPorDefecto,
     http.Client? client,
     this.timeout = const Duration(seconds: 60),
-  }) : _client = client ?? http.Client(),
+  }) : assert(apiKey != null || cuenta != null),
+       _client = client ?? http.Client(),
        _propio = client == null;
 
-  /// Con la clave guardada en este equipo y el modelo que le anduvo; [ErrorGemini] si no hay clave.
-  factory ClienteGemini.guardado({String? modelo, http.Client? client}) {
+  /// Con la clave de este equipo si tiene una; si no, con la del negocio. [ErrorGemini] si no hay ninguna.
+  factory ClienteGemini.guardado({String? modelo, http.Client? client, Duration timeout = const Duration(seconds: 60)}) {
     final clave = ClaveGemini.valor;
-    if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
-    return ClienteGemini(apiKey: clave, modelo: modelo ?? ClaveGemini.modelo ?? modeloGeminiPorDefecto, client: client);
+    final elegido = modelo ?? ClaveGemini.modelo ?? modeloGeminiPorDefecto;
+    if (clave != null) return ClienteGemini(apiKey: clave, modelo: elegido, client: client, timeout: timeout);
+    if (ClaveGemini.enCuenta) return ClienteGemini(cuenta: ClaveGemini._cuenta, modelo: elegido, client: client, timeout: timeout);
+    throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
   }
 
-  final String apiKey;
+  final String? apiKey;
+  final AccesoIaCuenta? cuenta;
   final String modelo;
   final Duration timeout;
   final http.Client _client;
@@ -206,13 +294,21 @@ class ClienteGemini {
       },
     };
 
+    final clave = apiKey;
+    if (clave == null) {
+      // Con la clave del negocio: el mismo pedido, por el sitio. La respuesta de Google vuelve tal cual y se lee igual.
+      final r = await cuenta!.generar(modelo: modelo, cuerpo: jsonEncode(cuerpo), limite: timeout);
+      if (r.estado != 200) throw ErrorGemini(_mensajeDeError(r.estado, r.cuerpo, modelo), estado: r.estado);
+      return _textoDeRespuesta(r.cuerpo);
+    }
+
     final http.Response r;
     try {
       r = await _client
           .post(
             Uri.parse('$_base/models/$modelo:generateContent'),
             // La clave va en el encabezado, no en la URL: una URL puede quedar en registros.
-            headers: {'x-goog-api-key': apiKey, 'content-type': 'application/json'},
+            headers: {'x-goog-api-key': clave, 'content-type': 'application/json'},
             body: jsonEncode(cuerpo),
           )
           .timeout(timeout);
@@ -264,9 +360,21 @@ class ClienteGemini {
 ///
 /// Recorre [modelosGemini] y salta al siguiente solo con un 404 (modelo no disponible para esta clave). Cualquier otro fallo
 /// (clave mala, sin cupo, sin internet) corta ahí: probar otro modelo no lo arregla.
+///
+/// Si este equipo es del dueño y está vinculado a la cuenta, la clave se guarda EN LA CUENTA del negocio (la usan todos los equipos) y
+/// la propia de este equipo se borra: queda una sola. Si no, se guarda en este equipo como siempre.
 Future<String?> probarYGuardarClave(String clave, {http.Client? client}) async {
   final limpia = clave.trim();
+  final enCuenta = ClaveGemini.puedeCambiarEnCuenta;
   if (limpia.isEmpty) {
+    if (enCuenta) {
+      try {
+        await ClaveGemini._cuenta!.guardarClave(null);
+      } on ErrorGemini catch (e) {
+        return e.mensaje;
+      }
+      await ClaveGemini._recordarCuenta(configurada: false, puedeCambiar: true);
+    }
     await ClaveGemini.guardar(null);
     return null;
   }
@@ -274,7 +382,14 @@ Future<String?> probarYGuardarClave(String clave, {http.Client? client}) async {
     final cliente = ClienteGemini(apiKey: limpia, modelo: modelo, client: client);
     try {
       await cliente.generarTexto('Respondé solo con la palabra: ok', temperatura: 0);
-      await ClaveGemini.guardar(limpia, modelo: modelo);
+      if (enCuenta) {
+        await ClaveGemini._cuenta!.guardarClave(limpia, modelo: modelo);
+        await ClaveGemini._recordarCuenta(configurada: true, modelo: modelo, puedeCambiar: true);
+        await ClaveGemini.guardar(null);
+        await ClaveGemini.elegirModelo(modelo);
+      } else {
+        await ClaveGemini.guardar(limpia, modelo: modelo);
+      }
       return null;
     } on ErrorGemini catch (e) {
       if (e.estado != 404) return e.mensaje;

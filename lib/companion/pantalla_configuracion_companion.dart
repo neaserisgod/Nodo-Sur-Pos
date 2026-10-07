@@ -77,6 +77,10 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   @override
   void initState() {
     super.initState();
+    // La clave de la IA del negocio pudo cambiar desde otro equipo.
+    ClaveGemini.refrescarCuenta().then((_) {
+      if (mounted) setState(() {});
+    });
     for (final c in [_primerAtadoCtrl, _atadoAdicionalCtrl, _sueltoCtrl]) {
       c.addListener(() {
         if (mounted) setState(() {});
@@ -432,11 +436,20 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     );
   }
 
-  /// La clave gratuita de Google (Gemini) de ESTE celular: se guarda al instante y no viaja con la sync (a diferencia del resto
-  /// de la configuración), porque es personal. Mismo guardado y mismas pruebas que la PC (`probarYGuardarClave`).
+  /// La clave de Google (Gemini): la del negocio, guardada en la cuenta (El dueño, 2026-10-07: "la clave es por cuenta"), o una de
+  /// este celular si no está vinculado. Mismo guardado y mismas pruebas que la PC (`probarYGuardarClave`); un empleado con la clave del
+  /// negocio no tiene nada que cargar.
   Widget _filaClaveIa(BuildContext context) {
     final ns = context.ns;
     final configurada = ClaveGemini.configurada;
+    final puedeCargar = !ClaveGemini.enCuenta || ClaveGemini.puedeCambiarEnCuenta;
+    final detalle = ClaveGemini.enCuenta
+        ? (ClaveGemini.puedeCambiarEnCuenta ? 'Clave del negocio: la usan todos tus equipos' : 'Usa la clave del negocio (la carga el dueño)')
+        : configurada
+            ? 'Clave cargada en este celular'
+            : ClaveGemini.puedeCambiarEnCuenta
+                ? 'Sin clave: cargala una vez y la usan todos tus equipos'
+                : 'Sin clave — es gratis en aistudio.google.com/apikey';
     return Container(
       constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.fromLTRB(22, 10, 12, 10),
@@ -448,20 +461,21 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('IA de Google (Gemini)', style: estiloNs(17, peso: FontWeight.w500, track: -0.02, color: ns.ink)),
-                Text(configurada ? 'Clave cargada en este celular' : 'Sin clave — es gratis en aistudio.google.com/apikey', style: estiloNs(14, color: ns.mute)),
+                Text(detalle, style: estiloNs(14, color: ns.mute)),
               ],
             ),
           ),
-          BotonNs(
-            texto: configurada ? 'Cambiar' : 'Cargar',
-            onTap: _cargarClaveIa,
-            alto: 44,
-            tamanio: 14,
-            fondo: ns.paper,
-            color: ns.ink,
-            rellenar: false,
-            paddingH: 18,
-          ),
+          if (puedeCargar)
+            BotonNs(
+              texto: configurada ? 'Cambiar' : 'Cargar',
+              onTap: _cargarClaveIa,
+              alto: 44,
+              tamanio: 14,
+              fondo: ns.paper,
+              color: ns.ink,
+              rellenar: false,
+              paddingH: 18,
+            ),
         ],
       ),
     );

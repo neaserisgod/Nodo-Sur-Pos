@@ -90,6 +90,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
 - [Cuenta corriente en el celular (El dueño, 2026-10-07)](#cuenta-corriente-en-el-celular-el-dueño-2026-10-07)
 - [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
+- [Clave de la IA por cuenta (El dueño, 2026-10-07)](#clave-de-la-ia-por-cuenta-el-dueño-2026-10-07-la-clave-es-por-cuenta)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2258,3 +2259,18 @@ revisar: retener como colchón o retirar, Regla 13, con `retenerComoColchon`/`re
 `evaluarRetiro`), y "vendido sin costo · ver cuáles" con `vendidoSinCostoDesde` + `cargarCostoProducto` (no se inventa un costo). Las
 validaciones del retiro estaban adentro del diálogo de la PC: pasaron a `motivoParaNoRetirar` para usarlas en los dos. Respeta el
 módulo "Retiro de ganancias" como la PC.
+
+## Clave de la IA por cuenta (El dueño, 2026-10-07: "la clave es por cuenta")
+
+Antes cada equipo cargaba su clave de Gemini (local, sin sincronizar). Opciones que se le mostraron al dueño: guardarla en el sitio para
+todo el negocio (elegida), solo para los equipos del dueño, o que viaje con la sincronización (descartada: quedaba copiada en el celular de
+cada empleado).
+
+- **La clave no sale del servidor**: `functions/_lib/ia.js` del sitio la guarda cifrada (BACKUP_KEY, como el token de Mercado Pago). La
+  app manda a `POST /api/ia/generar` el mismo JSON de `generateContent` que mandaría a Google y recibe la respuesta tal cual; así las
+  funciones de IA (facturas, vínculos, nombres, promos) no cambian según de dónde salga la clave.
+- **Solo el dueño la cambia** (`POST /api/ia/clave`); usarla pide lo mismo que sincronizar (operar la sucursal con el negocio al día).
+- **En la app**: `AccesoIaCuenta` (`servicios/ia_nube.dart`) y `ClaveGemini.enCuenta`. Una clave propia del equipo tiene prioridad (las
+  instalaciones viejas siguen andando); cuando el dueño guarda la del negocio desde un equipo, la propia de ese equipo se borra. El
+  modelo elegido sigue siendo de cada equipo (arranca en el que le anduvo a la clave).
+- Cargarla desde la web (`/negocio`) no se hizo: se carga desde la PC o el celular del dueño, donde ya se probaba.

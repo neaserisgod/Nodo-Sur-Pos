@@ -5,7 +5,7 @@
 //
 // Trabaja SIEMPRE contra la base propia del celular, aunque la PC esté en el wifi (El dueño: "independizar la apk de desktop"): la sync
 // (v61) lleva a la PC la deuda, el stock, el costo, la factura aplicada y lo aprendido. La clave de la IA es la de este celular
-// (Configuración › Asistente IA).
+// o, mejor, la del negocio guardada en la cuenta (Configuración › Asistente IA; El dueño, 2026-10-07: "la clave es por cuenta").
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';

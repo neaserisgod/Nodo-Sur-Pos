@@ -58,15 +58,15 @@ Future<ResultadoDeLectura> leerFacturasConGemini(
   Duration espera = const Duration(seconds: 3),
 }) async {
   if (adjuntos.isEmpty) throw const ErrorGemini('No hay nada para leer: elegí una foto o un PDF.');
-  final clave = ClaveGemini.valor;
-  if (clave == null) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
+  if (!ClaveGemini.configurada) throw const ErrorGemini('Falta cargar la clave de la IA en Configuración › Asistente IA.');
 
   final modelos = {ClaveGemini.modelo ?? modeloGeminiPorDefecto, modeloDeRespaldoParaFacturas};
   ErrorGemini? ultimo;
   for (final modelo in modelos) {
     for (var intento = 0; intento < 2; intento++) {
       // Leer una hoja entera tarda más que ponerle nombre a una promo.
-      final cliente = ClienteGemini(apiKey: clave, modelo: modelo, client: client, timeout: const Duration(seconds: 180));
+      // La clave de este equipo o la del negocio (por el sitio): el pedido es el mismo.
+      final cliente = ClienteGemini.guardado(modelo: modelo, client: client, timeout: const Duration(seconds: 180));
       try {
         final json = await cliente.generarJson(
           'Transcribí las facturas de los archivos adjuntos.',
