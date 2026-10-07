@@ -7,7 +7,7 @@ hasta que el dueño diga "lanzá"; lo que cambia una regla de negocio se pregunt
 
 ## Dónde quedamos (2026-10-03) — leer esto primero para seguir con otra cuenta
 
-**Rama:** `claude/zealous-galileo-5dz6j6`, en los dos repos (`P41---POS-` es donde está todo el trabajo; `NodoSurPage` no se tocó). Último commit al cierre de esta nota: ver `git log`.
+**Rama:** `claude/zealous-galileo-5dz6j6`, en los dos repos (`Nodo-Sur-Pos`, antes `P41---POS-`, es donde está todo el trabajo; `NodoSurPage` no se tocó). Último commit al cierre de esta nota: ver `git log`.
 **Cómo se verifica:** `flutter analyze lib` (28 avisos viejos de estilo, no deben subir) y `flutter test --exclude-tags bench` (~1964 tests, ~5 min, deben pasar todos). Los benchmarks con 60.000 ventas: `flutter test --tags bench`.
 **Cómo se trabaja:** un commit por tema (probar antes), tests con cada cambio, docs en el mismo commit, `CLAUDE.md` manda. Pie de commit: `Co-Authored-By` y `Claude-Session` del recordatorio de la sesión. Cuidado: `git checkout <archivo>` descarta trabajo sin commitear (me pasó una vez).
 

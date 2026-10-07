@@ -93,7 +93,7 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
   pastillas centradas (sin la marca), el **engranaje de Configuración** a la derecha y la búsqueda como lupa (Ctrl+F);
   en Venta, la campanita y "Cambiar de turno"/"Cerrar caja", y la búsqueda es el campo único siempre a la vista. Configuración en **5 grupos** (Negocio, Caja y cobros, Productos,
   Equipos y cuenta, Apariencia) con pastillas por sección.
-- **Celular**: barra inferior flotante de tinta con 4 pestañas de texto (Inicio, Productos, Historial, Gestión);
+- **Celular**: barra inferior con 5 pestañas (Inicio, Productos, Vender al centro, Caja, Más), calcada del mock del celular;
   pantallas secundarias con título grande y "Volver" en pastilla arriba a la derecha.
 - Para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y `test/companion/capturas_companion_test.dart`
   dejan PNG en `capturas/` (ignorada por git).
