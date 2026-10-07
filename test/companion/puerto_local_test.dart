@@ -8,6 +8,7 @@
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/carrito_venta.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -142,6 +143,29 @@ void main() {
     expect(actualizado.nombre, 'Sprite 500ml');
     expect(actualizado.precioCentavos, 105000);
     expect(actualizado.stock, 10);
+  });
+
+  test('editar un atado desde el celular no le borra la marca de cigarrillo ni el recargo (Regla 6)', () async {
+    // El formulario y "cambiar precio" del celular no mandan el tipo de cigarrillo: antes eso lo pisaba con
+    // 'ninguno' y el atado se vendía sin recargo por pago virtual (El dueño, 2026-10-07).
+    final id = await db.into(db.productos).insert(
+          ProductosCompanion.insert(
+            nombre: 'Marlboro 20',
+            precioCentavos: const Value(400000),
+            stock: const Value(10),
+            tipoCigarrillo: const Value('atado'),
+          ),
+        );
+
+    await puerto.actualizarProducto(id, nombre: 'Marlboro 20', esPesable: false, precioCentavos: 420000, stock: 10, activo: true, usuarioId: usuarioId);
+
+    final producto = (await puerto.buscarVenta('marlboro')).resultados.single;
+    expect(producto.tipoCigarrillo, 'atado');
+    final linea = lineaDesdeResultadoBusqueda(producto).linea!;
+    final virtual = await puerto.calcularVenta(lineas: [linea], medio: 'virtual');
+    expect(virtual.recargoCigarrillosCentavos, greaterThan(0));
+    final efectivo = await puerto.calcularVenta(lineas: [linea], medio: 'efectivo');
+    expect(efectivo.recargoCigarrillosCentavos, 0);
   });
 
   test('ajustarStock cambia el stock y queda en movimientos_de_stock', () async {

@@ -27,14 +27,30 @@ import '../tema/tokens.dart';
 import 'proveedores_controlador.dart';
 import '../tema/iconos.dart';
 
+/// Lo que se precarga en el alta de un producto que viene de una línea de factura (El dueño, 2026-10-07: "que deje crear nuevos productos
+/// en base a lo leído"). El precio no viene: lo pone el porcentaje del proveedor si tiene, o el dueño.
+class DatosProductoNuevo {
+  const DatosProductoNuevo({required this.nombre, this.codigoBarras, this.costoCentavos, this.mejorarNombre});
+
+  final String nombre;
+  final String? codigoBarras;
+  final int? costoCentavos;
+
+  /// "Mejorar nombre con IA" (solo si hay clave): devuelve el nombre propuesto, o lanza una excepción con un mensaje legible.
+  final Future<String> Function()? mejorarNombre;
+}
+
 /// [productoId] null da de alta un producto nuevo. [proveedorIdPreseleccionado]
 /// solo se usa en el alta, para que "+ Nuevo producto" desde el detalle de un
-/// proveedor puntual ya venga con ese proveedor elegido.
-Future<void> mostrarDialogoEditarProducto(
+/// proveedor puntual ya venga con ese proveedor elegido. [inicial] precarga el
+/// alta (lector de facturas). Devuelve el id del producto guardado, o null si
+/// se canceló.
+Future<int?> mostrarDialogoEditarProducto(
   BuildContext context, {
   required ProveedoresControlador controlador,
   int? productoId,
   int? proveedorIdPreseleccionado,
+  DatosProductoNuevo? inicial,
 }) async {
   Producto? producto;
   List<HistorialDePrecio> historial = const [];
@@ -44,15 +60,16 @@ Future<void> mostrarDialogoEditarProducto(
     )..where((p) => p.id.equals(productoId))).getSingle();
     historial = await historialDelProducto(controlador.db, productoId);
   }
-  if (!context.mounted) return;
+  if (!context.mounted) return null;
 
-  await mostrarModal<void>(
+  return mostrarModal<int>(
     context,
     builder: (context) => _DialogoEditarProducto(
       controlador: controlador,
       producto: producto,
       historial: historial,
       proveedorIdPreseleccionado: proveedorIdPreseleccionado,
+      inicial: productoId == null ? inicial : null,
     ),
   );
 }
@@ -63,6 +80,7 @@ class _DialogoEditarProducto extends StatefulWidget {
     required this.producto,
     required this.historial,
     required this.proveedorIdPreseleccionado,
+    this.inicial,
   });
 
   final ProveedoresControlador controlador;
@@ -71,6 +89,7 @@ class _DialogoEditarProducto extends StatefulWidget {
   final Producto? producto;
   final List<HistorialDePrecio> historial;
   final int? proveedorIdPreseleccionado;
+  final DatosProductoNuevo? inicial;
 
   @override
   State<_DialogoEditarProducto> createState() => _DialogoEditarProductoState();
@@ -78,10 +97,10 @@ class _DialogoEditarProducto extends StatefulWidget {
 
 class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
   late final _nombreCtrl = TextEditingController(
-    text: widget.producto?.nombre ?? '',
+    text: widget.producto?.nombre ?? widget.inicial?.nombre ?? '',
   );
   late final _codigoCtrl = TextEditingController(
-    text: widget.producto?.codigoBarras ?? '',
+    text: widget.producto?.codigoBarras ?? widget.inicial?.codigoBarras ?? '',
   );
   late final _precioCtrl = TextEditingController(
     text: widget.producto?.precioCentavos == null
@@ -89,9 +108,10 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
         : formatearARS(widget.producto!.precioCentavos!).replaceAll('\$', ''),
   );
   late final _costoCtrl = TextEditingController(
-    text: widget.producto?.costoCentavos == null
-        ? ''
-        : formatearARS(widget.producto!.costoCentavos!).replaceAll('\$', ''),
+    text: () {
+      final costo = widget.producto?.costoCentavos ?? widget.inicial?.costoCentavos;
+      return costo == null ? '' : formatearARS(costo).replaceAll('\$', '');
+    }(),
   );
   late final _precioPorKiloCtrl = TextEditingController(
     text: widget.producto?.precioPorKiloCentavos == null
@@ -138,8 +158,31 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
   late bool _fijo = widget.producto?.precioFijo ?? false;
   String? _motivoAjusteStock;
   String? _error;
+  bool _mejorandoNombre = false;
+
+  Future<void> _mejorarNombre() async {
+    setState(() {
+      _mejorandoNombre = true;
+      _error = null;
+    });
+    try {
+      final nombre = await widget.inicial!.mejorarNombre!();
+      if (mounted) setState(() => _nombreCtrl.text = nombre);
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _mejorandoNombre = false);
+    }
+  }
 
   bool get _esNuevo => widget.producto == null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Alta desde una factura: el costo ya viene, así que el precio automático del proveedor (si tiene %) se calcula de entrada.
+    if (widget.inicial != null) _recalcularPrecioAutomatico();
+  }
 
   int? _parsearONulo(String texto) {
     if (texto.trim().isEmpty) return null;
@@ -293,8 +336,9 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
     final db = widget.controlador.db;
 
     try {
+      final int id;
       if (_esNuevo) {
-        await crearProducto(
+        id = await crearProducto(
           db,
           nombre: nombre,
           codigoBarras: _codigoCtrl.text.trim().isEmpty
@@ -315,9 +359,10 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
           precioFijo: _fijo,
         );
       } else {
+        id = widget.producto!.id;
         await actualizarProducto(
           db,
-          id: widget.producto!.id,
+          id: id,
           nombre: nombre,
           codigoBarras: _codigoCtrl.text.trim().isEmpty
               ? null
@@ -339,16 +384,14 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
           precioFijo: _aplicaAutomatico ? _fijo : null,
         );
       }
+      await widget.controlador.recargarSeleccionActual();
+      if (mounted) Navigator.of(context).pop(id);
     } on ArgumentError catch (e) {
       // Código de barras duplicado (`repositorio_productos.dart`) — antes
       // de este chequeo esto tiraba una excepción cruda de sqlite sin
       // capturar, acá directo.
       setState(() => _error = e.message.toString());
-      return;
     }
-
-    await widget.controlador.recargarSeleccionActual();
-    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _crearCategoria() async {
@@ -434,6 +477,15 @@ class _DialogoEditarProductoState extends State<_DialogoEditarProducto> {
                 etiqueta: 'Nombre',
                 autofocus: true,
               ),
+              if (widget.inicial?.mejorarNombre != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    key: const Key('mejorar_nombre_ia'),
+                    onPressed: _mejorandoNombre ? null : _mejorarNombre,
+                    child: Text(_mejorandoNombre ? 'Pensando el nombre…' : 'Mejorar nombre con IA'),
+                  ),
+                ),
               const SizedBox(height: Espaciado.md),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,

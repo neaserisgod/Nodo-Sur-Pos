@@ -276,3 +276,109 @@ List<PropuestaDeVinculo> conSugerenciasDeIa(
       }(),
   ];
 }
+
+// ─── Proveedor de la factura ──────────────────────────────────────────────
+
+/// De cuál de los [candidatos] (los proveedores que tienen cargado el CUIT de la factura) es la factura. Un mismo CUIT puede ser de
+/// varios proveedores del comercio (El dueño, 2026-10-07: el mismo mayorista cargado como "X" y "X cigarrillos", para separar la lata),
+/// así que se decide por lo que trae: cada línea ya aprendida de un candidato le suma 2, y cada línea que se parece claramente a un
+/// producto de un candidato le suma 1. Gana el que más suma; con empate o sin nada reconocido devuelve null y se le pregunta al dueño:
+/// equivocarse de proveedor manda los vínculos aprendidos al lugar equivocado.
+int? elegirProveedorDeFactura({
+  required List<int> candidatos,
+  required List<LineaAVincular> lineas,
+  required List<ProductoCandidato> catalogo,
+  required Map<int, List<VinculoAprendido>> vinculosPorProveedor,
+}) {
+  if (candidatos.isEmpty) return null;
+  if (candidatos.length == 1) return candidatos.single;
+
+  final puntos = {for (final c in candidatos) c: 0};
+  final aprendidas = {
+    for (final c in candidatos)
+      c: proponerVinculos(lineas: lineas, catalogo: catalogo, vinculos: vinculosPorProveedor[c] ?? const []),
+  };
+  // Sin proveedor ni vínculos: el parecido de nombre solo, sin el empujón que le daría a un candidato.
+  final porNombre = proponerVinculos(lineas: lineas, catalogo: catalogo);
+  final duenoDe = {for (final p in catalogo) p.id: p.proveedorId};
+
+  for (var i = 0; i < lineas.length; i++) {
+    final conAprendido = [for (final c in candidatos) if (aprendidas[c]![i].origen == OrigenVinculo.aprendido) c];
+    if (conAprendido.isNotEmpty) {
+      for (final c in conAprendido) {
+        puntos[c] = puntos[c]! + 2;
+      }
+      continue;
+    }
+    final p = porNombre[i];
+    final dueno = p.productoId == null ? null : duenoDe[p.productoId];
+    if (p.confianza != ConfianzaVinculo.ninguna && dueno != null && puntos.containsKey(dueno)) puntos[dueno] = puntos[dueno]! + 1;
+  }
+
+  final orden = puntos.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  if (orden.first.value == 0 || orden.first.value == orden[1].value) return null;
+  return orden.first.key;
+}
+
+// ─── Producto nuevo desde una línea ───────────────────────────────────────
+
+/// El nombre con el que se propone dar de alta el producto de una línea que no está en el catálogo (El dueño, 2026-10-07): la descripción
+/// sin el código del proveedor adelante ("1042 - ") ni el pack del final ("(24)", a veces cortado: "(2"), en minúsculas con mayúscula
+/// inicial por palabra, y con las abreviaturas expandidas según las palabras que ya usan los productos del comercio
+/// ([nombresDelCatalogo]): "ALF" pasa a "Alfajor" si algún producto dice "Alfajor", y "AGUILA" a "Águila" con el acento de ahí. Gratis
+/// e instantáneo; lo que no se puede deducir así lo arregla el dueño, o la IA si la pide (`servicios/nombre_producto_ia.dart`).
+String nombreSugeridoDesdeFactura(String descripcion, {Iterable<String> nombresDelCatalogo = const []}) {
+  var t = descripcion.trim();
+  t = t.replaceFirst(RegExp(r'^\d+\s*-\s*'), '');
+  t = t.replaceFirst(RegExp(r'\s*\(\s*\d*\s*\)?\s*$'), '');
+  t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final vocabulario = _vocabularioDe(nombresDelCatalogo);
+  return t.split(' ').map((p) {
+    if (p.isEmpty || RegExp(r'\d').hasMatch(p) || _unidadesDeMedida.contains(p.toLowerCase())) return p.toLowerCase();
+    return _palabraDelCatalogo(p, vocabulario) ?? _conMayuscula(p);
+  }).join(' ');
+}
+
+String _conMayuscula(String p) => '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}';
+
+/// Las palabras de los productos: sin acentos ni mayúsculas → cómo se escriben ahí y cuántas veces aparece cada forma.
+Map<String, Map<String, int>> _vocabularioDe(Iterable<String> nombres) {
+  final v = <String, Map<String, int>>{};
+  for (final nombre in nombres) {
+    for (final palabra in nombre.split(RegExp(r'\s+'))) {
+      final limpia = palabra.replaceAll(RegExp(r'^[^\p{L}]+|[^\p{L}]+$', unicode: true), '');
+      if (limpia.length < 3 || RegExp(r'\d').hasMatch(limpia)) continue;
+      // Un catálogo cargado todo en mayúsculas no impone mayúsculas: se lleva a mayúscula inicial.
+      final forma = limpia == limpia.toUpperCase() ? _conMayuscula(limpia) : limpia;
+      final formas = v.putIfAbsent(normalizarTexto(limpia), () => {});
+      formas[forma] = (formas[forma] ?? 0) + 1;
+    }
+  }
+  return v;
+}
+
+/// La palabra del catálogo que corresponde a [p]: la misma palabra (para tomar su acento), o la única que empieza con ella si [p] es una
+/// abreviatura. Con dos candidatas parecidas ("BL": "Blanca" y "Blanco") gana una solo si aparece al menos el doble; si no, no adivina.
+String? _palabraDelCatalogo(String p, Map<String, Map<String, int>> vocabulario) {
+  final n = normalizarTexto(p);
+  String masUsada(Map<String, int> formas) => (formas.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).first.key;
+  final exacta = vocabulario[n];
+  if (exacta != null) return masUsada(exacta);
+  if (n.length < 2) return null;
+  final candidatas = [
+    for (final e in vocabulario.entries)
+      if (e.key.startsWith(n)) (palabra: e.key, veces: e.value.values.fold(0, (a, b) => a + b)),
+  ]..sort((a, b) => b.veces.compareTo(a.veces));
+  if (candidatas.isEmpty) return null;
+  if (candidatas.length > 1 && candidatas[0].veces < 2 * candidatas[1].veces) return null;
+  return masUsada(vocabulario[candidatas[0].palabra]!);
+}
+
+const _unidadesDeMedida = {'g', 'gr', 'grs', 'kg', 'ml', 'cc', 'l', 'lt', 'lts', 'cm', 'mm'};
+
+/// El código de barras de una línea, si el código impreso tiene forma de uno (8, 12, 13 o 14 dígitos); null si es un código propio del
+/// proveedor, que no sirve para escanear.
+String? codigoDeBarrasDeLinea(String? codigo) {
+  final d = _soloDigitos(codigo);
+  return {8, 12, 13, 14}.contains(d.length) && d == (codigo ?? '').trim() ? d : null;
+}

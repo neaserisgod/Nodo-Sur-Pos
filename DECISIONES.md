@@ -82,6 +82,10 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - ["Lenguaje de diseño": mocks de el dueño aplicados a toda la app (2026-09-26/28)](#lenguaje-de-diseño-mocks-de-el-dueño-aplicados-a-toda-la-app-2026-09-2628)
 - [Renombre visible a "Nodo Sur POS" (2026-10-01)](#renombre-visible-a-nodo-sur-pos-2026-10-01)
 - [Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")](#rediseño-del-lector-de-facturas-con-el-lenguaje-de-la-pc-el-dueño-2026-10-05-se-ve-horrible)
+- [Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)](#un-cuit-para-varios-proveedores-en-las-facturas-el-dueño-2026-10-07)
+- [Crear un producto desde una línea de factura (El dueño, 2026-10-07)](#crear-un-producto-desde-una-línea-de-factura-el-dueño-2026-10-07)
+- [Aplicar una factura de compra (El dueño, 2026-10-07)](#aplicar-una-factura-de-compra-el-dueño-2026-10-07)
+- [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
 
@@ -2073,7 +2077,7 @@ un negocio SÍ pasó a ser atómico (`DB.batch`).
 ### Vincular facturas con productos (2026-10-05)
 
 - **Se aprende, no se configura**: cada vínculo confirmado (código o descripción de ese proveedor → producto, con "unidades por cantidad") se guarda y la próxima factura sale
-  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige. Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
+  verde. El CUIT del proveedor se aprende la primera vez que el dueño lo elige (desde la v56 un CUIT puede ser de varios proveedores: ver "Un CUIT para varios proveedores", 2026-10-07). Tablas locales (`vinculos_factura`, `cuits_proveedor`), no se sincronizan; el CUIT NO se agregó a
   `proveedores` (tabla sincronizada) para no tocar el protocolo de sync.
 - **Nunca se inventa un vínculo**: el parecido de nombre propone solo con un parecido claro y una ventaja sobre el segundo; si no, queda sin vincular con alternativas. La IA solo
   elige entre los productos que se le muestran y se descarta cualquier id que no esté en esa lista. Lo de la IA o del parecido siempre queda en amarillo hasta que el dueño confirma.
@@ -2101,3 +2105,69 @@ Arriba de las líneas de cada factura, el lector dice cuántas de las líneas re
 ## Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")
 
 El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas ("bul…", "× u…"), nombres de producto truncados y un alto fijo que tapaba el selector de modelo. Se rehízo con las piezas del sistema de diseño (`Superficie`, `Insignia`, tipografía y espaciado de `tokens.dart`; claro y oscuro): una barra con los archivos y el modelo, una tarjeta por factura (proveedor y total impreso grandes, insignias de control, resumen "reconocí X de Y") y una tabla con encabezado de columnas (En la factura · Tu producto · Cant. · × unid. · Unidades · Total · Costo c/u) sobre fondo blanco. Un bulto propuesto pinta la casilla en alerta y debajo de "Unidades" dice "4 bultos × 24". El diálogo usa casi todo el alto de la ventana y scrollea adentro. Los mocks de escritorio del repo (`Lenguaje de diseño/`) no incluyen esta pantalla: se tomó su lenguaje (bloques planos, píldoras, números grandes), no una pantalla concreta.
+
+## Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)
+
+- **El caso**: el mismo mayorista trae cosas varias y cigarrillos, y el dueño lo tiene cargado como dos proveedores ("X" y "X cigarrillos",
+  para separar la lata). Con un CUIT atado a un solo proveedor, elegir "X cigarrillos" en una factura le sacaba el CUIT a "X", y la próxima
+  factura de cosas varias salía como cigarrillos.
+- **Decisión (opción A, elegida por el dueño)**: `cuits_proveedor` pasa a ser única por (proveedor, CUIT) — migración v56, que rehace la
+  tabla sin perder filas. Con varios proveedores para el CUIT, **decide lo que trae la factura** (`elegirProveedorDeFactura`,
+  `domain/vinculo_factura.dart`): línea ya aprendida de un proveedor = 2 puntos, línea parecida a un producto suyo = 1. Con empate o sin
+  nada reconocido no adivina: pregunta nombrando a los proveedores del CUIT. "Cambiar proveedor" está siempre a mano y elegir otro le
+  suma el CUIT, no se lo saca al primero.
+- **Descartadas**: preguntar siempre (un paso más en cada factura de X) y dividir una misma factura entre dos proveedores (solo tiene
+  sentido si los cigarrillos vienen mezclados en la misma factura; no se pidió).
+
+## Crear un producto desde una línea de factura (El dueño, 2026-10-07)
+
+- **El pedido**: el parecido de nombre vincula con el producto que más palabras comparte ("XB BOX" con "XB convertible BOX"). El dueño
+  quiere dejarlo así (no gasta IA ni tiempo), pero poder crear el producto que falta con lo leído.
+- **Decisión**: cada línea tiene un "+" ("No está en tu lista: crear producto con lo leído") que abre **el mismo alta de Proveedores**
+  (`mostrarDialogoEditarProducto`, ahora con `DatosProductoNuevo` y devolviendo el id), precargada con el nombre limpio
+  (`nombreSugeridoDesdeFactura`: sin el código del proveedor ni el pack), el costo por unidad de la factura (con el "× unid." elegido), el
+  proveedor de la factura y el código de barras solo si el código impreso tiene forma de uno. El precio lo pone el porcentaje del
+  proveedor si tiene, o el dueño. Al guardar, la línea queda vinculada al producto nuevo; "Aprender" lo recuerda para la próxima.
+- **El nombre** (El dueño, 2026-10-07: "¿es muy complicado que aplique un reformateo a los nombres solo?"): sale con las abreviaturas
+  expandidas según las palabras que ya usan tus productos ("ALF" → "Alfajor", "AGUILA" → "Águila"; con dos candidatas parecidas solo
+  gana una si aparece el doble, si no queda como vino) — gratis e instantáneo. Para lo que eso no deduce ("MRL" → Marlboro) hay un botón
+  **"Mejorar nombre con IA"** en el formulario, solo con clave cargada: una llamada por producto y solo si se toca
+  (`servicios/nombre_producto_ia.dart`; van la descripción y nombres de productos de ejemplo, nunca precios). Descartada una lista fija
+  de abreviaturas: hay que mantenerla a mano y varias tienen más de un significado.
+- **No cambia** el emparejamiento automático, y sigue siendo un solo lugar para dar de alta productos (Proveedores): el lector se abre
+  desde ahí. No se suma stock: eso llega con "aplicar la factura".
+
+## Aplicar una factura de compra (El dueño, 2026-10-07)
+
+Decidido por el dueño con preguntas (las cuatro, la opción recomendada):
+
+- **Contado**: "Aplicar" carga la deuda en la cuenta corriente **siempre** y nada más; el pago va por el camino de siempre ("Pagar
+  proveedor" / la cuenta corriente). Para el contado aparece "Pagar ahora", que abre la cuenta corriente con la deuda recién cargada.
+  Motivo: si "Aplicar" también registrara el pago y ya se le pagó con Alt+P, el gasto quedaría contado dos veces.
+- **Precio**: con el % del proveedor, el precio se recalcula solo (el mismo `actualizarProducto` de siempre, vía `cargarCostoProducto`).
+  Precio fijo y cigarrillos no se tocan; si con el costo nuevo quedarían perdiendo plata, la línea lo avisa en rojo ANTES de aplicar
+  (`precioTrasCambioDeCosto`, que comparte la regla con `actualizarProducto` en `_precioAutomaticoSiSigueAlProveedor`).
+- **Renglones**: casilla "No va" (no es del local): entra en la deuda, no en el stock ni el costo. No se aplica mientras haya una línea
+  sin producto y sin "No va" (`motivosParaNoAplicar`). El mismo producto en dos líneas suma unidades y toma el promedio de lo pagado.
+- **Deshacer**: en el aviso al aplicar y en la cuenta corriente ("Deshacer factura" en lugar de "Anular" en ese cargo: anularlo suelto
+  dejaría el stock y el costo cambiados). Anula el cargo, resta el stock y vuelve al costo de antes salvo que se haya cambiado a mano
+  después (ese queda y se avisa). Con un pago a cuenta del cargo, primero hay que anular el pago.
+
+Lo demás, con lo que se había propuesto: la casilla "Sumar al stock" viene marcada; una factura que no cierra con su total pide
+confirmar ("Aplicar igual") y carga el total impreso; la misma factura (mismo proveedor y número, sin importar ceros ni guiones) no se
+aplica dos veces mientras no se deshaga; una nota de crédito no se aplica todavía; aplicar también aprende los vínculos. Los productos
+por peso no se tocan: la factura cuenta unidades y su stock va en gramos.
+
+Técnico: migración v57 con `facturas_compra` y `productos_factura_compra` (locales, como la cuenta corriente: no se sincronizan). El
+stock se mueve con `ajustarStockRapido` (movimiento "AJUSTE" con motivo "Compra · Factura …"): es el movimiento que viaja al celular,
+así que no hizo falta un tipo nuevo ni tocar la sincronización. Todo en una transacción (`repositorio_facturas_compra.dart`).
+
+## La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)
+
+- **El bug**: el formulario y "cambiar precio" del celular no mandan `tipoCigarrillo`, y `actualizarProducto` lo pisaba con su default
+  `'ninguno'`. Cada edición desde el celular (con o sin la PC) le borraba la marca al producto, y por sync también en la PC: el atado
+  se vendía sin recargo por pago virtual (Regla 6). Ahora `tipoCigarrillo` null = no se toca (mismo criterio que `stockMinimo`).
+- **Recuperación (pedida por el dueño)**: migración v58 (`recuperarMarcaDeCigarrillos`). La línea de venta guarda el tipo del momento,
+  así que a cada producto sin marca que alguna vez se vendió marcado se le vuelve a poner la de su última venta marcada, con
+  `actualizado_en` para que viaje al otro equipo. Riesgo aceptado: un producto desmarcado a propósito vuelve a marcarse (se desmarca
+  de nuevo a mano).

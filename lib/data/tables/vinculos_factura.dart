@@ -27,10 +27,16 @@ class VinculosFactura extends Table {
   ];
 }
 
-/// El CUIT de cada proveedor, para reconocerlo en la factura sin preguntar. Un CUIT pertenece a un solo proveedor. Local, solo dígitos.
+/// El CUIT de cada proveedor, para reconocerlo en la factura sin preguntar. Local, solo dígitos. Un CUIT puede ser de varios proveedores
+/// (v56, El dueño, 2026-10-07: el mismo mayorista cargado como "X" y "X cigarrillos"); cuál es lo decide `elegirProveedorDeFactura`.
 @DataClassName('CuitProveedor')
 class CuitsProveedor extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get proveedorId => integer().references(Proveedores, #id)();
-  TextColumn get cuit => text().unique()();
+  TextColumn get cuit => text()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {proveedorId, cuit},
+  ];
 }

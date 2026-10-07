@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_vinculos_factura.dart';
 import 'package:la_plazoleta/servicios/gemini.dart';
 import 'package:la_plazoleta/ui/proveedores/dialogo_leer_factura.dart';
+import 'package:la_plazoleta/ui/proveedores/proveedores_controlador.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,6 +47,7 @@ void main() {
 
   /// El mismo cliente atiende la lectura de la factura y, si hace falta, la consulta de vínculos de la IA.
   http.Client ia({String total = '8774.21', int? vinculaAlProducto, int estadoVinculos = 200}) => MockClient((req) async {
+        if (req.body.contains('Descripción en la factura')) return http.Response(_respuesta('{"nombre":"Crema de leche simple 200 gr"}'), 200);
         if (req.body.contains('Productos del comercio')) {
           if (estadoVinculos != 200) return http.Response('{}', estadoVinculos);
           final json = vinculaAlProducto == null ? '{"vinculos":[]}' : '{"vinculos":[{"i":0,"producto_id":$vinculaAlProducto}]}';
@@ -53,7 +56,7 @@ void main() {
         return http.Response(_respuesta(_factura(total)), 200);
       });
 
-  Future<void> abrir(WidgetTester tester, http.Client cliente) async {
+  Future<void> abrir(WidgetTester tester, http.Client cliente, {ProveedoresControlador? controlador}) async {
     tester.view.physicalSize = const Size(1600, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -63,7 +66,13 @@ void main() {
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () => mostrarDialogoLeerFactura(context, db: db, clienteIa: cliente, adjuntosIniciales: [AdjuntoGemini('image/jpeg', Uint8List.fromList([1, 2, 3]))]),
+              onPressed: () => mostrarDialogoLeerFactura(
+                context,
+                db: db,
+                controlador: controlador,
+                clienteIa: cliente,
+                adjuntosIniciales: [AdjuntoGemini('image/jpeg', Uint8List.fromList([1, 2, 3]))],
+              ),
               child: const Text('abrir'),
             ),
           ),
@@ -156,7 +165,44 @@ void main() {
       await tester.tap(find.text('Distribuidora Elpar').last);
       await tester.pumpAndSettle();
       expect(find.text('Proveedor: Distribuidora Elpar'), findsOneWidget);
-      expect((await proveedorPorCuit(db, '30708174757'))!.id, elpar);
+      expect((await proveedoresPorCuit(db, '30708174757')).map((p) => p.id), [elpar]);
+    });
+
+    group('un CUIT para dos proveedores ("X" y "X cigarrillos", El dueño, 2026-10-07)', () {
+      late int elparCigarrillos;
+      setUp(() async {
+        elparCigarrillos = await db.into(db.proveedores).insert(ProveedoresCompanion.insert(codigo: 'ELC', nombre: 'Elpar cigarrillos'));
+        await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+        await asociarCuit(db, proveedorId: elparCigarrillos, cuit: '30708174757');
+      });
+
+      testWidgets('elige el proveedor por los productos de la factura', (tester) async {
+        await producto('Crema simple 200 gr', proveedorId: elpar);
+        await producto('Marlboro Box 20', proveedorId: elparCigarrillos);
+        await abrir(tester, ia());
+        await leer(tester);
+        expect(find.text('Proveedor: Distribuidora Elpar'), findsOneWidget);
+      });
+
+      testWidgets('si los productos no alcanzan para decidir, pregunta nombrando a los dos', (tester) async {
+        await abrir(tester, ia());
+        await leer(tester);
+        expect(find.textContaining('Este CUIT es de Distribuidora Elpar y Elpar cigarrillos'), findsOneWidget);
+      });
+
+      testWidgets('"Cambiar proveedor" deja elegir el otro sin sacarle el CUIT al primero', (tester) async {
+        await producto('Crema simple 200 gr', proveedorId: elpar);
+        await abrir(tester, ia());
+        await leer(tester);
+        await tester.tap(find.byKey(const ValueKey('cambiar_proveedor_0')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('elegir_proveedor_0')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Elpar cigarrillos').last);
+        await tester.pumpAndSettle();
+        expect(find.text('Proveedor: Elpar cigarrillos'), findsOneWidget);
+        expect((await proveedoresPorCuit(db, '30708174757')).map((p) => p.id), [elpar, elparCigarrillos]);
+      });
     });
 
     testWidgets('lo que el parecido no resuelve se lo pide a la IA, y queda en amarillo para confirmar', (tester) async {
@@ -189,6 +235,160 @@ void main() {
       // 4 × 6 = 24 unidades: 8.774,21 / 24 = 365,59 → $366 c/u.
       expect(find.textContaining('366'), findsWidgets);
       expect(find.textContaining('2.194'), findsNothing);
+    });
+  });
+
+  group('crear un producto que no está en la lista (El dueño, 2026-10-07)', () {
+    testWidgets('abre el alta precargada con lo leído y la línea queda vinculada al producto nuevo', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      // El parecido vincula con el más parecido que hay ("XB BOX" con "XB convertible BOX"): se puede crear el que falta igual.
+      final parecido = await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nuevo producto'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Crema simple X 200 gr'), findsOneWidget);
+      await tester.enterText(find.descendant(of: find.byKey(const Key('campo_precio')), matching: find.byType(TextField)), '3000');
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      final nuevo = (await db.select(db.productos).get()).singleWhere((p) => p.nombre == 'Crema simple X 200 gr');
+      expect(nuevo.proveedorId, elpar);
+      expect(nuevo.costoCentavos, inInclusiveRange(219300, 219400), reason: 'el costo por unidad de la factura');
+      expect(nuevo.id, isNot(parecido));
+      expect(find.text('Crema simple X 200 gr'), findsWidgets, reason: 'la línea muestra el producto nuevo');
+    });
+
+    testWidgets('"Mejorar nombre con IA" cambia el nombre propuesto por el que arma la IA', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('mejorar_nombre_ia')));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'Crema de leche simple 200 gr'), findsOneWidget);
+    });
+
+    testWidgets('sin clave de la IA no muestra "Mejorar nombre con IA"', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await producto('Crema simple 200 gr light', proveedorId: elpar);
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      final controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(), controlador: controlador);
+      await leer(tester);
+      ClaveGemini.fijarParaTest(null); // la lectura ya se hizo; se saca la clave antes de abrir el alta
+      await tester.tap(find.byTooltip('No está en tu lista: crear producto con lo leído'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mejorar_nombre_ia')), findsNothing);
+    });
+
+    testWidgets('sin el controlador de Proveedores no ofrece crear', (tester) async {
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(find.byTooltip('No está en tu lista: crear producto con lo leído'), findsNothing);
+    });
+  });
+
+  group('aplicar la factura (El dueño, 2026-10-07)', () {
+    late ProveedoresControlador controlador;
+
+    Future<void> conControlador(WidgetTester tester, {String total = '8774.21'}) async {
+      final usuarioId = await db.into(db.usuarios).insert(UsuariosCompanion.insert(nombre: 'Otro'));
+      controlador = ProveedoresControlador(db, usuarioId: usuarioId, sesionCajaId: null);
+      addTearDown(controlador.dispose);
+      await tester.runAsync(controlador.cargarTodo);
+      await abrir(tester, ia(total: total), controlador: controlador);
+      await leer(tester);
+    }
+
+    Future<Producto> leerProducto(WidgetTester tester, int id) async =>
+        (await tester.runAsync(() => (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle()))!;
+
+    testWidgets('suma el stock, pone el costo y carga la deuda; "Deshacer" lo vuelve atrás', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      final crema = await db.into(db.productos).insert(
+            ProductosCompanion.insert(nombre: 'Crema simple 200 gr', proveedorId: Value(elpar), precioCentavos: const Value(400000), costoCentavos: const Value(180000), stock: const Value(2)),
+          );
+      await conControlador(tester);
+      await tester.tap(find.byKey(const ValueKey('aplicar_factura_0')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Aplicada: 1 producto(s) con stock'), findsOneWidget);
+      expect(find.byKey(const ValueKey('pagar_ahora_0')), findsNothing, reason: 'es de cuenta corriente, no de contado');
+      expect((await leerProducto(tester, crema)).stock, 6);
+      expect((await leerProducto(tester, crema)).costoCentavos, 219400);
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 877421);
+      expect(await tester.runAsync(() => vinculosDe(db, elpar)), isNotEmpty, reason: 'aplicar también aprende los vínculos');
+
+      await tester.tap(find.byKey(const ValueKey('deshacer_factura_0')));
+      await tester.pumpAndSettle();
+      expect((await leerProducto(tester, crema)).stock, 2);
+      expect((await leerProducto(tester, crema)).costoCentavos, 180000);
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 0);
+      expect(find.byKey(const ValueKey('aplicar_factura_0')), findsOneWidget, reason: 'se puede volver a aplicar');
+    });
+
+    testWidgets('un renglón sin producto frena; marcado "No va" entra solo en la deuda', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await conControlador(tester);
+      await tester.tap(find.byKey(const ValueKey('aplicar_factura_0')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Línea 1: elegí el producto'), findsOneWidget);
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 0);
+
+      await tester.tap(find.byType(Checkbox).first); // "No va" de la única línea (la de stock va abajo)
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('aplicar_factura_0')));
+      await tester.pumpAndSettle();
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 877421);
+      expect(find.textContaining('Aplicada: 0 producto(s)'), findsOneWidget);
+    });
+
+    testWidgets('si la factura no cierra pide confirmar antes de aplicar', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await producto('Crema simple 200 gr', proveedorId: elpar);
+      await conControlador(tester, total: '9774.21');
+      await tester.tap(find.byKey(const ValueKey('aplicar_factura_0')));
+      await tester.pumpAndSettle();
+      expect(find.text('La factura no cierra'), findsOneWidget);
+      await tester.tap(find.text('Revisar'));
+      await tester.pumpAndSettle();
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 0);
+
+      await tester.tap(find.byKey(const ValueKey('aplicar_factura_0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Aplicar igual'));
+      await tester.pumpAndSettle();
+      expect(await tester.runAsync(() => saldoDeuda(db, elpar)), 977421, reason: 'la deuda es el total impreso');
+    });
+
+    testWidgets('avisa en rojo si con el costo nuevo el producto queda perdiendo plata', (tester) async {
+      await asociarCuit(db, proveedorId: elpar, cuit: '30708174757');
+      await db.into(db.productos).insert(
+            ProductosCompanion.insert(nombre: 'Crema simple 200 gr', proveedorId: Value(elpar), precioCentavos: const Value(200000), costoCentavos: const Value(150000)),
+          );
+      await conControlador(tester);
+      expect(find.textContaining('Pierde plata: cuesta \$2.194 y lo vendés a \$2.000'), findsOneWidget);
+    });
+
+    testWidgets('sin el controlador de Proveedores solo se revisa: no hay "Aplicar"', (tester) async {
+      await abrir(tester, ia());
+      await leer(tester);
+      expect(find.byKey(const ValueKey('aplicar_factura_0')), findsNothing);
     });
   });
 

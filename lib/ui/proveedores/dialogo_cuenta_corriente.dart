@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_deuda_proveedores.dart';
+import '../../data/repositorio_facturas_compra.dart';
 import '../../domain/dinero.dart';
 import '../comun/botones.dart';
 import '../comun/campo_texto.dart';
@@ -64,6 +65,9 @@ class _DialogoCuentaCorriente extends StatefulWidget {
 class _DialogoCuentaCorrienteState extends State<_DialogoCuentaCorriente> {
   int _saldo = 0;
   List<MovimientoDeuda> _movimientos = const [];
+
+  /// Los cargos que vienen de una factura aplicada: se deshacen enteros (deuda, stock y costo), no se anulan solos.
+  Set<int> _deFactura = const {};
   bool _cargando = true;
   String? _error;
 
@@ -79,12 +83,44 @@ class _DialogoCuentaCorrienteState extends State<_DialogoCuentaCorriente> {
       widget.db,
       widget.proveedor.id,
     );
+    final deFactura = await movimientosDeudaConFactura(widget.db, widget.proveedor.id);
     if (!mounted) return;
     setState(() {
       _saldo = saldo;
       _movimientos = movimientos;
+      _deFactura = deFactura;
       _cargando = false;
     });
+  }
+
+  /// "Deshacer factura" (El dueño, 2026-10-07): anula el cargo, resta el stock que sumó y vuelve al costo de antes.
+  Future<void> _deshacerFactura(MovimientoDeuda m) async {
+    final confirmar = await mostrarModal<bool>(
+      context,
+      builder: (context) => Modal(
+        titulo: 'Deshacer esta factura',
+        subtitulo: '${m.nota ?? 'Factura'} · ${formatearARS(m.montoCentavos)}',
+        contenido: Text(
+          'Se anula la deuda, se resta el stock que sumó y los productos vuelven al costo de antes '
+          '(salvo los que hayas cambiado a mano después).',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        botones: [
+          BotonSecundario(texto: 'Volver', onPressed: () => Navigator.of(context).pop(false)),
+          BotonPrimario(texto: 'Deshacer factura', onPressed: () => Navigator.of(context).pop(true)),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    final factura = await facturaDelMovimientoDeuda(widget.db, m.id);
+    if (factura == null) return;
+    try {
+      final r = await deshacerFactura(widget.db, facturaId: factura.id, usuarioId: widget.usuarioId);
+      setState(() => _error = r.costosQueQuedaron.isEmpty ? null : 'El costo de ${r.costosQueQuedaron.join(', ')} quedó como lo cambiaste.');
+      await _recargar();
+    } on ArgumentError catch (e) {
+      setState(() => _error = e.message.toString());
+    }
   }
 
   Future<void> _cargarDeuda() async {
@@ -232,7 +268,9 @@ class _DialogoCuentaCorrienteState extends State<_DialogoCuentaCorriente> {
                     const SizedBox(height: Espaciado.xs),
                 itemBuilder: (_, i) => _FilaMovimiento(
                   movimiento: _movimientos[i],
+                  deFactura: _deFactura.contains(_movimientos[i].id),
                   onAnular: () => _anular(_movimientos[i]),
+                  onDeshacerFactura: () => _deshacerFactura(_movimientos[i]),
                 ),
               ),
             ),
@@ -255,10 +293,12 @@ class _DialogoCuentaCorrienteState extends State<_DialogoCuentaCorriente> {
 }
 
 class _FilaMovimiento extends StatelessWidget {
-  const _FilaMovimiento({required this.movimiento, required this.onAnular});
+  const _FilaMovimiento({required this.movimiento, required this.deFactura, required this.onAnular, required this.onDeshacerFactura});
 
   final MovimientoDeuda movimiento;
+  final bool deFactura;
   final VoidCallback onAnular;
+  final VoidCallback onDeshacerFactura;
 
   @override
   Widget build(BuildContext context) {
@@ -319,7 +359,9 @@ class _FilaMovimiento extends StatelessWidget {
           ),
           if (!anulado) ...[
             const SizedBox(width: Espaciado.sm),
-            TextButton(onPressed: onAnular, child: const Text('Anular')),
+            deFactura
+                ? TextButton(key: Key('deshacer_factura_${m.id}'), onPressed: onDeshacerFactura, child: const Text('Deshacer factura'))
+                : TextButton(onPressed: onAnular, child: const Text('Anular')),
           ],
         ],
       ),

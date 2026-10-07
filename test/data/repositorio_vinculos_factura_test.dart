@@ -23,14 +23,14 @@ void main() {
   group('CUIT del proveedor', () {
     test('se reconoce con o sin guiones', () async {
       await asociarCuit(db, proveedorId: serra, cuit: '30-67037821-3');
-      expect((await proveedorPorCuit(db, '30670378213'))!.id, serra);
-      expect((await proveedorPorCuit(db, '30-67037821-3'))!.id, serra);
+      expect((await proveedoresPorCuit(db, '30670378213')).map((p) => p.id), [serra]);
+      expect((await proveedoresPorCuit(db, '30-67037821-3')).map((p) => p.id), [serra]);
     });
 
     test('un CUIT desconocido o inválido no encuentra a nadie', () async {
-      expect(await proveedorPorCuit(db, '30670378213'), isNull);
-      expect(await proveedorPorCuit(db, '1234'), isNull);
-      expect(await proveedorPorCuit(db, null), isNull);
+      expect(await proveedoresPorCuit(db, '30670378213'), isEmpty);
+      expect(await proveedoresPorCuit(db, '1234'), isEmpty);
+      expect(await proveedoresPorCuit(db, null), isEmpty);
     });
 
     test('un CUIT inválido no se guarda', () async {
@@ -38,11 +38,12 @@ void main() {
       expect(await db.select(db.cuitsProveedor).get(), isEmpty);
     });
 
-    test('un CUIT es de un solo proveedor: asociarlo a otro lo mueve', () async {
+    test('un CUIT puede ser de varios proveedores ("X" y "X cigarrillos"): asociarlo a otro lo suma, no se lo saca al primero', () async {
       await asociarCuit(db, proveedorId: serra, cuit: '30670378213');
       await asociarCuit(db, proveedorId: otro, cuit: '30670378213');
-      expect((await proveedorPorCuit(db, '30670378213'))!.id, otro);
-      expect(await db.select(db.cuitsProveedor).get(), hasLength(1));
+      await asociarCuit(db, proveedorId: otro, cuit: '30-67037821-3'); // repetido: no duplica
+      expect((await proveedoresPorCuit(db, '30670378213')).map((p) => p.id), [serra, otro]);
+      expect(await db.select(db.cuitsProveedor).get(), hasLength(2));
     });
   });
 

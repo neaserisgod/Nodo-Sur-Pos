@@ -289,7 +289,11 @@ Future<void> actualizarProducto(
   int? categoriaId,
   int? proveedorId,
   required bool esPesable,
-  String tipoCigarrillo = 'ninguno',
+  // Null = no se toca (mismo criterio que `stockMinimo`): el celular edita
+  // precios y stock sin saber de cigarrillos, y con un default 'ninguno' cada
+  // edición desde ahí le borraba la marca al producto — y con ella el recargo
+  // por pago virtual (Regla 6), en el celular y, por sync, en la PC.
+  String? tipoCigarrillo,
   int? precioCentavos,
   int? costoCentavos,
   int? precioPorKiloCentavos,
@@ -309,6 +313,7 @@ Future<void> actualizarProducto(
   final anterior = await (db.select(
     db.productos,
   )..where((p) => p.id.equals(id))).getSingle();
+  tipoCigarrillo ??= anterior.tipoCigarrillo;
 
   // Precio automático por proveedor (El dueño, 2026-09-29): si cambió el costo y
   // el producto sigue al porcentaje de su proveedor, el precio se recalcula
@@ -318,13 +323,14 @@ Future<void> actualizarProducto(
       ? anterior.costoPorKiloCentavos
       : anterior.costoCentavos;
   final costoNuevo = esPesable ? costoPorKiloCentavos : costoCentavos;
-  if (costoNuevo != costoAnterior && !(precioFijo ?? anterior.precioFijo)) {
-    final automatico = await _precioAutomatico(
+  if (costoNuevo != costoAnterior) {
+    final automatico = await _precioAutomaticoSiSigueAlProveedor(
       db,
+      anterior,
       proveedorId: proveedorId,
       tipoCigarrillo: tipoCigarrillo,
-      esVarios: anterior.esVarios,
-      costoCentavos: costoNuevo,
+      precioFijo: precioFijo,
+      costoNuevoCentavos: costoNuevo,
     );
     if (automatico != null) {
       if (esPesable) {
@@ -890,6 +896,75 @@ Future<int?> _precioAutomatico(
   final bp = proveedor?.markupBp;
   if (bp == null) return null;
   return precioConGananciaACentena(costoCentavos, bp);
+}
+
+/// El precio automático que le pone [actualizarProducto] a [anterior] cuando su costo cambia, o null si lo deja como está (precio fijo a
+/// mano, o sin precio automático que corresponda). Un solo lugar para la regla (convención 3): lo usan la edición y la vista previa
+/// de una factura ([precioTrasCambioDeCosto]).
+Future<int?> _precioAutomaticoSiSigueAlProveedor(
+  AppDatabase db,
+  Producto anterior, {
+  required int? proveedorId,
+  required String tipoCigarrillo,
+  bool? precioFijo,
+  required int? costoNuevoCentavos,
+}) async {
+  if (precioFijo ?? anterior.precioFijo) return null;
+  return _precioAutomatico(
+    db,
+    proveedorId: proveedorId,
+    tipoCigarrillo: tipoCigarrillo,
+    esVarios: anterior.esVarios,
+    costoCentavos: costoNuevoCentavos,
+  );
+}
+
+/// El precio de venta que le quedaría a [producto] si su costo pasa a [costoNuevoCentavos] (por kilo si es pesable): el automático del
+/// proveedor si lo sigue, o el de hoy. Para avisar ANTES de aplicar una factura que un producto va a quedar perdiendo plata.
+Future<int?> precioTrasCambioDeCosto(AppDatabase db, Producto producto, {required int costoNuevoCentavos}) async {
+  final precioHoy = producto.esPesable ? producto.precioPorKiloCentavos : producto.precioCentavos;
+  final costoHoy = producto.esPesable ? producto.costoPorKiloCentavos : producto.costoCentavos;
+  if (costoNuevoCentavos == costoHoy) return precioHoy;
+  final automatico = await _precioAutomaticoSiSigueAlProveedor(
+    db,
+    producto,
+    proveedorId: producto.proveedorId,
+    tipoCigarrillo: producto.tipoCigarrillo,
+    costoNuevoCentavos: costoNuevoCentavos,
+  );
+  return automatico ?? precioHoy;
+}
+
+/// Le devuelve la marca de cigarrillo (atado o suelto) a los productos que la perdieron (El dueño, 2026-10-07). Hasta la v57, editar un
+/// producto desde el celular le borraba la marca sin avisar, y el atado se vendía sin recargo por pago virtual (Regla 6). La línea de
+/// venta guarda el tipo del momento (costo-foto), así que la última venta marcada de cada producto dice qué era. Solo toca productos
+/// que hoy no tienen marca y alguna vez se vendieron con una. Devuelve los nombres recuperados.
+Future<List<String>> recuperarMarcaDeCigarrillos(AppDatabase db) {
+  return db.transaction(() async {
+    final sinMarca = await (db.select(db.productos)
+          ..where((p) => p.tipoCigarrillo.equals('ninguno') & p.esVarios.equals(false) & p.esPesable.equals(false)))
+        .get();
+    if (sinMarca.isEmpty) return const [];
+    final consulta = db.select(db.lineasDeVenta).join([innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId))])
+      ..where(db.lineasDeVenta.productoId.isIn([for (final p in sinMarca) p.id]) & db.lineasDeVenta.tipoCigarrillo.isNotValue('ninguno'))
+      ..orderBy([OrderingTerm.desc(db.ventas.fecha), OrderingTerm.desc(db.lineasDeVenta.id)]);
+    final ultimo = <int, String>{};
+    for (final fila in await consulta.get()) {
+      final l = fila.readTable(db.lineasDeVenta);
+      ultimo.putIfAbsent(l.productoId!, () => l.tipoCigarrillo);
+    }
+    final recuperados = <String>[];
+    for (final p in sinMarca) {
+      final tipo = ultimo[p.id];
+      if (tipo == null) continue;
+      // `actualizadoEn` hace que el arreglo viaje al otro equipo por la sincronización.
+      await (db.update(db.productos)..where((t) => t.id.equals(p.id))).write(
+        ProductosCompanion(tipoCigarrillo: Value(tipo), actualizadoEn: Value(DateTime.now())),
+      );
+      recuperados.add(p.nombre);
+    }
+    return recuperados;
+  });
 }
 
 /// Fija (o saca, con null) el porcentaje de ganancia de un proveedor. No toca

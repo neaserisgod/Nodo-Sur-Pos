@@ -199,4 +199,83 @@ void main() {
       expect(r, {EstadoDeVinculo.seguro: 2, EstadoDeVinculo.aConfirmar: 2, EstadoDeVinculo.sinVincular: 1});
     });
   });
+
+  /// Un mismo CUIT para dos proveedores del comercio (El dueño, 2026-10-07: "Proveedor X me trae cosas varias y también cigarrillos,
+  /// yo lo tengo diferenciado como X cigarrillos"): la factura se asigna por lo que trae, no por el CUIT solo.
+  group('elegirProveedorDeFactura', () {
+    const varios = 20, cigarrillos = 21;
+    const cat = [
+      ProductoCandidato(id: 100, nombre: 'Galletitas Oreo 118g', proveedorId: varios),
+      ProductoCandidato(id: 101, nombre: 'Jugo Tang Naranja 18g', proveedorId: varios),
+      ProductoCandidato(id: 200, nombre: 'Marlboro Box 20', proveedorId: cigarrillos),
+      ProductoCandidato(id: 201, nombre: 'Philip Morris Box 20', proveedorId: cigarrillos),
+    ];
+    const lineasCigarrillos = [LineaAVincular(descripcion: 'MARLBORO BOX 20'), LineaAVincular(descripcion: 'PHILIP MORRIS BOX 20')];
+    const lineasVarios = [LineaAVincular(descripcion: 'GALLETITAS OREO 118G'), LineaAVincular(descripcion: 'JUGO TANG NARANJA 18G')];
+
+    int? elegir(List<LineaAVincular> lineas, {List<int> candidatos = const [varios, cigarrillos], Map<int, List<VinculoAprendido>> vinculos = const {}}) =>
+        elegirProveedorDeFactura(candidatos: candidatos, lineas: lineas, catalogo: cat, vinculosPorProveedor: vinculos);
+
+    test('sin candidatos no hay proveedor, y con uno solo es ese (lo de siempre)', () {
+      expect(elegir(lineasCigarrillos, candidatos: const []), isNull);
+      expect(elegir(lineasCigarrillos, candidatos: const [varios]), varios);
+    });
+
+    test('con dos proveedores para el CUIT, gana el dueño de los productos que trae la factura', () {
+      expect(elegir(lineasCigarrillos), cigarrillos);
+      expect(elegir(lineasVarios), varios);
+    });
+
+    test('lo aprendido de un proveedor pesa más que el parecido de nombre', () {
+      final vinculos = {
+        cigarrillos: [
+          VinculoAprendido(tipoClave: TipoClaveVinculo.descripcion, clave: claveDeDescripcion('MRL BX 20 KS'), productoId: 200, unidadesPorCantidad: 10),
+          VinculoAprendido(tipoClave: TipoClaveVinculo.descripcion, clave: claveDeDescripcion('PM BX 20 KS'), productoId: 201, unidadesPorCantidad: 10),
+        ],
+      };
+      const abreviadas = [LineaAVincular(descripcion: 'MRL BX 20 KS'), LineaAVincular(descripcion: 'PM BX 20 KS'), LineaAVincular(descripcion: 'GALLETITAS OREO 118G')];
+      expect(elegir(abreviadas, vinculos: vinculos), cigarrillos);
+    });
+
+    test('empate o nada reconocido: no adivina, devuelve null para que se pregunte', () {
+      expect(elegir(const [LineaAVincular(descripcion: 'MARLBORO BOX 20'), LineaAVincular(descripcion: 'GALLETITAS OREO 118G')]), isNull);
+      expect(elegir(const [LineaAVincular(descripcion: 'PRODUCTO DESCONOCIDO XYZ')]), isNull);
+    });
+  });
+
+  group('producto nuevo desde una línea (El dueño, 2026-10-07)', () {
+    test('el nombre sale sin el código del proveedor ni el pack, con mayúscula por palabra', () {
+      expect(nombreSugeridoDesdeFactura('1042 - CREMA SIMPLE X 200 GR (24)'), 'Crema Simple X 200 gr');
+      expect(nombreSugeridoDesdeFactura('BG ALF AGUILA MINITORTA DARK 69G (2'), 'Bg Alf Aguila Minitorta Dark 69g');
+      expect(nombreSugeridoDesdeFactura('  XB   CONVERTIBLE BOX  '), 'Xb Convertible Box');
+    });
+
+    test('las abreviaturas se expanden con las palabras de tus productos, con su acento', () {
+      const nombres = ['Alfajor Águila Minitorta Blanca 69g', 'Alfajor Águila Minitorta Clásica 69g', 'Alfajor Minitorta Brown 71g'];
+      expect(
+        nombreSugeridoDesdeFactura('BG ALF AGUILA MINITORTA BL 69G (2', nombresDelCatalogo: nombres),
+        'Bg Alfajor Águila Minitorta Blanca 69g',
+      );
+      expect(nombreSugeridoDesdeFactura('ALF CLAS 69G', nombresDelCatalogo: nombres), 'Alfajor Clásica 69g');
+    });
+
+    test('con dos palabras posibles parecidas no adivina, salvo que una aparezca el doble', () {
+      expect(nombreSugeridoDesdeFactura('YOGUR BL', nombresDelCatalogo: const ['Yogur Blanco', 'Queso Blanca']), 'Yogur Bl');
+      expect(
+        nombreSugeridoDesdeFactura('YOGUR BL', nombresDelCatalogo: const ['Yogur Blanco', 'Leche Blanco', 'Queso Blanca']),
+        'Yogur Blanco',
+      );
+    });
+
+    test('un catálogo en mayúsculas no impone mayúsculas', () {
+      expect(nombreSugeridoDesdeFactura('GALL OREO', nombresDelCatalogo: const ['GALLETITAS OREO 118G']), 'Galletitas Oreo');
+    });
+
+    test('solo un código con forma de código de barras se usa como tal', () {
+      expect(codigoDeBarrasDeLinea('7790387000013'), '7790387000013');
+      expect(codigoDeBarrasDeLinea('1042'), isNull);
+      expect(codigoDeBarrasDeLinea('AB-7790387000013'), isNull);
+      expect(codigoDeBarrasDeLinea(null), isNull);
+    });
+  });
 }

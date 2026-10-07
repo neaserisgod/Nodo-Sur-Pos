@@ -14,25 +14,31 @@ String? cuitNormalizado(String? texto) {
   return cuitValido(d) ? d : null;
 }
 
-/// El proveedor dueño de ese CUIT, o null si ninguno lo tiene cargado.
-Future<Proveedor?> proveedorPorCuit(AppDatabase db, String? cuit) async {
+/// Los proveedores que tienen cargado ese CUIT (pueden ser varios: "X" y "X cigarrillos"), del más viejo al más nuevo; vacío si
+/// ninguno lo tiene o el CUIT no es válido. Cuál es el de la factura lo decide `elegirProveedorDeFactura`.
+Future<List<Proveedor>> proveedoresPorCuit(AppDatabase db, String? cuit) async {
   final c = cuitNormalizado(cuit);
-  if (c == null) return null;
-  final fila = await (db.select(db.cuitsProveedor)..where((t) => t.cuit.equals(c))).getSingleOrNull();
-  if (fila == null) return null;
-  return (db.select(db.proveedores)..where((p) => p.id.equals(fila.proveedorId))).getSingleOrNull();
+  if (c == null) return const [];
+  final filas = await (db.select(db.cuitsProveedor)..where((t) => t.cuit.equals(c))..orderBy([(t) => OrderingTerm(expression: t.id)])).get();
+  final ids = [for (final f in filas) f.proveedorId];
+  final proveedores = await (db.select(db.proveedores)..where((p) => p.id.isIn(ids))).get();
+  return [for (final id in ids) ...proveedores.where((p) => p.id == id)];
 }
 
-/// Asocia [cuit] a [proveedorId]. Un CUIT es de un solo proveedor: si lo tenía otro, pasa a este. Con un CUIT inválido no hace nada.
+/// Asocia [cuit] a [proveedorId], sumándolo a los que ya lo tenían: el mismo CUIT puede ser de varios proveedores. Con un CUIT inválido no
+/// hace nada.
 Future<void> asociarCuit(AppDatabase db, {required int proveedorId, required String? cuit}) async {
   final c = cuitNormalizado(cuit);
   if (c == null) return;
-  // `insertOnConflictUpdate` solo resuelve conflictos de la clave primaria: el CUIT es una clave ÚNICA aparte, así que se la nombra.
   await db.into(db.cuitsProveedor).insert(
         CuitsProveedorCompanion.insert(cuit: c, proveedorId: proveedorId),
-        onConflict: DoUpdate((_) => CuitsProveedorCompanion(proveedorId: Value(proveedorId)), target: [db.cuitsProveedor.cuit]),
+        mode: InsertMode.insertOrIgnore, // ya lo tenía: nada que hacer
       );
 }
+
+/// Lo aprendido de cada uno de [proveedorIds], para `elegirProveedorDeFactura`.
+Future<Map<int, List<VinculoAprendido>>> vinculosDeVarios(AppDatabase db, List<int> proveedorIds) async =>
+    {for (final id in proveedorIds) id: await vinculosDe(db, id)};
 
 /// Lo aprendido de un proveedor, listo para `proponerVinculos`.
 Future<List<VinculoAprendido>> vinculosDe(AppDatabase db, int proveedorId) async {

@@ -1,7 +1,8 @@
-// "Leer una factura (prueba)" (El dueño, 2026-10-05): elegís fotos o PDF de facturas de compra, la IA las transcribe y ves el costo real
-// de cada producto, si la factura cierra con su total y con qué producto de tu base se vincula cada línea. TODAVÍA NO TOCA costos, stock ni
-// deuda: lo único que guarda es lo que "aprende" (vínculos y CUIT del proveedor), para que la próxima factura salga vinculada sola.
-// "Copiar lectura" deja el JSON de la IA en el portapapeles. Plan en `docs/PLAN-FACTURAS.md`.
+// "Leer una factura" (El dueño, 2026-10-05): elegís fotos o PDF de facturas de compra, la IA las transcribe y ves el costo real de cada
+// producto, si la factura cierra con su total y con qué producto de tu base se vincula cada línea (lo que falta se crea desde la línea).
+// "Aplicar factura" (2026-10-07) suma el stock, pone el costo y carga la deuda en la cuenta corriente, con "Deshacer"
+// (`data/repositorio_facturas_compra.dart`). Lo que se confirma se aprende (vínculos y CUIT del proveedor), para que la próxima factura
+// salga vinculada sola. "Copiar lectura" deja el JSON de la IA en el portapapeles. Plan en `docs/PLAN-FACTURAS.md`.
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -13,14 +14,17 @@ import 'package:http/http.dart' as http;
 
 import '../comun/aviso_superior.dart';
 import '../../data/database.dart';
-import '../../data/repositorio_productos.dart' show listarProveedores;
+import '../../data/repositorio_productos.dart' show listarProveedores, precioTrasCambioDeCosto;
+import '../../data/repositorio_facturas_compra.dart';
 import '../../data/repositorio_vinculos_factura.dart';
+import '../../domain/aplicar_factura.dart';
 import '../../domain/dinero.dart';
 import '../../domain/factura_compra.dart';
 import '../../domain/lectura_factura.dart';
 import '../../domain/unidades_bulto.dart';
 import '../../servicios/gemini.dart';
 import '../../servicios/lector_facturas.dart';
+import '../../servicios/nombre_producto_ia.dart';
 import '../../domain/vinculo_factura.dart';
 import '../../servicios/preparar_imagen.dart';
 import '../../servicios/vinculador_ia.dart';
@@ -31,15 +35,24 @@ import '../configuracion/seccion_asistente_ia.dart' show SelectorModeloIa;
 import '../tema/acentos.dart';
 import '../tema/superficie.dart';
 import '../tema/tokens.dart';
+import '../tema/iconos.dart';
+import 'dialogo_cuenta_corriente.dart';
+import 'dialogo_editar_producto.dart';
+import 'proveedores_controlador.dart';
 
 /// [clienteIa] y [adjuntosIniciales] son solo para tests: el selector de archivos es nativo y no se puede manejar desde un test.
+/// [controlador] habilita "crear producto" en las líneas que no están en el catálogo (usa el mismo alta que Proveedores).
 Future<void> mostrarDialogoLeerFactura(
   BuildContext context, {
   required AppDatabase db,
+  ProveedoresControlador? controlador,
   http.Client? clienteIa,
   List<AdjuntoGemini> adjuntosIniciales = const [],
 }) {
-  return mostrarModal<void>(context, builder: (_) => _DialogoLeerFactura(db: db, clienteIa: clienteIa, adjuntosIniciales: adjuntosIniciales));
+  return mostrarModal<void>(
+    context,
+    builder: (_) => _DialogoLeerFactura(db: db, controlador: controlador, clienteIa: clienteIa, adjuntosIniciales: adjuntosIniciales),
+  );
 }
 
 /// Todo lo de una factura leída: el proveedor, la propuesta de vínculos y lo que el dueño fue eligiendo.
@@ -48,6 +61,9 @@ class _EstadoFactura {
 
   final FacturaNormalizada n;
   Proveedor? proveedor;
+
+  /// Los proveedores que tienen el CUIT de la factura: pueden ser varios ("X" y "X cigarrillos").
+  List<Proveedor> delCuit = const [];
   List<PropuestaDeVinculo> propuestas = const [];
 
   /// El producto elegido y las unidades por cantidad de cada línea (arrancan con lo propuesto).
@@ -57,6 +73,17 @@ class _EstadoFactura {
   /// Por qué se propuso ese "× unid." en las líneas donde no es lo aprendido (bulto o unidades): se le muestra al dueño para que confirme.
   Map<int, String> motivoUnidades = {};
   List<DropdownMenuEntry<int>> entradas = const [];
+
+  /// Las líneas que no son del local: entran en la deuda, no en el stock ni el costo.
+  List<bool> noVa = const [];
+
+  /// Línea → aviso de que con el costo nuevo el producto queda perdiendo plata.
+  Map<int, String> avisosPrecio = {};
+  bool sumarStock = true;
+  bool aplicando = false;
+  int? facturaAplicadaId;
+  String? resumenAplicada;
+  String? errorAplicar;
 
   /// Sube cada vez que se vuelve a proponer: obliga a los campos a tomar los valores nuevos.
   int version = 0;
@@ -68,9 +95,10 @@ class _EstadoFactura {
 }
 
 class _DialogoLeerFactura extends StatefulWidget {
-  const _DialogoLeerFactura({required this.db, this.clienteIa, this.adjuntosIniciales = const []});
+  const _DialogoLeerFactura({required this.db, this.controlador, this.clienteIa, this.adjuntosIniciales = const []});
 
   final AppDatabase db;
+  final ProveedoresControlador? controlador;
   final http.Client? clienteIa;
   final List<AdjuntoGemini> adjuntosIniciales;
 
@@ -143,7 +171,16 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
         _leyendo = false;
       });
       for (final e in estados) {
-        e.proveedor = await proveedorPorCuit(widget.db, e.n.leida.proveedorCuit);
+        e.delCuit = [for (final p in await proveedoresPorCuit(widget.db, e.n.leida.proveedorCuit)) if (p.activo) p];
+        final ids = [for (final p in e.delCuit) p.id];
+        // Con varios proveedores para el mismo CUIT decide lo que trae la factura; si no se puede decidir, se pregunta.
+        final elegido = elegirProveedorDeFactura(
+          candidatos: ids,
+          lineas: [for (final l in e.n.lineas) LineaAVincular(codigo: l.codigo, descripcion: l.descripcion)],
+          catalogo: _catalogo,
+          vinculosPorProveedor: await vinculosDeVarios(widget.db, ids),
+        );
+        e.proveedor = elegido == null ? null : e.delCuit.firstWhere((p) => p.id == elegido);
         await _proponer(e, conIa: true);
       }
     } on ErrorGemini catch (e) {
@@ -198,8 +235,161 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
       e.motivoUnidades = {};
       _sugerirUnidades(e);
       e.entradas = [for (final c in candidatos) DropdownMenuEntry<int>(value: c.id, label: c.nombre)];
+      if (e.noVa.length != propuestas.length) e.noVa = List.filled(propuestas.length, false);
       e.version++;
     });
+    _revisarPrecios(e);
+  }
+
+  /// El costo de cada línea con las unidades elegidas, o null si los importes no permiten calcularlo.
+  (FacturaDeCompra, List<CostoDeLinea>)? _costosDe(_EstadoFactura e) {
+    try {
+      final f = e.multiplicador.length == e.n.factura.lineas.length ? conUnidadesPorCantidad(e.n.factura, e.multiplicador) : e.n.factura;
+      return (f, costosDeFactura(f));
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  List<LineaParaAplicar>? _lineasParaAplicar(_EstadoFactura e) {
+    final c = _costosDe(e);
+    if (c == null) return null;
+    final (f, costos) = c;
+    return [
+      for (var i = 0; i < costos.length; i++)
+        LineaParaAplicar(
+          productoId: i < e.producto.length ? e.producto[i] : null,
+          unidades: f.lineas[i].unidades,
+          totalCentavos: costos[i].totalCentavos,
+          noVa: i < e.noVa.length && e.noVa[i],
+        ),
+    ];
+  }
+
+  /// Avisa en rojo, ANTES de aplicar, las líneas cuyo producto quedaría vendiéndose por menos de lo que costó (precio fijo o
+  /// cigarrillos: el precio no se toca; con el % del proveedor sube solo y no hace falta avisar).
+  Future<void> _revisarPrecios(_EstadoFactura e) async {
+    final c = _costosDe(e);
+    if (c == null) return;
+    final (_, costos) = c;
+    final avisos = <int, String>{};
+    for (var i = 0; i < costos.length; i++) {
+      final id = i < e.producto.length ? e.producto[i] : null;
+      if (id == null || (i < e.noVa.length && e.noVa[i])) continue;
+      final p = await (widget.db.select(widget.db.productos)..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (p == null || p.esPesable) continue;
+      final costo = costos[i].costoUnitarioCentavos;
+      final precio = await precioTrasCambioDeCosto(widget.db, p, costoNuevoCentavos: costo);
+      if (precio != null && costo > precio) {
+        avisos[i] = 'Pierde plata: cuesta ${formatearARS(costo)} y lo vendés a ${formatearARS(precio)}. Cambiá el precio después de aplicar.';
+      }
+    }
+    if (mounted) setState(() => e.avisosPrecio = avisos);
+  }
+
+  Future<void> _aplicarFactura(_EstadoFactura e) async {
+    final controlador = widget.controlador;
+    if (controlador == null) return;
+    final lineas = _lineasParaAplicar(e);
+    if (lineas == null) {
+      setState(() => e.errorAplicar = 'No se pudieron calcular los costos: revisá los importes de la factura.');
+      return;
+    }
+    final f = e.n.leida;
+    final motivos = motivosParaNoAplicar(proveedorId: e.proveedor?.id, tipo: f.tipo, lineas: lineas);
+    if (motivos.isNotEmpty) {
+      setState(() => e.errorAplicar = motivos.join('\n'));
+      return;
+    }
+    final control = e.n.control;
+    if (control != null && !e.n.cierra) {
+      final seguir = await mostrarModal<bool>(
+        context,
+        builder: (ctx) => Modal(
+          titulo: 'La factura no cierra',
+          contenido: Text(
+            'Lo leído tiene ${formatearARS(control.diferenciaCentavos.abs())} de diferencia con el total impreso: puede haber algo mal leído. '
+            'Si aplicás igual, la deuda se carga por el total impreso.',
+          ),
+          botones: [
+            BotonSecundario(texto: 'Revisar', onPressed: () => Navigator.of(ctx).pop(false)),
+            BotonPrimario(texto: 'Aplicar igual', onPressed: () => Navigator.of(ctx).pop(true)),
+          ],
+        ),
+      );
+      if (seguir != true || !mounted) return;
+    }
+    setState(() {
+      e.aplicando = true;
+      e.errorAplicar = null;
+    });
+    try {
+      final r = await aplicarFactura(
+        widget.db,
+        proveedorId: e.proveedor!.id,
+        numero: f.numero,
+        tipo: f.tipo,
+        fecha: f.fecha,
+        condicionPago: f.condicionPago,
+        totalImpresoCentavos: f.pie.totalCentavos,
+        lineas: lineas,
+        sumarStock: e.sumarStock,
+        usuarioId: controlador.usuarioId,
+      );
+      // Aplicar confirma los vínculos: se aprenden, así la próxima factura de este proveedor sale sola.
+      for (var i = 0; i < lineas.length; i++) {
+        final id = lineas[i].productoId;
+        if (id == null || lineas[i].noVa) continue;
+        await aprenderVinculo(widget.db, proveedorId: e.proveedor!.id, productoId: id, codigo: e.n.lineas[i].codigo, descripcion: e.n.lineas[i].descripcion, unidadesPorCantidad: e.multiplicador[i]);
+      }
+      await controlador.recargarSeleccionActual();
+      if (!mounted) return;
+      final total = montoDeLaDeuda(totalImpresoCentavos: f.pie.totalCentavos, lineas: lineas);
+      setState(() {
+        e.facturaAplicadaId = r.facturaId;
+        e.resumenAplicada = [
+          'Aplicada: ${r.productos} producto(s)${e.sumarStock ? ' con stock' : ', sin tocar el stock'}, y ${formatearARS(total)} en la cuenta corriente de ${e.proveedor!.nombre}.',
+          if (r.pesablesSinTocar.isNotEmpty) 'Por peso, cargalos a mano: ${r.pesablesSinTocar.join(', ')}.',
+        ].join(' ');
+      });
+      mostrarAviso(context, 'Factura aplicada', textoAccion: 'Deshacer', alAccionar: () => _deshacerFactura(e));
+    } on FacturaYaCargadaException catch (x) {
+      if (mounted) setState(() => e.errorAplicar = x.toString());
+    } on ArgumentError catch (x) {
+      if (mounted) setState(() => e.errorAplicar = '${x.message}');
+    } finally {
+      if (mounted) setState(() => e.aplicando = false);
+    }
+  }
+
+  Future<void> _deshacerFactura(_EstadoFactura e) async {
+    final controlador = widget.controlador;
+    final id = e.facturaAplicadaId;
+    if (controlador == null || id == null) return;
+    try {
+      final r = await deshacerFactura(widget.db, facturaId: id, usuarioId: controlador.usuarioId);
+      await controlador.recargarSeleccionActual();
+      if (!mounted) return;
+      setState(() {
+        e.facturaAplicadaId = null;
+        e.resumenAplicada = null;
+      });
+      mostrarAviso(
+        context,
+        r.costosQueQuedaron.isEmpty ? 'Factura deshecha' : 'Factura deshecha. El costo de ${r.costosQueQuedaron.join(', ')} quedó como lo cambiaste.',
+      );
+    } on ArgumentError catch (x) {
+      if (mounted) setState(() => e.errorAplicar = '${x.message}');
+    }
+  }
+
+  /// Contado: el pago va por el camino de siempre (la cuenta corriente), con la deuda recién cargada.
+  Future<void> _pagarAhora(_EstadoFactura e) async {
+    final controlador = widget.controlador;
+    final proveedor = e.proveedor;
+    if (controlador == null || proveedor == null) return;
+    await mostrarDialogoCuentaCorriente(context, db: widget.db, proveedor: proveedor, usuarioId: controlador.usuarioId, sesionCajaId: controlador.sesionCajaId);
+    await controlador.recargarSeleccionActual();
   }
 
   /// Bultos vs. unidades: donde el vínculo no está aprendido, propone el "× unid." con la descripción y el costo que ya tenés cargado.
@@ -240,9 +430,64 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
 
   Future<void> _elegirProveedor(_EstadoFactura e, int proveedorId) async {
     final proveedor = _proveedores.firstWhere((p) => p.id == proveedorId);
+    // Se suma al CUIT, no se lo saca a otro proveedor que ya lo tenía.
     await asociarCuit(widget.db, proveedorId: proveedor.id, cuit: e.n.leida.proveedorCuit);
+    if (!e.delCuit.any((p) => p.id == proveedor.id) && cuitNormalizado(e.n.leida.proveedorCuit) != null) e.delCuit = [...e.delCuit, proveedor];
     e.proveedor = proveedor;
     await _proponer(e, conIa: true);
+  }
+
+  /// Una línea que no está en el catálogo (o que el parecido vinculó con otro producto parecido, "XB BOX" con "XB convertible BOX"): se da de
+  /// alta con el formulario de siempre, precargado con lo leído — nombre, costo por unidad, proveedor y código de barras si viene —, y la
+  /// línea queda vinculada al producto nuevo.
+  Future<void> _crearProducto(_EstadoFactura e, int linea) async {
+    final controlador = widget.controlador;
+    if (controlador == null) return;
+    final l = e.n.lineas[linea];
+    int? costo;
+    try {
+      costo = costosDeFactura(conUnidadesPorCantidad(e.n.factura, e.multiplicador))[linea].costoUnitarioCentavos;
+    } on ArgumentError {
+      costo = null; // importes mal leídos: el costo se carga a mano
+    }
+    final id = await mostrarDialogoEditarProducto(
+      context,
+      controlador: controlador,
+      proveedorIdPreseleccionado: e.proveedor?.id,
+      inicial: DatosProductoNuevo(
+        nombre: nombreSugeridoDesdeFactura(l.descripcion, nombresDelCatalogo: [for (final c in _catalogo) c.nombre]),
+        codigoBarras: codigoDeBarrasDeLinea(l.codigo),
+        costoCentavos: costo,
+        mejorarNombre: !ClaveGemini.configurada
+            ? null
+            : () async {
+                // De ejemplo de estilo, primero los productos del mismo proveedor (se cargan parecido).
+                final ejemplos = [
+                  for (final c in _catalogo) if (c.proveedorId == e.proveedor?.id) c.nombre,
+                  for (final c in _catalogo) if (c.proveedorId != e.proveedor?.id) c.nombre,
+                ];
+                final cliente = ClienteGemini.guardado(client: widget.clienteIa);
+                try {
+                  return await mejorarNombreConIa(cliente, descripcion: l.descripcion, ejemplos: ejemplos);
+                } finally {
+                  cliente.close();
+                }
+              },
+      ),
+    );
+    if (id == null || !mounted) return;
+    _catalogo = await catalogoParaVincular(widget.db);
+    final nuevo = _catalogo.where((c) => c.id == id).firstOrNull;
+    if (!mounted) return;
+    setState(() {
+      e.producto[linea] = id;
+      if (nuevo != null && !e.entradas.any((x) => x.value == id)) {
+        e.entradas = [...e.entradas, DropdownMenuEntry<int>(value: id, label: nuevo.nombre)]
+          ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+      }
+      e.version++;
+    });
+    _revisarPrecios(e);
   }
 
   Future<void> _aprender(_EstadoFactura e) async {
@@ -284,7 +529,7 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
     final alto = math.max(320.0, MediaQuery.sizeOf(context).height - 330);
     return Modal(
       titulo: 'Leer una factura (prueba)',
-      subtitulo: 'Elegí fotos o PDF. La IA las lee y la vinculás con tus productos. Todavía no toca costos, stock ni deuda.',
+      subtitulo: 'Elegí fotos o PDF. La IA las lee, las vinculás con tus productos y las aplicás: stock, costo y deuda.',
       ancho: 1180,
       contenido: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: alto),
@@ -317,14 +562,30 @@ class _DialogoLeerFacturaState extends State<_DialogoLeerFactura> {
                     proveedores: _proveedores,
                     nombresDeProductos: {for (final c in _catalogo) c.id: c.nombre},
                     onProveedor: (id) => _elegirProveedor(_facturas[i], id),
-                    onProducto: (linea, id) => setState(() {
-                      _facturas[i].producto[linea] = id;
-                      // Otro producto, otro costo para comparar: se vuelve a proponer el bulto de esa línea.
-                      _sugerirUnidades(_facturas[i], lineas: {linea});
-                      _facturas[i].version++;
-                    }),
-                    onUnidades: (linea, n) => setState(() => _facturas[i].multiplicador[linea] = n < 1 ? 1 : n),
+                    onCambiarProveedor: () => setState(() => _facturas[i].proveedor = null),
+                    onProducto: (linea, id) {
+                      setState(() {
+                        _facturas[i].producto[linea] = id;
+                        // Otro producto, otro costo para comparar: se vuelve a proponer el bulto de esa línea.
+                        _sugerirUnidades(_facturas[i], lineas: {linea});
+                        _facturas[i].version++;
+                      });
+                      _revisarPrecios(_facturas[i]);
+                    },
+                    onUnidades: (linea, n) {
+                      setState(() => _facturas[i].multiplicador[linea] = n < 1 ? 1 : n);
+                      _revisarPrecios(_facturas[i]);
+                    },
+                    onNoVa: (linea, v) {
+                      setState(() => _facturas[i].noVa[linea] = v);
+                      _revisarPrecios(_facturas[i]);
+                    },
+                    onSumarStock: (v) => setState(() => _facturas[i].sumarStock = v),
+                    onAplicarFactura: widget.controlador == null ? null : () => _aplicarFactura(_facturas[i]),
+                    onDeshacerFactura: () => _deshacerFactura(_facturas[i]),
+                    onPagarAhora: () => _pagarAhora(_facturas[i]),
                     onAprender: () => _aprender(_facturas[i]),
+                    onCrearProducto: widget.controlador == null ? null : (linea) => _crearProducto(_facturas[i], linea),
                   ),
               ],
             ],
@@ -403,6 +664,7 @@ const double _anchoMultiplo = 92;
 const double _anchoUnidades = 92;
 const double _anchoTotal = 108;
 const double _anchoCostoUnidad = 124;
+const double _anchoNoVa = 56;
 
 class _TarjetaFactura extends StatelessWidget {
   const _TarjetaFactura({
@@ -411,9 +673,16 @@ class _TarjetaFactura extends StatelessWidget {
     required this.proveedores,
     required this.nombresDeProductos,
     required this.onProveedor,
+    required this.onCambiarProveedor,
     required this.onProducto,
     required this.onUnidades,
     required this.onAprender,
+    required this.onNoVa,
+    required this.onSumarStock,
+    required this.onDeshacerFactura,
+    required this.onPagarAhora,
+    this.onCrearProducto,
+    this.onAplicarFactura,
   });
 
   final int indice;
@@ -421,9 +690,18 @@ class _TarjetaFactura extends StatelessWidget {
   final List<Proveedor> proveedores;
   final Map<int, String> nombresDeProductos;
   final ValueChanged<int> onProveedor;
+  final VoidCallback onCambiarProveedor;
   final void Function(int linea, int? productoId) onProducto;
   final void Function(int linea, int unidades) onUnidades;
   final VoidCallback onAprender;
+  final ValueChanged<int>? onCrearProducto;
+  final void Function(int linea, bool noVa) onNoVa;
+  final ValueChanged<bool> onSumarStock;
+
+  /// Null sin el controlador de Proveedores (no hay usuario con quien aplicar): solo se revisa.
+  final VoidCallback? onAplicarFactura;
+  final VoidCallback onDeshacerFactura;
+  final VoidCallback onPagarAhora;
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +781,14 @@ class _TarjetaFactura extends StatelessWidget {
             ),
             for (final a in f.advertencias) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(a, style: textTheme.bodySmall)),
             if (e.producto.isNotEmpty) _ResumenDeVinculos(propuestas: e.propuestas, elegidos: e.producto),
-            if (e.proveedor == null) _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, proveedores: proveedores, onElegir: onProveedor),
+            if (e.proveedor == null)
+              _ElegirProveedor(indice: indice, cuit: f.proveedorCuit, delCuit: e.delCuit, proveedores: proveedores, onElegir: onProveedor)
+            else
+              // Se equivocó de proveedor (o es la otra cuenta del mismo mayorista): se puede cambiar antes de aprender.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(key: ValueKey('cambiar_proveedor_$indice'), onPressed: onCambiarProveedor, child: const Text('Cambiar proveedor')),
+              ),
             const SizedBox(height: Espaciado.md),
             // La tabla va sobre el fondo de la ventana (blanco) para que se despegue de la tarjeta gris, como los bloques de las otras pantallas.
             Container(
@@ -534,6 +819,10 @@ class _TarjetaFactura extends StatelessWidget {
                         costo: costos[i],
                         onProducto: (id) => onProducto(i, id),
                         onUnidades: (u) => onUnidades(i, u),
+                        onCrear: onCrearProducto == null ? null : () => onCrearProducto!(i),
+                        noVa: i < e.noVa.length && e.noVa[i],
+                        onNoVa: (v) => onNoVa(i, v),
+                        avisoPrecio: e.avisosPrecio[i],
                       ),
                 ],
               ),
@@ -557,6 +846,10 @@ class _TarjetaFactura extends StatelessWidget {
               ],
             ),
             if (e.avisoIa != null) Padding(padding: const EdgeInsets.only(top: Espaciado.xs), child: Text(e.avisoIa!, style: textTheme.bodySmall)),
+            if (onAplicarFactura != null) ...[
+              const SizedBox(height: Espaciado.md),
+              _BarraAplicar(indice: indice, e: e, onSumarStock: onSumarStock, onAplicar: onAplicarFactura!, onDeshacer: onDeshacerFactura, onPagarAhora: onPagarAhora),
+            ],
             const SizedBox(height: Espaciado.md),
             Text(
               [
@@ -580,10 +873,11 @@ class _TarjetaFactura extends StatelessWidget {
 }
 
 class _ElegirProveedor extends StatelessWidget {
-  const _ElegirProveedor({required this.indice, required this.cuit, required this.proveedores, required this.onElegir});
+  const _ElegirProveedor({required this.indice, required this.cuit, required this.delCuit, required this.proveedores, required this.onElegir});
 
   final int indice;
   final String? cuit;
+  final List<Proveedor> delCuit;
   final List<Proveedor> proveedores;
   final ValueChanged<int> onElegir;
 
@@ -596,7 +890,13 @@ class _ElegirProveedor extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              cuit == null ? 'No pude leer el CUIT del proveedor. ¿De cuál es esta factura?' : 'No conozco a este proveedor todavía (CUIT $cuit). ¿De cuál es?',
+              cuit == null
+                  ? 'No pude leer el CUIT del proveedor. ¿De cuál es esta factura?'
+                  : delCuit.length > 1
+                  ? 'Este CUIT es de ${delCuit.map((p) => p.nombre).join(' y ')}, y por los productos no me doy cuenta. ¿De cuál es esta factura?'
+                  : delCuit.isEmpty
+                  ? 'No conozco a este proveedor todavía (CUIT $cuit). ¿De cuál es?'
+                  : '¿De cuál proveedor es esta factura?',
               style: textTheme.bodyMedium,
             ),
           ),
@@ -670,6 +970,7 @@ class _EncabezadoDeLineas extends StatelessWidget {
           fija(_anchoTotal, 'Total'),
           const SizedBox(width: Espaciado.md),
           fija(_anchoCostoUnidad, 'Costo c/u'),
+          fija(_anchoNoVa, 'No va', alineacion: TextAlign.center),
         ],
       ),
     );
@@ -691,6 +992,10 @@ class _FilaLinea extends StatelessWidget {
     required this.costo,
     required this.onProducto,
     required this.onUnidades,
+    required this.noVa,
+    required this.onNoVa,
+    this.avisoPrecio,
+    this.onCrear,
   });
 
   final String descripcion;
@@ -707,6 +1012,10 @@ class _FilaLinea extends StatelessWidget {
   final CostoDeLinea costo;
   final ValueChanged<int?> onProducto;
   final ValueChanged<int> onUnidades;
+  final VoidCallback? onCrear;
+  final bool noVa;
+  final ValueChanged<bool> onNoVa;
+  final String? avisoPrecio;
 
   @override
   Widget build(BuildContext context) {
@@ -728,9 +1037,7 @@ class _FilaLinea extends StatelessWidget {
     final esBulto = unidades > 1;
     // Se pinta de alerta lo que hay que mirar: un bulto propuesto, o una descripción que habla de un pack sin costo con qué comparar.
     final paraMirar = esBulto || (motivoUnidades?.startsWith('La descripción') ?? false);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
-      child: Row(
+    final fila = Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Tooltip(message: ayuda, child: Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle))),
@@ -760,6 +1067,8 @@ class _FilaLinea extends StatelessWidget {
                     onSelected: onProducto,
                   ),
           ),
+          if (onCrear != null)
+            IconButton(key: ValueKey('crear_producto_$descripcion'), tooltip: 'No está en tu lista: crear producto con lo leído', icon: const IconoPlz(IconosPlazoleta.add), onPressed: onCrear),
           const SizedBox(width: Espaciado.md),
           SizedBox(width: _anchoCantidad, child: Text('$cantidad', textAlign: TextAlign.right, style: textTheme.bodyMedium)),
           const SizedBox(width: Espaciado.md),
@@ -809,8 +1118,76 @@ class _FilaLinea extends StatelessWidget {
               style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.fuerte),
             ),
           ),
+          SizedBox(
+            width: _anchoNoVa,
+            child: Tooltip(
+              message: 'No va: no es del local. Entra en la deuda, pero no suma stock ni cambia el costo.',
+              child: Checkbox(key: ValueKey('no_va_$descripcion'), value: noVa, onChanged: (v) => onNoVa(v ?? false)),
+            ),
+          ),
         ],
+      );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Espaciado.sm),
+      child: Opacity(
+        opacity: noVa ? 0.5 : 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            fila,
+            if (avisoPrecio != null && !noVa)
+              Padding(
+                padding: const EdgeInsets.only(left: 12 + Espaciado.md, top: Espaciado.xs),
+                child: Text(avisoPrecio!, style: textTheme.bodySmall?.copyWith(color: colores.error)),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+/// Abajo de cada factura: sumar al stock, aplicar, y lo aplicado (con Deshacer y, si fue de contado, Pagar ahora).
+class _BarraAplicar extends StatelessWidget {
+  const _BarraAplicar({required this.indice, required this.e, required this.onSumarStock, required this.onAplicar, required this.onDeshacer, required this.onPagarAhora});
+
+  final int indice;
+  final _EstadoFactura e;
+  final ValueChanged<bool> onSumarStock;
+  final VoidCallback onAplicar;
+  final VoidCallback onDeshacer;
+  final VoidCallback onPagarAhora;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colores = context.colores;
+    final aplicada = e.facturaAplicadaId != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            if (!aplicada) ...[
+              Checkbox(key: ValueKey('sumar_stock_$indice'), value: e.sumarStock, onChanged: (v) => onSumarStock(v ?? true)),
+              const Text('Sumar al stock'),
+              const Spacer(),
+              ElevatedButton(
+                key: ValueKey('aplicar_factura_$indice'),
+                onPressed: e.aplicando ? null : onAplicar,
+                child: Text(e.aplicando ? 'Aplicando…' : 'Aplicar factura'),
+              ),
+            ] else ...[
+              Expanded(child: Text(e.resumenAplicada ?? 'Aplicada', style: textTheme.bodyMedium?.copyWith(fontWeight: Pesos.medium))),
+              if (e.n.leida.condicionPago == 'contado')
+                TextButton(key: ValueKey('pagar_ahora_$indice'), onPressed: onPagarAhora, child: const Text('Pagar ahora')),
+              TextButton(key: ValueKey('deshacer_factura_$indice'), onPressed: onDeshacer, child: const Text('Deshacer')),
+            ],
+          ],
+        ),
+        if (e.errorAplicar != null) Text(e.errorAplicar!, style: textTheme.bodySmall?.copyWith(color: colores.error)),
+      ],
     );
   }
 }
