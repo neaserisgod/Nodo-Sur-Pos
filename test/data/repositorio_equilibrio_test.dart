@@ -86,6 +86,49 @@ void main() {
     });
   });
 
+  group('fijosDelMes: un fijo se repite hasta que se cambia', () {
+    Future<void> cargarTodos(String mesAnio, int monto) async {
+      for (final c in await db.select(db.gastosFijos).get()) {
+        await cargarMontoDelMes(db, gastoFijoId: c.id, mesAnio: mesAnio, montoCentavos: monto);
+      }
+    }
+
+    test('un mes sin cargar usa el último monto cargado y avisa de qué mes viene', () async {
+      await cargarTodos('2026-08', 10000000);
+      final r = await fijosDelMes(db, '2026-10');
+      expect(r.total, 40000000);
+      expect(r.faltantes, isEmpty);
+      expect(r.conceptos.every((c) => c.heredadoDe == '2026-08'), isTrue);
+    });
+
+    test('lo cargado en el mes gana sobre lo heredado, y no se marca como heredado', () async {
+      await cargarTodos('2026-08', 10000000);
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-10', montoCentavos: 99000000);
+      final r = await fijosDelMes(db, '2026-10');
+      final alquiler = r.conceptos.firstWhere((c) => c.concepto.id == alquilerId);
+      expect(alquiler.montoCentavos, 99000000);
+      expect(alquiler.heredadoDe, isNull);
+      expect(r.total, 30000000 + 99000000);
+    });
+
+    test('toma el más reciente anterior, nunca uno de un mes posterior', () async {
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-06', montoCentavos: 80000000);
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-08', montoCentavos: 90000000);
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-11', montoCentavos: 99000000);
+      final r = await fijosDelMes(db, '2026-09');
+      final alquiler = r.conceptos.firstWhere((c) => c.concepto.id == alquilerId);
+      expect(alquiler.montoCentavos, 90000000);
+      expect(alquiler.heredadoDe, '2026-08');
+    });
+
+    test('sin ningún monto anterior sigue faltando (no se inventa)', () async {
+      await cargarMontoDelMes(db, gastoFijoId: alquilerId, mesAnio: '2026-11', montoCentavos: 99000000);
+      final r = await fijosDelMes(db, '2026-10');
+      expect(r.faltantes, contains('Alquiler'));
+      expect(r.total, isNull);
+    });
+  });
+
   group('fijosPagadosDelMes', () {
     test('suma solo pagos con concepto de fijo asociado, del mes pedido', () async {
       final cajaNormal = await (db.select(db.cajas)..where((c) => c.esLata.equals(false))).getSingle();

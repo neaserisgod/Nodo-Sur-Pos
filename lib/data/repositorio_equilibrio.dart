@@ -34,7 +34,11 @@ class GastoFijoDelMes {
   final GastoFijo concepto;
   final int? montoCentavos;
 
-  const GastoFijoDelMes({required this.concepto, required this.montoCentavos});
+  /// Mes ("YYYY-MM") del que se tomó [montoCentavos] cuando el mes pedido no
+  /// tiene uno propio; null si el monto es del mes o no hay ninguno.
+  final String? heredadoDe;
+
+  const GastoFijoDelMes({required this.concepto, required this.montoCentavos, this.heredadoDe});
 }
 
 class ResumenFijosDelMes {
@@ -49,15 +53,26 @@ class ResumenFijosDelMes {
 
 Future<ResumenFijosDelMes> fijosDelMes(AppDatabase db, String mesAnio) async {
   final conceptos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
-  final montos = await (db.select(db.gastosFijosMontos)..where((m) => m.mesAnio.equals(mesAnio))).get();
-  final montoPorConcepto = {for (final m in montos) m.gastoFijoId: m.montoCentavos};
+  // Un fijo es fijo: el mes sin monto propio repite el último cargado (El dueño, 2026-10-07: "deberia de ser igual
+  // salvo que lo cambie"). Se lee en vez de copiarse fila por fila, así cargar un mes viejo no pisa los siguientes
+  // que ya tenían su monto. "YYYY-MM" ordena bien como texto.
+  final montos = await (db.select(db.gastosFijosMontos)
+        ..where((m) => m.mesAnio.isSmallerOrEqualValue(mesAnio))
+        ..orderBy([(m) => OrderingTerm.asc(m.mesAnio)]))
+      .get();
+  final ultimoPorConcepto = {for (final m in montos) m.gastoFijoId: m};
 
   final conceptosDelMes = <GastoFijoDelMes>[];
   final faltantes = <String>[];
   var total = 0;
   for (final c in conceptos) {
-    final monto = montoPorConcepto[c.id];
-    conceptosDelMes.add(GastoFijoDelMes(concepto: c, montoCentavos: monto));
+    final fila = ultimoPorConcepto[c.id];
+    final monto = fila?.montoCentavos;
+    conceptosDelMes.add(GastoFijoDelMes(
+      concepto: c,
+      montoCentavos: monto,
+      heredadoDe: fila != null && fila.mesAnio != mesAnio ? fila.mesAnio : null,
+    ));
     if (monto == null) {
       faltantes.add(c.nombre);
     } else {

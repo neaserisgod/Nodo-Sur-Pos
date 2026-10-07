@@ -347,6 +347,9 @@ Fijos mensuales actuales (agosto 2026): **$2.093.000**
 | Luz (estimado alto, es variable) | 300.000 |
 | Internet | 70.000 |
 
+- **Un fijo se repite hasta que se cambia** (El dueño, 2026-10-07: "deberia de ser igual salvo que lo cambie"):
+  un mes sin monto propio usa el último cargado (y la pantalla lo aclara: "igual que agosto"). Cargarlo en un
+  mes solo cambia ese mes y los siguientes sin monto propio.
 - **Reserva diaria de fijos** = fijos ÷ 30 ≈ **70.000**. Configurable.
 - Margen ponderado real ≈ **30%** (almacén ~35%, cigarrillos ~20%).
 - **Punto de equilibrio ≈ 231.900 de venta diaria.**

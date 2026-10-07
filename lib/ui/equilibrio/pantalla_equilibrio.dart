@@ -20,6 +20,7 @@ import '../../data/database.dart';
 import '../../domain/dinero.dart';
 import '../../data/repositorio_rentabilidad.dart' show nombreConceptoSueldo;
 import '../../domain/equilibrio.dart';
+import '../comun/fechas.dart' show meses;
 import '../kit/kit.dart';
 import 'dialogo_cargar_monto_fijo.dart';
 import 'dialogo_nuevo_concepto_fijo.dart';
@@ -479,7 +480,14 @@ class _TarjetaFijosDelMes extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(item.concepto.nombre, style: estilo(15.5, 500, color: p.tinta)),
-                                Text(item.montoCentavos == null ? 'sin cargar' : pesos(item.montoCentavos!), style: estilo(13, 400, color: p.mute, num: true)),
+                                Text(
+                                  item.montoCentavos == null
+                                      ? 'sin cargar'
+                                      : item.heredadoDe == null
+                                          ? pesos(item.montoCentavos!)
+                                          : '${pesos(item.montoCentavos!)} · igual que ${_nombreMes(item.heredadoDe!)}',
+                                  style: estilo(13, 400, color: p.mute, num: true),
+                                ),
                               ],
                             ),
                           ),
@@ -511,3 +519,6 @@ class _TarjetaFijosDelMes extends StatelessWidget {
     );
   }
 }
+
+/// "2026-08" → "agosto".
+String _nombreMes(String mesAnio) => meses[int.parse(mesAnio.substring(5, 7)) - 1];
