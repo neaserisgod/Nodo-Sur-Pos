@@ -8,9 +8,11 @@
 
 enum CajaDelCierre { efectivo, mercadoPago, lata }
 
-/// Debajo de esto no se pregunta: en Mercado Pago la diferencia diaria es casi siempre la comisión (en la base real
-/// del dueño, de $400 a $5.300 por día), y preguntar por eso todos los días sería ruido.
-const umbralFaltanteCentavos = 600000;
+/// Valor de entrada del mínimo desde el que se pregunta (configurable, Configuración → Caja y cobros). Debajo no se
+/// pregunta: en Mercado Pago la diferencia diaria es casi siempre la comisión (en la base real de La Plazoleta, de $400
+/// a $5.300 por día), y preguntar por eso todos los días sería ruido. Configurable porque esa comisión depende de cuánto
+/// venda cada comercio.
+const umbralFaltantePorDefectoCentavos = 600000;
 
 /// Lo que falta en cada caja (en positivo) a partir de las diferencias del cierre (contado − esperado), solo donde
 /// falta al menos [umbral]. Una diferencia null es una caja que todavía no se contó: no se pregunta por ella. Los
@@ -19,7 +21,7 @@ Map<CajaDelCierre, int> faltantesPorExplicar({
   required int diferenciaEfectivoCentavos,
   required int? diferenciaMpCentavos,
   required int? diferenciaLataCentavos,
-  int umbral = umbralFaltanteCentavos,
+  required int umbral,
 }) {
   final resultado = <CajaDelCierre, int>{};
   void ver(CajaDelCierre caja, int? diferencia) {

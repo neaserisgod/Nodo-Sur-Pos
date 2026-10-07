@@ -155,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 59;
+  int get schemaVersion => 60;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1140,6 +1140,16 @@ class AppDatabase extends _$AppDatabase {
             .map((c) => c.data['name'] as String)
             .toSet();
         if (!columnas.contains('dia_vencimiento')) await m.addColumn(gastosFijos, gastosFijos.diaVencimiento);
+      }
+      // v59 → v60 (2026-10-07): desde cuánto faltante pregunta el cierre, configurable por comercio. Columna nueva con
+      // el valor de entrada ($6.000). Con chequeo de columna, como v44→v45.
+      if (from < 60) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('umbral_faltante_centavos')) {
+          await m.addColumn(configuracionTabla, configuracionTabla.umbralFaltanteCentavos);
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

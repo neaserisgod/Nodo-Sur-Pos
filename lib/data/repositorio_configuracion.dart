@@ -93,6 +93,11 @@ Future<void> configurarRecargoCigarrillos(
       );
 }
 
+Future<void> configurarUmbralFaltante(AppDatabase db, int montoCentavos) {
+  if (montoCentavos < 0) throw const FormatException('El monto no puede ser negativo');
+  return db.update(db.configuracionTabla).write(ConfiguracionTablaCompanion(umbralFaltanteCentavos: Value(montoCentavos)));
+}
+
 Future<void> configurarFondoFijo(AppDatabase db, int montoCentavos) {
   if (montoCentavos < 0) throw const FormatException('El fondo fijo no puede ser negativo');
   return db.update(db.configuracionTabla).write(ConfiguracionTablaCompanion(fondoFijoCentavos: Value(montoCentavos)));

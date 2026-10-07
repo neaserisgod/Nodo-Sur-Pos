@@ -108,6 +108,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (07/10/2026)
 
+- **Plata que no aparece** (el dueño: "vendo mucho pero no tengo un peso"): en su base real salieron ~$1.590.000 sin anotar,
+  casi todo de Mercado Pago. Ahora (1) **el cierre pregunta a dónde fue cada faltante** (gasto mío / proveedor / fijo / otro
+  gasto) desde un mínimo configurable; (2) **los fijos repiten el último monto** hasta que se cambia; (3) **día de vencimiento
+  de cada fijo**, avisado en Equilibrio. Migraciones v59 y v60 (`schemaVersion` **60**). Detalle en `DECISIONES.md`. Probado con
+  tests; **no probado en una Windows real**.
 - **Celular**: editar un producto desde el celular ya no le borra la marca de cigarrillo (y con ella el recargo por pago virtual). Los
   productos que ya la perdieron la recuperan solos al actualizar (migración v58, con la última venta marcada de cada uno;
   `schemaVersion` **58**).

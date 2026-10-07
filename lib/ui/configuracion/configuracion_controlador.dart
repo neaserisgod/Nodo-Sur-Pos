@@ -137,6 +137,11 @@ class ConfiguracionControlador extends ChangeNotifier {
     await cargarTodo();
   }
 
+  Future<void> guardarUmbralFaltante(int monto) async {
+    await configurarUmbralFaltante(db, monto);
+    await cargarTodo();
+  }
+
   Future<void> guardarFondoFijo(int monto) async {
     await configurarFondoFijo(db, monto);
     await cargarTodo();

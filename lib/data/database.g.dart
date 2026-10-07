@@ -15368,6 +15368,17 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     requiredDuringInsert: false,
     defaultValue: const Constant(15000000),
   );
+  static const VerificationMeta _umbralFaltanteCentavosMeta =
+      const VerificationMeta('umbralFaltanteCentavos');
+  @override
+  late final GeneratedColumn<int> umbralFaltanteCentavos = GeneratedColumn<int>(
+    'umbral_faltante_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(600000),
+  );
   static const VerificationMeta _rutaRespaldoCarpetaMeta =
       const VerificationMeta('rutaRespaldoCarpeta');
   @override
@@ -15582,6 +15593,7 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
     pasoRedondeoCentavos,
     reservaDiariaFijosCentavos,
     fondoFijoCentavos,
+    umbralFaltanteCentavos,
     rutaRespaldoCarpeta,
     respaldoCantidadCopias,
     rutaTicketsCarpeta,
@@ -15666,6 +15678,15 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         fondoFijoCentavos.isAcceptableOrUnknown(
           data['fondo_fijo_centavos']!,
           _fondoFijoCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('umbral_faltante_centavos')) {
+      context.handle(
+        _umbralFaltanteCentavosMeta,
+        umbralFaltanteCentavos.isAcceptableOrUnknown(
+          data['umbral_faltante_centavos']!,
+          _umbralFaltanteCentavosMeta,
         ),
       );
     }
@@ -15853,6 +15874,10 @@ class $ConfiguracionTablaTable extends ConfiguracionTabla
         DriftSqlType.int,
         data['${effectivePrefix}fondo_fijo_centavos'],
       )!,
+      umbralFaltanteCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}umbral_faltante_centavos'],
+      )!,
       rutaRespaldoCarpeta: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ruta_respaldo_carpeta'],
@@ -15959,6 +15984,11 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
   /// conviene no llevarse nunca del cajón. Default $150.000.
   final int fondoFijoCentavos;
 
+  /// Desde cuánto faltante el cierre pregunta a dónde fue la plata (`domain/faltantes_cierre.dart`). Por comercio: lo
+  /// que es una comisión de Mercado Pago normal depende de cuánto se venda. El literal es
+  /// `umbralFaltantePorDefectoCentavos` (el código generado no ve el dominio; un test verifica que coincidan).
+  final int umbralFaltanteCentavos;
+
   /// Carpeta local (normalmente sincronizada por Drive/OneDrive) donde se
   /// guardan las copias de la base. Null hasta que se configure a mano —
   /// nunca un default silencioso, porque escribir en una carpeta que el
@@ -16064,6 +16094,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     required this.pasoRedondeoCentavos,
     required this.reservaDiariaFijosCentavos,
     required this.fondoFijoCentavos,
+    required this.umbralFaltanteCentavos,
     this.rutaRespaldoCarpeta,
     required this.respaldoCantidadCopias,
     this.rutaTicketsCarpeta,
@@ -16098,6 +16129,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       reservaDiariaFijosCentavos,
     );
     map['fondo_fijo_centavos'] = Variable<int>(fondoFijoCentavos);
+    map['umbral_faltante_centavos'] = Variable<int>(umbralFaltanteCentavos);
     if (!nullToAbsent || rutaRespaldoCarpeta != null) {
       map['ruta_respaldo_carpeta'] = Variable<String>(rutaRespaldoCarpeta);
     }
@@ -16151,6 +16183,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       pasoRedondeoCentavos: Value(pasoRedondeoCentavos),
       reservaDiariaFijosCentavos: Value(reservaDiariaFijosCentavos),
       fondoFijoCentavos: Value(fondoFijoCentavos),
+      umbralFaltanteCentavos: Value(umbralFaltanteCentavos),
       rutaRespaldoCarpeta: rutaRespaldoCarpeta == null && nullToAbsent
           ? const Value.absent()
           : Value(rutaRespaldoCarpeta),
@@ -16215,6 +16248,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         json['reservaDiariaFijosCentavos'],
       ),
       fondoFijoCentavos: serializer.fromJson<int>(json['fondoFijoCentavos']),
+      umbralFaltanteCentavos: serializer.fromJson<int>(
+        json['umbralFaltanteCentavos'],
+      ),
       rutaRespaldoCarpeta: serializer.fromJson<String?>(
         json['rutaRespaldoCarpeta'],
       ),
@@ -16265,6 +16301,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
         reservaDiariaFijosCentavos,
       ),
       'fondoFijoCentavos': serializer.toJson<int>(fondoFijoCentavos),
+      'umbralFaltanteCentavos': serializer.toJson<int>(umbralFaltanteCentavos),
       'rutaRespaldoCarpeta': serializer.toJson<String?>(rutaRespaldoCarpeta),
       'respaldoCantidadCopias': serializer.toJson<int>(respaldoCantidadCopias),
       'rutaTicketsCarpeta': serializer.toJson<String?>(rutaTicketsCarpeta),
@@ -16297,6 +16334,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     int? pasoRedondeoCentavos,
     int? reservaDiariaFijosCentavos,
     int? fondoFijoCentavos,
+    int? umbralFaltanteCentavos,
     Value<String?> rutaRespaldoCarpeta = const Value.absent(),
     int? respaldoCantidadCopias,
     Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -16325,6 +16363,8 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     reservaDiariaFijosCentavos:
         reservaDiariaFijosCentavos ?? this.reservaDiariaFijosCentavos,
     fondoFijoCentavos: fondoFijoCentavos ?? this.fondoFijoCentavos,
+    umbralFaltanteCentavos:
+        umbralFaltanteCentavos ?? this.umbralFaltanteCentavos,
     rutaRespaldoCarpeta: rutaRespaldoCarpeta.present
         ? rutaRespaldoCarpeta.value
         : this.rutaRespaldoCarpeta,
@@ -16382,6 +16422,9 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
       fondoFijoCentavos: data.fondoFijoCentavos.present
           ? data.fondoFijoCentavos.value
           : this.fondoFijoCentavos,
+      umbralFaltanteCentavos: data.umbralFaltanteCentavos.present
+          ? data.umbralFaltanteCentavos.value
+          : this.umbralFaltanteCentavos,
       rutaRespaldoCarpeta: data.rutaRespaldoCarpeta.present
           ? data.rutaRespaldoCarpeta.value
           : this.rutaRespaldoCarpeta,
@@ -16450,6 +16493,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('reservaDiariaFijosCentavos: $reservaDiariaFijosCentavos, ')
           ..write('fondoFijoCentavos: $fondoFijoCentavos, ')
+          ..write('umbralFaltanteCentavos: $umbralFaltanteCentavos, ')
           ..write('rutaRespaldoCarpeta: $rutaRespaldoCarpeta, ')
           ..write('respaldoCantidadCopias: $respaldoCantidadCopias, ')
           ..write('rutaTicketsCarpeta: $rutaTicketsCarpeta, ')
@@ -16484,6 +16528,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
     pasoRedondeoCentavos,
     reservaDiariaFijosCentavos,
     fondoFijoCentavos,
+    umbralFaltanteCentavos,
     rutaRespaldoCarpeta,
     respaldoCantidadCopias,
     rutaTicketsCarpeta,
@@ -16514,6 +16559,7 @@ class Configuracion extends DataClass implements Insertable<Configuracion> {
           other.pasoRedondeoCentavos == this.pasoRedondeoCentavos &&
           other.reservaDiariaFijosCentavos == this.reservaDiariaFijosCentavos &&
           other.fondoFijoCentavos == this.fondoFijoCentavos &&
+          other.umbralFaltanteCentavos == this.umbralFaltanteCentavos &&
           other.rutaRespaldoCarpeta == this.rutaRespaldoCarpeta &&
           other.respaldoCantidadCopias == this.respaldoCantidadCopias &&
           other.rutaTicketsCarpeta == this.rutaTicketsCarpeta &&
@@ -16543,6 +16589,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
   final Value<int> pasoRedondeoCentavos;
   final Value<int> reservaDiariaFijosCentavos;
   final Value<int> fondoFijoCentavos;
+  final Value<int> umbralFaltanteCentavos;
   final Value<String?> rutaRespaldoCarpeta;
   final Value<int> respaldoCantidadCopias;
   final Value<String?> rutaTicketsCarpeta;
@@ -16568,6 +16615,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.pasoRedondeoCentavos = const Value.absent(),
     this.reservaDiariaFijosCentavos = const Value.absent(),
     this.fondoFijoCentavos = const Value.absent(),
+    this.umbralFaltanteCentavos = const Value.absent(),
     this.rutaRespaldoCarpeta = const Value.absent(),
     this.respaldoCantidadCopias = const Value.absent(),
     this.rutaTicketsCarpeta = const Value.absent(),
@@ -16594,6 +16642,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     this.pasoRedondeoCentavos = const Value.absent(),
     this.reservaDiariaFijosCentavos = const Value.absent(),
     this.fondoFijoCentavos = const Value.absent(),
+    this.umbralFaltanteCentavos = const Value.absent(),
     this.rutaRespaldoCarpeta = const Value.absent(),
     this.respaldoCantidadCopias = const Value.absent(),
     this.rutaTicketsCarpeta = const Value.absent(),
@@ -16620,6 +16669,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Expression<int>? pasoRedondeoCentavos,
     Expression<int>? reservaDiariaFijosCentavos,
     Expression<int>? fondoFijoCentavos,
+    Expression<int>? umbralFaltanteCentavos,
     Expression<String>? rutaRespaldoCarpeta,
     Expression<int>? respaldoCantidadCopias,
     Expression<String>? rutaTicketsCarpeta,
@@ -16651,6 +16701,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       if (reservaDiariaFijosCentavos != null)
         'reserva_diaria_fijos_centavos': reservaDiariaFijosCentavos,
       if (fondoFijoCentavos != null) 'fondo_fijo_centavos': fondoFijoCentavos,
+      if (umbralFaltanteCentavos != null)
+        'umbral_faltante_centavos': umbralFaltanteCentavos,
       if (rutaRespaldoCarpeta != null)
         'ruta_respaldo_carpeta': rutaRespaldoCarpeta,
       if (respaldoCantidadCopias != null)
@@ -16685,6 +16737,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     Value<int>? pasoRedondeoCentavos,
     Value<int>? reservaDiariaFijosCentavos,
     Value<int>? fondoFijoCentavos,
+    Value<int>? umbralFaltanteCentavos,
     Value<String?>? rutaRespaldoCarpeta,
     Value<int>? respaldoCantidadCopias,
     Value<String?>? rutaTicketsCarpeta,
@@ -16715,6 +16768,8 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
       reservaDiariaFijosCentavos:
           reservaDiariaFijosCentavos ?? this.reservaDiariaFijosCentavos,
       fondoFijoCentavos: fondoFijoCentavos ?? this.fondoFijoCentavos,
+      umbralFaltanteCentavos:
+          umbralFaltanteCentavos ?? this.umbralFaltanteCentavos,
       rutaRespaldoCarpeta: rutaRespaldoCarpeta ?? this.rutaRespaldoCarpeta,
       respaldoCantidadCopias:
           respaldoCantidadCopias ?? this.respaldoCantidadCopias,
@@ -16769,6 +16824,11 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
     }
     if (fondoFijoCentavos.present) {
       map['fondo_fijo_centavos'] = Variable<int>(fondoFijoCentavos.value);
+    }
+    if (umbralFaltanteCentavos.present) {
+      map['umbral_faltante_centavos'] = Variable<int>(
+        umbralFaltanteCentavos.value,
+      );
     }
     if (rutaRespaldoCarpeta.present) {
       map['ruta_respaldo_carpeta'] = Variable<String>(
@@ -16844,6 +16904,7 @@ class ConfiguracionTablaCompanion extends UpdateCompanion<Configuracion> {
           ..write('pasoRedondeoCentavos: $pasoRedondeoCentavos, ')
           ..write('reservaDiariaFijosCentavos: $reservaDiariaFijosCentavos, ')
           ..write('fondoFijoCentavos: $fondoFijoCentavos, ')
+          ..write('umbralFaltanteCentavos: $umbralFaltanteCentavos, ')
           ..write('rutaRespaldoCarpeta: $rutaRespaldoCarpeta, ')
           ..write('respaldoCantidadCopias: $respaldoCantidadCopias, ')
           ..write('rutaTicketsCarpeta: $rutaTicketsCarpeta, ')
@@ -39484,6 +39545,7 @@ typedef $$ConfiguracionTablaTableCreateCompanionBuilder =
       Value<int> pasoRedondeoCentavos,
       Value<int> reservaDiariaFijosCentavos,
       Value<int> fondoFijoCentavos,
+      Value<int> umbralFaltanteCentavos,
       Value<String?> rutaRespaldoCarpeta,
       Value<int> respaldoCantidadCopias,
       Value<String?> rutaTicketsCarpeta,
@@ -39511,6 +39573,7 @@ typedef $$ConfiguracionTablaTableUpdateCompanionBuilder =
       Value<int> pasoRedondeoCentavos,
       Value<int> reservaDiariaFijosCentavos,
       Value<int> fondoFijoCentavos,
+      Value<int> umbralFaltanteCentavos,
       Value<String?> rutaRespaldoCarpeta,
       Value<int> respaldoCantidadCopias,
       Value<String?> rutaTicketsCarpeta,
@@ -39571,6 +39634,11 @@ class $$ConfiguracionTablaTableFilterComposer
 
   ColumnFilters<int> get fondoFijoCentavos => $composableBuilder(
     column: $table.fondoFijoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -39705,6 +39773,11 @@ class $$ConfiguracionTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get rutaRespaldoCarpeta => $composableBuilder(
     column: $table.rutaRespaldoCarpeta,
     builder: (column) => ColumnOrderings(column),
@@ -39832,6 +39905,11 @@ class $$ConfiguracionTablaTableAnnotationComposer
 
   GeneratedColumn<int> get fondoFijoCentavos => $composableBuilder(
     column: $table.fondoFijoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get umbralFaltanteCentavos => $composableBuilder(
+    column: $table.umbralFaltanteCentavos,
     builder: (column) => column,
   );
 
@@ -39970,6 +40048,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int> reservaDiariaFijosCentavos = const Value.absent(),
                 Value<int> fondoFijoCentavos = const Value.absent(),
+                Value<int> umbralFaltanteCentavos = const Value.absent(),
                 Value<String?> rutaRespaldoCarpeta = const Value.absent(),
                 Value<int> respaldoCantidadCopias = const Value.absent(),
                 Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -39997,6 +40076,7 @@ class $$ConfiguracionTablaTableTableManager
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 reservaDiariaFijosCentavos: reservaDiariaFijosCentavos,
                 fondoFijoCentavos: fondoFijoCentavos,
+                umbralFaltanteCentavos: umbralFaltanteCentavos,
                 rutaRespaldoCarpeta: rutaRespaldoCarpeta,
                 respaldoCantidadCopias: respaldoCantidadCopias,
                 rutaTicketsCarpeta: rutaTicketsCarpeta,
@@ -40024,6 +40104,7 @@ class $$ConfiguracionTablaTableTableManager
                 Value<int> pasoRedondeoCentavos = const Value.absent(),
                 Value<int> reservaDiariaFijosCentavos = const Value.absent(),
                 Value<int> fondoFijoCentavos = const Value.absent(),
+                Value<int> umbralFaltanteCentavos = const Value.absent(),
                 Value<String?> rutaRespaldoCarpeta = const Value.absent(),
                 Value<int> respaldoCantidadCopias = const Value.absent(),
                 Value<String?> rutaTicketsCarpeta = const Value.absent(),
@@ -40051,6 +40132,7 @@ class $$ConfiguracionTablaTableTableManager
                 pasoRedondeoCentavos: pasoRedondeoCentavos,
                 reservaDiariaFijosCentavos: reservaDiariaFijosCentavos,
                 fondoFijoCentavos: fondoFijoCentavos,
+                umbralFaltanteCentavos: umbralFaltanteCentavos,
                 rutaRespaldoCarpeta: rutaRespaldoCarpeta,
                 respaldoCantidadCopias: respaldoCantidadCopias,
                 rutaTicketsCarpeta: rutaTicketsCarpeta,

@@ -312,5 +312,18 @@ void main() {
       expect(sesion.estado, 'CERRADA');
       expect(sesion.mpDiferenciaCentavos, -10000000);
     });
+
+    testWidgets('con el umbral configurado más alto que el faltante, no pregunta', (tester) async {
+      final db = baseDeTest();
+      addTearDown(db.close);
+      final usuarioId = await _usuario(db);
+      final sesionId = await sesionConMp(db, usuarioId);
+      await db.update(db.configuracionTabla).write(const ConfiguracionTablaCompanion(umbralFaltanteCentavos: Value(20000000)));
+
+      await _pump(tester, db, sesionId, usuarioId);
+      await _contarYConfirmar(tester, efectivo: '0', mp: '0');
+
+      expect(find.byKey(const Key('cierre_faltantes')), findsNothing);
+    });
   });
 }

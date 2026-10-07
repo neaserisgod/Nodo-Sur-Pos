@@ -267,6 +267,7 @@ class CierreControlador extends ChangeNotifier {
     ordenesCobroSinResolver = await ordenesSinResolverDeSesion(db, sesionId);
     arqueos = await arqueosDelTurno(db, sesionId);
     ventasAbiertas = await cantidadVentasAbiertasConLineas(db, sesionId);
+    umbralFaltanteCentavos = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
     await _precargarDelUltimoArqueo();
 
     if (sesion!.estado == 'CERRADA') {
@@ -376,6 +377,9 @@ class CierreControlador extends ChangeNotifier {
 
   /// Lo que falta en cada caja y todavía no se dijo a dónde fue (El dueño, 2026-10-07: la plata que sale sin anotarse
   /// es la que Equilibrio sigue contando como retirable). Vacío antes de revelar el conteo.
+  /// Desde cuánto se pregunta (Configuración → Caja y cobros). Se lee en [cargar].
+  int umbralFaltanteCentavos = umbralFaltantePorDefectoCentavos;
+
   Map<CajaDelCierre, int> get faltantes {
     final r = resumen;
     if (r == null || fase != FaseCierre.revisado) return const {};
@@ -384,6 +388,7 @@ class CierreControlador extends ChangeNotifier {
       diferenciaMpCentavos: r.mpDiferenciaCentavos,
       // Sin el módulo de caja aparte la lata no se cuenta: no se pregunta por ella.
       diferenciaLataCentavos: moduloActivo(Modulo.cajaAparte) ? r.lataDiferenciaCentavos : null,
+      umbral: umbralFaltanteCentavos,
     );
   }
 

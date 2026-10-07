@@ -368,9 +368,11 @@ Revisando la base real se vio que la ganancia de la app no mentía: entre el 13/
 las cajas sin anotarse (casi todo de Mercado Pago: alquiler, luz, proveedores y gastos personales pagados desde la
 cuenta del negocio). Equilibrio seguía mostrando esa plata como retirable.
 
-- Al cerrar, cada caja con un faltante de **$6.000 o más** pregunta a dónde fue: **gasto mío** (cuenta como retiro),
+- Al cerrar, cada caja con un faltante desde el **mínimo configurable** (Configuración → Caja y cobros; arranca en
+  $6.000) pregunta a dónde fue: **gasto mío** (cuenta como retiro),
   **proveedor** (baja la deuda), **fijo** (lo marca pagado; desde la lata no) u **otro gasto del negocio**. Se puede
-  anotar en partes. Debajo de $6.000 no se pregunta: en Mercado Pago es la comisión diaria.
+  anotar en partes. Debajo del mínimo no se pregunta: en Mercado Pago es la comisión diaria, y cuánto es depende de
+  cuánto venda cada comercio (por eso es configurable).
 - "Me equivoqué al contar" vuelve al conteo.
 - Nunca traba el cierre: se puede cerrar sin explicar ("No sé"), con un aviso antes.
 
