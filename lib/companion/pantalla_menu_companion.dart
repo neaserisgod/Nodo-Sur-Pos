@@ -71,6 +71,7 @@ import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_cargar_factura.dart';
 import 'pantalla_promos.dart';
+import 'pantalla_cuenta_corriente.dart';
 import 'pantalla_cierres.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_consultar_precio.dart';
@@ -555,6 +556,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         await irA((_) => const PantallaCargarFactura());
       case AccionFuncion.promos:
         await irA((_) => const PantallaPromos());
+      case AccionFuncion.cuentaCorriente:
+        await irA((_) => const PantallaCuentaCorriente());
       case AccionFuncion.cambiarUsuario:
         await cambiarUsuario();
       case AccionFuncion.irAMas:

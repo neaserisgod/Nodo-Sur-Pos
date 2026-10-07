@@ -29,10 +29,11 @@ const _origenes = <({String clave, String etiqueta})>[
 ];
 
 class PantallaPagarProveedor extends StatefulWidget {
-  /// [servicio] es para tests; en la app es la base del celular.
-  const PantallaPagarProveedor({super.key, this.servicio});
+  /// [servicio] es para tests; en la app es la base del celular. [proveedorId] llega ya elegido (desde la cuenta corriente).
+  const PantallaPagarProveedor({super.key, this.servicio, this.proveedorId});
 
   final ServicioCompanion? servicio;
+  final int? proveedorId;
 
   @override
   State<PantallaPagarProveedor> createState() => _PantallaPagarProveedorState();
@@ -91,6 +92,8 @@ class _PantallaPagarProveedorState extends State<PantallaPagarProveedor> {
         _saldos = saldos;
         _sesionCajaId = sesion.abierta ? sesion.id : null;
       });
+      final inicial = proveedores.where((p) => p.id == widget.proveedorId).firstOrNull;
+      if (inicial != null) _elegirProveedor(inicial);
     } catch (e) {
       if (mounted) setState(() => _errorInicial = mensajeDeError(e));
     } finally {

@@ -88,6 +88,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Cargar factura en el celular, sin la PC (El dueño, 2026-10-07)](#cargar-factura-en-el-celular-sin-la-pc-el-dueño-2026-10-07)
 - [Pagar proveedor sin la PC (El dueño, 2026-10-07)](#pagar-proveedor-sin-la-pc-el-dueño-2026-10-07)
 - [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
+- [Cuenta corriente en el celular (El dueño, 2026-10-07)](#cuenta-corriente-en-el-celular-el-dueño-2026-10-07)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2238,3 +2239,11 @@ de la PC (qué productos pueden entrar en una promo, los atajos de porcentaje) p
   sus artículos (`catalogoConStockDePromos`, misma cuenta `stockDePromo` que la venta de la PC). Al cobrar ya se abría en sus artículos
   (`registrarVenta`).
 - La ganancia de la promo es sobre el precio (como toda ganancia de esta app), no sobre el costo: la pantalla lo dice.
+
+## Cuenta corriente en el celular (El dueño, 2026-10-07)
+
+"Seguí con la cuenta corriente". Más › Cuenta corriente: el total que debés, los proveedores con deuda (o todos, con buscador) y, por
+proveedor, el libro con cargar deuda, pagar, anular y deshacer factura — lo mismo que el diálogo de la PC. Sin lógica nueva: llama a
+`saldosDeuda`, `listarMovimientosDeuda`, `cargarDeuda`, `anularMovimientoDeuda`, `movimientosDeudaConFactura` y `deshacerFactura`. "Pagar"
+reusa la pantalla Pagar proveedor del celular con el proveedor ya elegido (un solo camino para pagar, El dueño 2026-10-02). Anular un pago
+que salió de una caja devuelve la plata en la caja abierta de la base del celular, como en la PC.
