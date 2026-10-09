@@ -210,6 +210,10 @@ sin internet el bot anda igual que hoy.
 - **Comprobantes**: foto a datos, solo en el caso 3.
 - **Privacidad** (decisión 13): opción de cada negocio; por defecto, plan gratis. Nunca el teléfono ni el historial.
 
+**Configurarlo desde Nodo Sur** (El dueño, 2026-10-09): la configuración del bot vive en el sitio, se edita desde la app
+del celular (Más › Bot de WhatsApp) solo con un plan con bot, y el bot la baja sola. Plan completo, pensado para hacerse todo
+desde el celular con Termux: [`PLAN-BOT.md`](./PLAN-BOT.md).
+
 **Orden de trabajo (cada paso probado antes del siguiente):**
 1. `botdemo`: arreglar `npm test`; pasar el núcleo a asincrónico sin cambiar comportamiento (los 98 escenarios tienen que
    seguir pasando); seña que nunca se confirma sola por OCR.

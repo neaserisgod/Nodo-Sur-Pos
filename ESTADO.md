@@ -103,6 +103,8 @@ Pendiente / ideas (sin hacer):
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
   de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Mock hecho, sin código**; plan y
   preguntas abiertas en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+- **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
+  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md); sin código en Nodo Sur ni en el sitio.
 - **Abrir la caja desde el celular sin la PC** (El dueño, 2026-10-07/09, independencia del celular, etapa 1, opción A):
   con el modo **"Solo celular"** el celular abre la caja sobre su propia base (antes daba "No se puede abrir una nueva
   desde acá" y el modo solo celular no podía arrancar el día). En "PC y celular" sigue bloqueado, para no tener dos cajas
