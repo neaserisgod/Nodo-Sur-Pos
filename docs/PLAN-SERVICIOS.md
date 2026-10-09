@@ -157,14 +157,19 @@ conexión saliente abierta no hiberna: un solo negocio se comería casi todo el 
 **La IA en el bot (Gemini, con la clave del negocio por `/api/ia/generar`):**
 
 Siguen las reglas de la IA de Nodo Sur (`DECISIONES.md`): la IA sugiere o transcribe, **el código decide**, y el bot anda
-igual sin clave, sin cupo o sin internet.
+igual sin clave, sin cupo o sin internet. **La IA nunca le contesta a nadie** (El dueño, 2026-10-09: "la IA debe ayudar a
+interpretar"): solo traduce lo que escribió la persona a algo que el bot entiende; las respuestas siempre las arma el bot con
+sus textos y los datos de Nodo Sur.
 
 - **El diccionario va primero, siempre.** `nlu.js` resuelve gratis y al instante casi todo (reservar, cancelar, confirmar,
   días y horas en texto libre, typos). Su FAQ solo conoce tres temas (precios, ubicación, horarios); lo demás hoy cuenta como
-  "no entendí" y a la segunda se deriva a la dueña. **La IA entra solo ahí, antes de derivar**, así casi nunca se usa.
+  "no entendí" y a la segunda se deriva a la dueña. **La IA entra solo ahí, antes de contestar "no entendí"**, así casi
+  nunca se usa.
 - **Entender (clientas y dueña):** devuelve JSON (intención, servicio, día, hora). Solo puede elegir servicios de la lista
   que se le muestra; un id que no está se descarta (como en las facturas). Lo que borra algo se confirma con "sí" como hoy.
-- **Consultas que el diccionario no conoce** ("¿hacen esculpidas?"): ver la pregunta 7.
+- **Consultas que el diccionario no conoce** ("¿hacen esculpidas?", "¿cuánto el semi?"): la IA las ubica en lo que el bot ya
+  sabe contestar (un servicio de la lista, precios, horarios, ubicación) y el bot contesta con su texto. Si no encaja en
+  nada, la IA lo marca "consulta para la dueña" y el bot se la pasa sin esperar al segundo "no entendí".
 - **Leer comprobantes:** foto a JSON, solo en el caso 3 de arriba.
 - **Privacidad (decisión 13):** opción de cada negocio en Configuración › Asistente IA: plan gratis (por defecto), clave
   paga, o IA sin comprobantes (los lee el OCR del celular y no salen de ahí). Nunca se manda el teléfono ni el historial de
@@ -186,21 +191,15 @@ igual sin clave, sin cupo o sin internet.
 
 ## Preguntas antes de programar
 
-1. **¿Arrancamos solo con el celular, sin PC?** Recomendado: es como trabajaría casi cualquier barbería o local de uñas, y
-   evita hacer cada cosa dos veces.
+1. ~~¿Arrancamos solo con el celular, sin PC?~~ → **decidido (2026-10-09): sí, solo celular.**
 2. **Profesionales = los usuarios de la app.** Recomendado. La contra: un profesional sin celular igual figura como usuario
    (sin cuenta, solo con su nombre).
 3. ~~Bot: el servidor reserva los horarios~~ → **decidido** (decisión 9): reserva el `SyncHub`.
 4. **Costo de WhatsApp**: con Baileys no hay (decisión 8). Vuelve cuando se pase a la API oficial: Meta cobra los mensajes
    que inicia el negocio (recordatorios). ¿Entra en el plan o se cobra aparte? `botdemo/docs/MERCADO.md` propone $35.000/mes.
 5. **Comisión por profesional**: ¿queda para después?
-6. **Turno cargado en la app sin internet:** no puede reservar en el servidor. Recomendado: se guarda igual y, si al
-   sincronizar choca con uno del bot, le avisa a la dueña (campanita) para que mueva uno. La contra: por un rato puede haber
-   dos turnos en el mismo horario.
-7. **Consultas que el diccionario no conoce** (el dueño preguntó si no alcanza con el diccionario: alcanza para precios,
-   ubicación y horarios, nada más). Recomendado: la IA contesta solo con lo que cargó la dueña (servicios, precios, horarios
-   y una ficha "info del negocio"); si no está ahí, le pasa la consulta a la dueña. Alternativa: sin IA para esto, derivar
-   directo como hoy.
+6. ~~Turno cargado en la app sin internet~~ → **decidido**: se guarda igual y, si al sincronizar choca con uno del bot, le
+   avisa a la dueña en la campanita para que mueva uno.
 
 ## Qué no se probó
 Solo existe el mock (Chromium de escritorio y ancho de celular). No hay código en Nodo Sur. De `botdemo` corren sus tests

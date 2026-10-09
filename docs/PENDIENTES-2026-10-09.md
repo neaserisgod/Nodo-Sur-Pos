@@ -48,11 +48,12 @@ en la PC (`lib/ui/cierre/`) y en el celular (`lib/companion/pantallas/pantalla_c
    monto, sin preguntar) y el resto queda pendiente para el próximo cierre. Cambia el paso 1 del flujo propuesto: no se
    escribe a mano cuánto se separó.
 
-**Punto a resolver con la respuesta 2:** antes de contar, la app no sabe cuánto efectivo hay (es el conteo a ciegas), así
-que no puede calcular sola "lo que haya". Forma posible sin preguntarle nada al cajero: el cajero separa lo que puede y
-cuenta; lo separado se deduce de la lata contada (lata contada − lata inicial + pagos − ingresos) y lo que falta queda
-pendiente. La contra: un faltante real en la lata se confundiría con "no alcanzó para separar". Hay que confirmarlo con el
-dueño antes de programar.
+**Cómo sabe la app "lo que haya" (el dueño, 2026-10-09):** con el efectivo **esperado** del cajón, que la app ya
+calcula (`cajaEsperadaCentavos`: apertura + ventas en efectivo − gastos en efectivo + ingresos en efectivo). El conteo a
+ciegas solo se lo esconde al cajero, la app lo sabe. Hoy `separarCigarrillos` (`domain/caja.dart`) toma como tope el
+efectivo **contado**, porque se separa después de contar; con el orden nuevo el tope pasa a ser el esperado. La app dice
+"Separá $X" con X = mín(a separar, esperado) y el resto queda pendiente para el próximo cierre. Si en el cajón había
+menos que lo esperado, eso aparece después como faltante, igual que hoy.
 
 Falta: cambiar la Regla 10 y la entrada de `DECISIONES.md` con esto, y programarlo (PC y celular).
 
