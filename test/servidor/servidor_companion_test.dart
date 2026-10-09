@@ -529,6 +529,36 @@ void main() {
     expect(sesion?.fondoInicialCentavos, 30000);
   });
 
+  group('apertura desde el celular con Mercado Pago (El dueño, 2026-10-09: "al abrir caja no me da el monto de Mercado Pago")', () {
+    setUp(() async {
+      final anterior = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await cerrarSesion(db, sesionId: anterior, usuarioId: usuarioId, efectivoContadoCentavos: 0, mpContadoCentavos: 1234500, lataContadoCentavos: 0);
+    });
+
+    test('/sesion sugiere lo último contado y /sesion/abrir guarda el monto confirmado', () async {
+      final estado = jsonDecode((await http.get(url('/sesion'), headers: headers())).body) as Map;
+      expect(estado['mpQueSeArrastraCentavos'], 1234500);
+
+      final r = await http.post(
+        url('/sesion/abrir'),
+        headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'fondoInicialCentavos': 0, 'mpInicialCentavos': 1300000}),
+      );
+      expect(r.statusCode, 201);
+      expect((await sesionAbierta(db))?.saldoMpInicialCentavos, 1300000);
+    });
+
+    test('sin el campo (celular sin actualizar) se arrastra lo último contado, como antes', () async {
+      final r = await http.post(
+        url('/sesion/abrir'),
+        headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'fondoInicialCentavos': 0}),
+      );
+      expect(r.statusCode, 201);
+      expect((await sesionAbierta(db))?.saldoMpInicialCentavos, 1234500);
+    });
+  });
+
   test(
     'POST /sesion/abrir con una ya abierta: 409, avisa quién la abrió, no crea otra',
     () async {

@@ -117,6 +117,15 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (09/10/2026)
+
+- **Abrir caja desde el celular pide el saldo de Mercado Pago** (El dueño: "al abrir caja no me da el monto de Mercado
+  Pago"): igual que la PC, viene precargado con lo último contado en el cierre anterior y se puede corregir (hoja "Abrir
+  caja" y la apertura dentro de "Gasto o ingreso"). Antes se arrastraba en silencio, sin verlo. Con la PC va por
+  `/sesion` (`mpQueSeArrastraCentavos`) y `/sesion/abrir` (`mpInicialCentavos`, opcional): una PC sin actualizar ignora
+  el monto y arrastra como antes, así que **conviene publicar la PC y el APK juntos**. Probado con tests; **no probado en
+  un celular real**.
+
 ## Últimos cambios (07/10/2026)
 
 - **Clave de la IA por cuenta** (El dueño: "la clave es por cuenta"): el dueño la carga una vez en Configuración › Asistente IA (PC o
