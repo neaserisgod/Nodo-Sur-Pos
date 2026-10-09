@@ -6,11 +6,14 @@ import 'dart:io';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
+import 'package:la_plazoleta/companion/emparejamiento.dart';
+import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/seleccion_servicio.dart';
 import 'package:la_plazoleta/companion/servicio_companion_offline.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/servidor/servidor_companion.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/base_para_tests.dart';
 
 void main() {
@@ -51,25 +54,62 @@ void main() {
   test('ServicioCompanionOffline: todo delega a PuertoLocal salvo abrirSesion', () async {
     final local = baseDeTest();
     addTearDown(local.close);
-    final servicio = ServicioCompanionOffline(PuertoLocal(local));
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => false);
 
     // Delega de verdad (no un stub vacío): trae el catálogo real de la base
     // local (proveedores sembrados de fábrica).
     final proveedores = await servicio.proveedores();
     expect(proveedores, isNotEmpty);
 
-    // Política especial: nunca abre una caja propia offline.
+    // Política especial: con "PC y celular" nunca abre una caja propia offline.
     expect(
       () => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 1000),
-      throwsA(
-        isA<ErrorCompanion>().having(
-          (e) => e.mensaje,
-          'mensaje',
-          contains('No se puede abrir'),
-        ),
-      ),
+      throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('No se puede abrir'))),
     );
     final sesionesLocales = await local.select(local.sesionesDeCaja).get();
     expect(sesionesLocales, isEmpty);
+  });
+
+  test('ServicioCompanionOffline: con "Solo celular" abre la caja sobre la base local', () async {
+    final local = baseDeTest();
+    addTearDown(local.close);
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => true);
+    final usuario = (await servicio.usuarios()).first;
+
+    final id = await servicio.abrirSesion(usuarioId: usuario.id, fondoInicialCentavos: 1000);
+
+    final sesiones = await local.select(local.sesionesDeCaja).get();
+    expect(sesiones.single.id, id);
+    expect(sesiones.single.fondoInicialCentavos, 1000);
+    expect(sesiones.single.globalId, isNotNull, reason: 'tiene que viajar por la sync');
+  });
+
+  test('ServicioCompanionOffline: con "Solo celular" no abre una segunda caja', () async {
+    final local = baseDeTest();
+    addTearDown(local.close);
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => true);
+    final usuario = (await servicio.usuarios()).first;
+    await servicio.abrirSesion(usuarioId: usuario.id, fondoInicialCentavos: 1000);
+
+    expect(
+      () => servicio.abrirSesion(usuarioId: usuario.id, fondoInicialCentavos: 2000),
+      throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('Ya hay una caja abierta'))),
+    );
+    expect(await local.select(local.sesionesDeCaja).get(), hasLength(1));
+  });
+
+  test('esSoloCelularGuardado sigue el modo elegido y, sin modo, si hay una PC emparejada', () async {
+    SharedPreferences.setMockInitialValues({});
+    expect(await esSoloCelularGuardado(), isTrue, reason: 'sin PC ni modo: el celular solo');
+
+    await guardarModoUso(ModoUso.pcYCelular);
+    expect(await esSoloCelularGuardado(), isFalse);
+
+    await guardarModoUso(ModoUso.soloCelular);
+    expect(await esSoloCelularGuardado(), isTrue);
+
+    SharedPreferences.setMockInitialValues({});
+    await guardarConexion(const DatosConexion(ip: '10.0.0.2', puerto: 8080, token: 't'));
+    expect(await esSoloCelularGuardado(), isFalse, reason: 'instalación vieja con PC emparejada');
   });
 }

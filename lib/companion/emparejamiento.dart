@@ -68,3 +68,19 @@ Future<ModoUso?> leerModoUso() async {
   final prefs = await SharedPreferences.getInstance();
   return ModoUso.desdeClave(prefs.getString(_claveModoUso));
 }
+
+/// Si este celular trabaja solo, sin PC — mismo criterio que `resolverModoUso` para las instalaciones que todavía no
+/// guardaron el modo. Ante cualquier duda (sin preferencias legibles) responde que no: abrir caja sin PC es lo que se
+/// está habilitando, y equivocarse para el lado de "no" solo deja el bloqueo de antes.
+Future<bool> esSoloCelularGuardado() async {
+  try {
+    final modo = resolverModoUso(
+      guardado: await leerModoUso(),
+      tieneConexion: await leerConexion() != null,
+      tieneUsuario: true,
+    );
+    return modo == ModoUso.soloCelular;
+  } catch (_) {
+    return false;
+  }
+}
