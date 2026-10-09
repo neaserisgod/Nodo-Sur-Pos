@@ -156,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 62;
+  int get schemaVersion => 63;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1167,6 +1167,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 62) {
         await _sumarComponentesDePromoALaSync(this, m);
       }
+      // v62 → v63 (2026-10-09): los gastos fijos y sus montos viajan entre la PC y el celular (independizar el celular).
+      if (from < 63) {
+        await _sumarIdentidadDeSyncAFijos(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1283,6 +1287,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'configuracion_negocio_tabla',
   'medios_de_pago',
   ...tablasDeSyncV61,
+  ...tablasDeSyncV63,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1489,6 +1494,34 @@ Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
     );
   }
   await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV61);
+}
+
+const tablasDeSyncV63 = ['gastos_fijos', 'gastos_fijos_montos'];
+
+/// v62 → v63: identidad de sincronización para los gastos fijos y sus montos (El dueño, 2026-10-09: independizar el celular). Lo
+/// que ya había lo creó este equipo; sale con `actualizado_en` de ahora para que suba. Dos equipos con el mismo fijo (la plantilla
+/// del rubro los siembra en los dos) se juntan al sincronizar por el nombre (`_clavesNaturales` de `repositorio_sincronizacion.dart`).
+Future<void> _sumarIdentidadDeSyncAFijos(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+  Future<void> sumar(TableInfo tabla, List<GeneratedColumn> nuevas) async {
+    final hay = await columnasDe(tabla.actualTableName);
+    for (final c in nuevas) {
+      if (!hay.contains(c.name)) await m.addColumn(tabla, c);
+    }
+  }
+
+  await sumar(db.gastosFijos, [db.gastosFijos.globalId, db.gastosFijos.origenDispositivo, db.gastosFijos.actualizadoEn]);
+  await sumar(db.gastosFijosMontos, [db.gastosFijosMontos.globalId, db.gastosFijosMontos.origenDispositivo, db.gastosFijosMontos.actualizadoEn]);
+  final origen = idDispositivoActual.replaceAll("'", "''");
+  final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  for (final tabla in tablasDeSyncV63) {
+    await db.customStatement(
+      "UPDATE $tabla SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen', actualizado_en = $ahora "
+      'WHERE global_id IS NULL',
+    );
+  }
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV63);
 }
 
 /// v61 → v62: columna `productos.componentes_promo`, llenada desde `promo_componentes`, e identidad de sincronización para las promos

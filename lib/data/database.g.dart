@@ -5385,8 +5385,51 @@ class $GastosFijosTable extends GastosFijos
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, nombre, activo, diaVencimiento];
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    nombre,
+    activo,
+    diaVencimiento,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5425,6 +5468,30 @@ class $GastosFijosTable extends GastosFijos
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5450,6 +5517,18 @@ class $GastosFijosTable extends GastosFijos
         DriftSqlType.int,
         data['${effectivePrefix}dia_vencimiento'],
       ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
     );
   }
 
@@ -5467,11 +5546,20 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
   /// Día del mes en que vence (1–31; en un mes más corto vence el último día). Null = sin fecha cargada. Es fijo como
   /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
   final int? diaVencimiento;
+
+  /// Identidad de sincronización (v63, El dueño, 2026-10-09: independizar el celular): los fijos se cargan desde la PC o el
+  /// celular y viajan entre los dos. Antes eran locales de cada equipo.
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
   const GastoFijo({
     required this.id,
     required this.nombre,
     required this.activo,
     this.diaVencimiento,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5481,6 +5569,15 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     map['activo'] = Variable<bool>(activo);
     if (!nullToAbsent || diaVencimiento != null) {
       map['dia_vencimiento'] = Variable<int>(diaVencimiento);
+    }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
     }
     return map;
   }
@@ -5493,6 +5590,15 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       diaVencimiento: diaVencimiento == null && nullToAbsent
           ? const Value.absent()
           : Value(diaVencimiento),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
     );
   }
 
@@ -5506,6 +5612,11 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       nombre: serializer.fromJson<String>(json['nombre']),
       activo: serializer.fromJson<bool>(json['activo']),
       diaVencimiento: serializer.fromJson<int?>(json['diaVencimiento']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
     );
   }
   @override
@@ -5516,6 +5627,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       'nombre': serializer.toJson<String>(nombre),
       'activo': serializer.toJson<bool>(activo),
       'diaVencimiento': serializer.toJson<int?>(diaVencimiento),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
     };
   }
 
@@ -5524,6 +5638,9 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     String? nombre,
     bool? activo,
     Value<int?> diaVencimiento = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
   }) => GastoFijo(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,
@@ -5531,6 +5648,13 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
     diaVencimiento: diaVencimiento.present
         ? diaVencimiento.value
         : this.diaVencimiento,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
   );
   GastoFijo copyWithCompanion(GastosFijosCompanion data) {
     return GastoFijo(
@@ -5540,6 +5664,13 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
       diaVencimiento: data.diaVencimiento.present
           ? data.diaVencimiento.value
           : this.diaVencimiento,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
     );
   }
 
@@ -5549,13 +5680,24 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
           ..write('activo: $activo, ')
-          ..write('diaVencimiento: $diaVencimiento')
+          ..write('diaVencimiento: $diaVencimiento, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, nombre, activo, diaVencimiento);
+  int get hashCode => Object.hash(
+    id,
+    nombre,
+    activo,
+    diaVencimiento,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5563,7 +5705,10 @@ class GastoFijo extends DataClass implements Insertable<GastoFijo> {
           other.id == this.id &&
           other.nombre == this.nombre &&
           other.activo == this.activo &&
-          other.diaVencimiento == this.diaVencimiento);
+          other.diaVencimiento == this.diaVencimiento &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
 }
 
 class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
@@ -5571,29 +5716,44 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
   final Value<String> nombre;
   final Value<bool> activo;
   final Value<int?> diaVencimiento;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
   const GastosFijosCompanion({
     this.id = const Value.absent(),
     this.nombre = const Value.absent(),
     this.activo = const Value.absent(),
     this.diaVencimiento = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   });
   GastosFijosCompanion.insert({
     this.id = const Value.absent(),
     required String nombre,
     this.activo = const Value.absent(),
     this.diaVencimiento = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   }) : nombre = Value(nombre);
   static Insertable<GastoFijo> custom({
     Expression<int>? id,
     Expression<String>? nombre,
     Expression<bool>? activo,
     Expression<int>? diaVencimiento,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (nombre != null) 'nombre': nombre,
       if (activo != null) 'activo': activo,
       if (diaVencimiento != null) 'dia_vencimiento': diaVencimiento,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
 
@@ -5602,12 +5762,18 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     Value<String>? nombre,
     Value<bool>? activo,
     Value<int?>? diaVencimiento,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
   }) {
     return GastosFijosCompanion(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       activo: activo ?? this.activo,
       diaVencimiento: diaVencimiento ?? this.diaVencimiento,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
 
@@ -5626,6 +5792,15 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
     if (diaVencimiento.present) {
       map['dia_vencimiento'] = Variable<int>(diaVencimiento.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
     return map;
   }
 
@@ -5635,7 +5810,10 @@ class GastosFijosCompanion extends UpdateCompanion<GastoFijo> {
           ..write('id: $id, ')
           ..write('nombre: $nombre, ')
           ..write('activo: $activo, ')
-          ..write('diaVencimiento: $diaVencimiento')
+          ..write('diaVencimiento: $diaVencimiento, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -5700,12 +5878,50 @@ class $GastosFijosMontosTable extends GastosFijosMontos
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     gastoFijoId,
     mesAnio,
     montoCentavos,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5752,6 +5968,30 @@ class $GastosFijosMontosTable extends GastosFijosMontos
     } else if (isInserting) {
       context.missing(_montoCentavosMeta);
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5781,6 +6021,18 @@ class $GastosFijosMontosTable extends GastosFijosMontos
         DriftSqlType.int,
         data['${effectivePrefix}monto_centavos'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
     );
   }
 
@@ -5797,11 +6049,19 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
   /// "YYYY-MM".
   final String mesAnio;
   final int montoCentavos;
+
+  /// Ver [GastosFijos.globalId]: el monto de cada mes también viaja (gana el más nuevo).
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
   const GastoFijoMonto({
     required this.id,
     required this.gastoFijoId,
     required this.mesAnio,
     required this.montoCentavos,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5810,6 +6070,15 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
     map['gasto_fijo_id'] = Variable<int>(gastoFijoId);
     map['mes_anio'] = Variable<String>(mesAnio);
     map['monto_centavos'] = Variable<int>(montoCentavos);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
     return map;
   }
 
@@ -5819,6 +6088,15 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
       gastoFijoId: Value(gastoFijoId),
       mesAnio: Value(mesAnio),
       montoCentavos: Value(montoCentavos),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
     );
   }
 
@@ -5832,6 +6110,11 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
       gastoFijoId: serializer.fromJson<int>(json['gastoFijoId']),
       mesAnio: serializer.fromJson<String>(json['mesAnio']),
       montoCentavos: serializer.fromJson<int>(json['montoCentavos']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
     );
   }
   @override
@@ -5842,6 +6125,9 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
       'gastoFijoId': serializer.toJson<int>(gastoFijoId),
       'mesAnio': serializer.toJson<String>(mesAnio),
       'montoCentavos': serializer.toJson<int>(montoCentavos),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
     };
   }
 
@@ -5850,11 +6136,21 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
     int? gastoFijoId,
     String? mesAnio,
     int? montoCentavos,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
   }) => GastoFijoMonto(
     id: id ?? this.id,
     gastoFijoId: gastoFijoId ?? this.gastoFijoId,
     mesAnio: mesAnio ?? this.mesAnio,
     montoCentavos: montoCentavos ?? this.montoCentavos,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
   );
   GastoFijoMonto copyWithCompanion(GastosFijosMontosCompanion data) {
     return GastoFijoMonto(
@@ -5866,6 +6162,13 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
       montoCentavos: data.montoCentavos.present
           ? data.montoCentavos.value
           : this.montoCentavos,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
     );
   }
 
@@ -5875,13 +6178,24 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
           ..write('id: $id, ')
           ..write('gastoFijoId: $gastoFijoId, ')
           ..write('mesAnio: $mesAnio, ')
-          ..write('montoCentavos: $montoCentavos')
+          ..write('montoCentavos: $montoCentavos, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, gastoFijoId, mesAnio, montoCentavos);
+  int get hashCode => Object.hash(
+    id,
+    gastoFijoId,
+    mesAnio,
+    montoCentavos,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5889,7 +6203,10 @@ class GastoFijoMonto extends DataClass implements Insertable<GastoFijoMonto> {
           other.id == this.id &&
           other.gastoFijoId == this.gastoFijoId &&
           other.mesAnio == this.mesAnio &&
-          other.montoCentavos == this.montoCentavos);
+          other.montoCentavos == this.montoCentavos &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
 }
 
 class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
@@ -5897,17 +6214,26 @@ class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
   final Value<int> gastoFijoId;
   final Value<String> mesAnio;
   final Value<int> montoCentavos;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
   const GastosFijosMontosCompanion({
     this.id = const Value.absent(),
     this.gastoFijoId = const Value.absent(),
     this.mesAnio = const Value.absent(),
     this.montoCentavos = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   });
   GastosFijosMontosCompanion.insert({
     this.id = const Value.absent(),
     required int gastoFijoId,
     required String mesAnio,
     required int montoCentavos,
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
   }) : gastoFijoId = Value(gastoFijoId),
        mesAnio = Value(mesAnio),
        montoCentavos = Value(montoCentavos);
@@ -5916,12 +6242,18 @@ class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
     Expression<int>? gastoFijoId,
     Expression<String>? mesAnio,
     Expression<int>? montoCentavos,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (gastoFijoId != null) 'gasto_fijo_id': gastoFijoId,
       if (mesAnio != null) 'mes_anio': mesAnio,
       if (montoCentavos != null) 'monto_centavos': montoCentavos,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
     });
   }
 
@@ -5930,12 +6262,18 @@ class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
     Value<int>? gastoFijoId,
     Value<String>? mesAnio,
     Value<int>? montoCentavos,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
   }) {
     return GastosFijosMontosCompanion(
       id: id ?? this.id,
       gastoFijoId: gastoFijoId ?? this.gastoFijoId,
       mesAnio: mesAnio ?? this.mesAnio,
       montoCentavos: montoCentavos ?? this.montoCentavos,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
     );
   }
 
@@ -5954,6 +6292,15 @@ class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
     if (montoCentavos.present) {
       map['monto_centavos'] = Variable<int>(montoCentavos.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
     return map;
   }
 
@@ -5963,7 +6310,10 @@ class GastosFijosMontosCompanion extends UpdateCompanion<GastoFijoMonto> {
           ..write('id: $id, ')
           ..write('gastoFijoId: $gastoFijoId, ')
           ..write('mesAnio: $mesAnio, ')
-          ..write('montoCentavos: $montoCentavos')
+          ..write('montoCentavos: $montoCentavos, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
           ..write(')'))
         .toString();
   }
@@ -31199,6 +31549,9 @@ typedef $$GastosFijosTableCreateCompanionBuilder =
       required String nombre,
       Value<bool> activo,
       Value<int?> diaVencimiento,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 typedef $$GastosFijosTableUpdateCompanionBuilder =
     GastosFijosCompanion Function({
@@ -31206,6 +31559,9 @@ typedef $$GastosFijosTableUpdateCompanionBuilder =
       Value<String> nombre,
       Value<bool> activo,
       Value<int?> diaVencimiento,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 
 final class $$GastosFijosTableReferences
@@ -31281,6 +31637,21 @@ class $$GastosFijosTableFilterComposer
 
   ColumnFilters<int> get diaVencimiento => $composableBuilder(
     column: $table.diaVencimiento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31363,6 +31734,21 @@ class $$GastosFijosTableOrderingComposer
     column: $table.diaVencimiento,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GastosFijosTableAnnotationComposer
@@ -31385,6 +31771,19 @@ class $$GastosFijosTableAnnotationComposer
 
   GeneratedColumn<int> get diaVencimiento => $composableBuilder(
     column: $table.diaVencimiento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => column,
   );
 
@@ -31476,11 +31875,17 @@ class $$GastosFijosTableTableManager
                 Value<String> nombre = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<int?> diaVencimiento = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => GastosFijosCompanion(
                 id: id,
                 nombre: nombre,
                 activo: activo,
                 diaVencimiento: diaVencimiento,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
               ({
@@ -31488,11 +31893,17 @@ class $$GastosFijosTableTableManager
                 required String nombre,
                 Value<bool> activo = const Value.absent(),
                 Value<int?> diaVencimiento = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => GastosFijosCompanion.insert(
                 id: id,
                 nombre: nombre,
                 activo: activo,
                 diaVencimiento: diaVencimiento,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -31586,6 +31997,9 @@ typedef $$GastosFijosMontosTableCreateCompanionBuilder =
       required int gastoFijoId,
       required String mesAnio,
       required int montoCentavos,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 typedef $$GastosFijosMontosTableUpdateCompanionBuilder =
     GastosFijosMontosCompanion Function({
@@ -31593,6 +32007,9 @@ typedef $$GastosFijosMontosTableUpdateCompanionBuilder =
       Value<int> gastoFijoId,
       Value<String> mesAnio,
       Value<int> montoCentavos,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
     });
 
 final class $$GastosFijosMontosTableReferences
@@ -31646,6 +32063,21 @@ class $$GastosFijosMontosTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$GastosFijosTableFilterComposer get gastoFijoId {
     final $$GastosFijosTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -31694,6 +32126,21 @@ class $$GastosFijosMontosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$GastosFijosTableOrderingComposer get gastoFijoId {
     final $$GastosFijosTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -31735,6 +32182,19 @@ class $$GastosFijosMontosTableAnnotationComposer
 
   GeneratedColumn<int> get montoCentavos => $composableBuilder(
     column: $table.montoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
     builder: (column) => column,
   );
 
@@ -31799,11 +32259,17 @@ class $$GastosFijosMontosTableTableManager
                 Value<int> gastoFijoId = const Value.absent(),
                 Value<String> mesAnio = const Value.absent(),
                 Value<int> montoCentavos = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => GastosFijosMontosCompanion(
                 id: id,
                 gastoFijoId: gastoFijoId,
                 mesAnio: mesAnio,
                 montoCentavos: montoCentavos,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           createCompanionCallback:
               ({
@@ -31811,11 +32277,17 @@ class $$GastosFijosMontosTableTableManager
                 required int gastoFijoId,
                 required String mesAnio,
                 required int montoCentavos,
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
               }) => GastosFijosMontosCompanion.insert(
                 id: id,
                 gastoFijoId: gastoFijoId,
                 mesAnio: mesAnio,
                 montoCentavos: montoCentavos,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -49,6 +49,9 @@ const Map<String, bool> tablasSincronizables = {
   'productos': true,
   'configuracion_negocio_tabla': true,
   'medios_de_pago': true,
+  // v63 (El dueño, 2026-10-09: independizar el celular): antes de `movimientos_de_caja`, que apunta a un fijo al pagarlo.
+  'gastos_fijos': true,
+  'gastos_fijos_montos': true,
   'sesiones_de_caja': true,
   'ventas': true,
   'lineas_de_venta': true,
@@ -70,7 +73,16 @@ const Map<String, bool> tablasSincronizables = {
 
 /// Las tablas que un equipo con una versión anterior a la v61 no conoce: si la PC todavía no se actualizó, le contesta error al
 /// celular por estas y la sincronización por wifi las saltea en vez de cortarse entera (`servicio_sincronizacion.dart`).
-const tablasSincronizablesV61 = {'movimientos_deuda', 'facturas_compra', 'productos_factura_compra', 'vinculos_factura', 'cuits_proveedor'};
+const tablasSincronizablesV61 = {
+  'movimientos_deuda',
+  'facturas_compra',
+  'productos_factura_compra',
+  'vinculos_factura',
+  'cuits_proveedor',
+  // Las de la v63: mismo trato con una PC anterior a la v63.
+  'gastos_fijos',
+  'gastos_fijos_montos',
+};
 
 bool _tablaValida(String tabla) {
   if (!tablasSincronizables.containsKey(tabla)) {
@@ -89,9 +101,10 @@ bool _tablaValida(String tabla) {
 /// ignora al aplicar), el `global_id` de la fila referenciada — así
 /// [_aplicarUnaFila] resuelve el id LOCAL correcto en la base que recibe,
 /// sea cual sea. No incluye columnas que referencian tablas NO
-/// sincronizadas (`medio_pago_id`, `caja_id`, `gasto_fijo_id`): esas son un
-/// catálogo fijo, sembrado igual en los dos dispositivos, así que su `id`
-/// ya coincide por convención sin necesidad de traducirlo.
+/// sincronizadas (`medio_pago_id`, `caja_id`): esas son un catálogo fijo,
+/// sembrado igual en los dos dispositivos, así que su `id` ya coincide por
+/// convención sin necesidad de traducirlo. `gasto_fijo_id` sí se traduce desde
+/// la v63: los fijos se cargan en cualquier equipo y su `id` no coincide.
 const Map<String, Map<String, String>> _referenciasCruzadas = {
   'productos': {'categoria_id': 'categorias', 'proveedor_id': 'proveedores'},
   'configuracion_negocio_tabla': {'producto_vuelto_id': 'productos'},
@@ -119,7 +132,9 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
     'venta_id': 'ventas',
     'proveedor_id': 'proveedores',
     'usuario_id': 'usuarios',
+    'gasto_fijo_id': 'gastos_fijos',
   },
+  'gastos_fijos_montos': {'gasto_fijo_id': 'gastos_fijos'},
   'arqueos_intermedios': {'sesion_caja_id': 'sesiones_de_caja', 'usuario_id': 'usuarios'},
   'historial_de_precios': {'producto_id': 'productos', 'usuario_id': 'usuarios'},
   'pendientes': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
@@ -145,6 +160,9 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
 const Map<String, List<String>> _clavesNaturales = {
   'vinculos_factura': ['proveedor_id', 'tipo_clave', 'clave'],
   'cuits_proveedor': ['proveedor_id', 'cuit'],
+  // El nombre es único: el mismo fijo creado en dos equipos (o sembrado por la plantilla del rubro) es uno solo.
+  'gastos_fijos': ['nombre'],
+  'gastos_fijos_montos': ['gasto_fijo_id', 'mes_anio'],
 };
 
 /// Nombre de la columna extra (no es una columna real de [tabla], se
@@ -554,7 +572,20 @@ Future<void> _aplicarUnaFila(
   if (!ordenDeLlegada) {
     final actualizadoLocal = (existente.data['actualizado_en'] as num?)?.toInt() ?? 0;
     final actualizadoEntrante = (fila['actualizado_en'] as num?)?.toInt() ?? 0;
-    if (actualizadoEntrante <= actualizadoLocal) return; // gana el más nuevo
+    if (actualizadoEntrante <= actualizadoLocal) {
+      // Empate exacto entre "la misma" fila creada en dos equipos (clave natural, mismo segundo): ninguna es más nueva y cada
+      // equipo se quedaba con su `global_id`, así que lo que apunta a ella desde el otro (el monto de un fijo, por ejemplo)
+      // no la encontraba nunca. Los dos se quedan con el `global_id` menor: el resultado es el mismo sin importar el orden.
+      final gidEntrante = fila['global_id'] as String?;
+      final gidLocal = existente.data['global_id'] as String?;
+      if (adoptarGlobalId && actualizadoEntrante == actualizadoLocal && gidEntrante != null && (gidLocal == null || gidEntrante.compareTo(gidLocal) < 0)) {
+        await db.customUpdate(
+          'UPDATE $tabla SET global_id = ? WHERE id = ?',
+          variables: [Variable.withString(gidEntrante), Variable.withInt((existente.data['id'] as num).toInt())],
+        );
+      }
+      return; // gana el más nuevo
+    }
   }
 
   final columnasExcluidas = {

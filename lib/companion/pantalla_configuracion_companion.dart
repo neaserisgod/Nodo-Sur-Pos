@@ -33,6 +33,7 @@ import 'debounce.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
+import 'pantalla_gastos_fijos.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
@@ -384,6 +385,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             ),
           const SizedBox(height: 2),
           BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+          _seccion('Gastos fijos'),
+          // Desde la v63 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
+          BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
           _seccion('Asistente IA'),
           _filaClaveIa(context),
           if (ClaveGemini.configurada) ...[

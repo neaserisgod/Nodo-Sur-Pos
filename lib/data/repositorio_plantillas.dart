@@ -51,7 +51,14 @@ Future<ResultadoPlantilla> aplicarPlantillaRubro(AppDatabase db, PlantillaRubro 
     var gastosFijosNuevos = 0;
     for (final nombre in plantilla.gastosFijos) {
       if (!fijosExistentes.add(nombre.toLowerCase())) continue;
-      await db.into(db.gastosFijos).insert(GastosFijosCompanion.insert(nombre: nombre));
+      await db.into(db.gastosFijos).insert(
+            GastosFijosCompanion.insert(
+              nombre: nombre,
+              globalId: Value(generarGlobalId()),
+              origenDispositivo: Value(idDispositivoActual),
+              actualizadoEn: Value(DateTime.now()),
+            ),
+          );
       gastosFijosNuevos++;
     }
 

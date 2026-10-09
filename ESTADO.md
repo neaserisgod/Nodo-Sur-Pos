@@ -133,8 +133,12 @@ Pendiente / ideas (sin hacer):
   - **Seña de encargues desde el celular**: al apartar (entra a la caja abierta, efectivo o Mercado Pago) y al cancelar (se devuelve),
     sin la PC y con la PC (rutas `/encargues` y `/encargues/<id>/cancelar` aceptan la seña). Cobrar o anotar deuda de un encargue
     con seña conectado a la PC sigue yendo por la PC (409).
-  Falta: el precio de las líneas de los encargues; **gastos fijos** (no se sincronizan: hace falta
-  migración con `global_id` para sumarlos a `tablasSincronizables`); fondo fijo y umbral de faltantes en el celular (son de cada
+  - **Gastos fijos sincronizados** (migración v63, `schemaVersion` **63**): `gastos_fijos` y `gastos_fijos_montos` con identidad
+    de sincronización; el mismo nombre en dos equipos es un solo fijo, y `movimientos_de_caja.gasto_fijo_id` se traduce por
+    `global_id`. En el celular: Configuración › Gastos fijos (alta, monto del mes, vencimiento). Arreglo del motor de sync: dos
+    filas "iguales" por clave natural creadas en el mismo segundo se quedan con el `global_id` menor (antes no convergían).
+    **Publicar la PC y el APK juntos** (un equipo sin v63 ignora esas filas).
+  Falta: el precio de las líneas de los encargues; fondo fijo y umbral de faltantes en el celular (son de cada
   equipo, `configuracion_tabla`); "+ Nuevo" proveedor/categoría en el formulario de producto; dejar de preguntar el modo al
   configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
   Probado con tests; **no probado en un celular real ni con la Point/cuenta real**.
