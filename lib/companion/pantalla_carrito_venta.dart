@@ -5,6 +5,10 @@
 // desktop"): buscar, calcular el total real (recargo de cigarrillos, redondeo,
 // descuento), cobrar en efectivo o por la terminal y asentar la venta.
 //
+// Sin pantalla de "Venta cobrada" (El dueño, 2026-10-09: "siento que hay una pantalla extra"): al cobrar se vuelve
+// directo a una venta nueva con el buscador listo, y arriba queda la tarjeta de la última venta (total, vuelto, imprimir)
+// hasta que se agrega el primer producto de la siguiente. El vuelto sigue a la vista lo que haga falta, sin un toque más.
+//
 // El mock (lote 1) ya trae lo que la app tiene: crédito en 1 pago, descuento
 // libre (monto o porcentaje), cantidad exacta con un toque, "Deshacer" al quitar
 // una línea, entregar un encargue, el caramelo cuando el vuelto es de $100 y
@@ -44,10 +48,10 @@ String _canalDe(_MedioVenta m) => switch (m) {
   _ => canalQr,
 };
 
-/// Los tres momentos de una venta en esta pantalla.
-enum _Paso { carrito, cobro, cobrado }
+/// Los dos momentos de una venta en esta pantalla: armar el carrito y elegir cómo paga.
+enum _Paso { carrito, cobro }
 
-/// Lo que muestra "Venta cobrada" una vez asentada la venta.
+/// Lo que muestra la tarjeta de la última venta, una vez asentada.
 typedef _ResumenCobro = ({int ventaId, int totalCentavos, _MedioVenta medio, int productos, int vueltoCentavos});
 
 class PantallaCarritoVenta extends StatefulWidget {
@@ -99,7 +103,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   final _mixtoCtrl = TextEditingController();
   String _canalMixto = canalQr;
 
-  /// Lo que se cobró en efectivo en la última venta mixta, para mostrarlo en "Venta cobrada".
+  /// Lo que se cobró en efectivo en la última venta mixta, para mostrarlo en la tarjeta de la última venta.
   int? _efectivoMixtoCobrado;
 
   /// Descuento libre (mock 08b): monto en pesos o porcentaje. `_valorDescuento` son centavos si es monto y puntos básicos si
@@ -112,7 +116,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   String? _encargueNombre;
   List<EncargueCompanion> _encargues = [];
 
-  /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra "Venta cobrada".
+  /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra la tarjeta de la
+  /// última venta.
   bool _cobradoAMano = false;
   String? _encargueEntregado;
 
@@ -237,6 +242,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
     final nueva = resultado.linea!;
     _claveCobroActual = null;
+    _cerrarUltimaVenta();
     setState(() {
       final i = widget.carrito.indexWhere((l) => l.productoId == nueva.productoId);
       if (i != -1) {
@@ -799,8 +805,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     if (!mounted) return;
     setState(() {
       _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
-      _paso = _Paso.cobrado;
+      _paso = _Paso.carrito;
+      _resultado = null;
+      _error = null;
     });
+    _ocultarBarra(false);
+    // Seguir vendiendo es lo natural: el buscador queda listo, como en la PC.
+    _busquedaFocus.requestFocus();
     // El resumen del día (Inicio, Caja) cambió.
     AppNs.of(context).refrescar();
   }
@@ -819,21 +830,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  void _nuevaVenta() {
+  /// Saca la tarjeta de la última venta (con la ✕, o sola al agregar el primer producto de la siguiente).
+  void _cerrarUltimaVenta() {
+    if (_cobrado == null) return;
     setState(() {
-      _paso = _Paso.carrito;
       _cobrado = null;
       _cobradoAMano = false;
       _encargueEntregado = null;
-      _resultado = null;
-      _error = null;
+      _efectivoMixtoCobrado = null;
     });
-    _ocultarBarra(false);
-  }
-
-  void _volverAlInicio() {
-    _nuevaVenta();
-    AppNs.of(context).irAPestania(PestaniaNs.inicio);
   }
 
   /// REGLAS-NEGOCIO §3: con $100 de vuelto exactos se agrega el producto de vuelto en vez de dar el cambio.
@@ -872,12 +877,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final ns = context.ns;
     final abierta = app.cajaAbierta;
     return PopScope(
-      // En "cobrar" y en "hecho" volver es volver al carrito, no salir de la venta.
+      // En "cobrar" volver es volver al carrito, no salir de la venta.
       canPop: _paso == _Paso.carrito,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_paso == _Paso.cobro) _volverAlCarrito();
-        if (_paso == _Paso.cobrado) _nuevaVenta();
       },
       child: ColoredBox(
         color: ns.paper,
@@ -889,7 +893,6 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 : switch (_paso) {
                     _Paso.carrito => _vistaCarrito(context),
                     _Paso.cobro => _vistaCobro(context),
-                    _Paso.cobrado => _vistaCobrado(context),
                   },
           ),
         ),
@@ -979,6 +982,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
         Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
         if (_encargues.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -1397,62 +1401,47 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   // ───────────────────────── Venta cobrada ─────────────────────────
 
-  Widget _vistaCobrado(BuildContext context) {
+  /// La venta recién cobrada, arriba de la venta nueva: total, cómo pagó, el vuelto bien grande si fue en efectivo, e
+  /// imprimir el ticket.
+  Widget _ultimaVenta(BuildContext context) {
     final ns = context.ns;
     final c = _cobrado!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final detalle = [
+      _nombres[c.medio]!,
+      c.productos == 1 ? '1 producto' : '${c.productos} productos',
+      if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
+        'Efectivo ${plataNs(_efectivoMixtoCobrado!)} + MP ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
+      if (_cobradoAMano) 'cobrado a mano, sin la terminal',
+      if (_encargueEntregado != null) 'encargue de $_encargueEntregado entregado',
+    ].join(' · ');
+    return EntradaNs(
+      duracion: const Duration(milliseconds: 180),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 14, 8, 14),
+        decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(28)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                CirculoTildeNs(tamanio: 76, fondo: ns.prim, color: TokensNs.blanco, tamanioTilde: 36),
-                const SizedBox(height: 14),
-                Text('Venta cobrada', style: tituloNs(50, track: -0.058, color: ns.ink)),
-                const SizedBox(height: 14),
-                Text(plataNs(c.totalCentavos), style: tituloNs(56, track: -0.06, color: ns.ink)),
-                const SizedBox(height: 14),
-                Text('${_nombres[c.medio]} · ${c.productos == 1 ? '1 producto' : '${c.productos} productos'}', style: estiloNs(16, color: ns.mute)),
-                const SizedBox(height: 14),
-                if (_encargueEntregado != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(999)),
-                    child: Text('Encargue de $_encargueEntregado entregado', style: estiloNs(14, peso: FontWeight.w600, color: ns.i)),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                if (c.medio == _MedioVenta.efectivo)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-                    decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(28)),
-                    child: Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
-                  )
-                else ...[
-                  if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'Efectivo ${plataNs(_efectivoMixtoCobrado!)} · Mercado Pago ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
-                        style: estiloNs(18, peso: FontWeight.w600, color: ns.ink, tabular: true),
-                      ),
-                    ),
-                  Text(_cobradoAMano ? 'Cobrado a mano: queda registrado sin pasar por la terminal' : 'Cobro registrado en la caja', style: estiloNs(16, altura: 1.4, color: ns.mute)),
-                ],
+                CirculoTildeNs(tamanio: 32, fondo: ns.g, color: TokensNs.blanco, tamanioTilde: 16),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Cobrado ${plataNs(c.totalCentavos)}', style: estiloNs(18, peso: FontWeight.w600, color: ns.g, tabular: true))),
+                BotonCircularNs(icono: IconoNs.cerrar, onTap: _cerrarUltimaVenta, etiqueta: 'Cerrar', fondo: Colors.transparent, tamanioIcono: 18),
               ],
             ),
-          ),
-          BotonNs.secundario(context, 'Imprimir ticket', () => _imprimirTicket(c.ventaId), alto: 56),
-          const SizedBox(height: 8),
-          BotonNs.primario(context, 'Nueva venta', _nuevaVenta, alto: 64, tamanio: 18),
-          const SizedBox(height: 8),
-          BotonNs.texto(context, 'Volver al inicio', _volverAlInicio),
-        ],
+            Padding(padding: const EdgeInsets.only(right: 10, top: 2), child: Text(detalle, style: estiloNs(14, altura: 1.35, color: ns.g))),
+            if (c.medio == _MedioVenta.efectivo) ...[
+              const SizedBox(height: 6),
+              Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
+            ],
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: BotonNs(texto: 'Imprimir ticket', onTap: () => _imprimirTicket(c.ventaId), alto: 44, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18, icono: IconoNs.imprimir),
+            ),
+          ],
+        ),
       ),
     );
   }

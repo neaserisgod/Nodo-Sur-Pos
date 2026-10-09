@@ -520,6 +520,7 @@ void main() {
         await t.tap(find.textContaining('Confirmar cobro'));
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 600)));
         await t.pump(const Duration(milliseconds: 1500));
+        await t.pump(const Duration(milliseconds: 300));
       },
     );
   });
@@ -534,6 +535,7 @@ void main() {
         await t.tap(find.text('Cobrar a mano (sin terminal)'));
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 600)));
         await t.pump(const Duration(milliseconds: 1500));
+        await t.pump(const Duration(milliseconds: 300));
       },
     );
   });

@@ -119,6 +119,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Vender en el celular sin la pantalla "Venta cobrada"** (El dueño: "siento que hay una pantalla extra"): al cobrar se vuelve
+  directo a una venta nueva con el buscador listo, y arriba queda una tarjeta con el total, el vuelto bien grande e "Imprimir
+  ticket", que se va sola al agregar el primer producto de la siguiente (o con la ✕). Un toque menos por venta. Probado con tests;
+  **no probado en un celular real**.
 - **Vender en el celular, con el teclado** (El dueño: "arriba del teclado hay una franja muy grande que tapa la lista"; "tiene
   que escribir y seleccionar"): con el teclado abierto se esconden la barra de pestañas, su espacio y el título, y los resultados
   ocupan todo el lugar hasta el teclado (antes 4 filas flotando sobre el total). El primero va marcado y **Enter lo agrega** sin
