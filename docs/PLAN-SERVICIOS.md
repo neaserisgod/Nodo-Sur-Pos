@@ -33,6 +33,13 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 13. **Privacidad de la IA: la elige cada negocio.** Nodo Sur ofrece la opción; por defecto, plan gratis de Gemini (puede
     usar lo que recibe). Ver la etapa 5.
 14. **El servidor es Cloudflare con plan gratis**, no un servidor dedicado: el bot tiene que caber en eso (ver la etapa 5).
+15. **Profesionales = los usuarios de la app.** Uno sin celular figura igual, solo con su nombre.
+16. **Comisión por profesional: para después.**
+17. **Seña que entra sin caja abierta** (link de MP fuera de horario): queda pendiente y entra como ingreso por Mercado Pago
+    en la próxima caja que se abra. El turno queda confirmado al instante.
+18. **Costo de la API oficial de Meta: incluido en el abono** del bot ($35.000/mes). El cliente no ve una factura aparte.
+19. **Lo que el sitio promete del bot se construye** (no se saca de la página), después de los turnos y en este orden:
+    catálogo y pedidos con stock → pedir el cierre de caja por WhatsApp y compararlo con el POS → cotizador de usados.
 
 ## Lo que encontró la revisión del código (cambia el plan)
 
@@ -214,25 +221,19 @@ sin internet el bot anda igual que hoy.
 
 ### Después (no ahora)
 - Servicios en "PC y celular": rutas en el servidor de la PC y pantallas en la PC.
-- Comisión por profesional.
+- Comisión por profesional (decisión 16).
+- Lo que el sitio promete del bot (decisión 19), una etapa por vez y en este orden:
+  1. **Catálogo y pedidos, con stock**: el bot muestra productos con precio y stock de Nodo Sur y toma el pedido, que entra
+     a la app como un encargue (`pendientes`) para cobrarlo en el local.
+  2. **Pedir el cierre de caja por WhatsApp**: el bot le pide el conteo al encargado y el POS lo compara con lo vendido.
+  3. **Cotizador de usados**: precio orientativo de un equipo usado.
+  También **correr en la compu del sistema** (la PC con Windows), además del celular: `botdemo` ya anda en PC con el
+  adaptador Baileys, falta instalarlo junto con Nodo Sur.
 
 ## Preguntas antes de programar
 
-1. ~~¿Arrancamos solo con el celular, sin PC?~~ → **decidido (2026-10-09): sí, solo celular.**
-2. **Profesionales = los usuarios de la app.** Recomendado. La contra: un profesional sin celular igual figura como usuario
-   (sin cuenta, solo con su nombre).
-3. ~~Bot: el servidor reserva los horarios~~ → **decidido** (decisión 9): reserva el `SyncHub`.
-4. **Costo de WhatsApp**: con Baileys no hay (decisión 8). Vuelve cuando se pase a la API oficial: Meta cobra los mensajes
-   que inicia el negocio (recordatorios). El bot ya se vende a $35.000/mes + $70.000 de alta (`NodoSurPage`,
-   `plans.js`): ¿el costo de Meta entra en eso o se cobra aparte?
-5. **Comisión por profesional**: ¿queda para después?
-6. ~~Turno cargado en la app sin internet~~ → **decidido**: se guarda igual y, si al sincronizar choca con uno del bot, le
-   avisa a la dueña en la campanita para que mueva uno.
-
-8. **Lo que promete el sitio y `botdemo` no hace** (catálogo y pedidos, stock, cotizador de usados, pedir el cierre por
-   WhatsApp, correr en la PC): ¿se construye, se saca de la página hasta que exista, o queda como está?
-9. **Seña que entra fuera de horario** (link de MP a las 23 hs, sin caja abierta): ¿queda pendiente y entra como ingreso en
-   la próxima caja que se abra, o se registra recién cuando la clienta viene?
+Todas respondidas el 2026-10-09: ver las decisiones 1 a 19 arriba. La que decía "reserva el `SyncHub`" quedó corregida en la
+etapa 5: reservar es trabajo nuevo en el servidor, por sucursal.
 
 ## Qué no se probó
 Solo existe el mock (Chromium de escritorio y ancho de celular). No hay código en Nodo Sur. De `botdemo` corren sus tests
