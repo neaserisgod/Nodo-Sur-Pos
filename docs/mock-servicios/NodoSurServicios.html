@@ -216,7 +216,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <li><span class="tag t-ad">opcional</span><span><b>Mano de obra</b> en el costo: cada profesional pone el valor de su hora y decide si se suma.</span></li>
         <li><span class="tag t-ad">opcional</span><span><b>Ajustar lo que se usó</b> al cobrar (uñas largas, barba tupida): lo decide quien atiende, solo para esa venta.</span></li>
         <li><span class="tag t-nu">nuevo</span><span><b>Turnos</b>: agenda por día, horarios libres, estados (confirmado, llegó, no vino, cobrado) y origen (WhatsApp o a mano).</span></li>
-        <li><span class="tag t-nu">nuevo</span><span><b>Bot de WhatsApp</b>: horarios, servicios que ofrece, recordatorio y seña opcional, con vista previa de la charla.</span></li>
+        <li><span class="tag t-nu">nuevo</span><span><b>Bot de WhatsApp</b>: horarios, servicios que ofrece y recordatorio, con vista previa de la charla.</span></li>
+        <li><span class="tag t-ad">configurable</span><span><b>Seña</b>: cada negocio elige si la pide (nunca, en algunos servicios o en todos), cuánto (% o monto fijo) y qué pasa si el cliente no viene. Por defecto: algunos servicios, 30 %, se pierde.</span></li>
       </ul>
     </div>
     <div class="panel">
@@ -231,9 +232,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="panel">
       <div class="rot">Queda por decidir</div>
       <ul class="lista">
-        <li><span>1.</span><span>¿La <b>seña</b> del turno por WhatsApp es obligatoria, opcional por servicio, o no va? El mock la deja apagada.</span></li>
-        <li><span>2.</span><span>Si el cliente <b>no viene</b>, ¿la seña se pierde o se devuelve?</span></li>
-        <li><span>3.</span><span>La <b>comisión</b> por profesional, ¿entra ahora o después de los turnos? El mock solo anota quién atendió.</span></li>
+        <li><span>1.</span><span>La <b>comisión</b> por profesional, ¿entra ahora o después de los turnos? El mock solo anota quién atendió.</span></li>
       </ul>
     </div>
   </section>
@@ -267,12 +266,12 @@ const RUBROS = {
     ],
     servicios: [
       {id:'s1', n:'Semipermanente manos', cat:'Manos', min:60, precio:18000, mo:false, receta:[['semi',.6],['base',.5],['top',.4],['prim',.2],['lima',1],['algo',4],['alco',8],['guan',2]]},
-      {id:'s2', n:'Esculpidas en polygel', cat:'Manos', min:120, precio:32000, mo:true, receta:[['poly',4],['tips',10],['base',.4],['top',.5],['semi',.6],['prim',.3],['lima',2],['alco',10],['guan',2]]},
+      {id:'s2', n:'Esculpidas en polygel', cat:'Manos', min:120, precio:32000, mo:true, pideSena:true, receta:[['poly',4],['tips',10],['base',.4],['top',.5],['semi',.6],['prim',.3],['lima',2],['alco',10],['guan',2]]},
       {id:'s3', n:'Kapping rubber', cat:'Manos', min:75, precio:22000, mo:false, receta:[['base',1.2],['semi',.6],['prim',.2],['lima',1],['alco',8],['guan',2]]},
       {id:'s4', n:'Retiro', cat:'Manos', min:20, precio:6000, mo:false, receta:[['acet',30],['algo',10],['lima',1],['guan',2]]},
       {id:'s5', n:'Semipermanente pies', cat:'Pies', min:60, precio:20000, mo:false, receta:[['semi',.4],['base',.4],['top',.3],['lima',1],['algo',4],['alco',8],['guan',2]]},
       {id:'s6', n:'Perfilado + tinte de cejas', cat:'Cejas y pestañas', min:30, precio:9000, mo:false, receta:[['tint',.5],['algo',2],['guan',2]]},
-      {id:'s7', n:'Lifting de pestañas', cat:'Cejas y pestañas', min:60, precio:25000, mo:false, receta:[['lift',1],['algo',2],['guan',2]]},
+      {id:'s7', n:'Lifting de pestañas', cat:'Cejas y pestañas', min:60, precio:25000, mo:false, pideSena:true, receta:[['lift',1],['algo',2],['guan',2]]},
     ],
     productos: [{id:'p1', n:'Aceite de cutículas 10 ml', precio:5500, stock:9}, {id:'p2', n:'Lima de vidrio', precio:4800, stock:4}],
     turnos: [
@@ -307,10 +306,10 @@ const RUBROS = {
     servicios: [
       {id:'b1', n:'Corte clásico', cat:'Cortes', min:30, precio:12000, mo:true, receta:[['cuel',1],['talc',3],['pom',3],['alco',5]]},
       {id:'b2', n:'Fade / degradé', cat:'Cortes', min:45, precio:14000, mo:true, receta:[['cuel',1],['talc',3],['pom',3],['hoja',1],['alco',5]]},
-      {id:'b3', n:'Corte + barba', cat:'Barba', min:60, precio:17000, mo:true, receta:[['cuel',1],['talc',4],['pom',3],['hoja',1],['espu',12],['afte',5],['acei',1],['toal',1],['alco',6]]},
+      {id:'b3', n:'Corte + barba', cat:'Barba', min:60, precio:17000, mo:true, pideSena:true, receta:[['cuel',1],['talc',4],['pom',3],['hoja',1],['espu',12],['afte',5],['acei',1],['toal',1],['alco',6]]},
       {id:'b4', n:'Perfilado de barba', cat:'Barba', min:30, precio:7000, mo:false, receta:[['hoja',1],['espu',10],['afte',5],['acei',1],['toal',1]]},
       {id:'b5', n:'Afeitado con navaja', cat:'Barba', min:30, precio:9000, mo:false, receta:[['hoja',1],['espu',15],['afte',6],['toal',2]]},
-      {id:'b6', n:'Platinado', cat:'Color', min:120, precio:38000, mo:true, receta:[['deco',60],['oxid',120],['sham',20],['toal',2],['cuel',1]]},
+      {id:'b6', n:'Platinado', cat:'Color', min:120, precio:38000, mo:true, pideSena:true, receta:[['deco',60],['oxid',120],['sham',20],['toal',2],['cuel',1]]},
     ],
     productos: [{id:'p1', n:'Pomada mate 100 g', precio:11000, stock:6}, {id:'p2', n:'Aceite de barba 30 ml', precio:9500, stock:3}],
     turnos: [
@@ -365,6 +364,11 @@ const costoManoObra = (min, hora) => Math.ceil(hora * min / 60);
 // Ganancia sobre el precio, como la "ganancia de referencia" del resto de la app.
 const margen = (precio, costo) => precio > 0 ? (precio - costo) / precio : 0;
 const redondeoEf = n => Math.ceil(n / 100) * 100;
+// Seña que pide el bot para un servicio, según lo que configuró el negocio. 0 = no pide.
+const senaDe = (s, cfg) => {
+  if (cfg.senaModo === 'no' || (cfg.senaModo === 'algunos' && !s.pideSena)) return 0;
+  return cfg.senaTipo === '%' ? Math.ceil(s.precio * cfg.senaValor / 100 / 500) * 500 : cfg.senaValor;
+};
 const alcanza = (receta, R) => receta.length ? Math.floor(Math.min(...receta.map(([id, c]) => R.insumos.find(i => i.id === id).stock / c))) : 0;
 
 // ---------------- estado ----------------
@@ -374,7 +378,9 @@ const AHORA = 12*60 + 10; // 12:10, para la línea de "ahora" en la agenda
 const st = {
   tab:'agenda', sub:null, dia:3, prof:'todos', servSeg:0, cat:'Todos',
   carrito:[], turnoCobrando:null, atendio:null, medio:null, editor:null, hoja:null, ajusteIdx:null, ultimo:null, ventas:[], toast:null,
-  cfg:{varios:true, manoObra:true, ajustar:true, bot:true, recordatorio:true, sena:false},
+  cfg:{varios:true, manoObra:true, ajustar:true, bot:true, recordatorio:true,
+    // Seña: la configura cada negocio. Por defecto (el dueño, 2026-10-09): solo en los servicios marcados, 30 %, se pierde si no viene.
+    senaModo:'algunos', senaTipo:'%', senaValor:30, noVino:'pierde'},
 };
 const R = () => datos[rubro];
 const prof = id => R().profs.find(p => p.id === id);
@@ -534,6 +540,9 @@ function vEditor(r) {
   ${vReceta(e.receta, r, 'q')}
   ${st.cfg.manoObra ? `<button class="sw ${e.mo?'on':''}" style="margin-top:12px" data-mo>
     <span class="esp"><span class="t" style="display:block">Sumar mano de obra</span><span class="st" style="display:block">${pr.n} cobra ${plata(pr.hora)} la hora · ${e.min} min = ${plata(costoManoObra(e.min, pr.hora))}</span></span><span class="pista"><i></i></span></button>` : ''}
+  ${st.cfg.senaModo === 'algunos' ? `<button class="sw ${e.pideSena?'on':''}" style="margin-top:8px" data-pide-sena>
+    <span class="esp"><span class="t" style="display:block">Pedir seña por WhatsApp</span><span class="st" style="display:block">${e.pideSena ? `${plata(senaDe(e, st.cfg))} al reservar` : 'Se reserva sin pagar nada'} · se cambia en Turnos por WhatsApp</span></span><span class="pista"><i></i></span></button>`
+    : st.cfg.senaModo === 'todos' ? `<div class="info" style="margin-top:12px">${ic('chat',20)}<span>Por WhatsApp se reserva con ${plata(senaDe(e, st.cfg))} de seña (configurado para todos los servicios).</span></div>` : ''}
   <div class="hero" style="margin-top:18px">
     <div class="l">Le cuesta a tu negocio</div>
     <div class="n tab">${plata(co)}</div>
@@ -678,7 +687,10 @@ function vMas(r) {
 
 // ---------------- Turnos por WhatsApp ----------------
 function vBot(r) {
-  const ofrece = r.servicios.filter(s => alcanza(s.receta, r) >= 1), [s1, s2] = ofrece;
+  const ofrece = r.servicios.filter(s => alcanza(s.receta, r) >= 1);
+  const s1 = ofrece.find(s => senaDe(s, st.cfg)) || ofrece[0], s2 = ofrece.find(s => s !== s1);
+  const sena1 = senaDe(s1, st.cfg);
+  const segS = (k, ops) => `<div class="seg">${ops.map(([v,t]) => `<button class="${String(st.cfg[k])===v?'on':''}" data-sena-set="${k}:${v}">${t}</button>`).join('')}</div>`;
   return `<div class="cab"><button class="circ ch" data-tab="mas" aria-label="Volver">${ic('volver')}</button><div class="h2">Turnos por WhatsApp</div></div>
   ${swNs('bot','Tomar turnos solo','El bot ofrece horarios libres y los anota en la agenda')}
   <div class="sec">Así lo ve tu cliente</div>
@@ -688,7 +700,7 @@ function vBot(r) {
     <div class="burb cli">${s1.n}</div>
     <div class="burb bot">${s1.n} · ${s1.min} min · ${plata(s1.precio)}. Mañana tengo:<div class="ops"><span>10:00</span><span>12:30</span><span>16:00</span></div></div>
     <div class="burb cli">12:30</div>
-    <div class="burb bot">Listo, te anoté el viernes 10 a las 12:30${st.cfg.varios ? ' con ' + r.profs[0].n : ''}.${st.cfg.recordatorio ? ' Te aviso el día antes.' : ''}${st.cfg.sena ? ` Para confirmarlo, dejá ${plata(Math.round(s1.precio*.3/500)*500)} de seña en este link de Mercado Pago.` : ''}</div>
+    <div class="burb bot">Listo, te anoté el viernes 10 a las 12:30${st.cfg.varios ? ' con ' + r.profs[0].n : ''}.${st.cfg.recordatorio ? ' Te aviso el día antes.' : ''}${sena1 ? ` Para confirmarlo, dejá ${plata(sena1)} de seña en este link de Mercado Pago.${st.cfg.noVino === 'pierde' ? ' Si no venís, la seña no se devuelve.' : ''}` : ''}</div>
   </div>
   <div class="sec">Qué ofrece</div>
   <div class="agr">
@@ -698,7 +710,16 @@ function vBot(r) {
   </div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
     ${swNs('recordatorio','Recordatorio el día antes','Si no confirma, el turno queda "Sin confirmar"')}
-    ${swNs('sena','Pedir seña','Link de Mercado Pago del negocio; entra como la seña de encargues')}
+  </div>
+  <div class="sec">Seña</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${segS('senaModo', [['no','No pedir'],['algunos','Algunos'],['todos','Todos']])}
+    ${st.cfg.senaModo !== 'no' ? `
+    ${segS('senaTipo', [['%','% del precio'],['$','Monto fijo']])}
+    <label class="campo"><small>${st.cfg.senaTipo === '%' ? 'Porcentaje del precio' : 'Monto fijo'}</small><input id="senaValor" inputmode="numeric" class="tab" value="${st.cfg.senaTipo === '%' ? st.cfg.senaValor + ' %' : '$ ' + Number(st.cfg.senaValor).toLocaleString('es-AR')}"></label>
+    <div class="rot" style="margin:6px 4px 0">Si el cliente no viene</div>
+    ${segS('noVino', [['pierde','La seña se pierde'],['devuelve','Se devuelve']])}
+    <div class="info">${ic('billetera',20)}<span>${st.cfg.senaModo === 'algunos' ? `La piden ${r.servicios.filter(s=>s.pideSena).length} servicios (se marca en cada uno). ` : ''}Se paga por link de Mercado Pago del negocio y entra como la seña de encargues.</span></div>` : ''}
   </div>
   <div class="info" style="margin-top:14px">${ic('chat',20)}<span>Número conectado: +54 9 294 412-3456. Si el bot no entiende algo, te avisa en la campanita.</span></div>`;
 }
@@ -727,7 +748,7 @@ function vHoja(r) {
       ${t.estado === 'pendiente' ? `<button class="btn p" data-estado="${t.id}:confirmado">Confirmar</button>` : ''}
       <div class="grid2">${t.estado !== 'llego' ? `<button class="btn s" data-estado="${t.id}:llego">Llegó</button>` : '<span></span>'}<button class="btn s" data-estado="${t.id}:novino">No vino</button></div>
       <div class="grid2"><button class="btn o">Mover</button><button class="btn r" data-estado="${t.id}:cancelar">Cancelar</button></div>
-      ${t.origen === 'wa' ? '<p style="color:var(--mute);font-size:14px;margin:0 4px">Si lo movés o lo cancelás, el bot le avisa al cliente.</p>' : ''}`}
+      ${t.origen === 'wa' ? `<p style="color:var(--mute);font-size:14px;margin:0 4px">Si lo movés o lo cancelás, el bot le avisa al cliente.${t.sena ? (st.cfg.noVino === 'pierde' ? ' Si no viene, la seña queda para el negocio.' : ' Si no viene, la seña se devuelve.') : ''}</p>` : ''}`}
     </div>`;
   } else if (h === 'nuevoTurno') {
     c = `<h3>Nuevo turno</h3><p class="sub" style="margin:0 0 14px">Para quien llama o viene al local. Los de WhatsApp se anotan solos.</p>
@@ -792,7 +813,8 @@ tel.addEventListener('click', e => {
   else if (d.estado) {
     const [id, es] = d.estado.split(':'); const tu = r.turnos.find(x => x.id === id);
     if (es === 'cancelar') { r.turnos.splice(r.turnos.indexOf(tu), 1); st.hoja = null; toast(tu.origen === 'wa' ? `Cancelado. El bot le avisó a ${tu.cli}.` : 'Turno cancelado'); }
-    else { tu.estado = es; st.hoja = null; toast(`${tu.cli}: ${ESTADOS[es][0].toLowerCase()}`); }
+    else { tu.estado = es; st.hoja = null;
+      toast(es === 'novino' && tu.sena ? (st.cfg.noVino === 'pierde' ? `${tu.cli} no vino. La seña de ${plata(tu.sena)} queda para el negocio.` : `${tu.cli} no vino. Devolvé la seña de ${plata(tu.sena)}.`) : `${tu.cli}: ${ESTADOS[es][0].toLowerCase()}`); }
   }
   else if (d.cobrarTurno) {
     const tu = r.turnos.find(x => x.id === d.cobrarTurno);
@@ -808,6 +830,8 @@ tel.addEventListener('click', e => {
   else if (d.editar) { st.editor = JSON.parse(JSON.stringify(serv(d.editar))); ir('servicios','editor'); }
   else if (d.cerrarEditor !== undefined) ir('servicios');
   else if (d.mo !== undefined) { st.editor.mo = !st.editor.mo; render(false); }
+  else if (d.pideSena !== undefined) { st.editor.pideSena = !st.editor.pideSena; render(false); }
+  else if (d.senaSet) { const [k,v] = d.senaSet.split(':'); st.cfg[k] = v; if (k === 'senaTipo') st.cfg.senaValor = v === '%' ? 30 : 5000; render(false); }
   else if (d.q || d.a) {
     const lista = d.q ? st.editor.receta : st.carrito[st.ajusteIdx].receta;
     const [k,p] = (d.q || d.a).split(':'); const it = lista[+k]; it[1] = Math.max(0, Math.round((it[1] + +p)*100)/100);
@@ -855,6 +879,7 @@ tel.addEventListener('input', e => {
 tel.addEventListener('change', e => {
   const el = e.target;
   if (['edPrecio','edNombre','edMin'].includes(el.id) || el.dataset.qi || el.dataset.ai) render(false);
+  if (el.id === 'senaValor') { st.cfg.senaValor = +el.value.replace(/\D/g,'') || 0; render(false); }
   if (el.id === 'cpIns') { st.compraId = el.value; render(false); calcCompra(); }
 });
 
