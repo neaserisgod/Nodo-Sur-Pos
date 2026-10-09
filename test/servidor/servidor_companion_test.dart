@@ -1647,6 +1647,97 @@ void main() {
         expect(orden.ventaId, ventaId);
       });
 
+      test('mixto: la terminal cobra solo lo que no se pagó en efectivo y la venta queda con los dos pagos', () async {
+        await configurarMpAccessToken(db, 'TOKEN123');
+        await configurarMpTerminalCobroId(db, 'N950NCC503383252');
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        final cuerpos = <String>[];
+        final mock = MockClient((request) async {
+          if (request.method == 'POST' && request.url.path.contains('/orders')) {
+            cuerpos.add(request.body);
+            return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'created'}), 201);
+          }
+          return http.Response(jsonEncode({'id': 'orden-mp-1', 'status': 'processed'}), 200);
+        });
+        final puertoMock = await servidorConMock(mock);
+        Uri urlMock(String path) => Uri.parse('http://127.0.0.1:$puertoMock$path');
+
+        // $1.120 redondea a $1.200 (hay efectivo de por medio): $500 en efectivo, $700 a la terminal.
+        final iniciado = await http.post(
+          urlMock('/ventas/mixto/posnet/iniciar'),
+          headers: headers(),
+          body: jsonEncode({
+            'lineas': [lineaCoca(cocaId)],
+            'canal': 'qr',
+            'sesionCajaId': sesionId,
+            'montoEfectivoMixtoCentavos': 50000,
+          }),
+        );
+        expect(iniciado.statusCode, 201);
+        expect(cuerpos.single, contains('"700.00"'));
+        final datos = jsonDecode(iniciado.body) as Map<String, dynamic>;
+
+        final confirmado = await http.post(
+          urlMock('/ventas/mixto/posnet/confirmar'),
+          headers: headers(),
+          body: jsonEncode({
+            'lineas': [lineaCoca(cocaId)],
+            'canal': 'qr',
+            'sesionCajaId': sesionId,
+            'usuarioId': usuarioId,
+            'ordenPendienteId': datos['ordenPendienteId'],
+            'montoEfectivoMixtoCentavos': 50000,
+          }),
+        );
+        expect(confirmado.statusCode, 201);
+        expect((jsonDecode(confirmado.body) as Map)['totalCentavos'], 120000);
+        final pagos = await db.select(db.pagos).get();
+        expect(pagos.map((p) => p.montoCentavos).toList()..sort(), [50000, 70000]);
+      });
+
+      test('mixto a mano: graba los dos pagos; un efectivo que cubre todo se rechaza sin grabar', () async {
+        final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
+        final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+        Future<http.Response> cobrar(int efectivo) => http.post(
+          url('/ventas/mixto/cobrar'),
+          headers: headers(),
+          body: jsonEncode({
+            'lineas': [lineaCoca(cocaId)],
+            'canal': 'debit_card',
+            'sesionCajaId': sesionId,
+            'usuarioId': usuarioId,
+            'montoEfectivoMixtoCentavos': efectivo,
+          }),
+        );
+
+        final todoEnEfectivo = await cobrar(120000);
+        expect(todoEnEfectivo.statusCode, 400);
+        expect(await db.select(db.ventas).get(), isEmpty);
+
+        final bien = await cobrar(20000);
+        expect(bien.statusCode, 201);
+        final pagos = await db.select(db.pagos).get();
+        expect(pagos.map((p) => p.montoCentavos).toList()..sort(), [20000, 100000]);
+        expect(pagos.firstWhere((p) => p.montoCentavos == 100000).canal, 'debit_card');
+      });
+
+      test('el celular con una PC sin actualizar: el mixto no llega a la terminal y avisa que hay que actualizar la PC', () async {
+        // Una PC vieja no tiene las rutas del mixto: shelf contesta 404 a cualquier ruta que no conoce.
+        final pcVieja = await HttpServer.bind('127.0.0.1', 0);
+        addTearDown(pcVieja.close);
+        pcVieja.listen((r) {
+          r.response.statusCode = 404;
+          r.response.write('Route not found');
+          r.response.close();
+        });
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: pcVieja.port, token: token));
+        await expectLater(
+          () => cliente.iniciarCobroPosnet(lineas: const [], canal: 'qr', sesionCajaId: 1, montoEfectivoMixtoCentavos: 100),
+          throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('actualizá la app de la PC'))),
+        );
+      });
+
       test('rechazado: /ventas/posnet/no-aprobado cierra el ciclo sin venta', () async {
         await configurarMpAccessToken(db, 'TOKEN123');
         await configurarMpTerminalCobroId(db, 'N950NCC503383252');

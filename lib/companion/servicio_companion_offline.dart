@@ -423,6 +423,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? montoEfectivoMixtoCentavos,
   }) => _local.cobrarVirtualAMano(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
@@ -431,6 +432,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
     encargueId: encargueId,
+    montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
   );
 
   @override
@@ -440,12 +442,14 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int sesionCajaId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? montoEfectivoMixtoCentavos,
   }) => _local.iniciarCobroPosnet(
     lineas: lineas,
     canal: canal,
     sesionCajaId: sesionCajaId,
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
+    montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
   );
 
   @override
@@ -462,6 +466,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? montoEfectivoMixtoCentavos,
   }) => _local.confirmarCobroPosnet(
     ordenPendienteId: ordenPendienteId,
     lineas: lineas,
@@ -471,6 +476,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
     encargueId: encargueId,
+    montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
   );
 
   @override

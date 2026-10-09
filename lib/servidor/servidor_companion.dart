@@ -1383,7 +1383,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // a mano" (El dueño, 2026-09-07: el pago no pasó por el ciclo de Point,
   // pero sigue siendo QR/Débito para el dato informativo del medio) — con
   // efectivo nunca viaja.
-  router.post('/ventas/cobrar', (Request request) async {
+  Future<Response> cobrarVenta(Request request, {bool mixto = false}) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     final (tipoDescuento, valorDescuento) = _descuentoDesdeBody(body);
@@ -1398,32 +1398,38 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       resultado = await registrarVentaSegunMedio(
         db,
         lineas: _lineasDesdeBody(body),
-        medio: composicionPagoDesdeTexto(_textoRequerido(body, 'medio')),
+        medio: mixto ? ComposicionPago.mixto : composicionPagoDesdeTexto(_textoRequerido(body, 'medio')),
         canal: body['canal'] as String?,
         sesionCajaId: _intRequerido(body, 'sesionCajaId'),
         usuarioId: _intRequerido(body, 'usuarioId'),
         tipoDescuento: tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: body['encargueId'] as int?,
+        montoEfectivoMixtoCentavos: mixto ? _intRequerido(body, 'montoEfectivoMixtoCentavos') : null,
       );
     } on SesionCerradaException {
       return _error(409, 'La caja ya se cerró, esta venta no se guardó');
     } on EncargueConSena catch (e) {
       return _error(409, e.mensaje);
+    } on MixtoInvalido catch (e) {
+      return _error(400, e.mensaje);
     }
     if (clave != null) _cobrosRecientes.guardar(clave, resultado);
     return _json({
       'ventaId': resultado.ventaId,
       'totalCentavos': resultado.totalCentavos,
     }, status: 201);
-  });
+  }
+
+  router.post('/ventas/cobrar', cobrarVenta);
+  router.post('/ventas/mixto/cobrar', (Request request) => cobrarVenta(request, mixto: true));
 
   // Cobro por terminal Point — mismo ciclo de tres pasos que
   // `dialogo_cobro_posnet.dart` del escritorio: iniciar, el celular hace su
   // propio polling sobre `estado/<id>` (mismo ritmo,
   // `intervaloPollingCobroPosnet`/`timeoutPollingCobroPosnet`), y recién
   // graba la venta cuando confirma que se aprobó.
-  router.post('/ventas/posnet/iniciar', (Request request) async {
+  Future<Response> iniciarPosnet(Request request, {bool mixto = false}) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     // Directo con el access token de la PC si está cargado (lo de siempre); si no, por el servidor con la cuenta conectada.
@@ -1445,17 +1451,26 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final resultado = await calcularResultadoVenta(
       db,
       lineas: _lineasDesdeBody(body),
-      medio: ComposicionPago.virtual,
+      medio: mixto ? ComposicionPago.mixto : ComposicionPago.virtual,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
+    // En un mixto la terminal cobra solo lo que no se pagó en efectivo (`montoParaPosnet` del escritorio).
+    final efectivoMixto = mixto ? _intRequerido(body, 'montoEfectivoMixtoCentavos') : 0;
+    if (mixto) {
+      try {
+        validarEfectivoMixto(efectivoMixto, totalCentavos: resultado.totalCentavos);
+      } on MixtoInvalido catch (e) {
+        return _error(400, e.mensaje);
+      }
+    }
     try {
       final orden = await iniciarOrdenDeCobro(
         db,
         pasarela,
         sesionCajaId: _intRequerido(body, 'sesionCajaId'),
         canal: canal,
-        montoCentavos: resultado.totalCentavos,
+        montoCentavos: resultado.totalCentavos - efectivoMixto,
       );
       return _json({
         'ordenPendienteId': orden.ordenPendienteId,
@@ -1465,7 +1480,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     } on CobroPosnetException catch (e) {
       return _error(502, e.mensaje);
     }
-  });
+  }
+
+  router.post('/ventas/posnet/iniciar', iniciarPosnet);
+  router.post('/ventas/mixto/posnet/iniciar', (Request request) => iniciarPosnet(request, mixto: true));
 
   router.get('/ventas/posnet/estado/<ordenIdMp>', (
     Request request,
@@ -1487,7 +1505,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
 
   // El pago se aprobó: recién acá se graba la venta real (misma regla que
   // `VentaControlador.confirmarCobroPosnetAprobado` — nunca antes).
-  router.post('/ventas/posnet/confirmar', (Request request) async {
+  Future<Response> confirmarPosnet(Request request, {bool mixto = false}) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     // El descuento tiene que viajar de nuevo acá, con el mismo valor que
@@ -1499,7 +1517,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       resultado = await registrarVentaSegunMedio(
         db,
         lineas: _lineasDesdeBody(body),
-        medio: ComposicionPago.virtual,
+        medio: mixto ? ComposicionPago.mixto : ComposicionPago.virtual,
         canal: _textoRequerido(body, 'canal'),
         sesionCajaId: _intRequerido(body, 'sesionCajaId'),
         usuarioId: _intRequerido(body, 'usuarioId'),
@@ -1509,6 +1527,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         // La orden queda ligada a la venta en la misma transacción, y un reintento del celular (no recibió la respuesta)
         // devuelve la venta ya grabada en vez de cobrar dos veces.
         ordenCobroPendienteId: _intRequerido(body, 'ordenPendienteId'),
+        montoEfectivoMixtoCentavos: mixto ? _intRequerido(body, 'montoEfectivoMixtoCentavos') : null,
       );
     } on SesionCerradaException {
       // El pago ya se cobró en la terminal: la orden queda SIN resolver a propósito, así el cierre avisa que hay un cobro
@@ -1516,6 +1535,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       return _error(409, 'El pago se aprobó pero la caja ya estaba cerrada: la venta no se guardó. Revisalo en Mercado Pago');
     } on EncargueConSena catch (e) {
       return _error(409, e.mensaje);
+    } on MixtoInvalido catch (e) {
+      return _error(400, e.mensaje);
     }
     // Etapa C: el ticket en la terminal también para lo que cobra el celular por esta PC (el interruptor es de la PC). En
     // segundo plano y sin tocar la venta si falla.
@@ -1524,7 +1545,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       'ventaId': resultado.ventaId,
       'totalCentavos': resultado.totalCentavos,
     }, status: 201);
-  });
+  }
+
+  router.post('/ventas/posnet/confirmar', confirmarPosnet);
+  router.post('/ventas/mixto/posnet/confirmar', (Request request) => confirmarPosnet(request, mixto: true));
 
   // El pago se rechazó — Mercado Pago ya resolvió la orden por su cuenta,
   // esto solo cierra el ciclo de la orden pendiente sin venta.

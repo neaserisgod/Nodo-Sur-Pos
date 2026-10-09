@@ -799,6 +799,25 @@ Future<List<PagoARegistrar>> pagosSegunMedio(
   ];
 }
 
+/// Un mixto tiene que dejar algo en cada punta: con $0 en efectivo es un pago virtual, y con todo en efectivo no queda
+/// nada que mandar a Mercado Pago (`clasificarComposicion`). Cobrarlo igual como mixto le pondría redondeo o recargo de
+/// más al cliente, así que se rechaza y quien cobra elige el medio que corresponde.
+void validarEfectivoMixto(int? montoEfectivoCentavos, {required int totalCentavos}) {
+  if (montoEfectivoCentavos == null ||
+      clasificarComposicion(montoEfectivoCentavos: montoEfectivoCentavos, totalCentavos: totalCentavos) !=
+          ComposicionPago.mixto) {
+    throw MixtoInvalido(totalCentavos);
+  }
+}
+
+class MixtoInvalido implements Exception {
+  const MixtoInvalido(this.totalCentavos);
+  final int totalCentavos;
+
+  String get mensaje => 'En un pago mixto el efectivo tiene que ser más de \$0 y menos que el total. '
+      'Si paga todo junto, elegí Efectivo o Mercado Pago.';
+}
+
 /// Calcula, arma los pagos y graba — el mismo camino tanto para "cobrar
 /// efectivo directo" como para "el posnet ya aprobó".
 ///
@@ -816,6 +835,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   int valorDescuento = 0,
   int? encargueId,
   int? ordenCobroPendienteId,
+  int? montoEfectivoMixtoCentavos,
 }) {
   return db.transaction(() async {
     if (ordenCobroPendienteId != null) {
@@ -838,11 +858,15 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
+    if (medio == ComposicionPago.mixto) {
+      validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: resultado.totalCentavos);
+    }
     final pagos = await pagosSegunMedio(
       db,
       medio: medio,
       totalCentavos: resultado.totalCentavos,
       canal: canal,
+      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     );
     final (ventaId, _) = await registrarVenta(
       db,

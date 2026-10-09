@@ -387,6 +387,15 @@ class ClienteCompanion implements ServicioCompanion {
     throw ErrorCompanion(r.statusCode, mensaje);
   }
 
+  /// El mixto va por rutas propias a propósito: una PC sin actualizar ignoraría el monto en efectivo y le cobraría el
+  /// total entero a la terminal. Con rutas nuevas, esa PC contesta 404 y no se cobra nada.
+  void _revisarMixto(http.Response r, {required bool mixto}) {
+    if (mixto && r.statusCode == 404) {
+      throw const ErrorCompanion(404, 'Para cobrar mixto con la PC, actualizá la app de la PC.');
+    }
+    _revisar(r);
+  }
+
   /// Sin token — solo confirma que hay algo escuchando en esa IP/puerto.
   /// Canjea el código de 6 números que muestra la PC (Configuración → Celular) por la llave de su servidor.
   static Future<DatosConexion> emparejarConCodigo(String ip, int puerto, String codigo, {http.Client? client}) async {
@@ -1277,22 +1286,25 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? montoEfectivoMixtoCentavos,
   }) async {
+    final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
-      conexion._url('/ventas/cobrar'),
+      conexion._url(mixto ? '/ventas/mixto/cobrar' : '/ventas/cobrar'),
       headers: _headers,
       body: jsonEncode({
         'lineas': [for (final l in lineas) lineaVentaAJson(l)],
-        'medio': 'virtual',
+        'medio': mixto ? 'mixto' : 'virtual',
         'canal': canal,
         'sesionCajaId': sesionCajaId,
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
         'claveCobro': ?claveCobro,
+        'montoEfectivoMixtoCentavos': ?montoEfectivoMixtoCentavos,
       }),
     );
-    _revisar(r);
+    _revisarMixto(r, mixto: mixto);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (
       ventaId: j['ventaId'] as int,
@@ -1311,18 +1323,21 @@ class ClienteCompanion implements ServicioCompanion {
     required int sesionCajaId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? montoEfectivoMixtoCentavos,
   }) async {
+    final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
-      conexion._url('/ventas/posnet/iniciar'),
+      conexion._url(mixto ? '/ventas/mixto/posnet/iniciar' : '/ventas/posnet/iniciar'),
       headers: _headers,
       body: jsonEncode({
         'lineas': [for (final l in lineas) lineaVentaAJson(l)],
         'canal': canal,
         'sesionCajaId': sesionCajaId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
+        'montoEfectivoMixtoCentavos': ?montoEfectivoMixtoCentavos,
       }),
     );
-    _revisar(r);
+    _revisarMixto(r, mixto: mixto);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (
       ordenPendienteId: j['ordenPendienteId'] as int,
@@ -1357,9 +1372,11 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? montoEfectivoMixtoCentavos,
   }) async {
+    final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
-      conexion._url('/ventas/posnet/confirmar'),
+      conexion._url(mixto ? '/ventas/mixto/posnet/confirmar' : '/ventas/posnet/confirmar'),
       headers: _headers,
       body: jsonEncode({
         'ordenPendienteId': ordenPendienteId,
@@ -1369,9 +1386,10 @@ class ClienteCompanion implements ServicioCompanion {
         'usuarioId': usuarioId,
         ..._descuentoAJson(tipoDescuento, valorDescuento),
         'encargueId': ?encargueId,
+        'montoEfectivoMixtoCentavos': ?montoEfectivoMixtoCentavos,
       }),
     );
-    _revisar(r);
+    _revisarMixto(r, mixto: mixto);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (
       ventaId: j['ventaId'] as int,

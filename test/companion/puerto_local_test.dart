@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/carrito_venta.dart';
 import 'package:la_plazoleta/companion/cliente_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
+import 'package:la_plazoleta/data/cobro_posnet.dart' show OrdenCobroCreada, PasarelaPoint;
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_promos.dart';
@@ -462,4 +463,98 @@ void main() {
       expect(usuario.activo, isFalse);
     });
   });
+
+  group('mixto sin la PC', () {
+    late int idCoca;
+    late int sesionId;
+    late _PasarelaQueAnota pasarela;
+    late PuertoLocal conTerminal;
+
+    setUp(() async {
+      idCoca = await db.into(db.productos).insert(
+            ProductosCompanion.insert(nombre: 'Coca-Cola', precioCentavos: const Value(112000), stock: const Value(20)),
+          );
+      sesionId = await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 0);
+      pasarela = _PasarelaQueAnota();
+      conTerminal = PuertoLocal(db, pasarelaDePrueba: () async => pasarela);
+    });
+
+    List<LineaVenta> coca() => [
+          LineaVentaPorUnidad(
+            productoId: '$idCoca',
+            nombreProducto: 'Coca-Cola',
+            proveedorId: null,
+            cantidad: 1,
+            precioUnitarioCentavos: 112000,
+            costoUnitarioCentavos: 0,
+          ),
+        ];
+
+    test('la terminal cobra solo el resto y la venta queda con efectivo y Mercado Pago', () async {
+      // $1.120 redondea a $1.200 (hay efectivo): $500 en efectivo, $700 a la terminal.
+      final orden = await conTerminal.iniciarCobroPosnet(
+        lineas: coca(),
+        canal: 'qr',
+        sesionCajaId: sesionId,
+        montoEfectivoMixtoCentavos: 50000,
+      );
+      expect(pasarela.montos, [70000]);
+
+      final venta = await conTerminal.confirmarCobroPosnet(
+        ordenPendienteId: orden.ordenPendienteId,
+        lineas: coca(),
+        canal: 'qr',
+        sesionCajaId: sesionId,
+        usuarioId: usuarioId,
+        montoEfectivoMixtoCentavos: 50000,
+      );
+      expect(venta.totalCentavos, 120000);
+      final pagos = await (db.select(db.pagos)..where((p) => p.ventaId.equals(venta.ventaId))).get();
+      expect(pagos.map((p) => p.montoCentavos).toList()..sort(), [50000, 70000]);
+    });
+
+    test('un efectivo de \$0 o que cubre todo no manda nada a la terminal', () async {
+      for (final efectivo in [0, 120000]) {
+        await expectLater(
+          conTerminal.iniciarCobroPosnet(lineas: coca(), canal: 'qr', sesionCajaId: sesionId, montoEfectivoMixtoCentavos: efectivo),
+          throwsA(isA<ErrorCompanion>()),
+        );
+      }
+      expect(pasarela.montos, isEmpty);
+    });
+
+    test('a mano graba los dos pagos con el canal del resto', () async {
+      final venta = await puerto.cobrarVirtualAMano(
+        lineas: coca(),
+        sesionCajaId: sesionId,
+        usuarioId: usuarioId,
+        canal: 'credit_card',
+        montoEfectivoMixtoCentavos: 20000,
+      );
+      final pagos = await (db.select(db.pagos)..where((p) => p.ventaId.equals(venta.ventaId))).get();
+      expect(pagos.map((p) => p.montoCentavos).toList()..sort(), [20000, 100000]);
+      expect(pagos.firstWhere((p) => p.montoCentavos == 100000).canal, 'credit_card');
+    });
+  });
+}
+
+class _PasarelaQueAnota implements PasarelaPoint {
+  final montos = <int>[];
+
+  @override
+  Future<OrdenCobroCreada> crear({
+    required String externalReference,
+    required String idempotencyKey,
+    required int montoCentavos,
+    required String canal,
+  }) async {
+    montos.add(montoCentavos);
+    return const OrdenCobroCreada(ordenIdMp: 'orden-1', estado: 'created');
+  }
+
+  @override
+  Future<String> consultar(String ordenIdMp) async => 'processed';
+
+  @override
+  Future<void> cancelar(String ordenIdMp) async {}
 }

@@ -41,7 +41,7 @@ import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
-import '../domain/medio_pago.dart' show composicionPagoDesdeTexto;
+import '../domain/medio_pago.dart' show ComposicionPago, composicionPagoDesdeTexto;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta, Venta;
 import '../data/cobro_posnet.dart' show PasarelaPoint;
 import '../servicios/pasarela_point_nube.dart';
@@ -1110,18 +1110,50 @@ class PuertoLocal implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? montoEfectivoMixtoCentavos,
   }) {
-    return repo_ventas.registrarVentaSegunMedio(
-      db,
+    return _registrarVirtualOMixto(
       lineas: lineas,
-      medio: composicionPagoDesdeTexto('virtual'),
       canal: canal,
       sesionCajaId: sesionCajaId,
       usuarioId: usuarioId,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     );
+  }
+
+  /// Venta por Mercado Pago, o mixta si viene la parte en efectivo. Un mixto que no cierra vuelve como [ErrorCompanion]
+  /// con el mensaje para quien cobra.
+  Future<({int ventaId, int totalCentavos})> _registrarVirtualOMixto({
+    required List<LineaVenta> lineas,
+    required String canal,
+    required int sesionCajaId,
+    required int usuarioId,
+    TipoDescuento? tipoDescuento,
+    int valorDescuento = 0,
+    int? encargueId,
+    int? ordenCobroPendienteId,
+    int? montoEfectivoMixtoCentavos,
+  }) async {
+    try {
+      return await repo_ventas.registrarVentaSegunMedio(
+        db,
+        lineas: lineas,
+        medio: montoEfectivoMixtoCentavos == null ? ComposicionPago.virtual : ComposicionPago.mixto,
+        canal: canal,
+        sesionCajaId: sesionCajaId,
+        usuarioId: usuarioId,
+        tipoDescuento: tipoDescuento,
+        valorDescuento: valorDescuento,
+        encargueId: encargueId,
+        ordenCobroPendienteId: ordenCobroPendienteId,
+        montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+      );
+    } on repo_ventas.MixtoInvalido catch (e) {
+      throw ErrorCompanion(400, e.mensaje);
+    }
   }
 
   /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
@@ -1152,22 +1184,32 @@ class PuertoLocal implements ServicioCompanion {
     required int sesionCajaId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? montoEfectivoMixtoCentavos,
   }) async {
     final pasarela = await _pasarela();
+    final mixto = montoEfectivoMixtoCentavos != null;
     final resultado = await repo_ventas.calcularResultadoVenta(
       db,
       lineas: lineas,
-      medio: composicionPagoDesdeTexto('virtual'),
+      medio: mixto ? ComposicionPago.mixto : ComposicionPago.virtual,
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
+    // En un mixto la terminal cobra solo la parte que no se pagó en efectivo (mismo `montoParaPosnet` de la PC).
+    final int montoTerminal;
+    try {
+      if (mixto) repo_ventas.validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: resultado.totalCentavos);
+      montoTerminal = resultado.totalCentavos - (montoEfectivoMixtoCentavos ?? 0);
+    } on repo_ventas.MixtoInvalido catch (e) {
+      throw ErrorCompanion(400, e.mensaje);
+    }
     try {
       final orden = await repo_cobro.iniciarOrdenDeCobro(
         db,
         pasarela,
         sesionCajaId: sesionCajaId,
         canal: canal,
-        montoCentavos: resultado.totalCentavos,
+        montoCentavos: montoTerminal,
       );
       return (
         ordenPendienteId: orden.ordenPendienteId,
@@ -1199,12 +1241,11 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? montoEfectivoMixtoCentavos,
   }) async {
     // La venta y la orden quedan ligadas en la MISMA transacción, y confirmar dos veces devuelve la misma venta.
-    return repo_ventas.registrarVentaSegunMedio(
-      db,
+    return _registrarVirtualOMixto(
       lineas: lineas,
-      medio: composicionPagoDesdeTexto('virtual'),
       canal: canal,
       sesionCajaId: sesionCajaId,
       usuarioId: usuarioId,
@@ -1212,6 +1253,7 @@ class PuertoLocal implements ServicioCompanion {
       valorDescuento: valorDescuento,
       encargueId: encargueId,
       ordenCobroPendienteId: ordenPendienteId,
+      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     );
   }
 
