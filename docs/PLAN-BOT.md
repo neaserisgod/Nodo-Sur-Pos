@@ -1,6 +1,6 @@
 # Plan · Bot de WhatsApp desde el celular, configurable desde Nodo Sur
 
-**Estado al 2026-10-09: etapas 1 (rubro guardado, migración v63) y 2 (sitio, rama `ccr-e5e5b532-aj3e0g` de `NodoSurPage`, sin mezclar) hechas; el resto, plan.** En `neaserisgod/botdemo` ya están las plantillas de uñas
+**Estado al 2026-10-09: etapas 1 (rubro guardado, migración v63), 2 (sitio) y 3 (bot) hechas, en las ramas `ccr-e5e5b532-aj3e0g` de los tres repos, sin mezclar; el resto, plan.** En `neaserisgod/botdemo` ya están las plantillas de uñas
 y barbería (rama `ccr-e5e5b532-aj3e0g`). Revisado contra el código de los tres repos el mismo día. El resto del bot (turnos,
 seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), etapa 5.
 
@@ -106,7 +106,7 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
    almacén queda `almacen` cuando el dueño lo elige ahí (un negocio viejo arranca sin elegir: no se adivina).
 2. ✅ **Sitio** (hecho el 2026-10-09, detalle en el README del sitio): `tieneBot`, equipo tipo `bot`, `/api/bot/config`, catálogo (`/api/bot/catalogo`) y pedidos
    (`/api/bot/pedido`, aceptar y rechazar), con el aviso al bot y a los equipos. Con tests, como el resto del sitio.
-3. **Bot**: plantilla y flujo de almacén (precio y si hay, horarios y ubicación, pedidos); pausa de 1 hora configurable,
+3. ✅ **Bot** (hecho el 2026-10-09, detalle en el README de `botdemo`): plantilla y flujo de almacén (precio y si hay, horarios y ubicación, pedidos); pausa de 1 hora configurable,
    también cuando el dueño contesta a mano; vincularse desde Termux; bajar configuración y catálogo y recargarlos sin
    reiniciarse; `instalar.sh` de un comando. Tests como los de barbería.
 4. **App del celular**: pantalla Bot de WhatsApp (estado, configuración, instalar), publicar el catálogo, pedidos por
@@ -115,8 +115,14 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
    proyecto desde el celular.
 6. Después: editar desde `/negocio` para "Solo el bot"; turnos de servicios (`PLAN-SERVICIOS.md`).
 
-**Supuesto a confirmar antes de la etapa 3:** el pedido es para **retirar en el local** (no hay envío), y el precio que
-le dice el bot es el de ese momento: el que vale es el del día que se entrega (Regla 4, como cualquier encargue).
+**Confirmado por el dueño antes de la etapa 3 (2026-10-09):** el pedido es para **retirar en el local** (sin envío); un producto
+**sin stock no se agrega** al pedido; y el bot aclara que el precio es **el de hoy y puede cambiar** (vale el del día que se
+retira, Regla 4, como cualquier encargue).
+
+**Etapa 3, qué no se probó:** nada en un celular real ni con WhatsApp real. Sin probar: que Baileys reciba los mensajes que el
+dueño manda a mano desde el celular principal (la pausa cuando contestás vos), los avisos en vivo por el WebSocket (necesitan
+el Durable Object de Cloudflare; sin él el bot revisa cada 10 minutos), `termux-open-url` y el instalador en Termux. Sí se probó
+el bot contra el worker real del sitio corriendo local (configuración, catálogo, pedido aceptado y aviso al cliente).
 
 ## Qué no se probó
 
