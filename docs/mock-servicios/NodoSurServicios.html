@@ -1,0 +1,663 @@
+<title>Nodo Sur Servicios</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Mock "Nodo Sur · Servicios" (uñas/belleza y barbería) para el celular.
+   Tokens copiados 1:1 de lib/companion/kit/tokens_ns.dart: el rubro cambia
+   datos y textos, nunca el lenguaje visual. Layout: notas a la izquierda,
+   teléfono de 390 px a la derecha. */
+:root{
+  --ink:#121317;--paper:#fff;--s:#F3F4F7;--s2:#E1E4EA;--mute:#566070;--line:#C4C9D4;
+  --prim:#121317;--hero:#121317;--toast:#121317;
+  --gbg:#E3F6EF;--g:#0B6A52;--bbg:#FBE0DE;--b:#A4231B;--wbg:#FDECD6;--w:#7D3B03;--ibg:#E0E9FF;--i:#1D3A9A;
+  --marca:#2F5BE8;--marca-osc:#1F3FA8;--efectivo:#0B7A5E;--debito:#4B5563;--mixto:#B45309;
+  --fondo:#E9EBF0;--fina:rgba(18,19,23,.08);--velo:rgba(18,19,23,.5);
+  --font:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#EEF0F4;--paper:#0E0F13;--s:#1A1D24;--s2:#2A2E38;--mute:#A0A8B6;--line:#3B4150;
+  --prim:#2F5BE8;--hero:#1C2231;--toast:#2A2E38;
+  --gbg:#10342A;--g:#63D9B0;--bbg:#3A1613;--b:#FF918A;--wbg:#392510;--w:#F5B56C;--ibg:#17254F;--i:#A3BCFF;
+  --fondo:#07080A;--fina:rgba(238,240,244,.08);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#EEF0F4;--paper:#0E0F13;--s:#1A1D24;--s2:#2A2E38;--mute:#A0A8B6;--line:#3B4150;
+  --prim:#2F5BE8;--hero:#1C2231;--toast:#2A2E38;
+  --gbg:#10342A;--g:#63D9B0;--bbg:#3A1613;--b:#FF918A;--wbg:#392510;--w:#F5B56C;--ibg:#17254F;--i:#A3BCFF;
+  --fondo:#07080A;--fina:rgba(238,240,244,.08);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--fondo);color:var(--ink);font-family:var(--font);margin:0;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:3px solid #3B6CFF;outline-offset:2px}
+.tab{font-variant-numeric:tabular-nums}
+.wrap{display:grid;grid-template-columns:minmax(0,420px) 390px;gap:48px;justify-content:center;align-items:start;padding:40px 16px 60px;max-width:1100px;margin:0 auto}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr);justify-items:center;gap:28px;padding-block:24px 40px}}
+
+/* ---------- notas ---------- */
+.notas{display:flex;flex-direction:column;gap:22px;min-width:0;width:100%}
+.notas h1{font-size:40px;font-weight:500;letter-spacing:-.05em;line-height:1.02;margin:0;text-wrap:balance}
+.notas p{margin:0;color:var(--mute);font-size:15px;line-height:1.45}
+.rot{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.seg{display:flex;gap:6px;background:var(--s);padding:5px;border-radius:999px}
+.seg button{flex:1;height:46px;border-radius:999px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,color .15s}
+.seg button.on{background:var(--prim);color:#fff}
+.panel{background:var(--paper);border-radius:28px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.lista{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14.5px;line-height:1.4}
+.lista li{display:flex;gap:10px;align-items:flex-start}
+.lista b{font-weight:600}
+.tag{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;flex:none;margin-top:1px}
+.t-re{background:var(--gbg);color:var(--g)}.t-ad{background:var(--ibg);color:var(--i)}.t-nu{background:var(--wbg);color:var(--w)}.t-no{background:var(--s2);color:var(--mute)}
+.irA{display:flex;flex-wrap:wrap;gap:6px}
+.irA button{height:36px;padding:0 14px;border-radius:999px;background:var(--s);font-size:14px;font-weight:600}
+.irA button.on{background:var(--ink);color:var(--paper)}
+
+/* ---------- teléfono ---------- */
+.tel{width:390px;max-width:100%;height:844px;background:var(--paper);border-radius:48px;position:relative;overflow:hidden;
+  box-shadow:0 0 0 10px var(--hero),0 30px 60px rgba(18,19,23,.25)}
+@media (max-width:440px){.tel{height:760px;border-radius:36px;box-shadow:0 0 0 6px var(--hero)}}
+.pant{position:absolute;inset:0;overflow-y:auto;padding:24px 20px 140px;scrollbar-width:none}
+.pant::-webkit-scrollbar{display:none}
+.entra{animation:entra .18s ease-out}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.fila{display:flex;align-items:center;gap:12px}
+.esp{flex:1;min-width:0;overflow-wrap:anywhere}
+.circ{width:48px;height:48px;border-radius:50%;background:var(--s);display:grid;place-items:center;flex:none;position:relative}
+.circ.ch{width:44px;height:44px}
+.globo{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:#D92D20;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 5px;box-shadow:0 0 0 2px var(--paper)}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.h1{font-size:44px;font-weight:500;letter-spacing:-.055em;line-height:1.02;margin:14px 0 0}
+.h2{font-size:32px;font-weight:500;letter-spacing:-.05em;line-height:1.05;margin:0}
+.sec{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);margin:26px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.sec span{text-transform:none;letter-spacing:0;font-weight:400;font-size:13px}
+.btnAzul{width:100%;height:72px;border-radius:999px;background:var(--marca);color:#fff;font-size:21px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;justify-content:center;gap:12px;margin-top:18px;transition:transform .12s}
+.btnAzul:active{transform:scale(.98)}
+.btn{height:56px;border-radius:999px;padding:0 22px;font-size:17px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn.p{background:var(--prim);color:#fff}.btn.o{box-shadow:inset 0 0 0 1.5px var(--line)}.btn.s{background:var(--s)}
+.btn:disabled{opacity:.4;cursor:default}
+.carr{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none}
+.carr::-webkit-scrollbar{display:none}
+.tdia{flex:none;width:250px;border-radius:30px;padding:20px;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.tdia .n{font-size:40px;font-weight:500;letter-spacing:-.055em;line-height:1}
+.tdia .l{font-size:14px;font-weight:600}
+.tdia .d{font-size:13.5px;line-height:1.35;opacity:.85}
+.hero{background:var(--hero);color:#fff;border-radius:34px;padding:22px}
+.hero .l{font-size:14px;font-weight:600;color:rgba(255,255,255,.78)}
+.hero .n{font-size:44px;font-weight:500;letter-spacing:-.058em;line-height:1.02;margin-top:6px}
+.hero .d{font-size:14px;color:rgba(255,255,255,.8);margin-top:6px;line-height:1.4}
+.atajos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.atajo{background:var(--s);border-radius:26px;padding:16px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;font-size:14.5px;font-weight:600;text-align:left;line-height:1.2;min-height:112px}
+.atajo .circ{width:40px;height:40px;background:var(--paper)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{height:44px;padding:0 18px;border-radius:999px;background:var(--s);font-size:15px;font-weight:600;white-space:nowrap;flex:none}
+.chip.on{background:var(--prim);color:#fff}
+.busc{height:52px;border-radius:999px;background:var(--s);display:flex;align-items:center;gap:12px;padding:0 20px;color:var(--mute);font-size:16px;font-weight:500}
+.agr{background:var(--s);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;gap:1px}
+.agr>*{background:var(--s);box-shadow:0 1px 0 var(--fina)}
+.item{display:flex;align-items:center;gap:14px;padding:14px 18px;min-height:72px;text-align:left;width:100%}
+.item .t{font-size:17px;font-weight:500;letter-spacing:-.02em}
+.item .st{font-size:14px;color:var(--mute);margin-top:2px;line-height:1.3}
+.item .v{font-size:17px;font-weight:600;text-align:right;white-space:nowrap}
+.item .vs{font-size:13px;color:var(--mute);text-align:right;margin-top:2px;white-space:nowrap}
+.item .circ{background:var(--paper);width:44px;height:44px}
+.et{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;display:inline-block}
+.et.w{background:var(--wbg);color:var(--w)}.et.b{background:var(--bbg);color:var(--b)}.et.g{background:var(--gbg);color:var(--g)}.et.i{background:var(--ibg);color:var(--i)}
+.barra{height:6px;border-radius:999px;background:var(--s2);overflow:hidden;margin-top:8px}
+.barra i{display:block;height:100%;border-radius:999px;background:var(--g)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.serv{background:var(--s);border-radius:26px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:118px;position:relative;transition:transform .12s}
+.serv:active{transform:scale(.97)}
+.serv .t{font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.serv .d{font-size:13px;color:var(--mute)}
+.serv .p{font-size:22px;font-weight:500;letter-spacing:-.04em;margin-top:auto}
+.serv .cant{position:absolute;top:12px;right:12px;min-width:26px;height:26px;border-radius:999px;background:var(--marca);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;padding:0 7px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--fina);font-size:15px}
+.kv span:first-child{color:var(--mute)}
+.kv span:last-child{font-weight:600}
+.step{display:flex;align-items:center;background:var(--paper);border-radius:999px;padding:3px;flex:none}
+.step button{width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.step input{width:46px;border:0;background:none;text-align:center;font:700 16px var(--font);color:var(--ink);font-variant-numeric:tabular-nums}
+.step input:focus{outline:none;text-decoration:underline}
+.campo{background:var(--s);border-radius:28px;padding:14px 22px 16px;display:block}
+.campo small{display:block;font-size:13px;font-weight:600;color:var(--mute)}
+.campo input{width:100%;border:0;background:none;font:500 20px var(--font);color:var(--ink);margin-top:4px;padding:0;font-variant-numeric:tabular-nums}
+.campo input:focus{outline:none}
+.campo.gr input{font-size:40px;letter-spacing:-.05em}
+.info{background:var(--ibg);color:var(--i);border-radius:22px;padding:14px 18px;font-size:14px;line-height:1.4;display:flex;gap:10px}
+.info.w{background:var(--wbg);color:var(--w)}.info.g{background:var(--gbg);color:var(--g)}
+.medios{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.medio{height:84px;border-radius:26px;color:#fff;font-size:17px;font-weight:600;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:14px 18px;text-align:left;transition:transform .12s,box-shadow .12s}
+.medio.on{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--ink)}
+.cab{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.cab .h2{font-size:30px}
+
+/* barra inferior: píldora flotante, Vender al centro (doc 01 §6.1) */
+.nav{position:absolute;left:16px;right:16px;bottom:16px;height:68px;border-radius:999px;background:var(--paper);display:flex;align-items:center;padding:0 6px;box-shadow:0 0 0 1px rgba(18,19,23,.06),0 10px 28px rgba(18,19,23,.14);z-index:5}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:600;color:var(--mute)}
+.nav button .pi{width:48px;height:28px;border-radius:999px;display:grid;place-items:center;transition:background .15s}
+.nav button.on{color:var(--ink)}.nav button.on .pi{background:var(--ibg);color:var(--i)}
+.nav .vend{flex:1.15}
+.nav .vend .pv{height:52px;width:100%;border-radius:999px;background:var(--marca);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11.5px}
+.nav .vend.on .pv{background:var(--marca-osc)}
+.nav .vend.on .pi{background:none}
+
+/* hoja inferior */
+.velo{position:absolute;inset:0;background:var(--velo);z-index:9;display:flex;align-items:flex-end;animation:fade .18s}
+@keyframes fade{from{opacity:0}}
+.hoja{background:var(--paper);border-radius:40px 40px 0 0;width:100%;max-height:88%;overflow-y:auto;padding:12px 20px 28px;animation:sube .2s ease-out}
+@keyframes sube{from{transform:translateY(40px);opacity:.4}}
+.asa{width:44px;height:5px;border-radius:999px;background:#D3D7DF;margin:0 auto 18px}
+.hoja h3{font-size:28px;font-weight:500;letter-spacing:-.05em;margin:0 0 6px}
+.toast{position:absolute;left:20px;right:20px;bottom:100px;background:var(--toast);color:#fff;border-radius:22px;padding:14px 18px;font-size:15px;font-weight:500;z-index:12;animation:sube .2s}
+.tilde{width:96px;height:96px;border-radius:50%;background:var(--gbg);color:var(--g);display:grid;place-items:center;margin:30px auto 16px;animation:bloom .3s ease-out}
+@keyframes bloom{from{transform:scale(.6);opacity:0}}
+.marca-nueva{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--w);background:var(--wbg);padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
+</style>
+
+<div class="wrap">
+  <section class="notas" aria-label="Notas del mock">
+    <div>
+      <div class="rot">Mock · App del celular</div>
+      <h1 style="margin-top:8px">Nodo Sur para servicios</h1>
+    </div>
+    <p>La misma app del celular, con los mismos tokens, piezas y gestos, pensada para un local que vende <b>servicios</b>. El rubro cambia los datos y los textos. El diseño es el mismo. Todo el teléfono es tocable: armá un servicio, cobralo y mirá cómo bajan los insumos.</p>
+    <div>
+      <div class="rot" style="margin-bottom:8px">Rubro</div>
+      <div class="seg" id="segRubro">
+        <button data-r="unias" class="on">Uñas y belleza</button>
+        <button data-r="barberia">Barbería</button>
+      </div>
+    </div>
+    <div>
+      <div class="rot" style="margin-bottom:8px">Ir a una pantalla</div>
+      <div class="irA" id="irA"></div>
+    </div>
+    <div class="panel">
+      <div class="rot">Qué se reutiliza</div>
+      <ul class="lista">
+        <li><span class="tag t-re">igual</span><span><b>Cobrar</b>: efectivo, QR y tarjeta por Point, mixto, redondeo del efectivo, descuento sobre el total, ticket.</span></li>
+        <li><span class="tag t-re">igual</span><span><b>Caja</b>: abrir, contar, gastos e ingresos, cerrar en 3 pasos, ventas del día, eliminar venta (ahora también devuelve los insumos).</span></li>
+        <li><span class="tag t-re">igual</span><span>Notificaciones, buscador de funciones, usuarios, sincronización con la PC, cargar días anteriores, actualizar.</span></li>
+        <li><span class="tag t-ad">adaptado</span><span><b>Productos → Insumos</b>: catálogo, controlar stock (ahora por ml, g o unidad), editar en lote, historial de precios.</span></li>
+        <li><span class="tag t-ad">adaptado</span><span><b>Cargar factura</b>, <b>proveedores</b>, <b>cuenta corriente</b> y <b>pagar proveedor</b>: la compra suma a los insumos.</span></li>
+        <li><span class="tag t-ad">adaptado</span><span><b>Separar</b>: aparta el costo real de los insumos que se gastaron, por proveedor (misma regla de reposición).</span></li>
+        <li><span class="tag t-ad">adaptado</span><span><b>Promos</b> → combos de servicios. <b>Productos de reventa</b> (ceras, shampoo) siguen siendo productos comunes.</span></li>
+        <li><span class="tag t-nu">nuevo</span><span><b>Insumos</b> con envase y unidad de uso: un frasco de 15 ml a $ 12.000 da el costo por ml.</span></li>
+        <li><span class="tag t-nu">nuevo</span><span><b>Creador de servicios</b>: receta (qué insumo y cuánto), costo en vivo, ganancia y precio sugerido, y para cuántos servicios alcanza el stock.</span></li>
+        <li><span class="tag t-nu">nuevo</span><span><b>Descuento automático</b>: al cobrar, cada servicio resta su receta de los insumos y deja rastro.</span></li>
+        <li><span class="tag t-no">no aplica</span><span>Recargo de cigarrillos, producto para el vuelto, pesables a la venta (los gramos quedan del lado de los insumos).</span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="rot">Para decidir antes de programar</div>
+      <ul class="lista">
+        <li><span>1.</span><span>¿Hace falta registrar <b>quién atendió</b> (y comisión por profesional)? El mock no lo incluye.</span></li>
+        <li><span>2.</span><span>¿Un insumo sin stock <b>bloquea</b> el servicio o solo avisa? El mock avisa y deja cobrar, porque la receta es un promedio.</span></li>
+        <li><span>3.</span><span>¿Se puede <b>ajustar lo que se gastó</b> en una venta puntual (uñas largas, barba tupida)?</span></li>
+        <li><span>4.</span><span>¿El costo del servicio suma <b>mano de obra</b> o solo insumos? El mock calcula solo insumos.</span></li>
+        <li><span>5.</span><span>¿<b>Turnos / agenda</b> entran en esta etapa? Hoy no existe nada parecido en la app.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="tel" id="tel"></div>
+</div>
+
+<script>
+// ---------------- datos de ejemplo (precios ARS, octubre 2026) ----------------
+// Insumo: envase = contenido de un envase en su unidad; costoEnv = lo que se paga por envase.
+// Servicio: receta = [[idInsumo, cantidad por servicio]]. Todo en pesos enteros (en la app real: centavos).
+const RUBROS = {
+  unias: {
+    usuario: 'Vale', local: 'Estudio Lila', icono: 'brillo',
+    cats: ['Manos', 'Pies', 'Cejas y pestañas'],
+    insumos: [
+      {id:'semi',  n:'Esmalte semipermanente', u:'ml', envase:10,  costoEnv:9500,  stock:46,  min:20, prov:'Distri Nails'},
+      {id:'base',  n:'Base rubber',            u:'ml', envase:15,  costoEnv:12000, stock:22,  min:10, prov:'Distri Nails'},
+      {id:'top',   n:'Top coat',               u:'ml', envase:15,  costoEnv:11000, stock:7,   min:10, prov:'Distri Nails'},
+      {id:'prim',  n:'Primer sin ácido',       u:'ml', envase:15,  costoEnv:8000,  stock:12,  min:5,  prov:'Distri Nails'},
+      {id:'poly',  n:'Polygel',                u:'g',  envase:30,  costoEnv:18000, stock:64,  min:30, prov:'Distri Nails'},
+      {id:'tips',  n:'Tips soft gel',          u:'u',  envase:500, costoEnv:9000,  stock:380, min:100,prov:'Distri Nails'},
+      {id:'acet',  n:'Acetona pura',           u:'ml', envase:1000,costoEnv:6000,  stock:820, min:300,prov:'Farmacia Centro'},
+      {id:'alco',  n:'Alcohol isopropílico',   u:'ml', envase:500, costoEnv:7000,  stock:310, min:150,prov:'Farmacia Centro'},
+      {id:'algo',  n:'Discos de algodón',      u:'u',  envase:100, costoEnv:2500,  stock:140, min:60, prov:'Farmacia Centro'},
+      {id:'lima',  n:'Limas descartables',     u:'u',  envase:50,  costoEnv:15000, stock:18,  min:20, prov:'Distri Nails'},
+      {id:'guan',  n:'Guantes de nitrilo',     u:'u',  envase:100, costoEnv:14000, stock:96,  min:40, prov:'Farmacia Centro'},
+      {id:'tint',  n:'Tintura de cejas',       u:'ml', envase:15,  costoEnv:9000,  stock:11,  min:5,  prov:'Belleza Sur'},
+      {id:'lift',  n:'Kit lifting (sachet)',   u:'u',  envase:10,  costoEnv:28000, stock:6,   min:4,  prov:'Belleza Sur'},
+    ],
+    servicios: [
+      {id:'s1', n:'Semipermanente manos', cat:'Manos', min:60, precio:18000, receta:[['semi',.6],['base',.5],['top',.4],['prim',.2],['lima',1],['algo',4],['alco',8],['guan',2]]},
+      {id:'s2', n:'Esculpidas en polygel', cat:'Manos', min:120, precio:32000, receta:[['poly',4],['tips',10],['base',.4],['top',.5],['semi',.6],['prim',.3],['lima',2],['alco',10],['guan',2]]},
+      {id:'s3', n:'Kapping rubber', cat:'Manos', min:75, precio:22000, receta:[['base',1.2],['top',.4],['semi',.6],['prim',.2],['lima',1],['alco',8],['guan',2]]},
+      {id:'s4', n:'Retiro', cat:'Manos', min:20, precio:6000, receta:[['acet',30],['algo',10],['lima',1],['guan',2]]},
+      {id:'s5', n:'Semipermanente pies', cat:'Pies', min:60, precio:20000, receta:[['semi',.4],['base',.4],['top',.3],['lima',1],['algo',4],['alco',8],['guan',2]]},
+      {id:'s6', n:'Perfilado + tinte de cejas', cat:'Cejas y pestañas', min:30, precio:9000, receta:[['tint',.5],['algo',2],['guan',2]]},
+      {id:'s7', n:'Lifting de pestañas', cat:'Cejas y pestañas', min:60, precio:25000, receta:[['lift',1],['algo',2],['guan',2]]},
+    ],
+    reventa: [
+      {n:'Aceite de cutículas 10 ml', p:5500, stock:9},
+      {n:'Lima de vidrio', p:4800, stock:4},
+      {n:'Crema de manos 60 ml', p:6200, stock:0},
+    ],
+    hechos: {cant:7, plata:139000},
+  },
+  barberia: {
+    usuario: 'Nico', local: 'Barbería del Centro', icono: 'tijera',
+    cats: ['Cortes', 'Barba', 'Color'],
+    insumos: [
+      {id:'hoja',  n:'Hojas de afeitar',         u:'u',  envase:100, costoEnv:12000, stock:64,  min:30, prov:'Barber Supply'},
+      {id:'cuel',  n:'Cuellos descartables',     u:'u',  envase:100, costoEnv:5000,  stock:22,  min:40, prov:'Barber Supply'},
+      {id:'talc',  n:'Talco',                    u:'g',  envase:200, costoEnv:4000,  stock:150, min:60, prov:'Barber Supply'},
+      {id:'pom',   n:'Pomada de terminación',    u:'g',  envase:100, costoEnv:9000,  stock:240, min:100,prov:'Barber Supply'},
+      {id:'espu',  n:'Espuma de afeitar',        u:'ml', envase:400, costoEnv:6000,  stock:520, min:200,prov:'Farmacia Centro'},
+      {id:'afte',  n:'After shave',              u:'ml', envase:500, costoEnv:10000, stock:380, min:150,prov:'Barber Supply'},
+      {id:'sham',  n:'Shampoo profesional',      u:'ml', envase:1000,costoEnv:8000,  stock:640, min:300,prov:'Barber Supply'},
+      {id:'acei',  n:'Aceite de barba',          u:'ml', envase:30,  costoEnv:7000,  stock:18,  min:15, prov:'Barber Supply'},
+      {id:'deco',  n:'Polvo decolorante',        u:'g',  envase:500, costoEnv:20000, stock:90,  min:120,prov:'Color Patagonia'},
+      {id:'oxid',  n:'Oxidante 30 vol',          u:'ml', envase:1000,costoEnv:9000,  stock:700, min:300,prov:'Color Patagonia'},
+      {id:'toal',  n:'Toallas descartables',     u:'u',  envase:50,  costoEnv:6000,  stock:41,  min:20, prov:'Barber Supply'},
+      {id:'alco',  n:'Alcohol 70°',              u:'ml', envase:1000,costoEnv:5000,  stock:480, min:200,prov:'Farmacia Centro'},
+    ],
+    servicios: [
+      {id:'b1', n:'Corte clásico', cat:'Cortes', min:30, precio:12000, receta:[['cuel',1],['talc',3],['pom',3],['alco',5]]},
+      {id:'b2', n:'Fade / degradé', cat:'Cortes', min:45, precio:14000, receta:[['cuel',1],['talc',3],['pom',3],['hoja',1],['alco',5]]},
+      {id:'b3', n:'Corte + barba', cat:'Barba', min:50, precio:17000, receta:[['cuel',1],['talc',4],['pom',3],['hoja',1],['espu',12],['afte',5],['acei',1],['toal',1],['alco',6]]},
+      {id:'b4', n:'Perfilado de barba', cat:'Barba', min:25, precio:7000, receta:[['hoja',1],['espu',10],['afte',5],['acei',1],['toal',1]]},
+      {id:'b5', n:'Afeitado con navaja', cat:'Barba', min:30, precio:9000, receta:[['hoja',1],['espu',15],['afte',6],['toal',2]]},
+      {id:'b6', n:'Platinado', cat:'Color', min:120, precio:38000, receta:[['deco',60],['oxid',120],['sham',20],['toal',2],['cuel',1]]},
+      {id:'b7', n:'Lavado', cat:'Cortes', min:10, precio:3000, receta:[['sham',15],['toal',1]]},
+    ],
+    reventa: [
+      {n:'Pomada mate 100 g', p:11000, stock:6},
+      {n:'Aceite de barba 30 ml', p:9500, stock:3},
+      {n:'Peine de madera', p:4000, stock:0},
+    ],
+    hechos: {cant:11, plata:148000},
+  },
+};
+
+const ICON = {
+  inicio:'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+  carrito:'M3 4h2l2.4 10.5a1 1 0 001 .8h8.9a1 1 0 001-.7L20 8H6.2M9 20h.01M17 20h.01',
+  billetera:'M3 7h15a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V7zM3 7l12-4v4M17 14h.01',
+  mas:'M5 12h.01M12 12h.01M19 12h.01',
+  lupa:'M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5',
+  campana:'M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 004 0',
+  volver:'M15 6l-6 6 6 6', chevron:'M9 6l6 6-6 6', masMas:'M12 5v14M5 12h14', menos:'M5 12h14',
+  tilde:'M5 12.5l4.5 4.5L19 7.5', cerrar:'M6 6l12 12M18 6L6 18', computadora:'M3 4h18v12H3zM8 20h8M12 16v4',
+  portapapeles:'M9 4h6v3H9zM7 5H6a2 2 0 00-2 2v13a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1M8 12h8M8 16h5',
+  camara:'M4 8h3l2-3h6l2 3h3v11H4zM12 10a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',
+  calculadora:'M5 3h14v18H5zM8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01',
+  papelera:'M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3',
+  reloj:'M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v4l3 2',
+  alerta:'M12 4l9 16H3zM12 10v4M12 17h.01',
+  camion:'M3 6h11v10H3zM14 9h4l3 3v4h-7M7 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM17 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z',
+  ajustes:'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4',
+  // nuevos para este rubro (mismo trazo 24×24, grosor 2)
+  tijera:'M6 9a3 3 0 100-6 3 3 0 000 6zM6 21a3 3 0 100-6 3 3 0 000 6zM8.1 7.9L20 20M8.1 16.1L20 4',
+  brillo:'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6',
+  frasco:'M9 3h6v3H9zM8 6h8l1 3v10a2 2 0 01-2 2H9a2 2 0 01-2-2V9zM7 13h10',
+  receta:'M6 3h12v18H6zM9 8h6M9 12h6M9 16h3',
+};
+const ic = (k, s=22, extra='') => `<svg class="ic" style="width:${s}px;height:${s}px" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="${ICON[k]}"/></svg>`;
+
+// ---------------- formatos y fórmulas (cada una en un solo lugar) ----------------
+const plata = n => (n < 0 ? '-' : '') + '$ ' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+const num = (n, d=1) => Number(n).toLocaleString('es-AR', {maximumFractionDigits:d});
+const costoUnidad = ins => ins.costoEnv / ins.envase;
+// Convención 5: todo costo calculado redondea hacia arriba al peso entero.
+const costoServicio = (s, R) => Math.ceil(s.receta.reduce((t, [id, c]) => t + costoUnidad(R.insumos.find(i => i.id === id)) * c, 0));
+// Ganancia sobre el precio, como la "ganancia de referencia" del resto de la app.
+const margen = (precio, costo) => precio > 0 ? (precio - costo) / precio : 0;
+const alcanza = (s, R) => Math.floor(Math.min(...s.receta.map(([id, c]) => R.insumos.find(i => i.id === id).stock / c)));
+const redondeoEf = n => Math.ceil(n / 100) * 100; // paso de redondeo del efectivo (default 100)
+
+// ---------------- estado ----------------
+let rubro = 'unias';
+let datos = JSON.parse(JSON.stringify(RUBROS));
+const st = {tab:'inicio', sub:null, servSeg:0, cat:'Todos', carrito:{}, medio:null, editor:null, hoja:null, ultimo:null, ventas:[], toast:null};
+const R = () => datos[rubro];
+
+const tel = document.getElementById('tel');
+function render(anim = true) {
+  const r = R();
+  let html = '';
+  if (st.sub === 'editor') html = vEditor(r);
+  else if (st.sub === 'cobrar') html = vCobrar(r);
+  else if (st.sub === 'cobrada') html = vCobrada(r);
+  else html = ({inicio:vInicio, servicios:vServicios, vender:vVender, caja:vCaja, mas:vMas})[st.tab](r);
+  const conNav = !['editor','cobrar','cobrada'].includes(st.sub);
+  tel.innerHTML = `<div class="pant ${anim ? 'entra' : ''}" id="pant">${html}</div>` + (conNav ? vNav() : '') + (st.hoja ? vHoja(r) : '') + (st.toast ? `<div class="toast" role="status">${st.toast}</div>` : '');
+  pintarIrA();
+}
+function ir(tab, sub=null) { st.tab = tab; st.sub = sub; st.hoja = null; render(); document.getElementById('pant').scrollTop = 0; }
+function toast(t) { st.toast = t; render(false); clearTimeout(toast.t); toast.t = setTimeout(() => { st.toast = null; render(false); }, 2600); }
+
+// ---------------- barra inferior ----------------
+function vNav() {
+  const b = (k, i, t) => `<button class="${st.tab===k?'on':''}" data-tab="${k}" aria-label="${t}"><span class="pi">${ic(i,22)}</span>${t}</button>`;
+  return `<nav class="nav">${b('inicio','inicio','Inicio')}${b('servicios','frasco','Servicios')}
+    <button class="vend ${st.tab==='vender'?'on':''}" data-tab="vender"><span class="pv">${ic('carrito',22)}Cobrar</span></button>
+    ${b('caja','billetera','Caja')}${b('mas','mas','Más')}</nav>`;
+}
+
+// ---------------- Inicio ----------------
+function vInicio(r) {
+  const bajos = r.insumos.filter(i => i.stock < i.min);
+  const consumido = st.ventas.reduce((t, v) => t + v.costo, 0);
+  const hoy = r.hechos.plata + st.ventas.reduce((t, v) => t + v.total, 0);
+  const cant = r.hechos.cant + st.ventas.reduce((t, v) => t + v.items, 0);
+  const enCarr = Object.values(st.carrito).reduce((a, b) => a + b, 0);
+  return `
+  <div class="fila">
+    <div class="circ" style="background:var(--gbg);color:var(--g)" aria-label="Conectado a la PC">${ic('computadora')}</div>
+    <div class="esp"></div>
+    <button class="circ" data-hoja="notif" aria-label="Notificaciones">${ic('campana')}${bajos.length ? `<span class="globo">${bajos.length}</span>` : ''}</button>
+  </div>
+  <h1 class="h1">Hola, ${r.usuario}</h1>
+  <button class="btnAzul" data-tab="vender">${ic(r.icono,26)} ${enCarr ? `Seguir cobrando (${enCarr})` : 'Cobrar un servicio'}</button>
+  <div class="sec">Tu día <span>Deslizá para ver más →</span></div>
+  <div class="carr">
+    <div class="tdia" style="background:var(--hero);color:#fff"><div class="l" style="opacity:.8">Servicios de hoy</div><div class="n tab">${cant}</div><div class="d">${plata(hoy)} cobrados</div></div>
+    <button class="tdia" style="background:var(--wbg);color:var(--w);text-align:left" data-tab2="servicios" data-seg="1"><div class="l">Insumos por acabarse</div><div class="n tab">${bajos.length}</div><div class="d">${bajos.slice(0,2).map(i=>i.n).join(' · ') || 'Todo en orden'}</div></button>
+    <button class="tdia" style="background:var(--gbg);color:var(--g);text-align:left" data-tab="caja"><div class="l">Para reponer insumos</div><div class="n tab">${plata(Math.round(r.hechos.plata*.09) + consumido)}</div><div class="d">Lo que costó lo que se gastó hoy</div></button>
+  </div>
+  <div class="sec">Para hacer rápido</div>
+  <div class="atajos">
+    <button class="atajo" data-nuevo-serv><span class="circ">${ic('receta',20)}</span>Nuevo servicio</button>
+    <button class="atajo" data-hoja="compra"><span class="circ">${ic('camara',20)}</span>Cargar una compra</button>
+    <button class="atajo" data-tab2="servicios" data-seg="1"><span class="circ">${ic('portapapeles',20)}</span>Contar insumos</button>
+  </div>
+  <div class="busc" style="margin-top:14px">${ic('lupa',20)} ¿No encontrás algo? Buscá una función</div>`;
+}
+
+// ---------------- Servicios / Insumos / Reventa ----------------
+function vServicios(r) {
+  const seg = ['Servicios','Insumos','Reventa'].map((t,i)=>`<button class="${st.servSeg===i?'on':''}" data-seg="${i}">${t}</button>`).join('');
+  let cuerpo = '';
+  if (st.servSeg === 0) {
+    cuerpo = `<button class="btn p" style="margin-top:14px" data-nuevo-serv>${ic('masMas',20)} Nuevo servicio</button>
+    ${r.cats.map(c => {
+      const ls = r.servicios.filter(s => s.cat === c);
+      if (!ls.length) return '';
+      return `<div class="sec">${c}</div><div class="agr">${ls.map(s => {
+        const co = costoServicio(s, r), m = margen(s.precio, co), al = alcanza(s, r);
+        return `<button class="item" data-editar="${s.id}"><div class="esp"><div class="t">${s.n}</div>
+          <div class="st">${s.min} min · insumos ${plata(co)} · ${al < 5 ? `<span class="et ${al<1?'b':'w'}">alcanza para ${al}</span>` : `alcanza para ${al}`}</div></div>
+          <div><div class="v tab">${plata(s.precio)}</div><div class="vs" style="color:var(--g)">gana ${Math.round(m*100)} %</div></div></button>`;
+      }).join('')}</div>`;
+    }).join('')}`;
+  } else if (st.servSeg === 1) {
+    const ord = [...r.insumos].sort((a,b) => (a.stock/a.min) - (b.stock/b.min));
+    cuerpo = `<div class="grid2" style="margin-top:14px">
+      <button class="btn p" data-hoja="compra">${ic('masMas',20)} Cargar compra</button>
+      <button class="btn s">${ic('portapapeles',20)} Contar</button></div>
+      <div class="sec">Por acabarse primero</div>
+      <div class="agr">${ord.map(i => {
+        const pct = Math.min(1, i.stock / (i.min * 2.5));
+        const bajo = i.stock < i.min;
+        return `<button class="item" data-hoja="insumo:${i.id}"><div class="esp"><div class="t">${i.n}</div>
+          <div class="st">${num(i.stock)} ${i.u} · ${num(i.stock / i.envase, 1)} envases · ${plata(costoUnidad(i))}/${i.u}</div>
+          <div class="barra"><i style="width:${pct*100}%;background:${bajo?'var(--w)':'var(--g)'}"></i></div></div>
+          ${bajo ? '<span class="et w">Poco stock</span>' : ''}</button>`;
+      }).join('')}</div>`;
+  } else {
+    cuerpo = `<div class="info" style="margin-top:14px">${ic('carrito',20)}<span>Lo que vendés en el mostrador funciona igual que hoy: es un producto común, con precio, stock y código.</span></div>
+      <div class="sec">Productos</div><div class="agr">${r.reventa.map(p => `<div class="item"><div class="esp"><div class="t">${p.n}</div>
+      <div class="st">${p.stock ? `${p.stock} en stock` : '<span class="et b">Sin stock</span>'}</div></div><div class="v tab">${plata(p.p)}</div></div>`).join('')}</div>`;
+  }
+  return `<h2 class="h2" style="margin:10px 0 16px">Servicios</h2><div class="seg">${seg}</div>${cuerpo}`;
+}
+
+// ---------------- Creador de servicio con calculador ----------------
+function vEditor(r) {
+  const e = st.editor;
+  const co = Math.ceil(e.receta.reduce((t,[id,c]) => t + costoUnidad(r.insumos.find(i=>i.id===id))*c, 0));
+  const m = margen(e.precio, co);
+  const ref = 0.7; // ganancia de referencia de la categoría (configurable, como hoy)
+  const sugerido = Math.ceil(co / (1 - ref) / 500) * 500;
+  const al = e.receta.length ? Math.floor(Math.min(...e.receta.map(([id,c]) => r.insumos.find(i=>i.id===id).stock / c))) : 0;
+  const colorM = m >= ref ? 'var(--g)' : m >= .5 ? 'var(--w)' : 'var(--b)';
+  return `
+  <div class="cab"><button class="circ ch" data-cerrar-editor aria-label="Volver">${ic('volver')}</button><div class="h2">${e.nuevo ? 'Nuevo servicio' : 'Editar servicio'}</div></div>
+  <label class="campo"><small>Nombre</small><input id="edNombre" value="${e.n}" placeholder="Ej.: ${r === datos.unias ? 'Semipermanente manos' : 'Corte clásico'}"></label>
+  <div class="grid2" style="margin-top:10px">
+    <label class="campo"><small>Duración (min)</small><input id="edMin" inputmode="numeric" value="${e.min}"></label>
+    <label class="campo"><small>Categoría</small><input id="edCat" value="${e.cat}"></label>
+  </div>
+  <div class="sec">Qué usa cada vez <span>${e.receta.length} insumos</span></div>
+  <div class="agr">
+  ${e.receta.map(([id,c],k) => { const ins = r.insumos.find(i=>i.id===id); const paso = ins.u === 'u' ? 1 : ins.u === 'g' && ins.envase > 100 ? 5 : .1;
+    return `<div class="item" style="gap:10px;padding:12px 12px 12px 18px"><div class="esp"><div class="t" style="font-size:16px">${ins.n}</div>
+      <div class="st tab">${plata(Math.ceil(costoUnidad(ins)*c))} <span style="opacity:.75">(${plata(costoUnidad(ins))}/${ins.u})</span></div></div>
+      <div class="step"><button data-q="${k}:-${paso}" aria-label="Menos">${ic('menos',18)}</button><input class="tab" data-qi="${k}" value="${num(c,2)}" aria-label="Cantidad en ${ins.u}"><button data-q="${k}:${paso}" aria-label="Más">${ic('masMas',18)}</button></div>
+      <span style="font-size:13px;color:var(--mute);width:16px">${ins.u}</span>
+      <button class="circ ch" style="width:36px;height:36px;background:none;color:var(--mute)" data-quitar="${k}" aria-label="Quitar">${ic('papelera',18)}</button></div>`;}).join('')}
+  <button class="item" data-hoja="agregarInsumo" style="color:var(--i);font-weight:600;font-size:16px;min-height:60px">${ic('masMas',20)} Agregar un insumo</button>
+  </div>
+  <div class="hero" style="margin-top:18px">
+    <div class="l">Le cuesta a tu negocio en insumos</div>
+    <div class="n tab">${plata(co)}</div>
+    <div class="d">Con el stock de hoy alcanza para <b style="color:#fff">${al} ${al===1?'servicio':'servicios'}</b>${e.receta.length ? ' · el que se acaba primero: ' + (() => { const [id,c] = e.receta.reduce((a,b)=> r.insumos.find(i=>i.id===a[0]).stock/a[1] <= r.insumos.find(i=>i.id===b[0]).stock/b[1] ? a : b); return r.insumos.find(i=>i.id===id).n.toLowerCase(); })() : ''}</div>
+  </div>
+  <label class="campo gr" style="margin-top:12px"><small>Precio al cliente</small><input id="edPrecio" inputmode="numeric" class="tab" value="${e.precio ? '$ ' + e.precio.toLocaleString('es-AR') : ''}" placeholder="$ 0"></label>
+  <div style="padding:4px 4px 0">
+    <div class="kv"><span>Ganancia por servicio</span><span class="tab" style="color:${colorM}">${plata(e.precio - co)} · ${Math.round(m*100)} %</span></div>
+    <div class="kv"><span>Precio para ganar el ${Math.round(ref*100)} %</span><span class="tab">${plata(sugerido)} <button style="color:var(--i);font-weight:600;margin-left:6px" data-usar="${sugerido}">Usar</button></span></div>
+  </div>
+  ${m < ref && e.precio ? `<div class="info w" style="margin-top:12px">${ic('alerta',20)}<span>Gana menos que la referencia de la categoría (${Math.round(ref*100)} %). Se puede guardar igual.</span></div>` : ''}
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+    <button class="btn p" data-guardar ${!e.n || !e.receta.length || !e.precio ? 'disabled' : ''}>${ic('tilde',20)} Guardar servicio</button>
+    ${e.nuevo ? '' : '<button class="btn o" style="color:var(--b)">Dejar de ofrecerlo</button>'}
+  </div>`;
+}
+
+// ---------------- Vender ----------------
+function vVender(r) {
+  const cats = ['Todos', ...r.cats];
+  const ls = r.servicios.filter(s => st.cat === 'Todos' || s.cat === st.cat);
+  const items = Object.entries(st.carrito);
+  const total = items.reduce((t,[id,c]) => t + r.servicios.find(s=>s.id===id).precio*c, 0);
+  return `
+  <h2 class="h2" style="margin:10px 0 16px">Cobrar</h2>
+  <div class="busc">${ic('lupa',20)} Buscar servicio o producto</div>
+  <div class="chips" style="margin-top:12px">${cats.map(c=>`<button class="chip ${st.cat===c?'on':''}" data-cat="${c}">${c}</button>`).join('')}</div>
+  <div class="grid2" style="margin-top:14px">
+    ${ls.map(s => `<button class="serv" data-sumar="${s.id}">${st.carrito[s.id] ? `<span class="cant">${st.carrito[s.id]}</span>` : ''}
+      <span class="t">${s.n}</span><span class="d">${s.min} min</span><span class="p tab">${plata(s.precio)}</span></button>`).join('')}
+  </div>
+  ${items.length ? `<div class="sec">En esta venta</div>
+  <div class="agr">${items.map(([id,c]) => { const s = r.servicios.find(x=>x.id===id);
+    return `<div class="item" style="gap:10px"><div class="esp"><div class="t" style="font-size:16px">${s.n}</div><div class="st tab">${plata(s.precio)} c/u</div></div>
+    <div class="step" style="background:var(--paper)"><button data-sumar="${id}:-1" aria-label="Menos">${ic('menos',18)}</button><input class="tab" readonly value="${c}" style="width:34px"><button data-sumar="${id}" aria-label="Más">${ic('masMas',18)}</button></div></div>`;}).join('')}</div>
+  <button class="btnAzul" data-cobrar style="height:64px">Cobrar ${plata(total)}</button>` :
+  `<div class="info" style="margin-top:18px">${ic('brillo',20)}<span>Tocá un servicio para sumarlo. Al cobrar, se descuenta solo lo que usa cada uno.</span></div>`}`;
+}
+function vCobrar(r) {
+  const items = Object.entries(st.carrito);
+  const total = items.reduce((t,[id,c]) => t + r.servicios.find(s=>s.id===id).precio*c, 0);
+  const ef = st.medio === 'ef';
+  const final = ef ? redondeoEf(total) : total;
+  const M = [['ef','Efectivo','var(--efectivo)','Alt+E'],['qr','QR','var(--marca)','Alt+Q'],['tj','Tarjeta','var(--debito)','Alt+D'],['mx','Mixto','var(--mixto)','Alt+X']];
+  return `
+  <div class="cab"><button class="circ ch" data-tab="vender" aria-label="Volver">${ic('volver')}</button><div class="h2">Cobrar</div></div>
+  <div class="hero"><div class="l">Total</div><div class="n tab">${plata(final)}</div>
+  <div class="d">${items.map(([id,c])=>`${c > 1 ? c+' × ' : ''}${r.servicios.find(s=>s.id===id).n}`).join(' · ')}</div></div>
+  ${ef && final !== total ? `<div class="kv" style="padding:12px 4px"><span>Redondeo del efectivo</span><span class="tab">+ ${plata(final-total)}</span></div>` : ''}
+  <div class="sec">Cómo paga</div>
+  <div class="medios">${M.map(([k,t,c]) => `<button class="medio ${st.medio===k?'on':''}" style="background:${c}" data-medio="${k}">${ic(k==='ef'?'billetera':k==='qr'?'portapapeles':k==='tj'?'billetera':'calculadora',22)}${t}</button>`).join('')}</div>
+  <div class="info g" style="margin-top:14px">${ic('frasco',20)}<span>Al cobrar se descuentan los insumos de ${items.reduce((t,[,c])=>t+c,0)} ${items.length===1&&items[0][1]===1?'servicio':'servicios'}. Si te equivocás, eliminar la venta los devuelve.</span></div>
+  <button class="btnAzul" data-confirmar ${st.medio ? '' : 'disabled style="opacity:.4"'}>${ic('tilde',24)} Cobrar ${plata(final)}</button>`;
+}
+function vCobrada(r) {
+  const v = st.ultimo;
+  return `
+  <div class="tilde">${ic('tilde',48)}</div>
+  <h2 class="h2" style="text-align:center">Servicio cobrado</h2>
+  <p style="text-align:center;color:var(--mute);margin:8px 0 22px;font-size:16px" class="tab">${plata(v.total)} · ${v.medio}</p>
+  <div class="sec" style="margin-top:6px">Se descontó de insumos <span>${v.mov.length} movimientos</span></div>
+  <div class="agr">${v.mov.map(m => `<div class="item" style="min-height:58px;padding:10px 18px"><div class="esp"><div class="t" style="font-size:15.5px">${m.n}</div>
+    <div class="st tab">quedan ${num(m.queda)} ${m.u}</div></div><div class="v tab" style="color:var(--b);font-size:16px">− ${num(m.c,2)} ${m.u}</div>
+    ${m.queda < m.min ? '<span class="et w">Poco</span>' : ''}</div>`).join('')}</div>
+  <div class="kv" style="padding:16px 4px"><span>Costo de lo que se usó (va a Separar)</span><span class="tab">${plata(v.costo)}</span></div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+    <button class="btn p" data-tab="vender">Cobrar otro servicio</button>
+    <button class="btn o">Imprimir ticket</button>
+  </div>`;
+}
+
+// ---------------- Caja (reutilizada) ----------------
+function vCaja(r) {
+  const extra = st.ventas.reduce((t,v)=>t+v.total,0);
+  const costoHoy = Math.round(r.hechos.plata*.09) + st.ventas.reduce((t,v)=>t+v.costo,0);
+  const provs = {};
+  r.insumos.forEach(i => provs[i.prov] = 0);
+  // el costo consumido se reparte por proveedor según de quién es cada insumo
+  st.ventas.forEach(v => v.mov.forEach(m => provs[m.prov] += m.costo));
+  const base = Math.round(r.hechos.plata*.09); const ks = Object.keys(provs);
+  ks.forEach((k,i) => provs[k] += Math.round(base * [0.55,0.3,0.15,0][i] || 0));
+  return `
+  <h2 class="h2" style="margin:10px 0 16px">Caja</h2>
+  <div class="seg"><button class="on">Resumen</button><button>Separar</button><button>Ventas</button></div>
+  <div class="hero" style="margin-top:16px"><div class="l">En la caja ahora</div><div class="n tab">${plata(40000 + Math.round((r.hechos.plata+extra)*.45))}</div><div class="d">Abierta por ${r.usuario} a las 9:02</div></div>
+  <div style="padding:6px 4px 0">
+    <div class="kv"><span>Servicios cobrados</span><span class="tab">${plata(r.hechos.plata + extra)}</span></div>
+    <div class="kv"><span>Mercado Pago</span><span class="tab">${plata(Math.round((r.hechos.plata+extra)*.55))}</span></div>
+    <div class="kv"><span>Gastos</span><span class="tab">− ${plata(4500)}</span></div>
+  </div>
+  <div class="sec">Separar para reponer insumos</div>
+  <div class="agr">${ks.filter(k=>provs[k]>0).map(k=>`<div class="item"><div class="circ">${ic('camion',20)}</div><div class="esp"><div class="t">${k}</div><div class="st">costo real de lo que se usó</div></div><div class="v tab">${plata(provs[k])}</div></div>`).join('')}</div>
+  <div class="grid2" style="margin-top:14px"><button class="btn s">Contar la caja</button><button class="btn p">Cerrar caja</button></div>`;
+}
+
+// ---------------- Más ----------------
+function vMas(r) {
+  const fila = (i,t,s,tag) => `<div class="item"><div class="circ">${ic(i,20)}</div><div class="esp"><div class="t">${t}${tag?`<span class="marca-nueva">${tag}</span>`:''}</div><div class="st">${s}</div></div>${ic('chevron',20,'style="color:var(--mute)"')}</div>`;
+  return `<h2 class="h2" style="margin:10px 0 16px">Más</h2>
+  <div class="agr">${fila('computadora', r.usuario, r.local + ' · Cambiar')}</div>
+  <div class="sec">Negocio</div>
+  <div class="agr">${fila('camara','Cargar una factura','Suma a los insumos y a la deuda')}${fila('camion','Proveedores y cuenta corriente','Lo que debés y pagos')}${fila('brillo','Combos','Promos de servicios','ADAPTADO')}${fila('ajustes','Configuración','Ganancia de referencia, cobro, usuarios')}</div>
+  <div class="sec">Esta aplicación</div>
+  <div class="agr">${fila('portapapeles','Rubro del negocio', rubro==='unias'?'Uñas y belleza':'Barbería','NUEVO')}${fila('reloj','Cargar días anteriores','Completar ventas pasadas')}</div>`;
+}
+
+// ---------------- hojas ----------------
+function vHoja(r) {
+  const h = st.hoja; let c = '';
+  if (h === 'notif') {
+    const bajos = r.insumos.filter(i => i.stock < i.min);
+    c = `<h3>Notificaciones</h3><div class="agr" style="margin-top:14px">${bajos.map(i=>`<div class="item"><div class="circ" style="color:var(--w)">${ic('alerta',20)}</div><div class="esp"><div class="t">Queda poco: ${i.n}</div><div class="st tab">${num(i.stock)} ${i.u} · mínimo ${i.min} ${i.u} · ${i.prov}</div></div></div>`).join('') || '<div class="item">Sin novedades por ahora</div>'}</div>`;
+  } else if (h === 'agregarInsumo') {
+    const usados = st.editor.receta.map(x=>x[0]);
+    c = `<h3>Agregar un insumo</h3><p style="color:var(--mute);margin:0 0 14px">Elegí qué usa este servicio. La cantidad se ajusta después.</p>
+    <div class="agr">${r.insumos.filter(i=>!usados.includes(i.id)).map(i=>`<button class="item" data-elegir="${i.id}"><div class="esp"><div class="t">${i.n}</div><div class="st tab">${plata(costoUnidad(i))} por ${i.u}</div></div>${ic('masMas',20)}</button>`).join('')}</div>`;
+  } else if (h === 'compra' || h.startsWith('insumo:')) {
+    const id = h.startsWith('insumo:') ? h.slice(7) : (st.compraId || r.insumos[0].id);
+    const i = r.insumos.find(x=>x.id===id);
+    const usa = r.servicios.filter(s => s.receta.some(([x])=>x===id));
+    c = `<h3>${i.n}</h3><p style="color:var(--mute);margin:0 0 14px" class="tab">Quedan ${num(i.stock)} ${i.u} · ${i.prov}</p>
+    ${h === 'compra' ? `<label class="campo" style="margin-bottom:10px"><small>Insumo</small><select id="cpIns" style="width:100%;border:0;background:none;font:500 20px var(--font);color:var(--ink);margin-top:4px">${r.insumos.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${x.n}</option>`).join('')}</select></label>` : ''}
+    <div class="grid2">
+      <label class="campo"><small>Envases que entraron</small><input id="cpCant" inputmode="numeric" value="2" class="tab"></label>
+      <label class="campo"><small>Contenido (${i.u})</small><input id="cpEnv" inputmode="numeric" value="${i.envase}" class="tab"></label>
+    </div>
+    <label class="campo gr" style="margin-top:10px"><small>Precio por envase</small><input id="cpPrecio" inputmode="numeric" value="$ ${i.costoEnv.toLocaleString('es-AR')}" class="tab"></label>
+    <div class="info" style="margin-top:12px">${ic('calculadora',20)}<span id="cpCalc"></span></div>
+    ${usa.length ? `<p style="color:var(--mute);font-size:14px;margin:12px 4px 0">Lo usan: ${usa.map(s=>s.n).join(', ')}.</p>` : ''}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px"><button class="btn p" data-cargar="${id}">${ic('tilde',20)} Sumar al stock</button>
+    <button class="btn o">${ic('camara',20)} Sacarle foto a la factura</button></div>`;
+  }
+  return `<div class="velo" data-velo><div class="hoja" role="dialog" aria-modal="true"><div class="asa"></div>${c}</div></div>`;
+}
+function calcCompra() {
+  const el = document.getElementById('cpCalc'); if (!el) return;
+  const id = document.getElementById('cpIns')?.value || (st.hoja.startsWith('insumo:') ? st.hoja.slice(7) : r0().id);
+  const i = R().insumos.find(x=>x.id===id);
+  const cant = +document.getElementById('cpCant').value.replace(/\D/g,'') || 0;
+  const env = +document.getElementById('cpEnv').value.replace(/\D/g,'') || 0;
+  const pr = +document.getElementById('cpPrecio').value.replace(/\D/g,'') || 0;
+  const cu = env ? pr / env : 0; const ant = costoUnidad(i);
+  el.innerHTML = `Entran <b>${num(cant*env)} ${i.u}</b> · ${plata(cu)} por ${i.u}` + (Math.abs(cu-ant) > .01 && cu ? ` (antes ${plata(ant)}, ${cu > ant ? 'subió' : 'bajó'} ${Math.round(Math.abs(cu/ant-1)*100)} %). Los servicios que lo usan recalculan su costo.` : '.');
+}
+const r0 = () => R().insumos[0];
+
+// ---------------- eventos ----------------
+tel.addEventListener('click', e => {
+  const t = e.target.closest('button,[data-velo]'); if (!t) return;
+  const d = t.dataset, r = R();
+  if (d.velo !== undefined && e.target === t) { st.hoja = null; render(false); return; }
+  if (d.tab) { if (d.tab !== 'vender') st.medio = null; ir(d.tab); }
+  else if (d.tab2) { st.servSeg = +d.seg; ir(d.tab2); }
+  else if (d.seg !== undefined) { st.servSeg = +d.seg; render(false); }
+  else if (d.hoja) { st.hoja = d.hoja; st.compraId = null; render(false); calcCompra(); }
+  else if (d.nuevoServ !== undefined) { st.editor = {nuevo:true, n:'', min:45, cat:r.cats[0], precio:0, receta:[]}; ir('servicios','editor'); }
+  else if (d.editar) { const s = r.servicios.find(x=>x.id===d.editar); st.editor = JSON.parse(JSON.stringify(s)); ir('servicios','editor'); }
+  else if (d.cerrarEditor !== undefined) ir('servicios');
+  else if (d.q) { const [k,p] = d.q.split(':'); const it = st.editor.receta[+k]; it[1] = Math.max(0, Math.round((it[1] + +p)*100)/100); render(false); }
+  else if (d.quitar) { st.editor.receta.splice(+d.quitar,1); render(false); }
+  else if (d.elegir) { const i = r.insumos.find(x=>x.id===d.elegir); st.editor.receta.push([i.id, i.u==='u'?1:i.u==='g'?3:1]); st.hoja = null; render(false); }
+  else if (d.usar) { st.editor.precio = +d.usar; render(false); }
+  else if (d.guardar !== undefined) {
+    const e2 = st.editor;
+    if (e2.nuevo) { e2.id = 'n' + Date.now(); delete e2.nuevo; if (!r.cats.includes(e2.cat)) r.cats.push(e2.cat); r.servicios.push(e2); }
+    else r.servicios[r.servicios.findIndex(x=>x.id===e2.id)] = e2;
+    st.servSeg = 0; ir('servicios'); toast(`Guardado: ${e2.n}`);
+  }
+  else if (d.cat) { st.cat = d.cat; render(false); }
+  else if (d.sumar) { const [id,m] = d.sumar.split(':'); st.carrito[id] = (st.carrito[id]||0) + (m ? -1 : 1); if (st.carrito[id] <= 0) delete st.carrito[id]; render(false); }
+  else if (d.cobrar !== undefined) { st.medio = null; st.sub = 'cobrar'; render(); }
+  else if (d.medio) { st.medio = d.medio; render(false); }
+  else if (d.confirmar !== undefined && st.medio) cobrar(r);
+  else if (d.cargar) {
+    const id = document.getElementById('cpIns')?.value || d.cargar; const i = r.insumos.find(x=>x.id===id);
+    const cant = +document.getElementById('cpCant').value.replace(/\D/g,'') || 0, env = +document.getElementById('cpEnv').value.replace(/\D/g,'') || i.envase, pr = +document.getElementById('cpPrecio').value.replace(/\D/g,'') || i.costoEnv;
+    i.stock += cant*env; i.envase = env; i.costoEnv = pr; st.hoja = null; toast(`Sumado: ${num(cant*env)} ${i.u} de ${i.n.toLowerCase()}`);
+  }
+});
+tel.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'edNombre') st.editor.n = el.value;
+  if (el.id === 'edMin') st.editor.min = +el.value.replace(/\D/g,'') || 0;
+  if (el.id === 'edCat') st.editor.cat = el.value;
+  if (el.id === 'edPrecio') { st.editor.precio = +el.value.replace(/\D/g,'') || 0; }
+  if (el.dataset.qi) { const v = parseFloat(el.value.replace(',','.')); if (!isNaN(v)) st.editor.receta[+el.dataset.qi][1] = v; }
+  if (el.id?.startsWith('cp')) calcCompra();
+});
+// El precio y las cantidades recalculan al salir del campo, para no perder el cursor mientras se escribe.
+tel.addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'edPrecio' || el.dataset.qi || el.id === 'edNombre') render(false);
+  if (el.id === 'cpIns') { st.compraId = el.value; render(false); calcCompra(); }
+});
+
+function cobrar(r) {
+  const items = Object.entries(st.carrito);
+  const total = items.reduce((t,[id,c]) => t + r.servicios.find(s=>s.id===id).precio*c, 0);
+  const final = st.medio === 'ef' ? redondeoEf(total) : total;
+  const acum = {};
+  items.forEach(([id,c]) => r.servicios.find(s=>s.id===id).receta.forEach(([ins,q]) => acum[ins] = (acum[ins]||0) + q*c));
+  const mov = Object.entries(acum).map(([id,q]) => { const i = r.insumos.find(x=>x.id===id); i.stock = Math.round((i.stock - q)*100)/100;
+    return {n:i.n, u:i.u, c:q, queda:i.stock, min:i.min, prov:i.prov, costo:costoUnidad(i)*q}; });
+  const costo = Math.ceil(mov.reduce((t,m)=>t+m.costo,0));
+  st.ultimo = {total:final, medio:{ef:'Efectivo',qr:'QR de Mercado Pago',tj:'Tarjeta (Point)',mx:'Mixto'}[st.medio], mov, costo};
+  st.ventas.push({total:final, costo, mov, items:items.reduce((t,[,c])=>t+c,0)});
+  st.carrito = {}; st.medio = null; st.sub = 'cobrada'; render();
+}
+
+// ---------------- panel de notas ----------------
+document.getElementById('segRubro').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  rubro = b.dataset.r; [...e.currentTarget.children].forEach(x => x.classList.toggle('on', x === b));
+  st.carrito = {}; st.ventas = []; st.cat = 'Todos'; st.sub = null; st.hoja = null; render();
+});
+const PANT = [['Inicio',()=>ir('inicio')],['Servicios',()=>{st.servSeg=0;ir('servicios')}],['Creador de servicio',()=>{st.editor=JSON.parse(JSON.stringify(R().servicios[rubro==='unias'?1:2]));ir('servicios','editor')}],['Insumos',()=>{st.servSeg=1;ir('servicios')}],['Cargar compra',()=>{st.servSeg=1;ir('servicios');st.hoja='compra';render(false);calcCompra()}],['Cobrar',()=>ir('vender')],['Caja',()=>ir('caja')],['Más',()=>ir('mas')]];
+function pintarIrA() {
+  const cur = st.sub === 'editor' ? 'Creador de servicio' : st.tab === 'servicios' ? (st.servSeg===1?'Insumos':'Servicios') : ({inicio:'Inicio',vender:'Cobrar',caja:'Caja',mas:'Más'})[st.tab];
+  document.getElementById('irA').innerHTML = PANT.map(([t],k)=>`<button data-k="${k}" class="${t===cur?'on':''}">${t}</button>`).join('');
+}
+document.getElementById('irA').addEventListener('click', e => { const b = e.target.closest('button'); if (b) PANT[+b.dataset.k][1](); });
+render();
+</script>
