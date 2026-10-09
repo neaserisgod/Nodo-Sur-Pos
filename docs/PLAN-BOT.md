@@ -137,7 +137,87 @@ dueño manda a mano desde el celular principal (la pausa cuando contestás vos),
 el Durable Object de Cloudflare; sin él el bot revisa cada 10 minutos), `termux-open-url` y el instalador en Termux. Sí se probó
 el bot contra el worker real del sitio corriendo local (configuración, catálogo, pedido aceptado y aviso al cliente).
 
+## Primera instalación real (2026-10-09, El dueño, en el local)
+
+Publicado ese día: app (Windows 1.0.0.2155 y APK 2156, estable), sitio (`NodoSurPage` PR #55) y bot (`botdemo` PR #1 y #2).
+Lo que apareció al instalarlo en un celular de verdad, en orden (el detalle técnico de cada uno está en `TRAMPAS.md`):
+
+1. **Termux recién instalado no trae `curl`**: el comando de un paso falla con "curl: command not found". Hay que correr antes
+   `pkg install -y curl`. *Pendiente:* que el comando que copia la app sea `pkg install -y curl && curl -fsSL … | bash`.
+2. **Pegar con el portapapeles del teclado mete basura** (`^[[200~ … ~`, sale "bash~"). Se pega manteniendo apretado en la
+   pantalla de Termux › Paste, o se escribe a mano. *Pendiente:* decirlo en el paso 2 de la pantalla del bot.
+3. **Ningún mensaje se descifraba ("Bad MAC")**, ni con sesión nueva. Baileys 6.7.24 había quedado "legacy": se pasó a
+   7.0.0-rc14 (fijada), con las claves en caché, y el modo de vincular ya no corta a los 2 s (espera 1 minuto). Arreglado en
+   `botdemo` PR #2. Para actualizar un bot ya instalado: `cd ~/bot-turnos && git pull && npm install --omit=optional` y
+   `bash bot.sh vincular`.
+4. **Al vincular, el WhatsApp del celular puede mostrar un error aunque haya quedado vinculado**: en Termux aparece
+   "código 515" (WhatsApp pide reconectar, es normal) y después "WhatsApp conectado". Se confirma en Dispositivos vinculados.
+5. **"código 401 / Sesión cerrada desde el teléfono"** al cerrar la sesión vieja desde el celular: esperado.
+6. **"Closing session: SessionEntry {…}"** en los registros no es un error: la librería reemplaza una clave vieja.
+7. **El bot no le contesta a su propio número de soporte ni trata como cliente al número de avisos.** Probarlo desde el
+   número del dueño (que en esta cuenta es el de soporte de Nodo Sur, 5492944796044) no da respuesta, a propósito
+   (`botdemo/src/core/motor.js`). Para probar como cliente hay que escribir desde un tercer número.
+8. **Ver si llegan los mensajes**: `DEPURAR=1 pm2 restart bot-turnos --update-env && pm2 logs bot-turnos` muestra
+   `[msj] de=… texto="…"` por cada mensaje recibido. Para apagarlo: `pm2 restart bot-turnos --update-env` sin la variable.
+
+Estado al cierre del día: el bot vinculado, con la configuración de Nodo Sur (versión 1), y los mensajes llegan y se
+descifran. **Falta la prueba completa de abajo.**
+
+## Prueba completa en el local
+
+Desde un **tercer número** (ni el del bot, ni el de avisos, ni el de soporte), salvo donde se dice otra cosa. Cada paso dice
+qué tiene que pasar.
+
+**Consultas**
+1. "hola" → saludo con el nombre del negocio y el menú (1 precios, 2 pedido, 3 ubicación y horarios, 4 persona).
+2. "1" y después el nombre de un producto con stock (ej. "coca") → nombre, precio y ✅, con "precios de hoy, pueden cambiar".
+3. "¿cuánto sale la yerba?" directo, sin menú → lo mismo.
+4. Un producto con stock 0 → aparece con "❌ sin stock".
+5. Algo que no existe ("¿tienen helicóptero?") → "No encontré ese producto".
+6. Cambiar un precio en la PC o el celular, esperar que suba la sync (unos minutos) y volver a preguntar → precio nuevo.
+7. "3", o "¿dónde están?" / "¿a qué hora abren?" → dirección y horarios, como se cargaron en Más › Bot de WhatsApp.
+
+**Pedido**
+8. "2" (o "quiero hacer un pedido") → pide productos de a uno.
+9. "2 coca" → "Anotado: 2 × …" con el subtotal. Uno con varias coincidencias → lista para elegir con número.
+10. Un producto sin stock → no lo agrega y lo dice.
+11. "listo" → pide el nombre (solo la primera vez) → resumen con el total y pide confirmar → confirmar.
+12. En el celular con la app: **Encargues › Por confirmar · WhatsApp** muestra el pedido (con la app abierta aparece solo;
+    si no, entrar de nuevo a Encargues).
+13. **Aceptar y apartar** → queda como encargue "Nombre (WhatsApp)", baja el stock, y **al cliente le llega** que pase a
+    retirarlo.
+14. Otro pedido → **Rechazar** → al cliente le llega que no se puede; el stock no cambia.
+15. Un pedido de algo que tiene poco stock, vender eso en la caja antes de aceptar, y aceptar → la app dice qué falta y no
+    acepta; desde ahí se puede rechazar.
+16. "cancelar" en medio de un pedido → "no anoté nada".
+17. Entregar el encargue aceptado desde Encargues y cobrarlo → sale como cualquier encargue.
+
+**Persona y pausa**
+18. "4" (o "quiero hablar con alguien") → al cliente le dice que le van a responder; **al número de avisos le llega** el aviso
+    con lo que escribió.
+19. Contestarle a mano a ese cliente desde el WhatsApp del local → el bot se calla en ese chat durante la pausa configurada
+    (60 min por defecto): un "hola" del cliente en ese rato no tiene respuesta del bot.
+20. Pasada la pausa (o probar con la pausa en 15 min) → el bot vuelve a contestar.
+
+**Dueño (desde el número de avisos)**
+21. "ayuda" → la lista de lo que puede pedir el dueño.
+22. "pasame los contactos" → manda el archivo de contactos.
+23. "aviso …" → solo si de verdad se quiere mandar a todos los clientes (se manda en serio).
+
+**Configuración desde la app**
+24. Más › Bot de WhatsApp muestra "Andando" con la última señal (se actualiza cada hora).
+25. Cambiar un horario o la dirección y Guardar → en unos segundos (o hasta 10 min sin avisos en vivo) el bot contesta con lo
+    nuevo en el paso 7.
+26. Un día cerrado: escribir ese día → contesta igual (consultas y pedidos), y en "3" figura cerrado.
+
+**Robustez**
+27. Apagar el WiFi del celular del bot 5 minutos y prenderlo → vuelve a contestar solo (si no, `bash bot.sh revisar`).
+28. Reiniciar el celular del bot → arranca solo (Termux:Boot) y contesta sin tocar nada.
+29. Dejarlo un día entero: Más › Bot de WhatsApp no tiene que pasar a "Sin señal".
+
+Si algo falla: captura de `pm2 logs bot-turnos --lines 60 --nostream` y del chat.
+
 ## Qué no se probó
 
-Nada: es un plan. Lo de Termux (`termux-open-url`, `curl` en una instalación nueva, el vínculo por `127.0.0.1` en Android)
-sale de cómo está hecho `setup.sh` y el sitio; no se probó en un celular.
+Ver "Prueba completa en el local": al 2026-10-09 solo se probó que el bot se vincula, baja la configuración y recibe y descifra
+los mensajes.

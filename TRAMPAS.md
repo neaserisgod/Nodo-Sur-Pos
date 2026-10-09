@@ -781,3 +781,30 @@ Arreglo (APK 2134): el menú publica su controlador en `puenteAppNs` y `Material
 
 Para probarlo hay que armar el **menú real** (`test/companion/menu_real_test.dart`), no un `ControladorFalsoNs` con el servicio ya puesto.
 
+## Bot de WhatsApp: con Baileys 6 ningún mensaje se descifraba ("Bad MAC")
+
+`botdemo/src/adaptadores/baileys.js` — en el primer celular real (2026-10-09) cada mensaje entrante daba "Failed to decrypt
+message with any known session… Bad MAC", incluso con una sesión recién vinculada: el bot nunca recibía nada. Tres causas
+juntas, las tres arregladas en `botdemo` PR #2:
+
+- **Baileys 6.7.24 había quedado "legacy"** (npm: `latest` = 7.0.0-rc14) desde que WhatsApp pasó a los chats `@lid`. Se fijó la
+  7.0.0-rc14. La 7 es módulo ES: se carga con `import()` (anda en cualquier Node 20+; `require()` de un módulo ES recién viene
+  sin bandera desde Node 22.12) y el número real de un chat `@lid` viene en `remoteJidAlt`/`participantAlt`.
+- **Las claves sin caché** (`auth: state` pelado): dos mensajes juntos leen y escriben el mismo archivo de sesión. Va
+  `makeCacheableSignalKeyStore(state.keys, logger)`, como recomienda Baileys, y `getMessage` para los reenvíos.
+- **Vincular cortaba a los 2 s** (`--pareo`), con WhatsApp todavía pasando las claves. Ahora espera 1 minuto.
+
+Desde este entorno de desarrollo no se llega a WhatsApp: la conexión real solo se prueba en el celular.
+
+## Bot de WhatsApp: no le contesta al número de soporte ni trata como cliente al de avisos
+
+`botdemo/src/core/motor.js` — un mensaje de `numero_soporte` se ignora y uno de `numero_duena` va a los comandos del dueño. La
+app pone como soporte el número de Nodo Sur (`numeroSoporteNodoSur`, que en la cuenta del dueño es su propio celular): probar
+el bot desde ahí no da respuesta y parece que no anda. Se prueba siempre desde un tercer número.
+
+## Termux recién instalado: no hay `curl`, y pegar con el teclado mete `^[[200~`
+
+El comando de un paso (`curl … | bash`) falla en un Termux nuevo ("curl: command not found"): primero `pkg install -y curl`.
+Pegar desde el portapapeles del teclado (Gboard) agrega los códigos de pegado (`^[[200~ … ~`) y el comando sale roto
+("bash~"); hay que pegar manteniendo apretado en la pantalla de Termux › Paste.
+
