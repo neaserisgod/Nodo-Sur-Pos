@@ -160,8 +160,11 @@ Lo que apareció al instalarlo en un celular de verdad, en orden (el detalle té
 8. **Ver si llegan los mensajes**: `DEPURAR=1 pm2 restart bot-turnos --update-env && pm2 logs bot-turnos` muestra
    `[msj] de=… texto="…"` por cada mensaje recibido. Para apagarlo: `pm2 restart bot-turnos --update-env` sin la variable.
 
-Estado al cierre del día: el bot vinculado, con la configuración de Nodo Sur (versión 1), y los mensajes llegan y se
-descifran. **Falta la prueba completa de abajo.**
+9. **Los pedidos tardaban hasta 10 minutos en llegar a Encargues**: el bot los mandaba recién en la vuelta del sincronizador.
+   Ahora salen después de cada mensaje (`botdemo` PR #3); el sitio no los duplica.
+
+Estado al cierre del día: el bot vinculado, con la configuración de Nodo Sur, contesta, y **los pedidos llegan a Encargues**
+(probado por el dueño desde un tercer número). Falta terminar la prueba completa de abajo.
 
 ## Prueba completa en el local
 
