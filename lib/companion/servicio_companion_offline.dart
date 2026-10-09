@@ -12,10 +12,18 @@
 // Excepción: con el modo "Solo celular" (El dueño, 2026-10-07: independencia
 // del celular, opción A) no hay otro dispositivo que pueda abrir la caja, así
 // que el riesgo de dos aperturas no existe y el celular la abre sobre su base.
-// En "PC y celular" sigue bloqueado: la PC puede estar apagada pero abrir
-// después.
+// En "PC y celular" (El dueño, 2026-10-09: "dejalo como respaldo", la nube pasa a
+// ser el camino principal) se abre si la nube lo confirma: se sincroniza por
+// internet y, si con lo último de todos los equipos no hay una caja abierta, el
+// celular la abre y la sube en el acto. Sin internet (o sin cuenta) sigue
+// bloqueado: no hay forma de saber si la PC ya abrió. Queda una ventana de un par
+// de segundos si los dos abren a la vez; para cerrarla del todo haría falta un
+// candado en el servidor (repo NodoSurPage).
+
+import 'dart:async';
 
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
+import '../servicios/sync_nube.dart' show SyncNubeOk;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
@@ -25,22 +33,36 @@ import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
+import 'sync_nube_companion.dart' show syncNubeDelCelular;
 import '../servicios/devolucion_mp.dart' show CobroPoint;
 
 const mensajeSinAperturaOffline = ErrorCompanion(
   0,
-  'Sin conexión a la PC — hace falta que haya quedado una caja abierta '
-  'antes de perder la conexión. No se puede abrir una nueva desde acá.',
+  'Sin conexión a la PC ni a internet: no se puede saber si la caja ya se abrió en otro equipo. '
+  'Conectate a internet (o al wifi de la PC) para abrirla.',
 );
 
 const mensajeCajaYaAbierta = ErrorCompanion(409, 'Ya hay una caja abierta.');
 
 class ServicioCompanionOffline implements ServicioCompanion {
-  ServicioCompanionOffline(this._local, {Future<bool> Function()? esSoloCelular})
-    : _esSoloCelular = esSoloCelular ?? esSoloCelularGuardado;
+  ServicioCompanionOffline(this._local, {Future<bool> Function()? esSoloCelular, Future<bool> Function()? sincronizarNube})
+    : _esSoloCelular = esSoloCelular ?? esSoloCelularGuardado,
+      _sincronizarNube = sincronizarNube ?? _sincronizarNubeDelCelular;
 
   final PuertoLocal _local;
   final Future<bool> Function() _esSoloCelular;
+
+  /// Sincroniza por internet y dice si salió bien (con cuenta y con red).
+  final Future<bool> Function() _sincronizarNube;
+
+  static Future<bool> _sincronizarNubeDelCelular() async {
+    try {
+      final sync = await syncNubeDelCelular();
+      return await sync.servicio.sincronizar() is SyncNubeOk;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   Future<int> abrirSesion({
@@ -48,9 +70,14 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required int fondoInicialCentavos,
     int? mpInicialCentavos,
   }) async {
-    if (!await _esSoloCelular()) throw mensajeSinAperturaOffline;
+    final soloCelular = await _esSoloCelular();
+    // Con una PC en juego, solo se abre si la nube confirma, con lo último de todos los equipos, que no hay otra abierta.
+    if (!soloCelular && !await _sincronizarNube()) throw mensajeSinAperturaOffline;
     try {
-      return await _local.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: fondoInicialCentavos, mpInicialCentavos: mpInicialCentavos);
+      final id = await _local.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: fondoInicialCentavos, mpInicialCentavos: mpInicialCentavos);
+      // Que la PC (y los otros celulares) la vean ya, en vez de esperar la próxima subida.
+      if (!soloCelular) unawaited(_sincronizarNube());
+      return id;
     } on SesionYaAbiertaException {
       // Puede haber llegado abierta por la sync de otro celular del mismo negocio.
       throw mensajeCajaYaAbierta;

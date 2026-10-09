@@ -119,6 +119,20 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Independizar el celular de la PC** (El dueño: "¿qué falta para independizar?"; sobre el modo "PC y celular": "dejalo como
+  respaldo"). La nube pasa a ser el camino principal; el wifi con la PC queda de respaldo. Hecho:
+  - **Abrir la caja con la PC apagada** en "PC y celular": se sincroniza por internet y, si con lo último de todos no hay una caja
+    abierta, el celular la abre y la sube al instante. Sin internet sigue bloqueado. Queda una ventana de un par de segundos si
+    dos equipos abren a la vez (cerrarla del todo pide un candado en el servidor, repo `NodoSurPage`).
+  - **Imprimir el ticket sin la PC**: en la terminal Point por el servidor de Nodo Sur (`PuertoLocal.imprimirTicket`). Las ventas
+    grabadas en la PC se siguen imprimiendo por la PC.
+  - **"Traer saldo de Mercado Pago"** en el cierre del celular, como en la PC.
+  - **Categorías nuevas** desde Configuración del celular (viajan por la sync).
+  Falta: avisos de Mercado Pago en el celular; seña y precio de los encargues; **gastos fijos** (no se sincronizan: hace falta
+  migración con `global_id` para sumarlos a `tablasSincronizables`); fondo fijo y umbral de faltantes en el celular (son de cada
+  equipo, `configuracion_tabla`); "+ Nuevo" proveedor/categoría en el formulario de producto; dejar de preguntar el modo al
+  configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
+  Probado con tests; **no probado en un celular real ni con la Point/cuenta real**.
 - **Vender en el celular sin la pantalla "Venta cobrada"** (El dueño: "siento que hay una pantalla extra"): al cobrar se vuelve
   directo a una venta nueva con el buscador listo, y arriba queda una tarjeta con el total, el vuelto bien grande e "Imprimir
   ticket", que se va sola al agregar el primer producto de la siguiente (o con la ✕). Un toque menos por venta. Probado con tests;
