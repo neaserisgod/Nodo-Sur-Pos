@@ -181,7 +181,8 @@ qué tiene que pasar.
 8. "2" (o "quiero hacer un pedido") → pide productos de a uno.
 9. "2 coca" → "Anotado: 2 × …" con el subtotal. Uno con varias coincidencias → lista para elegir con número.
 10. Un producto sin stock → no lo agrega y lo dice.
-11. "listo" → pide el nombre (solo la primera vez) → resumen con el total y pide confirmar → confirmar.
+11. "listo" → pide el nombre (solo la primera vez) → resumen con el total: *1* confirma, *2* agrega algo, *0* cancela.
+    Con *1* → "Le pasé tu pedido al local".
 12. En el celular con la app: **Encargues › Por confirmar · WhatsApp** muestra el pedido (con la app abierta aparece solo;
     si no, entrar de nuevo a Encargues).
 13. **Aceptar y apartar** → queda como encargue "Nombre (WhatsApp)", baja el stock, y **al cliente le llega** que pase a
@@ -194,7 +195,8 @@ qué tiene que pasar.
 
 **Persona y pausa**
 18. "4" (o "quiero hablar con alguien") → al cliente le dice que le van a responder; **al número de avisos le llega** el aviso
-    con lo que escribió.
+    con lo que escribió. Desde ahí el bot se calla en ese chat durante la pausa (hacer este paso al final, o desde otro
+    número).
 19. Contestarle a mano a ese cliente desde el WhatsApp del local → el bot se calla en ese chat durante la pausa configurada
     (60 min por defecto): un "hola" del cliente en ese rato no tiene respuesta del bot.
 20. Pasada la pausa (o probar con la pausa en 15 min) → el bot vuelve a contestar.
@@ -208,7 +210,7 @@ qué tiene que pasar.
 24. Más › Bot de WhatsApp muestra "Andando" con la última señal (se actualiza cada hora).
 25. Cambiar un horario o la dirección y Guardar → en unos segundos (o hasta 10 min sin avisos en vivo) el bot contesta con lo
     nuevo en el paso 7.
-26. Un día cerrado: escribir ese día → contesta igual (consultas y pedidos), y en "3" figura cerrado.
+26. Un día marcado cerrado: en "3" figura "cerrado". El bot contesta igual a cualquier hora (no corta fuera de horario).
 
 **Robustez**
 27. Apagar el WiFi del celular del bot 5 minutos y prenderlo → vuelve a contestar solo (si no, `bash bot.sh revisar`).
