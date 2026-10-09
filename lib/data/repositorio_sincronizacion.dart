@@ -13,7 +13,7 @@
 // filas de la PC: sincronizar es simétrico, no le importa quién le manda a
 // quién.
 //
-// Nunca sincroniza `productos.stock`/`stock_gramos` como el resto de las
+// Nunca sincroniza `productos.stock`/`stock_gramos`/`stock_milesimas` como el resto de las
 // columnas de esa fila (perdería ventas hechas en paralelo en los dos
 // dispositivos si gana "la última que sincronizó") — `movimientos_de_stock`
 // viaja como cualquier otro log (dedupeado por `global_id`, nunca se pisa),
@@ -328,8 +328,9 @@ Variable _variableDesde(Object? v) {
 /// fila de todos modos (útil para el alta de un producto nuevo, donde no hay
 /// nada que preservar) pero se ignoran al actualizar uno que ya existe: el
 /// número de verdad lo arma [_aplicarDeltaDeMovimientoStock] fila por fila,
-/// a partir del log de `movimientos_de_stock` (`lib/domain/stock.dart`).
-const _columnasStockDeProductos = {'stock', 'stock_gramos'};
+/// a partir del log de `movimientos_de_stock` (`lib/domain/stock.dart`). `stock_milesimas` (un insumo, v65) es el mismo
+/// contador: dos equipos pueden gastar del mismo frasco a la vez.
+const _columnasStockDeProductos = {'stock', 'stock_gramos', 'stock_milesimas'};
 
 /// Cuando [fila] es un movimiento de stock recién insertado (no uno que ya
 /// existía, ver [aplicarCambios]), aplica su delta al `productos` local
@@ -362,6 +363,16 @@ Future<void> _aplicarDeltaDeMovimientoStock(
     final delta = DeltaStock(anterior: gramosAnterior, posterior: gramosPosterior).delta;
     await db.customUpdate(
       'UPDATE productos SET stock_gramos = COALESCE(stock_gramos, 0) + ? WHERE id = ?',
+      variables: [Variable.withInt(delta), Variable.withInt(productoId)],
+    );
+  }
+
+  final milesimasAnterior = (fila['milesimas_anterior'] as num?)?.toInt();
+  final milesimasPosterior = (fila['milesimas_posterior'] as num?)?.toInt();
+  if (milesimasAnterior != null && milesimasPosterior != null) {
+    final delta = DeltaStock(anterior: milesimasAnterior, posterior: milesimasPosterior).delta;
+    await db.customUpdate(
+      'UPDATE productos SET stock_milesimas = COALESCE(stock_milesimas, 0) + ? WHERE id = ?',
       variables: [Variable.withInt(delta), Variable.withInt(productoId)],
     );
   }

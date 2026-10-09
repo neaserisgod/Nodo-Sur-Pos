@@ -260,11 +260,21 @@ void main() {
       )));
       await t.pumpAndSettle();
 
-      final grupos = find.byWidgetPredicate((w) => w is SeccionNs, skipOffstage: false).evaluate().map((e) => (e.widget as SeccionNs).texto);
-      expect(grupos, containsAllInOrder(['Vendés productos', 'Das servicios', '¿Ninguno?']));
+      // La lista se arma a medida que se ve: los grupos se juntan antes y después de bajar hasta el último.
+      final grupos = <String>[];
+      void juntarGrupos() {
+        for (final e in find.byWidgetPredicate((w) => w is SeccionNs, skipOffstage: false).evaluate()) {
+          final texto = (e.widget as SeccionNs).texto;
+          if (!grupos.contains(texto)) grupos.add(texto);
+        }
+      }
+
+      juntarGrupos();
       await t.enterText(find.byKey(const Key('asistente-nombre')), 'Estudio Lila');
       await t.dragUntilVisible(find.byKey(const Key('rubro-otro')), find.byType(ListView), const Offset(0, -200));
       await t.pumpAndSettle();
+      juntarGrupos();
+      expect(grupos, containsAllInOrder(['Vendés productos', 'Das servicios', '¿Ninguno?']));
       await t.tap(find.byKey(const Key('rubro-unas')));
       await t.pump();
       expect(find.textContaining('Manos, Pies, Cejas y pestañas', skipOffstage: false), findsOneWidget);

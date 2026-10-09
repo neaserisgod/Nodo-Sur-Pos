@@ -42,7 +42,10 @@ import 'package:flutter/scheduler.dart';
 
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/caja.dart' show necesitaArqueoIntermedio;
+import '../domain/forma_de_trabajo.dart';
+import '../domain/modulos.dart' show ModulosNegocio;
 import '../domain/venta.dart';
+import '../servicios/modulos_activos.dart';
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
 import 'flujo_modo_uso.dart';
@@ -61,6 +64,7 @@ import 'pantallas/pantalla_caja_ns.dart';
 import 'pantallas/pantalla_inicio_ns.dart';
 import 'pantallas/pantalla_mas_ns.dart';
 import 'pantallas/pantalla_productos_ns.dart';
+import 'pantallas/pantalla_servicios_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
@@ -265,6 +269,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _modoUso = modo;
     });
     sinConexionGlobalNs.value = sinConexion;
+    // Los módulos y la forma de trabajar del negocio (si da servicios, Productos pasa a Servicios). Solo sin PC: con la PC,
+    // las pantallas de servicios todavía no existen (`docs/PLAN-SERVICIOS.md`) y la app sigue como siempre.
+    await _modulosSub?.cancel();
+    _modulosSub = conexion == null ? seguirModulos(baseLocalCompanion()) : null;
+    if (conexion != null) modulosActuales.value = ModulosNegocio.todosActivos;
     unawaited(_iniciarAvisosMp(modo));
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
@@ -442,8 +451,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     }
   }
 
+  StreamSubscription<ModulosNegocio>? _modulosSub;
+
   @override
   void dispose() {
+    _modulosSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _tickArqueoIntermedio.cancel();
     _subCambiosSync?.cancel();
@@ -803,7 +815,10 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             index: _pestania.index,
             children: [
               const PantallaInicioNs(),
-              const PantallaProductosNs(),
+              ValueListenableBuilder<ModulosNegocio>(
+                valueListenable: modulosActuales,
+                builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs(),
+              ),
               _servicio == null || _usuarioId == null
                   ? const SizedBox.shrink()
                   : PantallaCarritoVenta(
@@ -825,7 +840,15 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             builder: (context, oculta, _) => ConTecladoNs(
               builder: (context, teclado) => oculta || teclado
                   ? const SizedBox.shrink()
-                  : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+                  : ValueListenableBuilder<ModulosNegocio>(
+                      valueListenable: modulosActuales,
+                      builder: (context, m, _) => BarraInferiorNs(
+                        activa: _pestania,
+                        onSeleccionar: irAPestania,
+                        hayActualizacion: _hayActualizacion,
+                        conServicios: m.forma == FormaDeTrabajo.servicios,
+                      ),
+                    ),
             ),
           ),
         ),

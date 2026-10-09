@@ -20,12 +20,14 @@
 
 import 'package:flutter/material.dart';
 
+import '../data/repositorio_configuracion.dart' show configurarValorHora;
 import '../data/repositorio_productos.dart' show crearCategoria;
 import '../domain/dinero.dart';
 import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/gemini.dart';
+import '../servicios/modulos_activos.dart' show moduloActivo;
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
@@ -55,6 +57,9 @@ class PantallaConfiguracionCompanion extends StatefulWidget {
 class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCompanion> {
   ServicioCompanion? _servicio;
   bool _pcEmparejada = false;
+
+  /// Lo que vale una hora de trabajo (servicios con mano de obra). Solo sin PC: se lee y se guarda en la base del celular.
+  int? _valorHora;
 
   ConfiguracionNegocioCompanion? _config;
   List<CategoriaCompanion> _categorias = [];
@@ -122,6 +127,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         servicio.usuarios(),
       ]);
       final config = resultados[0] as ConfiguracionNegocioCompanion;
+      final valorHora = conexion == null
+          ? (await baseLocalCompanion().select(baseLocalCompanion().configuracionNegocioTabla).getSingleOrNull())?.valorHoraCentavos
+          : null;
       String? nombreVuelto;
       if (config.productoVueltoId != null) {
         final productos = await servicio.productos();
@@ -134,6 +142,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         setState(() {
           _servicio = servicio;
           _pcEmparejada = conexion != null;
+          _valorHora = valorHora;
           _config = config;
           _categorias = resultados[1] as List<CategoriaCompanion>;
           _mediosPago = resultados[2] as List<MedioDePagoCompanion>;
@@ -410,6 +419,16 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             ),
           const SizedBox(height: 2),
           BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+          if (!_pcEmparejada && moduloActivo(Modulo.manoDeObra)) ...[
+            _seccion('Mano de obra'),
+            TarjetaFilaNs(
+              key: const Key('config-valor-hora'),
+              titulo: 'Valor de la hora',
+              subtitulo: _valorHora == null ? 'Sin cargar: los servicios no suman mano de obra' : '${plataNs(_valorHora!)} la hora',
+              icono: IconoNs.reloj,
+              onTap: _editarValorHora,
+            ),
+          ],
           _seccion('Gastos fijos'),
           // Desde la v64 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
           BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
@@ -626,6 +645,23 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   void _cambiarMarkup(CategoriaCompanion c, int delta) {
     final nuevo = (_markup(c) + delta).clamp(0, 99);
     setState(() => nuevo == c.markupDefaultBp ~/ 100 ? _markupPendiente.remove(c.id) : _markupPendiente[c.id] = nuevo);
+  }
+
+  /// Se guarda al momento (no espera a "Guardar"): es un dato del negocio, como el nombre de un medio de pago.
+  Future<void> _editarValorHora() async {
+    final ctrl = TextEditingController(text: _valorHora == null ? '' : formatearARS(_valorHora!, conSigno: false));
+    await mostrarHojaVidrio<bool>(
+      context,
+      builder: (context) => _HojaUnMonto(
+        titulo: 'Valor de la hora',
+        controller: ctrl,
+        onGuardar: (monto) async {
+          await configurarValorHora(baseLocalCompanion(), monto);
+          if (mounted) setState(() => _valorHora = monto);
+        },
+      ),
+    );
+    ctrl.dispose();
   }
 
   Future<void> _otroRedondeo() async {

@@ -124,6 +124,9 @@ class AppNs extends InheritedWidget {
     return w!.controlador;
   }
 
+  /// Como [of], pero null fuera del menú (una pantalla probada sola).
+  static ControladorAppNs? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppNs>()?.controlador;
+
   @override
   bool updateShouldNotify(AppNs old) => old.version != version || old.controlador != controlador;
 }

@@ -122,11 +122,39 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
   );
 
-  /// Un servicio que no es barbería ni uñas: sin categorías de ejemplo.
+  static const peluqueria = PlantillaRubro(
+    clave: 'peluqueria',
+    nombre: 'Peluquería',
+    descripcion: 'Cortes, color, alisados y peinados, con turnos.',
+    forma: FormaDeTrabajo.servicios,
+    categorias: [
+      CategoriaDePlantilla('Cortes'),
+      CategoriaDePlantilla('Color'),
+      CategoriaDePlantilla('Tratamientos'),
+      CategoriaDePlantilla('Peinados'),
+    ],
+    gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
+  );
+
+  static const estetica = PlantillaRubro(
+    clave: 'estetica',
+    nombre: 'Estética',
+    descripcion: 'Faciales, depilación y masajes, con turnos.',
+    forma: FormaDeTrabajo.servicios,
+    categorias: [
+      CategoriaDePlantilla('Faciales'),
+      CategoriaDePlantilla('Depilación'),
+      CategoriaDePlantilla('Corporales'),
+      CategoriaDePlantilla('Masajes'),
+    ],
+    gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
+  );
+
+  /// Un servicio que no entra en los otros: sin categorías de ejemplo.
   static const servicio = PlantillaRubro(
     clave: 'servicio',
     nombre: 'Otro servicio',
-    descripcion: 'Peluquería, estética, masajes, tatuajes…',
+    descripcion: 'Masajes, tatuajes y otros servicios con turnos.',
     forma: FormaDeTrabajo.servicios,
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
@@ -139,7 +167,7 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
 
-  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, barberia, unas, servicio, otro];
+  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, barberia, unas, peluqueria, estetica, servicio, otro];
 
   /// Las de una forma de trabajar, en el orden de [todas] (el alta los muestra en dos grupos). "Otro" es de productos.
   static List<PlantillaRubro> deForma(FormaDeTrabajo forma) => [for (final p in todas) if (p.forma == forma && p != otro) p];

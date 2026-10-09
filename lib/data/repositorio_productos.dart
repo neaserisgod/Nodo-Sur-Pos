@@ -637,7 +637,7 @@ Future<List<Producto>> listarProductos(
 }) async {
   // Las promos no son un producto editable con costo y stock propios: tienen su
   // propio creador y no van al celular ni a las listas de gestión.
-  final query = db.select(db.productos)..where((p) => p.esVarios.equals(false) & p.esPromo.equals(false));
+  final query = db.select(db.productos)..where((p) => p.esVarios.equals(false) & p.esPromo.equals(false) & p.esInsumo.equals(false) & p.esServicio.equals(false));
   if (soloActivos) query.where((p) => p.activo.equals(true));
   if (categoriaId != null) {
     query.where((p) => p.categoriaId.equals(categoriaId));

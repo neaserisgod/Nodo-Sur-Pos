@@ -114,6 +114,18 @@ Future<void> configurarRecargoCigarrillos(
       );
 }
 
+/// Lo que vale una hora de trabajo, para la mano de obra de los servicios (v65; El dueño, 2026-10-09: un valor por negocio).
+/// Null lo borra: sin valor cargado, ningún servicio suma mano de obra.
+Future<void> configurarValorHora(AppDatabase db, int? montoCentavos) {
+  if (montoCentavos != null && montoCentavos < 0) throw const FormatException('El valor de la hora no puede ser negativo');
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          valorHoraCentavos: Value(montoCentavos),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
 Future<void> configurarUmbralFaltante(AppDatabase db, int montoCentavos) {
   if (montoCentavos < 0) throw const FormatException('El monto no puede ser negativo');
   return db.update(db.configuracionTabla).write(ConfiguracionTablaCompanion(umbralFaltanteCentavos: Value(montoCentavos)));

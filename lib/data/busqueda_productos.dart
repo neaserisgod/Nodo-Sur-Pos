@@ -71,6 +71,10 @@ ConsultaBusqueda interpretarTexto(String textoOriginal) {
 /// sola vez al cargar el catálogo; sin ellos (los otros tres llamadores:
 /// carga histórica, editor de venta, servidor companion — ninguno corre por
 /// tecla) se sigue calculando al vuelo como antes, mismo resultado.
+/// Insumos y servicios (v65) no se cobran desde la caja todavía: cobrar un servicio es la etapa 3 de
+/// `docs/PLAN-SERVICIOS.md`, y un insumo no se vende nunca. Hasta entonces no aparecen en ninguna búsqueda para vender.
+bool esDeServicios(Producto p) => p.esInsumo || p.esServicio;
+
 List<Producto> buscarProductos({
   required List<Producto> catalogo,
   required String textoBuscado,
@@ -95,6 +99,7 @@ List<Producto> buscarProductos({
         .where(
           (p) =>
               p.activo &&
+              !esDeServicios(p) &&
               tieneStockSiExigido(p) &&
               codigoNormalizadoDe(p) == normalizado,
         )
@@ -103,7 +108,7 @@ List<Producto> buscarProductos({
   }
 
   final candidatos = catalogo.where((p) {
-    if (!p.activo) return false;
+    if (!p.activo || esDeServicios(p)) return false;
     if (!tieneStockSiExigido(p)) return false;
     if (consulta.gramos != null && !p.esPesable) return false;
     return nombreNormalizadoDe(p).contains(normalizado);
@@ -114,7 +119,7 @@ List<Producto> buscarProductos({
   if (candidatos.isEmpty && consulta.gramos != null) {
     final completo = normalizarTexto(textoBuscado.trim());
     final todos = catalogo
-        .where((p) => p.activo && tieneStockSiExigido(p) && nombreNormalizadoDe(p).contains(completo))
+        .where((p) => p.activo && !esDeServicios(p) && tieneStockSiExigido(p) && nombreNormalizadoDe(p).contains(completo))
         .toList();
     return _conStockPrimero(todos, incluirSinStock).take(limite).toList();
   }

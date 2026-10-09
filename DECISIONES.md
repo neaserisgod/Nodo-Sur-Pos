@@ -74,6 +74,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
+- [Servicios e insumos son productos; el costo del servicio no se guarda (2026-10-09)](#servicios-e-insumos-son-productos-el-costo-del-servicio-no-se-guarda-2026-10-09)
 
 **Diseño y pantallas**
 
@@ -2365,3 +2366,25 @@ Cómo se usa:
   Cambiar a un rubro de otra forma avisa qué se deja de ver (nada se borra). El alta de un servicio **no promete la agenda**: dice que
   llega en las próximas actualizaciones. La barra inferior del celular todavía no cambia con la forma: Agenda y Servicios son pantallas
   de las etapas 2 y 4, y una pestaña sin pantalla no se muestra.
+
+## Servicios e insumos son productos; el costo del servicio no se guarda (2026-10-09)
+
+Etapa 2 de `docs/PLAN-SERVICIOS.md` (El dueño, 2026-10-09: mano de obra = un valor de la hora por negocio; ganancia buscada de
+cada servicio, 60 % de arranque; precio sugerido a la centena).
+
+- **Insumo y servicio son filas de `productos`** (`es_insumo` / `es_servicio`, v65): heredan la sync, las categorías, los
+  proveedores, el historial de precios y la baja sin escribir nada nuevo. El insumo no tiene precio de venta: su costo es el del
+  **envase** y su stock va en **milésimas** de su unidad (`stock_milesimas`), enteros como la plata.
+- **`stock_milesimas` es un contador, como `stock`**: nunca se pisa al sincronizar; cada movimiento suma su delta. Dos equipos que
+  gastan del mismo frasco a la vez no se pierden ninguno.
+- **El costo de un servicio no se guarda**: depende del precio de hoy de cada insumo y del valor de la hora, así que se calcula al
+  listar (`listarServicios`). Guardarlo lo dejaría viejo apenas cambia el precio de un insumo. El costo-foto de cada venta
+  (convención 2) llega con la etapa 3, al cobrar.
+- **Comprar y contar un insumo son movimientos `AJUSTE`** con motivo ("Compra de 2 envases", "Conteo físico"): no se inventó un
+  tipo nuevo de movimiento que los reportes de hoy no conocen.
+- **Hasta la etapa 3, insumos y servicios no aparecen en la venta ni en las listas del almacén** (`esDeServicios`): cobrar un
+  servicio todavía no descuenta sus insumos, y un insumo no se vende nunca.
+- **El celular cambia Productos por Servicios** (pestaña y pantalla) cuando el rubro es de servicios, **solo en "Solo celular"**:
+  con la PC, las pantallas de servicios de la PC llegan después y el celular avisa eso.
+- **Peluquería (`peluqueria`) y Estética (`estetica`) son rubros propios**, con sus categorías y, en el bot, sus servicios de
+  ejemplo y su diccionario. "Otro servicio" queda para masajes, tatuajes y el resto.

@@ -14,11 +14,14 @@ import 'tokens_ns.dart';
 enum PestaniaNs { inicio, productos, vender, caja, mas }
 
 class BarraInferiorNs extends StatelessWidget {
-  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false});
+  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.conServicios = false});
 
   final PestaniaNs activa;
   final ValueChanged<PestaniaNs> onSeleccionar;
   final bool hayActualizacion;
+
+  /// Un negocio de servicios: la pestaña de Productos es Servicios (`pantalla_servicios_ns.dart`).
+  final bool conServicios;
 
   /// Cuánto espacio inferior necesita el contenido para no quedar tapado:
   /// barra 68 + margen 16 + aire 40 (doc 01 §3).
@@ -62,7 +65,7 @@ class BarraInferiorNs extends StatelessWidget {
                   child: p == PestaniaNs.vender
                       ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p))
                       : _Pestania(
-                          etiqueta: etiqueta,
+                          etiqueta: p == PestaniaNs.productos && conServicios ? 'Servicios' : etiqueta,
                           icono: icono,
                           activa: activa == p,
                           punto: p == PestaniaNs.mas && hayActualizacion && activa != p,

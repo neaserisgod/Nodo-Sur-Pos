@@ -8,7 +8,7 @@ void main() {
       expect(
         PlantillaRubro.todas.map((p) => p.clave).toList(),
         // Las mismas claves que el bot de WhatsApp (`botdemo/src/plantillas.js`): no se renombran nunca.
-        ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas', 'servicio', 'otro'],
+        ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas', 'peluqueria', 'estetica', 'servicio', 'otro'],
       );
       final claves = PlantillaRubro.todas.map((p) => p.clave);
       expect(claves.toSet().length, claves.length);
@@ -25,26 +25,26 @@ void main() {
       expect(PlantillaRubro.desdeClave(''), isNull);
     });
 
-    test('kiosco, almacén, fiambrería, barbería y uñas traen categorías; "otro" y "otro servicio" arrancan vacíos', () {
-      for (final clave in ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas']) {
+    test('kiosco, almacén, fiambrería, barbería, uñas, peluquería y estética traen categorías; "otro" y "otro servicio" arrancan vacíos', () {
+      for (final clave in ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas', 'peluqueria', 'estetica']) {
         expect(PlantillaRubro.desdeClave(clave)!.categorias, isNotEmpty, reason: clave);
       }
       expect(PlantillaRubro.otro.categorias, isEmpty);
       expect(PlantillaRubro.servicio.categorias, isEmpty);
     });
 
-    test('cada rubro trae su forma de trabajar: los comercios venden productos, barbería y uñas dan servicios', () {
+    test('cada rubro trae su forma de trabajar: los comercios venden productos, barbería, uñas, peluquería y estética dan servicios', () {
       for (final p in [PlantillaRubro.kiosco, PlantillaRubro.almacen, PlantillaRubro.fiambreria, PlantillaRubro.otro]) {
         expect(p.forma, FormaDeTrabajo.productos, reason: p.clave);
       }
-      for (final p in [PlantillaRubro.barberia, PlantillaRubro.unas, PlantillaRubro.servicio]) {
+      for (final p in [PlantillaRubro.barberia, PlantillaRubro.unas, PlantillaRubro.peluqueria, PlantillaRubro.estetica, PlantillaRubro.servicio]) {
         expect(p.forma, FormaDeTrabajo.servicios, reason: p.clave);
       }
     });
 
     test('deForma arma los dos grupos del alta, sin "otro", en el orden de todas', () {
       expect(PlantillaRubro.deForma(FormaDeTrabajo.productos).map((p) => p.clave), ['kiosco', 'almacen', 'fiambreria']);
-      expect(PlantillaRubro.deForma(FormaDeTrabajo.servicios).map((p) => p.clave), ['barberia', 'unas', 'servicio']);
+      expect(PlantillaRubro.deForma(FormaDeTrabajo.servicios).map((p) => p.clave), ['barberia', 'unas', 'peluqueria', 'estetica', 'servicio']);
     });
 
     test('formaDeRubro: sin rubro o con una clave desconocida es productos, la app de siempre', () {
@@ -53,6 +53,8 @@ void main() {
       expect(formaDeRubro('almacen'), FormaDeTrabajo.productos);
       expect(formaDeRubro('barberia'), FormaDeTrabajo.servicios);
       expect(formaDeRubro('unas'), FormaDeTrabajo.servicios);
+      expect(formaDeRubro('peluqueria'), FormaDeTrabajo.servicios);
+      expect(formaDeRubro('estetica'), FormaDeTrabajo.servicios);
       // Una clave de una versión más nueva se lee como "sin elegir".
       expect(formaDeRubro('rubro_del_futuro'), FormaDeTrabajo.productos);
     });

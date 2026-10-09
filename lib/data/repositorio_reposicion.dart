@@ -1562,7 +1562,8 @@ Future<List<ProductoDeProveedor>> productosDeProveedor(
   final productos =
       await (db.select(db.productos)
             ..where(
-              (p) => p.proveedorId.equals(proveedorId) & p.activo.equals(true),
+              // Insumos fuera hasta que se puedan comprar desde acá (su stock va en milésimas, `repositorio_servicios.dart`).
+              (p) => p.proveedorId.equals(proveedorId) & p.activo.equals(true) & p.esInsumo.equals(false) & p.esServicio.equals(false),
             )
             ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
           .get();
@@ -1577,7 +1578,7 @@ Future<List<ProductoDeProveedor>> productosDeProveedor(
 Future<List<ProductoDeProveedor>> productosTodos(AppDatabase db) async {
   final productos =
       await (db.select(db.productos)
-            ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false))
+            ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false) & p.esInsumo.equals(false) & p.esServicio.equals(false))
             ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
           .get();
   return productos.map(_productoDeProveedorDesde).toList();
@@ -1593,7 +1594,9 @@ Future<List<ProductoDeProveedor>> productosSinProveedor(AppDatabase db) async {
                   p.proveedorId.isNull() &
                   p.activo.equals(true) &
                   p.esVarios.equals(false) &
-                  p.esPromo.equals(false),
+                  p.esPromo.equals(false) &
+                  p.esInsumo.equals(false) &
+                  p.esServicio.equals(false),
             )
             ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
           .get();

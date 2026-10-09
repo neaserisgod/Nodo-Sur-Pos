@@ -115,7 +115,7 @@ class VentaControlador extends ChangeNotifier {
 
   void _recalcularCatalogoVisible() {
     catalogoVisible = _catalogo
-        .where((p) => p.activo && tieneStock(p) && !p.esVarios)
+        .where((p) => p.activo && tieneStock(p) && !p.esVarios && !esDeServicios(p))
         .toList();
   }
 
@@ -265,7 +265,7 @@ class VentaControlador extends ChangeNotifier {
     final normalizado = normalizarTexto(consulta.texto);
     if (normalizado.isEmpty) return null;
     for (final p in _catalogo) {
-      if (p.activo && (_codigosNormalizados[p.id] ?? '') == normalizado) {
+      if (p.activo && !esDeServicios(p) && (_codigosNormalizados[p.id] ?? '') == normalizado) {
         return p;
       }
     }
