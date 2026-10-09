@@ -273,6 +273,42 @@ class Productos extends Table {
   /// se rehace desde acá (`aplicarCambios`). Null en lo que no es promo.
   TextColumn get componentesPromo => text().nullable()();
 
+  // --- Servicios e insumos (v65, `docs/PLAN-SERVICIOS.md` etapa 2, `lib/domain/servicios.dart`) ---
+
+  /// Insumo: se compra por envase y se gasta de a poco en los servicios. No se vende ni aparece en la venta. Su costo es el
+  /// del envase ([costoCentavos]) y su stock va en [stockMilesimas], no en [stock].
+  BoolColumn get esInsumo => boolean().withDefault(const Constant(false))();
+
+  /// En qué se usa un insumo: `ml`, `g` o `u` (`UnidadInsumo`). Null en lo que no es insumo.
+  TextColumn get unidadInsumo => text().nullable()();
+
+  /// Lo que trae un envase del insumo, en milésimas de su unidad (un frasco de 15 ml = 15000).
+  IntColumn get contenidoEnvaseMilesimas => integer().nullable()();
+
+  /// Stock del insumo en milésimas de su unidad: se usa de a 0,4 ml. Contador como [stock]: se mueve con su movimiento de
+  /// stock (`movimientos_de_stock.milesimas_*`) y la sync lo arma con los deltas, nunca pisándolo.
+  IntColumn get stockMilesimas => integer().nullable()();
+
+  /// Aviso de "poco stock" del insumo, en milésimas. 0 o null: sin aviso (mismo criterio que [stockMinimo]).
+  IntColumn get stockMinimoMilesimas => integer().nullable()();
+
+  /// Servicio: se vende con duración y receta de insumos, sin stock propio.
+  BoolColumn get esServicio => boolean().withDefault(const Constant(false))();
+
+  /// Lo que dura un servicio, en minutos.
+  IntColumn get duracionMinutos => integer().nullable()();
+
+  /// Lo que usa un servicio cada vez: `[{"gid": <global_id del insumo>, "milesimas": n}]`. Por `global_id` para que viaje por
+  /// la sync, como [componentesPromo]. Null en lo que no es servicio.
+  TextColumn get recetaServicio => text().nullable()();
+
+  /// Si el costo del servicio suma la mano de obra (duración × valor de la hora del negocio).
+  BoolColumn get sumaManoDeObra => boolean().withDefault(const Constant(false))();
+
+  /// La ganancia buscada del servicio, sobre el precio (El dueño, 2026-10-09: de cada servicio). Null: la de arranque
+  /// (`gananciaBuscadaPorDefectoBp`).
+  IntColumn get gananciaBuscadaBp => integer().nullable()();
+
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
   DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get actualizadoEn =>

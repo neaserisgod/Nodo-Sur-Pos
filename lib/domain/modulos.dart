@@ -12,6 +12,12 @@
 //    ya existen, sin migración;
 //  * una clave que esta versión no conoce (un celular más nuevo que la PC, o
 //    al revés) se ignora en vez de romper.
+//
+// Por eso mismo cada módulo dice para qué forma de trabajar vale
+// (`forma_de_trabajo.dart`): un módulo de servicios (la Agenda, los Insumos)
+// nace prendido, pero un almacén no lo ve porque no vale para su forma.
+
+import 'forma_de_trabajo.dart';
 
 /// Las claves se guardan en la base y se sincronizan entre PC y celular:
 /// NO se renombran nunca.
@@ -45,7 +51,14 @@ enum Modulo {
   compararPrecios('comparar_precios'),
 
   /// Cobro con la terminal de Mercado Pago Point.
-  cobroPoint('cobro_point');
+  cobroPoint('cobro_point'),
+
+  /// Insumos de los servicios: stock por envase, receta de cada servicio y lo que cuesta (`docs/PLAN-SERVICIOS.md`,
+  /// etapa 2). Solo servicios.
+  insumos('insumos'),
+
+  /// Sumar la mano de obra (lo que vale la hora de trabajo) al costo de un servicio. Solo servicios.
+  manoDeObra('mano_de_obra');
 
   const Modulo(this.clave);
 
@@ -61,6 +74,8 @@ enum Modulo {
     cargaHistorica => 'Carga histórica',
     compararPrecios => 'Comparador de precios',
     cobroPoint => 'Cobro con Mercado Pago Point',
+    insumos => 'Insumos',
+    manoDeObra => 'Mano de obra en el costo',
   };
 
   String get descripcion => switch (this) {
@@ -74,10 +89,24 @@ enum Modulo {
     cargaHistorica => 'Cargar planillas de días anteriores.',
     compararPrecios => 'Comparar tus precios con supermercados de Bariloche (SEPA) y una tienda online de la zona.',
     cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
+    insumos => 'Lo que usa cada servicio, su costo y para cuántos alcanza.',
+    manoDeObra => 'Sumar lo que vale la hora de trabajo al costo de cada servicio.',
   };
 
   /// Identificador estable que se guarda en la base.
   final String clave;
+
+  /// Para qué formas de trabajar vale. Los de productos son de un comercio que vende con stock: la lata de
+  /// cigarrillos, lo que se pesa, las promos (se abren en las líneas de sus artículos, y un servicio tiene que salir en
+  /// el ticket como "Corte") y el comparador contra los supermercados. Un módulo nuevo de servicios va solo con
+  /// [FormaDeTrabajo.servicios]: así no le aparece a un almacén al actualizar.
+  Set<FormaDeTrabajo> get formas => switch (this) {
+    cajaAparte || pesables || promos || compararPrecios => const {FormaDeTrabajo.productos},
+    fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint => const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios},
+    insumos || manoDeObra => const {FormaDeTrabajo.servicios},
+  };
+
+  bool valePara(FormaDeTrabajo forma) => formas.contains(forma);
 
   static Modulo? desdeClave(String clave) {
     for (final modulo in Modulo.values) {
@@ -87,9 +116,9 @@ enum Modulo {
   }
 }
 
-/// Qué módulos tiene apagados un comercio. Inmutable.
+/// Qué módulos tiene apagados un comercio, y su forma de trabajar. Inmutable.
 class ModulosNegocio {
-  const ModulosNegocio(this.desactivados);
+  const ModulosNegocio(this.desactivados, {this.forma = FormaDeTrabajo.productos});
 
   /// Todo activo: cómo funciona la app hoy, y lo que se asume mientras la
   /// configuración no se pudo leer (vender nunca puede frenarse por esto).
@@ -97,7 +126,7 @@ class ModulosNegocio {
 
   /// Lee el texto guardado en la base. Tolera espacios, mayúsculas, claves
   /// repetidas y claves desconocidas.
-  factory ModulosNegocio.desdeTexto(String texto) {
+  factory ModulosNegocio.desdeTexto(String texto, {FormaDeTrabajo forma = FormaDeTrabajo.productos}) {
     final apagados = <Modulo>{};
     for (final parte in texto.split(',')) {
       final clave = parte.trim().toLowerCase();
@@ -105,12 +134,20 @@ class ModulosNegocio {
       final modulo = Modulo.desdeClave(clave);
       if (modulo != null) apagados.add(modulo);
     }
-    return ModulosNegocio(apagados);
+    return ModulosNegocio(apagados, forma: forma);
   }
 
+  /// Los apagados a propósito. Puede tener módulos que no valen para [forma]: se conservan, así un negocio que cambia de
+  /// rubro y vuelve encuentra todo como lo dejó.
   final Set<Modulo> desactivados;
 
-  bool estaActivo(Modulo modulo) => !desactivados.contains(modulo);
+  final FormaDeTrabajo forma;
+
+  /// Prendido = vale para la forma del negocio y no se apagó a propósito.
+  bool estaActivo(Modulo modulo) => modulo.valePara(forma) && !desactivados.contains(modulo);
+
+  /// Los que se pueden prender o apagar en este negocio (la lista de Configuración), en el orden de [Modulo.values].
+  List<Modulo> get disponibles => [for (final m in Modulo.values) if (m.valePara(forma)) m];
 
   /// Copia con [modulo] prendido o apagado.
   ModulosNegocio conModulo(Modulo modulo, {required bool activo}) {
@@ -120,7 +157,7 @@ class ModulosNegocio {
     } else {
       nuevos.add(modulo);
     }
-    return ModulosNegocio(nuevos);
+    return ModulosNegocio(nuevos, forma: forma);
   }
 
   /// Texto para guardar: siempre en el orden de [Modulo.values], sin

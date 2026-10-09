@@ -55,10 +55,14 @@ Future<void> configurarRubro(AppDatabase db, PlantillaRubro rubro) {
 /// Qué módulos usa este comercio. Sin configuración legible (la companion
 /// antes de la primera sincronización) se asume todo activo: vender nunca
 /// puede frenarse por esto (Regla 8).
-Future<ModulosNegocio> modulosNegocioActuales(AppDatabase db) async {
-  final config = await configuracionNegocioActual(db);
-  return ModulosNegocio.desdeTexto(config.modulosDesactivados);
-}
+Future<ModulosNegocio> modulosNegocioActuales(AppDatabase db) async => modulosDeConfiguracion(await configuracionNegocioActual(db));
+
+/// Los módulos de una fila de configuración, con la forma de trabajar que sale de su rubro. Un solo lugar para armarlos
+/// (Regla 3): lo usan esta consulta, el aviso global (`modulos_activos.dart`) y la lista de Configuración. Sin fila, todo
+/// activo, como siempre.
+ModulosNegocio modulosDeConfiguracion(ConfiguracionNegocio? fila) => fila == null
+    ? ModulosNegocio.todosActivos
+    : ModulosNegocio.desdeTexto(fila.modulosDesactivados, forma: formaDeRubro(fila.rubro));
 
 /// Prende o apaga un módulo sin tocar los demás. Solo cambia lo que se ve y
 /// lo que entra en cada cálculo: la lógica y los datos del módulo quedan
@@ -105,6 +109,18 @@ Future<void> configurarRecargoCigarrillos(
           recargoPrimerAtadoCentavos: Value(primerAtadoCentavos),
           recargoAtadoAdicionalCentavos: Value(atadoAdicionalCentavos),
           recargoSueltoCentavos: Value(sueltoCentavos),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
+/// Lo que vale una hora de trabajo, para la mano de obra de los servicios (v65; El dueño, 2026-10-09: un valor por negocio).
+/// Null lo borra: sin valor cargado, ningún servicio suma mano de obra.
+Future<void> configurarValorHora(AppDatabase db, int? montoCentavos) {
+  if (montoCentavos != null && montoCentavos < 0) throw const FormatException('El valor de la hora no puede ser negativo');
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          valorHoraCentavos: Value(montoCentavos),
           actualizadoEn: Value(DateTime.now()),
         ),
       );

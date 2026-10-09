@@ -3,7 +3,9 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import '../helpers/base_para_tests.dart';
 
 void main() {
@@ -91,6 +93,50 @@ void main() {
       );
       final modulos = await modulosNegocioActuales(db);
       expect(modulos.desactivados, {Modulo.fiado});
+    });
+  });
+
+  group('forma de trabajar según el rubro', () {
+    Future<void> rubro(String clave) =>
+        db.update(db.configuracionNegocioTabla).write(ConfiguracionNegocioTablaCompanion(rubro: Value(clave)));
+
+    test('sin rubro (La Plazoleta) todo sigue como siempre: productos y todos los módulos', () async {
+      final modulos = await modulosNegocioActuales(db);
+      expect(modulos.forma, FormaDeTrabajo.productos);
+      for (final m in Modulo.values) {
+        expect(modulos.estaActivo(m), m.valePara(FormaDeTrabajo.productos), reason: m.clave);
+      }
+    });
+
+    test('una barbería no ve lo de un comercio con stock; volver a almacén lo devuelve como estaba', () async {
+      await configurarModulo(db, Modulo.fiado, activo: false);
+      await rubro('barberia');
+      var modulos = await modulosNegocioActuales(db);
+      expect(modulos.forma, FormaDeTrabajo.servicios);
+      expect(modulos.estaActivo(Modulo.pesables), isFalse);
+      expect(modulos.estaActivo(Modulo.fiado), isFalse);
+
+      // Prender un módulo en la barbería no pisa lo apagado de la otra forma.
+      await configurarModulo(db, Modulo.turnos, activo: false);
+      await rubro('almacen');
+      modulos = await modulosNegocioActuales(db);
+      expect(modulos.estaActivo(Modulo.pesables), isTrue);
+      expect(modulos.desactivados, {Modulo.fiado, Modulo.turnos});
+    });
+
+    test('el aviso global sigue al rubro al toque (un cambio llegado por sincronización)', () async {
+      final sub = seguirModulos(db);
+      addTearDown(() async {
+        await sub.cancel();
+        modulosActuales.value = ModulosNegocio.todosActivos;
+      });
+      await rubro('unas');
+      await pumpEventQueue();
+      expect(modulosActuales.value.forma, FormaDeTrabajo.servicios);
+      expect(moduloActivo(Modulo.cajaAparte), isFalse);
+      await rubro('kiosco');
+      await pumpEventQueue();
+      expect(moduloActivo(Modulo.cajaAparte), isTrue);
     });
   });
 }

@@ -654,6 +654,10 @@ class ClienteCompanion implements ServicioCompanion {
     );
     // Una PC sin actualizar no conoce la ruta (404): se dice qué hacer en vez del error genérico.
     if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el rubro con la PC, actualizá la app de la PC.');
+    // Una PC anterior a los rubros de servicios (barbería, uñas) no los conoce y responde 400: lo mismo, actualizarla.
+    if (r.statusCode == 400 && r.body.contains('No existe el rubro')) {
+      throw const ErrorCompanion(400, 'La app de la PC no conoce este rubro todavía: actualizala y volvé a elegirlo.');
+    }
     _revisar(r);
   }
 

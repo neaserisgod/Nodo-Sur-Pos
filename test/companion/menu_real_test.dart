@@ -76,5 +76,10 @@ void main() {
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await t.pump(const Duration(seconds: 1));
     expect(find.textContaining('escaneá o tocá un producto'), findsOneWidget, reason: 'Vender quedó en blanco');
+
+    // El menú escucha los módulos con una consulta en vivo de drift (Solo celular): al cerrarla, drift agenda su limpieza
+    // para el próximo instante. Se desarma el menú y se deja correr ese instante.
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 1));
   });
 }

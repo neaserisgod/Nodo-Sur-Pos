@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/forma_de_trabajo.dart';
 import '../../domain/plantillas_rubro.dart';
 import '../kit/kit_ns.dart';
 
@@ -249,17 +250,30 @@ class _PasoNegocio extends StatelessWidget {
           ),
         ),
         const InfoNs('Sale en los tickets y arriba de la app.'),
-        const SeccionNs('¿Qué rubro es?'),
-        for (final r in PlantillaRubro.todas)
-          KeyedSubtree(
-            key: Key('rubro-${r.clave}'),
-            child: OpcionNs(titulo: r.nombre, detalle: r.descripcion, derecha: rubro == r ? 'Elegido' : null, marcada: rubro == r, onTap: () => alElegirRubro(r)),
-          ),
-        if (rubro != null)
-          InfoNs(
-            categorias.isEmpty ? 'Arrancás sin categorías: las armás vos.' : 'Te dejamos estas categorías para empezar: ${categorias.map((c) => c.nombre).join(', ')}.',
-            tono: TonoNs.good,
-          ),
+        // En dos grupos (`docs/PLAN-SERVICIOS.md`, etapa 1): el rubro decide si la app es de productos o de servicios. Lo
+        // que trae el rubro elegido se cuenta debajo de su grupo, a la vista: con siete rubros, al final de la lista
+        // quedaba fuera de la pantalla.
+        for (final (titulo, rubros) in [
+          ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
+          ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          ('¿Ninguno?', const [PlantillaRubro.otro]),
+        ]) ...[
+          SeccionNs(titulo),
+          for (final r in rubros)
+            KeyedSubtree(
+              key: Key('rubro-${r.clave}'),
+              child: OpcionNs(titulo: r.nombre, detalle: r.descripcion, derecha: rubro == r ? 'Elegido' : null, marcada: rubro == r, onTap: () => alElegirRubro(r)),
+            ),
+          if (rubro != null && rubros.contains(rubro))
+            InfoNs(
+              [
+                categorias.isEmpty ? 'Arrancás sin categorías: las armás vos.' : 'Te dejamos estas categorías para empezar: ${categorias.map((c) => c.nombre).join(', ')}.',
+                // La agenda, los servicios con insumos y la seña son las etapas 2 a 4 del plan: no se promete lo que no está.
+                if (rubro!.forma == FormaDeTrabajo.servicios) 'La agenda y los servicios con sus insumos llegan en las próximas actualizaciones.',
+              ].join(' '),
+              tono: TonoNs.good,
+            ),
+        ],
       ],
       botones: [
         KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.primario(context, 'Siguiente', listo && !guardando ? alSeguir : null, habilitado: listo && !guardando)),

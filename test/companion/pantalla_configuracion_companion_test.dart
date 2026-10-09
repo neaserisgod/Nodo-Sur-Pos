@@ -95,6 +95,26 @@ void main() {
     expect(_guardarActivo(t), isFalse);
   });
 
+  testWidgets('rubro de servicios: pasar a Barbería avisa qué se deja de ver y se guarda con Guardar', (t) async {
+    final puerto = await _preparar(t);
+    await _abrir(t);
+    expect(find.text('Vendés productos'), findsOneWidget);
+    expect(find.text('Das servicios'), findsOneWidget);
+
+    // De un rubro de productos a otro no cambia la forma: no hay aviso.
+    await t.tap(_chip('Kiosco'));
+    await t.pump();
+    expect(find.textContaining('Pasás a un negocio'), findsNothing);
+
+    await t.tap(_chip('Barbería'));
+    await t.pump();
+    expect(find.textContaining('Pasás a un negocio de servicios: se dejan de ver Caja aparte'), findsOneWidget);
+    expect(find.textContaining('No se borra nada'), findsOneWidget);
+
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.rubro, 'barberia');
+  });
+
   testWidgets('nombre del comercio: se carga desde el celular con Guardar, y vacío no borra el que había', (t) async {
     final puerto = await _preparar(t);
     await _abrir(t);

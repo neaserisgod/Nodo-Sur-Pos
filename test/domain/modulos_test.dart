@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 
 void main() {
   group('ModulosNegocio — qué partes de la app usa cada comercio', () {
-    test('sin nada desactivado, todos los módulos están activos', () {
+    test('sin nada desactivado, todos los módulos de su forma están activos', () {
       final modulos = ModulosNegocio.desdeTexto('');
-      for (final modulo in Modulo.values) {
+      for (final modulo in modulos.disponibles) {
         expect(modulos.estaActivo(modulo), isTrue, reason: modulo.clave);
       }
       expect(modulos.desactivados, isEmpty);
@@ -72,8 +73,72 @@ void main() {
           'carga_historica',
           'comparar_precios',
           'cobro_point',
+          'insumos',
+          'mano_de_obra',
         },
       );
+    });
+  });
+
+  group('forma de trabajar — un almacén no ve los módulos de servicios ni al revés', () {
+    test('sin forma, es productos: un negocio que ya existía no cambia en nada', () {
+      expect(ModulosNegocio.todosActivos.forma, FormaDeTrabajo.productos);
+      expect(ModulosNegocio.desdeTexto('').forma, FormaDeTrabajo.productos);
+    });
+
+    test('un comercio de productos ve y usa todos los módulos de hoy, igual que antes', () {
+      // El invariante de la etapa 1: para La Plazoleta, estaActivo es exactamente "no está apagado".
+      for (final texto in ['', 'pesables,fiado', 'comparar_precios']) {
+        final modulos = ModulosNegocio.desdeTexto(texto);
+        for (final m in Modulo.values.where((m) => m.valePara(FormaDeTrabajo.productos))) {
+          expect(modulos.estaActivo(m), !modulos.desactivados.contains(m), reason: '$texto / ${m.clave}');
+        }
+      }
+    });
+
+    // Los módulos que existían antes de los servicios: un almacén los sigue viendo todos, igual que antes.
+    const deAntes = [
+      Modulo.cajaAparte, Modulo.pesables, Modulo.promos, Modulo.fiado, Modulo.retiroGanancias,
+      Modulo.equilibrio, Modulo.turnos, Modulo.cargaHistorica, Modulo.compararPrecios, Modulo.cobroPoint,
+    ];
+
+    test('todo módulo vale para alguna forma, y los de antes valen para productos', () {
+      for (final m in Modulo.values) {
+        expect(m.formas, isNotEmpty, reason: m.clave);
+      }
+      for (final m in deAntes) {
+        expect(m.valePara(FormaDeTrabajo.productos), isTrue, reason: m.clave);
+      }
+    });
+
+    test('un almacén no ve los módulos de servicios aunque nazcan prendidos', () {
+      final almacen = ModulosNegocio.desdeTexto('');
+      expect(almacen.disponibles, deAntes);
+      expect(almacen.estaActivo(Modulo.insumos), isFalse);
+      expect(almacen.estaActivo(Modulo.manoDeObra), isFalse);
+      final barberia = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios);
+      expect(barberia.estaActivo(Modulo.insumos), isTrue);
+      expect(barberia.estaActivo(Modulo.manoDeObra), isTrue);
+    });
+
+    test('en un negocio de servicios, lo que es de un comercio con stock no se ve ni cuenta aunque no esté apagado', () {
+      final modulos = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios);
+      for (final m in [Modulo.cajaAparte, Modulo.pesables, Modulo.promos, Modulo.compararPrecios]) {
+        expect(modulos.estaActivo(m), isFalse, reason: m.clave);
+        expect(modulos.disponibles, isNot(contains(m)), reason: m.clave);
+      }
+      for (final m in [Modulo.fiado, Modulo.retiroGanancias, Modulo.equilibrio, Modulo.turnos, Modulo.cargaHistorica, Modulo.cobroPoint]) {
+        expect(modulos.estaActivo(m), isTrue, reason: m.clave);
+        expect(modulos.disponibles, contains(m), reason: m.clave);
+      }
+    });
+
+    test('lo apagado de la otra forma se conserva: cambiar de rubro y volver deja todo como estaba', () {
+      final servicios = ModulosNegocio.desdeTexto('pesables,fiado', forma: FormaDeTrabajo.servicios);
+      expect(servicios.estaActivo(Modulo.fiado), isFalse);
+      final otra = servicios.conModulo(Modulo.turnos, activo: false);
+      expect(otra.forma, FormaDeTrabajo.servicios);
+      expect(ModulosNegocio.desdeTexto(otra.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.turnos});
     });
   });
 }

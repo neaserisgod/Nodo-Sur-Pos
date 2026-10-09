@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../data/database.dart';
+import '../../data/repositorio_configuracion.dart';
 import '../../domain/dinero.dart';
 import '../../domain/marca.dart';
 import '../../domain/modulos.dart';
@@ -1238,12 +1239,12 @@ class _SeccionModulos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modulos = ModulosNegocio.desdeTexto(c.configuracionNegocio?.modulosDesactivados ?? '');
+    final modulos = modulosDeConfiguracion(c.configuracionNegocio);
     return _Apilado([
       const Nota(texto: 'Apagá lo que no usás. No se borra nada: al prenderlo vuelve como estaba.'),
       Lista(
         filas: [
-          for (final m in Modulo.values)
+          for (final m in modulos.disponibles)
             Interruptor(
               key: Key('modulo_${m.clave}'),
               titulo: m.etiqueta,

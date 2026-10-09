@@ -160,6 +160,8 @@ Future<List<ProductoBajoMargen>> productosPorDebajoDelMargen(AppDatabase db, int
               p.activo.equals(true) &
               p.esVarios.equals(false) &
               p.esPromo.equals(false) &
+              p.esInsumo.equals(false) &
+              p.esServicio.equals(false) &
               p.tipoCigarrillo.equals('ninguno'),
         ))
       .get();

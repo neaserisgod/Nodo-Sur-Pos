@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/ui/kit/kit.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:la_plazoleta/ui/configuracion/pantalla_configuracion.dart';
 import 'package:la_plazoleta/ui/tema/tema.dart';
@@ -23,14 +25,28 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
-  testWidgets('lista todos los módulos, todos prendidos en un comercio que ya existía', (tester) async {
+  testWidgets('lista todos los módulos de un comercio, todos prendidos en uno que ya existía', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
     for (final m in Modulo.values) {
       final interruptor = find.byKey(Key('modulo_${m.clave}'));
+      if (!m.valePara(FormaDeTrabajo.productos)) {
+        expect(interruptor, findsNothing, reason: '${m.clave} es de servicios');
+        continue;
+      }
       expect(interruptor, findsOneWidget, reason: m.clave);
       expect(tester.widget<Interruptor>(interruptor).valor, isTrue, reason: m.clave);
+    }
+  });
+
+  testWidgets('una barbería solo ve los módulos que valen para servicios', (tester) async {
+    final db = baseDeTest();
+    addTearDown(db.close);
+    await configurarRubro(db, PlantillaRubro.barberia);
+    await _pump(tester, db);
+    for (final m in Modulo.values) {
+      expect(find.byKey(Key('modulo_${m.clave}')), m.valePara(FormaDeTrabajo.servicios) ? findsOneWidget : findsNothing, reason: m.clave);
     }
   });
 

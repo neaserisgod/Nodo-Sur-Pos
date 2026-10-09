@@ -1,7 +1,7 @@
 # Plan · Bot de WhatsApp desde el celular, configurable desde Nodo Sur
 
-**Estado al 2026-10-09: etapas 1 (rubro guardado, migración v63), 2 (sitio) y 3 (bot) hechas, en las ramas `ccr-e5e5b532-aj3e0g` de los tres repos, sin mezclar; el resto, plan.** En `neaserisgod/botdemo` ya están las plantillas de uñas
-y barbería (rama `ccr-e5e5b532-aj3e0g`). Revisado contra el código de los tres repos el mismo día. El resto del bot (turnos,
+**Estado al 2026-10-09: etapas 1 (rubro guardado, migración v63), 2 (sitio) y 3 (bot) hechas y mezcladas en los tres repos (en esta app, release #94); el resto, plan.** En `neaserisgod/botdemo` ya están las plantillas de uñas,
+barbería y otro servicio. Revisado contra el código de los tres repos el mismo día. El resto del bot (turnos,
 seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), etapa 5.
 
 ## Lo que pidió el dueño (2026-10-09)

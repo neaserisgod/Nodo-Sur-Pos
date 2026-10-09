@@ -3926,6 +3926,127 @@ class $ProductosTable extends Productos
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _esInsumoMeta = const VerificationMeta(
+    'esInsumo',
+  );
+  @override
+  late final GeneratedColumn<bool> esInsumo = GeneratedColumn<bool>(
+    'es_insumo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("es_insumo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _unidadInsumoMeta = const VerificationMeta(
+    'unidadInsumo',
+  );
+  @override
+  late final GeneratedColumn<String> unidadInsumo = GeneratedColumn<String>(
+    'unidad_insumo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contenidoEnvaseMilesimasMeta =
+      const VerificationMeta('contenidoEnvaseMilesimas');
+  @override
+  late final GeneratedColumn<int> contenidoEnvaseMilesimas =
+      GeneratedColumn<int>(
+        'contenido_envase_milesimas',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _stockMilesimasMeta = const VerificationMeta(
+    'stockMilesimas',
+  );
+  @override
+  late final GeneratedColumn<int> stockMilesimas = GeneratedColumn<int>(
+    'stock_milesimas',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stockMinimoMilesimasMeta =
+      const VerificationMeta('stockMinimoMilesimas');
+  @override
+  late final GeneratedColumn<int> stockMinimoMilesimas = GeneratedColumn<int>(
+    'stock_minimo_milesimas',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _esServicioMeta = const VerificationMeta(
+    'esServicio',
+  );
+  @override
+  late final GeneratedColumn<bool> esServicio = GeneratedColumn<bool>(
+    'es_servicio',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("es_servicio" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _duracionMinutosMeta = const VerificationMeta(
+    'duracionMinutos',
+  );
+  @override
+  late final GeneratedColumn<int> duracionMinutos = GeneratedColumn<int>(
+    'duracion_minutos',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recetaServicioMeta = const VerificationMeta(
+    'recetaServicio',
+  );
+  @override
+  late final GeneratedColumn<String> recetaServicio = GeneratedColumn<String>(
+    'receta_servicio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sumaManoDeObraMeta = const VerificationMeta(
+    'sumaManoDeObra',
+  );
+  @override
+  late final GeneratedColumn<bool> sumaManoDeObra = GeneratedColumn<bool>(
+    'suma_mano_de_obra',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("suma_mano_de_obra" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _gananciaBuscadaBpMeta = const VerificationMeta(
+    'gananciaBuscadaBp',
+  );
+  @override
+  late final GeneratedColumn<int> gananciaBuscadaBp = GeneratedColumn<int>(
+    'ganancia_buscada_bp',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activoMeta = const VerificationMeta('activo');
   @override
   late final GeneratedColumn<bool> activo = GeneratedColumn<bool>(
@@ -4041,6 +4162,16 @@ class $ProductosTable extends Productos
     precioFijo,
     esPromo,
     componentesPromo,
+    esInsumo,
+    unidadInsumo,
+    contenidoEnvaseMilesimas,
+    stockMilesimas,
+    stockMinimoMilesimas,
+    esServicio,
+    duracionMinutos,
+    recetaServicio,
+    sumaManoDeObra,
+    gananciaBuscadaBp,
     activo,
     creadoEn,
     actualizadoEn,
@@ -4211,6 +4342,90 @@ class $ProductosTable extends Productos
         ),
       );
     }
+    if (data.containsKey('es_insumo')) {
+      context.handle(
+        _esInsumoMeta,
+        esInsumo.isAcceptableOrUnknown(data['es_insumo']!, _esInsumoMeta),
+      );
+    }
+    if (data.containsKey('unidad_insumo')) {
+      context.handle(
+        _unidadInsumoMeta,
+        unidadInsumo.isAcceptableOrUnknown(
+          data['unidad_insumo']!,
+          _unidadInsumoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('contenido_envase_milesimas')) {
+      context.handle(
+        _contenidoEnvaseMilesimasMeta,
+        contenidoEnvaseMilesimas.isAcceptableOrUnknown(
+          data['contenido_envase_milesimas']!,
+          _contenidoEnvaseMilesimasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stock_milesimas')) {
+      context.handle(
+        _stockMilesimasMeta,
+        stockMilesimas.isAcceptableOrUnknown(
+          data['stock_milesimas']!,
+          _stockMilesimasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stock_minimo_milesimas')) {
+      context.handle(
+        _stockMinimoMilesimasMeta,
+        stockMinimoMilesimas.isAcceptableOrUnknown(
+          data['stock_minimo_milesimas']!,
+          _stockMinimoMilesimasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('es_servicio')) {
+      context.handle(
+        _esServicioMeta,
+        esServicio.isAcceptableOrUnknown(data['es_servicio']!, _esServicioMeta),
+      );
+    }
+    if (data.containsKey('duracion_minutos')) {
+      context.handle(
+        _duracionMinutosMeta,
+        duracionMinutos.isAcceptableOrUnknown(
+          data['duracion_minutos']!,
+          _duracionMinutosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('receta_servicio')) {
+      context.handle(
+        _recetaServicioMeta,
+        recetaServicio.isAcceptableOrUnknown(
+          data['receta_servicio']!,
+          _recetaServicioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('suma_mano_de_obra')) {
+      context.handle(
+        _sumaManoDeObraMeta,
+        sumaManoDeObra.isAcceptableOrUnknown(
+          data['suma_mano_de_obra']!,
+          _sumaManoDeObraMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ganancia_buscada_bp')) {
+      context.handle(
+        _gananciaBuscadaBpMeta,
+        gananciaBuscadaBp.isAcceptableOrUnknown(
+          data['ganancia_buscada_bp']!,
+          _gananciaBuscadaBpMeta,
+        ),
+      );
+    }
     if (data.containsKey('activo')) {
       context.handle(
         _activoMeta,
@@ -4359,6 +4574,46 @@ class $ProductosTable extends Productos
         DriftSqlType.string,
         data['${effectivePrefix}componentes_promo'],
       ),
+      esInsumo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}es_insumo'],
+      )!,
+      unidadInsumo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unidad_insumo'],
+      ),
+      contenidoEnvaseMilesimas: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}contenido_envase_milesimas'],
+      ),
+      stockMilesimas: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stock_milesimas'],
+      ),
+      stockMinimoMilesimas: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stock_minimo_milesimas'],
+      ),
+      esServicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}es_servicio'],
+      )!,
+      duracionMinutos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duracion_minutos'],
+      ),
+      recetaServicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}receta_servicio'],
+      ),
+      sumaManoDeObra: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}suma_mano_de_obra'],
+      )!,
+      gananciaBuscadaBp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ganancia_buscada_bp'],
+      ),
       activo: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
@@ -4467,6 +4722,40 @@ class Producto extends DataClass implements Insertable<Producto> {
   /// criterio que `pendientes.lineasJson`). `promo_componentes` sigue siendo lo que lee la venta; al llegar una promo por la sync
   /// se rehace desde acá (`aplicarCambios`). Null en lo que no es promo.
   final String? componentesPromo;
+
+  /// Insumo: se compra por envase y se gasta de a poco en los servicios. No se vende ni aparece en la venta. Su costo es el
+  /// del envase ([costoCentavos]) y su stock va en [stockMilesimas], no en [stock].
+  final bool esInsumo;
+
+  /// En qué se usa un insumo: `ml`, `g` o `u` (`UnidadInsumo`). Null en lo que no es insumo.
+  final String? unidadInsumo;
+
+  /// Lo que trae un envase del insumo, en milésimas de su unidad (un frasco de 15 ml = 15000).
+  final int? contenidoEnvaseMilesimas;
+
+  /// Stock del insumo en milésimas de su unidad: se usa de a 0,4 ml. Contador como [stock]: se mueve con su movimiento de
+  /// stock (`movimientos_de_stock.milesimas_*`) y la sync lo arma con los deltas, nunca pisándolo.
+  final int? stockMilesimas;
+
+  /// Aviso de "poco stock" del insumo, en milésimas. 0 o null: sin aviso (mismo criterio que [stockMinimo]).
+  final int? stockMinimoMilesimas;
+
+  /// Servicio: se vende con duración y receta de insumos, sin stock propio.
+  final bool esServicio;
+
+  /// Lo que dura un servicio, en minutos.
+  final int? duracionMinutos;
+
+  /// Lo que usa un servicio cada vez: `[{"gid": <global_id del insumo>, "milesimas": n}]`. Por `global_id` para que viaje por
+  /// la sync, como [componentesPromo]. Null en lo que no es servicio.
+  final String? recetaServicio;
+
+  /// Si el costo del servicio suma la mano de obra (duración × valor de la hora del negocio).
+  final bool sumaManoDeObra;
+
+  /// La ganancia buscada del servicio, sobre el precio (El dueño, 2026-10-09: de cada servicio). Null: la de arranque
+  /// (`gananciaBuscadaPorDefectoBp`).
+  final int? gananciaBuscadaBp;
   final bool activo;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
@@ -4506,6 +4795,16 @@ class Producto extends DataClass implements Insertable<Producto> {
     required this.precioFijo,
     required this.esPromo,
     this.componentesPromo,
+    required this.esInsumo,
+    this.unidadInsumo,
+    this.contenidoEnvaseMilesimas,
+    this.stockMilesimas,
+    this.stockMinimoMilesimas,
+    required this.esServicio,
+    this.duracionMinutos,
+    this.recetaServicio,
+    required this.sumaManoDeObra,
+    this.gananciaBuscadaBp,
     required this.activo,
     required this.creadoEn,
     required this.actualizadoEn,
@@ -4556,6 +4855,32 @@ class Producto extends DataClass implements Insertable<Producto> {
     map['es_promo'] = Variable<bool>(esPromo);
     if (!nullToAbsent || componentesPromo != null) {
       map['componentes_promo'] = Variable<String>(componentesPromo);
+    }
+    map['es_insumo'] = Variable<bool>(esInsumo);
+    if (!nullToAbsent || unidadInsumo != null) {
+      map['unidad_insumo'] = Variable<String>(unidadInsumo);
+    }
+    if (!nullToAbsent || contenidoEnvaseMilesimas != null) {
+      map['contenido_envase_milesimas'] = Variable<int>(
+        contenidoEnvaseMilesimas,
+      );
+    }
+    if (!nullToAbsent || stockMilesimas != null) {
+      map['stock_milesimas'] = Variable<int>(stockMilesimas);
+    }
+    if (!nullToAbsent || stockMinimoMilesimas != null) {
+      map['stock_minimo_milesimas'] = Variable<int>(stockMinimoMilesimas);
+    }
+    map['es_servicio'] = Variable<bool>(esServicio);
+    if (!nullToAbsent || duracionMinutos != null) {
+      map['duracion_minutos'] = Variable<int>(duracionMinutos);
+    }
+    if (!nullToAbsent || recetaServicio != null) {
+      map['receta_servicio'] = Variable<String>(recetaServicio);
+    }
+    map['suma_mano_de_obra'] = Variable<bool>(sumaManoDeObra);
+    if (!nullToAbsent || gananciaBuscadaBp != null) {
+      map['ganancia_buscada_bp'] = Variable<int>(gananciaBuscadaBp);
     }
     map['activo'] = Variable<bool>(activo);
     map['creado_en'] = Variable<DateTime>(creadoEn);
@@ -4623,6 +4948,30 @@ class Producto extends DataClass implements Insertable<Producto> {
       componentesPromo: componentesPromo == null && nullToAbsent
           ? const Value.absent()
           : Value(componentesPromo),
+      esInsumo: Value(esInsumo),
+      unidadInsumo: unidadInsumo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unidadInsumo),
+      contenidoEnvaseMilesimas: contenidoEnvaseMilesimas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contenidoEnvaseMilesimas),
+      stockMilesimas: stockMilesimas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stockMilesimas),
+      stockMinimoMilesimas: stockMinimoMilesimas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stockMinimoMilesimas),
+      esServicio: Value(esServicio),
+      duracionMinutos: duracionMinutos == null && nullToAbsent
+          ? const Value.absent()
+          : Value(duracionMinutos),
+      recetaServicio: recetaServicio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recetaServicio),
+      sumaManoDeObra: Value(sumaManoDeObra),
+      gananciaBuscadaBp: gananciaBuscadaBp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gananciaBuscadaBp),
       activo: Value(activo),
       creadoEn: Value(creadoEn),
       actualizadoEn: Value(actualizadoEn),
@@ -4675,6 +5024,20 @@ class Producto extends DataClass implements Insertable<Producto> {
       precioFijo: serializer.fromJson<bool>(json['precioFijo']),
       esPromo: serializer.fromJson<bool>(json['esPromo']),
       componentesPromo: serializer.fromJson<String?>(json['componentesPromo']),
+      esInsumo: serializer.fromJson<bool>(json['esInsumo']),
+      unidadInsumo: serializer.fromJson<String?>(json['unidadInsumo']),
+      contenidoEnvaseMilesimas: serializer.fromJson<int?>(
+        json['contenidoEnvaseMilesimas'],
+      ),
+      stockMilesimas: serializer.fromJson<int?>(json['stockMilesimas']),
+      stockMinimoMilesimas: serializer.fromJson<int?>(
+        json['stockMinimoMilesimas'],
+      ),
+      esServicio: serializer.fromJson<bool>(json['esServicio']),
+      duracionMinutos: serializer.fromJson<int?>(json['duracionMinutos']),
+      recetaServicio: serializer.fromJson<String?>(json['recetaServicio']),
+      sumaManoDeObra: serializer.fromJson<bool>(json['sumaManoDeObra']),
+      gananciaBuscadaBp: serializer.fromJson<int?>(json['gananciaBuscadaBp']),
       activo: serializer.fromJson<bool>(json['activo']),
       creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
@@ -4716,6 +5079,18 @@ class Producto extends DataClass implements Insertable<Producto> {
       'precioFijo': serializer.toJson<bool>(precioFijo),
       'esPromo': serializer.toJson<bool>(esPromo),
       'componentesPromo': serializer.toJson<String?>(componentesPromo),
+      'esInsumo': serializer.toJson<bool>(esInsumo),
+      'unidadInsumo': serializer.toJson<String?>(unidadInsumo),
+      'contenidoEnvaseMilesimas': serializer.toJson<int?>(
+        contenidoEnvaseMilesimas,
+      ),
+      'stockMilesimas': serializer.toJson<int?>(stockMilesimas),
+      'stockMinimoMilesimas': serializer.toJson<int?>(stockMinimoMilesimas),
+      'esServicio': serializer.toJson<bool>(esServicio),
+      'duracionMinutos': serializer.toJson<int?>(duracionMinutos),
+      'recetaServicio': serializer.toJson<String?>(recetaServicio),
+      'sumaManoDeObra': serializer.toJson<bool>(sumaManoDeObra),
+      'gananciaBuscadaBp': serializer.toJson<int?>(gananciaBuscadaBp),
       'activo': serializer.toJson<bool>(activo),
       'creadoEn': serializer.toJson<DateTime>(creadoEn),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
@@ -4753,6 +5128,16 @@ class Producto extends DataClass implements Insertable<Producto> {
     bool? precioFijo,
     bool? esPromo,
     Value<String?> componentesPromo = const Value.absent(),
+    bool? esInsumo,
+    Value<String?> unidadInsumo = const Value.absent(),
+    Value<int?> contenidoEnvaseMilesimas = const Value.absent(),
+    Value<int?> stockMilesimas = const Value.absent(),
+    Value<int?> stockMinimoMilesimas = const Value.absent(),
+    bool? esServicio,
+    Value<int?> duracionMinutos = const Value.absent(),
+    Value<String?> recetaServicio = const Value.absent(),
+    bool? sumaManoDeObra,
+    Value<int?> gananciaBuscadaBp = const Value.absent(),
     bool? activo,
     DateTime? creadoEn,
     DateTime? actualizadoEn,
@@ -4793,6 +5178,28 @@ class Producto extends DataClass implements Insertable<Producto> {
     componentesPromo: componentesPromo.present
         ? componentesPromo.value
         : this.componentesPromo,
+    esInsumo: esInsumo ?? this.esInsumo,
+    unidadInsumo: unidadInsumo.present ? unidadInsumo.value : this.unidadInsumo,
+    contenidoEnvaseMilesimas: contenidoEnvaseMilesimas.present
+        ? contenidoEnvaseMilesimas.value
+        : this.contenidoEnvaseMilesimas,
+    stockMilesimas: stockMilesimas.present
+        ? stockMilesimas.value
+        : this.stockMilesimas,
+    stockMinimoMilesimas: stockMinimoMilesimas.present
+        ? stockMinimoMilesimas.value
+        : this.stockMinimoMilesimas,
+    esServicio: esServicio ?? this.esServicio,
+    duracionMinutos: duracionMinutos.present
+        ? duracionMinutos.value
+        : this.duracionMinutos,
+    recetaServicio: recetaServicio.present
+        ? recetaServicio.value
+        : this.recetaServicio,
+    sumaManoDeObra: sumaManoDeObra ?? this.sumaManoDeObra,
+    gananciaBuscadaBp: gananciaBuscadaBp.present
+        ? gananciaBuscadaBp.value
+        : this.gananciaBuscadaBp,
     activo: activo ?? this.activo,
     creadoEn: creadoEn ?? this.creadoEn,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -4857,6 +5264,34 @@ class Producto extends DataClass implements Insertable<Producto> {
       componentesPromo: data.componentesPromo.present
           ? data.componentesPromo.value
           : this.componentesPromo,
+      esInsumo: data.esInsumo.present ? data.esInsumo.value : this.esInsumo,
+      unidadInsumo: data.unidadInsumo.present
+          ? data.unidadInsumo.value
+          : this.unidadInsumo,
+      contenidoEnvaseMilesimas: data.contenidoEnvaseMilesimas.present
+          ? data.contenidoEnvaseMilesimas.value
+          : this.contenidoEnvaseMilesimas,
+      stockMilesimas: data.stockMilesimas.present
+          ? data.stockMilesimas.value
+          : this.stockMilesimas,
+      stockMinimoMilesimas: data.stockMinimoMilesimas.present
+          ? data.stockMinimoMilesimas.value
+          : this.stockMinimoMilesimas,
+      esServicio: data.esServicio.present
+          ? data.esServicio.value
+          : this.esServicio,
+      duracionMinutos: data.duracionMinutos.present
+          ? data.duracionMinutos.value
+          : this.duracionMinutos,
+      recetaServicio: data.recetaServicio.present
+          ? data.recetaServicio.value
+          : this.recetaServicio,
+      sumaManoDeObra: data.sumaManoDeObra.present
+          ? data.sumaManoDeObra.value
+          : this.sumaManoDeObra,
+      gananciaBuscadaBp: data.gananciaBuscadaBp.present
+          ? data.gananciaBuscadaBp.value
+          : this.gananciaBuscadaBp,
       activo: data.activo.present ? data.activo.value : this.activo,
       creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
       actualizadoEn: data.actualizadoEn.present
@@ -4900,6 +5335,16 @@ class Producto extends DataClass implements Insertable<Producto> {
           ..write('precioFijo: $precioFijo, ')
           ..write('esPromo: $esPromo, ')
           ..write('componentesPromo: $componentesPromo, ')
+          ..write('esInsumo: $esInsumo, ')
+          ..write('unidadInsumo: $unidadInsumo, ')
+          ..write('contenidoEnvaseMilesimas: $contenidoEnvaseMilesimas, ')
+          ..write('stockMilesimas: $stockMilesimas, ')
+          ..write('stockMinimoMilesimas: $stockMinimoMilesimas, ')
+          ..write('esServicio: $esServicio, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('recetaServicio: $recetaServicio, ')
+          ..write('sumaManoDeObra: $sumaManoDeObra, ')
+          ..write('gananciaBuscadaBp: $gananciaBuscadaBp, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -4935,6 +5380,16 @@ class Producto extends DataClass implements Insertable<Producto> {
     precioFijo,
     esPromo,
     componentesPromo,
+    esInsumo,
+    unidadInsumo,
+    contenidoEnvaseMilesimas,
+    stockMilesimas,
+    stockMinimoMilesimas,
+    esServicio,
+    duracionMinutos,
+    recetaServicio,
+    sumaManoDeObra,
+    gananciaBuscadaBp,
     activo,
     creadoEn,
     actualizadoEn,
@@ -4967,6 +5422,16 @@ class Producto extends DataClass implements Insertable<Producto> {
           other.precioFijo == this.precioFijo &&
           other.esPromo == this.esPromo &&
           other.componentesPromo == this.componentesPromo &&
+          other.esInsumo == this.esInsumo &&
+          other.unidadInsumo == this.unidadInsumo &&
+          other.contenidoEnvaseMilesimas == this.contenidoEnvaseMilesimas &&
+          other.stockMilesimas == this.stockMilesimas &&
+          other.stockMinimoMilesimas == this.stockMinimoMilesimas &&
+          other.esServicio == this.esServicio &&
+          other.duracionMinutos == this.duracionMinutos &&
+          other.recetaServicio == this.recetaServicio &&
+          other.sumaManoDeObra == this.sumaManoDeObra &&
+          other.gananciaBuscadaBp == this.gananciaBuscadaBp &&
           other.activo == this.activo &&
           other.creadoEn == this.creadoEn &&
           other.actualizadoEn == this.actualizadoEn &&
@@ -4999,6 +5464,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
   final Value<bool> precioFijo;
   final Value<bool> esPromo;
   final Value<String?> componentesPromo;
+  final Value<bool> esInsumo;
+  final Value<String?> unidadInsumo;
+  final Value<int?> contenidoEnvaseMilesimas;
+  final Value<int?> stockMilesimas;
+  final Value<int?> stockMinimoMilesimas;
+  final Value<bool> esServicio;
+  final Value<int?> duracionMinutos;
+  final Value<String?> recetaServicio;
+  final Value<bool> sumaManoDeObra;
+  final Value<int?> gananciaBuscadaBp;
   final Value<bool> activo;
   final Value<DateTime> creadoEn;
   final Value<DateTime> actualizadoEn;
@@ -5027,6 +5502,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.precioFijo = const Value.absent(),
     this.esPromo = const Value.absent(),
     this.componentesPromo = const Value.absent(),
+    this.esInsumo = const Value.absent(),
+    this.unidadInsumo = const Value.absent(),
+    this.contenidoEnvaseMilesimas = const Value.absent(),
+    this.stockMilesimas = const Value.absent(),
+    this.stockMinimoMilesimas = const Value.absent(),
+    this.esServicio = const Value.absent(),
+    this.duracionMinutos = const Value.absent(),
+    this.recetaServicio = const Value.absent(),
+    this.sumaManoDeObra = const Value.absent(),
+    this.gananciaBuscadaBp = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5056,6 +5541,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.precioFijo = const Value.absent(),
     this.esPromo = const Value.absent(),
     this.componentesPromo = const Value.absent(),
+    this.esInsumo = const Value.absent(),
+    this.unidadInsumo = const Value.absent(),
+    this.contenidoEnvaseMilesimas = const Value.absent(),
+    this.stockMilesimas = const Value.absent(),
+    this.stockMinimoMilesimas = const Value.absent(),
+    this.esServicio = const Value.absent(),
+    this.duracionMinutos = const Value.absent(),
+    this.recetaServicio = const Value.absent(),
+    this.sumaManoDeObra = const Value.absent(),
+    this.gananciaBuscadaBp = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5085,6 +5580,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Expression<bool>? precioFijo,
     Expression<bool>? esPromo,
     Expression<String>? componentesPromo,
+    Expression<bool>? esInsumo,
+    Expression<String>? unidadInsumo,
+    Expression<int>? contenidoEnvaseMilesimas,
+    Expression<int>? stockMilesimas,
+    Expression<int>? stockMinimoMilesimas,
+    Expression<bool>? esServicio,
+    Expression<int>? duracionMinutos,
+    Expression<String>? recetaServicio,
+    Expression<bool>? sumaManoDeObra,
+    Expression<int>? gananciaBuscadaBp,
     Expression<bool>? activo,
     Expression<DateTime>? creadoEn,
     Expression<DateTime>? actualizadoEn,
@@ -5116,6 +5621,18 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       if (precioFijo != null) 'precio_fijo': precioFijo,
       if (esPromo != null) 'es_promo': esPromo,
       if (componentesPromo != null) 'componentes_promo': componentesPromo,
+      if (esInsumo != null) 'es_insumo': esInsumo,
+      if (unidadInsumo != null) 'unidad_insumo': unidadInsumo,
+      if (contenidoEnvaseMilesimas != null)
+        'contenido_envase_milesimas': contenidoEnvaseMilesimas,
+      if (stockMilesimas != null) 'stock_milesimas': stockMilesimas,
+      if (stockMinimoMilesimas != null)
+        'stock_minimo_milesimas': stockMinimoMilesimas,
+      if (esServicio != null) 'es_servicio': esServicio,
+      if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
+      if (recetaServicio != null) 'receta_servicio': recetaServicio,
+      if (sumaManoDeObra != null) 'suma_mano_de_obra': sumaManoDeObra,
+      if (gananciaBuscadaBp != null) 'ganancia_buscada_bp': gananciaBuscadaBp,
       if (activo != null) 'activo': activo,
       if (creadoEn != null) 'creado_en': creadoEn,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -5150,6 +5667,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Value<bool>? precioFijo,
     Value<bool>? esPromo,
     Value<String?>? componentesPromo,
+    Value<bool>? esInsumo,
+    Value<String?>? unidadInsumo,
+    Value<int?>? contenidoEnvaseMilesimas,
+    Value<int?>? stockMilesimas,
+    Value<int?>? stockMinimoMilesimas,
+    Value<bool>? esServicio,
+    Value<int?>? duracionMinutos,
+    Value<String?>? recetaServicio,
+    Value<bool>? sumaManoDeObra,
+    Value<int?>? gananciaBuscadaBp,
     Value<bool>? activo,
     Value<DateTime>? creadoEn,
     Value<DateTime>? actualizadoEn,
@@ -5180,6 +5707,17 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       precioFijo: precioFijo ?? this.precioFijo,
       esPromo: esPromo ?? this.esPromo,
       componentesPromo: componentesPromo ?? this.componentesPromo,
+      esInsumo: esInsumo ?? this.esInsumo,
+      unidadInsumo: unidadInsumo ?? this.unidadInsumo,
+      contenidoEnvaseMilesimas:
+          contenidoEnvaseMilesimas ?? this.contenidoEnvaseMilesimas,
+      stockMilesimas: stockMilesimas ?? this.stockMilesimas,
+      stockMinimoMilesimas: stockMinimoMilesimas ?? this.stockMinimoMilesimas,
+      esServicio: esServicio ?? this.esServicio,
+      duracionMinutos: duracionMinutos ?? this.duracionMinutos,
+      recetaServicio: recetaServicio ?? this.recetaServicio,
+      sumaManoDeObra: sumaManoDeObra ?? this.sumaManoDeObra,
+      gananciaBuscadaBp: gananciaBuscadaBp ?? this.gananciaBuscadaBp,
       activo: activo ?? this.activo,
       creadoEn: creadoEn ?? this.creadoEn,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -5258,6 +5796,38 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     if (componentesPromo.present) {
       map['componentes_promo'] = Variable<String>(componentesPromo.value);
     }
+    if (esInsumo.present) {
+      map['es_insumo'] = Variable<bool>(esInsumo.value);
+    }
+    if (unidadInsumo.present) {
+      map['unidad_insumo'] = Variable<String>(unidadInsumo.value);
+    }
+    if (contenidoEnvaseMilesimas.present) {
+      map['contenido_envase_milesimas'] = Variable<int>(
+        contenidoEnvaseMilesimas.value,
+      );
+    }
+    if (stockMilesimas.present) {
+      map['stock_milesimas'] = Variable<int>(stockMilesimas.value);
+    }
+    if (stockMinimoMilesimas.present) {
+      map['stock_minimo_milesimas'] = Variable<int>(stockMinimoMilesimas.value);
+    }
+    if (esServicio.present) {
+      map['es_servicio'] = Variable<bool>(esServicio.value);
+    }
+    if (duracionMinutos.present) {
+      map['duracion_minutos'] = Variable<int>(duracionMinutos.value);
+    }
+    if (recetaServicio.present) {
+      map['receta_servicio'] = Variable<String>(recetaServicio.value);
+    }
+    if (sumaManoDeObra.present) {
+      map['suma_mano_de_obra'] = Variable<bool>(sumaManoDeObra.value);
+    }
+    if (gananciaBuscadaBp.present) {
+      map['ganancia_buscada_bp'] = Variable<int>(gananciaBuscadaBp.value);
+    }
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
@@ -5313,6 +5883,16 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
           ..write('precioFijo: $precioFijo, ')
           ..write('esPromo: $esPromo, ')
           ..write('componentesPromo: $componentesPromo, ')
+          ..write('esInsumo: $esInsumo, ')
+          ..write('unidadInsumo: $unidadInsumo, ')
+          ..write('contenidoEnvaseMilesimas: $contenidoEnvaseMilesimas, ')
+          ..write('stockMilesimas: $stockMilesimas, ')
+          ..write('stockMinimoMilesimas: $stockMinimoMilesimas, ')
+          ..write('esServicio: $esServicio, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('recetaServicio: $recetaServicio, ')
+          ..write('sumaManoDeObra: $sumaManoDeObra, ')
+          ..write('gananciaBuscadaBp: $gananciaBuscadaBp, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -12919,6 +13499,38 @@ class $MovimientosDeStockTable extends MovimientosDeStock
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _milesimasMeta = const VerificationMeta(
+    'milesimas',
+  );
+  @override
+  late final GeneratedColumn<int> milesimas = GeneratedColumn<int>(
+    'milesimas',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _milesimasAnteriorMeta = const VerificationMeta(
+    'milesimasAnterior',
+  );
+  @override
+  late final GeneratedColumn<int> milesimasAnterior = GeneratedColumn<int>(
+    'milesimas_anterior',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _milesimasPosteriorMeta =
+      const VerificationMeta('milesimasPosterior');
+  @override
+  late final GeneratedColumn<int> milesimasPosterior = GeneratedColumn<int>(
+    'milesimas_posterior',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _motivoMeta = const VerificationMeta('motivo');
   @override
   late final GeneratedColumn<String> motivo = GeneratedColumn<String>(
@@ -12974,6 +13586,9 @@ class $MovimientosDeStockTable extends MovimientosDeStock
     gramos,
     gramosAnterior,
     gramosPosterior,
+    milesimas,
+    milesimasAnterior,
+    milesimasPosterior,
     motivo,
     fecha,
     globalId,
@@ -13072,6 +13687,30 @@ class $MovimientosDeStockTable extends MovimientosDeStock
         ),
       );
     }
+    if (data.containsKey('milesimas')) {
+      context.handle(
+        _milesimasMeta,
+        milesimas.isAcceptableOrUnknown(data['milesimas']!, _milesimasMeta),
+      );
+    }
+    if (data.containsKey('milesimas_anterior')) {
+      context.handle(
+        _milesimasAnteriorMeta,
+        milesimasAnterior.isAcceptableOrUnknown(
+          data['milesimas_anterior']!,
+          _milesimasAnteriorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('milesimas_posterior')) {
+      context.handle(
+        _milesimasPosteriorMeta,
+        milesimasPosterior.isAcceptableOrUnknown(
+          data['milesimas_posterior']!,
+          _milesimasPosteriorMeta,
+        ),
+      );
+    }
     if (data.containsKey('motivo')) {
       context.handle(
         _motivoMeta,
@@ -13152,6 +13791,18 @@ class $MovimientosDeStockTable extends MovimientosDeStock
         DriftSqlType.int,
         data['${effectivePrefix}gramos_posterior'],
       ),
+      milesimas: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}milesimas'],
+      ),
+      milesimasAnterior: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}milesimas_anterior'],
+      ),
+      milesimasPosterior: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}milesimas_posterior'],
+      ),
       motivo: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}motivo'],
@@ -13191,6 +13842,12 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
   final int? gramos;
   final int? gramosAnterior;
   final int? gramosPosterior;
+
+  /// Milésimas de un insumo (v65): lo que se compró, se usó o se contó, y el stock antes y después. Mismo esquema que los
+  /// gramos de un pesable.
+  final int? milesimas;
+  final int? milesimasAnterior;
+  final int? milesimasPosterior;
   final String? motivo;
   final DateTime fecha;
 
@@ -13216,6 +13873,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
     this.gramos,
     this.gramosAnterior,
     this.gramosPosterior,
+    this.milesimas,
+    this.milesimasAnterior,
+    this.milesimasPosterior,
     this.motivo,
     required this.fecha,
     this.globalId,
@@ -13248,6 +13908,15 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
     }
     if (!nullToAbsent || gramosPosterior != null) {
       map['gramos_posterior'] = Variable<int>(gramosPosterior);
+    }
+    if (!nullToAbsent || milesimas != null) {
+      map['milesimas'] = Variable<int>(milesimas);
+    }
+    if (!nullToAbsent || milesimasAnterior != null) {
+      map['milesimas_anterior'] = Variable<int>(milesimasAnterior);
+    }
+    if (!nullToAbsent || milesimasPosterior != null) {
+      map['milesimas_posterior'] = Variable<int>(milesimasPosterior);
     }
     if (!nullToAbsent || motivo != null) {
       map['motivo'] = Variable<String>(motivo);
@@ -13289,6 +13958,15 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
       gramosPosterior: gramosPosterior == null && nullToAbsent
           ? const Value.absent()
           : Value(gramosPosterior),
+      milesimas: milesimas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(milesimas),
+      milesimasAnterior: milesimasAnterior == null && nullToAbsent
+          ? const Value.absent()
+          : Value(milesimasAnterior),
+      milesimasPosterior: milesimasPosterior == null && nullToAbsent
+          ? const Value.absent()
+          : Value(milesimasPosterior),
       motivo: motivo == null && nullToAbsent
           ? const Value.absent()
           : Value(motivo),
@@ -13319,6 +13997,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
       gramos: serializer.fromJson<int?>(json['gramos']),
       gramosAnterior: serializer.fromJson<int?>(json['gramosAnterior']),
       gramosPosterior: serializer.fromJson<int?>(json['gramosPosterior']),
+      milesimas: serializer.fromJson<int?>(json['milesimas']),
+      milesimasAnterior: serializer.fromJson<int?>(json['milesimasAnterior']),
+      milesimasPosterior: serializer.fromJson<int?>(json['milesimasPosterior']),
       motivo: serializer.fromJson<String?>(json['motivo']),
       fecha: serializer.fromJson<DateTime>(json['fecha']),
       globalId: serializer.fromJson<String?>(json['globalId']),
@@ -13342,6 +14023,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
       'gramos': serializer.toJson<int?>(gramos),
       'gramosAnterior': serializer.toJson<int?>(gramosAnterior),
       'gramosPosterior': serializer.toJson<int?>(gramosPosterior),
+      'milesimas': serializer.toJson<int?>(milesimas),
+      'milesimasAnterior': serializer.toJson<int?>(milesimasAnterior),
+      'milesimasPosterior': serializer.toJson<int?>(milesimasPosterior),
       'motivo': serializer.toJson<String?>(motivo),
       'fecha': serializer.toJson<DateTime>(fecha),
       'globalId': serializer.toJson<String?>(globalId),
@@ -13361,6 +14045,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
     Value<int?> gramos = const Value.absent(),
     Value<int?> gramosAnterior = const Value.absent(),
     Value<int?> gramosPosterior = const Value.absent(),
+    Value<int?> milesimas = const Value.absent(),
+    Value<int?> milesimasAnterior = const Value.absent(),
+    Value<int?> milesimasPosterior = const Value.absent(),
     Value<String?> motivo = const Value.absent(),
     DateTime? fecha,
     Value<String?> globalId = const Value.absent(),
@@ -13385,6 +14072,13 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
     gramosPosterior: gramosPosterior.present
         ? gramosPosterior.value
         : this.gramosPosterior,
+    milesimas: milesimas.present ? milesimas.value : this.milesimas,
+    milesimasAnterior: milesimasAnterior.present
+        ? milesimasAnterior.value
+        : this.milesimasAnterior,
+    milesimasPosterior: milesimasPosterior.present
+        ? milesimasPosterior.value
+        : this.milesimasPosterior,
     motivo: motivo.present ? motivo.value : this.motivo,
     fecha: fecha ?? this.fecha,
     globalId: globalId.present ? globalId.value : this.globalId,
@@ -13415,6 +14109,13 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
       gramosPosterior: data.gramosPosterior.present
           ? data.gramosPosterior.value
           : this.gramosPosterior,
+      milesimas: data.milesimas.present ? data.milesimas.value : this.milesimas,
+      milesimasAnterior: data.milesimasAnterior.present
+          ? data.milesimasAnterior.value
+          : this.milesimasAnterior,
+      milesimasPosterior: data.milesimasPosterior.present
+          ? data.milesimasPosterior.value
+          : this.milesimasPosterior,
       motivo: data.motivo.present ? data.motivo.value : this.motivo,
       fecha: data.fecha.present ? data.fecha.value : this.fecha,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
@@ -13438,6 +14139,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
           ..write('gramos: $gramos, ')
           ..write('gramosAnterior: $gramosAnterior, ')
           ..write('gramosPosterior: $gramosPosterior, ')
+          ..write('milesimas: $milesimas, ')
+          ..write('milesimasAnterior: $milesimasAnterior, ')
+          ..write('milesimasPosterior: $milesimasPosterior, ')
           ..write('motivo: $motivo, ')
           ..write('fecha: $fecha, ')
           ..write('globalId: $globalId, ')
@@ -13459,6 +14163,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
     gramos,
     gramosAnterior,
     gramosPosterior,
+    milesimas,
+    milesimasAnterior,
+    milesimasPosterior,
     motivo,
     fecha,
     globalId,
@@ -13479,6 +14186,9 @@ class MovimientoStock extends DataClass implements Insertable<MovimientoStock> {
           other.gramos == this.gramos &&
           other.gramosAnterior == this.gramosAnterior &&
           other.gramosPosterior == this.gramosPosterior &&
+          other.milesimas == this.milesimas &&
+          other.milesimasAnterior == this.milesimasAnterior &&
+          other.milesimasPosterior == this.milesimasPosterior &&
           other.motivo == this.motivo &&
           other.fecha == this.fecha &&
           other.globalId == this.globalId &&
@@ -13497,6 +14207,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
   final Value<int?> gramos;
   final Value<int?> gramosAnterior;
   final Value<int?> gramosPosterior;
+  final Value<int?> milesimas;
+  final Value<int?> milesimasAnterior;
+  final Value<int?> milesimasPosterior;
   final Value<String?> motivo;
   final Value<DateTime> fecha;
   final Value<String?> globalId;
@@ -13513,6 +14226,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
     this.gramos = const Value.absent(),
     this.gramosAnterior = const Value.absent(),
     this.gramosPosterior = const Value.absent(),
+    this.milesimas = const Value.absent(),
+    this.milesimasAnterior = const Value.absent(),
+    this.milesimasPosterior = const Value.absent(),
     this.motivo = const Value.absent(),
     this.fecha = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -13530,6 +14246,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
     this.gramos = const Value.absent(),
     this.gramosAnterior = const Value.absent(),
     this.gramosPosterior = const Value.absent(),
+    this.milesimas = const Value.absent(),
+    this.milesimasAnterior = const Value.absent(),
+    this.milesimasPosterior = const Value.absent(),
     this.motivo = const Value.absent(),
     this.fecha = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -13549,6 +14268,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
     Expression<int>? gramos,
     Expression<int>? gramosAnterior,
     Expression<int>? gramosPosterior,
+    Expression<int>? milesimas,
+    Expression<int>? milesimasAnterior,
+    Expression<int>? milesimasPosterior,
     Expression<String>? motivo,
     Expression<DateTime>? fecha,
     Expression<String>? globalId,
@@ -13566,6 +14288,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
       if (gramos != null) 'gramos': gramos,
       if (gramosAnterior != null) 'gramos_anterior': gramosAnterior,
       if (gramosPosterior != null) 'gramos_posterior': gramosPosterior,
+      if (milesimas != null) 'milesimas': milesimas,
+      if (milesimasAnterior != null) 'milesimas_anterior': milesimasAnterior,
+      if (milesimasPosterior != null) 'milesimas_posterior': milesimasPosterior,
       if (motivo != null) 'motivo': motivo,
       if (fecha != null) 'fecha': fecha,
       if (globalId != null) 'global_id': globalId,
@@ -13585,6 +14310,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
     Value<int?>? gramos,
     Value<int?>? gramosAnterior,
     Value<int?>? gramosPosterior,
+    Value<int?>? milesimas,
+    Value<int?>? milesimasAnterior,
+    Value<int?>? milesimasPosterior,
     Value<String?>? motivo,
     Value<DateTime>? fecha,
     Value<String?>? globalId,
@@ -13602,6 +14330,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
       gramos: gramos ?? this.gramos,
       gramosAnterior: gramosAnterior ?? this.gramosAnterior,
       gramosPosterior: gramosPosterior ?? this.gramosPosterior,
+      milesimas: milesimas ?? this.milesimas,
+      milesimasAnterior: milesimasAnterior ?? this.milesimasAnterior,
+      milesimasPosterior: milesimasPosterior ?? this.milesimasPosterior,
       motivo: motivo ?? this.motivo,
       fecha: fecha ?? this.fecha,
       globalId: globalId ?? this.globalId,
@@ -13645,6 +14376,15 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
     if (gramosPosterior.present) {
       map['gramos_posterior'] = Variable<int>(gramosPosterior.value);
     }
+    if (milesimas.present) {
+      map['milesimas'] = Variable<int>(milesimas.value);
+    }
+    if (milesimasAnterior.present) {
+      map['milesimas_anterior'] = Variable<int>(milesimasAnterior.value);
+    }
+    if (milesimasPosterior.present) {
+      map['milesimas_posterior'] = Variable<int>(milesimasPosterior.value);
+    }
     if (motivo.present) {
       map['motivo'] = Variable<String>(motivo.value);
     }
@@ -13674,6 +14414,9 @@ class MovimientosDeStockCompanion extends UpdateCompanion<MovimientoStock> {
           ..write('gramos: $gramos, ')
           ..write('gramosAnterior: $gramosAnterior, ')
           ..write('gramosPosterior: $gramosPosterior, ')
+          ..write('milesimas: $milesimas, ')
+          ..write('milesimasAnterior: $milesimasAnterior, ')
+          ..write('milesimasPosterior: $milesimasPosterior, ')
           ..write('motivo: $motivo, ')
           ..write('fecha: $fecha, ')
           ..write('globalId: $globalId, ')
@@ -17467,6 +18210,17 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _valorHoraCentavosMeta = const VerificationMeta(
+    'valorHoraCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> valorHoraCentavos = GeneratedColumn<int>(
+    'valor_hora_centavos',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -17514,6 +18268,7 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     encabezadoTicket,
     modulosDesactivados,
     rubro,
+    valorHoraCentavos,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -17611,6 +18366,15 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         rubro.isAcceptableOrUnknown(data['rubro']!, _rubroMeta),
       );
     }
+    if (data.containsKey('valor_hora_centavos')) {
+      context.handle(
+        _valorHoraCentavosMeta,
+        valorHoraCentavos.isAcceptableOrUnknown(
+          data['valor_hora_centavos']!,
+          _valorHoraCentavosMeta,
+        ),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -17684,6 +18448,10 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         DriftSqlType.string,
         data['${effectivePrefix}rubro'],
       )!,
+      valorHoraCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}valor_hora_centavos'],
+      ),
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -17749,6 +18517,10 @@ class ConfiguracionNegocio extends DataClass
   /// columnas que trae).
   final String rubro;
 
+  /// Lo que vale una hora de trabajo, para sumar la mano de obra al costo de un servicio (v65; El dueño, 2026-10-09: un
+  /// valor por negocio). Null: sin cargar.
+  final int? valorHoraCentavos;
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   final String? globalId;
@@ -17765,6 +18537,7 @@ class ConfiguracionNegocio extends DataClass
     required this.encabezadoTicket,
     required this.modulosDesactivados,
     required this.rubro,
+    this.valorHoraCentavos,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -17788,6 +18561,9 @@ class ConfiguracionNegocio extends DataClass
     map['encabezado_ticket'] = Variable<String>(encabezadoTicket);
     map['modulos_desactivados'] = Variable<String>(modulosDesactivados);
     map['rubro'] = Variable<String>(rubro);
+    if (!nullToAbsent || valorHoraCentavos != null) {
+      map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos);
+    }
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -17814,6 +18590,9 @@ class ConfiguracionNegocio extends DataClass
       encabezadoTicket: Value(encabezadoTicket),
       modulosDesactivados: Value(modulosDesactivados),
       rubro: Value(rubro),
+      valorHoraCentavos: valorHoraCentavos == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valorHoraCentavos),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -17852,6 +18631,7 @@ class ConfiguracionNegocio extends DataClass
         json['modulosDesactivados'],
       ),
       rubro: serializer.fromJson<String>(json['rubro']),
+      valorHoraCentavos: serializer.fromJson<int?>(json['valorHoraCentavos']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -17877,6 +18657,7 @@ class ConfiguracionNegocio extends DataClass
       'encabezadoTicket': serializer.toJson<String>(encabezadoTicket),
       'modulosDesactivados': serializer.toJson<String>(modulosDesactivados),
       'rubro': serializer.toJson<String>(rubro),
+      'valorHoraCentavos': serializer.toJson<int?>(valorHoraCentavos),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -17894,6 +18675,7 @@ class ConfiguracionNegocio extends DataClass
     String? encabezadoTicket,
     String? modulosDesactivados,
     String? rubro,
+    Value<int?> valorHoraCentavos = const Value.absent(),
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -17912,6 +18694,9 @@ class ConfiguracionNegocio extends DataClass
     encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
     modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
     rubro: rubro ?? this.rubro,
+    valorHoraCentavos: valorHoraCentavos.present
+        ? valorHoraCentavos.value
+        : this.valorHoraCentavos,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -17950,6 +18735,9 @@ class ConfiguracionNegocio extends DataClass
           ? data.modulosDesactivados.value
           : this.modulosDesactivados,
       rubro: data.rubro.present ? data.rubro.value : this.rubro,
+      valorHoraCentavos: data.valorHoraCentavos.present
+          ? data.valorHoraCentavos.value
+          : this.valorHoraCentavos,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -17975,6 +18763,7 @@ class ConfiguracionNegocio extends DataClass
           ..write('encabezadoTicket: $encabezadoTicket, ')
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
+          ..write('valorHoraCentavos: $valorHoraCentavos, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -17994,6 +18783,7 @@ class ConfiguracionNegocio extends DataClass
     encabezadoTicket,
     modulosDesactivados,
     rubro,
+    valorHoraCentavos,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -18013,6 +18803,7 @@ class ConfiguracionNegocio extends DataClass
           other.encabezadoTicket == this.encabezadoTicket &&
           other.modulosDesactivados == this.modulosDesactivados &&
           other.rubro == this.rubro &&
+          other.valorHoraCentavos == this.valorHoraCentavos &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -18030,6 +18821,7 @@ class ConfiguracionNegocioTablaCompanion
   final Value<String> encabezadoTicket;
   final Value<String> modulosDesactivados;
   final Value<String> rubro;
+  final Value<int?> valorHoraCentavos;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -18044,6 +18836,7 @@ class ConfiguracionNegocioTablaCompanion
     this.encabezadoTicket = const Value.absent(),
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
+    this.valorHoraCentavos = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18059,6 +18852,7 @@ class ConfiguracionNegocioTablaCompanion
     this.encabezadoTicket = const Value.absent(),
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
+    this.valorHoraCentavos = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18074,6 +18868,7 @@ class ConfiguracionNegocioTablaCompanion
     Expression<String>? encabezadoTicket,
     Expression<String>? modulosDesactivados,
     Expression<String>? rubro,
+    Expression<int>? valorHoraCentavos,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -18094,6 +18889,7 @@ class ConfiguracionNegocioTablaCompanion
       if (modulosDesactivados != null)
         'modulos_desactivados': modulosDesactivados,
       if (rubro != null) 'rubro': rubro,
+      if (valorHoraCentavos != null) 'valor_hora_centavos': valorHoraCentavos,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -18111,6 +18907,7 @@ class ConfiguracionNegocioTablaCompanion
     Value<String>? encabezadoTicket,
     Value<String>? modulosDesactivados,
     Value<String>? rubro,
+    Value<int?>? valorHoraCentavos,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -18129,6 +18926,7 @@ class ConfiguracionNegocioTablaCompanion
       encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
       modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
       rubro: rubro ?? this.rubro,
+      valorHoraCentavos: valorHoraCentavos ?? this.valorHoraCentavos,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -18174,6 +18972,9 @@ class ConfiguracionNegocioTablaCompanion
     if (rubro.present) {
       map['rubro'] = Variable<String>(rubro.value);
     }
+    if (valorHoraCentavos.present) {
+      map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -18201,6 +19002,7 @@ class ConfiguracionNegocioTablaCompanion
           ..write('encabezadoTicket: $encabezadoTicket, ')
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
+          ..write('valorHoraCentavos: $valorHoraCentavos, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -29875,6 +30677,16 @@ typedef $$ProductosTableCreateCompanionBuilder =
       Value<bool> precioFijo,
       Value<bool> esPromo,
       Value<String?> componentesPromo,
+      Value<bool> esInsumo,
+      Value<String?> unidadInsumo,
+      Value<int?> contenidoEnvaseMilesimas,
+      Value<int?> stockMilesimas,
+      Value<int?> stockMinimoMilesimas,
+      Value<bool> esServicio,
+      Value<int?> duracionMinutos,
+      Value<String?> recetaServicio,
+      Value<bool> sumaManoDeObra,
+      Value<int?> gananciaBuscadaBp,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -29905,6 +30717,16 @@ typedef $$ProductosTableUpdateCompanionBuilder =
       Value<bool> precioFijo,
       Value<bool> esPromo,
       Value<String?> componentesPromo,
+      Value<bool> esInsumo,
+      Value<String?> unidadInsumo,
+      Value<int?> contenidoEnvaseMilesimas,
+      Value<int?> stockMilesimas,
+      Value<int?> stockMinimoMilesimas,
+      Value<bool> esServicio,
+      Value<int?> duracionMinutos,
+      Value<String?> recetaServicio,
+      Value<bool> sumaManoDeObra,
+      Value<int?> gananciaBuscadaBp,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -30234,6 +31056,56 @@ class $$ProductosTableFilterComposer
 
   ColumnFilters<String> get componentesPromo => $composableBuilder(
     column: $table.componentesPromo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get esInsumo => $composableBuilder(
+    column: $table.esInsumo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unidadInsumo => $composableBuilder(
+    column: $table.unidadInsumo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get contenidoEnvaseMilesimas => $composableBuilder(
+    column: $table.contenidoEnvaseMilesimas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stockMilesimas => $composableBuilder(
+    column: $table.stockMilesimas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stockMinimoMilesimas => $composableBuilder(
+    column: $table.stockMinimoMilesimas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recetaServicio => $composableBuilder(
+    column: $table.recetaServicio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get sumaManoDeObra => $composableBuilder(
+    column: $table.sumaManoDeObra,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gananciaBuscadaBp => $composableBuilder(
+    column: $table.gananciaBuscadaBp,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30647,6 +31519,56 @@ class $$ProductosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get esInsumo => $composableBuilder(
+    column: $table.esInsumo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unidadInsumo => $composableBuilder(
+    column: $table.unidadInsumo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get contenidoEnvaseMilesimas => $composableBuilder(
+    column: $table.contenidoEnvaseMilesimas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stockMilesimas => $composableBuilder(
+    column: $table.stockMilesimas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stockMinimoMilesimas => $composableBuilder(
+    column: $table.stockMinimoMilesimas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recetaServicio => $composableBuilder(
+    column: $table.recetaServicio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get sumaManoDeObra => $composableBuilder(
+    column: $table.sumaManoDeObra,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get gananciaBuscadaBp => $composableBuilder(
+    column: $table.gananciaBuscadaBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get activo => $composableBuilder(
     column: $table.activo,
     builder: (column) => ColumnOrderings(column),
@@ -30814,6 +31736,54 @@ class $$ProductosTableAnnotationComposer
 
   GeneratedColumn<String> get componentesPromo => $composableBuilder(
     column: $table.componentesPromo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get esInsumo =>
+      $composableBuilder(column: $table.esInsumo, builder: (column) => column);
+
+  GeneratedColumn<String> get unidadInsumo => $composableBuilder(
+    column: $table.unidadInsumo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get contenidoEnvaseMilesimas => $composableBuilder(
+    column: $table.contenidoEnvaseMilesimas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get stockMilesimas => $composableBuilder(
+    column: $table.stockMilesimas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get stockMinimoMilesimas => $composableBuilder(
+    column: $table.stockMinimoMilesimas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recetaServicio => $composableBuilder(
+    column: $table.recetaServicio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get sumaManoDeObra => $composableBuilder(
+    column: $table.sumaManoDeObra,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get gananciaBuscadaBp => $composableBuilder(
+    column: $table.gananciaBuscadaBp,
     builder: (column) => column,
   );
 
@@ -31188,6 +32158,16 @@ class $$ProductosTableTableManager
                 Value<bool> precioFijo = const Value.absent(),
                 Value<bool> esPromo = const Value.absent(),
                 Value<String?> componentesPromo = const Value.absent(),
+                Value<bool> esInsumo = const Value.absent(),
+                Value<String?> unidadInsumo = const Value.absent(),
+                Value<int?> contenidoEnvaseMilesimas = const Value.absent(),
+                Value<int?> stockMilesimas = const Value.absent(),
+                Value<int?> stockMinimoMilesimas = const Value.absent(),
+                Value<bool> esServicio = const Value.absent(),
+                Value<int?> duracionMinutos = const Value.absent(),
+                Value<String?> recetaServicio = const Value.absent(),
+                Value<bool> sumaManoDeObra = const Value.absent(),
+                Value<int?> gananciaBuscadaBp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -31218,6 +32198,16 @@ class $$ProductosTableTableManager
                 precioFijo: precioFijo,
                 esPromo: esPromo,
                 componentesPromo: componentesPromo,
+                esInsumo: esInsumo,
+                unidadInsumo: unidadInsumo,
+                contenidoEnvaseMilesimas: contenidoEnvaseMilesimas,
+                stockMilesimas: stockMilesimas,
+                stockMinimoMilesimas: stockMinimoMilesimas,
+                esServicio: esServicio,
+                duracionMinutos: duracionMinutos,
+                recetaServicio: recetaServicio,
+                sumaManoDeObra: sumaManoDeObra,
+                gananciaBuscadaBp: gananciaBuscadaBp,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
@@ -31248,6 +32238,16 @@ class $$ProductosTableTableManager
                 Value<bool> precioFijo = const Value.absent(),
                 Value<bool> esPromo = const Value.absent(),
                 Value<String?> componentesPromo = const Value.absent(),
+                Value<bool> esInsumo = const Value.absent(),
+                Value<String?> unidadInsumo = const Value.absent(),
+                Value<int?> contenidoEnvaseMilesimas = const Value.absent(),
+                Value<int?> stockMilesimas = const Value.absent(),
+                Value<int?> stockMinimoMilesimas = const Value.absent(),
+                Value<bool> esServicio = const Value.absent(),
+                Value<int?> duracionMinutos = const Value.absent(),
+                Value<String?> recetaServicio = const Value.absent(),
+                Value<bool> sumaManoDeObra = const Value.absent(),
+                Value<int?> gananciaBuscadaBp = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -31278,6 +32278,16 @@ class $$ProductosTableTableManager
                 precioFijo: precioFijo,
                 esPromo: esPromo,
                 componentesPromo: componentesPromo,
+                esInsumo: esInsumo,
+                unidadInsumo: unidadInsumo,
+                contenidoEnvaseMilesimas: contenidoEnvaseMilesimas,
+                stockMilesimas: stockMilesimas,
+                stockMinimoMilesimas: stockMinimoMilesimas,
+                esServicio: esServicio,
+                duracionMinutos: duracionMinutos,
+                recetaServicio: recetaServicio,
+                sumaManoDeObra: sumaManoDeObra,
+                gananciaBuscadaBp: gananciaBuscadaBp,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
@@ -38558,6 +39568,9 @@ typedef $$MovimientosDeStockTableCreateCompanionBuilder =
       Value<int?> gramos,
       Value<int?> gramosAnterior,
       Value<int?> gramosPosterior,
+      Value<int?> milesimas,
+      Value<int?> milesimasAnterior,
+      Value<int?> milesimasPosterior,
       Value<String?> motivo,
       Value<DateTime> fecha,
       Value<String?> globalId,
@@ -38576,6 +39589,9 @@ typedef $$MovimientosDeStockTableUpdateCompanionBuilder =
       Value<int?> gramos,
       Value<int?> gramosAnterior,
       Value<int?> gramosPosterior,
+      Value<int?> milesimas,
+      Value<int?> milesimasAnterior,
+      Value<int?> milesimasPosterior,
       Value<String?> motivo,
       Value<DateTime> fecha,
       Value<String?> globalId,
@@ -38693,6 +39709,21 @@ class $$MovimientosDeStockTableFilterComposer
 
   ColumnFilters<int> get gramosPosterior => $composableBuilder(
     column: $table.gramosPosterior,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get milesimas => $composableBuilder(
+    column: $table.milesimas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get milesimasAnterior => $composableBuilder(
+    column: $table.milesimasAnterior,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get milesimasPosterior => $composableBuilder(
+    column: $table.milesimasPosterior,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38835,6 +39866,21 @@ class $$MovimientosDeStockTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get milesimas => $composableBuilder(
+    column: $table.milesimas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get milesimasAnterior => $composableBuilder(
+    column: $table.milesimasAnterior,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get milesimasPosterior => $composableBuilder(
+    column: $table.milesimasPosterior,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get motivo => $composableBuilder(
     column: $table.motivo,
     builder: (column) => ColumnOrderings(column),
@@ -38963,6 +40009,19 @@ class $$MovimientosDeStockTableAnnotationComposer
 
   GeneratedColumn<int> get gramosPosterior => $composableBuilder(
     column: $table.gramosPosterior,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get milesimas =>
+      $composableBuilder(column: $table.milesimas, builder: (column) => column);
+
+  GeneratedColumn<int> get milesimasAnterior => $composableBuilder(
+    column: $table.milesimasAnterior,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get milesimasPosterior => $composableBuilder(
+    column: $table.milesimasPosterior,
     builder: (column) => column,
   );
 
@@ -39098,6 +40157,9 @@ class $$MovimientosDeStockTableTableManager
                 Value<int?> gramos = const Value.absent(),
                 Value<int?> gramosAnterior = const Value.absent(),
                 Value<int?> gramosPosterior = const Value.absent(),
+                Value<int?> milesimas = const Value.absent(),
+                Value<int?> milesimasAnterior = const Value.absent(),
+                Value<int?> milesimasPosterior = const Value.absent(),
                 Value<String?> motivo = const Value.absent(),
                 Value<DateTime> fecha = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -39114,6 +40176,9 @@ class $$MovimientosDeStockTableTableManager
                 gramos: gramos,
                 gramosAnterior: gramosAnterior,
                 gramosPosterior: gramosPosterior,
+                milesimas: milesimas,
+                milesimasAnterior: milesimasAnterior,
+                milesimasPosterior: milesimasPosterior,
                 motivo: motivo,
                 fecha: fecha,
                 globalId: globalId,
@@ -39132,6 +40197,9 @@ class $$MovimientosDeStockTableTableManager
                 Value<int?> gramos = const Value.absent(),
                 Value<int?> gramosAnterior = const Value.absent(),
                 Value<int?> gramosPosterior = const Value.absent(),
+                Value<int?> milesimas = const Value.absent(),
+                Value<int?> milesimasAnterior = const Value.absent(),
+                Value<int?> milesimasPosterior = const Value.absent(),
                 Value<String?> motivo = const Value.absent(),
                 Value<DateTime> fecha = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -39148,6 +40216,9 @@ class $$MovimientosDeStockTableTableManager
                 gramos: gramos,
                 gramosAnterior: gramosAnterior,
                 gramosPosterior: gramosPosterior,
+                milesimas: milesimas,
+                milesimasAnterior: milesimasAnterior,
+                milesimasPosterior: milesimasPosterior,
                 motivo: motivo,
                 fecha: fecha,
                 globalId: globalId,
@@ -41472,6 +42543,7 @@ typedef $$ConfiguracionNegocioTablaTableCreateCompanionBuilder =
       Value<String> encabezadoTicket,
       Value<String> modulosDesactivados,
       Value<String> rubro,
+      Value<int?> valorHoraCentavos,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -41488,6 +42560,7 @@ typedef $$ConfiguracionNegocioTablaTableUpdateCompanionBuilder =
       Value<String> encabezadoTicket,
       Value<String> modulosDesactivados,
       Value<String> rubro,
+      Value<int?> valorHoraCentavos,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -41577,6 +42650,11 @@ class $$ConfiguracionNegocioTablaTableFilterComposer
 
   ColumnFilters<String> get rubro => $composableBuilder(
     column: $table.rubro,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get valorHoraCentavos => $composableBuilder(
+    column: $table.valorHoraCentavos,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -41673,6 +42751,11 @@ class $$ConfiguracionNegocioTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get valorHoraCentavos => $composableBuilder(
+    column: $table.valorHoraCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -41762,6 +42845,11 @@ class $$ConfiguracionNegocioTablaTableAnnotationComposer
   GeneratedColumn<String> get rubro =>
       $composableBuilder(column: $table.rubro, builder: (column) => column);
 
+  GeneratedColumn<int> get valorHoraCentavos => $composableBuilder(
+    column: $table.valorHoraCentavos,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
 
@@ -41848,6 +42936,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> encabezadoTicket = const Value.absent(),
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
+                Value<int?> valorHoraCentavos = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -41862,6 +42951,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 encabezadoTicket: encabezadoTicket,
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
+                valorHoraCentavos: valorHoraCentavos,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -41878,6 +42968,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> encabezadoTicket = const Value.absent(),
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
+                Value<int?> valorHoraCentavos = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -41892,6 +42983,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 encabezadoTicket: encabezadoTicket,
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
+                valorHoraCentavos: valorHoraCentavos,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,

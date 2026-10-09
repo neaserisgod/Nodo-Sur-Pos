@@ -20,6 +20,8 @@ import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
+import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/sync_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -104,6 +106,19 @@ void main() {
       expect(categorias, hasLength(PlantillaRubro.almacen.categorias.length), reason: '"bebidas" ya estaba y no se repite');
       final nuevas = categorias.where((c) => c.nombre != 'bebidas');
       expect(nuevas.every((c) => c.globalId != null && c.actualizadoEn != null), isTrue);
+    });
+
+    test('una barbería: guarda el rubro, siembra sus categorías y la app pasa a ser de servicios', () async {
+      final db = await _baseDeCelularNuevo();
+      addTearDown(db.close);
+      await guardarNegocio(db, nombre: 'Barbería del Centro', rubro: PlantillaRubro.barberia);
+
+      expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, 'barberia');
+      expect((await db.select(db.categorias).get()).map((c) => c.nombre).toSet(), {'Cortes', 'Barba', 'Color'});
+      final modulos = await modulosNegocioActuales(db);
+      expect(modulos.forma, FormaDeTrabajo.servicios);
+      expect(modulos.estaActivo(Modulo.cajaAparte), isFalse, reason: 'la lata de cigarrillos es de un comercio');
+      expect(modulos.estaActivo(Modulo.fiado), isTrue);
     });
 
     test('el rubro "Otro" no trae categorías', () async {
@@ -230,6 +245,43 @@ void main() {
       await t.tap(find.byKey(const Key('asistente-terminar')));
       expect(hechos, PasoNegocio.values);
       expect(alFinal, isEmpty);
+    });
+
+    testWidgets('los rubros van en dos grupos y uno de servicios avisa que la agenda llega después', (t) async {
+      await tamanio(t);
+      (String, PlantillaRubro)? negocio;
+      await t.pumpWidget(app(AsistenteNegocio(
+        alGuardarNegocio: (n, r) async => negocio = (n, r),
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alAbrirWeb: (_) {},
+        alCompletarPaso: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+
+      // La lista se arma a medida que se ve: los grupos se juntan antes y después de bajar hasta el último.
+      final grupos = <String>[];
+      void juntarGrupos() {
+        for (final e in find.byWidgetPredicate((w) => w is SeccionNs, skipOffstage: false).evaluate()) {
+          final texto = (e.widget as SeccionNs).texto;
+          if (!grupos.contains(texto)) grupos.add(texto);
+        }
+      }
+
+      juntarGrupos();
+      await t.enterText(find.byKey(const Key('asistente-nombre')), 'Estudio Lila');
+      await t.dragUntilVisible(find.byKey(const Key('rubro-otro')), find.byType(ListView), const Offset(0, -200));
+      await t.pumpAndSettle();
+      juntarGrupos();
+      expect(grupos, containsAllInOrder(['Vendés productos', 'Das servicios', '¿Ninguno?']));
+      await t.tap(find.byKey(const Key('rubro-unas')));
+      await t.pump();
+      expect(find.textContaining('Manos, Pies, Cejas y pestañas', skipOffstage: false), findsOneWidget);
+      expect(find.textContaining('La agenda y los servicios', skipOffstage: false), findsOneWidget, reason: 'no se promete lo que todavía no está');
+      await t.tap(find.byKey(const Key('asistente-seguir')));
+      await t.pumpAndSettle();
+      expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
     });
 
     testWidgets('"Después" deja el paso pendiente y no lo da por hecho', (t) async {

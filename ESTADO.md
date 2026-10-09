@@ -101,11 +101,12 @@ Distinto del mock a propósito:
 Pendiente / ideas (sin hacer):
 - **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
-  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Mock hecho, sin código**; plan y
-  preguntas abiertas en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapa 1 hecha** (forma de trabajar
+  deducida del rubro y rubros Barbería, Uñas y belleza y Otro servicio; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el resto, plan
+  en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
 - **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
-  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas en ramas sin mezclar
-  (`ccr-e5e5b532-aj3e0g` en esta app, en `NodoSurPage` y en `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
+  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas y mezcladas (esta app en
+  el release #94; `NodoSurPage` #55; `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
   bot en Termux y, en el celular, **pedidos por confirmar en Encargues** (Aceptar los aparta, sin stock dice qué falta y no
   acepta; Rechazar no toca nada) y la pantalla **Más › Bot de WhatsApp** (estado, configuración para dueño/encargado,
   instalar). La PC también publica el catálogo: **hace falta un release nuevo de Windows** además del APK. Probado con
@@ -131,6 +132,14 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Servicios, etapas 1 y 2** (`docs/PLAN-SERVICIOS.md`; rama `ccr-a0284350-02fhfg`, sin mezclar): rubros **Barbería**, **Uñas
+  y belleza**, **Peluquería**, **Estética** y **Otro servicio** en el alta y en Configuración › Tu negocio del celular (en dos
+  grupos); la forma de trabajar sale del rubro y esconde a un negocio de servicios lo que es de un comercio con stock. En "Solo
+  celular", la pestaña Productos pasa a **Servicios**: servicios con costo, ganancia y para cuántos alcanza; insumos con compra
+  por envases, conteo y poco stock; creador con el costo en vivo y el precio sugerido; valor de la hora en Configuración.
+  Migración v65. Cobrar servicios (descontar insumos) es la etapa 3. La Plazoleta no cambia. Probado con tests; **falta verlo en
+  un celular real**. Motivos en `DECISIONES.md`. El bot suma `peluqueria`, `estetica` y `servicio`, y un salón con turnos ya no
+  se vuelve comercio si la app le manda un rubro de comercio (`botdemo`, misma rama).
 - **Independizar el celular de la PC** (El dueño: "¿qué falta para independizar?"; sobre el modo "PC y celular": "dejalo como
   respaldo"). La nube pasa a ser el camino principal; el wifi con la PC queda de respaldo. Hecho:
   - **Abrir la caja con la PC apagada** en "PC y celular": se sincroniza por internet y, si con lo último de todos no hay una caja
@@ -271,6 +280,12 @@ celular; pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder
 obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
+
+- **Stock contado dos veces en un equipo que se sincroniza por primera vez** (encontrado el 2026-10-09, sin arreglar): la fila
+  del producto llega con el stock de hoy y después cada movimiento viejo le vuelve a sumar su delta. Ej.: alta con 10, venta
+  que deja 7, y un equipo nuevo que baja las dos tablas desde 0 queda en 4. Vale para `stock`, `stock_gramos` y
+  `stock_milesimas` (`_aplicarDeltaDeMovimientoStock`, `repositorio_sincronizacion.dart`). Ver si en la práctica un equipo
+  nuevo arranca de una copia de la base (y no pasa) antes de tocarlo: es el núcleo del stock.
 
 - (Resuelto el 2026-10-04: cobrar un fiado ahora es atómico e idempotente, y separar/pagar proveedor van en transacción; ver
   `TRAMPAS.md`.) Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).

@@ -105,7 +105,7 @@ Future<void> aprenderVinculo(
 /// Los productos con los que se puede vincular una línea: activos, sin "Varios" ni promos (una promo no se compra).
 Future<List<ProductoCandidato>> catalogoParaVincular(AppDatabase db) async {
   final productos = await (db.select(db.productos)
-        ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false)))
+        ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false) & p.esInsumo.equals(false) & p.esServicio.equals(false)))
       .get();
   return [
     for (final p in productos) ProductoCandidato(

@@ -156,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 64;
+  int get schemaVersion => 65;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1183,6 +1183,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 64) {
         await _sumarIdentidadDeSyncAFijos(this, m);
       }
+      // v64 → v65 (2026-10-09): servicios e insumos (`docs/PLAN-SERVICIOS.md`, etapa 2). Columnas nuevas en `productos` (insumo,
+      // servicio y receta), en `movimientos_de_stock` (milésimas de un insumo) y el valor de la hora en la configuración. Todo
+      // nace vacío o en false: un almacén no cambia. Con chequeo de columna, como v59→v60.
+      if (from < 65) {
+        await _sumarServiciosEInsumos(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1208,6 +1214,41 @@ class AppDatabase extends _$AppDatabase {
       await _crearIndicesAdicionales(this);
     },
   );
+}
+
+/// v64 → v65: las columnas de servicios e insumos. Cada una se agrega solo si falta, así una base a medio migrar no se rompe.
+Future<void> _sumarServiciosEInsumos(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+
+  final deProductos = await columnasDe('productos');
+  for (final (nombre, columna) in [
+    ('es_insumo', db.productos.esInsumo),
+    ('unidad_insumo', db.productos.unidadInsumo),
+    ('contenido_envase_milesimas', db.productos.contenidoEnvaseMilesimas),
+    ('stock_milesimas', db.productos.stockMilesimas),
+    ('stock_minimo_milesimas', db.productos.stockMinimoMilesimas),
+    ('es_servicio', db.productos.esServicio),
+    ('duracion_minutos', db.productos.duracionMinutos),
+    ('receta_servicio', db.productos.recetaServicio),
+    ('suma_mano_de_obra', db.productos.sumaManoDeObra),
+    ('ganancia_buscada_bp', db.productos.gananciaBuscadaBp),
+  ]) {
+    if (!deProductos.contains(nombre)) await m.addColumn(db.productos, columna);
+  }
+
+  final deMovimientos = await columnasDe('movimientos_de_stock');
+  for (final (nombre, columna) in [
+    ('milesimas', db.movimientosDeStock.milesimas),
+    ('milesimas_anterior', db.movimientosDeStock.milesimasAnterior),
+    ('milesimas_posterior', db.movimientosDeStock.milesimasPosterior),
+  ]) {
+    if (!deMovimientos.contains(nombre)) await m.addColumn(db.movimientosDeStock, columna);
+  }
+
+  if (!(await columnasDe('configuracion_negocio_tabla')).contains('valor_hora_centavos')) {
+    await m.addColumn(db.configuracionNegocioTabla, db.configuracionNegocioTabla.valorHoraCentavos);
+  }
 }
 
 /// Índices sobre las columnas que reciben WHERE/JOIN en la ruta caliente de
