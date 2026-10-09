@@ -5,6 +5,10 @@
 // desktop"): buscar, calcular el total real (recargo de cigarrillos, redondeo,
 // descuento), cobrar en efectivo o por la terminal y asentar la venta.
 //
+// Sin pantalla de "Venta cobrada" (El dueño, 2026-10-09: "siento que hay una pantalla extra"): al cobrar se vuelve
+// directo a una venta nueva con el buscador listo, y arriba queda la tarjeta de la última venta (total, vuelto, imprimir)
+// hasta que se agrega el primer producto de la siguiente. El vuelto sigue a la vista lo que haga falta, sin un toque más.
+//
 // El mock (lote 1) ya trae lo que la app tiene: crédito en 1 pago, descuento
 // libre (monto o porcentaje), cantidad exacta con un toque, "Deshacer" al quitar
 // una línea, entregar un encargue, el caramelo cuando el vuelto es de $100 y
@@ -18,6 +22,7 @@ import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
+import '../domain/pesables.dart' show subtotalPesable;
 import '../domain/venta.dart';
 import '../domain/vuelto.dart';
 import 'app_ns.dart';
@@ -43,10 +48,10 @@ String _canalDe(_MedioVenta m) => switch (m) {
   _ => canalQr,
 };
 
-/// Los tres momentos de una venta en esta pantalla.
-enum _Paso { carrito, cobro, cobrado }
+/// Los dos momentos de una venta en esta pantalla: armar el carrito y elegir cómo paga.
+enum _Paso { carrito, cobro }
 
-/// Lo que muestra "Venta cobrada" una vez asentada la venta.
+/// Lo que muestra la tarjeta de la última venta, una vez asentada.
 typedef _ResumenCobro = ({int ventaId, int totalCentavos, _MedioVenta medio, int productos, int vueltoCentavos});
 
 class PantallaCarritoVenta extends StatefulWidget {
@@ -98,7 +103,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   final _mixtoCtrl = TextEditingController();
   String _canalMixto = canalQr;
 
-  /// Lo que se cobró en efectivo en la última venta mixta, para mostrarlo en "Venta cobrada".
+  /// Lo que se cobró en efectivo en la última venta mixta, para mostrarlo en la tarjeta de la última venta.
   int? _efectivoMixtoCobrado;
 
   /// Descuento libre (mock 08b): monto en pesos o porcentaje. `_valorDescuento` son centavos si es monto y puntos básicos si
@@ -111,13 +116,19 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   String? _encargueNombre;
   List<EncargueCompanion> _encargues = [];
 
-  /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra "Venta cobrada".
+  /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra la tarjeta de la
+  /// última venta.
   bool _cobradoAMano = false;
   String? _encargueEntregado;
 
   final _busquedaCtrl = TextEditingController();
   final _busquedaFocus = FocusNode();
-  final _debouncerBusqueda = Debouncer();
+  // Corto: lo que se tipea no puede esperar (CLAUDE.md, "Prioridad: arranque vs. operación"). Alcanza para no mandar una
+  // consulta por letra cuando se escribe rápido.
+  final _debouncerBusqueda = Debouncer(duracion: const Duration(milliseconds: 120));
+
+  /// El texto al que corresponden [_resultadosBusqueda]: Enter solo agrega si los resultados son del texto de ahora.
+  String? _textoDeResultados;
   List<ProductoCompanion> _resultadosBusqueda = [];
   int? _gramosBusqueda;
   bool _buscando = false;
@@ -197,11 +208,27 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         setState(() {
           _resultadosBusqueda = resultado.resultados;
           _gramosBusqueda = resultado.gramos;
+          _textoDeResultados = texto;
         });
       }
     } finally {
       if (mounted && _busquedaCtrl.text == texto) setState(() => _buscando = false);
     }
+  }
+
+  /// Enter en el teclado: agrega el primer resultado (el marcado) y deja el campo listo para el siguiente. Si la búsqueda
+  /// de lo último que se escribió todavía no volvió, la hace ya en vez de esperar.
+  Future<void> _enviarBusqueda(String texto) async {
+    if (texto.trim().isEmpty) return;
+    _debouncerBusqueda.cancelar();
+    if (_textoDeResultados != texto) await _buscar(texto);
+    if (!mounted || _busquedaCtrl.text != texto) return;
+    if (_resultadosBusqueda.isEmpty) {
+      mostrarAvisoNs(context, 'Sin coincidencias');
+      return;
+    }
+    _agregar(_resultadosBusqueda.first);
+    _busquedaFocus.requestFocus();
   }
 
   /// Agrega [producto] al carrito con la misma lógica que `VentaControlador.agregarProducto`
@@ -215,6 +242,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
     final nueva = resultado.linea!;
     _claveCobroActual = null;
+    _cerrarUltimaVenta();
     setState(() {
       final i = widget.carrito.indexWhere((l) => l.productoId == nueva.productoId);
       if (i != -1) {
@@ -227,6 +255,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         _busquedaCtrl.clear();
         _resultadosBusqueda = [];
         _gramosBusqueda = null;
+        _textoDeResultados = null;
       }
     });
   }
@@ -776,8 +805,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     if (!mounted) return;
     setState(() {
       _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
-      _paso = _Paso.cobrado;
+      _paso = _Paso.carrito;
+      _resultado = null;
+      _error = null;
     });
+    _ocultarBarra(false);
+    // Seguir vendiendo es lo natural: el buscador queda listo, como en la PC.
+    _busquedaFocus.requestFocus();
     // El resumen del día (Inicio, Caja) cambió.
     AppNs.of(context).refrescar();
   }
@@ -796,21 +830,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  void _nuevaVenta() {
+  /// Saca la tarjeta de la última venta (con la ✕, o sola al agregar el primer producto de la siguiente).
+  void _cerrarUltimaVenta() {
+    if (_cobrado == null) return;
     setState(() {
-      _paso = _Paso.carrito;
       _cobrado = null;
       _cobradoAMano = false;
       _encargueEntregado = null;
-      _resultado = null;
-      _error = null;
+      _efectivoMixtoCobrado = null;
     });
-    _ocultarBarra(false);
-  }
-
-  void _volverAlInicio() {
-    _nuevaVenta();
-    AppNs.of(context).irAPestania(PestaniaNs.inicio);
   }
 
   /// REGLAS-NEGOCIO §3: con $100 de vuelto exactos se agrega el producto de vuelto en vez de dar el cambio.
@@ -849,12 +877,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final ns = context.ns;
     final abierta = app.cajaAbierta;
     return PopScope(
-      // En "cobrar" y en "hecho" volver es volver al carrito, no salir de la venta.
+      // En "cobrar" volver es volver al carrito, no salir de la venta.
       canPop: _paso == _Paso.carrito,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_paso == _Paso.cobro) _volverAlCarrito();
-        if (_paso == _Paso.cobrado) _nuevaVenta();
       },
       child: ColoredBox(
         color: ns.paper,
@@ -866,7 +893,6 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 : switch (_paso) {
                     _Paso.carrito => _vistaCarrito(context),
                     _Paso.cobro => _vistaCobro(context),
-                    _Paso.cobrado => _vistaCobrado(context),
                   },
           ),
         ),
@@ -874,71 +900,80 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
-  Widget _vistaCarrito(BuildContext context) {
+  Widget _vistaCarrito(BuildContext context) => ConTecladoNs(builder: _vistaCarritoCon);
+
+  Widget _vistaCarritoCon(BuildContext context, bool teclado) {
     final ns = context.ns;
     final n = widget.carrito.length;
     final buscando = _busquedaCtrl.text.trim().isNotEmpty;
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
-                  if (n > 0) Text(n == 1 ? '1 producto' : '$n productos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _FilaBuscador(
-                controller: _busquedaCtrl,
-                foco: _busquedaFocus,
-                escaneando: _escaneando,
-                onEscanear: _escanearYAgregar,
-                onChanged: (t) {
-                  setState(() {});
-                  if (t.trim().isEmpty) {
-                    _debouncerBusqueda.cancelar();
-                    _buscar(t);
-                  } else {
-                    _debouncerBusqueda.ejecutar(() => _buscar(t));
-                  }
-                },
-              ),
-              const SizedBox(height: 14),
-              if (_encargue.value != null && n > 0) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
-                  child: Text('Entregando el encargue de ${_encargueNombre ?? 'un cliente'}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+    // Con el teclado abierto se esconde todo lo que no sea buscar o el carrito (El dueño, 2026-10-09: "arriba del
+    // teclado hay una franja muy grande que tapa la lista"): el título, el espacio de la barra de pestañas (que también
+    // se esconde) y el descuento.
+    final abajo = teclado ? 12.0 : BarraInferiorNs.espacioReservado;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(margenNs, teclado ? 12 : 28, margenNs, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Se achica a cero en vez de sacarlo: si cambiara la cantidad de hijos, el campo de búsqueda se armaría de
+          // nuevo, perdería el foco y el teclado se cerraría apenas se abre.
+          ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: teclado ? 0 : 1,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
+                    if (n > 0) Text(n == 1 ? '1 producto' : '$n productos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+                  ],
                 ),
-                const SizedBox(height: 14),
-              ],
-              Expanded(child: n == 0 ? _vacio(context) : _lineas(context)),
-              if (n > 0) ...[
-                _filaDescuento(context),
-                const SizedBox(height: 14),
-                _barraTotal(context),
-                const SizedBox(height: BarraInferiorNs.espacioReservado),
-              ] else
-                const SizedBox(height: BarraInferiorNs.espacioReservado),
-            ],
+              ),
+            ),
           ),
-        ),
-        if (buscando)
-          Positioned(
-            left: margenNs,
-            right: margenNs,
-            // 28 de margen + 40 del título + 14 + 64 hasta debajo del campo.
-            top: 28 + 40 + 14 + 64,
-            child: _MenuBusqueda(resultados: _resultadosBusqueda.take(4).toList(), buscando: _buscando, onElegir: _agregar),
+          _FilaBuscador(
+            controller: _busquedaCtrl,
+            foco: _busquedaFocus,
+            escaneando: _escaneando,
+            onEscanear: _escanearYAgregar,
+            onEnviar: _enviarBusqueda,
+            onChanged: (t) {
+              setState(() {});
+              if (t.trim().isEmpty) {
+                _debouncerBusqueda.cancelar();
+                _buscar(t);
+              } else {
+                _debouncerBusqueda.ejecutar(() => _buscar(t));
+              }
+            },
           ),
-      ],
+          SizedBox(height: teclado ? 10 : 14),
+          if (_encargue.value != null && n > 0 && !buscando) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+              child: Text('Entregando el encargue de ${_encargueNombre ?? 'un cliente'}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+            ),
+            const SizedBox(height: 14),
+          ],
+          Expanded(
+            child: buscando
+                ? _ResultadosBusqueda(resultados: _resultadosBusqueda, buscando: _buscando, gramos: _gramosBusqueda, onElegir: _agregar)
+                : n == 0
+                ? _vacio(context)
+                : _lineas(context),
+          ),
+          if (n > 0 && !buscando) ...[
+            if (!teclado) ...[_filaDescuento(context), const SizedBox(height: 14)] else const SizedBox(height: 8),
+            _barraTotal(context),
+          ],
+          SizedBox(height: abajo),
+        ],
+      ),
     );
   }
 
@@ -947,6 +982,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
         Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
         if (_encargues.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -1365,62 +1401,47 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   // ───────────────────────── Venta cobrada ─────────────────────────
 
-  Widget _vistaCobrado(BuildContext context) {
+  /// La venta recién cobrada, arriba de la venta nueva: total, cómo pagó, el vuelto bien grande si fue en efectivo, e
+  /// imprimir el ticket.
+  Widget _ultimaVenta(BuildContext context) {
     final ns = context.ns;
     final c = _cobrado!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final detalle = [
+      _nombres[c.medio]!,
+      c.productos == 1 ? '1 producto' : '${c.productos} productos',
+      if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
+        'Efectivo ${plataNs(_efectivoMixtoCobrado!)} + MP ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
+      if (_cobradoAMano) 'cobrado a mano, sin la terminal',
+      if (_encargueEntregado != null) 'encargue de $_encargueEntregado entregado',
+    ].join(' · ');
+    return EntradaNs(
+      duracion: const Duration(milliseconds: 180),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 14, 8, 14),
+        decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(28)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                CirculoTildeNs(tamanio: 76, fondo: ns.prim, color: TokensNs.blanco, tamanioTilde: 36),
-                const SizedBox(height: 14),
-                Text('Venta cobrada', style: tituloNs(50, track: -0.058, color: ns.ink)),
-                const SizedBox(height: 14),
-                Text(plataNs(c.totalCentavos), style: tituloNs(56, track: -0.06, color: ns.ink)),
-                const SizedBox(height: 14),
-                Text('${_nombres[c.medio]} · ${c.productos == 1 ? '1 producto' : '${c.productos} productos'}', style: estiloNs(16, color: ns.mute)),
-                const SizedBox(height: 14),
-                if (_encargueEntregado != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(999)),
-                    child: Text('Encargue de $_encargueEntregado entregado', style: estiloNs(14, peso: FontWeight.w600, color: ns.i)),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                if (c.medio == _MedioVenta.efectivo)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-                    decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(28)),
-                    child: Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
-                  )
-                else ...[
-                  if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'Efectivo ${plataNs(_efectivoMixtoCobrado!)} · Mercado Pago ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
-                        style: estiloNs(18, peso: FontWeight.w600, color: ns.ink, tabular: true),
-                      ),
-                    ),
-                  Text(_cobradoAMano ? 'Cobrado a mano: queda registrado sin pasar por la terminal' : 'Cobro registrado en la caja', style: estiloNs(16, altura: 1.4, color: ns.mute)),
-                ],
+                CirculoTildeNs(tamanio: 32, fondo: ns.g, color: TokensNs.blanco, tamanioTilde: 16),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Cobrado ${plataNs(c.totalCentavos)}', style: estiloNs(18, peso: FontWeight.w600, color: ns.g, tabular: true))),
+                BotonCircularNs(icono: IconoNs.cerrar, onTap: _cerrarUltimaVenta, etiqueta: 'Cerrar', fondo: Colors.transparent, tamanioIcono: 18),
               ],
             ),
-          ),
-          BotonNs.secundario(context, 'Imprimir ticket', () => _imprimirTicket(c.ventaId), alto: 56),
-          const SizedBox(height: 8),
-          BotonNs.primario(context, 'Nueva venta', _nuevaVenta, alto: 64, tamanio: 18),
-          const SizedBox(height: 8),
-          BotonNs.texto(context, 'Volver al inicio', _volverAlInicio),
-        ],
+            Padding(padding: const EdgeInsets.only(right: 10, top: 2), child: Text(detalle, style: estiloNs(14, altura: 1.35, color: ns.g))),
+            if (c.medio == _MedioVenta.efectivo) ...[
+              const SizedBox(height: 6),
+              Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
+            ],
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: BotonNs(texto: 'Imprimir ticket', onTap: () => _imprimirTicket(c.ventaId), alto: 44, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18, icono: IconoNs.imprimir),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1463,19 +1484,33 @@ class _CajaCerrada extends StatelessWidget {
 }
 
 class _FilaBuscador extends StatelessWidget {
-  const _FilaBuscador({required this.controller, required this.foco, required this.escaneando, required this.onEscanear, required this.onChanged});
+  const _FilaBuscador({required this.controller, required this.foco, required this.escaneando, required this.onEscanear, required this.onChanged, required this.onEnviar});
   final TextEditingController controller;
   final FocusNode foco;
   final bool escaneando;
   final VoidCallback onEscanear;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String> onEnviar;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
     return Row(
       children: [
-        Expanded(child: BuscadorNs(controller: controller, foco: foco, placeholder: 'Buscar producto', onChanged: onChanged)),
+        Expanded(
+          child: BuscadorNs(
+            controller: controller,
+            foco: foco,
+            placeholder: 'Buscar producto',
+            onChanged: onChanged,
+            onEnviar: onEnviar,
+            conBorrar: controller.text.isNotEmpty,
+            onBorrar: () {
+              controller.clear();
+              onChanged('');
+            },
+          ),
+        ),
         const SizedBox(width: 8),
         PresionNs(
           onTap: escaneando ? null : onEscanear,
@@ -1495,52 +1530,68 @@ class _FilaBuscador extends StatelessWidget {
   }
 }
 
-/// Menú flotante de resultados (docs/03 B2.1): hasta 4 filas de 52, radio 26.
-class _MenuBusqueda extends StatelessWidget {
-  const _MenuBusqueda({required this.resultados, required this.buscando, required this.onElegir});
+/// Resultados de la búsqueda, ocupando todo el lugar entre el campo y el teclado (antes eran 4 filas flotando encima
+/// del carrito). Sin animación de entrada: lo que se tipea no espera. El primero va marcado: es el que agrega Enter.
+class _ResultadosBusqueda extends StatelessWidget {
+  const _ResultadosBusqueda({required this.resultados, required this.buscando, required this.gramos, required this.onElegir});
   final List<ProductoCompanion> resultados;
   final bool buscando;
+
+  /// Gramos escritos antes del nombre ("200 queso"): el pesable muestra el subtotal de esa cantidad.
+  final int? gramos;
   final ValueChanged<ProductoCompanion> onElegir;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    return EntradaNs(
-      duracion: const Duration(milliseconds: 450),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: ns.paper,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: const [BoxShadow(color: Color(0x38121317), blurRadius: 60, offset: Offset(0, 24)), BoxShadow(color: Color(0x14121317), spreadRadius: 1)],
-        ),
-        child: resultados.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Text(buscando ? 'Buscando…' : 'No encontramos ese producto. Probá con otra parte del nombre.', style: estiloNs(15, color: ns.mute)),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final p in resultados)
-                    PresionNs(
-                      onTap: () => onElegir(p),
-                      etiqueta: p.nombre,
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 52),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(p.nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, color: ns.ink))),
-                            const SizedBox(width: 10),
-                            Text(p.esPesable ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(p.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w500, color: ns.ink, tabular: true)),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-      ),
+    if (resultados.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
+        child: Text(buscando ? 'Buscando…' : 'Sin coincidencias. Probá con otra parte del nombre.', style: estiloNs(15, color: ns.mute)),
+      );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+      itemCount: resultados.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
+      itemBuilder: (context, i) {
+        final p = resultados[i];
+        final marcado = i == 0;
+        final precio = p.esPesable
+            ? (gramos == null ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(subtotalPesable(montoPorKiloCentavos: p.precioPorKiloCentavos, gramos: gramos!)))
+            : plataNs(p.precioCentavos ?? 0);
+        final detalle = [
+          if (p.esPesable && gramos != null) '$gramos g',
+          'Quedan ${stockTextoNs(p)}',
+          if (marcado) 'Enter para agregar',
+        ].join(' · ');
+        return PresionNs(
+          onTap: () => onElegir(p),
+          etiqueta: p.nombre,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(color: marcado ? ns.ibg : ns.s, borderRadius: BorderRadius.circular(20)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(p.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, altura: 1.2, color: ns.ink)),
+                      Text(detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, color: marcado ? ns.i : ns.mute)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(precio, style: estiloNs(17, peso: FontWeight.w600, color: ns.ink, tabular: true)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

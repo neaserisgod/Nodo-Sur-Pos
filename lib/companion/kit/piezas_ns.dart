@@ -421,10 +421,15 @@ class BuscadorNs extends StatelessWidget {
     this.autofoco = false,
     this.conBorrar = false,
     this.onBorrar,
+    this.onEnviar,
   });
 
   final TextEditingController controller;
   final String placeholder;
+
+  /// La tecla de acción del teclado (lupa/Enter). Con esto el teclado queda abierto después: en Vender se agrega un
+  /// producto y se sigue escribiendo el siguiente sin volver a tocar el campo.
+  final ValueChanged<String>? onEnviar;
   final double alto;
   final ValueChanged<String>? onChanged;
   final double tamanioTexto;
@@ -451,6 +456,9 @@ class BuscadorNs extends StatelessWidget {
               focusNode: foco,
               autofocus: autofoco,
               onChanged: onChanged,
+              textInputAction: onEnviar == null ? null : TextInputAction.search,
+              onSubmitted: onEnviar,
+              onEditingComplete: onEnviar == null ? null : () {},
               cursorColor: ns.ink,
               style: estiloNs(tamanioTexto, peso: FontWeight.w500, color: ns.ink),
               decoration: InputDecoration(

@@ -18,6 +18,9 @@
 import 'package:drift/drift.dart';
 
 import '../domain/ajuste_a_disponible.dart';
+import '../domain/codigo_proveedor.dart';
+import '../domain/pedido_whatsapp.dart' show LineaDePedido;
+import '../domain/tablero.dart' show avisaPorStock;
 import '../domain/ganancia.dart';
 import '../domain/reposicion.dart';
 import '../domain/separacion_por_medio.dart';
@@ -1427,6 +1430,44 @@ Future<int> crearProveedor(
           actualizadoEn: Value(DateTime.now()),
         ),
       );
+}
+
+/// Alta desde el celular: lo mismo que [crearProveedor], pero el código (único, dato técnico) se arma solo con
+/// [codigoProveedorNuevo] contra todos los que ya existen, activos o no. En una transacción, para que dos altas
+/// seguidas no elijan el mismo.
+Future<int> crearProveedorConCodigoAutomatico(
+  AppDatabase db, {
+  required String nombre,
+  String? diaPedido,
+  String? diaEntrega,
+  String medioPago = 'Efectivo',
+  String? whatsapp,
+}) {
+  return db.transaction(() async {
+    final codigos = await db.select(db.proveedores).map((p) => p.codigo).get();
+    return crearProveedor(
+      db,
+      nombre: nombre,
+      codigo: codigoProveedorNuevo(nombre, codigos),
+      diaPedido: diaPedido,
+      diaEntrega: diaEntrega,
+      medioPago: medioPago,
+      whatsapp: whatsapp,
+    );
+  });
+}
+
+/// Lo que hay que pedirle a un proveedor por WhatsApp: sus productos activos que avisan por stock ([avisaPorStock],
+/// con "vendido hace poco" = en los últimos 30 días), igual que "Pedir por WhatsApp" de la PC.
+Future<List<LineaDePedido>> lineasParaPedirAProveedor(AppDatabase db, int proveedorId, {DateTime? ahora}) async {
+  final hoy = ahora ?? DateTime.now();
+  final productos = await productosDeProveedor(db, proveedorId);
+  final vendido30 = await vendidoPorProductoDesde(db, DateTime(hoy.year, hoy.month, hoy.day).subtract(const Duration(days: 30)));
+  return [
+    for (final p in productos)
+      if (avisaPorStock(stock: p.stock, minimo: p.stockMinimo, vendidoHacePoco: (vendido30[p.id] ?? 0) > 0))
+        LineaDePedido(nombre: p.nombre, stock: p.stock, esPesable: p.esPesable),
+  ];
 }
 
 /// Productos de un proveedor, para la tabla del panel derecho de

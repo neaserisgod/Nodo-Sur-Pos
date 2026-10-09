@@ -78,9 +78,62 @@ void main() {
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await esperar(t);
 
-    expect(find.text('Venta cobrada'), findsOneWidget);
-    expect(find.textContaining('Efectivo'), findsWidgets);
+    // Sin pantalla de "Venta cobrada": vuelve a una venta nueva con la tarjeta de la que se cobró.
+    expect(find.textContaining('Cobrado'), findsOneWidget);
+    expect(find.textContaining('Efectivo \$\u00A0500 + MP \$\u00A0700'), findsOneWidget);
     final pagos = (await t.runAsync(() => db.select(db.pagos).get()))!;
     expect(pagos.map((p) => p.montoCentavos).toList()..sort(), [50000, 70000]);
   });
+
+  testWidgets('cobrar en efectivo vuelve directo a una venta nueva: el vuelto queda arriba hasta el próximo producto '
+      '(El dueño, 2026-10-09: "siento que hay una pantalla extra")', (t) async {
+    t.view.physicalSize = const Size(390 * 2, 844 * 2);
+    t.view.devicePixelRatio = 2;
+    addTearDown(t.view.reset);
+    final db = (await t.runAsync(() async => baseDeTest()))!;
+    usarBaseLocalDeTest(db);
+    final servicio = PuertoLocal(baseLocalCompanion());
+    final cocaId = (await t.runAsync(
+      () => db.into(db.productos).insert(ProductosCompanion.insert(nombre: 'Coca-Cola', precioCentavos: const Value(120000), stock: const Value(20))),
+    ))!;
+    await t.runAsync(() => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 0));
+    final carrito = <LineaVenta>[
+      LineaVentaPorUnidad(productoId: '$cocaId', nombreProducto: 'Coca-Cola', proveedorId: null, cantidad: 1, precioUnitarioCentavos: 120000),
+    ];
+    await t.pumpWidget(
+      MaterialApp(
+        theme: TemaCompanion.claro,
+        home: AppNs(controlador: ControladorFalsoNs(), version: 0, child: Scaffold(body: PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: carrito))),
+      ),
+    );
+    await esperar(t);
+
+    await t.tap(find.text('Cobrar'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await esperar(t);
+    await t.tap(find.text('\$\u00A02.000')); // paga con $2.000
+    await esperar(t);
+    await t.tap(find.textContaining('Confirmar cobro'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await esperar(t);
+
+    expect(find.text('Venta cobrada'), findsNothing);
+    expect(find.text('Cobrado \$\u00A01.200'), findsOneWidget);
+    expect(find.text('Dar de vuelto \$\u00A0800'), findsOneWidget);
+    expect(carrito, isEmpty);
+    final campo = find.byType(TextField).first;
+    final editable = t.widget<EditableText>(find.descendant(of: campo, matching: find.byType(EditableText)));
+    expect(editable.focusNode.hasFocus, isTrue, reason: 'el buscador queda listo para la próxima venta');
+
+    // Al agregar el primer producto de la siguiente, la tarjeta se va sola.
+    await t.enterText(campo, 'coca');
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await esperar(t);
+    await t.testTextInput.receiveAction(TextInputAction.search);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await esperar(t);
+    expect(carrito, hasLength(1));
+    expect(find.textContaining('Dar de vuelto'), findsNothing);
+  });
 }
+

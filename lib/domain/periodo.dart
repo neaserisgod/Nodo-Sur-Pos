@@ -36,6 +36,10 @@ DateTime? inicioDePeriodo(
   };
 }
 
+/// Los días en que se le pide o entrega a un proveedor (de lunes a sábado: el local no abre el domingo). Se guardan así,
+/// con mayúscula y acento; [tocaPedirHoy] igual los compara sin acentos porque en la PC también se pueden escribir a mano.
+const diasDePedido = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
 const _nombresDias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
 /// "Pedir hoy" de la lista de Proveedores: el día de pedido es texto libre ("Martes", "martes", "Miércoles", "Miercoles"),

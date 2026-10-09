@@ -71,7 +71,7 @@ import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_cargar_factura.dart';
 import 'pantalla_promos.dart';
-import 'pantalla_cuenta_corriente.dart';
+import 'pantalla_proveedores.dart';
 import 'pantalla_cierres.dart';
 import 'pantalla_configuracion_companion.dart';
 import 'pantalla_consultar_precio.dart';
@@ -556,8 +556,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         await irA((_) => const PantallaCargarFactura());
       case AccionFuncion.promos:
         await irA((_) => const PantallaPromos());
-      case AccionFuncion.cuentaCorriente:
-        await irA((_) => const PantallaCuentaCorriente());
+      case AccionFuncion.proveedores:
+        await irA((_) => const PantallaProveedores());
       case AccionFuncion.cambiarUsuario:
         await cambiarUsuario();
       case AccionFuncion.irAMas:
@@ -771,9 +771,13 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           ),
           bottomNavigationBar: ValueListenableBuilder<bool>(
             valueListenable: ocultarBarra,
-            builder: (context, oculta, _) => oculta
-                ? const SizedBox.shrink()
-                : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+            // Con el teclado abierto la barra no sirve y, como sube pegada al teclado, tapaba la lista (El dueño,
+            // 2026-10-09: "arriba del teclado hay una franja muy grande que tapa la lista de los productos").
+            builder: (context, oculta, _) => ConTecladoNs(
+              builder: (context, teclado) => oculta || teclado
+                  ? const SizedBox.shrink()
+                  : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+            ),
           ),
         ),
       ),
