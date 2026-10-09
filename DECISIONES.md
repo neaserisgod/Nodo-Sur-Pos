@@ -75,6 +75,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 - [Servicios e insumos son productos; el costo del servicio no se guarda (2026-10-09)](#servicios-e-insumos-son-productos-el-costo-del-servicio-no-se-guarda-2026-10-09)
+- [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
 
 **Diseño y pantallas**
 
@@ -2388,3 +2389,17 @@ cada servicio, 60 % de arranque; precio sugerido a la centena).
   con la PC, las pantallas de servicios de la PC llegan después y el celular avisa eso.
 - **Peluquería (`peluqueria`) y Estética (`estetica`) son rubros propios**, con sus categorías y, en el bot, sus servicios de
   ejemplo y su diccionario. "Otro servicio" queda para masajes, tatuajes y el resto.
+
+## El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)
+
+El dueño preguntó por qué siempre salía primero la PC: el APK era a mano y esperaba en la misma fila de publicación que
+Windows (que además deja uno solo en espera y cancela al anterior: así se perdió un intento del APK 2154). Un negocio de
+servicios usa solo el celular, así que el celular no puede llegar último.
+
+- **`publicar-apk` corre con el merge `release:`/`beta:`**, como `publicar-beta`, y sigue pudiendo dispararse a mano.
+- **Fila propia (`publicar-apk`)**: en el sitio cada plataforma es un registro aparte (`releases`) y su archivo va a otra
+  ruta de R2 (`<canal>/<versión>/NodoSurPOS-Companion-…apk` contra `…-Setup-…exe`), y el APK no escribe en el repo. Lo único que
+  no puede pasar a la vez, la misma versión de la misma plataforma, sigue en fila dentro de cada workflow.
+- **El número lo calcula solo**: el mayor entre el que publica Windows (`pubspec.yaml` + 1) y el último APK publicado + 1 (de
+  `/api/admin/releases`, en cualquier canal). Si no puede leer el sitio, no compila: un número viejo deja al celular sin
+  actualizarse. El dato `build` a mano sigue mandando.
