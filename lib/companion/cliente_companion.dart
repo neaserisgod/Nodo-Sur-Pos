@@ -297,6 +297,11 @@ class SesionCompanion {
   /// cigarrillos?" (El dueño, 2026-09-10).
   final int? lataQueSeArrastraCentavos;
 
+  /// Solo si NO `abierta` — lo último contado de Mercado Pago en el cierre anterior: la apertura del celular lo
+  /// muestra precargado para confirmarlo o corregirlo (El dueño, 2026-10-09: "al abrir caja no me da el monto de
+  /// Mercado Pago"). Null si nunca hubo un cierre, o si contesta una PC que todavía no lo manda.
+  final int? mpQueSeArrastraCentavos;
+
   /// Solo si `abierta` — quién la abrió (el servidor ya resuelve el join
   /// contra `usuarios`, mismo criterio que `nombreEmpleado` en
   /// `repositorio_historial.dart`) y desde qué dispositivo (`'android-…'` o
@@ -315,6 +320,7 @@ class SesionCompanion {
     this.ultimoArqueoMpCentavos,
     this.fondoInicialSugeridoCentavos,
     this.lataQueSeArrastraCentavos,
+    this.mpQueSeArrastraCentavos,
     this.usuarioAbrioNombre,
     this.origenDispositivo,
   });
@@ -332,6 +338,7 @@ class SesionCompanion {
     ultimoArqueoMpCentavos: j['ultimoArqueoMpCentavos'] as int?,
     fondoInicialSugeridoCentavos: j['fondoInicialSugeridoCentavos'] as int?,
     lataQueSeArrastraCentavos: j['lataQueSeArrastraCentavos'] as int?,
+    mpQueSeArrastraCentavos: j['mpQueSeArrastraCentavos'] as int?,
     usuarioAbrioNombre: j['usuarioAbrioNombre'] as String?,
     origenDispositivo: j['origenDispositivo'] as String?,
   );
@@ -991,6 +998,7 @@ class ClienteCompanion implements ServicioCompanion {
   Future<int> abrirSesion({
     required int usuarioId,
     required int fondoInicialCentavos,
+    int? mpInicialCentavos,
   }) async {
     final r = await _client.post(
       conexion._url('/sesion/abrir'),
@@ -998,6 +1006,7 @@ class ClienteCompanion implements ServicioCompanion {
       body: jsonEncode({
         'usuarioId': usuarioId,
         'fondoInicialCentavos': fondoInicialCentavos,
+        'mpInicialCentavos': ?mpInicialCentavos,
       }),
     );
     _revisar(r);

@@ -517,10 +517,12 @@ class PuertoLocal implements ServicioCompanion {
     if (sesion == null) {
       final sugerido = await repo_cierre.fondoInicialSugeridoCentavos(db);
       final lataQueSeArrastra = await repo_ventas.lataQueSeArrastraCentavos(db);
+      final mpQueSeArrastra = await repo_ventas.mpQueSeArrastraCentavos(db);
       return SesionCompanion(
         abierta: false,
         fondoInicialSugeridoCentavos: sugerido,
         lataQueSeArrastraCentavos: lataQueSeArrastra,
+        mpQueSeArrastraCentavos: mpQueSeArrastra,
       );
     }
     final ultimoArqueo = await repo_arqueo.fechaUltimoArqueoIntermedio(db, sesion.id);
@@ -952,11 +954,13 @@ class PuertoLocal implements ServicioCompanion {
   Future<int> abrirSesion({
     required int usuarioId,
     required int fondoInicialCentavos,
+    int? mpInicialCentavos,
   }) {
     return repo_ventas.abrirSesion(
       db,
       usuarioId: usuarioId,
       fondoInicialCentavos: fondoInicialCentavos,
+      mpInicialCentavos: mpInicialCentavos,
     );
   }
 

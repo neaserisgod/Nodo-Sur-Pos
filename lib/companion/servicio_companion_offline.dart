@@ -46,10 +46,11 @@ class ServicioCompanionOffline implements ServicioCompanion {
   Future<int> abrirSesion({
     required int usuarioId,
     required int fondoInicialCentavos,
+    int? mpInicialCentavos,
   }) async {
     if (!await _esSoloCelular()) throw mensajeSinAperturaOffline;
     try {
-      return await _local.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: fondoInicialCentavos);
+      return await _local.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: fondoInicialCentavos, mpInicialCentavos: mpInicialCentavos);
     } on SesionYaAbiertaException {
       // Puede haber llegado abierta por la sync de otro celular del mismo negocio.
       throw mensajeCajaYaAbierta;

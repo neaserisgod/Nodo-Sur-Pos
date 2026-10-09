@@ -363,9 +363,12 @@ abstract class ServicioCompanion {
     String? ordenIdMp,
   });
 
+  /// [mpInicialCentavos]: el saldo de Mercado Pago con que arranca la caja. Null = se arrastra lo último contado
+  /// en el cierre anterior (una PC sin actualizar ignora el valor y hace eso mismo).
   Future<int> abrirSesion({
     required int usuarioId,
     required int fondoInicialCentavos,
+    int? mpInicialCentavos,
   });
 
   /// Lo que se le debe a cada proveedor con movimientos en su cuenta corriente

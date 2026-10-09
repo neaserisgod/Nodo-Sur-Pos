@@ -33,6 +33,8 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
   String? _error;
   final _fondoCtrl = TextEditingController();
   int? _lataArrastra;
+  final _mpCtrl = TextEditingController();
+  int? _mpArrastra;
 
   @override
   void initState() {
@@ -49,6 +51,8 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
       if (!mounted) return;
       setState(() {
         _lataArrastra = sesion.lataQueSeArrastraCentavos;
+        _mpArrastra = sesion.mpQueSeArrastraCentavos;
+        if (_mpArrastra != null && _mpCtrl.text.isEmpty) _mpCtrl.text = '${_mpArrastra! ~/ centavosPorPeso}';
         if (sesion.fondoInicialSugeridoCentavos != null && _fondoCtrl.text.isEmpty) _fondoCtrl.text = '${sesion.fondoInicialSugeridoCentavos! ~/ centavosPorPeso}';
       });
     } catch (_) {
@@ -61,12 +65,14 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     final usuario = app.usuarioId;
     if (servicio == null || usuario == null) return;
     final centavos = (int.tryParse(_fondoCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
+    // Vacío = 0, igual que en la PC (ver hoja_abrir_caja_ns.dart).
+    final mpCentavos = (int.tryParse(_mpCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso;
     setState(() {
       _guardando = true;
       _error = null;
     });
     try {
-      await servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: centavos);
+      await servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: centavos, mpInicialCentavos: mpCentavos);
       if (!mounted) return;
       mostrarAvisoNs(context, 'Caja abierta con ${plataNs(centavos)}');
       await app.refrescar();
@@ -82,6 +88,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     _montoCtrl.dispose();
     _motivoCtrl.dispose();
     _fondoCtrl.dispose();
+    _mpCtrl.dispose();
     super.dispose();
   }
 
@@ -157,6 +164,13 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                               const InfoNs('No hay caja abierta en la PC ahora mismo.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w600),
                               const SizedBox(height: 10),
                               CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondoCtrl, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+                              const SizedBox(height: 10),
+                              CampoNs(etiqueta: 'Mercado Pago (lo que hay en la cuenta)', controller: _mpCtrl, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs),
+                              if (_mpArrastra != null)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                                  child: Text('Precargado con lo último contado en el cierre anterior. Si no coincide con la app de Mercado Pago, corregilo.', style: estiloNs(14, altura: 1.4, color: ns.mute)),
+                                ),
                               if (_lataArrastra != null)
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),

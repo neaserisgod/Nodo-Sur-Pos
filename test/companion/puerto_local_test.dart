@@ -15,6 +15,7 @@ import 'package:la_plazoleta/data/cobro_posnet.dart' show OrdenCobroCreada, Pasa
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart';
 import 'package:la_plazoleta/data/repositorio_promos.dart';
+import 'package:la_plazoleta/data/repositorio_ventas.dart' as repo_ventas;
 import 'package:la_plazoleta/domain/venta.dart';
 import '../helpers/base_para_tests.dart';
 
@@ -193,6 +194,16 @@ void main() {
       final sesion = await puerto.sesion();
       expect(sesion.abierta, false);
       expect(sesion.lataQueSeArrastraCentavos, 0);
+    });
+
+    test('con un cierre anterior, sesion() sugiere su MP contado y abrirSesion guarda el MP confirmado', () async {
+      await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 0);
+      await puerto.confirmarCierre(usuarioId: usuarioId, efectivoContadoCentavos: 0, mpContadoCentavos: 870000, lataContadoCentavos: 0);
+
+      expect((await puerto.sesion()).mpQueSeArrastraCentavos, 870000);
+
+      await puerto.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 0, mpInicialCentavos: 900000);
+      expect((await repo_ventas.sesionAbierta(db))?.saldoMpInicialCentavos, 900000);
     });
 
     test('abrirSesion abre, y sesion() la refleja', () async {

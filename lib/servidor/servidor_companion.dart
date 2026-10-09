@@ -1017,10 +1017,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     if (sesion == null) {
       final sugerido = await fondoInicialSugeridoCentavos(db);
       final lataQueSeArrastra = await lataQueSeArrastraCentavos(db);
+      final mpQueSeArrastra = await mpQueSeArrastraCentavos(db);
       return _json({
         'abierta': false,
         'fondoInicialSugeridoCentavos': ?sugerido,
         'lataQueSeArrastraCentavos': lataQueSeArrastra,
+        'mpQueSeArrastraCentavos': ?mpQueSeArrastra,
       });
     }
     // `fechaUltimoArqueoIntermedio` es lo que el celular necesita para
@@ -1249,6 +1251,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
         db,
         usuarioId: _intRequerido(body, 'usuarioId'),
         fondoInicialCentavos: _intRequerido(body, 'fondoInicialCentavos'),
+        // Opcional: un celular sin actualizar no lo manda y se arrastra lo último contado, como antes.
+        mpInicialCentavos: body['mpInicialCentavos'] as int?,
       );
       return _json({'id': id}, status: 201);
     } on SesionYaAbiertaException catch (e) {
