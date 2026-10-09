@@ -35,6 +35,7 @@ class _Servicio extends Fake implements ServicioCompanion {
     required int sesionCajaId,
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
+    int? montoEfectivoMixtoCentavos,
   }) async {
     ordenesCreadas++;
     return (ordenPendienteId: 1, ordenIdMp: 'ORD1', totalCentavos: 112000);
@@ -53,6 +54,7 @@ class _Servicio extends Fake implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? montoEfectivoMixtoCentavos,
   }) async {
     confirmaciones++;
     if (confirmaciones <= fallosAlConfirmar.length) throw fallosAlConfirmar[confirmaciones - 1];
@@ -69,6 +71,7 @@ class _Servicio extends Fake implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? montoEfectivoMixtoCentavos,
   }) async {
     cobrosAMano++;
     return (ventaId: 8, totalCentavos: 112000);

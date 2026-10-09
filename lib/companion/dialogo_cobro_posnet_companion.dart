@@ -39,6 +39,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
   int? encargueId,
+  int? montoEfectivoMixtoCentavos,
 }) {
   return mostrarHojaNs<({int ventaId, int totalCentavos, bool aMano})?>(
     context,
@@ -53,6 +54,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     ),
   );
 }
@@ -80,6 +82,7 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
     this.tipoDescuento,
     this.valorDescuento = 0,
     this.encargueId,
+    this.montoEfectivoMixtoCentavos,
   });
 
   final ServicioCompanion cliente;
@@ -93,6 +96,9 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
 
   /// El encargue por apartado que esta venta entrega: se libera al grabar la venta, por Point o a mano.
   final int? encargueId;
+
+  /// Con valor, la venta es mixta: [montoCentavos] es solo la parte que va a la terminal.
+  final int? montoEfectivoMixtoCentavos;
 
   @override
   State<_DialogoCobroPosnetCompanion> createState() =>
@@ -140,6 +146,7 @@ class _DialogoCobroPosnetCompanionState
         sesionCajaId: widget.sesionCajaId,
         tipoDescuento: widget.tipoDescuento,
         valorDescuento: widget.valorDescuento,
+        montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
       );
       if (_cancelado) {
         await _ejecutarCancelacion(
@@ -230,6 +237,7 @@ class _DialogoCobroPosnetCompanionState
           usuarioId: widget.usuarioId,
           tipoDescuento: widget.tipoDescuento,
           valorDescuento: widget.valorDescuento,
+          montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
           encargueId: widget.encargueId,
         );
         _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
@@ -310,6 +318,7 @@ class _DialogoCobroPosnetCompanionState
         canal: widget.canal,
         tipoDescuento: widget.tipoDescuento,
         valorDescuento: widget.valorDescuento,
+        montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
         encargueId: widget.encargueId,
       );
       if (mounted) Navigator.of(context).pop((ventaId: resultado.ventaId, totalCentavos: resultado.totalCentavos, aMano: true));

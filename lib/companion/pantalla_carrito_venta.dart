@@ -32,7 +32,9 @@ import 'mensaje_error.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'servicio_companion.dart';
 
-enum _MedioVenta { efectivo, qr, debito, credito }
+/// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
+/// (QR, débito o crédito) se elige adentro del mixto.
+enum _MedioVenta { efectivo, qr, debito, credito, mixto }
 
 /// Canal de la Point de cada medio virtual (crédito siempre en 1 pago).
 String _canalDe(_MedioVenta m) => switch (m) {
@@ -92,6 +94,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   final _otroCtrl = TextEditingController();
   bool _escaneando = false;
 
+  /// Mixto: lo que paga en efectivo (en pesos, como se escribe) y por dónde va el resto.
+  final _mixtoCtrl = TextEditingController();
+  String _canalMixto = canalQr;
+
+  /// Lo que se cobró en efectivo en la última venta mixta, para mostrarlo en "Venta cobrada".
+  int? _efectivoMixtoCobrado;
+
   /// Descuento libre (mock 08b): monto en pesos o porcentaje. `_valorDescuento` son centavos si es monto y puntos básicos si
   /// es porcentaje (la unidad de `calcularDescuento`); 0 = sin descuento.
   TipoDescuento _tipoDescuento = TipoDescuento.porcentaje;
@@ -134,6 +143,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _encargue.removeListener(_alCambiarEncargue);
     if (widget.encargue == null) _encargue.dispose();
     _otroCtrl.dispose();
+    _mixtoCtrl.dispose();
     _busquedaCtrl.dispose();
     _busquedaFocus.dispose();
     _debouncerBusqueda.dispose();
@@ -551,6 +561,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       return;
     }
     _otroCtrl.clear();
+    _mixtoCtrl.clear();
+    _canalMixto = canalQr;
     setState(() {
       _paso = _Paso.cobro;
       _pagaCentavos = null;
@@ -579,7 +591,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     try {
       final resultado = await widget.servicio.calcularVenta(
         lineas: widget.carrito,
-        medio: medio == _MedioVenta.efectivo ? 'efectivo' : 'virtual',
+        medio: switch (medio) {
+          _MedioVenta.efectivo => 'efectivo',
+          _MedioVenta.mixto => 'mixto',
+          _ => 'virtual',
+        },
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
       );
@@ -595,6 +611,20 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final digitos = _otroCtrl.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digitos.isEmpty) return 0;
     return (int.tryParse(digitos) ?? 0) * centavosPorPeso;
+  }
+
+  int get _efectivoMixtoCentavos {
+    final digitos = _mixtoCtrl.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitos.isEmpty) return 0;
+    return (int.tryParse(digitos) ?? 0) * centavosPorPeso;
+  }
+
+  /// El efectivo de un mixto tiene que dejar algo para Mercado Pago y algo en efectivo; si no, es otro medio.
+  String? _problemaMixto(int total) {
+    final efectivo = _efectivoMixtoCentavos;
+    if (efectivo <= 0) return 'Escribí cuánto paga en efectivo';
+    if (efectivo >= total) return 'Con ${plataNs(efectivo)} en efectivo paga todo: elegí Efectivo';
+    return null;
   }
 
   /// Con cuánto paga: lo escrito en "Otro monto" (si es mayor a cero), si no el
@@ -616,6 +646,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         return;
       }
       await _cobrarEfectivo();
+    } else if (_medio == _MedioVenta.mixto) {
+      final problema = _problemaMixto(total);
+      if (problema != null) {
+        mostrarAvisoNs(context, problema);
+        return;
+      }
+      await _cobrarPosnet(_canalMixto, efectivoMixto: _efectivoMixtoCentavos);
     } else {
       await _cobrarPosnet(_canalDe(_medio));
     }
@@ -646,7 +683,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  Future<void> _cobrarPosnet(String canal) async {
+  Future<void> _cobrarPosnet(String canal, {int? efectivoMixto}) async {
     final sesionId = AppNs.of(context).sesion?.id;
     if (sesionId == null) return;
     // Sin este try/finally, una excepción antes de que se abra la terminal dejaba `_cobrando` en `true` para siempre.
@@ -667,12 +704,16 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         sesionCajaId: sesionId,
         lineas: widget.carrito,
         canal: canal,
-        montoCentavos: total,
+        // En un mixto la terminal cobra solo lo que no se pagó en efectivo.
+        montoCentavos: total - (efectivoMixto ?? 0),
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
+        montoEfectivoMixtoCentavos: efectivoMixto,
       );
-      if (resultado != null) await _ventaCobrada(resultado.ventaId, resultado.totalCentavos, aMano: resultado.aMano);
+      if (resultado != null) {
+        await _ventaCobrada(resultado.ventaId, resultado.totalCentavos, aMano: resultado.aMano, efectivoMixto: efectivoMixto);
+      }
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -685,6 +726,16 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Future<void> _cobrarAMano() async {
     final sesionId = AppNs.of(context).sesion?.id;
     if (_medio == _MedioVenta.efectivo || sesionId == null) return;
+    final mixto = _medio == _MedioVenta.mixto;
+    final total = _resultado?.totalCentavos;
+    if (mixto) {
+      final problema = total == null ? 'Elegí el medio de pago de nuevo antes de cobrar.' : _problemaMixto(total);
+      if (problema != null) {
+        mostrarAvisoNs(context, problema);
+        return;
+      }
+    }
+    final efectivoMixto = mixto ? _efectivoMixtoCentavos : null;
     setState(() {
       _cobrando = true;
       _error = null;
@@ -694,13 +745,14 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         lineas: widget.carrito,
         sesionCajaId: sesionId,
         usuarioId: widget.usuarioId,
-        canal: _canalDe(_medio),
+        canal: mixto ? _canalMixto : _canalDe(_medio),
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         claveCobro: _claveCobro,
+        montoEfectivoMixtoCentavos: efectivoMixto,
       );
-      await _ventaCobrada(r.ventaId, r.totalCentavos, aMano: true);
+      await _ventaCobrada(r.ventaId, r.totalCentavos, aMano: true, efectivoMixto: efectivoMixto);
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
     } finally {
@@ -708,8 +760,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
-  Future<void> _ventaCobrada(int ventaId, int totalCentavos, {bool aMano = false}) async {
+  Future<void> _ventaCobrada(int ventaId, int totalCentavos, {bool aMano = false, int? efectivoMixto}) async {
     _claveCobroActual = null;
+    _efectivoMixtoCobrado = efectivoMixto;
     // El resumen se arma ANTES de vaciar el carrito: cuántos productos fueron
     // y cuánto se devuelve dependen de lo que había.
     final medio = _medio;
@@ -1045,13 +1098,16 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _MedioVenta.qr: 'QR de Mercado Pago',
     _MedioVenta.debito: 'Tarjeta de débito',
     _MedioVenta.credito: 'Tarjeta de crédito (1 pago)',
+    _MedioVenta.mixto: 'Mixto: efectivo + Mercado Pago',
   };
 
   static const _colores = {
     _MedioVenta.efectivo: TokensNs.medioEfectivo,
     _MedioVenta.qr: TokensNs.medioMercadoPago,
     _MedioVenta.debito: TokensNs.medioDebito,
-    _MedioVenta.credito: TokensNs.medioMixto,
+    // Las dos tarjetas comparten color; el del mixto vuelve a su dueño.
+    _MedioVenta.credito: TokensNs.medioDebito,
+    _MedioVenta.mixto: TokensNs.medioMixto,
   };
 
   static const _iconos = {
@@ -1059,6 +1115,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _MedioVenta.qr: IconoNs.escanear,
     _MedioVenta.debito: IconoNs.tarjeta,
     _MedioVenta.credito: IconoNs.tarjeta,
+    _MedioVenta.mixto: IconoNs.intercambio,
   };
 
   static const _textoTerminal = {
@@ -1117,7 +1174,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 const SizedBox(height: 12),
                 if (efectivo && total != null) _panelEfectivo(context, total),
                 if (!efectivo) ...[
-                  InfoNs(_textoTerminal[_medio]!, tono: TonoNs.info, radio: 24, tamanio: 15, peso: FontWeight.w500, vertical: 16),
+                  if (_medio == _MedioVenta.mixto)
+                    if (total != null) _panelMixto(context, total) else const SizedBox.shrink()
+                  else
+                    InfoNs(_textoTerminal[_medio]!, tono: TonoNs.info, radio: 24, tamanio: 15, peso: FontWeight.w500, vertical: 16),
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -1236,6 +1296,73 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
+  /// Mixto: cuánto paga en efectivo y por dónde va el resto. El resto se ve calculado mientras se escribe, como en la PC.
+  Widget _panelMixto(BuildContext context, int total) {
+    final ns = context.ns;
+    final efectivo = _efectivoMixtoCentavos.clamp(0, total);
+    final resto = total - efectivo;
+    final problema = _problemaMixto(total);
+    return EntradaNs(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Cuánto paga en efectivo?', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+            const SizedBox(height: 10),
+            Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(color: ns.paper, borderRadius: BorderRadius.circular(999)),
+              child: Row(
+                children: [
+                  Text('Efectivo', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _mixtoCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: soloDigitosNs,
+                      textAlign: TextAlign.right,
+                      onChanged: (_) => setState(() {}),
+                      cursorColor: ns.ink,
+                      style: estiloNs(17, peso: FontWeight.w600, color: ns.ink, tabular: true),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        hintText: '\$ 0',
+                        hintStyle: estiloNs(17, peso: FontWeight.w600, color: ns.mute),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text('El resto por Mercado Pago', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+            Text(plataNs(resto), style: estiloNs(32, peso: FontWeight.w600, track: -0.04, color: ns.ink, tabular: true)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (canal, texto) in const [(canalQr, 'QR'), (canalDebito, 'Débito'), (canalCredito, 'Crédito 1 pago')])
+                  _ChipPago(texto: texto, activo: _canalMixto == canal, onTap: () => setState(() => _canalMixto = canal)),
+              ],
+            ),
+            if (problema != null && _mixtoCtrl.text.isNotEmpty)
+              Padding(padding: const EdgeInsets.only(top: 10), child: Text(problema, style: estiloNs(14, color: ns.b))),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ───────────────────────── Venta cobrada ─────────────────────────
 
   Widget _vistaCobrado(BuildContext context) {
@@ -1274,8 +1401,17 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                     decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(28)),
                     child: Text('Dar de vuelto ${plataNs(c.vueltoCentavos)}', style: estiloNs(30, peso: FontWeight.w600, color: ns.g, tabular: true)),
                   )
-                else
+                else ...[
+                  if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Efectivo ${plataNs(_efectivoMixtoCobrado!)} · Mercado Pago ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
+                        style: estiloNs(18, peso: FontWeight.w600, color: ns.ink, tabular: true),
+                      ),
+                    ),
                   Text(_cobradoAMano ? 'Cobrado a mano: queda registrado sin pasar por la terminal' : 'Cobro registrado en la caja', style: estiloNs(16, altura: 1.4, color: ns.mute)),
+                ],
               ],
             ),
           ),
