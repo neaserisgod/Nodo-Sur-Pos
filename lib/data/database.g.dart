@@ -17107,6 +17107,16 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _rubroMeta = const VerificationMeta('rubro');
+  @override
+  late final GeneratedColumn<String> rubro = GeneratedColumn<String>(
+    'rubro',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -17153,6 +17163,7 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     nombreComercio,
     encabezadoTicket,
     modulosDesactivados,
+    rubro,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -17244,6 +17255,12 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         ),
       );
     }
+    if (data.containsKey('rubro')) {
+      context.handle(
+        _rubroMeta,
+        rubro.isAcceptableOrUnknown(data['rubro']!, _rubroMeta),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -17313,6 +17330,10 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         DriftSqlType.string,
         data['${effectivePrefix}modulos_desactivados'],
       )!,
+      rubro: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rubro'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -17371,6 +17392,13 @@ class ConfiguracionNegocio extends DataClass
   /// apagados para que un módulo nuevo nazca activo sin migración.
   final String modulosDesactivados;
 
+  /// Rubro del comercio, la clave de `PlantillaRubro` (`domain/plantillas_rubro.dart`): `almacen`, `kiosco`… Vacío = sin
+  /// elegir. Hasta la v63 el rubro solo servía para sembrar categorías y no quedaba guardado en ningún lado; ahora se guarda
+  /// porque lo necesita el bot de WhatsApp para saber cómo hablar y qué hacer (El dueño, 2026-10-09, `docs/PLAN-BOT.md`).
+  /// Viaja con esta fila por la sync; un equipo sin actualizar la recibe sin esta columna y no la pisa (solo actualiza las
+  /// columnas que trae).
+  final String rubro;
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   final String? globalId;
@@ -17386,6 +17414,7 @@ class ConfiguracionNegocio extends DataClass
     required this.nombreComercio,
     required this.encabezadoTicket,
     required this.modulosDesactivados,
+    required this.rubro,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -17408,6 +17437,7 @@ class ConfiguracionNegocio extends DataClass
     map['nombre_comercio'] = Variable<String>(nombreComercio);
     map['encabezado_ticket'] = Variable<String>(encabezadoTicket);
     map['modulos_desactivados'] = Variable<String>(modulosDesactivados);
+    map['rubro'] = Variable<String>(rubro);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -17433,6 +17463,7 @@ class ConfiguracionNegocio extends DataClass
       nombreComercio: Value(nombreComercio),
       encabezadoTicket: Value(encabezadoTicket),
       modulosDesactivados: Value(modulosDesactivados),
+      rubro: Value(rubro),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -17470,6 +17501,7 @@ class ConfiguracionNegocio extends DataClass
       modulosDesactivados: serializer.fromJson<String>(
         json['modulosDesactivados'],
       ),
+      rubro: serializer.fromJson<String>(json['rubro']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -17494,6 +17526,7 @@ class ConfiguracionNegocio extends DataClass
       'nombreComercio': serializer.toJson<String>(nombreComercio),
       'encabezadoTicket': serializer.toJson<String>(encabezadoTicket),
       'modulosDesactivados': serializer.toJson<String>(modulosDesactivados),
+      'rubro': serializer.toJson<String>(rubro),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -17510,6 +17543,7 @@ class ConfiguracionNegocio extends DataClass
     String? nombreComercio,
     String? encabezadoTicket,
     String? modulosDesactivados,
+    String? rubro,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -17527,6 +17561,7 @@ class ConfiguracionNegocio extends DataClass
     nombreComercio: nombreComercio ?? this.nombreComercio,
     encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
     modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
+    rubro: rubro ?? this.rubro,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -17564,6 +17599,7 @@ class ConfiguracionNegocio extends DataClass
       modulosDesactivados: data.modulosDesactivados.present
           ? data.modulosDesactivados.value
           : this.modulosDesactivados,
+      rubro: data.rubro.present ? data.rubro.value : this.rubro,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -17588,6 +17624,7 @@ class ConfiguracionNegocio extends DataClass
           ..write('nombreComercio: $nombreComercio, ')
           ..write('encabezadoTicket: $encabezadoTicket, ')
           ..write('modulosDesactivados: $modulosDesactivados, ')
+          ..write('rubro: $rubro, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -17606,6 +17643,7 @@ class ConfiguracionNegocio extends DataClass
     nombreComercio,
     encabezadoTicket,
     modulosDesactivados,
+    rubro,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -17624,6 +17662,7 @@ class ConfiguracionNegocio extends DataClass
           other.nombreComercio == this.nombreComercio &&
           other.encabezadoTicket == this.encabezadoTicket &&
           other.modulosDesactivados == this.modulosDesactivados &&
+          other.rubro == this.rubro &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -17640,6 +17679,7 @@ class ConfiguracionNegocioTablaCompanion
   final Value<String> nombreComercio;
   final Value<String> encabezadoTicket;
   final Value<String> modulosDesactivados;
+  final Value<String> rubro;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -17653,6 +17693,7 @@ class ConfiguracionNegocioTablaCompanion
     this.nombreComercio = const Value.absent(),
     this.encabezadoTicket = const Value.absent(),
     this.modulosDesactivados = const Value.absent(),
+    this.rubro = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -17667,6 +17708,7 @@ class ConfiguracionNegocioTablaCompanion
     this.nombreComercio = const Value.absent(),
     this.encabezadoTicket = const Value.absent(),
     this.modulosDesactivados = const Value.absent(),
+    this.rubro = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -17681,6 +17723,7 @@ class ConfiguracionNegocioTablaCompanion
     Expression<String>? nombreComercio,
     Expression<String>? encabezadoTicket,
     Expression<String>? modulosDesactivados,
+    Expression<String>? rubro,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -17700,6 +17743,7 @@ class ConfiguracionNegocioTablaCompanion
       if (encabezadoTicket != null) 'encabezado_ticket': encabezadoTicket,
       if (modulosDesactivados != null)
         'modulos_desactivados': modulosDesactivados,
+      if (rubro != null) 'rubro': rubro,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -17716,6 +17760,7 @@ class ConfiguracionNegocioTablaCompanion
     Value<String>? nombreComercio,
     Value<String>? encabezadoTicket,
     Value<String>? modulosDesactivados,
+    Value<String>? rubro,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -17733,6 +17778,7 @@ class ConfiguracionNegocioTablaCompanion
       nombreComercio: nombreComercio ?? this.nombreComercio,
       encabezadoTicket: encabezadoTicket ?? this.encabezadoTicket,
       modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
+      rubro: rubro ?? this.rubro,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -17775,6 +17821,9 @@ class ConfiguracionNegocioTablaCompanion
     if (modulosDesactivados.present) {
       map['modulos_desactivados'] = Variable<String>(modulosDesactivados.value);
     }
+    if (rubro.present) {
+      map['rubro'] = Variable<String>(rubro.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -17801,6 +17850,7 @@ class ConfiguracionNegocioTablaCompanion
           ..write('nombreComercio: $nombreComercio, ')
           ..write('encabezadoTicket: $encabezadoTicket, ')
           ..write('modulosDesactivados: $modulosDesactivados, ')
+          ..write('rubro: $rubro, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -40949,6 +40999,7 @@ typedef $$ConfiguracionNegocioTablaTableCreateCompanionBuilder =
       Value<String> nombreComercio,
       Value<String> encabezadoTicket,
       Value<String> modulosDesactivados,
+      Value<String> rubro,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -40964,6 +41015,7 @@ typedef $$ConfiguracionNegocioTablaTableUpdateCompanionBuilder =
       Value<String> nombreComercio,
       Value<String> encabezadoTicket,
       Value<String> modulosDesactivados,
+      Value<String> rubro,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -41048,6 +41100,11 @@ class $$ConfiguracionNegocioTablaTableFilterComposer
 
   ColumnFilters<String> get modulosDesactivados => $composableBuilder(
     column: $table.modulosDesactivados,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rubro => $composableBuilder(
+    column: $table.rubro,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -41139,6 +41196,11 @@ class $$ConfiguracionNegocioTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get rubro => $composableBuilder(
+    column: $table.rubro,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -41225,6 +41287,9 @@ class $$ConfiguracionNegocioTablaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get rubro =>
+      $composableBuilder(column: $table.rubro, builder: (column) => column);
+
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
 
@@ -41310,6 +41375,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> nombreComercio = const Value.absent(),
                 Value<String> encabezadoTicket = const Value.absent(),
                 Value<String> modulosDesactivados = const Value.absent(),
+                Value<String> rubro = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -41323,6 +41389,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 nombreComercio: nombreComercio,
                 encabezadoTicket: encabezadoTicket,
                 modulosDesactivados: modulosDesactivados,
+                rubro: rubro,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -41338,6 +41405,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> nombreComercio = const Value.absent(),
                 Value<String> encabezadoTicket = const Value.absent(),
                 Value<String> modulosDesactivados = const Value.absent(),
+                Value<String> rubro = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -41351,6 +41419,7 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 nombreComercio: nombreComercio,
                 encabezadoTicket: encabezadoTicket,
                 modulosDesactivados: modulosDesactivados,
+                rubro: rubro,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,

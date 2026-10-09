@@ -156,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 62;
+  int get schemaVersion => 63;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1166,6 +1166,17 @@ class AppDatabase extends _$AppDatabase {
       // `global_id`), y las promos que se crearon sin identidad de sincronización la reciben: hasta acá no llegaban nunca al celular.
       if (from < 62) {
         await _sumarComponentesDePromoALaSync(this, m);
+      }
+      // v62 → v63 (2026-10-09): el rubro del comercio queda guardado (`configuracion_negocio_tabla.rubro`), para el bot de
+      // WhatsApp (`docs/PLAN-BOT.md`). Nace vacío ("sin elegir"): el rubro con que se armó un negocio viejo no se guardó nunca
+      // y no se adivina. Con chequeo de columna, como v59→v60.
+      if (from < 63) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_negocio_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('rubro')) {
+          await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.rubro);
+        }
       }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;

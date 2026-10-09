@@ -125,6 +125,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **El rubro del comercio queda guardado** (bot de WhatsApp, etapa 1 de [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md)): columna
+  `rubro` en la configuración del negocio (migración v63, `schemaVersion` **63**), que viaja por la sync. Se elige en el celular,
+  Configuración › **Tu negocio** (Kiosco, Almacén, Fiambrería, Otro), con o sin PC; el asistente de negocio nuevo y las plantillas
+  de la PC lo guardan solos. Un negocio armado antes nace **sin elegir** (el rubro no se guardaba y no se adivina). Con una PC sin
+  actualizar, el celular avisa que hay que actualizarla. Probado con tests; **no probado en un celular real**.
 - **Vender en el celular sin la pantalla "Venta cobrada"** (El dueño: "siento que hay una pantalla extra"): al cobrar se vuelve
   directo a una venta nueva con el buscador listo, y arriba queda una tarjeta con el total, el vuelto bien grande e "Imprimir
   ticket", que se va sola al agregar el primer producto de la siguiente (o con la ✕). Un toque menos por venta. Probado con tests;

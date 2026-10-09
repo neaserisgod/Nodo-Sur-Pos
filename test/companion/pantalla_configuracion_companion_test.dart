@@ -79,6 +79,22 @@ void main() {
     expect((await t.runAsync(() => puerto.configuracionNegocio()))!.pasoRedondeoCentavos, elegido);
   });
 
+  testWidgets('rubro (v63): arranca sin elegir y elegir Almacén se guarda recién con Guardar', (t) async {
+    final puerto = await _preparar(t);
+    await _abrir(t);
+    expect(find.textContaining('Sin elegir'), findsOneWidget);
+
+    await t.tap(_chip('Almacén'));
+    await t.pump();
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.rubro, isNull, reason: 'sin Guardar no se escribió nada');
+    expect(_guardarActivo(t), isTrue);
+
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.rubro, 'almacen');
+    expect(find.textContaining('Sin elegir'), findsNothing);
+    expect(_guardarActivo(t), isFalse);
+  });
+
   testWidgets('el recargo de cigarrillos se guarda con sus tres montos', (t) async {
     final puerto = await _preparar(t);
     await _abrir(t);

@@ -61,6 +61,7 @@ import '../data/repositorio_cierre.dart'
 import '../data/repositorio_cobro.dart';
 import '../data/repositorio_deuda_proveedores.dart';
 import '../data/repositorio_configuracion.dart';
+import '../domain/plantillas_rubro.dart';
 import '../data/repositorio_edicion_venta.dart';
 import '../data/repositorio_gastos.dart';
 import '../data/repositorio_historial.dart' show listarDias;
@@ -702,6 +703,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       'recargoSueltoCentavos': c.recargoSueltoCentavos,
       'pasoRedondeoCentavos': c.pasoRedondeoCentavos,
       'productoVueltoId': ?c.productoVueltoId,
+      // v63: sin elegir se omite, como un null.
+      'rubro': ?(c.rubro.isEmpty ? null : c.rubro),
     });
   });
 
@@ -721,6 +724,17 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     await configurarPasoRedondeo(db, _intRequerido(body, 'montoCentavos'));
+    return _json({'ok': true});
+  });
+
+  // Rubro del comercio (v63), para el bot de WhatsApp (`docs/PLAN-BOT.md`). Un rubro que no existe es un 400.
+  router.put('/configuracion/rubro', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final clave = body['rubro'];
+    final rubro = clave is String ? PlantillaRubro.desdeClave(clave) : null;
+    if (rubro == null) throw FormatException('No existe el rubro "$clave"');
+    await configurarRubro(db, rubro);
     return _json({'ok': true});
   });
 

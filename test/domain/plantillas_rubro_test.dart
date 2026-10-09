@@ -19,6 +19,8 @@ void main() {
       expect(PlantillaRubro.desdeClave('almacen')?.nombre, 'Almacén');
       expect(PlantillaRubro.desdeClave('kiosco')?.nombre, 'Kiosco');
       expect(PlantillaRubro.desdeClave('nave_espacial'), isNull);
+      // Vacío es "sin elegir" (`configuracion_negocio_tabla.rubro`, v63): un negocio viejo no tiene rubro guardado.
+      expect(PlantillaRubro.desdeClave(''), isNull);
     });
 
     test('kiosco, almacén y fiambrería traen categorías; "otro" arranca vacío', () {

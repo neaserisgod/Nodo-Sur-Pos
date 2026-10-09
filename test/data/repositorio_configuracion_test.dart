@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/faltantes_cierre.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import '../helpers/base_para_tests.dart';
 
 void main() {
@@ -60,6 +61,24 @@ void main() {
     expect(config.productoVueltoId, productoId);
   });
 
+  test('rubro: arranca sin elegir; configurarRubro lo guarda y lo marca para la sync', () async {
+    expect(await rubroActual(db), isNull, reason: 'un negocio viejo no tiene rubro guardado (v63)');
+    final antes = (await configuracionNegocioActual(db)).actualizadoEn;
+
+    await configurarRubro(db, PlantillaRubro.almacen);
+
+    expect(await rubroActual(db), PlantillaRubro.almacen);
+    final config = await configuracionNegocioActual(db);
+    expect(config.rubro, 'almacen');
+    expect(config.actualizadoEn, isNotNull);
+    if (antes != null) expect(config.actualizadoEn!.isBefore(antes), isFalse);
+  });
+
+  test('rubro guardado con una clave que esta versión no conoce: se lee como sin elegir, no rompe', () async {
+    await db.update(db.configuracionNegocioTabla).write(const ConfiguracionNegocioTablaCompanion(rubro: Value('barberia')));
+    expect(await rubroActual(db), isNull);
+  });
+
   test('configuracionNegocioActual devuelve defaults de fábrica si la tabla está vacía (companion sin sync)', () async {
     await db.delete(db.configuracionNegocioTabla).go();
 
@@ -69,5 +88,6 @@ void main() {
     expect(config.recargoSueltoCentavos, 5000);
     expect(config.pasoRedondeoCentavos, 10000);
     expect(config.productoVueltoId, isNull);
+    expect(config.rubro, '');
   });
 }

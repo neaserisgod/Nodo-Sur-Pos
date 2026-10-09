@@ -92,6 +92,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
 - [Proveedores en el celular: un solo lugar, con alta y edición (El dueño, 2026-10-09)](#proveedores-en-el-celular-un-solo-lugar-con-alta-y-edición-el-dueño-2026-10-09)
 - [Clave de la IA por cuenta (El dueño, 2026-10-07)](#clave-de-la-ia-por-cuenta-el-dueño-2026-10-07-la-clave-es-por-cuenta)
+- [El rubro del comercio queda guardado (El dueño, 2026-10-09)](#el-rubro-del-comercio-queda-guardado-el-dueño-2026-10-09)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2296,3 +2297,19 @@ proveedor, Cargar factura). Ahora Más › **Proveedores** (`pantalla_proveedore
   formulario de producto, con la PC conectada, lista los proveedores de la PC: uno recién creado en el celular aparece ahí cuando la sync
   lo lleva.
 
+## El rubro del comercio queda guardado (El dueño, 2026-10-09)
+
+Para el bot de WhatsApp (`docs/PLAN-BOT.md`): el dueño pidió que su cuenta "ya debería tener el rubro" y la revisión encontró que no
+estaba en ningún lado. El rubro solo servía para sembrar categorías al armar el negocio (`guardarNegocio`, `aplicarPlantillaRubro`).
+
+- **Una columna, `configuracion_negocio_tabla.rubro`** (migración v63), con la clave de `PlantillaRubro` (`kiosco`, `almacen`,
+  `fiambreria`, `otro`). Vacío = sin elegir. Viaja con esa fila por la sync.
+- **Un negocio viejo arranca sin elegir**: no se adivina por las categorías (el dueño puede haberlas cambiado). Se elige en el celular,
+  Configuración › Tu negocio.
+- **Elegirlo no carga categorías**: eso pasa solo al armar el negocio. Cambiar de rubro a un negocio que ya funciona no le agrega nada
+  que no pidió.
+- **Una clave desconocida se lee como sin elegir** (`rubroActual`): un equipo más viejo que recibe un rubro nuevo (por ejemplo los de
+  servicios, `docs/PLAN-SERVICIOS.md`) no se rompe.
+- **Un equipo sin actualizar no lo borra**: manda la fila sin la columna y la sync solo actualiza las columnas que llegan (probado en
+  `sync_configuracion_negocio_test.dart`). Con una PC sin actualizar, guardar el rubro desde el celular avisa que hay que actualizarla
+  (la ruta nueva da 404).

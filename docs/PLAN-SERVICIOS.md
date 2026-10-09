@@ -96,29 +96,29 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 ## Etapas (una por vez, cada una probada antes de la siguiente)
 
 ### Etapa 1 · Forma de trabajar y rubro guardado
-- `configuracion_negocio` suma `rubro` y `forma` (migración v63). Todo lo que ya existe queda en `productos`: La Plazoleta no
+- `configuracion_negocio` suma `forma` (migración v64; `rubro` ya está desde la v63, `PLAN-BOT.md`). Todo lo que ya existe queda en `productos`: La Plazoleta no
   cambia.
 - `PlantillaRubro` suma Barbería, Uñas y belleza y Otro servicio, cada uno con su `forma` y sus módulos de arranque.
 - Los módulos nuevos (`agenda`, `turnos_whatsapp`, `insumos`, `bloquear_insumos`, `ajustar_insumos`, `mano_de_obra`,
   `profesionales`, `reventa`) valen solo con `forma = servicios`.
 - Onboarding del celular: los rubros en dos grupos. Con `servicios`, el celular arranca en la Agenda y Productos pasa a
   Servicios (la barra inferior depende de la forma).
-- Tests: `domain/` (rubros, forma, módulos efectivos), migración v63, onboarding del celular y "un almacén no ve nada nuevo".
+- Tests: `domain/` (rubros, forma, módulos efectivos), migración v64, onboarding del celular y "un almacén no ve nada nuevo".
 
 ### Etapa 2 · Insumos, servicios y calculador (sin PC)
 - Dominio puro, tests primero (`domain/servicios.dart`): milésimas, costo por unidad, costo del servicio (hacia arriba al
   peso, convención 5), ganancia sobre el precio, precio sugerido, "alcanza para N", qué insumo falta, mano de obra.
-- Migración v64: columnas de insumo y servicio en `productos`.
+- Migración v65: columnas de insumo y servicio en `productos`.
 - Pantallas del celular: Servicios (servicios + insumos) y el creador. Cargar compra de un insumo, por envase.
 
 ### Etapa 3 · Cobrar servicios (sin PC)
-- Tabla de consumos por línea (v65, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
+- Tabla de consumos por línea (v66, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
   módulo. Ajustar lo usado en la venta, si el módulo está prendido.
 - Reposición, Separaciones y ganancia leen los consumos. Se amplía el test de conciliación con ventas de servicios.
 - `REGLAS-NEGOCIO.md` gana la sección "Servicios e insumos" (antes de programar, con el OK del dueño).
 
 ### Etapa 4 · Agenda, profesionales y seña (sin PC)
-- Tabla `turnos` (v66, sincronizada), con cliente de `clientes` y profesional de `usuarios`.
+- Tabla `turnos` (v67, sincronizada), con cliente de `clientes` y profesional de `usuarios`.
 - Agenda, nuevo turno, estados y cobrar un turno. Seña con `domain/sena.dart`, que ahora también se usa en el celular. "No
   vino" según la configuración.
 - `REGLAS-NEGOCIO.md` gana la sección "Turnos y seña".

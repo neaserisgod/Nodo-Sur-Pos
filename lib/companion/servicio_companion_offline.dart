@@ -114,6 +114,9 @@ class ServicioCompanionOffline implements ServicioCompanion {
   Future<void> actualizarProductoVuelto(int? productoId) => _local.actualizarProductoVuelto(productoId);
 
   @override
+  Future<void> actualizarRubro(String clave) => _local.actualizarRubro(clave);
+
+  @override
   Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp) =>
       _local.actualizarMarkupCategoria(categoriaId, markupBp);
 

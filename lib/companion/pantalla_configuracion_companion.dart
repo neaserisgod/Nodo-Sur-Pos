@@ -21,6 +21,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
+import '../domain/plantillas_rubro.dart';
 import '../servicios/gemini.dart';
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
@@ -64,6 +65,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   String? _error;
 
   // ---- Cambios pendientes: viven por encima de lo guardado ----
+  String? _rubroPendiente;
   int? _pasoPendiente;
   ({int? id, String? nombre})? _vueltoPendiente;
   final Map<int, bool> _mediosPendientes = {};
@@ -149,6 +151,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   // ---- Valores efectivos (pendiente sobre guardado) y qué cambió ----
 
   int get _paso => _pasoPendiente ?? _config!.pasoRedondeoCentavos;
+  String? get _rubro => _rubroPendiente ?? _config!.rubro;
+  bool get _rubroCambio => _rubroPendiente != null && _rubroPendiente != _config?.rubro;
 
   bool _medioActivo(MedioDePagoCompanion m) => _mediosPendientes[m.id] ?? m.activo;
   bool _usuarioActivo(UsuarioCompanion u) => _usuariosPendientes[u.id] ?? u.activo;
@@ -180,7 +184,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   bool get _hayCambios {
     final c = _config;
     if (c == null) return false;
-    return (_pasoPendiente != null && _pasoPendiente != c.pasoRedondeoCentavos) ||
+    return _rubroCambio ||
+        (_pasoPendiente != null && _pasoPendiente != c.pasoRedondeoCentavos) ||
         _recargoCambio ||
         _vueltoCambio ||
         _mediosPago.any((m) => _medioActivo(m) != m.activo) ||
@@ -210,6 +215,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       }
     }
 
+    if (_rubroCambio) {
+      await intentar('Rubro', () => servicio.actualizarRubro(_rubroPendiente!), () => _rubroPendiente = null);
+    }
     if (_pasoPendiente != null && _pasoPendiente != config.pasoRedondeoCentavos) {
       await intentar('Redondeo', () => servicio.actualizarPasoRedondeo(_pasoPendiente!), () => _pasoPendiente = null);
     }
@@ -326,6 +334,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         padding: EdgeInsets.zero,
         children: [
           AvisoModoLocal(servicio: _servicio, pcEmparejada: _pcEmparejada),
+          _filaRubro(context),
           // Las secciones del mock (docs/03 D5).
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -388,6 +397,35 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             _filaModeloIa(context),
           ],
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  /// Rubro del comercio (v63). Elegirlo no carga categorías (eso es solo al armar el negocio): queda guardado para el bot de
+  /// WhatsApp, que según el rubro sabe cómo atender (`docs/PLAN-BOT.md`).
+  Widget _filaRubro(BuildContext context) {
+    final ns = context.ns;
+    final rubro = _rubro;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SeccionNs('Tu negocio'),
+          const SizedBox(height: 10),
+          Text(
+            rubro == null ? 'Rubro · Sin elegir. Lo usa el bot de WhatsApp para saber cómo atender' : 'Rubro',
+            style: estiloNs(14, peso: FontWeight.w600, color: ns.mute),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final p in PlantillaRubro.todas) ChipNs(texto: p.nombre, activo: rubro == p.clave, onTap: () => setState(() => _rubroPendiente = p.clave)),
+            ],
+          ),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 # Plan · Bot de WhatsApp desde el celular, configurable desde Nodo Sur
 
-**Estado al 2026-10-09: plan, sin código en Nodo Sur ni en el sitio.** En `neaserisgod/botdemo` ya están las plantillas de uñas
+**Estado al 2026-10-09: etapa 1 hecha (rubro guardado, migración v63); el resto, plan.** En `neaserisgod/botdemo` ya están las plantillas de uñas
 y barbería (rama `ccr-e5e5b532-aj3e0g`). Revisado contra el código de los tres repos el mismo día. El resto del bot (turnos,
 seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), etapa 5.
 
@@ -101,9 +101,9 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
 
 ## Etapas (una por vez, cada una probada antes de la siguiente)
 
-1. **Rubro guardado** (la etapa 1 de `PLAN-SERVICIOS.md`, achicada a lo que el bot necesita): `rubro` en
-   `configuracion_negocio` (migración, sincronizado) y elegirlo en Configuración del celular. La cuenta del almacén queda
-   `almacen`.
+1. ✅ **Rubro guardado** (hecho el 2026-10-09; la etapa 1 de `PLAN-SERVICIOS.md`, achicada a lo que el bot necesita): `rubro` en
+   `configuracion_negocio` (migración v63, sincronizado) y elegirlo en Configuración › Tu negocio del celular. La cuenta del
+   almacén queda `almacen` cuando el dueño lo elige ahí (un negocio viejo arranca sin elegir: no se adivina).
 2. **Sitio**: `tieneBot`, equipo tipo `bot`, `/api/bot/config`, catálogo (`/api/bot/catalogo`) y pedidos
    (`/api/bot/pedido`, aceptar y rechazar), con el aviso al bot y a los equipos. Con tests, como el resto del sitio.
 3. **Bot**: plantilla y flujo de almacén (precio y si hay, horarios y ubicación, pedidos); pausa de 1 hora configurable,

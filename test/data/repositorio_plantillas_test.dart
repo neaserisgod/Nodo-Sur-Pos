@@ -35,6 +35,11 @@ void main() {
       expect(resultado.gastosFijosNuevos, almacen.gastosFijos.length);
     });
 
+    test('deja guardado el rubro (v63): antes solo sembraba categorías y el rubro no quedaba en ningún lado', () async {
+      await aplicarPlantillaRubro(db, PlantillaRubro.almacen);
+      expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, 'almacen');
+    });
+
     test('aplicarla dos veces no duplica nada', () async {
       final kiosco = PlantillaRubro.desdeClave('kiosco')!;
       await aplicarPlantillaRubro(db, kiosco);

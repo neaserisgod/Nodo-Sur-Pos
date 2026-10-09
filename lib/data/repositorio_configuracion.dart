@@ -11,6 +11,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 
 import '../domain/modulos.dart';
+import '../domain/plantillas_rubro.dart';
 import 'database.dart';
 
 /// La fila única de `configuracion_negocio_tabla`, o los defaults de
@@ -32,6 +33,22 @@ Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
         nombreComercio: '',
         encabezadoTicket: '',
         modulosDesactivados: '',
+        rubro: '',
+      );
+}
+
+/// El rubro del comercio, o null si todavía no se eligió (un negocio armado antes de la v63) o si la clave es de una
+/// versión más nueva que esta: se lee como "sin elegir" en vez de romper.
+Future<PlantillaRubro?> rubroActual(AppDatabase db) async => PlantillaRubro.desdeClave((await configuracionNegocioActual(db)).rubro);
+
+/// Guarda el rubro (v63). Elegirlo no siembra nada: las categorías de la plantilla se cargan solo al armar el negocio
+/// (`guardarNegocio`, `aplicarPlantillaRubro`), y un negocio que ya funciona no tiene por qué recibir categorías que no pidió.
+Future<void> configurarRubro(AppDatabase db, PlantillaRubro rubro) {
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          rubro: Value(rubro.clave),
+          actualizadoEn: Value(DateTime.now()),
+        ),
       );
 }
 

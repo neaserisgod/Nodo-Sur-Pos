@@ -22,6 +22,7 @@ import '../data/repositorio_carga_historica.dart' as repo_carga_historica;
 import '../data/repositorio_cierre.dart' as repo_cierre;
 import '../data/repositorio_cobro.dart' as repo_cobro;
 import '../data/repositorio_configuracion.dart' as repo_configuracion;
+import '../domain/plantillas_rubro.dart';
 import '../data/repositorio_deuda_proveedores.dart' as repo_deuda;
 import '../data/repositorio_edicion_venta.dart' as repo_edicion_venta;
 import '../data/repositorio_encargues.dart' as repo_encargues;
@@ -260,6 +261,7 @@ class PuertoLocal implements ServicioCompanion {
       recargoSueltoCentavos: c.recargoSueltoCentavos,
       pasoRedondeoCentavos: c.pasoRedondeoCentavos,
       productoVueltoId: c.productoVueltoId,
+      rubro: c.rubro.isEmpty ? null : c.rubro,
     );
   }
 
@@ -282,6 +284,13 @@ class PuertoLocal implements ServicioCompanion {
   @override
   Future<void> actualizarProductoVuelto(int? productoId) =>
       repo_configuracion.configurarProductoVuelto(db, productoId);
+
+  @override
+  Future<void> actualizarRubro(String clave) {
+    final rubro = PlantillaRubro.desdeClave(clave);
+    if (rubro == null) throw FormatException('No existe el rubro "$clave"');
+    return repo_configuracion.configurarRubro(db, rubro);
+  }
 
   @override
   Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp) =>
