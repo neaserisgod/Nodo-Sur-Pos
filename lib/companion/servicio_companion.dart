@@ -25,6 +25,8 @@ import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import 'cliente_companion.dart';
 import '../servicios/devolucion_mp.dart' show CobroPoint;
 
@@ -245,6 +247,21 @@ abstract class ServicioCompanion {
     String? nota,
   });
 
+  /// "¿A dónde fue esta plata?" del cierre (REGLAS-NEGOCIO, "Faltantes del cierre"; en el celular desde el 2026-10-09): desde
+  /// cuánto faltante se pregunta y los fijos que se pueden marcar pagados. Null si no se puede preguntar (una PC sin actualizar).
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante();
+
+  /// Anota a dónde fue [montoCentavos] que falta en [caja], en la caja abierta (`anotarFaltante` de la PC).
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  });
+
   /// Detalle completo de un cierre YA guardado (El dueño, 2026-09-19: rework
   /// de "Cierres" con el desglose por proveedor) — mismo shape que
   /// [calcularCierre]. [sesionId] tiene que ser una sesión `CERRADA`.
@@ -428,3 +445,6 @@ abstract class ServicioCompanion {
     String? claveCobro,
   });
 }
+
+/// Ver [ServicioCompanion.opcionesFaltante].
+typedef OpcionesFaltanteCompanion = ({int umbralCentavos, List<({int id, String nombre})> fijos});

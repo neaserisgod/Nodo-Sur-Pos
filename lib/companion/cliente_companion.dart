@@ -15,6 +15,8 @@ import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
 import '../domain/venta_json.dart' show lineaVentaAJson, lineaVentaDesdeJson;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import 'servicio_companion.dart';
 import '../servicios/devolucion_mp.dart' show CobroPoint;
 
@@ -1446,6 +1448,45 @@ class ClienteCompanion implements ServicioCompanion {
       body: jsonEncode({
         'ordenPendienteId': ordenPendienteId,
         'ordenIdMp': ?ordenIdMp,
+      }),
+    );
+    _revisar(r);
+  }
+
+  @override
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante() async {
+    final r = await _client.get(conexion._url('/cierre/faltantes'), headers: _headers);
+    // Una PC anterior al 2026-10-09 no tiene la ruta: el cierre del celular no pregunta (lo de siempre).
+    if (r.statusCode == 404) return null;
+    _revisar(r);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (
+      umbralCentavos: j['umbralCentavos'] as int,
+      fijos: [for (final f in j['fijos'] as List) (id: (f as Map)['id'] as int, nombre: f['nombre'] as String)],
+    );
+  }
+
+  @override
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) async {
+    final r = await _client.post(
+      conexion._url('/cierre/faltantes'),
+      headers: _headers,
+      body: jsonEncode({
+        'usuarioId': usuarioId,
+        'caja': caja.name,
+        'montoCentavos': montoCentavos,
+        'destino': destino.name,
+        'proveedorId': ?proveedorId,
+        'gastoFijoId': ?gastoFijoId,
+        'nota': ?nota,
       }),
     );
     _revisar(r);

@@ -62,7 +62,9 @@ import '../data/repositorio_cobro.dart';
 import '../data/repositorio_deuda_proveedores.dart';
 import '../data/repositorio_configuracion.dart';
 import '../data/repositorio_edicion_venta.dart';
+import '../data/repositorio_faltantes.dart';
 import '../data/repositorio_gastos.dart';
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../data/repositorio_historial.dart' show listarDias;
 import '../data/repositorio_ingresos.dart';
 import '../data/repositorio_historial_ventas.dart';
@@ -1167,6 +1169,42 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — se
       // cerró desde otro lado entre el último /calcular y este /confirmar.
       return _error(409, 'La caja ya se cerró desde otro lado mientras tanto');
+    }
+  });
+
+  // "¿A dónde fue esta plata?" desde el celular (El dueño, 2026-10-09: independizar el celular). Mismo `anotarFaltante` que
+  // el cierre de la PC, sobre la caja abierta.
+  router.get('/cierre/faltantes', (Request request) async {
+    final umbral = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
+    final fijos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
+    return _json({
+      'umbralCentavos': umbral,
+      'fijos': [for (final f in fijos) {'id': f.id, 'nombre': f.nombre}],
+    });
+  });
+
+  router.post('/cierre/faltantes', (Request request) async {
+    final sesion = await sesionAbierta(db);
+    if (sesion == null) return _error(409, 'No hay caja abierta');
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final caja = CajaDelCierre.values.where((c) => c.name == body['caja']).firstOrNull;
+    final destino = DestinoFaltante.values.where((d) => d.name == body['destino']).firstOrNull;
+    if (caja == null || destino == null) return _error(400, 'Caja o destino inválido');
+    try {
+      await anotarFaltante(
+        db,
+        sesionCajaId: sesion.id,
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        caja: caja,
+        montoCentavos: _intRequerido(body, 'montoCentavos'),
+        destino: destino,
+        proveedorId: body['proveedorId'] as int?,
+        gastoFijoId: body['gastoFijoId'] as int?,
+        nota: body['nota'] as String?,
+      );
+      return _json({'ok': true});
+    } on ArgumentError catch (e) {
+      return _error(400, '${e.message}');
     }
   });
 

@@ -33,6 +33,9 @@ import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
 import '../data/repositorio_promos.dart' as repo_promos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
+import '../data/repositorio_faltantes.dart' as repo_faltantes;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
 import '../data/repositorio_pendientes.dart' as repo_pendientes;
 import '../data/repositorio_ventas.dart' as repo_ventas;
@@ -1177,6 +1180,42 @@ class PuertoLocal implements ServicioCompanion {
   /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
   /// de Mercado Pago que el negocio conectó (el token nunca baja al celular). Sin cuenta vinculada, o con el negocio sin
   /// conectar o sin terminal elegida, se dice qué falta (`servicios/pasarela_point_nube.dart`).
+  @override
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante() async {
+    final umbral = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
+    final fijos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
+    return (umbralCentavos: umbral, fijos: [for (final f in fijos) (id: f.id, nombre: f.nombre)]);
+  }
+
+  @override
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) throw const ErrorCompanion(409, 'No hay caja abierta');
+    try {
+      await repo_faltantes.anotarFaltante(
+        db,
+        sesionCajaId: sesion.id,
+        usuarioId: usuarioId,
+        caja: caja,
+        montoCentavos: montoCentavos,
+        destino: destino,
+        proveedorId: proveedorId,
+        gastoFijoId: gastoFijoId,
+        nota: nota,
+      );
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
+
   /// Imprime el ticket de una venta de esta base en la terminal Point, por el servidor de Nodo Sur con el Mercado Pago del
   /// negocio (El dueño, 2026-10-09: independizar el celular). Antes solo se podía con la PC, que imprime por el mismo camino.
   /// Las ventas cobradas por la PC (con el celular conectado a ella) se siguen imprimiendo por la PC: su id es el de esa base.

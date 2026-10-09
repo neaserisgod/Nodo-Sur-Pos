@@ -138,9 +138,11 @@ Pendiente / ideas (sin hacer):
     `global_id`. En el celular: Configuración › Gastos fijos (alta, monto del mes, vencimiento). Arreglo del motor de sync: dos
     filas "iguales" por clave natural creadas en el mismo segundo se quedan con el `global_id` menor (antes no convergían).
     **Publicar la PC y el APK juntos** (un equipo sin v63 ignora esas filas).
-  Falta: la pregunta "¿a dónde fue esta plata?" del cierre (faltantes, `dialogo_faltante.dart`) en el cierre del celular, que
-  es lo único que usa el umbral de faltantes (el fondo fijo ya no entra en ninguna cuenta: no hace falta en el celular); el
-  precio de las líneas de los encargues; "+ Nuevo" proveedor/categoría en el formulario de producto (con la PC conectada la lista
+  - **"¿A dónde fue esta plata?" en el cierre del celular**: con un faltante desde el mínimo, se anota como gasto mío, proveedor,
+    fijo u otro gasto (en partes), con el mismo `anotarFaltante` de la PC; cerrar sin explicar avisa antes. Con la PC, rutas
+    nuevas `GET/POST /cierre/faltantes` (una PC vieja contesta 404 y el celular no pregunta). El fondo fijo ya no entra en
+    ninguna cuenta: no hace falta en el celular.
+  Falta: el precio de las líneas de los encargues; "+ Nuevo" proveedor/categoría en el formulario de producto (con la PC conectada la lista
   viene de la PC, con otros ids: no se puede elegir un proveedor recién creado en el celular hasta que la sync lo lleva);
   dejar de preguntar el modo al configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
   Probado con tests; **no probado en un celular real ni con la Point/cuenta real**.

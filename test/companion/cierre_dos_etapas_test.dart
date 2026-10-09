@@ -98,5 +98,31 @@ void main() {
     expect(mp.controller!.text, '175000');
     expect(find.textContaining('por liberar'), findsOneWidget);
   });
+
+  testWidgets('un faltante del cajón pregunta a dónde fue; anotarlo como otro gasto lo explica (El dueño, 2026-10-07/09)', (t) async {
+    await abrir(t);
+    // Fondo de $30.000 y se cuentan $20.000: faltan $10.000 (más que el mínimo de $6.000).
+    await t.enterText(campo('Efectivo contado'), '20000');
+    await esperar(t);
+    await t.tap(find.text('Confirmar conteo'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+    await esperar(t);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await esperar(t);
+
+    final pregunta = find.text('¿A dónde fue?');
+    await t.ensureVisible(pregunta);
+    expect(find.textContaining('Faltan \$\u00A010.000 en el cajón'), findsOneWidget);
+    await t.tap(pregunta);
+    await esperar(t);
+    await t.tap(find.text('Otro gasto'));
+    await t.pump();
+    await t.tap(find.text('Anotar'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+    await esperar(t);
+
+    expect(find.text('¿A dónde fue?'), findsNothing, reason: 'el gasto explica el faltante: lo esperado bajó');
+    await t.pump(const Duration(seconds: 4));
+  });
 }
 

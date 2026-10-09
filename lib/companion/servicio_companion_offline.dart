@@ -22,7 +22,9 @@
 
 import 'dart:async';
 
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../servicios/sync_nube.dart' show SyncNubeOk;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
@@ -83,6 +85,20 @@ class ServicioCompanionOffline implements ServicioCompanion {
       throw mensajeCajaYaAbierta;
     }
   }
+
+  @override
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante() => _local.opcionesFaltante();
+
+  @override
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) => _local.anotarFaltante(usuarioId: usuarioId, caja: caja, montoCentavos: montoCentavos, destino: destino, proveedorId: proveedorId, gastoFijoId: gastoFijoId, nota: nota);
 
   /// Sin la PC, el ticket se imprime en la terminal por el servidor de Nodo Sur ([PuertoLocal.imprimirTicket]).
   Future<void> imprimirTicket(int ventaId) => _local.imprimirTicket(ventaId);

@@ -559,6 +559,23 @@ void main() {
     });
   });
 
+  test('/cierre/faltantes: el celular pide el mínimo y los fijos, y anota a dónde fue un faltante en la caja abierta', () async {
+    final opciones = jsonDecode((await http.get(url('/cierre/faltantes'), headers: headers())).body) as Map;
+    expect(opciones['umbralCentavos'], isA<int>());
+    expect(opciones['fijos'], isA<List>());
+
+    final sinCaja = await http.post(url('/cierre/faltantes'), headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'caja': 'efectivo', 'montoCentavos': 1000000, 'destino': 'negocio'}));
+    expect(sinCaja.statusCode, 409);
+
+    final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 3000000);
+    final r = await http.post(url('/cierre/faltantes'), headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'caja': 'efectivo', 'montoCentavos': 1000000, 'destino': 'negocio', 'nota': 'Ferretería'}));
+    expect(r.statusCode, 200);
+    final movimientos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get();
+    expect(movimientos.single.montoCentavos.abs(), 1000000);
+  });
+
   test(
     'POST /sesion/abrir con una ya abierta: 409, avisa quién la abrió, no crea otra',
     () async {
