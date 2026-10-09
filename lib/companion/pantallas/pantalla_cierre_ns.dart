@@ -4,10 +4,15 @@
 //             cerró nada: "Cerrar caja" es lo que cierra.
 //   Cerrada · el resultado, con lo que un cierre real tiene además de las tres cajas.
 // Una caja cerrada no se reabre, por eso el resultado se revisa ANTES de cerrar (etapa 2), no después.
+//
+// "Traer saldo de Mercado Pago" (El dueño, 2026-10-09: independizar el celular): el mismo botón del cierre de la PC
+// (`traerSaldoMpDeCuenta`, con la cuenta vinculada de este celular) llena el "MP contado" con el saldo real.
 
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../domain/saldo_mp.dart' show SaldoMp;
+import '../../servicios/saldo_mp_nube.dart';
 import '../app_ns.dart';
 import '../cliente_companion.dart' show ResumenCierreCompanion;
 import '../kit/kit_ns.dart';
@@ -15,6 +20,7 @@ import '../mensaje_error.dart';
 import '../seccion_extra_cierre_companion.dart';
 import '../servicio_companion.dart';
 import '../servicio_companion_offline.dart';
+import '../sync_nube_companion.dart';
 
 class PantallaCierreNs extends StatefulWidget {
   const PantallaCierreNs({
@@ -25,7 +31,11 @@ class PantallaCierreNs extends StatefulWidget {
     this.precargaMpCentavos,
     this.precargaLataCentavos,
     this.horaPrecarga,
+    this.traerSaldoMp,
   });
+
+  /// Para tests. En la app sale de la cuenta vinculada del celular.
+  final TraerSaldoMp? traerSaldoMp;
 
   final ServicioCompanion servicio;
   final int usuarioId;
@@ -54,6 +64,33 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
   ResumenCierreCompanion? _resumen;
   bool _trabajando = false;
   String? _error;
+
+  SaldoMp? _saldo;
+  bool _pidiendoSaldo = false;
+
+  /// Pide el saldo real de la cuenta de Mercado Pago (tarda: el reporte lo arma Mercado Pago) y lo pone en "MP contado",
+  /// editable. Nunca frena el cierre: si falla, se avisa y se sigue con lo contado a mano.
+  Future<void> _traerSaldo() async {
+    final desde = AppNs.of(context).sesion?.fechaApertura;
+    if (desde == null || _pidiendoSaldo) return;
+    setState(() => _pidiendoSaldo = true);
+    try {
+      final traer = widget.traerSaldoMp ?? await () async {
+        final sync = await syncNubeDelCelular();
+        return traerSaldoMpDeCuenta(sync.almacen, sync.cliente);
+      }();
+      final saldo = await traer(desde);
+      if (!mounted) return;
+      setState(() {
+        _saldo = saldo;
+        _mp.text = '${(saldo.contadoSugeridoCentavos / centavosPorPeso).round()}';
+      });
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
+    } finally {
+      if (mounted) setState(() => _pidiendoSaldo = false);
+    }
+  }
 
   static String _pesos(int? centavos) => centavos == null ? '' : '${centavos ~/ centavosPorPeso}';
 
@@ -255,6 +292,17 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
         if (ef != null) dato('Caja esperada', r.efectivoEsperadoCentavos, ef),
         const SizedBox(height: 4),
         campo('MP contado (según la app de Mercado Pago)', _mp),
+        const SizedBox(height: 8),
+        BotonNs.secundario(context, _pidiendoSaldo ? 'Pidiendo el saldo a Mercado Pago…' : 'Traer saldo de Mercado Pago', _pidiendoSaldo ? null : _traerSaldo, icono: IconoNs.descarga),
+        if (_saldo != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: InfoNs(
+              _saldo!.aLiberarConocido
+                  ? 'Mercado Pago: disponible ${plataNs(_saldo!.disponibleCentavos)} + por liberar ${plataNs(_saldo!.aLiberarCentavos!)}. Se puede corregir.'
+                  : 'Mercado Pago: disponible ${plataNs(_saldo!.disponibleCentavos)} (no se pudo saber lo que falta liberar). Se puede corregir.',
+            ),
+          ),
         if (mp != null) dato('MP esperado', r.mpEsperadoCentavos, mp),
         const SizedBox(height: 4),
         campo('Lata contada', _lata),
