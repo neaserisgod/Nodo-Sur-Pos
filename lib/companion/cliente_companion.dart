@@ -15,6 +15,8 @@ import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
 import '../domain/venta_json.dart' show lineaVentaAJson, lineaVentaDesdeJson;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import 'servicio_companion.dart';
 import '../servicios/devolucion_mp.dart' show CobroPoint;
 
@@ -70,6 +72,10 @@ class ProductoCompanion {
   /// en Conteo/Precios.
   final String tipoCigarrillo;
 
+  /// Identidad de sincronización: la misma en todos los equipos (el id local no). Con ella vuelve un producto que salió de
+  /// esta base, como los del pedido del bot de WhatsApp. Null si la PC todavía no la manda (versión anterior a 2026-10-09).
+  final String? globalId;
+
   const ProductoCompanion({
     required this.id,
     required this.nombre,
@@ -85,6 +91,7 @@ class ProductoCompanion {
     this.stockGramos,
     required this.activo,
     this.tipoCigarrillo = 'ninguno',
+    this.globalId,
   });
 
   factory ProductoCompanion.desdeJson(Map<String, dynamic> j) =>
@@ -103,6 +110,7 @@ class ProductoCompanion {
         stockGramos: j['stockGramos'] as int?,
         activo: j['activo'] as bool,
         tipoCigarrillo: j['tipoCigarrillo'] as String? ?? 'ninguno',
+        globalId: j['globalId'] as String?,
       );
 }
 
@@ -167,13 +175,21 @@ class EncargueCompanion {
 
   /// Una línea de texto por producto apartado ("3 × Galletitas", "250 g Queso barra").
   final List<String> lineas;
-  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas});
+
+  /// La seña que dejó el cliente (0 si no dejó). Una PC vieja no la manda: `as int?`.
+  final int senaCentavos;
+
+  /// Cuánto sale hoy lo apartado (precios de hoy). Null si no se pudo calcular o la PC no lo manda.
+  final int? totalHoyCentavos;
+  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas, this.senaCentavos = 0, this.totalHoyCentavos});
 
   factory EncargueCompanion.desdeJson(Map<String, dynamic> j) => EncargueCompanion(
     id: j['id'] as int,
     nombreCliente: j['nombreCliente'] as String,
     desde: DateTime.fromMillisecondsSinceEpoch((j['desdeMs'] as num).toInt()),
     lineas: [for (final l in j['lineas'] as List) l as String],
+    senaCentavos: j['senaCentavos'] as int? ?? 0,
+    totalHoyCentavos: j['totalHoyCentavos'] as int?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -181,6 +197,8 @@ class EncargueCompanion {
     'nombreCliente': nombreCliente,
     'desdeMs': desde.millisecondsSinceEpoch,
     'lineas': lineas,
+    'senaCentavos': senaCentavos,
+    'totalHoyCentavos': ?totalHoyCentavos,
   };
 }
 
@@ -246,12 +264,21 @@ class ConfiguracionNegocioCompanion {
   final int pasoRedondeoCentavos;
   final int? productoVueltoId;
 
+  /// Clave del rubro (`PlantillaRubro.clave`, v63), o null si todavía no se eligió o si la PC no lo informa (una PC sin
+  /// actualizar no manda el campo).
+  final String? rubro;
+
+  /// El nombre del comercio (Configuración de la PC). Vacío si no se cargó o si la PC no lo informa (anterior a 2026-10-09).
+  final String nombreComercio;
+
   const ConfiguracionNegocioCompanion({
     required this.recargoPrimerAtadoCentavos,
     required this.recargoAtadoAdicionalCentavos,
     required this.recargoSueltoCentavos,
     required this.pasoRedondeoCentavos,
     this.productoVueltoId,
+    this.rubro,
+    this.nombreComercio = '',
   });
 
   factory ConfiguracionNegocioCompanion.desdeJson(Map<String, dynamic> j) => ConfiguracionNegocioCompanion(
@@ -260,6 +287,8 @@ class ConfiguracionNegocioCompanion {
     recargoSueltoCentavos: j['recargoSueltoCentavos'] as int,
     pasoRedondeoCentavos: j['pasoRedondeoCentavos'] as int,
     productoVueltoId: j['productoVueltoId'] as int?,
+    rubro: switch (j['rubro']) { final String r when r.isNotEmpty => r, _ => null },
+    nombreComercio: j['nombreComercio'] as String? ?? '',
   );
 }
 
@@ -466,11 +495,19 @@ class ClienteCompanion implements ServicioCompanion {
     required String nombreCliente,
     required List<ApartadoCompanion> lineas,
     required int usuarioId,
+    int senaCentavos = 0,
+    bool senaEsEfectivo = true,
   }) async {
     final r = await _client.post(
       conexion._url('/encargues'),
       headers: _headers,
-      body: jsonEncode({'nombreCliente': nombreCliente, 'usuarioId': usuarioId, 'lineas': [for (final l in lineas) l.toJson()]}),
+      body: jsonEncode({
+        'nombreCliente': nombreCliente,
+        'usuarioId': usuarioId,
+        'lineas': [for (final l in lineas) l.toJson()],
+        if (senaCentavos > 0) 'senaCentavos': senaCentavos,
+        if (senaCentavos > 0) 'senaEsEfectivo': senaEsEfectivo,
+      }),
     );
     _revisar(r);
     return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;
@@ -605,6 +642,29 @@ class ClienteCompanion implements ServicioCompanion {
       headers: _headers,
       body: jsonEncode({'montoCentavos': montoCentavos}),
     );
+    _revisar(r);
+  }
+
+  @override
+  Future<void> actualizarRubro(String clave) async {
+    final r = await _client.put(
+      conexion._url('/configuracion/rubro'),
+      headers: _headers,
+      body: jsonEncode({'rubro': clave}),
+    );
+    // Una PC sin actualizar no conoce la ruta (404): se dice qué hacer en vez del error genérico.
+    if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el rubro con la PC, actualizá la app de la PC.');
+    _revisar(r);
+  }
+
+  @override
+  Future<void> actualizarNombreComercio(String nombre) async {
+    final r = await _client.put(
+      conexion._url('/configuracion/nombre-comercio'),
+      headers: _headers,
+      body: jsonEncode({'nombre': nombre}),
+    );
+    if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el nombre con la PC, actualizá la app de la PC.');
     _revisar(r);
   }
 
@@ -1433,6 +1493,45 @@ class ClienteCompanion implements ServicioCompanion {
       body: jsonEncode({
         'ordenPendienteId': ordenPendienteId,
         'ordenIdMp': ?ordenIdMp,
+      }),
+    );
+    _revisar(r);
+  }
+
+  @override
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante() async {
+    final r = await _client.get(conexion._url('/cierre/faltantes'), headers: _headers);
+    // Una PC anterior al 2026-10-09 no tiene la ruta: el cierre del celular no pregunta (lo de siempre).
+    if (r.statusCode == 404) return null;
+    _revisar(r);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (
+      umbralCentavos: j['umbralCentavos'] as int,
+      fijos: [for (final f in j['fijos'] as List) (id: (f as Map)['id'] as int, nombre: f['nombre'] as String)],
+    );
+  }
+
+  @override
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) async {
+    final r = await _client.post(
+      conexion._url('/cierre/faltantes'),
+      headers: _headers,
+      body: jsonEncode({
+        'usuarioId': usuarioId,
+        'caja': caja.name,
+        'montoCentavos': montoCentavos,
+        'destino': destino.name,
+        'proveedorId': ?proveedorId,
+        'gastoFijoId': ?gastoFijoId,
+        'nota': ?nota,
       }),
     );
     _revisar(r);

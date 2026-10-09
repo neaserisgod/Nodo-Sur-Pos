@@ -165,6 +165,9 @@ void main() {
     final creado = productos.cast<Map<String, dynamic>>().firstWhere((p) => p['id'] == id);
     expect(creado['nombre'], 'Fernet');
     expect(creado['precioCentavos'], 500000);
+    // El pedido del bot de WhatsApp nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+    expect(creado['globalId'], isA<String>());
+    expect(ProductoCompanion.desdeJson(creado).globalId, creado['globalId']);
   });
 
   // El dueño, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
@@ -557,6 +560,23 @@ void main() {
       expect(r.statusCode, 201);
       expect((await sesionAbierta(db))?.saldoMpInicialCentavos, 1234500);
     });
+  });
+
+  test('/cierre/faltantes: el celular pide el mínimo y los fijos, y anota a dónde fue un faltante en la caja abierta', () async {
+    final opciones = jsonDecode((await http.get(url('/cierre/faltantes'), headers: headers())).body) as Map;
+    expect(opciones['umbralCentavos'], isA<int>());
+    expect(opciones['fijos'], isA<List>());
+
+    final sinCaja = await http.post(url('/cierre/faltantes'), headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'caja': 'efectivo', 'montoCentavos': 1000000, 'destino': 'negocio'}));
+    expect(sinCaja.statusCode, 409);
+
+    final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 3000000);
+    final r = await http.post(url('/cierre/faltantes'), headers: headers(),
+        body: jsonEncode({'usuarioId': usuarioId, 'caja': 'efectivo', 'montoCentavos': 1000000, 'destino': 'negocio', 'nota': 'Ferretería'}));
+    expect(r.statusCode, 200);
+    final movimientos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get();
+    expect(movimientos.single.montoCentavos.abs(), 1000000);
   });
 
   test(
@@ -1240,7 +1260,8 @@ void main() {
     });
 
     group('encargues por apartado', () {
-      test('un encargue con seña: el celular lo ve, pero cobrarlo, anotar deuda o cancelarlo se hace desde la PC (409, sin tocar la caja)', () async {
+      test('un encargue con seña: el celular lo ve, cobrarlo o anotar deuda se hace desde la PC (409), y cancelarlo devuelve la seña '
+          'desde la caja abierta de la PC (El dueño, 2026-10-09)', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
         final id = await crearEncargueApartando(
@@ -1267,9 +1288,13 @@ void main() {
         );
         expect(cobro.statusCode, 409);
         expect((await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
-        expect((await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
         expect(await db.select(db.ventas).get(), isEmpty);
         expect(await listarEnarguesPendientes(db), hasLength(1), reason: 'sigue apartado');
+
+        expect((await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 200);
+        expect(await listarEnarguesPendientes(db), isEmpty);
+        final movimientos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get();
+        expect(movimientos, hasLength(2), reason: 'la seña y su devolución');
       });
 
       test('apartar por HTTP baja el stock; el listado, las líneas y la entrega por /ventas/cobrar liberan lo apartado', () async {
@@ -2736,6 +2761,49 @@ void main() {
         expect(j['recargoPrimerAtadoCentavos'], 30000);
         expect(j['pasoRedondeoCentavos'], 10000);
         expect(j.containsKey('productoVueltoId'), isFalse); // null se omite
+        expect(j.containsKey('rubro'), isFalse, reason: 'sin elegir (v63) se omite, como un null');
+      });
+
+      test('rubro (v63, para el bot de WhatsApp): el celular lo guarda en la PC y lo lee de vuelta', () async {
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: puerto, token: token));
+        expect((await cliente.configuracionNegocio()).rubro, isNull);
+
+        await cliente.actualizarRubro('almacen');
+
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, 'almacen');
+        expect((await cliente.configuracionNegocio()).rubro, 'almacen');
+      });
+
+      test('PUT /configuracion/rubro con un rubro que no existe: 400 y no guarda nada', () async {
+        final respuesta = await http.put(url('/configuracion/rubro'), headers: headers(), body: jsonEncode({'rubro': 'nave_espacial'}));
+        expect(respuesta.statusCode, 400);
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, '');
+      });
+
+      test('el celular con una PC sin actualizar: guardar el rubro avisa que hay que actualizar la PC', () async {
+        final pcVieja = await HttpServer.bind('127.0.0.1', 0);
+        addTearDown(pcVieja.close);
+        pcVieja.listen((r) {
+          r.response.statusCode = 404;
+          r.response.write('Route not found');
+          r.response.close();
+        });
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: pcVieja.port, token: token));
+        await expectLater(
+          () => cliente.actualizarRubro('almacen'),
+          throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('actualizá la app de la PC'))),
+        );
+      });
+
+      test('nombre del comercio (para el bot de WhatsApp): el celular lo guarda en la PC y lo lee de vuelta', () async {
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: puerto, token: token));
+        await cliente.actualizarNombreComercio('Almacén Don Pepe');
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
+        expect((await cliente.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+
+        final vacio = await http.put(url('/configuracion/nombre-comercio'), headers: headers(), body: jsonEncode({'nombre': ' '}));
+        expect(vacio.statusCode, 400);
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
       });
 
       test('PUT /configuracion/recargo-cigarrillos actualiza los tres montos', () async {

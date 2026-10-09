@@ -11,6 +11,7 @@ import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/seleccion_servicio.dart';
 import 'package:la_plazoleta/companion/servicio_companion_offline.dart';
+import 'package:la_plazoleta/data/database.dart' show SesionesDeCajaCompanion;
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/servidor/servidor_companion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,20 +55,57 @@ void main() {
   test('ServicioCompanionOffline: todo delega a PuertoLocal salvo abrirSesion', () async {
     final local = baseDeTest();
     addTearDown(local.close);
-    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => false);
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => false, sincronizarNube: () async => false);
 
     // Delega de verdad (no un stub vacío): trae el catálogo real de la base
     // local (proveedores sembrados de fábrica).
     final proveedores = await servicio.proveedores();
     expect(proveedores, isNotEmpty);
 
-    // Política especial: con "PC y celular" nunca abre una caja propia offline.
+    // Política especial: con "PC y celular" y sin poder confirmarlo con la nube, no abre una caja propia.
     expect(
       () => servicio.abrirSesion(usuarioId: 1, fondoInicialCentavos: 1000),
-      throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('No se puede abrir'))),
+      throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('no se puede saber si la caja ya se abrió'))),
     );
     final sesionesLocales = await local.select(local.sesionesDeCaja).get();
     expect(sesionesLocales, isEmpty);
+  });
+
+  test('ServicioCompanionOffline: con "PC y celular" y la PC apagada, abre si la nube confirma que no hay otra (El dueño, 2026-10-09)', () async {
+    final local = baseDeTest();
+    addTearDown(local.close);
+    var sincronizadas = 0;
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => false, sincronizarNube: () async {
+      sincronizadas++;
+      return true;
+    });
+    final usuario = (await servicio.usuarios()).first;
+
+    await servicio.abrirSesion(usuarioId: usuario.id, fondoInicialCentavos: 1000);
+
+    expect(await local.select(local.sesionesDeCaja).get(), hasLength(1));
+    await Future<void>.delayed(Duration.zero);
+    expect(sincronizadas, 2, reason: 'una antes de abrir (confirmar) y otra después (que la PC la vea ya)');
+  });
+
+  test('ServicioCompanionOffline: si la nube trajo una caja abierta de la PC, no abre otra', () async {
+    final local = baseDeTest();
+    addTearDown(local.close);
+    final usuarioId = (await local.select(local.usuarios).get()).first.id;
+    final servicio = ServicioCompanionOffline(PuertoLocal(local), esSoloCelular: () async => false, sincronizarNube: () async {
+      // Lo que bajó de la nube: la caja que abrió la PC.
+      if ((await local.select(local.sesionesDeCaja).get()).isEmpty) {
+        await local.into(local.sesionesDeCaja).insert(SesionesDeCajaCompanion.insert(usuarioAbrioId: usuarioId, fondoInicialCentavos: 500));
+      }
+      return true;
+    });
+
+    expect(
+      () => servicio.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: 1000),
+      throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('Ya hay una caja abierta'))),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(await local.select(local.sesionesDeCaja).get(), hasLength(1));
   });
 
   test('ServicioCompanionOffline: con "Solo celular" abre la caja sobre la base local', () async {

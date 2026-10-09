@@ -138,15 +138,19 @@ Future<void> cargarMontoDelMes(
   required String mesAnio,
   required int montoCentavos,
 }) {
-  final companion = GastosFijosMontosCompanion.insert(
-    gastoFijoId: gastoFijoId,
-    mesAnio: mesAnio,
-    montoCentavos: montoCentavos,
-  );
+  final ahora = DateTime.now();
   return db.into(db.gastosFijosMontos).insert(
-        companion,
+        GastosFijosMontosCompanion.insert(
+          gastoFijoId: gastoFijoId,
+          mesAnio: mesAnio,
+          montoCentavos: montoCentavos,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(ahora),
+        ),
+        // Al corregir el monto del mes se conserva la identidad de la fila (la que ya conocen los otros equipos).
         onConflict: DoUpdate(
-          (_) => companion,
+          (_) => GastosFijosMontosCompanion(montoCentavos: Value(montoCentavos), actualizadoEn: Value(ahora)),
           target: [db.gastosFijosMontos.gastoFijoId, db.gastosFijosMontos.mesAnio],
         ),
       );
@@ -155,11 +159,18 @@ Future<void> cargarMontoDelMes(
 /// Carga (o borra, con null) el día de vencimiento de un fijo. Vale para todos los meses.
 Future<void> configurarVencimiento(AppDatabase db, {required int gastoFijoId, required int? dia}) async {
   if (dia != null && (dia < 1 || dia > 31)) throw ArgumentError('El día tiene que ser del 1 al 31');
-  await (db.update(db.gastosFijos)..where((g) => g.id.equals(gastoFijoId))).write(GastosFijosCompanion(diaVencimiento: Value(dia)));
+  await (db.update(db.gastosFijos)..where((g) => g.id.equals(gastoFijoId))).write(GastosFijosCompanion(diaVencimiento: Value(dia), actualizadoEn: Value(DateTime.now())));
 }
 
 Future<int> crearConcepto(AppDatabase db, String nombre) {
-  return db.into(db.gastosFijos).insert(GastosFijosCompanion.insert(nombre: nombre));
+  return db.into(db.gastosFijos).insert(
+        GastosFijosCompanion.insert(
+          nombre: nombre,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
 }
 
 /// [pagadoConMp]: mismo criterio que el gasto rápido de venta — `cajaId`

@@ -92,6 +92,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
 - [Proveedores en el celular: un solo lugar, con alta y edición (El dueño, 2026-10-09)](#proveedores-en-el-celular-un-solo-lugar-con-alta-y-edición-el-dueño-2026-10-09)
 - [Clave de la IA por cuenta (El dueño, 2026-10-07)](#clave-de-la-ia-por-cuenta-el-dueño-2026-10-07-la-clave-es-por-cuenta)
+- [El rubro del comercio queda guardado (El dueño, 2026-10-09)](#el-rubro-del-comercio-queda-guardado-el-dueño-2026-10-09)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
 **Producto, instalación y publicación**
@@ -2295,4 +2296,44 @@ proveedor, Cargar factura). Ahora Más › **Proveedores** (`pantalla_proveedore
 - Sobre la base del celular, como la cuenta corriente: los proveedores ya se sincronizaban, así que el alta llega a la PC sola. El
   formulario de producto, con la PC conectada, lista los proveedores de la PC: uno recién creado en el celular aparece ahí cuando la sync
   lo lleva.
+
+## El rubro del comercio queda guardado (El dueño, 2026-10-09)
+
+Para el bot de WhatsApp (`docs/PLAN-BOT.md`): el dueño pidió que su cuenta "ya debería tener el rubro" y la revisión encontró que no
+estaba en ningún lado. El rubro solo servía para sembrar categorías al armar el negocio (`guardarNegocio`, `aplicarPlantillaRubro`).
+
+- **Una columna, `configuracion_negocio_tabla.rubro`** (migración v63), con la clave de `PlantillaRubro` (`kiosco`, `almacen`,
+  `fiambreria`, `otro`). Vacío = sin elegir. Viaja con esa fila por la sync.
+- **Un negocio viejo arranca sin elegir**: no se adivina por las categorías (el dueño puede haberlas cambiado). Se elige en el celular,
+  Configuración › Tu negocio.
+- **Elegirlo no carga categorías**: eso pasa solo al armar el negocio. Cambiar de rubro a un negocio que ya funciona no le agrega nada
+  que no pidió.
+- **Una clave desconocida se lee como sin elegir** (`rubroActual`): un equipo más viejo que recibe un rubro nuevo (por ejemplo los de
+  servicios, `docs/PLAN-SERVICIOS.md`) no se rompe.
+- **Un equipo sin actualizar no lo borra**: manda la fila sin la columna y la sync solo actualiza las columnas que llegan (probado en
+  `sync_configuracion_negocio_test.dart`). Con una PC sin actualizar, guardar el rubro desde el celular avisa que hay que actualizarla
+  (la ruta nueva da 404).
+
+## Pedidos del bot de WhatsApp en el celular (El dueño, 2026-10-09)
+
+Etapa 4 de `docs/PLAN-BOT.md`. Aceptar un pedido es tocar dos lugares (la base del negocio y el sitio), y eso decidió el orden:
+
+- **Primero se aparta, después se avisa.** Si se avisara primero, un "no alcanza el stock" al apartar dejaría al cliente con un
+  "confirmado" que no es. El stock se revisa entero antes (`apartadosDePedido`, dominio) para nombrar TODO lo que falta, no solo lo
+  primero que rechazaría `crearEncargue`; si igual se vendió en el medio, el 409 de apartar se muestra como faltante.
+- **Entre apartar y avisar, el pedido queda anotado en el celular** (`RegistroPedidosBotPrefs`, pedido → encargue). Si avisar falla
+  (sin internet), el botón pasa a "Avisar al cliente" y el reintento no aparta de nuevo. Un pedido ya apartado no se deja rechazar
+  (el cliente quedaría con un "no" y la mercadería apartada).
+- **"Ya resuelto" no cancela el encargue solo.** El sitio contesta lo mismo si otro equipo lo resolvió antes (encargue repetido) que si
+  el aviso de este equipo llegó y la respuesta se perdió (encargue bueno): no hay forma de distinguirlos, así que se avisa y se revisa a
+  mano.
+- **El producto vuelve por su `global_id`** (el id local cambia entre equipos). La PC lo manda ahora en `/productos`; si todos los
+  productos llegan sin él, es una PC vieja y se pide actualizarla en vez de adivinar por nombre.
+- **Un pesable se pide por kilo**: el bot lo ofrece "por kg" con el precio por kilo y le confirma al cliente "2 × Queso (por kg)", así
+  que 2 son 2000 g.
+- **Sin el bot, Encargues no cambia**: sin plan, sin cuenta vinculada o sin internet la sección no aparece; nunca muestra un error.
+- **La pantalla del bot no carga nombre ni rubro** (Regla 3): salen de Configuración. El nombre del comercio viajaba solo en la PC;
+  ahora `/configuracion` lo manda al celular y **se carga también en Configuración › Tu negocio del celular** (El dueño, 2026-10-09,
+  eligió eso antes que pedirlo en la pantalla del bot: un solo lugar para el dato). Vacío no se guarda: un campo en blanco no borra el
+  nombre que ya había. Con una PC sin actualizar, guardarlo avisa que hay que actualizarla (la ruta nueva da 404).
 

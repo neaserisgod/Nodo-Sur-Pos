@@ -444,6 +444,21 @@ void main() {
       expect(despues.recargoSueltoCentavos, 6000);
     });
 
+    test('rubro (v63): arranca sin elegir, actualizarRubro lo guarda, y un rubro que no existe no se guarda', () async {
+      expect((await puerto.configuracionNegocio()).rubro, isNull);
+      await puerto.actualizarRubro('almacen');
+      expect((await puerto.configuracionNegocio()).rubro, 'almacen');
+      await expectLater(() => puerto.actualizarRubro('nave_espacial'), throwsFormatException);
+      expect((await puerto.configuracionNegocio()).rubro, 'almacen');
+    });
+
+    test('nombre del comercio: actualizarNombreComercio lo guarda; vacío no borra el que había', () async {
+      await puerto.actualizarNombreComercio('  Almacén Don Pepe ');
+      expect((await puerto.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+      expect(() => puerto.actualizarNombreComercio(' '), throwsArgumentError);
+      expect((await puerto.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+    });
+
     test('actualizarMarkupCategoria cambia solo esa categoría', () async {
       final categoria = (await puerto.categorias()).first;
       await puerto.actualizarMarkupCategoria(categoria.id, 8000);

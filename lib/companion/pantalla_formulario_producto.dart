@@ -9,13 +9,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/repositorio_productos.dart' show crearCategoria;
 import '../domain/dinero.dart';
 import '../domain/ganancia.dart';
+import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'escanear_codigo.dart';
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
+import 'pantalla_formulario_proveedor.dart';
 import 'servicio_companion.dart';
 
 /// Abre la página de alta o edición. Devuelve `true` si se guardó algo.
@@ -91,6 +94,49 @@ class PantallaFormularioProducto extends StatefulWidget {
 
 class _PantallaFormularioProductoState extends State<PantallaFormularioProducto> {
   static final _soloNumeros = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
+
+  late List<ProveedorCompanion> _proveedores = widget.proveedores;
+  late List<CategoriaCompanion> _categorias = widget.categorias;
+
+  /// "+ Nuevo" proveedor o categoría sin salir del formulario (El dueño, 2026-10-09: independizar el celular). Solo sobre la
+  /// base del celular: con la PC conectada el producto se guarda en la PC con sus `id`, y lo recién creado en el celular no
+  /// existe ahí hasta que la sync lo lleva.
+  bool get _sobreBaseLocal => widget.cliente is! ClienteCompanion;
+
+  Future<void> _nuevoProveedor() async {
+    final id = await abrirFormularioProveedor(context, db: baseLocalCompanion());
+    if (id == null) return;
+    final lista = await widget.cliente.proveedores();
+    if (!mounted) return;
+    setState(() {
+      _proveedores = lista;
+      _proveedorId = id;
+      _sucio = true;
+    });
+  }
+
+  Future<void> _nuevaCategoria() async {
+    final nombre = TextEditingController();
+    final creada = await mostrarHojaNs<String>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Nueva categoría',
+        bloques: [CampoNs(etiqueta: 'Nombre', controller: nombre, placeholder: 'Ej: Limpieza', autofoco: true)],
+        botones: [BotonNs.primario(ctx, 'Crear', () => Navigator.of(ctx).pop(nombre.text.trim()))],
+      ),
+    );
+    if (creada == null || creada.isEmpty || !mounted) return;
+    final db = baseLocalCompanion();
+    final existente = (await db.select(db.categorias).get()).where((c) => c.nombre.trim().toLowerCase() == creada.toLowerCase()).firstOrNull;
+    final id = existente?.id ?? await crearCategoria(db, creada);
+    final lista = await widget.cliente.categorias();
+    if (!mounted) return;
+    setState(() {
+      _categorias = lista;
+      _categoriaId = id;
+      _sucio = true;
+    });
+  }
 
   late final _nombre = TextEditingController(text: widget.producto?.nombre ?? widget.desdeFactura?.nombre ?? '');
   late final _codigo = TextEditingController(text: widget.producto?.codigoBarras ?? widget.codigoInicial ?? widget.desdeFactura?.codigoBarras ?? '');
@@ -348,23 +394,25 @@ class _PantallaFormularioProductoState extends State<PantallaFormularioProducto>
                         const SizedBox(height: 10),
                         _FilaOpciones(
                           etiqueta: 'Categoría',
-                          opciones: [('Sin categoría', null), for (final c in widget.categorias) (c.nombre, c.id)],
+                          opciones: [('Sin categoría', null), for (final c in _categorias) (c.nombre, c.id)],
                           elegida: _categoriaId,
                           onElegir: (v) => setState(() {
                             _categoriaId = v;
                             _sucio = true;
                           }),
                         ),
+                        if (_sobreBaseLocal) Align(alignment: Alignment.centerLeft, child: BotonNs.texto(context, '+ Nueva categoría', _nuevaCategoria)),
                         const SizedBox(height: 14),
                         _FilaOpciones(
                           etiqueta: 'Proveedor',
-                          opciones: [('Sin proveedor', null), for (final p in widget.proveedores) (p.nombre, p.id)],
+                          opciones: [('Sin proveedor', null), for (final p in _proveedores) (p.nombre, p.id)],
                           elegida: _proveedorId,
                           onElegir: (v) => setState(() {
                             _proveedorId = v;
                             _sucio = true;
                           }),
                         ),
+                        if (_sobreBaseLocal) Align(alignment: Alignment.centerLeft, child: BotonNs.texto(context, '+ Nuevo proveedor', _nuevoProveedor)),
                         const SizedBox(height: 14),
                         InterruptorNs(
                           etiqueta: 'Activo',

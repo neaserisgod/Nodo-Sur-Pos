@@ -22,6 +22,7 @@ import '../data/repositorio_carga_historica.dart' as repo_carga_historica;
 import '../data/repositorio_cierre.dart' as repo_cierre;
 import '../data/repositorio_cobro.dart' as repo_cobro;
 import '../data/repositorio_configuracion.dart' as repo_configuracion;
+import '../domain/plantillas_rubro.dart';
 import '../data/repositorio_deuda_proveedores.dart' as repo_deuda;
 import '../data/repositorio_edicion_venta.dart' as repo_edicion_venta;
 import '../data/repositorio_encargues.dart' as repo_encargues;
@@ -33,6 +34,9 @@ import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
 import '../data/repositorio_promos.dart' as repo_promos;
 import '../data/repositorio_ticket.dart' as repo_ticket;
+import '../data/repositorio_faltantes.dart' as repo_faltantes;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../data/repositorio_usuarios.dart' as repo_usuarios;
 import '../data/repositorio_pendientes.dart' as repo_pendientes;
 import '../data/repositorio_ventas.dart' as repo_ventas;
@@ -44,6 +48,8 @@ import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/medio_pago.dart' show ComposicionPago, composicionPagoDesdeTexto;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta, Venta;
 import '../data/cobro_posnet.dart' show PasarelaPoint;
+import '../servicios/impresion_posnet_nube.dart' show imprimirTicketPosnet;
+import '../servicios/marca_actual.dart' show marcaDeBase;
 import '../servicios/pasarela_point_nube.dart';
 import 'cliente_companion.dart';
 import 'servicio_companion.dart';
@@ -70,6 +76,7 @@ ProductoCompanion _productoDesdeFila(Producto p) => ProductoCompanion(
   stockGramos: p.stockGramos,
   activo: p.activo,
   tipoCigarrillo: p.tipoCigarrillo,
+  globalId: p.globalId,
 );
 
 /// Mismo mapeo, campo por campo, que `_resumenDiaAJson` en
@@ -170,7 +177,14 @@ class PuertoLocal implements ServicioCompanion {
     final lista = await repo_encargues.listarEnarguesPendientes(db);
     return [
       for (final e in lista)
-        EncargueCompanion(id: e.id, nombreCliente: e.nombreCliente, desde: e.desde, lineas: [for (final l in e.lineas) l.texto]),
+        EncargueCompanion(
+          id: e.id,
+          nombreCliente: e.nombreCliente,
+          desde: e.desde,
+          lineas: [for (final l in e.lineas) l.texto],
+          senaCentavos: e.senaCentavos,
+          totalHoyCentavos: await _totalHoy(e.id),
+        ),
     ];
   }
 
@@ -179,6 +193,8 @@ class PuertoLocal implements ServicioCompanion {
     required String nombreCliente,
     required List<ApartadoCompanion> lineas,
     required int usuarioId,
+    int senaCentavos = 0,
+    bool senaEsEfectivo = true,
   }) async {
     try {
       return await repo_encargues.crearEncargueApartando(
@@ -189,6 +205,10 @@ class PuertoLocal implements ServicioCompanion {
             repo_encargues.LineaEncargueNueva(productoId: l.productoId, cantidad: l.cantidad, gramos: l.gramos),
         ],
         usuarioId: usuarioId,
+        // La seña entra a la caja abierta de esta base, como en la PC (El dueño, 2026-10-09: independizar el celular).
+        senaCentavos: senaCentavos,
+        senaEsEfectivo: senaEsEfectivo,
+        sesionCajaId: senaCentavos > 0 ? (await repo_ventas.sesionAbierta(db))?.id : null,
       );
     } on repo_encargues.EncargueSinStock catch (e) {
       throw ErrorCompanion(409, 'No alcanza el stock de ${e.nombreProducto}.');
@@ -198,8 +218,14 @@ class PuertoLocal implements ServicioCompanion {
   }
 
   @override
-  Future<void> cancelarEncargue(int id, {required int usuarioId}) =>
-      repo_encargues.cancelarEncargue(db, id, usuarioId: usuarioId);
+  Future<void> cancelarEncargue(int id, {required int usuarioId}) async {
+    try {
+      // Con seña, la devolución sale de la caja abierta de esta base, como en la PC.
+      await repo_encargues.cancelarEncargue(db, id, usuarioId: usuarioId, sesionCajaId: (await repo_ventas.sesionAbierta(db))?.id);
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
 
   @override
   Future<List<LineaVenta>> lineasDeEncargue(int id) => repo_encargues.lineasParaEntregar(db, id);
@@ -260,6 +286,8 @@ class PuertoLocal implements ServicioCompanion {
       recargoSueltoCentavos: c.recargoSueltoCentavos,
       pasoRedondeoCentavos: c.pasoRedondeoCentavos,
       productoVueltoId: c.productoVueltoId,
+      rubro: c.rubro.isEmpty ? null : c.rubro,
+      nombreComercio: c.nombreComercio,
     );
   }
 
@@ -282,6 +310,19 @@ class PuertoLocal implements ServicioCompanion {
   @override
   Future<void> actualizarProductoVuelto(int? productoId) =>
       repo_configuracion.configurarProductoVuelto(db, productoId);
+
+  @override
+  Future<void> actualizarRubro(String clave) {
+    final rubro = PlantillaRubro.desdeClave(clave);
+    if (rubro == null) throw FormatException('No existe el rubro "$clave"');
+    return repo_configuracion.configurarRubro(db, rubro);
+  }
+
+  @override
+  Future<void> actualizarNombreComercio(String nombre) {
+    if (nombre.trim().isEmpty) throw ArgumentError('El nombre del comercio no puede quedar vacío.');
+    return repo_configuracion.configurarNombreComercio(db, nombre);
+  }
 
   @override
   Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp) =>
@@ -1163,6 +1204,65 @@ class PuertoLocal implements ServicioCompanion {
   /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
   /// de Mercado Pago que el negocio conectó (el token nunca baja al celular). Sin cuenta vinculada, o con el negocio sin
   /// conectar o sin terminal elegida, se dice qué falta (`servicios/pasarela_point_nube.dart`).
+  /// Null si no se puede valorizar (un producto apartado sin precio, o borrado): el encargue se muestra igual.
+  Future<int?> _totalHoy(int encargueId) async {
+    try {
+      return await repo_encargues.totalHoyDeEncargue(db, encargueId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante() async {
+    final umbral = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
+    final fijos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
+    return (umbralCentavos: umbral, fijos: [for (final f in fijos) (id: f.id, nombre: f.nombre)]);
+  }
+
+  @override
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
+    String? nota,
+  }) async {
+    final sesion = await repo_ventas.sesionAbierta(db);
+    if (sesion == null) throw const ErrorCompanion(409, 'No hay caja abierta');
+    try {
+      await repo_faltantes.anotarFaltante(
+        db,
+        sesionCajaId: sesion.id,
+        usuarioId: usuarioId,
+        caja: caja,
+        montoCentavos: montoCentavos,
+        destino: destino,
+        proveedorId: proveedorId,
+        gastoFijoId: gastoFijoId,
+        nota: nota,
+      );
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
+
+  /// Imprime el ticket de una venta de esta base en la terminal Point, por el servidor de Nodo Sur con el Mercado Pago del
+  /// negocio (El dueño, 2026-10-09: independizar el celular). Antes solo se podía con la PC, que imprime por el mismo camino.
+  /// Las ventas cobradas por la PC (con el celular conectado a ella) se siguen imprimiendo por la PC: su id es el de esa base.
+  Future<void> imprimirTicket(int ventaId) async {
+    final sync = await syncNubeDelCelular();
+    await imprimirTicketPosnet(
+      ticket: await repo_ticket.ticketDeVenta(db, ventaId),
+      encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
+      forzarNube: true,
+      almacen: sync.almacen,
+      cliente: sync.cliente,
+    );
+  }
+
   Future<PasarelaPoint> _pasarela() async {
     final inyectada = pasarelaDePrueba;
     if (inyectada != null) return inyectada();

@@ -61,6 +61,13 @@ class ConfiguracionNegocioTabla extends Table {
   /// apagados para que un módulo nuevo nazca activo sin migración.
   TextColumn get modulosDesactivados => text().withDefault(const Constant(''))();
 
+  /// Rubro del comercio, la clave de `PlantillaRubro` (`domain/plantillas_rubro.dart`): `almacen`, `kiosco`… Vacío = sin
+  /// elegir. Hasta la v63 el rubro solo servía para sembrar categorías y no quedaba guardado en ningún lado; ahora se guarda
+  /// porque lo necesita el bot de WhatsApp para saber cómo hablar y qué hacer (El dueño, 2026-10-09, `docs/PLAN-BOT.md`).
+  /// Viaja con esta fila por la sync; un equipo sin actualizar la recibe sin esta columna y no la pisa (solo actualiza las
+  /// columnas que trae).
+  TextColumn get rubro => text().withDefault(const Constant(''))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

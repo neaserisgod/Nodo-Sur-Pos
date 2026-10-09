@@ -5,6 +5,7 @@
 // queda ahí, y de ahí sale hacia la nube; lo que llega de otros dispositivos entra ahí y las pantallas se
 // refrescan con el mismo aviso que usa la sync por wifi.
 
+import '../servicios/catalogo_bot_nube.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -16,6 +17,7 @@ import '../data/database.dart';
 import '../data/repositorio_sincronizacion.dart' show tablasSincronizables;
 import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
+import '../servicios/avisos_mp_servicio.dart';
 import 'base_local.dart';
 import 'cambios_companion.dart';
 import 'conmutador_sync.dart';
@@ -82,6 +84,8 @@ SyncNubeCompanion armarSyncNubeCompanion({
     cliente: cliente,
     almacenEstado: almacenEstado,
     alAplicarBajada: avisarCambiosCompanion,
+    // Cuando el celular sube a la nube (sin PC), publica también el catálogo del bot de WhatsApp (si el negocio lo tiene).
+    alTerminarVuelta: PublicadorCatalogoBot(db: db, cliente: cliente).publicarSiHaceFalta,
   );
   final conmutador = ConmutadorSync(
     hayCuenta: () async => await almacen.leer() != null,
@@ -125,3 +129,14 @@ Future<SyncNubeCompanion> syncNubeDelCelular() async {
 
 /// Nombre con el que este celular aparece en "Mis dispositivos" del sitio.
 String nombreDelCelular() => 'Celular (${Platform.operatingSystem})';
+
+/// Avisos de Mercado Pago del celular (El dueño, 2026-10-09: independizar el celular): el mismo servicio de la PC, sobre la base
+/// del celular y con su cuenta vinculada. Se arma una sola vez.
+ServicioAvisosMp? avisosMpCompanion;
+
+Future<ServicioAvisosMp> avisosMpDelCelular() async {
+  final existente = avisosMpCompanion;
+  if (existente != null) return existente;
+  final sync = await syncNubeDelCelular();
+  return avisosMpCompanion ??= ServicioAvisosMp(db: baseLocalCompanion(), almacen: sync.almacen, cliente: sync.cliente);
+}

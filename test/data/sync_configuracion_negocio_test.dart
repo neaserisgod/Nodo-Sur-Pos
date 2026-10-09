@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/data/repositorio_sincronizacion.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 const _tabla = 'configuracion_negocio_tabla';
@@ -62,6 +63,33 @@ void main() {
     await _pasar(pc, celular);
     expect((await configuracionNegocioActual(celular)).nombreComercio, 'Almacén Ana');
     expect(await celular.select(celular.configuracionNegocioTabla).get(), hasLength(1));
+  });
+
+  test('el rubro viaja con la configuración (v63)', () async {
+    final pc = AppDatabase(NativeDatabase.memory());
+    final celular = await _celularConConfiguracionPropia();
+    addTearDown(pc.close);
+    addTearDown(celular.close);
+    await Future<void>.delayed(const Duration(milliseconds: 1100)); // `actualizado_en` guarda segundos
+    await configurarRubro(pc, PlantillaRubro.almacen);
+    await _pasar(pc, celular);
+    expect(await rubroActual(celular), PlantillaRubro.almacen);
+  });
+
+  test('un equipo sin actualizar (sin la columna rubro) que edita otra cosa no le borra el rubro al que sí lo tiene', () async {
+    final pc = AppDatabase(NativeDatabase.memory());
+    final celular = await _celularConConfiguracionPropia();
+    addTearDown(pc.close);
+    addTearDown(celular.close);
+    await configurarRubro(celular, PlantillaRubro.almacen);
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    await configurarNombreComercio(pc, 'Almacén Ana');
+    // Lo que manda una versión anterior a la v63: la misma fila, sin la columna.
+    final filas = [for (final f in await cambiosDesde(pc, tabla: _tabla, desde: 0)) Map<String, dynamic>.from(f)..remove('rubro')];
+    expect(await aplicarCambios(celular, tabla: _tabla, filas: filas), isEmpty);
+    final config = await configuracionNegocioActual(celular);
+    expect(config.nombreComercio, 'Almacén Ana');
+    expect(config.rubro, 'almacen');
   });
 
   test('una configuración vieja que llega tarde no pisa la más nueva', () async {

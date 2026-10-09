@@ -12,6 +12,12 @@ class GastosFijos extends Table {
   /// Día del mes en que vence (1–31; en un mes más corto vence el último día). Null = sin fecha cargada. Es fijo como
   /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
   IntColumn get diaVencimiento => integer().nullable()();
+
+  /// Identidad de sincronización (v64, El dueño, 2026-10-09: independizar el celular): los fijos se cargan desde la PC o el
+  /// celular y viajan entre los dos. Antes eran locales de cada equipo.
+  TextColumn get globalId => text().nullable()();
+  TextColumn get origenDispositivo => text().nullable()();
+  DateTimeColumn get actualizadoEn => dateTime().nullable()();
 }
 
 @DataClassName('GastoFijoMonto')
@@ -22,6 +28,11 @@ class GastosFijosMontos extends Table {
   /// "YYYY-MM".
   TextColumn get mesAnio => text().withLength(min: 7, max: 7)();
   IntColumn get montoCentavos => integer()();
+
+  /// Ver [GastosFijos.globalId]: el monto de cada mes también viaja (gana el más nuevo).
+  TextColumn get globalId => text().nullable()();
+  TextColumn get origenDispositivo => text().nullable()();
+  DateTimeColumn get actualizadoEn => dateTime().nullable()();
 
   @override
   List<Set<Column>> get uniqueKeys => [

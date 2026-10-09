@@ -15,7 +15,7 @@ import 'servicio_companion.dart';
 
 /// Lo que hay para hacer, calculado de los datos reales (docs/02 §3.8).
 class PendientesNs {
-  const PendientesNs({this.faltaSepararCentavos = 0, this.proveedoresPendientes = 0, this.proveedoresTotal = 0, this.sinStock = 0, this.hayActualizacion = false, this.arqueoVencido = false, this.minutosDesdeConteo = 0});
+  const PendientesNs({this.faltaSepararCentavos = 0, this.proveedoresPendientes = 0, this.proveedoresTotal = 0, this.sinStock = 0, this.hayActualizacion = false, this.arqueoVencido = false, this.minutosDesdeConteo = 0, this.avisosMp = 0});
 
   /// Plata del día que todavía no se separó para proveedores.
   final int faltaSepararCentavos;
@@ -30,11 +30,14 @@ class PendientesNs {
   /// Cuánto hace del último conteo (o de la apertura): "Hace 2 h 15 min".
   final int minutosDesdeConteo;
 
+  /// Avisos de Mercado Pago sin ver (cobros sin venta, contracargos, reclamos). Solo sin la PC: con PC los muestra la PC.
+  final int avisosMp;
+
   int get proveedoresSeparados => proveedoresTotal - proveedoresPendientes;
   bool get haySeparar => proveedoresPendientes > 0;
 
   /// Cuántos pendientes vigentes marca la campana.
-  int get cantidad => (haySeparar ? 1 : 0) + (sinStock > 0 ? 1 : 0) + (hayActualizacion ? 1 : 0) + (arqueoVencido ? 1 : 0);
+  int get cantidad => (haySeparar ? 1 : 0) + (sinStock > 0 ? 1 : 0) + (hayActualizacion ? 1 : 0) + (arqueoVencido ? 1 : 0) + avisosMp;
 }
 
 /// Cifras del día (Inicio y Resumen de Caja), leídas de la base local.

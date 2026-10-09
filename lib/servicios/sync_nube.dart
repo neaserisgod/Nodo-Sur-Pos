@@ -161,6 +161,7 @@ class ServicioSyncNube {
     required this.cliente,
     required this.almacenEstado,
     this.alAplicarBajada,
+    this.alTerminarVuelta,
   });
 
   final AppDatabase db;
@@ -170,6 +171,10 @@ class ServicioSyncNube {
 
   /// Se llama cuando se aplicó algo que vino de otro dispositivo, para que las pantallas se refresquen.
   final void Function()? alAplicarBajada;
+
+  /// Al terminar bien cada vuelta, con el token de la cuenta: lo que tiene que hacer el equipo que sube a la nube (hoy, publicar
+  /// el catálogo del bot de WhatsApp). Lo que falle ahí no hace fallar la sync.
+  final Future<void> Function(String token)? alTerminarVuelta;
 
   /// Último resultado: lo que muestra la pantalla de dispositivos ("sin conexión", "al día").
   ResultadoSyncNube? get ultimo => _ultimo;
@@ -229,6 +234,11 @@ class ServicioSyncNube {
       if (estado.necesitaCopia) return const SyncNubeExpirada();
       final subidas = await _subir(cuenta.token, estado);
       if (bajadas > 0) alAplicarBajada?.call();
+      try {
+        await alTerminarVuelta?.call(cuenta.token);
+      } catch (_) {
+        // no frena la sync
+      }
       return SyncNubeOk(bajadas: bajadas, subidas: subidas);
     } on ErrorNube catch (e) {
       return SyncNubeFallida(e.mensaje, pideVincular: e.pideVincularDeNuevo, sinRed: e.codigo == 'sin_red');

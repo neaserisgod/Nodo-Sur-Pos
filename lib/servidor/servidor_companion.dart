@@ -61,8 +61,11 @@ import '../data/repositorio_cierre.dart'
 import '../data/repositorio_cobro.dart';
 import '../data/repositorio_deuda_proveedores.dart';
 import '../data/repositorio_configuracion.dart';
+import '../domain/plantillas_rubro.dart';
 import '../data/repositorio_edicion_venta.dart';
+import '../data/repositorio_faltantes.dart';
 import '../data/repositorio_gastos.dart';
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../data/repositorio_historial.dart' show listarDias;
 import '../data/repositorio_ingresos.dart';
 import '../data/repositorio_historial_ventas.dart';
@@ -198,6 +201,8 @@ Map<String, dynamic> _productoAJson(Producto p) => {
   'stock': p.stock,
   'stockGramos': p.stockGramos,
   'activo': p.activo,
+  // Para el pedido del bot de WhatsApp, que nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+  'globalId': p.globalId,
 };
 
 /// Dónde queda el rastro de un 500 real — al lado de la base y del `.apk`
@@ -464,6 +469,14 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // ─── Encargues por apartado (El dueño, 2026-10-02) ───────────────────
   router.get('/encargues', (Request request) async {
     final lista = await listarEnarguesPendientes(db);
+    Future<int?> totalHoy(int id) async {
+      try {
+        return await totalHoyDeEncargue(db, id);
+      } catch (_) {
+        return null;
+      }
+    }
+
     return _json([
       for (final e in lista)
         {
@@ -471,8 +484,9 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'nombreCliente': e.nombreCliente,
           'desdeMs': e.desde.millisecondsSinceEpoch,
           'lineas': [for (final l in e.lineas) l.texto],
-          // La seña se entrega y se cancela desde la PC (toca la caja): el celular solo la muestra.
           'senaCentavos': e.senaCentavos,
+          // Cuánto sale hoy (El dueño, 2026-10-09: el celular no mostraba precios en los encargues).
+          'totalHoyCentavos': ?await totalHoy(e.id),
         },
     ]);
   });
@@ -492,6 +506,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
             ),
         ],
         usuarioId: _intRequerido(body, 'usuarioId'),
+        // Seña desde el celular (El dueño, 2026-10-09): entra a la caja abierta de la PC. Un celular viejo no la manda.
+        senaCentavos: body['senaCentavos'] as int? ?? 0,
+        senaEsEfectivo: body['senaEsEfectivo'] as bool? ?? true,
+        sesionCajaId: (await sesionAbierta(db))?.id,
       );
       return _json({'id': id}, status: 201);
     } on EncargueSinStock catch (e) {
@@ -503,11 +521,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
 
   router.post('/encargues/<id>/cancelar', (Request request, String id) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    // Un encargue con seña vuelve plata por la caja: se cancela desde la PC, donde está la caja abierta.
-    if ((await senaPendienteDe(db, int.parse(id))).centavos > 0) {
-      return _error(409, 'Este encargue tiene una seña: cancelalo desde la PC para devolverla.');
+    // Con seña, la devolución sale de la caja abierta de la PC (antes solo se podía cancelar desde la PC).
+    try {
+      await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'), sesionCajaId: (await sesionAbierta(db))?.id);
+    } on ArgumentError catch (e) {
+      return _error(409, '${e.message}');
     }
-    await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
     return _json({'ok': true});
   });
 
@@ -702,6 +721,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       'recargoSueltoCentavos': c.recargoSueltoCentavos,
       'pasoRedondeoCentavos': c.pasoRedondeoCentavos,
       'productoVueltoId': ?c.productoVueltoId,
+      // v63: sin elegir se omite, como un null.
+      'rubro': ?(c.rubro.isEmpty ? null : c.rubro),
+      // El bot de WhatsApp se presenta con este nombre (docs/PLAN-BOT.md).
+      'nombreComercio': c.nombreComercio,
     });
   });
 
@@ -721,6 +744,27 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     await configurarPasoRedondeo(db, _intRequerido(body, 'montoCentavos'));
+    return _json({'ok': true});
+  });
+
+  // Rubro del comercio (v63), para el bot de WhatsApp (`docs/PLAN-BOT.md`). Un rubro que no existe es un 400.
+  router.put('/configuracion/rubro', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final clave = body['rubro'];
+    final rubro = clave is String ? PlantillaRubro.desdeClave(clave) : null;
+    if (rubro == null) throw FormatException('No existe el rubro "$clave"');
+    await configurarRubro(db, rubro);
+    return _json({'ok': true});
+  });
+
+  // Nombre del comercio, para que un negocio que usa el celular también lo pueda cargar (el bot se presenta con él).
+  router.put('/configuracion/nombre-comercio', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final nombre = body['nombre'];
+    if (nombre is! String || nombre.trim().isEmpty) throw const FormatException('El nombre del comercio no puede quedar vacío');
+    await configurarNombreComercio(db, nombre);
     return _json({'ok': true});
   });
 
@@ -1163,6 +1207,42 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       // El dueño, 2026-09-19: "aislar los usuarios para que no se pisen" — se
       // cerró desde otro lado entre el último /calcular y este /confirmar.
       return _error(409, 'La caja ya se cerró desde otro lado mientras tanto');
+    }
+  });
+
+  // "¿A dónde fue esta plata?" desde el celular (El dueño, 2026-10-09: independizar el celular). Mismo `anotarFaltante` que
+  // el cierre de la PC, sobre la caja abierta.
+  router.get('/cierre/faltantes', (Request request) async {
+    final umbral = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;
+    final fijos = await (db.select(db.gastosFijos)..where((g) => g.activo.equals(true))).get();
+    return _json({
+      'umbralCentavos': umbral,
+      'fijos': [for (final f in fijos) {'id': f.id, 'nombre': f.nombre}],
+    });
+  });
+
+  router.post('/cierre/faltantes', (Request request) async {
+    final sesion = await sesionAbierta(db);
+    if (sesion == null) return _error(409, 'No hay caja abierta');
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final caja = CajaDelCierre.values.where((c) => c.name == body['caja']).firstOrNull;
+    final destino = DestinoFaltante.values.where((d) => d.name == body['destino']).firstOrNull;
+    if (caja == null || destino == null) return _error(400, 'Caja o destino inválido');
+    try {
+      await anotarFaltante(
+        db,
+        sesionCajaId: sesion.id,
+        usuarioId: _intRequerido(body, 'usuarioId'),
+        caja: caja,
+        montoCentavos: _intRequerido(body, 'montoCentavos'),
+        destino: destino,
+        proveedorId: body['proveedorId'] as int?,
+        gastoFijoId: body['gastoFijoId'] as int?,
+        nota: body['nota'] as String?,
+      );
+      return _json({'ok': true});
+    } on ArgumentError catch (e) {
+      return _error(400, '${e.message}');
     }
   });
 

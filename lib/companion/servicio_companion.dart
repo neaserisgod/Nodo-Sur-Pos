@@ -25,6 +25,8 @@ import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
+import '../data/repositorio_faltantes.dart' show DestinoFaltante;
+import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import 'cliente_companion.dart';
 import '../servicios/devolucion_mp.dart' show CobroPoint;
 
@@ -38,7 +40,8 @@ abstract class ServicioCompanion {
   Future<List<EncargueCompanion>> encargues();
 
   /// Aparta lo pedido (baja el stock). Tira [ErrorCompanion] si no alcanza o falta algún dato.
-  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId});
+  /// Con [senaCentavos] > 0 el cliente deja una seña: entra a la caja abierta (cajón si [senaEsEfectivo], Mercado Pago si no).
+  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId, int senaCentavos = 0, bool senaEsEfectivo = true});
 
   /// Devuelve lo apartado al stock. Cancelar uno ya entregado o ya cancelado no hace nada.
   Future<void> cancelarEncargue(int id, {required int usuarioId});
@@ -76,6 +79,14 @@ abstract class ServicioCompanion {
   Future<void> actualizarPasoRedondeo(int montoCentavos);
 
   Future<void> actualizarProductoVuelto(int? productoId);
+
+  /// Rubro del comercio (v63), por su clave (`PlantillaRubro.clave`). Lo usa el bot de WhatsApp (`docs/PLAN-BOT.md`).
+  /// Una clave que no existe es un `FormatException` (sin PC) o un 400 (con PC), y no se guarda.
+  Future<void> actualizarRubro(String clave);
+
+  /// Nombre del comercio (con el que se presenta el bot de WhatsApp, y el del ticket). Vacío es un `ArgumentError` (sin PC)
+  /// o un 400 (con PC): no se borra el nombre por un campo que quedó en blanco.
+  Future<void> actualizarNombreComercio(String nombre);
 
   /// Markup de referencia (Regla 14, puramente informativo) — nunca crea
   /// una categoría nueva, solo edita el % de una que ya existe.
@@ -241,6 +252,21 @@ abstract class ServicioCompanion {
     required int efectivoContadoCentavos,
     required int mpContadoCentavos,
     required int lataContadoCentavos,
+    String? nota,
+  });
+
+  /// "¿A dónde fue esta plata?" del cierre (REGLAS-NEGOCIO, "Faltantes del cierre"; en el celular desde el 2026-10-09): desde
+  /// cuánto faltante se pregunta y los fijos que se pueden marcar pagados. Null si no se puede preguntar (una PC sin actualizar).
+  Future<OpcionesFaltanteCompanion?> opcionesFaltante();
+
+  /// Anota a dónde fue [montoCentavos] que falta en [caja], en la caja abierta (`anotarFaltante` de la PC).
+  Future<void> anotarFaltante({
+    required int usuarioId,
+    required CajaDelCierre caja,
+    required int montoCentavos,
+    required DestinoFaltante destino,
+    int? proveedorId,
+    int? gastoFijoId,
     String? nota,
   });
 
@@ -427,3 +453,6 @@ abstract class ServicioCompanion {
     String? claveCobro,
   });
 }
+
+/// Ver [ServicioCompanion.opcionesFaltante].
+typedef OpcionesFaltanteCompanion = ({int umbralCentavos, List<({int id, String nombre})> fijos});

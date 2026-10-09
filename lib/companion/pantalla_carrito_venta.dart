@@ -35,6 +35,7 @@ import 'escanear_codigo.dart';
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
+import 'puerto_local.dart';
 import 'servicio_companion.dart';
 
 /// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
@@ -120,6 +121,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// última venta.
   bool _cobradoAMano = false;
   String? _encargueEntregado;
+
+  /// La última venta se grabó en la base de la PC (el celular estaba conectado a ella): su ticket se imprime por la PC.
+  bool _cobradoEnPc = false;
 
   final _busquedaCtrl = TextEditingController();
   final _busquedaFocus = FocusNode();
@@ -800,6 +804,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     widget.carrito.clear();
     _valorDescuento = 0;
     _cobradoAMano = aMano;
+    _cobradoEnPc = widget.servicio is ClienteCompanion;
     _encargueEntregado = _encargueNombre;
     _encargue.value = null;
     if (!mounted) return;
@@ -817,13 +822,19 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _imprimirTicket(int ventaId) async {
+    // Sale por donde se cobró: una venta grabada en la PC tiene el id de la base de la PC; una del celular (sin la PC, o
+    // con la PC apagada) se imprime desde el celular por el servidor de Nodo Sur.
     final cliente = widget.cliente;
-    if (cliente == null || AppNs.of(context).sinConexion) {
-      mostrarAvisoNs(context, 'Para imprimir hace falta estar conectado a la PC');
+    if (_cobradoEnPc && (cliente == null || AppNs.of(context).sinConexion)) {
+      mostrarAvisoNs(context, 'Esta venta se cobró en la PC: para imprimirla hace falta estar conectado a ella');
       return;
     }
     try {
-      await cliente.imprimirTicket(ventaId);
+      if (_cobradoEnPc) {
+        await cliente!.imprimirTicket(ventaId);
+      } else {
+        await PuertoLocal(baseLocalCompanion()).imprimirTicket(ventaId);
+      }
       if (mounted) mostrarAvisoNs(context, 'Ticket enviado a la impresora');
     } catch (e) {
       if (mounted) mostrarAvisoNs(context, 'No se pudo imprimir: ${mensajeDeError(e)}', largo: true);
