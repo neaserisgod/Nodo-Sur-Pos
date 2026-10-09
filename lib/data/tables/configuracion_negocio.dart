@@ -68,6 +68,10 @@ class ConfiguracionNegocioTabla extends Table {
   /// columnas que trae).
   TextColumn get rubro => text().withDefault(const Constant(''))();
 
+  /// Lo que vale una hora de trabajo, para sumar la mano de obra al costo de un servicio (v65; El dueño, 2026-10-09: un
+  /// valor por negocio). Null: sin cargar.
+  IntColumn get valorHoraCentavos => integer().nullable()();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

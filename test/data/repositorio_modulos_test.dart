@@ -104,7 +104,7 @@ void main() {
       final modulos = await modulosNegocioActuales(db);
       expect(modulos.forma, FormaDeTrabajo.productos);
       for (final m in Modulo.values) {
-        expect(modulos.estaActivo(m), isTrue, reason: m.clave);
+        expect(modulos.estaActivo(m), m.valePara(FormaDeTrabajo.productos), reason: m.clave);
       }
     });
 

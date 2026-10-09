@@ -51,7 +51,14 @@ enum Modulo {
   compararPrecios('comparar_precios'),
 
   /// Cobro con la terminal de Mercado Pago Point.
-  cobroPoint('cobro_point');
+  cobroPoint('cobro_point'),
+
+  /// Insumos de los servicios: stock por envase, receta de cada servicio y lo que cuesta (`docs/PLAN-SERVICIOS.md`,
+  /// etapa 2). Solo servicios.
+  insumos('insumos'),
+
+  /// Sumar la mano de obra (lo que vale la hora de trabajo) al costo de un servicio. Solo servicios.
+  manoDeObra('mano_de_obra');
 
   const Modulo(this.clave);
 
@@ -67,6 +74,8 @@ enum Modulo {
     cargaHistorica => 'Carga histórica',
     compararPrecios => 'Comparador de precios',
     cobroPoint => 'Cobro con Mercado Pago Point',
+    insumos => 'Insumos',
+    manoDeObra => 'Mano de obra en el costo',
   };
 
   String get descripcion => switch (this) {
@@ -80,6 +89,8 @@ enum Modulo {
     cargaHistorica => 'Cargar planillas de días anteriores.',
     compararPrecios => 'Comparar tus precios con supermercados de Bariloche (SEPA) y una tienda online de la zona.',
     cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
+    insumos => 'Lo que usa cada servicio, su costo y para cuántos alcanza.',
+    manoDeObra => 'Sumar lo que vale la hora de trabajo al costo de cada servicio.',
   };
 
   /// Identificador estable que se guarda en la base.
@@ -92,6 +103,7 @@ enum Modulo {
   Set<FormaDeTrabajo> get formas => switch (this) {
     cajaAparte || pesables || promos || compararPrecios => const {FormaDeTrabajo.productos},
     fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint => const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios},
+    insumos || manoDeObra => const {FormaDeTrabajo.servicios},
   };
 
   bool valePara(FormaDeTrabajo forma) => formas.contains(forma);

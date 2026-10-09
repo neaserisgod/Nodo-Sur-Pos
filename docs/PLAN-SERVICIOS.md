@@ -117,6 +117,40 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 - **Falta probarla en un celular real** (alta de una barbería y cambiar de rubro desde Configuración).
 
 ### Etapa 2 · Insumos, servicios y calculador (sin PC)
+
+**En curso (2026-10-09, para retomar en otra sesión). Rama `ccr-1a8287aa-6i8nq2`.**
+
+Decidido por el dueño ese día: **mano de obra = un valor de la hora por negocio** (`configuracion_negocio.valor_hora_centavos`);
+**ganancia buscada por SERVICIO** (no por categoría), arranca en **60 %**, y el precio sugerido **redondea hacia arriba a la
+centena** (misma cuenta que la Regla 14, `precioConGananciaACentena`).
+
+Hecho y probado:
+- `lib/domain/servicios.dart` + `test/domain/servicios_test.dart`: milésimas, costo de insumos exacto (suma fracciones y
+  redondea una vez al peso), costo por unidad, mano de obra, costo del servicio separado, precio sugerido, alcanza para N,
+  qué se acaba primero, compra por envases, texto ↔ milésimas, `UnidadInsumo` (`ml`/`g`/`u`).
+- Módulos `insumos` y `mano_de_obra` (solo servicios; tests de módulos actualizados).
+- Migración **v65** (`_sumarServiciosEInsumos` en `database.dart`): en `productos` `es_insumo`, `unidad_insumo`,
+  `contenido_envase_milesimas`, `stock_milesimas`, `stock_minimo_milesimas`, `es_servicio`, `duracion_minutos`,
+  `receta_servicio` (JSON `[{gid, milesimas}]`), `suma_mano_de_obra`, `ganancia_buscada_bp`; en `movimientos_de_stock`
+  `milesimas`, `milesimas_anterior`, `milesimas_posterior`; en la configuración `valor_hora_centavos`. `database.g.dart`
+  regenerado. Pasan `test/data` y `test/domain`.
+
+Falta, en este orden:
+1. **Test de migración v65** (copiar `test/data/migracion_v64_test.dart`).
+2. **Sync del stock en milésimas**: en `repositorio_sincronizacion.dart` sumar `stock_milesimas` a `_columnasStockDeProductos` y
+   aplicar el delta de `milesimas_anterior/posterior` en `_aplicarDeltaDeMovimientoStock` (como los gramos). Test de dos
+   equipos usando el mismo insumo.
+3. **`lib/data/repositorio_servicios.dart`**: crear/editar insumo (con `global_id`), cargar compra por envases (movimiento con
+   milésimas, costo del envase nuevo con `registrarCambioDePrecio`), contar (ajuste), crear/editar servicio (receta por
+   `global_id`, historial de precios), dejar de ofrecer (`activo = false`), listar con costo y "alcanza para".
+4. **Sacar insumos y servicios de la venta y de las listas de gestión** hasta la etapa 3: `listarProductos`,
+   `catalogoConStockDePromos`, `VentaControlador` (línea ~334), `asistente.dart` (~72), stock bajo de `repositorio_tablero`
+   (~175) y `repositorio_reposicion` (~1580).
+5. **Celular**: el celular no escucha los módulos (`seguirModulos` solo corre en `main.dart` de la PC): sumarlo para la base
+   local. Con forma `servicios`, la pestaña Productos pasa a **Servicios** (segmentos Servicios / Insumos, como el mock),
+   con el creador de servicio (calculador), alta de insumo, cargar compra y contar. Valor de la hora en Configuración.
+   Solo modo "solo celular"; con PC, un aviso. Patrón: `pantalla_promos.dart` (trabaja sobre la base local).
+6. `DECISIONES.md`, `ESTADO.md` y esta sección al cerrar.
 - Dominio puro, tests primero (`domain/servicios.dart`): milésimas, costo por unidad, costo del servicio (hacia arriba al
   peso, convención 5), ganancia sobre el precio, precio sugerido, "alcanza para N", qué insumo falta, mano de obra.
 - Migración v65: columnas de insumo y servicio en `productos`. Los módulos `insumos`, `bloquear_insumos`, `ajustar_insumos` y

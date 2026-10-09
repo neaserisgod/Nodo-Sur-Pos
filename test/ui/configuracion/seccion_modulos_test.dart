@@ -25,12 +25,16 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
-  testWidgets('lista todos los módulos, todos prendidos en un comercio que ya existía', (tester) async {
+  testWidgets('lista todos los módulos de un comercio, todos prendidos en uno que ya existía', (tester) async {
     final db = baseDeTest();
     addTearDown(db.close);
     await _pump(tester, db);
     for (final m in Modulo.values) {
       final interruptor = find.byKey(Key('modulo_${m.clave}'));
+      if (!m.valePara(FormaDeTrabajo.productos)) {
+        expect(interruptor, findsNothing, reason: '${m.clave} es de servicios');
+        continue;
+      }
       expect(interruptor, findsOneWidget, reason: m.clave);
       expect(tester.widget<Interruptor>(interruptor).valor, isTrue, reason: m.clave);
     }

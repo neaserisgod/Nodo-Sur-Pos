@@ -26,6 +26,12 @@ class MovimientosDeStock extends Table {
   IntColumn get gramosAnterior => integer().nullable()();
   IntColumn get gramosPosterior => integer().nullable()();
 
+  /// Milésimas de un insumo (v65): lo que se compró, se usó o se contó, y el stock antes y después. Mismo esquema que los
+  /// gramos de un pesable.
+  IntColumn get milesimas => integer().nullable()();
+  IntColumn get milesimasAnterior => integer().nullable()();
+  IntColumn get milesimasPosterior => integer().nullable()();
+
   TextColumn get motivo => text().nullable()();
   DateTimeColumn get fecha => dateTime().withDefault(currentDateAndTime)();
 
