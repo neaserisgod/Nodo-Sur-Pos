@@ -2,7 +2,8 @@
 
 **Estado al 2026-10-09: mock hecho, sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
-por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día.
+por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
+día sobre el bot que ya existe (`neaserisgod/botdemo`).
 
 ## Lo que decidió el dueño (2026-10-09)
 
@@ -14,6 +15,24 @@ por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync,
 5. **Turnos**, tomados también por un **bot de WhatsApp**.
 6. **Seña configurable por negocio**: nunca / algunos servicios / todos; % o monto fijo; si no viene, se pierde o se devuelve.
    Por defecto: algunos servicios, 30 %, se pierde.
+
+### El bot de WhatsApp (El dueño, 2026-10-09, misma sesión)
+
+7. **El bot ya existe: `neaserisgod/botdemo`** (bot-turnos, Node, probado: 98 escenarios + 29 chequeos + simulación). Es el
+   punto de partida de la etapa 5, no se escribe de cero.
+8. **Canal: Baileys primero, API oficial de Meta después.** Arranca con costo cero; se pasa a la oficial cuando haya
+   negocios que la paguen. El núcleo del bot no sabe qué es WhatsApp (cada canal es un adaptador), así que el cambio no toca
+   la lógica.
+9. **El bot va dentro de Nodo Sur**: turnos, clientes y servicios viven en la sync; el bot es una puerta más para reservar.
+   Una sola agenda.
+10. **Seña: las dos formas, según el negocio.** Link de Mercado Pago si el negocio lo tiene conectado; si no, transferencia
+    y foto del comprobante, como hace el bot hoy.
+11. **La dueña maneja todo desde la app y también por WhatsApp** (le escribe al bot "aprobá la 7", "qué tengo hoy").
+12. **Una seña se confirma sola solo si cruza con Mercado Pago** (pago del link, o la transferencia aparece en los cobros
+    reales de la cuenta). Un comprobante de otro banco lo lee la IA pero queda para que lo apruebe la dueña.
+13. **Privacidad de la IA: la elige cada negocio.** Nodo Sur ofrece la opción; por defecto, plan gratis de Gemini (puede
+    usar lo que recibe). Ver la etapa 5.
+14. **El servidor es Cloudflare con plan gratis**, no un servidor dedicado: el bot tiene que caber en eso (ver la etapa 5).
 
 ## Lo que encontró la revisión del código (cambia el plan)
 
@@ -96,11 +115,70 @@ por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync,
   vino" según la configuración.
 - `REGLAS-NEGOCIO.md` gana la sección "Turnos y seña".
 
-### Etapa 5 · Bot de WhatsApp (en `NodoSurPage`)
-- WhatsApp Business oficial (Meta), un número por negocio conectado desde `/negocio`. Seña con el Mercado Pago del negocio
-  (OAuth ya hecho).
-- El servidor reserva el horario en un solo lugar y sube el turno a la sync como un equipo más.
-- Es la etapa de más riesgo y depende de las preguntas 3 y 4.
+### Etapa 5 · Bot de WhatsApp (desde `botdemo`)
+
+**Dónde corre.** Baileys no entra en Cloudflare gratis: necesita una conexión a WhatsApp abierta todo el día y librerías de
+Node (`ws`, `libsignal`) que un Worker no tiene. Un Worker gratis tiene 10 ms de CPU por pedido, y un Durable Object con una
+conexión saliente abierta no hiberna: un solo negocio se comería casi todo el cupo diario. Entonces:
+
+- **Con Baileys:** el bot sigue en un **celular con Termux** por negocio (como hoy, `setup.sh` y `bot.sh` ya lo resuelven).
+  Ese celular entra a Nodo Sur como un **equipo más** de la sucursal (token de dispositivo) y no tiene agenda propia.
+- **Reservar es del servidor:** el `SyncHub` de la cuenta (Durable Object, SQLite, plan gratis) ya serializa por cuenta.
+  Suma `POST /api/agenda/reservar` (atómico: ocupa el horario o contesta "ya no está") y `GET /api/agenda/libres`. Un pedido
+  por reserva, nada abierto: entra en el plan gratis. Los turnos que se cargan en la app también reservan por ahí cuando
+  hay internet.
+- **Con la API oficial (después):** Meta llama a un webhook, que es HTTP normal y **sí corre en el Worker** gratis. Ahí
+  desaparece el celular con Termux. El núcleo del bot (`src/core/`) es JavaScript puro, así que se mueve al Worker cambiando
+  solo el adaptador y la capa de base (`src/db/` pasa a hablar con D1 / el Durable Object).
+
+**Qué se toma de `botdemo` y qué cambia:**
+
+| | `botdemo` hoy | En Nodo Sur |
+|---|---|---|
+| Conversación (`maquina.js`, `nlu.js`, `nlu-duena.js`) | — | Igual |
+| Recordatorios 24 hs, agenda diaria, `.ics`, `.vcf` | — | Igual |
+| Tests de casos difíciles (carreras, señas falsas, fuzzing) | — | Igual; se suman los de reservar contra el servidor |
+| Base (`clientas`, `servicios`, `turnos`, `senas`) | SQLite propia | `clientes`, productos con `esServicio` y `turnos` de la sync; el celular guarda solo el estado de cada conversación |
+| Servicios y horarios | `config.json` | Los de Nodo Sur (Configuración del negocio) |
+| Seña "vencida" (2 hs sin pago, libera el horario) | Sí | Se suma al estado del turno de la etapa 4 |
+| Seña "no vino: se pierde / se devuelve" | No | De la etapa 4 (`domain/sena.dart`) |
+| Cobro de la seña | Transferencia + OCR | Link de MP o transferencia, según el negocio (decisión 10) |
+
+**Confirmar cobros (decisión 12), de más seguro a menos:**
+
+1. **Link de Mercado Pago** (negocio con MP conectado): el turno va como `external_reference`; cuando MP avisa el pago
+   aprobado, el turno se confirma solo. Sin fotos ni IA.
+2. **Transferencia a la cuenta de MP del negocio:** la clienta manda el comprobante; se busca el cobro en los cobros reales
+   de la cuenta (el sitio ya los lee, `/api/mp/cobros`) por número de operación y monto. Si aparece, se confirma solo.
+3. **Transferencia a otro banco:** la IA lee el comprobante (monto, destinatario, número de operación, fecha) y las reglas de
+   hoy lo revisan (número de operación sin repetir, monto, destinatario, fecha no anterior al turno). **Nunca se confirma
+   solo:** le llega a la dueña con los datos ya leídos y ella aprueba con un "sí". Si no hay IA, el OCR de hoy hace lo mismo.
+
+**La IA en el bot (Gemini, con la clave del negocio por `/api/ia/generar`):**
+
+Siguen las reglas de la IA de Nodo Sur (`DECISIONES.md`): la IA sugiere o transcribe, **el código decide**, y el bot anda
+igual sin clave, sin cupo o sin internet.
+
+- **El diccionario va primero, siempre.** `nlu.js` resuelve gratis y al instante casi todo (reservar, cancelar, confirmar,
+  días y horas en texto libre, typos). Su FAQ solo conoce tres temas (precios, ubicación, horarios); lo demás hoy cuenta como
+  "no entendí" y a la segunda se deriva a la dueña. **La IA entra solo ahí, antes de derivar**, así casi nunca se usa.
+- **Entender (clientas y dueña):** devuelve JSON (intención, servicio, día, hora). Solo puede elegir servicios de la lista
+  que se le muestra; un id que no está se descarta (como en las facturas). Lo que borra algo se confirma con "sí" como hoy.
+- **Consultas que el diccionario no conoce** ("¿hacen esculpidas?"): ver la pregunta 7.
+- **Leer comprobantes:** foto a JSON, solo en el caso 3 de arriba.
+- **Privacidad (decisión 13):** opción de cada negocio en Configuración › Asistente IA: plan gratis (por defecto), clave
+  paga, o IA sin comprobantes (los lee el OCR del celular y no salen de ahí). Nunca se manda el teléfono ni el historial de
+  la clienta, solo el mensaje.
+
+**Orden de trabajo:**
+
+1. Arreglar `npm test` en `botdemo` (desde `39f8902` pide `config.json`, que ya no está en el repo).
+2. Agenda en el servidor: `reservar` / `libres` en el `SyncHub`, con tests de carrera (dos reservas al mismo horario).
+3. El bot como equipo de la sync: lee servicios, horarios y turnos; sus turnos y clientes suben como lotes. Sus tablas van en
+   una lista aparte (como `tablasSincronizablesV61`).
+4. Seña por link de MP y cruce de transferencias con los cobros reales.
+5. IA de respaldo (entender, leer comprobantes), con la opción de privacidad.
+6. Después, cuando haya quien la pague: adaptador de la API oficial en el Worker.
 
 ### Después (no ahora)
 - Servicios en "PC y celular": rutas en el servidor de la PC y pantallas en la PC.
@@ -112,10 +190,18 @@ por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync,
    evita hacer cada cosa dos veces.
 2. **Profesionales = los usuarios de la app.** Recomendado. La contra: un profesional sin celular igual figura como usuario
    (sin cuenta, solo con su nombre).
-3. **Bot: el servidor reserva los horarios.** Recomendado, porque si no, dos clientes pueden sacar el mismo turno. La contra:
-   el bot no funciona sin internet (tampoco podría, porque WhatsApp lo necesita).
-4. **Costo de WhatsApp**: Meta cobra los mensajes que inicia el negocio (recordatorios). ¿Entra en el plan o se cobra aparte?
+3. ~~Bot: el servidor reserva los horarios~~ → **decidido** (decisión 9): reserva el `SyncHub`.
+4. **Costo de WhatsApp**: con Baileys no hay (decisión 8). Vuelve cuando se pase a la API oficial: Meta cobra los mensajes
+   que inicia el negocio (recordatorios). ¿Entra en el plan o se cobra aparte? `botdemo/docs/MERCADO.md` propone $35.000/mes.
 5. **Comisión por profesional**: ¿queda para después?
+6. **Turno cargado en la app sin internet:** no puede reservar en el servidor. Recomendado: se guarda igual y, si al
+   sincronizar choca con uno del bot, le avisa a la dueña (campanita) para que mueva uno. La contra: por un rato puede haber
+   dos turnos en el mismo horario.
+7. **Consultas que el diccionario no conoce** (el dueño preguntó si no alcanza con el diccionario: alcanza para precios,
+   ubicación y horarios, nada más). Recomendado: la IA contesta solo con lo que cargó la dueña (servicios, precios, horarios
+   y una ficha "info del negocio"); si no está ahí, le pasa la consulta a la dueña. Alternativa: sin IA para esto, derivar
+   directo como hoy.
 
 ## Qué no se probó
-Solo existe el mock (Chromium de escritorio y ancho de celular). No hay código.
+Solo existe el mock (Chromium de escritorio y ancho de celular). No hay código en Nodo Sur. De `botdemo` corren sus tests
+(con `config.example.json` copiado como `config.json`); no se probó nada contra el sitio ni con Gemini.

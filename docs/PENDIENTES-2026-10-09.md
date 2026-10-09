@@ -12,7 +12,7 @@ Para retomar en una sesión nueva. Lo hecho y publicado ese día está en `ESTAD
   relanzado a las 15:40 UTC: **verificar en `/admin/` → Versiones que haya quedado publicado**. El primer intento se
   canceló solo por la fila de publicación (`concurrency: publicar` cancela el pendiente cuando entra otro).
 
-## 1. Cierre de caja: separar los cigarrillos ANTES de contar (esperando al dueño)
+## 1. Cierre de caja: separar los cigarrillos ANTES de contar (decidido, sin programar)
 
 **Pedido del dueño:** *"tengo que hacer las cuentas 2 veces, porque tengo que contar el efectivo, y recién ahí separar,
 en lugar de que separe lo de los cigarrillos antes de contar"*.
@@ -42,10 +42,19 @@ Las cuentas de fondo no cambian, solo el orden. Hay que cambiar la Regla 10 y la
 en la PC (`lib/ui/cierre/`) y en el celular (`lib/companion/pantallas/pantalla_cierre_ns.dart`), con tests en
 `domain/caja.dart` y `repositorio_cierre.dart`. Revisar también el arqueo intermedio (`arqueos_del_turno`).
 
-**Preguntas para el dueño (sin responder):**
-1. ¿Le sirve ver el monto a separar **antes** de contar?
-2. Si en el cajón no alcanza para separar todo, ¿escribe a mano cuánto separó y el resto queda pendiente para el
-   próximo cierre?
+**Respuestas del dueño (2026-10-09):**
+1. ¿Le sirve ver el monto a separar **antes** de contar? → **Sí, separar primero.**
+2. Si en el cajón no alcanza para separar todo → **la app separa lo que haya** (todo el efectivo disponible hasta el
+   monto, sin preguntar) y el resto queda pendiente para el próximo cierre. Cambia el paso 1 del flujo propuesto: no se
+   escribe a mano cuánto se separó.
+
+**Punto a resolver con la respuesta 2:** antes de contar, la app no sabe cuánto efectivo hay (es el conteo a ciegas), así
+que no puede calcular sola "lo que haya". Forma posible sin preguntarle nada al cajero: el cajero separa lo que puede y
+cuenta; lo separado se deduce de la lata contada (lata contada − lata inicial + pagos − ingresos) y lo que falta queda
+pendiente. La contra: un faltante real en la lata se confundiría con "no alcanzó para separar". Hay que confirmarlo con el
+dueño antes de programar.
+
+Falta: cambiar la Regla 10 y la entrada de `DECISIONES.md` con esto, y programarlo (PC y celular).
 
 ## 2. Celular: lo que sigue del plan "simple pero sin datos faltantes"
 
