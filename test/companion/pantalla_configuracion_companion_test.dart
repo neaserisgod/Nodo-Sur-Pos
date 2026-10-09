@@ -134,4 +134,32 @@ void main() {
     // Aparece la confirmación de salir sin guardar: la pantalla sigue ahí.
     expect(find.byType(PantallaConfiguracionCompanion), findsOneWidget);
   });
+
+  testWidgets('"+ Nueva categoría" la crea en la base del celular (viaja por la sync) y no deja repetir un nombre', (t) async {
+    await _preparar(t);
+    await _abrir(t);
+    final db = baseLocalCompanion();
+    final antes = (await t.runAsync(() => db.select(db.categorias).get()))!;
+
+    await t.tap(find.text('+ Nueva categoría'));
+    await _asentar(t);
+    await t.enterText(find.byType(TextField).last, 'Limpieza');
+    await t.tap(find.text('Guardar').last);
+    await _asentar(t);
+
+    final despues = (await t.runAsync(() => db.select(db.categorias).get()))!;
+    expect(despues, hasLength(antes.length + 1));
+    final nueva = despues.firstWhere((c) => c.nombre == 'Limpieza');
+    expect(nueva.globalId, isNotNull, reason: 'viaja a la PC');
+    expect(find.text('Limpieza'), findsWidgets);
+
+    await t.tap(find.text('+ Nueva categoría'));
+    await _asentar(t);
+    await t.enterText(find.byType(TextField).last, 'limpieza');
+    await t.tap(find.text('Guardar').last);
+    await _asentar(t);
+    expect(find.text('Ya hay una categoría llamada "limpieza"'), findsOneWidget);
+    expect((await t.runAsync(() => db.select(db.categorias).get()))!, hasLength(antes.length + 1));
+  });
 }
+

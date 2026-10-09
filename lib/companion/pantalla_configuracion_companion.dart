@@ -20,6 +20,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../data/repositorio_productos.dart' show crearCategoria;
 import '../domain/dinero.dart';
 import '../servicios/gemini.dart';
 import '../ui/comun/campo_texto.dart';
@@ -370,6 +371,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               padding: const EdgeInsets.only(bottom: 8),
               child: _FilaPorcentaje(nombre: c.nombre, porcentaje: _markup(c), onMenos: () => _cambiarMarkup(c, -5), onMas: () => _cambiarMarkup(c, 5)),
             ),
+          const SizedBox(height: 2),
+          BotonNs.secundario(context, '+ Nueva categoría', _agregarCategoria),
           _seccion('Quiénes usan la app'),
           for (final u in _usuarios)
             Padding(
@@ -588,7 +591,33 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         },
       ),
     );
-    ctrl.dispose();
+    // Sin dispose acá: la hoja todavía se está cerrando (animación) y su campo usa el controlador; queda para el recolector.
+    if (guardado == true) await _cargar();
+  }
+
+  /// Categoría nueva desde el celular (El dueño, 2026-10-09: independizar el celular; antes solo en la PC). Sobre la base del
+  /// celular, como Proveedores: las categorías viajan por la sync y llegan a la PC.
+  Future<void> _agregarCategoria() async {
+    final ctrl = TextEditingController();
+    final db = baseLocalCompanion();
+    final guardado = await mostrarHojaVidrio<bool>(
+      context,
+      builder: (context) => _HojaTextoSimple(
+        titulo: 'Nueva categoría',
+        etiqueta: 'Nombre',
+        controller: ctrl,
+        onGuardar: (texto) async {
+          final nombre = texto.trim();
+          if (nombre.isEmpty) throw const FormatException('Escribí un nombre');
+          final todas = await db.select(db.categorias).get();
+          if (todas.any((c) => c.nombre.trim().toLowerCase() == nombre.toLowerCase())) {
+            throw FormatException('Ya hay una categoría llamada "$nombre"');
+          }
+          await crearCategoria(db, nombre);
+        },
+      ),
+    );
+    // Sin dispose acá: la hoja todavía se está cerrando (animación) y su campo usa el controlador; queda para el recolector.
     if (guardado == true) await _cargar();
   }
 }
