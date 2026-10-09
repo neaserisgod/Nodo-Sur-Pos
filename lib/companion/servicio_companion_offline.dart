@@ -8,13 +8,21 @@
 // silenciosa de dos aperturas"). El resto de los métodos son un delegado
 // directo a `PuertoLocal` — nada de lógica nueva, la política es solo sobre
 // `abrirSesion`.
+//
+// Excepción: con el modo "Solo celular" (El dueño, 2026-10-07: independencia
+// del celular, opción A) no hay otro dispositivo que pueda abrir la caja, así
+// que el riesgo de dos aperturas no existe y el celular la abre sobre su base.
+// En "PC y celular" sigue bloqueado: la PC puede estar apagada pero abrir
+// después.
 
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
+import '../data/repositorio_ventas.dart' show SesionYaAbiertaException;
 import 'cliente_companion.dart';
+import 'emparejamiento.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
 import '../servicios/devolucion_mp.dart' show CobroPoint;
@@ -25,17 +33,27 @@ const mensajeSinAperturaOffline = ErrorCompanion(
   'antes de perder la conexión. No se puede abrir una nueva desde acá.',
 );
 
+const mensajeCajaYaAbierta = ErrorCompanion(409, 'Ya hay una caja abierta.');
+
 class ServicioCompanionOffline implements ServicioCompanion {
-  ServicioCompanionOffline(this._local);
+  ServicioCompanionOffline(this._local, {Future<bool> Function()? esSoloCelular})
+    : _esSoloCelular = esSoloCelular ?? esSoloCelularGuardado;
 
   final PuertoLocal _local;
+  final Future<bool> Function() _esSoloCelular;
 
   @override
   Future<int> abrirSesion({
     required int usuarioId,
     required int fondoInicialCentavos,
   }) async {
-    throw mensajeSinAperturaOffline;
+    if (!await _esSoloCelular()) throw mensajeSinAperturaOffline;
+    try {
+      return await _local.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: fondoInicialCentavos);
+    } on SesionYaAbiertaException {
+      // Puede haber llegado abierta por la sync de otro celular del mismo negocio.
+      throw mensajeCajaYaAbierta;
+    }
   }
 
   @override
