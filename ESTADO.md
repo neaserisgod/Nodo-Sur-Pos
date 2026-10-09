@@ -119,6 +119,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Vender en el celular, con el teclado** (El dueño: "arriba del teclado hay una franja muy grande que tapa la lista"; "tiene
+  que escribir y seleccionar"): con el teclado abierto se esconden la barra de pestañas, su espacio y el título, y los resultados
+  ocupan todo el lugar hasta el teclado (antes 4 filas flotando sobre el total). El primero va marcado y **Enter lo agrega** sin
+  cerrar el teclado. La búsqueda espera 120 ms (antes 300) y los resultados aparecen sin animación. Probado con tests; **no probado
+  en un celular real** (el alto real del teclado y el comportamiento de la tecla Enter dependen del teclado del celular).
 - **Proveedores en el celular** (El dueño: "que no queden datos importantes sin poder llenar, por ej. un proveedor"): Más › Proveedores
   junta lo que estaba en tres filas (Cuenta corriente, Pagar proveedor, Cargar factura) y suma **alta y edición** (nombre, WhatsApp, días
   de pedido y entrega, cómo se le paga, dar de baja) y **"Pedir por WhatsApp"**. El código se arma solo. Detalle en `DECISIONES.md`.

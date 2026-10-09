@@ -771,9 +771,13 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           ),
           bottomNavigationBar: ValueListenableBuilder<bool>(
             valueListenable: ocultarBarra,
-            builder: (context, oculta, _) => oculta
-                ? const SizedBox.shrink()
-                : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+            // Con el teclado abierto la barra no sirve y, como sube pegada al teclado, tapaba la lista (El dueño,
+            // 2026-10-09: "arriba del teclado hay una franja muy grande que tapa la lista de los productos").
+            builder: (context, oculta, _) => ConTecladoNs(
+              builder: (context, teclado) => oculta || teclado
+                  ? const SizedBox.shrink()
+                  : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+            ),
           ),
         ),
       ),

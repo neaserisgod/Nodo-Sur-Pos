@@ -721,6 +721,25 @@ void main() {
       await esperar(t);
     });
   });
+  testWidgets('05b-vender-buscando-con-teclado', (t) async {
+    final servicio = await conCatalogo(t);
+    // Sin barra: con el teclado abierto el menú la esconde (acá la captura no pasa por el menú).
+    await capturarNs(t, '05b-vender-buscando-con-teclado', PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: tresLineas()), antes: (t) async {
+      // Teclado de Android abierto: ~300 de alto en un celular de 844.
+      t.view.viewInsets = const FakeViewPadding(bottom: 300 * 2);
+      await t.enterText(find.byType(TextField).first, 'a');
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+      await esperar(t);
+    });
+  });
+  testWidgets('05c-vender-carrito-con-teclado', (t) async {
+    final servicio = await conCatalogo(t);
+    await capturarNs(t, '05c-vender-carrito-con-teclado', PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: 1, carrito: tresLineas()), antes: (t) async {
+      t.view.viewInsets = const FakeViewPadding(bottom: 300 * 2);
+      await t.tap(find.byType(TextField).first);
+      await esperar(t);
+    });
+  });
   testWidgets('23-controlar-stock', (t) async {
     final servicio = await conCatalogo(t);
     final c = ControladorConServicio(servicio)..productosEnConteo.value = true;

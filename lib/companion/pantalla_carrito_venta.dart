@@ -18,6 +18,7 @@ import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
+import '../domain/pesables.dart' show subtotalPesable;
 import '../domain/venta.dart';
 import '../domain/vuelto.dart';
 import 'app_ns.dart';
@@ -117,7 +118,12 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   final _busquedaCtrl = TextEditingController();
   final _busquedaFocus = FocusNode();
-  final _debouncerBusqueda = Debouncer();
+  // Corto: lo que se tipea no puede esperar (CLAUDE.md, "Prioridad: arranque vs. operación"). Alcanza para no mandar una
+  // consulta por letra cuando se escribe rápido.
+  final _debouncerBusqueda = Debouncer(duracion: const Duration(milliseconds: 120));
+
+  /// El texto al que corresponden [_resultadosBusqueda]: Enter solo agrega si los resultados son del texto de ahora.
+  String? _textoDeResultados;
   List<ProductoCompanion> _resultadosBusqueda = [];
   int? _gramosBusqueda;
   bool _buscando = false;
@@ -197,11 +203,27 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         setState(() {
           _resultadosBusqueda = resultado.resultados;
           _gramosBusqueda = resultado.gramos;
+          _textoDeResultados = texto;
         });
       }
     } finally {
       if (mounted && _busquedaCtrl.text == texto) setState(() => _buscando = false);
     }
+  }
+
+  /// Enter en el teclado: agrega el primer resultado (el marcado) y deja el campo listo para el siguiente. Si la búsqueda
+  /// de lo último que se escribió todavía no volvió, la hace ya en vez de esperar.
+  Future<void> _enviarBusqueda(String texto) async {
+    if (texto.trim().isEmpty) return;
+    _debouncerBusqueda.cancelar();
+    if (_textoDeResultados != texto) await _buscar(texto);
+    if (!mounted || _busquedaCtrl.text != texto) return;
+    if (_resultadosBusqueda.isEmpty) {
+      mostrarAvisoNs(context, 'Sin coincidencias');
+      return;
+    }
+    _agregar(_resultadosBusqueda.first);
+    _busquedaFocus.requestFocus();
   }
 
   /// Agrega [producto] al carrito con la misma lógica que `VentaControlador.agregarProducto`
@@ -227,6 +249,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         _busquedaCtrl.clear();
         _resultadosBusqueda = [];
         _gramosBusqueda = null;
+        _textoDeResultados = null;
       }
     });
   }
@@ -874,71 +897,80 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     );
   }
 
-  Widget _vistaCarrito(BuildContext context) {
+  Widget _vistaCarrito(BuildContext context) => ConTecladoNs(builder: _vistaCarritoCon);
+
+  Widget _vistaCarritoCon(BuildContext context, bool teclado) {
     final ns = context.ns;
     final n = widget.carrito.length;
     final buscando = _busquedaCtrl.text.trim().isNotEmpty;
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
-                  if (n > 0) Text(n == 1 ? '1 producto' : '$n productos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _FilaBuscador(
-                controller: _busquedaCtrl,
-                foco: _busquedaFocus,
-                escaneando: _escaneando,
-                onEscanear: _escanearYAgregar,
-                onChanged: (t) {
-                  setState(() {});
-                  if (t.trim().isEmpty) {
-                    _debouncerBusqueda.cancelar();
-                    _buscar(t);
-                  } else {
-                    _debouncerBusqueda.ejecutar(() => _buscar(t));
-                  }
-                },
-              ),
-              const SizedBox(height: 14),
-              if (_encargue.value != null && n > 0) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
-                  child: Text('Entregando el encargue de ${_encargueNombre ?? 'un cliente'}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+    // Con el teclado abierto se esconde todo lo que no sea buscar o el carrito (El dueño, 2026-10-09: "arriba del
+    // teclado hay una franja muy grande que tapa la lista"): el título, el espacio de la barra de pestañas (que también
+    // se esconde) y el descuento.
+    final abajo = teclado ? 12.0 : BarraInferiorNs.espacioReservado;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(margenNs, teclado ? 12 : 28, margenNs, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Se achica a cero en vez de sacarlo: si cambiara la cantidad de hijos, el campo de búsqueda se armaría de
+          // nuevo, perdería el foco y el teclado se cerraría apenas se abre.
+          ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: teclado ? 0 : 1,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
+                    if (n > 0) Text(n == 1 ? '1 producto' : '$n productos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+                  ],
                 ),
-                const SizedBox(height: 14),
-              ],
-              Expanded(child: n == 0 ? _vacio(context) : _lineas(context)),
-              if (n > 0) ...[
-                _filaDescuento(context),
-                const SizedBox(height: 14),
-                _barraTotal(context),
-                const SizedBox(height: BarraInferiorNs.espacioReservado),
-              ] else
-                const SizedBox(height: BarraInferiorNs.espacioReservado),
-            ],
+              ),
+            ),
           ),
-        ),
-        if (buscando)
-          Positioned(
-            left: margenNs,
-            right: margenNs,
-            // 28 de margen + 40 del título + 14 + 64 hasta debajo del campo.
-            top: 28 + 40 + 14 + 64,
-            child: _MenuBusqueda(resultados: _resultadosBusqueda.take(4).toList(), buscando: _buscando, onElegir: _agregar),
+          _FilaBuscador(
+            controller: _busquedaCtrl,
+            foco: _busquedaFocus,
+            escaneando: _escaneando,
+            onEscanear: _escanearYAgregar,
+            onEnviar: _enviarBusqueda,
+            onChanged: (t) {
+              setState(() {});
+              if (t.trim().isEmpty) {
+                _debouncerBusqueda.cancelar();
+                _buscar(t);
+              } else {
+                _debouncerBusqueda.ejecutar(() => _buscar(t));
+              }
+            },
           ),
-      ],
+          SizedBox(height: teclado ? 10 : 14),
+          if (_encargue.value != null && n > 0 && !buscando) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+              child: Text('Entregando el encargue de ${_encargueNombre ?? 'un cliente'}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+            ),
+            const SizedBox(height: 14),
+          ],
+          Expanded(
+            child: buscando
+                ? _ResultadosBusqueda(resultados: _resultadosBusqueda, buscando: _buscando, gramos: _gramosBusqueda, onElegir: _agregar)
+                : n == 0
+                ? _vacio(context)
+                : _lineas(context),
+          ),
+          if (n > 0 && !buscando) ...[
+            if (!teclado) ...[_filaDescuento(context), const SizedBox(height: 14)] else const SizedBox(height: 8),
+            _barraTotal(context),
+          ],
+          SizedBox(height: abajo),
+        ],
+      ),
     );
   }
 
@@ -1463,19 +1495,33 @@ class _CajaCerrada extends StatelessWidget {
 }
 
 class _FilaBuscador extends StatelessWidget {
-  const _FilaBuscador({required this.controller, required this.foco, required this.escaneando, required this.onEscanear, required this.onChanged});
+  const _FilaBuscador({required this.controller, required this.foco, required this.escaneando, required this.onEscanear, required this.onChanged, required this.onEnviar});
   final TextEditingController controller;
   final FocusNode foco;
   final bool escaneando;
   final VoidCallback onEscanear;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String> onEnviar;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
     return Row(
       children: [
-        Expanded(child: BuscadorNs(controller: controller, foco: foco, placeholder: 'Buscar producto', onChanged: onChanged)),
+        Expanded(
+          child: BuscadorNs(
+            controller: controller,
+            foco: foco,
+            placeholder: 'Buscar producto',
+            onChanged: onChanged,
+            onEnviar: onEnviar,
+            conBorrar: controller.text.isNotEmpty,
+            onBorrar: () {
+              controller.clear();
+              onChanged('');
+            },
+          ),
+        ),
         const SizedBox(width: 8),
         PresionNs(
           onTap: escaneando ? null : onEscanear,
@@ -1495,52 +1541,68 @@ class _FilaBuscador extends StatelessWidget {
   }
 }
 
-/// Menú flotante de resultados (docs/03 B2.1): hasta 4 filas de 52, radio 26.
-class _MenuBusqueda extends StatelessWidget {
-  const _MenuBusqueda({required this.resultados, required this.buscando, required this.onElegir});
+/// Resultados de la búsqueda, ocupando todo el lugar entre el campo y el teclado (antes eran 4 filas flotando encima
+/// del carrito). Sin animación de entrada: lo que se tipea no espera. El primero va marcado: es el que agrega Enter.
+class _ResultadosBusqueda extends StatelessWidget {
+  const _ResultadosBusqueda({required this.resultados, required this.buscando, required this.gramos, required this.onElegir});
   final List<ProductoCompanion> resultados;
   final bool buscando;
+
+  /// Gramos escritos antes del nombre ("200 queso"): el pesable muestra el subtotal de esa cantidad.
+  final int? gramos;
   final ValueChanged<ProductoCompanion> onElegir;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    return EntradaNs(
-      duracion: const Duration(milliseconds: 450),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: ns.paper,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: const [BoxShadow(color: Color(0x38121317), blurRadius: 60, offset: Offset(0, 24)), BoxShadow(color: Color(0x14121317), spreadRadius: 1)],
-        ),
-        child: resultados.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Text(buscando ? 'Buscando…' : 'No encontramos ese producto. Probá con otra parte del nombre.', style: estiloNs(15, color: ns.mute)),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final p in resultados)
-                    PresionNs(
-                      onTap: () => onElegir(p),
-                      etiqueta: p.nombre,
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 52),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(p.nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, color: ns.ink))),
-                            const SizedBox(width: 10),
-                            Text(p.esPesable ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(p.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w500, color: ns.ink, tabular: true)),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-      ),
+    if (resultados.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
+        child: Text(buscando ? 'Buscando…' : 'Sin coincidencias. Probá con otra parte del nombre.', style: estiloNs(15, color: ns.mute)),
+      );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+      itemCount: resultados.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
+      itemBuilder: (context, i) {
+        final p = resultados[i];
+        final marcado = i == 0;
+        final precio = p.esPesable
+            ? (gramos == null ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(subtotalPesable(montoPorKiloCentavos: p.precioPorKiloCentavos, gramos: gramos!)))
+            : plataNs(p.precioCentavos ?? 0);
+        final detalle = [
+          if (p.esPesable && gramos != null) '$gramos g',
+          'Quedan ${stockTextoNs(p)}',
+          if (marcado) 'Enter para agregar',
+        ].join(' · ');
+        return PresionNs(
+          onTap: () => onElegir(p),
+          etiqueta: p.nombre,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(color: marcado ? ns.ibg : ns.s, borderRadius: BorderRadius.circular(20)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(p.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, altura: 1.2, color: ns.ink)),
+                      Text(detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, color: marcado ? ns.i : ns.mute)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(precio, style: estiloNs(17, peso: FontWeight.w600, color: ns.ink, tabular: true)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
