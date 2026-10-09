@@ -324,6 +324,9 @@ Future<List<LineaVenta>> lineasParaEntregar(AppDatabase db, int id) async {
   return lineas;
 }
 
+/// Cuánto sale hoy lo apartado (precios de hoy, Regla 4): lo que se cobraría al entregarlo, antes de descontar la seña.
+Future<int> totalHoyDeEncargue(AppDatabase db, int id) async => Venta(lineas: await lineasParaEntregar(db, id)).subtotalCentavos;
+
 /// Lo llama `registrarVenta` dentro de su transacción al cobrar la entrega: devuelve lo apartado (la venta lo descuenta
 /// ella) y deja el encargue resuelto con la venta que lo saldó.
 Future<void> liberarEncargueEntregado(AppDatabase db, int id, {required int ventaId, required int usuarioId}) async {
@@ -348,7 +351,7 @@ Future<int?> entregarEncargueADeuda(AppDatabase db, int id, {required int usuari
       throw const EncargueConSena('Este encargue tiene una seña: cobralo (se descuenta la seña) o cancelalo para devolverla.');
     }
     final lineas = _leerLineas(p.lineasJson);
-    final total = Venta(lineas: await lineasParaEntregar(db, id)).subtotalCentavos;
+    final total = await totalHoyDeEncargue(db, id);
     await (db.update(db.pendientes)..where((x) => x.id.equals(id))).write(PendientesCompanion(
       tipo: const Value('FIADO'),
       montoCentavos: Value(total),

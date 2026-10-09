@@ -142,9 +142,10 @@ Pendiente / ideas (sin hacer):
     fijo u otro gasto (en partes), con el mismo `anotarFaltante` de la PC; cerrar sin explicar avisa antes. Con la PC, rutas
     nuevas `GET/POST /cierre/faltantes` (una PC vieja contesta 404 y el celular no pregunta). El fondo fijo ya no entra en
     ninguna cuenta: no hace falta en el celular.
-  Falta: el precio de las líneas de los encargues; "+ Nuevo" proveedor/categoría en el formulario de producto (con la PC conectada la lista
-  viene de la PC, con otros ids: no se puede elegir un proveedor recién creado en el celular hasta que la sync lo lleva);
-  dejar de preguntar el modo al configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
+  - **"+ Nuevo proveedor" y "+ Nueva categoría" en el formulario de producto**, solo sobre la base del celular (con la PC
+    conectada el producto se guarda en la PC con sus ids y lo nuevo del celular no existe ahí hasta la sync).
+  - **Encargues con precio**: "Hoy sale $X" (y lo que falta cobrar si hay seña), a precios de hoy (`totalHoyDeEncargue`).
+  Falta: dejar de preguntar el modo al configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
   Probado con tests; **no probado en un celular real ni con la Point/cuenta real**.
 - **Vender en el celular sin la pantalla "Venta cobrada"** (El dueño: "siento que hay una pantalla extra"): al cobrar se vuelve
   directo a una venta nueva con el buscador listo, y arriba queda una tarjeta con el total, el vuelto bien grande e "Imprimir

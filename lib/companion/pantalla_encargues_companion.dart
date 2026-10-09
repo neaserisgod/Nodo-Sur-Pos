@@ -206,6 +206,16 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
                     children: [
                       _fechaYNombre(context, '${e.desde.day}/${e.desde.month}', e.nombreCliente),
                       for (final l in e.lineas) _lineaDeTexto(context, l),
+                      if (e.totalHoyCentavos != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: FilaClaveValorNs(
+                            clave: e.senaCentavos > 0 ? 'Hoy sale (falta cobrar)' : 'Hoy sale',
+                            valor: e.senaCentavos > 0 ? '${plataNs(e.totalHoyCentavos!)} (${plataNs(e.totalHoyCentavos! - e.senaCentavos)})' : plataNs(e.totalHoyCentavos!),
+                            tamanioValor: 16,
+                            sinLinea: true,
+                          ),
+                        ),
                       if (e.senaCentavos > 0) Padding(padding: const EdgeInsets.only(top: 10), child: InfoNs('Dejó una seña de ${plataNs(e.senaCentavos)}: se descuenta al entregar.')),
                       const SizedBox(height: 12),
                       BotonNs.primario(context, 'Entregar', () => _entregar(e), alto: 52, tamanio: 16),

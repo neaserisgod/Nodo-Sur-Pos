@@ -175,7 +175,14 @@ class PuertoLocal implements ServicioCompanion {
     final lista = await repo_encargues.listarEnarguesPendientes(db);
     return [
       for (final e in lista)
-        EncargueCompanion(id: e.id, nombreCliente: e.nombreCliente, desde: e.desde, lineas: [for (final l in e.lineas) l.texto], senaCentavos: e.senaCentavos),
+        EncargueCompanion(
+          id: e.id,
+          nombreCliente: e.nombreCliente,
+          desde: e.desde,
+          lineas: [for (final l in e.lineas) l.texto],
+          senaCentavos: e.senaCentavos,
+          totalHoyCentavos: await _totalHoy(e.id),
+        ),
     ];
   }
 
@@ -1180,6 +1187,15 @@ class PuertoLocal implements ServicioCompanion {
   /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
   /// de Mercado Pago que el negocio conectó (el token nunca baja al celular). Sin cuenta vinculada, o con el negocio sin
   /// conectar o sin terminal elegida, se dice qué falta (`servicios/pasarela_point_nube.dart`).
+  /// Null si no se puede valorizar (un producto apartado sin precio, o borrado): el encargue se muestra igual.
+  Future<int?> _totalHoy(int encargueId) async {
+    try {
+      return await repo_encargues.totalHoyDeEncargue(db, encargueId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<OpcionesFaltanteCompanion?> opcionesFaltante() async {
     final umbral = (await db.select(db.configuracionTabla).getSingle()).umbralFaltanteCentavos;

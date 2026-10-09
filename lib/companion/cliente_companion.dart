@@ -172,7 +172,10 @@ class EncargueCompanion {
 
   /// La seña que dejó el cliente (0 si no dejó). Una PC vieja no la manda: `as int?`.
   final int senaCentavos;
-  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas, this.senaCentavos = 0});
+
+  /// Cuánto sale hoy lo apartado (precios de hoy). Null si no se pudo calcular o la PC no lo manda.
+  final int? totalHoyCentavos;
+  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas, this.senaCentavos = 0, this.totalHoyCentavos});
 
   factory EncargueCompanion.desdeJson(Map<String, dynamic> j) => EncargueCompanion(
     id: j['id'] as int,
@@ -180,6 +183,7 @@ class EncargueCompanion {
     desde: DateTime.fromMillisecondsSinceEpoch((j['desdeMs'] as num).toInt()),
     lineas: [for (final l in j['lineas'] as List) l as String],
     senaCentavos: j['senaCentavos'] as int? ?? 0,
+    totalHoyCentavos: j['totalHoyCentavos'] as int?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -188,6 +192,7 @@ class EncargueCompanion {
     'desdeMs': desde.millisecondsSinceEpoch,
     'lineas': lineas,
     'senaCentavos': senaCentavos,
+    'totalHoyCentavos': ?totalHoyCentavos,
   };
 }
 

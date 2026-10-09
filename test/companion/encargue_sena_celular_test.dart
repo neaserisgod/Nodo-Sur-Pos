@@ -29,6 +29,7 @@ void main() {
 
     expect(await ingresosEnEfectivoDelDia(db, sesion), 500000);
     expect((await puerto.encargues()).single.senaCentavos, 500000);
+    expect((await puerto.encargues()).single.totalHoyCentavos, 2000000, reason: 'lo que sale hoy lo apartado');
 
     await puerto.cancelarEncargue(id, usuarioId: usuario);
     final movimientos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesion))).get();

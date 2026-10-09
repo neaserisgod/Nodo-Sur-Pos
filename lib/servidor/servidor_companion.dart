@@ -466,6 +466,14 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   // ─── Encargues por apartado (El dueño, 2026-10-02) ───────────────────
   router.get('/encargues', (Request request) async {
     final lista = await listarEnarguesPendientes(db);
+    Future<int?> totalHoy(int id) async {
+      try {
+        return await totalHoyDeEncargue(db, id);
+      } catch (_) {
+        return null;
+      }
+    }
+
     return _json([
       for (final e in lista)
         {
@@ -474,6 +482,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'desdeMs': e.desde.millisecondsSinceEpoch,
           'lineas': [for (final l in e.lineas) l.texto],
           'senaCentavos': e.senaCentavos,
+          // Cuánto sale hoy (El dueño, 2026-10-09: el celular no mostraba precios en los encargues).
+          'totalHoyCentavos': ?await totalHoy(e.id),
         },
     ]);
   });
