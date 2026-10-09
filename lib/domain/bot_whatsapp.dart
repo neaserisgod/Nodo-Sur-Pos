@@ -349,7 +349,7 @@ final _hora = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 List<String> problemasConfigBot(ConfigBotEditable c, {required String nombreNegocio, required String? rubro}) {
   final malos = <String>[];
   if (rubro == null || rubro.isEmpty) malos.add('Elegí el rubro del negocio en Configuración › Tu negocio.');
-  if (nombreNegocio.trim().isEmpty) malos.add('Falta el nombre del negocio (Configuración).');
+  if (nombreNegocio.trim().isEmpty) malos.add('Falta el nombre del comercio: cargalo en Configuración › Tu negocio.');
   final bot = numeroWhatsApp(c.numeroBot), avisos = numeroWhatsApp(c.numeroAvisos);
   if (bot == null) malos.add('El número del bot no se entiende: escribilo como siempre, por ejemplo 2944 123456.');
   if (avisos == null) malos.add('El número para los avisos no se entiende: escribilo como siempre, por ejemplo 2944 123456.');

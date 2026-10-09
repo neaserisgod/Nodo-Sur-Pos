@@ -742,6 +742,16 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'ok': true});
   });
 
+  // Nombre del comercio, para que un negocio que usa el celular también lo pueda cargar (el bot se presenta con él).
+  router.put('/configuracion/nombre-comercio', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final nombre = body['nombre'];
+    if (nombre is! String || nombre.trim().isEmpty) throw const FormatException('El nombre del comercio no puede quedar vacío');
+    await configurarNombreComercio(db, nombre);
+    return _json({'ok': true});
+  });
+
   router.put('/configuracion/producto-vuelto', (Request request) async {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;

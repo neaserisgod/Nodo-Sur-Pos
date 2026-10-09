@@ -120,9 +120,9 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
    PC necesita el `globalId`) y **APK beta**.
 
 **Etapa 4, qué no se probó:** nada en un celular real. Con tests: aceptar contra una base real (stock, reintento sin
-duplicar, ya resuelto, PC vieja), la sección de Encargues, la pantalla del bot y la fila de Más. Quedan abiertos: (a) el
-nombre del comercio solo se carga en la PC, así que un negocio **solo celular** sin nombre no puede guardar la
-configuración del bot; (b) en **"PC y celular"**, los pedidos se ven solo si el celular está vinculado a la cuenta (el
+duplicar, ya resuelto, PC vieja), la sección de Encargues, la pantalla del bot y la fila de Más. El nombre del comercio
+ahora también se carga en el celular (Configuración › Tu negocio, El dueño, 2026-10-09), así un negocio **solo celular**
+puede configurar el bot. Quedan abiertos: (b) en **"PC y celular"**, los pedidos se ven solo si el celular está vinculado a la cuenta (el
 token sale de ahí); (c) `numeroWhatsApp` no saca el 15 ("2944 15 123456" no se entiende; es la misma regla que el bot).
 5. **Notificaciones con la app cerrada** (Firebase): registrar el token, mandar el aviso del pedido, pasos para crear el
    proyecto desde el celular.

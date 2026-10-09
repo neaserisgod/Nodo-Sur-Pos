@@ -53,7 +53,7 @@ void main() {
   Future<void> abrir(WidgetTester t) async {
     await t.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
-      home: PantallaBotWhatsApp(acceso: sitio, servicio: puerto, ahora: () => _ahora, alElegirRubro: () => rubroPedido++),
+      home: PantallaBotWhatsApp(acceso: sitio, servicio: puerto, ahora: () => _ahora, alIrATuNegocio: () => rubroPedido++),
     ));
     await _asentar(t);
   }

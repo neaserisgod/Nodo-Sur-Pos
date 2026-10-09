@@ -452,6 +452,13 @@ void main() {
       expect((await puerto.configuracionNegocio()).rubro, 'almacen');
     });
 
+    test('nombre del comercio: actualizarNombreComercio lo guarda; vacío no borra el que había', () async {
+      await puerto.actualizarNombreComercio('  Almacén Don Pepe ');
+      expect((await puerto.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+      expect(() => puerto.actualizarNombreComercio(' '), throwsArgumentError);
+      expect((await puerto.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+    });
+
     test('actualizarMarkupCategoria cambia solo esa categoría', () async {
       final categoria = (await puerto.categorias()).first;
       await puerto.actualizarMarkupCategoria(categoria.id, 8000);

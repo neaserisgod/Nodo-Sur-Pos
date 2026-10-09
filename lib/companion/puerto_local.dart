@@ -295,6 +295,12 @@ class PuertoLocal implements ServicioCompanion {
   }
 
   @override
+  Future<void> actualizarNombreComercio(String nombre) {
+    if (nombre.trim().isEmpty) throw ArgumentError('El nombre del comercio no puede quedar vacío.');
+    return repo_configuracion.configurarNombreComercio(db, nombre);
+  }
+
+  @override
   Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp) =>
       repo_productos.actualizarMarkupCategoria(db, categoriaId: categoriaId, markupBp: markupBp);
 

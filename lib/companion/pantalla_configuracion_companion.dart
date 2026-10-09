@@ -75,6 +75,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   final _primerAtadoCtrl = TextEditingController();
   final _atadoAdicionalCtrl = TextEditingController();
   final _sueltoCtrl = TextEditingController();
+  final _nombreComercioCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -83,7 +84,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     ClaveGemini.refrescarCuenta().then((_) {
       if (mounted) setState(() {});
     });
-    for (final c in [_primerAtadoCtrl, _atadoAdicionalCtrl, _sueltoCtrl]) {
+    for (final c in [_primerAtadoCtrl, _atadoAdicionalCtrl, _sueltoCtrl, _nombreComercioCtrl]) {
       c.addListener(() {
         if (mounted) setState(() {});
       });
@@ -96,6 +97,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     _primerAtadoCtrl.dispose();
     _atadoAdicionalCtrl.dispose();
     _sueltoCtrl.dispose();
+    _nombreComercioCtrl.dispose();
     super.dispose();
   }
 
@@ -124,6 +126,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       if (mounted) {
         // Los campos de recargo solo se pisan si no hay nada tipeado a medias.
         final recargoSinCambios = !_recargoCambio;
+        final nombreSinCambios = _config == null || !_nombreCambio;
         setState(() {
           _servicio = servicio;
           _pcEmparejada = conexion != null;
@@ -134,6 +137,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           _nombreVueltoGuardado = nombreVuelto;
         });
         if (recargoSinCambios || _primerAtadoCtrl.text.isEmpty) _cargarCamposRecargo(config);
+        if (nombreSinCambios) _nombreComercioCtrl.text = config.nombreComercio;
       }
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
@@ -153,6 +157,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   int get _paso => _pasoPendiente ?? _config!.pasoRedondeoCentavos;
   String? get _rubro => _rubroPendiente ?? _config!.rubro;
   bool get _rubroCambio => _rubroPendiente != null && _rubroPendiente != _config?.rubro;
+  bool get _nombreCambio => _config != null && _nombreComercioCtrl.text.trim() != _config!.nombreComercio.trim();
 
   bool _medioActivo(MedioDePagoCompanion m) => _mediosPendientes[m.id] ?? m.activo;
   bool _usuarioActivo(UsuarioCompanion u) => _usuariosPendientes[u.id] ?? u.activo;
@@ -185,6 +190,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     final c = _config;
     if (c == null) return false;
     return _rubroCambio ||
+        _nombreCambio ||
         (_pasoPendiente != null && _pasoPendiente != c.pasoRedondeoCentavos) ||
         _recargoCambio ||
         _vueltoCambio ||
@@ -215,6 +221,14 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       }
     }
 
+    if (_nombreCambio) {
+      final nombre = _nombreComercioCtrl.text.trim();
+      if (nombre.isEmpty) {
+        errores.add('Nombre del comercio: no puede quedar vacío');
+      } else {
+        await intentar('Nombre del comercio', () => servicio.actualizarNombreComercio(nombre), () {});
+      }
+    }
     if (_rubroCambio) {
       await intentar('Rubro', () => servicio.actualizarRubro(_rubroPendiente!), () => _rubroPendiente = null);
     }
@@ -414,6 +428,11 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
         children: [
           const SeccionNs('Tu negocio'),
           const SizedBox(height: 10),
+          KeyedSubtree(
+            key: const Key('config_nombre_comercio'),
+            child: CampoNs(etiqueta: 'Nombre del comercio', controller: _nombreComercioCtrl, placeholder: 'Ej: Almacén Don Pepe'),
+          ),
+          const SizedBox(height: 12),
           Text(
             rubro == null ? 'Rubro · Sin elegir. Lo usa el bot de WhatsApp para saber cómo atender' : 'Rubro',
             style: estiloNs(14, peso: FontWeight.w600, color: ns.mute),

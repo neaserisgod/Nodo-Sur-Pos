@@ -100,7 +100,7 @@ class PantallaMasNs extends StatelessWidget {
                           (_) => PantallaBotWhatsApp(
                             acceso: accesoBotDelCelular,
                             servicio: app.servicio!,
-                            alElegirRubro: () => app.irA((_) => const PantallaConfiguracionCompanion()),
+                            alIrATuNegocio: () => app.irA((_) => const PantallaConfiguracionCompanion()),
                           ),
                         ),
                       ),

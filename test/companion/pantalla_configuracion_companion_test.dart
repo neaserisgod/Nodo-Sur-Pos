@@ -95,6 +95,23 @@ void main() {
     expect(_guardarActivo(t), isFalse);
   });
 
+  testWidgets('nombre del comercio: se carga desde el celular con Guardar, y vacío no borra el que había', (t) async {
+    final puerto = await _preparar(t);
+    await _abrir(t);
+    final campo = find.descendant(of: find.byKey(const Key('config_nombre_comercio')), matching: find.byType(TextField));
+    await t.enterText(campo, 'Almacén Don Pepe');
+    await t.pump();
+    expect(_guardarActivo(t), isTrue);
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.nombreComercio, 'Almacén Don Pepe');
+    expect(_guardarActivo(t), isFalse);
+
+    await t.enterText(campo, '   ');
+    await t.pump();
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.nombreComercio, 'Almacén Don Pepe');
+  });
+
   testWidgets('el recargo de cigarrillos se guarda con sus tres montos', (t) async {
     final puerto = await _preparar(t);
     await _abrir(t);

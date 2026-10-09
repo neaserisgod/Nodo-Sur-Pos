@@ -18,13 +18,13 @@ import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 
 class PantallaBotWhatsApp extends StatefulWidget {
-  const PantallaBotWhatsApp({super.key, required this.acceso, required this.servicio, this.alElegirRubro, this.ahora});
+  const PantallaBotWhatsApp({super.key, required this.acceso, required this.servicio, this.alIrATuNegocio, this.ahora});
 
   final AccesoBot acceso;
   final ServicioCompanion servicio;
 
-  /// Abre Configuración › Tu negocio para elegir el rubro. Null = solo se avisa.
-  final VoidCallback? alElegirRubro;
+  /// Abre Configuración › Tu negocio (rubro y nombre del comercio). Null = solo se avisa.
+  final VoidCallback? alIrATuNegocio;
   final DateTime Function()? ahora;
 
   @override
@@ -218,14 +218,18 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
       if (rubro == null) ...[
         const SizedBox(height: 8),
         const InfoNs('El bot atiende según el rubro: elegilo en Configuración › Tu negocio.', tono: TonoNs.warn),
-        if (widget.alElegirRubro != null) ...[
+        if (widget.alIrATuNegocio != null) ...[
           const SizedBox(height: 8),
-          KeyedSubtree(key: const Key('bot_elegir_rubro'), child: BotonNs.secundario(context, 'Elegir el rubro', widget.alElegirRubro)),
+          KeyedSubtree(key: const Key('bot_elegir_rubro'), child: BotonNs.secundario(context, 'Elegir el rubro', widget.alIrATuNegocio)),
         ],
       ],
       if (negocio.nombreComercio.trim().isEmpty) ...[
         const SizedBox(height: 8),
-        const InfoNs('El bot se presenta con el nombre del comercio: cargalo en Configuración de la PC.', tono: TonoNs.warn),
+        const InfoNs('El bot se presenta con el nombre del comercio: cargalo en Configuración › Tu negocio.', tono: TonoNs.warn),
+        if (widget.alIrATuNegocio != null && rubro != null) ...[
+          const SizedBox(height: 8),
+          BotonNs.secundario(context, 'Ir a Tu negocio', widget.alIrATuNegocio),
+        ],
       ],
       _seccion('Números'),
       KeyedSubtree(

@@ -638,6 +638,17 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   @override
+  Future<void> actualizarNombreComercio(String nombre) async {
+    final r = await _client.put(
+      conexion._url('/configuracion/nombre-comercio'),
+      headers: _headers,
+      body: jsonEncode({'nombre': nombre}),
+    );
+    if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el nombre con la PC, actualizá la app de la PC.');
+    _revisar(r);
+  }
+
+  @override
   Future<void> actualizarProductoVuelto(int? productoId) async {
     final r = await _client.put(
       conexion._url('/configuracion/producto-vuelto'),

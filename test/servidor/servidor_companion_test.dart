@@ -2773,6 +2773,17 @@ void main() {
         );
       });
 
+      test('nombre del comercio (para el bot de WhatsApp): el celular lo guarda en la PC y lo lee de vuelta', () async {
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: puerto, token: token));
+        await cliente.actualizarNombreComercio('Almacén Don Pepe');
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
+        expect((await cliente.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+
+        final vacio = await http.put(url('/configuracion/nombre-comercio'), headers: headers(), body: jsonEncode({'nombre': ' '}));
+        expect(vacio.statusCode, 400);
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
+      });
+
       test('PUT /configuracion/recargo-cigarrillos actualiza los tres montos', () async {
         final respuesta = await http.put(
           url('/configuracion/recargo-cigarrillos'),

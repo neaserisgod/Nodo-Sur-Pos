@@ -2333,5 +2333,7 @@ Etapa 4 de `docs/PLAN-BOT.md`. Aceptar un pedido es tocar dos lugares (la base d
   que 2 son 2000 g.
 - **Sin el bot, Encargues no cambia**: sin plan, sin cuenta vinculada o sin internet la sección no aparece; nunca muestra un error.
 - **La pantalla del bot no carga nombre ni rubro** (Regla 3): salen de Configuración. El nombre del comercio viajaba solo en la PC;
-  ahora `/configuracion` lo manda al celular.
+  ahora `/configuracion` lo manda al celular y **se carga también en Configuración › Tu negocio del celular** (El dueño, 2026-10-09,
+  eligió eso antes que pedirlo en la pantalla del bot: un solo lugar para el dato). Vacío no se guarda: un campo en blanco no borra el
+  nombre que ya había. Con una PC sin actualizar, guardarlo avisa que hay que actualizarla (la ruta nueva da 404).
 
