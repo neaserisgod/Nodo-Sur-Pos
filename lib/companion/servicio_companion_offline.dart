@@ -57,6 +57,9 @@ class ServicioCompanionOffline implements ServicioCompanion {
     }
   }
 
+  /// Sin la PC, el ticket se imprime en la terminal por el servidor de Nodo Sur ([PuertoLocal.imprimirTicket]).
+  Future<void> imprimirTicket(int ventaId) => _local.imprimirTicket(ventaId);
+
   @override
   Future<List<UsuarioCompanion>> usuarios() => _local.usuarios();
 

@@ -44,6 +44,8 @@ import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/medio_pago.dart' show ComposicionPago, composicionPagoDesdeTexto;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta, Venta;
 import '../data/cobro_posnet.dart' show PasarelaPoint;
+import '../servicios/impresion_posnet_nube.dart' show imprimirTicketPosnet;
+import '../servicios/marca_actual.dart' show marcaDeBase;
 import '../servicios/pasarela_point_nube.dart';
 import 'cliente_companion.dart';
 import 'servicio_companion.dart';
@@ -1163,6 +1165,20 @@ class PuertoLocal implements ServicioCompanion {
   /// Por dónde cobra el celular a la terminal Point cuando no está con la PC: por el servidor de Nodo Sur, con la cuenta
   /// de Mercado Pago que el negocio conectó (el token nunca baja al celular). Sin cuenta vinculada, o con el negocio sin
   /// conectar o sin terminal elegida, se dice qué falta (`servicios/pasarela_point_nube.dart`).
+  /// Imprime el ticket de una venta de esta base en la terminal Point, por el servidor de Nodo Sur con el Mercado Pago del
+  /// negocio (El dueño, 2026-10-09: independizar el celular). Antes solo se podía con la PC, que imprime por el mismo camino.
+  /// Las ventas cobradas por la PC (con el celular conectado a ella) se siguen imprimiendo por la PC: su id es el de esa base.
+  Future<void> imprimirTicket(int ventaId) async {
+    final sync = await syncNubeDelCelular();
+    await imprimirTicketPosnet(
+      ticket: await repo_ticket.ticketDeVenta(db, ventaId),
+      encabezadoNegocio: (await marcaDeBase(db)).encabezadoTicketEfectivo,
+      forzarNube: true,
+      almacen: sync.almacen,
+      cliente: sync.cliente,
+    );
+  }
+
   Future<PasarelaPoint> _pasarela() async {
     final inyectada = pasarelaDePrueba;
     if (inyectada != null) return inyectada();
