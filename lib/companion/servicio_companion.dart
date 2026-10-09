@@ -80,6 +80,14 @@ abstract class ServicioCompanion {
 
   Future<void> actualizarProductoVuelto(int? productoId);
 
+  /// Rubro del comercio (v63), por su clave (`PlantillaRubro.clave`). Lo usa el bot de WhatsApp (`docs/PLAN-BOT.md`).
+  /// Una clave que no existe es un `FormatException` (sin PC) o un 400 (con PC), y no se guarda.
+  Future<void> actualizarRubro(String clave);
+
+  /// Nombre del comercio (con el que se presenta el bot de WhatsApp, y el del ticket). Vacío es un `ArgumentError` (sin PC)
+  /// o un 400 (con PC): no se borra el nombre por un campo que quedó en blanco.
+  Future<void> actualizarNombreComercio(String nombre);
+
   /// Markup de referencia (Regla 14, puramente informativo) — nunca crea
   /// una categoría nueva, solo edita el % de una que ya existe.
   Future<void> actualizarMarkupCategoria(int categoriaId, int markupBp);

@@ -90,6 +90,8 @@ Future<void> guardarNegocio(AppDatabase db, {required String nombre, required Pl
   await prepararNegocioNuevo(db);
   await db.transaction(() async {
     await configurarNombreComercio(db, nombre);
+    // Desde la v63 el rubro queda guardado (lo usa el bot de WhatsApp, `docs/PLAN-BOT.md`).
+    await configurarRubro(db, rubro);
     final existentes = {for (final c in await db.select(db.categorias).get()) c.nombre.trim().toLowerCase()};
     for (final c in rubro.categorias) {
       if (!existentes.add(c.nombre.toLowerCase())) continue;

@@ -165,6 +165,9 @@ void main() {
     final creado = productos.cast<Map<String, dynamic>>().firstWhere((p) => p['id'] == id);
     expect(creado['nombre'], 'Fernet');
     expect(creado['precioCentavos'], 500000);
+    // El pedido del bot de WhatsApp nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+    expect(creado['globalId'], isA<String>());
+    expect(ProductoCompanion.desdeJson(creado).globalId, creado['globalId']);
   });
 
   // El dueño, 2026-09-19: "filtrar por productos sin proveedor, sin costo,
@@ -2758,6 +2761,49 @@ void main() {
         expect(j['recargoPrimerAtadoCentavos'], 30000);
         expect(j['pasoRedondeoCentavos'], 10000);
         expect(j.containsKey('productoVueltoId'), isFalse); // null se omite
+        expect(j.containsKey('rubro'), isFalse, reason: 'sin elegir (v63) se omite, como un null');
+      });
+
+      test('rubro (v63, para el bot de WhatsApp): el celular lo guarda en la PC y lo lee de vuelta', () async {
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: puerto, token: token));
+        expect((await cliente.configuracionNegocio()).rubro, isNull);
+
+        await cliente.actualizarRubro('almacen');
+
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, 'almacen');
+        expect((await cliente.configuracionNegocio()).rubro, 'almacen');
+      });
+
+      test('PUT /configuracion/rubro con un rubro que no existe: 400 y no guarda nada', () async {
+        final respuesta = await http.put(url('/configuracion/rubro'), headers: headers(), body: jsonEncode({'rubro': 'nave_espacial'}));
+        expect(respuesta.statusCode, 400);
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).rubro, '');
+      });
+
+      test('el celular con una PC sin actualizar: guardar el rubro avisa que hay que actualizar la PC', () async {
+        final pcVieja = await HttpServer.bind('127.0.0.1', 0);
+        addTearDown(pcVieja.close);
+        pcVieja.listen((r) {
+          r.response.statusCode = 404;
+          r.response.write('Route not found');
+          r.response.close();
+        });
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: pcVieja.port, token: token));
+        await expectLater(
+          () => cliente.actualizarRubro('almacen'),
+          throwsA(isA<ErrorCompanion>().having((e) => e.mensaje, 'mensaje', contains('actualizá la app de la PC'))),
+        );
+      });
+
+      test('nombre del comercio (para el bot de WhatsApp): el celular lo guarda en la PC y lo lee de vuelta', () async {
+        final cliente = ClienteCompanion(DatosConexion(ip: '127.0.0.1', puerto: puerto, token: token));
+        await cliente.actualizarNombreComercio('Almacén Don Pepe');
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
+        expect((await cliente.configuracionNegocio()).nombreComercio, 'Almacén Don Pepe');
+
+        final vacio = await http.put(url('/configuracion/nombre-comercio'), headers: headers(), body: jsonEncode({'nombre': ' '}));
+        expect(vacio.statusCode, 400);
+        expect((await db.select(db.configuracionNegocioTabla).getSingle()).nombreComercio, 'Almacén Don Pepe');
       });
 
       test('PUT /configuracion/recargo-cigarrillos actualiza los tres montos', () async {

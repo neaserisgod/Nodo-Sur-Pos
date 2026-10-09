@@ -156,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 63;
+  int get schemaVersion => 64;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1167,8 +1167,20 @@ class AppDatabase extends _$AppDatabase {
       if (from < 62) {
         await _sumarComponentesDePromoALaSync(this, m);
       }
-      // v62 → v63 (2026-10-09): los gastos fijos y sus montos viajan entre la PC y el celular (independizar el celular).
+      // v62 → v63 (2026-10-09): el rubro del comercio queda guardado (`configuracion_negocio_tabla.rubro`), para el bot de
+      // WhatsApp (`docs/PLAN-BOT.md`). Nace vacío ("sin elegir"): el rubro con que se armó un negocio viejo no se guardó nunca
+      // y no se adivina. Con chequeo de columna, como v59→v60.
       if (from < 63) {
+        final columnas = (await customSelect("SELECT name FROM pragma_table_info('configuracion_negocio_tabla')").get())
+            .map((c) => c.data['name'] as String)
+            .toSet();
+        if (!columnas.contains('rubro')) {
+          await m.addColumn(configuracionNegocioTabla, configuracionNegocioTabla.rubro);
+        }
+      }
+      // v63 → v64 (2026-10-09): los gastos fijos y sus montos viajan entre la PC y el celular (independizar el celular). Iba a
+      // ser la v63, pero esa quedó para el rubro del bot (El dueño, 2026-10-09: "Bot queda v63, fijos a v64").
+      if (from < 64) {
         await _sumarIdentidadDeSyncAFijos(this, m);
       }
       if (from < 37 && !Platform.isAndroid) {
@@ -1287,7 +1299,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'configuracion_negocio_tabla',
   'medios_de_pago',
   ...tablasDeSyncV61,
-  ...tablasDeSyncV63,
+  ...tablasDeSyncV64,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1496,9 +1508,9 @@ Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
   await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV61);
 }
 
-const tablasDeSyncV63 = ['gastos_fijos', 'gastos_fijos_montos'];
+const tablasDeSyncV64 = ['gastos_fijos', 'gastos_fijos_montos'];
 
-/// v62 → v63: identidad de sincronización para los gastos fijos y sus montos (El dueño, 2026-10-09: independizar el celular). Lo
+/// v63 → v64: identidad de sincronización para los gastos fijos y sus montos (El dueño, 2026-10-09: independizar el celular). Lo
 /// que ya había lo creó este equipo; sale con `actualizado_en` de ahora para que suba. Dos equipos con el mismo fijo (la plantilla
 /// del rubro los siembra en los dos) se juntan al sincronizar por el nombre (`_clavesNaturales` de `repositorio_sincronizacion.dart`).
 Future<void> _sumarIdentidadDeSyncAFijos(AppDatabase db, Migrator m) async {
@@ -1515,13 +1527,13 @@ Future<void> _sumarIdentidadDeSyncAFijos(AppDatabase db, Migrator m) async {
   await sumar(db.gastosFijosMontos, [db.gastosFijosMontos.globalId, db.gastosFijosMontos.origenDispositivo, db.gastosFijosMontos.actualizadoEn]);
   final origen = idDispositivoActual.replaceAll("'", "''");
   final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  for (final tabla in tablasDeSyncV63) {
+  for (final tabla in tablasDeSyncV64) {
     await db.customStatement(
       "UPDATE $tabla SET global_id = lower(hex(randomblob(16))), origen_dispositivo = '$origen', actualizado_en = $ahora "
       'WHERE global_id IS NULL',
     );
   }
-  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV63);
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV64);
 }
 
 /// v61 → v62: columna `productos.componentes_promo`, llenada desde `promo_componentes`, e identidad de sincronización para las promos

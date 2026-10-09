@@ -2,6 +2,7 @@
 // se habla y cómo se abre el navegador. Es global (como `servicioActualizaciones`) porque lo usan el arranque, el
 // cierre de caja y Configuración; los tests de pantalla le pasan la suya.
 
+import 'catalogo_bot_nube.dart';
 import 'gemini.dart';
 import 'ia_nube.dart';
 import 'dart:async';
@@ -103,6 +104,8 @@ Future<NubeApp> iniciarNube(AppDatabase db) async {
     cliente: cliente,
     almacenEstado: AlmacenEstadoSyncEnArchivo(soporte.path),
     alAplicarBajada: avisos.cambioDelCelular,
+    // La PC es la que sube a la nube: publica también el catálogo del bot de WhatsApp (si el negocio lo tiene).
+    alTerminarVuelta: PublicadorCatalogoBot(db: db, cliente: cliente).publicarSiHaceFalta,
   );
   final avisosMp = ServicioAvisosMp(db: db, almacen: almacen, cliente: cliente);
   final nube = NubeApp(

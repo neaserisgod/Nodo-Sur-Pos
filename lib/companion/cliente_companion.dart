@@ -72,6 +72,10 @@ class ProductoCompanion {
   /// en Conteo/Precios.
   final String tipoCigarrillo;
 
+  /// Identidad de sincronización: la misma en todos los equipos (el id local no). Con ella vuelve un producto que salió de
+  /// esta base, como los del pedido del bot de WhatsApp. Null si la PC todavía no la manda (versión anterior a 2026-10-09).
+  final String? globalId;
+
   const ProductoCompanion({
     required this.id,
     required this.nombre,
@@ -87,6 +91,7 @@ class ProductoCompanion {
     this.stockGramos,
     required this.activo,
     this.tipoCigarrillo = 'ninguno',
+    this.globalId,
   });
 
   factory ProductoCompanion.desdeJson(Map<String, dynamic> j) =>
@@ -105,6 +110,7 @@ class ProductoCompanion {
         stockGramos: j['stockGramos'] as int?,
         activo: j['activo'] as bool,
         tipoCigarrillo: j['tipoCigarrillo'] as String? ?? 'ninguno',
+        globalId: j['globalId'] as String?,
       );
 }
 
@@ -258,12 +264,21 @@ class ConfiguracionNegocioCompanion {
   final int pasoRedondeoCentavos;
   final int? productoVueltoId;
 
+  /// Clave del rubro (`PlantillaRubro.clave`, v63), o null si todavía no se eligió o si la PC no lo informa (una PC sin
+  /// actualizar no manda el campo).
+  final String? rubro;
+
+  /// El nombre del comercio (Configuración de la PC). Vacío si no se cargó o si la PC no lo informa (anterior a 2026-10-09).
+  final String nombreComercio;
+
   const ConfiguracionNegocioCompanion({
     required this.recargoPrimerAtadoCentavos,
     required this.recargoAtadoAdicionalCentavos,
     required this.recargoSueltoCentavos,
     required this.pasoRedondeoCentavos,
     this.productoVueltoId,
+    this.rubro,
+    this.nombreComercio = '',
   });
 
   factory ConfiguracionNegocioCompanion.desdeJson(Map<String, dynamic> j) => ConfiguracionNegocioCompanion(
@@ -272,6 +287,8 @@ class ConfiguracionNegocioCompanion {
     recargoSueltoCentavos: j['recargoSueltoCentavos'] as int,
     pasoRedondeoCentavos: j['pasoRedondeoCentavos'] as int,
     productoVueltoId: j['productoVueltoId'] as int?,
+    rubro: switch (j['rubro']) { final String r when r.isNotEmpty => r, _ => null },
+    nombreComercio: j['nombreComercio'] as String? ?? '',
   );
 }
 
@@ -625,6 +642,29 @@ class ClienteCompanion implements ServicioCompanion {
       headers: _headers,
       body: jsonEncode({'montoCentavos': montoCentavos}),
     );
+    _revisar(r);
+  }
+
+  @override
+  Future<void> actualizarRubro(String clave) async {
+    final r = await _client.put(
+      conexion._url('/configuracion/rubro'),
+      headers: _headers,
+      body: jsonEncode({'rubro': clave}),
+    );
+    // Una PC sin actualizar no conoce la ruta (404): se dice qué hacer en vez del error genérico.
+    if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el rubro con la PC, actualizá la app de la PC.');
+    _revisar(r);
+  }
+
+  @override
+  Future<void> actualizarNombreComercio(String nombre) async {
+    final r = await _client.put(
+      conexion._url('/configuracion/nombre-comercio'),
+      headers: _headers,
+      body: jsonEncode({'nombre': nombre}),
+    );
+    if (r.statusCode == 404) throw const ErrorCompanion(404, 'Para guardar el nombre con la PC, actualizá la app de la PC.');
     _revisar(r);
   }
 

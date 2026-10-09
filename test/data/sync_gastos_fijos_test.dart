@@ -1,4 +1,4 @@
-// Los gastos fijos viajan entre la PC y el celular (v63, El dueño 2026-10-09: independizar el celular): un fijo cargado en un
+// Los gastos fijos viajan entre la PC y el celular (v64, El dueño 2026-10-09: independizar el celular): un fijo cargado en un
 // equipo, con su monto y su vencimiento, aparece en el otro; el mismo nombre en los dos es un solo fijo; y un pago de un fijo
 // desde la caja apunta al fijo correcto aunque los `id` locales no coincidan.
 import 'package:flutter_test/flutter_test.dart';

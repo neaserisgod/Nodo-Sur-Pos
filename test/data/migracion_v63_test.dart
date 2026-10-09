@@ -1,34 +1,27 @@
-// Prueba de upgrade REAL (v62 → v63: los gastos fijos y sus montos se sincronizan, El dueño 2026-10-09) contra un archivo de
-// verdad, mismo motivo que `migracion_v47_test.dart`.
+// Prueba de upgrade REAL (v62 → v63: el rubro del comercio queda guardado) contra un archivo de verdad, mismo motivo que
+// `migracion_v47_test.dart`.
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
-import 'package:la_plazoleta/data/repositorio_equilibrio.dart';
-import 'package:la_plazoleta/data/repositorio_sincronizacion.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 void main() {
-  test('una base v62 real sube a v63: los fijos y sus montos siguen y quedan listos para sincronizar', () async {
+  test('una base v62 real sube a v63: la configuración queda igual y el rubro arranca sin elegir', () async {
     final carpeta = await Directory.systemTemp.createTemp('la_plazoleta_migracion_v63_');
     addTearDown(() => carpeta.delete(recursive: true));
     final archivo = File('${carpeta.path}/base.sqlite');
     final nueva = AppDatabase(NativeDatabase(archivo));
-    await nueva.select(nueva.usuarios).get(); // abre (y crea) la base
+    await nueva.update(nueva.configuracionNegocioTabla).write(
+          const ConfiguracionNegocioTablaCompanion(nombreComercio: Value('La Plazoleta'), pasoRedondeoCentavos: Value(5000)),
+        );
     await nueva.close();
 
-    // Como estaba en la v62: sin las columnas de sincronización, con un fijo y su monto de antes.
     final crudo = sqlite3.sqlite3.open(archivo.path);
     try {
-      for (final tabla in ['gastos_fijos', 'gastos_fijos_montos']) {
-        crudo.execute('DROP INDEX IF EXISTS idx_${tabla}_global_id');
-        for (final c in ['global_id', 'origen_dispositivo', 'actualizado_en']) {
-          crudo.execute('ALTER TABLE $tabla DROP COLUMN $c');
-        }
-      }
-      crudo.execute("INSERT INTO gastos_fijos (nombre, activo) VALUES ('Alquiler local', 1)");
-      crudo.execute("INSERT INTO gastos_fijos_montos (gasto_fijo_id, mes_anio, monto_centavos) VALUES (last_insert_rowid(), '2026-10', 45000000)");
+      crudo.execute('ALTER TABLE configuracion_negocio_tabla DROP COLUMN rubro');
       crudo.execute('PRAGMA user_version = 62');
     } finally {
       crudo.close();
@@ -36,12 +29,9 @@ void main() {
 
     final db = AppDatabase(NativeDatabase(archivo));
     addTearDown(() => db.close());
-    final resumen = await fijosDelMes(db, '2026-10');
-    expect(resumen.conceptos.where((c) => c.concepto.nombre == 'Alquiler local').single.montoCentavos, 45000000);
-    final fijos = await cambiosDesde(db, tabla: 'gastos_fijos', desde: 0);
-    expect(fijos.where((f) => f['nombre'] == 'Alquiler local').single['global_id'], isNotNull);
-    final montos = await cambiosDesde(db, tabla: 'gastos_fijos_montos', desde: 0);
-    expect(montos.single['global_id'], isNotNull);
-    expect(montos.single['gasto_fijo_id_gid'], isNotNull, reason: 'el monto viaja con la identidad de su fijo');
+    final config = await db.select(db.configuracionNegocioTabla).getSingle();
+    expect(config.nombreComercio, 'La Plazoleta');
+    expect(config.pasoRedondeoCentavos, 5000);
+    expect(config.rubro, '', reason: 'el rubro con que se armó un negocio viejo no se guardó nunca: no se adivina');
   });
 }

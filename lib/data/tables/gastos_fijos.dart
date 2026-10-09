@@ -13,7 +13,7 @@ class GastosFijos extends Table {
   /// el concepto, no por mes: el alquiler vence el mismo día todos los meses (El dueño, 2026-10-07).
   IntColumn get diaVencimiento => integer().nullable()();
 
-  /// Identidad de sincronización (v63, El dueño, 2026-10-09: independizar el celular): los fijos se cargan desde la PC o el
+  /// Identidad de sincronización (v64, El dueño, 2026-10-09: independizar el celular): los fijos se cargan desde la PC o el
   /// celular y viajan entre los dos. Antes eran locales de cada equipo.
   TextColumn get globalId => text().nullable()();
   TextColumn get origenDispositivo => text().nullable()();

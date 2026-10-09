@@ -99,6 +99,7 @@ void main() {
 
       final config = await db.select(db.configuracionNegocioTabla).getSingle();
       expect(config.nombreComercio, 'Almacén Don Pepe');
+      expect(config.rubro, 'almacen', reason: 'desde la v63 el rubro queda guardado (lo usa el bot de WhatsApp)');
       final categorias = await db.select(db.categorias).get();
       expect(categorias, hasLength(PlantillaRubro.almacen.categorias.length), reason: '"bebidas" ya estaba y no se repite');
       final nuevas = categorias.where((c) => c.nombre != 'bebidas');

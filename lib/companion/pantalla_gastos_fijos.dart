@@ -1,5 +1,5 @@
 // Gastos fijos en el celular (El dueño, 2026-10-09: independizar el celular; antes solo en la PC): cada fijo con el monto de este
-// mes y el día en que vence, cargar o corregir el monto, y sumar uno nuevo. Desde la v63 los fijos viajan entre la PC y el
+// mes y el día en que vence, cargar o corregir el monto, y sumar uno nuevo. Desde la v64 los fijos viajan entre la PC y el
 // celular, así que se trabaja sobre la base del celular como Proveedores. Las reglas son las de la PC (`repositorio_equilibrio.dart`):
 // un mes sin monto propio repite el último cargado.
 

@@ -49,7 +49,7 @@ const Map<String, bool> tablasSincronizables = {
   'productos': true,
   'configuracion_negocio_tabla': true,
   'medios_de_pago': true,
-  // v63 (El dueño, 2026-10-09: independizar el celular): antes de `movimientos_de_caja`, que apunta a un fijo al pagarlo.
+  // v64 (El dueño, 2026-10-09: independizar el celular): antes de `movimientos_de_caja`, que apunta a un fijo al pagarlo.
   'gastos_fijos': true,
   'gastos_fijos_montos': true,
   'sesiones_de_caja': true,
@@ -79,7 +79,7 @@ const tablasSincronizablesV61 = {
   'productos_factura_compra',
   'vinculos_factura',
   'cuits_proveedor',
-  // Las de la v63: mismo trato con una PC anterior a la v63.
+  // Las de la v64: mismo trato con una PC anterior a la v64.
   'gastos_fijos',
   'gastos_fijos_montos',
 };
@@ -104,7 +104,7 @@ bool _tablaValida(String tabla) {
 /// sincronizadas (`medio_pago_id`, `caja_id`): esas son un catálogo fijo,
 /// sembrado igual en los dos dispositivos, así que su `id` ya coincide por
 /// convención sin necesidad de traducirlo. `gasto_fijo_id` sí se traduce desde
-/// la v63: los fijos se cargan en cualquier equipo y su `id` no coincide.
+/// la v64: los fijos se cargan en cualquier equipo y su `id` no coincide.
 const Map<String, Map<String, String>> _referenciasCruzadas = {
   'productos': {'categoria_id': 'categorias', 'proveedor_id': 'proveedores'},
   'configuracion_negocio_tabla': {'producto_vuelto_id': 'productos'},

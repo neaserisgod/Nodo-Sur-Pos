@@ -61,6 +61,7 @@ import '../data/repositorio_cierre.dart'
 import '../data/repositorio_cobro.dart';
 import '../data/repositorio_deuda_proveedores.dart';
 import '../data/repositorio_configuracion.dart';
+import '../domain/plantillas_rubro.dart';
 import '../data/repositorio_edicion_venta.dart';
 import '../data/repositorio_faltantes.dart';
 import '../data/repositorio_gastos.dart';
@@ -200,6 +201,8 @@ Map<String, dynamic> _productoAJson(Producto p) => {
   'stock': p.stock,
   'stockGramos': p.stockGramos,
   'activo': p.activo,
+  // Para el pedido del bot de WhatsApp, que nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+  'globalId': p.globalId,
 };
 
 /// Dónde queda el rastro de un 500 real — al lado de la base y del `.apk`
@@ -718,6 +721,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       'recargoSueltoCentavos': c.recargoSueltoCentavos,
       'pasoRedondeoCentavos': c.pasoRedondeoCentavos,
       'productoVueltoId': ?c.productoVueltoId,
+      // v63: sin elegir se omite, como un null.
+      'rubro': ?(c.rubro.isEmpty ? null : c.rubro),
+      // El bot de WhatsApp se presenta con este nombre (docs/PLAN-BOT.md).
+      'nombreComercio': c.nombreComercio,
     });
   });
 
@@ -737,6 +744,27 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     final body =
         jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     await configurarPasoRedondeo(db, _intRequerido(body, 'montoCentavos'));
+    return _json({'ok': true});
+  });
+
+  // Rubro del comercio (v63), para el bot de WhatsApp (`docs/PLAN-BOT.md`). Un rubro que no existe es un 400.
+  router.put('/configuracion/rubro', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final clave = body['rubro'];
+    final rubro = clave is String ? PlantillaRubro.desdeClave(clave) : null;
+    if (rubro == null) throw FormatException('No existe el rubro "$clave"');
+    await configurarRubro(db, rubro);
+    return _json({'ok': true});
+  });
+
+  // Nombre del comercio, para que un negocio que usa el celular también lo pueda cargar (el bot se presenta con él).
+  router.put('/configuracion/nombre-comercio', (Request request) async {
+    final body =
+        jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final nombre = body['nombre'];
+    if (nombre is! String || nombre.trim().isEmpty) throw const FormatException('El nombre del comercio no puede quedar vacío');
+    await configurarNombreComercio(db, nombre);
     return _json({'ok': true});
   });
 

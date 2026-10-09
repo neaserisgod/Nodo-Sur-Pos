@@ -99,6 +99,18 @@ Distinto del mock a propósito:
   y "Probar estados" es solo del mock.
 
 Pendiente / ideas (sin hacer):
+- **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
+  onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Mock hecho, sin código**; plan y
+  preguntas abiertas en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+- **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
+  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas en ramas sin mezclar
+  (`ccr-e5e5b532-aj3e0g` en esta app, en `NodoSurPage` y en `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
+  bot en Termux y, en el celular, **pedidos por confirmar en Encargues** (Aceptar los aparta, sin stock dice qué falta y no
+  acepta; Rechazar no toca nada) y la pantalla **Más › Bot de WhatsApp** (estado, configuración para dueño/encargado,
+  instalar). La PC también publica el catálogo: **hace falta un release nuevo de Windows** además del APK. Probado con
+  tests; **nada probado en un celular real ni con WhatsApp real**. Falta: APK beta y notificaciones con la app cerrada
+  (etapa 5).
 - **Abrir la caja desde el celular sin la PC** (El dueño, 2026-10-07/09, independencia del celular, etapa 1, opción A):
   con el modo **"Solo celular"** el celular abre la caja sobre su propia base (antes daba "No se puede abrir una nueva
   desde acá" y el modo solo celular no podía arrancar el día). En "PC y celular" sigue bloqueado, para no tener dos cajas
@@ -133,11 +145,11 @@ Pendiente / ideas (sin hacer):
   - **Seña de encargues desde el celular**: al apartar (entra a la caja abierta, efectivo o Mercado Pago) y al cancelar (se devuelve),
     sin la PC y con la PC (rutas `/encargues` y `/encargues/<id>/cancelar` aceptan la seña). Cobrar o anotar deuda de un encargue
     con seña conectado a la PC sigue yendo por la PC (409).
-  - **Gastos fijos sincronizados** (migración v63, `schemaVersion` **63**): `gastos_fijos` y `gastos_fijos_montos` con identidad
+  - **Gastos fijos sincronizados** (migración v64, `schemaVersion` **64**; iba a ser la v63, que quedó para el rubro del bot): `gastos_fijos` y `gastos_fijos_montos` con identidad
     de sincronización; el mismo nombre en dos equipos es un solo fijo, y `movimientos_de_caja.gasto_fijo_id` se traduce por
     `global_id`. En el celular: Configuración › Gastos fijos (alta, monto del mes, vencimiento). Arreglo del motor de sync: dos
     filas "iguales" por clave natural creadas en el mismo segundo se quedan con el `global_id` menor (antes no convergían).
-    **Publicar la PC y el APK juntos** (un equipo sin v63 ignora esas filas).
+    **Publicar la PC y el APK juntos** (un equipo sin v64 ignora esas filas). Esta rama ya trae la del bot (`ccr-e5e5b532-aj3e0g`): se publica después de ella o junto.
   - **"¿A dónde fue esta plata?" en el cierre del celular**: con un faltante desde el mínimo, se anota como gasto mío, proveedor,
     fijo u otro gasto (en partes), con el mismo `anotarFaltante` de la PC; cerrar sin explicar avisa antes. Con la PC, rutas
     nuevas `GET/POST /cierre/faltantes` (una PC vieja contesta 404 y el celular no pregunta). El fondo fijo ya no entra en
@@ -147,6 +159,11 @@ Pendiente / ideas (sin hacer):
   - **Encargues con precio**: "Hoy sale $X" (y lo que falta cobrar si hay seña), a precios de hoy (`totalHoyDeEncargue`).
   Falta: dejar de preguntar el modo al configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.
   Probado con tests; **no probado en un celular real ni con la Point/cuenta real**.
+- **El rubro del comercio queda guardado** (bot de WhatsApp, etapa 1 de [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md)): columna
+  `rubro` en la configuración del negocio (migración v63, `schemaVersion` **63**), que viaja por la sync. Se elige en el celular,
+  Configuración › **Tu negocio** (Kiosco, Almacén, Fiambrería, Otro), con o sin PC; el asistente de negocio nuevo y las plantillas
+  de la PC lo guardan solos. Un negocio armado antes nace **sin elegir** (el rubro no se guardaba y no se adivina). Con una PC sin
+  actualizar, el celular avisa que hay que actualizarla. Probado con tests; **no probado en un celular real**.
 - **Vender en el celular sin la pantalla "Venta cobrada"** (El dueño: "siento que hay una pantalla extra"): al cobrar se vuelve
   directo a una venta nueva con el buscador listo, y arriba queda una tarjeta con el total, el vuelto bien grande e "Imprimir
   ticket", que se va sola al agregar el primer producto de la siguiente (o con la ✕). Un toque menos por venta. Probado con tests;

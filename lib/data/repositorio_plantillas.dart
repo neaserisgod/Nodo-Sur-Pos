@@ -15,6 +15,7 @@ import 'package:drift/drift.dart';
 import '../domain/plantillas_rubro.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
+import 'repositorio_configuracion.dart';
 
 class ResultadoPlantilla {
   const ResultadoPlantilla({required this.categoriasNuevas, required this.gastosFijosNuevos});
@@ -61,6 +62,8 @@ Future<ResultadoPlantilla> aplicarPlantillaRubro(AppDatabase db, PlantillaRubro 
           );
       gastosFijosNuevos++;
     }
+    // Desde la v63 el rubro queda guardado (lo usa el bot de WhatsApp, `docs/PLAN-BOT.md`).
+    await configurarRubro(db, plantilla);
 
     return ResultadoPlantilla(categoriasNuevas: categoriasNuevas, gastosFijosNuevos: gastosFijosNuevos);
   });

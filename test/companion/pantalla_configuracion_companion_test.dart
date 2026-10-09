@@ -79,6 +79,39 @@ void main() {
     expect((await t.runAsync(() => puerto.configuracionNegocio()))!.pasoRedondeoCentavos, elegido);
   });
 
+  testWidgets('rubro (v63): arranca sin elegir y elegir Almacén se guarda recién con Guardar', (t) async {
+    final puerto = await _preparar(t);
+    await _abrir(t);
+    expect(find.textContaining('Sin elegir'), findsOneWidget);
+
+    await t.tap(_chip('Almacén'));
+    await t.pump();
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.rubro, isNull, reason: 'sin Guardar no se escribió nada');
+    expect(_guardarActivo(t), isTrue);
+
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.rubro, 'almacen');
+    expect(find.textContaining('Sin elegir'), findsNothing);
+    expect(_guardarActivo(t), isFalse);
+  });
+
+  testWidgets('nombre del comercio: se carga desde el celular con Guardar, y vacío no borra el que había', (t) async {
+    final puerto = await _preparar(t);
+    await _abrir(t);
+    final campo = find.descendant(of: find.byKey(const Key('config_nombre_comercio')), matching: find.byType(TextField));
+    await t.enterText(campo, 'Almacén Don Pepe');
+    await t.pump();
+    expect(_guardarActivo(t), isTrue);
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.nombreComercio, 'Almacén Don Pepe');
+    expect(_guardarActivo(t), isFalse);
+
+    await t.enterText(campo, '   ');
+    await t.pump();
+    await _tocarGuardar(t);
+    expect((await t.runAsync(() => puerto.configuracionNegocio()))!.nombreComercio, 'Almacén Don Pepe');
+  });
+
   testWidgets('el recargo de cigarrillos se guarda con sus tres montos', (t) async {
     final puerto = await _preparar(t);
     await _abrir(t);
