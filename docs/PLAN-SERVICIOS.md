@@ -68,8 +68,9 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
    movimiento que cancelar un encargue.
 10. **La sync es un buzón donde gana el último en llegar**, no una base central. El bot necesita ver los horarios libres al
     instante y no puede dar dos veces el mismo turno. Por eso el servidor tiene que **entrar a la sync como un equipo más** (subir
-    los turnos como lotes) y además **reservar el horario en un solo lugar** (el `SyncHub` de cada cuenta ya serializa por
-    cuenta). Es la parte de más riesgo.
+    los turnos como lotes) y además **reservar el horario en un solo lugar**. Corregido el mismo día contra el código del
+    sitio: el `SyncHub` es uno por sucursal y no guarda datos, así que reservar es trabajo nuevo (ver la etapa 5). Es la
+    parte de más riesgo.
 11. Toda tabla nueva que viaja necesita `global_id`, `origen_dispositivo` y `actualizado_en` en cada insert (`TRAMPAS.md`), y
     una lista aparte como `tablasSincronizablesV61`, para que un equipo sin actualizar la saltee en vez de cortar la sync.
 
@@ -117,73 +118,99 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 
 ### Etapa 5 · Bot de WhatsApp (desde `botdemo`)
 
-**Dónde corre.** Baileys no entra en Cloudflare gratis: necesita una conexión a WhatsApp abierta todo el día y librerías de
-Node (`ws`, `libsignal`) que un Worker no tiene. Un Worker gratis tiene 10 ms de CPU por pedido, y un Durable Object con una
-conexión saliente abierta no hiberna: un solo negocio se comería casi todo el cupo diario. Entonces:
+Revisado contra el código de los tres repos el 2026-10-09 (`botdemo` en `main` 39f8902, `NodoSurPage` en `main` #54). Lo de
+Cloudflare, contra su documentación oficial del mismo día.
 
-- **Con Baileys:** el bot sigue en un **celular con Termux** por negocio (como hoy, `setup.sh` y `bot.sh` ya lo resuelven).
-  Ese celular entra a Nodo Sur como un **equipo más** de la sucursal (token de dispositivo) y no tiene agenda propia.
-- **Reservar es del servidor:** el `SyncHub` de la cuenta (Durable Object, SQLite, plan gratis) ya serializa por cuenta.
-  Suma `POST /api/agenda/reservar` (atómico: ocupa el horario o contesta "ya no está") y `GET /api/agenda/libres`. Un pedido
-  por reserva, nada abierto: entra en el plan gratis. Los turnos que se cargan en la app también reservan por ahí cuando
-  hay internet.
-- **Con la API oficial (después):** Meta llama a un webhook, que es HTTP normal y **sí corre en el Worker** gratis. Ahí
-  desaparece el celular con Termux. El núcleo del bot (`src/core/`) es JavaScript puro, así que se mueve al Worker cambiando
-  solo el adaptador y la capa de base (`src/db/` pasa a hablar con D1 / el Durable Object).
+**Lo que ya vende el sitio (no es un producto nuevo).** `functions/_lib/plans.js`: planes `bot` ($35.000/mes) y `pos-bot`
+($60.000/mes), con alta de $70.000 (`ALTA_URL`). Las páginas `/bot-whatsapp/` y `/diferencias-sistema-pos-y-bot-whatsapp/`
+prometen más de lo que hace `botdemo`: turnos (sí lo hace), **catálogo y pedidos, stock y horarios, cotizador de usados**,
+**"le pide el cierre de caja al encargado por WhatsApp y el POS lo compara"**, y que corre **"en la compu del sistema o en un
+celu Android"**, **"sin servidores"**. `botdemo` solo hace turnos (con seña, recordatorio y FAQ de precios, ubicación y horarios).
+Ver la pregunta 8.
 
-**Qué se toma de `botdemo` y qué cambia:**
+**Dónde corre (verificado).** Baileys no entra en Cloudflare gratis:
+- Un Worker gratis tiene **10 ms de CPU por pedido** (`workers/platform/limits`). Baileys necesita una conexión a WhatsApp
+  abierta todo el día y librerías de Node (`ws`, `libsignal`) pensadas para un proceso que no se corta.
+- Un Durable Object podría tener esa conexión, pero **"Outgoing WebSockets do not hibernate"**
+  (`durable-objects/best-practices/websockets`): se cobra el tiempo entero. A 128 MB, un día son 0,125 GB × 86.400 s =
+  **10.800 GB-s**, y el plan gratis da **13.000 GB-s por día para toda la cuenta**: un solo negocio se come el 83 %.
 
-| | `botdemo` hoy | En Nodo Sur |
+Entonces, con Baileys el bot sigue en un **celular con Termux** por negocio (como hoy: `setup.sh`, `bot.sh`, vinculado como
+dispositivo del WhatsApp Business del negocio, `adaptadores/baileys.js`). Con la API oficial de Meta (después), Meta llama a
+un webhook HTTP, que sí corre en el Worker (esperar la red no cuenta como CPU) y ya no hace falta el celular.
+
+**Cómo está hecho hoy el servidor (lo que cambia el diseño):**
+- **`SyncHub` no guarda datos.** Es "solo la campanita" (`functions/_lib/sync_hub.js`): avisa `{"seq":N}` y los avisos de MP.
+  Hay **uno por sucursal** (`scopeDeSync` = `n<negocio>:<sucursal>`), no por cuenta. Reservar un horario en un solo lugar
+  es trabajo nuevo: guardar los horarios ocupados en el SQLite del Durable Object (el plan gratis lo permite) y
+  `reservar`/`liberar`/`libres` atómicos. Y **los turnos que se cargan en la app también tienen que reservar ahí**; si no,
+  el servidor no sabe qué está ocupado.
+- **Los lotes son opacos para el servidor**: `gzip(JSON {v:1, tablas:{tabla:[filas]}})` con las filas SQL crudas del esquema
+  de la app y las referencias como `<columna>_gid` (`registro_sync_nube.dart`, `repositorio_sincronizacion.dart`), cifrados
+  al guardarse. Para que el bot entre como un equipo más tiene que leer y armar esas filas en JavaScript, con el esquema
+  exacto de cada tabla, y vincularse como dispositivo (`/vincular` con PKCE, token de 1 año) de una sucursal con la
+  suscripción al día (`syncAccess`).
+- **No existe un link de pago de MP para el negocio.** `mp_conexion.js` solo crea órdenes Point (`type: 'point'`, vencen a los
+  2 min) e impresiones. El link de seña (Checkout Pro con el token OAuth del negocio y el turno en `external_reference`) es
+  nuevo. El webhook ya procesa el tema `payment` (`mp_avisos.js`) y despierta a la sucursal; un pago sin orden Point no
+  sabe de qué sucursal es (despierta a todas las que tienen terminal).
+- **`/api/mp/cobros`** lista `/v1/payments/search` filtrando por la cuenta como cobradora. **Sin verificar** si una
+  transferencia bancaria al CVU aparece ahí; el reporte de Liquidaciones sí trae todos los movimientos
+  (`DECISIONES.md`, saldo real), pero tarda minutos.
+- **IA**: `/api/ia/generar` reenvía el pedido a Gemini con la clave del negocio y exige un **token de dispositivo** de una
+  sucursal con permiso de operar. El bot vinculado puede usarla tal cual.
+
+**Cómo está hecho hoy `botdemo` (lo que hay que cambiar):**
+
+| | `botdemo` hoy | Lo que pide Nodo Sur |
 |---|---|---|
-| Conversación (`maquina.js`, `nlu.js`, `nlu-duena.js`) | — | Igual |
-| Recordatorios 24 hs, agenda diaria, `.ics`, `.vcf` | — | Igual |
-| Tests de casos difíciles (carreras, señas falsas, fuzzing) | — | Igual; se suman los de reservar contra el servidor |
-| Base (`clientas`, `servicios`, `turnos`, `senas`) | SQLite propia | `clientes`, productos con `esServicio` y `turnos` de la sync; el celular guarda solo el estado de cada conversación |
-| Servicios y horarios | `config.json` | Los de Nodo Sur (Configuración del negocio) |
-| Seña "vencida" (2 hs sin pago, libera el horario) | Sí | Se suma al estado del turno de la etapa 4 |
-| Seña "no vino: se pierde / se devuelve" | No | De la etapa 4 (`domain/sena.dart`) |
-| Cobro de la seña | Transferencia + OCR | Link de MP o transferencia, según el negocio (decisión 10) |
+| Acceso a datos | Todo **sincrónico** (`better-sqlite3` / `node:sqlite`); `maquina.procesar` no espera nada | Reservar contra el servidor es por red: hay que volver asincrónica la conversación entera |
+| Agenda | **Una sola**: `haySolapamiento` mira todos los turnos | Por profesional (decisión 4) |
+| Seña | **Se confirma sola si el OCR pasa las reglas** (`flujos/senas.js`) | Solo si cruza con MP (decisión 12) |
+| Plata | Pesos enteros (`precio`, `sena`) | Centavos (convención 1) |
+| Servicios y horarios | `config.json`, un servicio por turno, ids de la base como opciones del menú | Productos con `esServicio` y la configuración del negocio |
+| Dueña | **Un solo número** (`numero_duena`); cambia precios por WhatsApp ("el kapping sale 30000") | Varios usuarios con rol; un precio cambia con historial (`historial_de_precios`) |
+| Clientas | Tabla propia con el estado de la conversación | `clientes` (nombre, teléfono) de la sync; el estado de la charla queda en el celular |
+| App → bot | No existe | El mock: "si lo movés o lo cancelás, el bot le avisa al cliente" |
+| No entendí | Deriva a la dueña por WhatsApp y calla 12 hs | El mock: aviso en la campanita |
+| Textos | Con 💅 fijo | Según el rubro |
+| `npm test` | Roto en un clon nuevo desde 39f8902 (pide `config.json`) | — |
 
-**Confirmar cobros (decisión 12), de más seguro a menos:**
+Lo que se toma sin cambios: el entendimiento sin IA (`nlu.js`, `nlu-duena.js`), los recordatorios con catch-up, la seña
+que vence y libera el horario, los `.ics`/`.vcf`, el aviso masivo con confirmación, el watchdog de conexión zombi y los
+tests de casos difíciles.
 
-1. **Link de Mercado Pago** (negocio con MP conectado): el turno va como `external_reference`; cuando MP avisa el pago
-   aprobado, el turno se confirma solo. Sin fotos ni IA.
-2. **Transferencia a la cuenta de MP del negocio:** la clienta manda el comprobante; se busca el cobro en los cobros reales
-   de la cuenta (el sitio ya los lee, `/api/mp/cobros`) por número de operación y monto. Si aparece, se confirma solo.
-3. **Transferencia a otro banco:** la IA lee el comprobante (monto, destinatario, número de operación, fecha) y las reglas de
-   hoy lo revisan (número de operación sin repetir, monto, destinatario, fecha no anterior al turno). **Nunca se confirma
-   solo:** le llega a la dueña con los datos ya leídos y ella aprueba con un "sí". Si no hay IA, el OCR de hoy hace lo mismo.
+**Seña y caja.** En Nodo Sur la seña es un **ingreso de caja** de la caja con que se pagó (`domain/sena.dart`, Regla 15), no
+una venta. Una seña que entra por el link de MP a las 23 hs no tiene caja abierta. Ver la pregunta 9.
 
-**La IA en el bot (Gemini, con la clave del negocio por `/api/ia/generar`):**
+**Confirmar cobros (decisión 12):**
+1. **Link de MP** (a construir): el pago aprobado con el turno en `external_reference` confirma el turno solo.
+2. **Transferencia a la cuenta de MP del negocio**: se confirma sola si aparece en los cobros reales. Depende de lo que
+   está sin verificar arriba; si no aparece, va al caso 3.
+3. **Transferencia a otro banco**: la IA (o el OCR de hoy) lee el comprobante, las reglas de hoy lo revisan y **la dueña
+   aprueba**. Nunca se confirma solo.
 
-Siguen las reglas de la IA de Nodo Sur (`DECISIONES.md`): la IA sugiere o transcribe, **el código decide**, y el bot anda
-igual sin clave, sin cupo o sin internet. **La IA nunca le contesta a nadie** (El dueño, 2026-10-09: "la IA debe ayudar a
-interpretar"): solo traduce lo que escribió la persona a algo que el bot entiende; las respuestas siempre las arma el bot con
-sus textos y los datos de Nodo Sur.
+**La IA en el bot (Gemini, con la clave del negocio por `/api/ia/generar`).** La IA **solo interpreta, nunca le contesta a
+nadie** (El dueño, 2026-10-09): traduce lo que escribió la persona a algo que el bot ya sabe manejar, y el bot contesta
+con sus textos y los datos de Nodo Sur. Siguen las reglas de `DECISIONES.md`: el código decide, y sin clave, sin cupo o
+sin internet el bot anda igual que hoy.
+- **El diccionario va primero, siempre** (gratis e instantáneo). Su FAQ solo conoce precios, ubicación y horarios; lo demás
+  hoy es "no entendí". La IA entra solo ahí.
+- **Entender** (clientas y dueña): devuelve intención, servicio, día y hora. Solo puede elegir servicios de la lista que se
+  le muestra; un id que no está se descarta (como en las facturas). Lo que borra algo se confirma con "sí".
+- **Consultas que no encajan** ("¿hacen esculpidas?"): la IA las ubica en lo que el bot sabe contestar (un servicio,
+  precios, horarios, ubicación); si no encaja en nada, la marca "para la dueña" sin esperar el segundo "no entendí".
+- **Comprobantes**: foto a datos, solo en el caso 3.
+- **Privacidad** (decisión 13): opción de cada negocio; por defecto, plan gratis. Nunca el teléfono ni el historial.
 
-- **El diccionario va primero, siempre.** `nlu.js` resuelve gratis y al instante casi todo (reservar, cancelar, confirmar,
-  días y horas en texto libre, typos). Su FAQ solo conoce tres temas (precios, ubicación, horarios); lo demás hoy cuenta como
-  "no entendí" y a la segunda se deriva a la dueña. **La IA entra solo ahí, antes de contestar "no entendí"**, así casi
-  nunca se usa.
-- **Entender (clientas y dueña):** devuelve JSON (intención, servicio, día, hora). Solo puede elegir servicios de la lista
-  que se le muestra; un id que no está se descarta (como en las facturas). Lo que borra algo se confirma con "sí" como hoy.
-- **Consultas que el diccionario no conoce** ("¿hacen esculpidas?", "¿cuánto el semi?"): la IA las ubica en lo que el bot ya
-  sabe contestar (un servicio de la lista, precios, horarios, ubicación) y el bot contesta con su texto. Si no encaja en
-  nada, la IA lo marca "consulta para la dueña" y el bot se la pasa sin esperar al segundo "no entendí".
-- **Leer comprobantes:** foto a JSON, solo en el caso 3 de arriba.
-- **Privacidad (decisión 13):** opción de cada negocio en Configuración › Asistente IA: plan gratis (por defecto), clave
-  paga, o IA sin comprobantes (los lee el OCR del celular y no salen de ahí). Nunca se manda el teléfono ni el historial de
-  la clienta, solo el mensaje.
-
-**Orden de trabajo:**
-
-1. Arreglar `npm test` en `botdemo` (desde `39f8902` pide `config.json`, que ya no está en el repo).
-2. Agenda en el servidor: `reservar` / `libres` en el `SyncHub`, con tests de carrera (dos reservas al mismo horario).
-3. El bot como equipo de la sync: lee servicios, horarios y turnos; sus turnos y clientes suben como lotes. Sus tablas van en
-   una lista aparte (como `tablasSincronizablesV61`).
-4. Seña por link de MP y cruce de transferencias con los cobros reales.
-5. IA de respaldo (entender, leer comprobantes), con la opción de privacidad.
-6. Después, cuando haya quien la pague: adaptador de la API oficial en el Worker.
+**Orden de trabajo (cada paso probado antes del siguiente):**
+1. `botdemo`: arreglar `npm test`; pasar el núcleo a asincrónico sin cambiar comportamiento (los 98 escenarios tienen que
+   seguir pasando); seña que nunca se confirma sola por OCR.
+2. Servidor: horarios ocupados y `reservar`/`liberar`/`libres` atómicos por sucursal, con tests de carrera.
+3. El bot como equipo de la sync: vincularse, leer servicios, horarios, clientes y turnos; subir los suyos.
+4. Link de seña de MP y confirmación por el webhook `payment`; verificar si las transferencias al CVU aparecen en los cobros.
+5. IA de respaldo.
+6. Después: adaptador de la API oficial en el Worker.
 
 ### Después (no ahora)
 - Servicios en "PC y celular": rutas en el servidor de la PC y pantallas en la PC.
@@ -196,10 +223,16 @@ sus textos y los datos de Nodo Sur.
    (sin cuenta, solo con su nombre).
 3. ~~Bot: el servidor reserva los horarios~~ → **decidido** (decisión 9): reserva el `SyncHub`.
 4. **Costo de WhatsApp**: con Baileys no hay (decisión 8). Vuelve cuando se pase a la API oficial: Meta cobra los mensajes
-   que inicia el negocio (recordatorios). ¿Entra en el plan o se cobra aparte? `botdemo/docs/MERCADO.md` propone $35.000/mes.
+   que inicia el negocio (recordatorios). El bot ya se vende a $35.000/mes + $70.000 de alta (`NodoSurPage`,
+   `plans.js`): ¿el costo de Meta entra en eso o se cobra aparte?
 5. **Comisión por profesional**: ¿queda para después?
 6. ~~Turno cargado en la app sin internet~~ → **decidido**: se guarda igual y, si al sincronizar choca con uno del bot, le
    avisa a la dueña en la campanita para que mueva uno.
+
+8. **Lo que promete el sitio y `botdemo` no hace** (catálogo y pedidos, stock, cotizador de usados, pedir el cierre por
+   WhatsApp, correr en la PC): ¿se construye, se saca de la página hasta que exista, o queda como está?
+9. **Seña que entra fuera de horario** (link de MP a las 23 hs, sin caja abierta): ¿queda pendiente y entra como ingreso en
+   la próxima caja que se abra, o se registra recién cuando la clienta viene?
 
 ## Qué no se probó
 Solo existe el mock (Chromium de escritorio y ancho de celular). No hay código en Nodo Sur. De `botdemo` corren sus tests
