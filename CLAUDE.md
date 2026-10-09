@@ -425,7 +425,7 @@ El recargo de cigarrillos **no tiene tecla**: se calcula solo según el medio de
 
 **Configurable:** los tres montos del recargo de cigarrillos · ganancia de referencia (sobre el precio)
 por categoría · fondo fijo de caja · reserva diaria de fijos · día del retiro
-semanal · desde cuánto faltante el cierre pregunta a dónde fue la plata · colchón de reposición por proveedor · paso de redondeo en efectivo
+semanal · desde cuánto faltante el cierre pregunta a dónde fue la plata · paso de redondeo en efectivo
 (default 100) · producto del botón de vuelto · rutas de respaldo y de PDF · qué
 secciones se ven y en qué orden · productos, precios, costos, proveedores,
 categorías, medios de pago, gastos fijos.

@@ -28,6 +28,11 @@ import 'package:la_plazoleta/companion/pantallas/pantalla_mas_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_productos_ns.dart';
 import 'package:la_plazoleta/companion/pantalla_conteo_stock.dart';
 import 'package:la_plazoleta/companion/pantalla_formulario_producto.dart';
+import 'package:la_plazoleta/companion/pantalla_formulario_proveedor.dart';
+import 'package:la_plazoleta/companion/pantalla_proveedores.dart';
+import 'package:la_plazoleta/data/database.dart' show AppDatabase, ProveedoresCompanion;
+import 'package:la_plazoleta/data/repositorio_deuda_proveedores.dart' show cargarDeuda;
+import 'package:drift/drift.dart' show Value;
 import 'package:la_plazoleta/companion/pantallas/pantalla_inicio_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_notificaciones_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -872,6 +877,34 @@ void main() {
       await t.tap(find.text('Nuevo día'));
       await esperar(t);
     });
+  });
+
+  Future<AppDatabase> conProveedores(WidgetTester t) async {
+    SharedPreferences.setMockInitialValues({'companion_usuario_id': 1, 'companion_usuario_nombre': 'Ana'});
+    final db = (await t.runAsync(() async => baseDeTest()))!;
+    await t.runAsync(() async {
+      final usuario = (await db.select(db.usuarios).get()).first.id;
+      final provs = await db.select(db.proveedores).get();
+      await (db.update(db.proveedores)..where((p) => p.id.equals(provs[0].id))).write(const ProveedoresCompanion(diaPedido: Value('Martes'), diaEntrega: Value('Jueves'), whatsapp: Value('294 412-3456'), medioPago: Value('Transferencia')));
+      await (db.update(db.proveedores)..where((p) => p.id.equals(provs[1].id))).write(const ProveedoresCompanion(diaPedido: Value('Lunes')));
+      await cargarDeuda(db, proveedorId: provs[0].id, montoCentavos: 18450000, fecha: DateTime(2026, 10, 7), nota: 'Factura 0003-2214', usuarioId: usuario);
+      await cargarDeuda(db, proveedorId: provs[1].id, montoCentavos: 4200000, fecha: DateTime(2026, 10, 8), nota: 'Remito 88', usuarioId: usuario);
+    });
+    return db;
+  }
+
+  testWidgets('46-proveedores', (t) async {
+    final db = await conProveedores(t);
+    await capturarNs(t, '46-proveedores', PantallaProveedores(db: db, usuarioId: 1), antes: esperarCarga);
+  });
+  testWidgets('46b-proveedor-ficha', (t) async {
+    final db = await conProveedores(t);
+    final p = (await t.runAsync(() => db.select(db.proveedores).get()))!.first;
+    await capturarNs(t, '46b-proveedor-ficha', PantallaProveedor(db: db, proveedor: p, usuarioId: 1), antes: esperarCarga);
+  });
+  testWidgets('46c-proveedor-nuevo', (t) async {
+    final db = await conProveedores(t);
+    await capturarNs(t, '46c-proveedor-nuevo', PantallaFormularioProveedor(db: db), antes: esperarCarga);
   });
 
   testWidgets('37-mas', (t) async {

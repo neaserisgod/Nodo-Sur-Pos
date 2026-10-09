@@ -90,6 +90,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Promos en el celular (El dueño, 2026-10-07)](#promos-en-el-celular-el-dueño-2026-10-07)
 - [Cuenta corriente en el celular (El dueño, 2026-10-07)](#cuenta-corriente-en-el-celular-el-dueño-2026-10-07)
 - [Separaciones completas en el celular (El dueño, 2026-10-07)](#separaciones-completas-en-el-celular-el-dueño-2026-10-07)
+- [Proveedores en el celular: un solo lugar, con alta y edición (El dueño, 2026-10-09)](#proveedores-en-el-celular-un-solo-lugar-con-alta-y-edición-el-dueño-2026-10-09)
 - [Clave de la IA por cuenta (El dueño, 2026-10-07)](#clave-de-la-ia-por-cuenta-el-dueño-2026-10-07-la-clave-es-por-cuenta)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
 
@@ -2274,3 +2275,24 @@ cada empleado).
   instalaciones viejas siguen andando); cuando el dueño guarda la del negocio desde un equipo, la propia de ese equipo se borra. El
   modelo elegido sigue siendo de cada equipo (arranca en el que le anduvo a la clave).
 - Cargarla desde la web (`/negocio`) no se hizo: se carga desde la PC o el celular del dueño, donde ya se probaba.
+
+## Proveedores en el celular: un solo lugar, con alta y edición (El dueño, 2026-10-09)
+
+"Simple para no agobiar, pero que no queden datos importantes sin poder llenar, por ej. un proveedor". Antes el celular no podía crear ni
+editar un proveedor (solo elegirlo de la lista que venía de la PC), y lo del proveedor estaba en tres filas de Más (Cuenta corriente, Pagar
+proveedor, Cargar factura). Ahora Más › **Proveedores** (`pantalla_proveedores.dart`) junta todo: la lista con la deuda de cada uno, "+ Nuevo",
+"Cargar factura" y "Pagar"; la ficha de cada proveedor con sus datos, "Editar", "Pedir por WhatsApp" y la cuenta corriente de antes.
+
+- **El formulario pide lo mismo que el alta de la PC, de un toque**: nombre, WhatsApp, día de pedido y de entrega (chips de lunes a
+  sábado, `diasDePedido`, compartido con la PC) y cómo se le paga. Un nombre repetido no se deja guardar.
+- **El código no se pide**: es único en la base pero es un dato técnico; se arma con las iniciales (`codigoProveedorNuevo`, "Coca Cola" →
+  "CC", y "CC2" si ya existe) en una transacción (`crearProveedorConCodigoAutomatico`). Se cambia en la PC si hace falta.
+- **El colchón no está**: no se carga a mano, es ganancia retenida (Regla 13, `REGLAS-NEGOCIO.md` §5). Se corrigió en `CLAUDE.md`, que todavía
+  lo listaba como configurable.
+- **La lata (caja aparte) no se configura desde el celular**: es un proveedor especial que se arma una vez en la PC; el formulario no le
+  ofrece medio de pago (se paga en efectivo de la lata, Regla 6).
+- **"Pedir por WhatsApp"** usa la misma regla de la PC (`avisaPorStock`, con lo vendido en 30 días) por `lineasParaPedirAProveedor`.
+- Sobre la base del celular, como la cuenta corriente: los proveedores ya se sincronizaban, así que el alta llega a la PC sola. El
+  formulario de producto, con la PC conectada, lista los proveedores de la PC: uno recién creado en el celular aparece ahí cuando la sync
+  lo lleva.
+

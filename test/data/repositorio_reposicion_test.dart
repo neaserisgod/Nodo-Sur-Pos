@@ -481,6 +481,33 @@ void main() {
     });
   });
 
+  group('alta desde el celular (El dueño, 2026-10-09)', () {
+    test('crearProveedorConCodigoAutomatico arma el código con las iniciales y no repite', () async {
+      final a = await crearProveedorConCodigoAutomatico(db, nombre: 'Coca Cola', diaPedido: 'Martes', medioPago: 'Transferencia', whatsapp: '294 412-3456');
+      final b = await crearProveedorConCodigoAutomatico(db, nombre: 'Café Cordobés');
+      final pa = await (db.select(db.proveedores)..where((p) => p.id.equals(a))).getSingle();
+      final pb = await (db.select(db.proveedores)..where((p) => p.id.equals(b))).getSingle();
+      expect(pa.codigo, 'CC');
+      expect(pb.codigo, 'CC2');
+      expect(pa.diaPedido, 'Martes');
+      expect(pa.medioPago, 'Transferencia');
+      expect(pa.whatsapp, '294 412-3456');
+      expect(pa.globalId, isNotNull, reason: 'viaja a la PC por la sync');
+    });
+
+    test('lineasParaPedirAProveedor: bajo el mínimo, o agotado y vendido hace poco', () async {
+      Future<int> producto(String nombre, {required int stock, int minimo = 0}) => db.into(db.productos).insert(
+            ProductosCompanion.insert(nombre: nombre, proveedorId: Value(proveedorId), stock: Value(stock), stockMinimo: Value(minimo)),
+          );
+      await producto('Bajo el mínimo', stock: 2, minimo: 5);
+      await producto('Con stock', stock: 20, minimo: 5);
+      await producto('Agotado viejo', stock: 0);
+
+      final lineas = await lineasParaPedirAProveedor(db, proveedorId);
+      expect(lineas.map((l) => l.nombre), ['Bajo el mínimo']);
+    });
+  });
+
   group('actualizarProveedorNivel2', () {
     test('guarda colchón y medio de pago', () async {
       await actualizarProveedorNivel2(

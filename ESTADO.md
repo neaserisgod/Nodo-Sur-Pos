@@ -119,6 +119,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Proveedores en el celular** (El dueño: "que no queden datos importantes sin poder llenar, por ej. un proveedor"): Más › Proveedores
+  junta lo que estaba en tres filas (Cuenta corriente, Pagar proveedor, Cargar factura) y suma **alta y edición** (nombre, WhatsApp, días
+  de pedido y entrega, cómo se le paga, dar de baja) y **"Pedir por WhatsApp"**. El código se arma solo. Detalle en `DECISIONES.md`.
+  Probado con tests; **no probado en un celular real**.
 - **Abrir caja desde el celular pide el saldo de Mercado Pago** (El dueño: "al abrir caja no me da el monto de Mercado
   Pago"): igual que la PC, viene precargado con lo último contado en el cierre anterior y se puede corregir (hoja "Abrir
   caja" y la apertura dentro de "Gasto o ingreso"). Antes se arrastraba en silencio, sin verlo. Con la PC va por
