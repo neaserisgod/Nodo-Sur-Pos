@@ -196,6 +196,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="rot">Mock · App del celular · versión 2</div>
       <h1 style="margin-top:8px">Nodo Sur para servicios</h1>
     </div>
+    <p><b>Todo es opcional</b>: es un SaaS para muchos negocios, así que cada parte nueva es un módulo que cada uno prende o apaga en Más › Módulos (como los módulos que ya tiene la app). Apagado, no se ve ni entra en las cuentas. Probá apagar Agenda o Insumos.</p>
     <p>Misma estética que la app del celular, con menos cosas. La <b>agenda</b> es la pantalla principal: los turnos llegan solos desde el bot de WhatsApp o se cargan a mano, y de un turno se pasa a cobrar en un toque. Todo el teléfono se puede tocar.</p>
     <div>
       <div class="rot" style="margin-bottom:8px">Rubro</div>
@@ -211,12 +212,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="panel">
       <div class="rot">Lo que decidiste</div>
       <ul class="lista">
-        <li><span class="tag t-nu">bloquea</span><span>Si un insumo no alcanza, el servicio <b>no se puede cobrar</b>. La tarjeta se apaga y dice qué falta.</span></li>
+        <li><span class="tag t-ad">opcional</span><span><b>Bloquear si falta un insumo</b>: prendido, el servicio no se cobra y la tarjeta dice qué falta; apagado, solo avisa.</span></li>
+        <li><span class="tag t-ad">opcional</span><span><b>Insumos y costos</b>, <b>turnos</b>, <b>bot de WhatsApp</b> y <b>productos de reventa</b>: módulos aparte. Un negocio puede usar solo la agenda, o solo el cobro.</span></li>
         <li><span class="tag t-ad">opcional</span><span><b>Varios profesionales</b>: interruptor en Más. Prendido, la agenda se filtra por persona y el cobro pregunta quién atendió.</span></li>
         <li><span class="tag t-ad">opcional</span><span><b>Mano de obra</b> en el costo: cada profesional pone el valor de su hora y decide si se suma.</span></li>
         <li><span class="tag t-ad">opcional</span><span><b>Ajustar lo que se usó</b> al cobrar (uñas largas, barba tupida): lo decide quien atiende, solo para esa venta.</span></li>
-        <li><span class="tag t-nu">nuevo</span><span><b>Turnos</b>: agenda por día, horarios libres, estados (confirmado, llegó, no vino, cobrado) y origen (WhatsApp o a mano).</span></li>
-        <li><span class="tag t-nu">nuevo</span><span><b>Bot de WhatsApp</b>: horarios, servicios que ofrece y recordatorio, con vista previa de la charla.</span></li>
+        <li><span class="tag t-ad">opcional</span><span><b>Turnos</b>: agenda por día, horarios libres, estados (confirmado, llegó, no vino, cobrado) y origen (WhatsApp o a mano).</span></li>
+        <li><span class="tag t-ad">opcional</span><span><b>Bot de WhatsApp</b>: horarios, servicios que ofrece y recordatorio, con vista previa de la charla.</span></li>
         <li><span class="tag t-ad">configurable</span><span><b>Seña</b>: cada negocio elige si la pide (nunca, en algunos servicios o en todos), cuánto (% o monto fijo) y qué pasa si el cliente no viene. Por defecto: algunos servicios, 30 %, se pierde.</span></li>
       </ul>
     </div>
@@ -378,7 +380,8 @@ const AHORA = 12*60 + 10; // 12:10, para la línea de "ahora" en la agenda
 const st = {
   tab:'agenda', sub:null, dia:3, prof:'todos', servSeg:0, cat:'Todos',
   carrito:[], turnoCobrando:null, atendio:null, medio:null, editor:null, hoja:null, ajusteIdx:null, ultimo:null, ventas:[], toast:null,
-  cfg:{varios:true, manoObra:true, ajustar:true, bot:true, recordatorio:true,
+  // Todo es opcional (SaaS multi-negocio): cada módulo se prende o se apaga por negocio; apagado no se muestra ni calcula.
+  cfg:{turnos:true, bot:true, insumos:true, bloquear:true, varios:true, manoObra:true, ajustar:true, productos:true, recordatorio:true,
     // Seña: la configura cada negocio. Por defecto (el dueño, 2026-10-09): solo en los servicios marcados, 30 %, se pierde si no viene.
     senaModo:'algunos', senaTipo:'%', senaValor:30, noVino:'pierde'},
 };
@@ -394,15 +397,19 @@ function pedidoCarrito(extra = null) {
 }
 // Decisión del dueño (2026-10-09): si un insumo no alcanza, el servicio NO se cobra.
 function faltante(extra = null) {
+  if (!st.cfg.insumos) return null;
   const r = R(), ped = pedidoCarrito(extra);
   for (const [id, q] of Object.entries(ped)) { const i = r.insumos.find(x => x.id === id); if (i.stock + 1e-9 < q) return i; }
   return null;
 }
+// Con "Bloquear si falta un insumo" apagado, el faltante solo avisa.
+const bloquea = extra => st.cfg.bloquear ? faltante(extra) : null;
 const lineaServicio = s => ({tipo:'s', id:s.id, n:s.n, precio:s.precio, receta:JSON.parse(JSON.stringify(s.receta)), ajustada:false});
 
 const tel = document.getElementById('tel');
 function render(anim = true) {
   const r = R();
+  if (!st.cfg.turnos && st.tab === 'agenda') st.tab = 'vender';
   const sub = {editor:vEditor, cobrar:vCobrar, cobrada:vCobrada, bot:vBot, insumos:vInsumos}[st.sub];
   const html = sub ? sub(r) : ({agenda:vAgenda, servicios:vServicios, vender:vVender, caja:vCaja, mas:vMas})[st.tab](r);
   const conNav = !['editor','cobrar','cobrada'].includes(st.sub);
@@ -418,7 +425,7 @@ function toast(t) { st.toast = t; render(false); clearTimeout(toast.t); toast.t 
 function vNav() {
   const pend = R().turnos.filter(t => t.estado === 'pendiente').length;
   const b = (k, i, t, punto) => `<button class="${st.tab===k?'on':''}" data-tab="${k}" aria-label="${t}"><span class="pi">${ic(i,22)}</span>${t}${punto?'<span class="punto"></span>':''}</button>`;
-  return `<nav class="nav">${b('agenda','agenda','Agenda', pend)}${b('servicios','frasco','Servicios')}
+  return `<nav class="nav">${st.cfg.turnos ? b('agenda','agenda','Agenda', pend) : ''}${b('servicios','frasco','Servicios')}
     <button class="vend ${st.tab==='vender'?'on':''}" data-tab="vender"><span class="pv">${ic('carrito',22)}Cobrar</span></button>
     ${b('caja','billetera','Caja')}${b('mas','mas','Más')}</nav>`;
 }
@@ -476,7 +483,7 @@ function vAgenda(r) {
     return `<div class="linea"><div class="hora">${t.h}<small>${s.min} min</small></div>
       <button class="turno ${t.estado==='cobrado'||t.estado==='novino'?'hecho':''}" style="--c:${st.cfg.varios ? p.c : 'var(--marca)'}" data-turno="${t.id}" ${hoy ? '' : 'disabled'}>
         <span class="t">${t.cli}</span><span class="st">${s.n}${st.cfg.varios ? ' · ' + p.n : ''}</span>
-        <span class="fx"><span class="et ${ec}">${et}</span>${t.origen==='wa' ? `<span class="et g">${ic('chat',12)} WhatsApp</span>` : ''}${t.sena ? `<span class="et m">Seña ${plata(t.sena)}</span>` : ''}${falta ? `<span class="et b">${ic('candado',12)} Falta ${falta.n.toLowerCase()}</span>` : ''}</span>
+        <span class="fx"><span class="et ${ec}">${et}</span>${t.origen==='wa' ? `<span class="et g">${ic('chat',12)} WhatsApp</span>` : ''}${t.sena ? `<span class="et m">Seña ${plata(t.sena)}</span>` : ''}${falta ? `<span class="et ${st.cfg.bloquear ? 'b' : 'w'}">${ic(st.cfg.bloquear ? 'candado' : 'alerta',12)} Falta ${falta.n.toLowerCase()}</span>` : ''}</span>
       </button></div>`;
   }).join('') : `<div class="info">${ic('agenda',20)}<span>No hay turnos este día. Los que pidan por WhatsApp aparecen acá solos.</span></div>`}
   </div>`;
@@ -486,12 +493,14 @@ function vAgenda(r) {
 function vServicios(r) {
   const seg = ['Servicios','Insumos'].map((t,i)=>`<button class="${st.servSeg===i?'on':''}" data-seg="${i}">${t}</button>`).join('');
   let cuerpo = '';
+  if (!st.cfg.insumos) st.servSeg = 0;
   if (st.servSeg === 0) {
     cuerpo = `<button class="btn p" style="margin-top:14px" data-nuevo-serv>${ic('masMas',20)} Nuevo servicio</button>
     ${r.cats.map(c => {
       const ls = r.servicios.filter(s => s.cat === c);
       if (!ls.length) return '';
       return `<div class="sec">${c}</div><div class="agr">${ls.map(s => {
+        if (!st.cfg.insumos) return `<button class="item" data-editar="${s.id}"><div class="esp"><div class="t">${s.n}</div><div class="st">${s.min} min</div></div><div class="v tab">${plata(s.precio)}</div></button>`;
         const co = costoInsumos(s.receta, r) + (st.cfg.manoObra && s.mo ? costoManoObra(s.min, r.profs[0].hora) : 0);
         const m = margen(s.precio, co), al = alcanza(s.receta, r);
         return `<button class="item" data-editar="${s.id}"><div class="esp"><div class="t">${s.n}</div>
@@ -513,7 +522,7 @@ function vServicios(r) {
           ${bajo ? '<span class="et w">Poco stock</span>' : ''}</button>`;
       }).join('')}</div>`;
   }
-  return `<h2 class="h2" style="margin:8px 0 16px">Servicios</h2><div class="seg">${seg}</div>${cuerpo}`;
+  return `<h2 class="h2" style="margin:8px 0 16px">Servicios</h2>${st.cfg.insumos ? `<div class="seg">${seg}</div>` : ''}${cuerpo}`;
 }
 
 // ---------------- Creador de servicio con calculador ----------------
@@ -536,25 +545,25 @@ function vEditor(r) {
     <label class="campo"><small>Duración (min)</small><input id="edMin" inputmode="numeric" value="${e.min}"></label>
     <label class="campo"><small>Categoría</small><input id="edCat" value="${e.cat}"></label>
   </div>
-  <div class="sec">Qué usa cada vez <span>${e.receta.length} insumos</span></div>
-  ${vReceta(e.receta, r, 'q')}
-  ${st.cfg.manoObra ? `<button class="sw ${e.mo?'on':''}" style="margin-top:12px" data-mo>
+  ${st.cfg.insumos ? `<div class="sec">Qué usa cada vez <span>${e.receta.length} insumos</span></div>
+  ${vReceta(e.receta, r, 'q')}` : ''}
+  ${st.cfg.insumos && st.cfg.manoObra ? `<button class="sw ${e.mo?'on':''}" style="margin-top:12px" data-mo>
     <span class="esp"><span class="t" style="display:block">Sumar mano de obra</span><span class="st" style="display:block">${pr.n} cobra ${plata(pr.hora)} la hora · ${e.min} min = ${plata(costoManoObra(e.min, pr.hora))}</span></span><span class="pista"><i></i></span></button>` : ''}
-  ${st.cfg.senaModo === 'algunos' ? `<button class="sw ${e.pideSena?'on':''}" style="margin-top:8px" data-pide-sena>
+  ${st.cfg.turnos && st.cfg.bot && st.cfg.senaModo === 'algunos' ? `<button class="sw ${e.pideSena?'on':''}" style="margin-top:8px" data-pide-sena>
     <span class="esp"><span class="t" style="display:block">Pedir seña por WhatsApp</span><span class="st" style="display:block">${e.pideSena ? `${plata(senaDe(e, st.cfg))} al reservar` : 'Se reserva sin pagar nada'} · se cambia en Turnos por WhatsApp</span></span><span class="pista"><i></i></span></button>`
-    : st.cfg.senaModo === 'todos' ? `<div class="info" style="margin-top:12px">${ic('chat',20)}<span>Por WhatsApp se reserva con ${plata(senaDe(e, st.cfg))} de seña (configurado para todos los servicios).</span></div>` : ''}
-  <div class="hero" style="margin-top:18px">
+    : st.cfg.turnos && st.cfg.bot && st.cfg.senaModo === 'todos' ? `<div class="info" style="margin-top:12px">${ic('chat',20)}<span>Por WhatsApp se reserva con ${plata(senaDe(e, st.cfg))} de seña (configurado para todos los servicios).</span></div>` : ''}
+  ${st.cfg.insumos ? `<div class="hero" style="margin-top:18px">
     <div class="l">Le cuesta a tu negocio</div>
     <div class="n tab">${plata(co)}</div>
     <div class="d">${cmo ? `Insumos ${plata(ci)} + mano de obra ${plata(cmo)}<br>` : ''}${al < 1 && primero ? `<b style="color:#FFB4AD">Con el stock de hoy no alcanza: falta ${primero.n.toLowerCase()}.</b>` : `Con el stock de hoy alcanza para <b style="color:#fff">${al} ${al===1?'servicio':'servicios'}</b>${primero ? ' · se acaba primero: ' + primero.n.toLowerCase() : ''}`}</div>
-  </div>
+  </div>` : ''}
   <label class="campo gr" style="margin-top:12px"><small>Precio al cliente</small><input id="edPrecio" inputmode="numeric" class="tab" value="${e.precio ? '$ ' + e.precio.toLocaleString('es-AR') : ''}" placeholder="$ 0"></label>
-  <div style="padding:4px 4px 0">
+  ${st.cfg.insumos ? `<div style="padding:4px 4px 0">
     <div class="kv"><span>Ganancia por servicio</span><span class="tab" style="color:${colorM}">${plata(e.precio - co)} · ${Math.round(m*100)} %</span></div>
     <div class="kv"><span>Precio para ganar el ${Math.round(ref*100)} %</span><span class="tab">${plata(sugerido)} <button style="color:var(--i);font-weight:600;margin-left:6px" data-usar="${sugerido}">Usar</button></span></div>
-  </div>
+  </div>` : ''}
   <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
-    <button class="btn p" data-guardar ${!e.n || !e.receta.length || !e.precio ? 'disabled' : ''}>${ic('tilde',20)} Guardar servicio</button>
+    <button class="btn p" data-guardar ${!e.n || (st.cfg.insumos && !e.receta.length) || !e.precio ? 'disabled' : ''}>${ic('tilde',20)} Guardar servicio</button>
     ${e.nuevo ? '' : '<button class="btn r">Dejar de ofrecerlo</button>'}
   </div>`;
 }
@@ -572,7 +581,8 @@ function vReceta(receta, r, pref) {
 
 // ---------------- Cobrar ----------------
 function vVender(r) {
-  const cats = ['Todos', ...r.cats, 'Productos'];
+  const cats = ['Todos', ...r.cats, ...(st.cfg.productos ? ['Productos'] : [])];
+  if (!st.cfg.productos && st.cat === 'Productos') st.cat = 'Todos';
   const total = st.carrito.reduce((t,l) => t + l.precio, 0);
   const cuenta = id => st.carrito.filter(l => l.id === id).length;
   let grilla;
@@ -581,9 +591,9 @@ function vVender(r) {
       <span class="t">${p.n}</span><span class="d">${p.stock} en stock</span><span class="p tab">${p.stock - cuenta(p.id) <= 0 ? 'Sin stock' : plata(p.precio)}</span></button>`).join('');
   } else {
     grilla = r.servicios.filter(s => st.cat === 'Todos' || s.cat === st.cat).map(s => {
-      const f = faltante(lineaServicio(s));
+      const f = bloquea(lineaServicio(s)), aviso = !f && faltante(lineaServicio(s));
       return `<button class="serv ${f ? 'no' : ''}" data-sumar="${s.id}" ${f ? `aria-disabled="true"` : ''}>${cuenta(s.id) ? `<span class="cant">${cuenta(s.id)}</span>` : ''}
-        <span class="t">${s.n}</span><span class="d">${s.min} min</span><span class="p tab">${f ? `${ic('candado',13)} Falta ${f.n.toLowerCase()}` : plata(s.precio)}</span></button>`;
+        <span class="t">${s.n}</span><span class="d">${s.min} min${aviso ? ` · <span style="color:var(--w);font-weight:600">poco ${aviso.n.toLowerCase()}</span>` : ''}</span><span class="p tab">${f ? `${ic('candado',13)} Falta ${f.n.toLowerCase()}` : plata(s.precio)}</span></button>`;
     }).join('');
   }
   const t = st.turnoCobrando && r.turnos.find(x => x.id === st.turnoCobrando);
@@ -596,10 +606,10 @@ function vVender(r) {
   ${st.carrito.length ? `<div class="sec">En esta venta</div>
   <div class="agr">${st.carrito.map((l,k) => `<div class="item" style="gap:10px"><div class="esp"><div class="t" style="font-size:16px">${l.n}</div>
     <div class="st tab">${plata(l.precio)}${l.ajustada ? ' · <span style="color:var(--i);font-weight:600">insumos ajustados</span>' : ''}</div></div>
-    ${l.tipo === 's' && st.cfg.ajustar ? `<button class="btn s chico" style="background:var(--paper)" data-ajustar="${k}">Ajustar</button>` : ''}
+    ${l.tipo === 's' && st.cfg.insumos && st.cfg.ajustar ? `<button class="btn s chico" style="background:var(--paper)" data-ajustar="${k}">Ajustar</button>` : ''}
     <button class="circ ch" style="width:40px;height:40px;background:var(--paper)" data-sacar="${k}" aria-label="Sacar">${ic('cerrar',18)}</button></div>`).join('')}</div>
   <button class="btnAzul" data-cobrar>Cobrar ${plata(total - (t?.sena || 0))}</button>` :
-  `<div class="info" style="margin-top:18px">${ic('brillo',20)}<span>Tocá un servicio para sumarlo. Al cobrar se descuenta solo lo que usa cada uno. Los que tienen candado no se cobran hasta que entre el insumo que falta.</span></div>`}`;
+  `<div class="info" style="margin-top:18px">${ic('brillo',20)}<span>Tocá un servicio para sumarlo.${st.cfg.insumos ? ' Al cobrar se descuenta solo lo que usa cada uno.' : ''}${st.cfg.insumos && st.cfg.bloquear ? ' Los que tienen candado no se cobran hasta que entre el insumo que falta.' : ''}</span></div>`}`;
 }
 function vCobrar(r) {
   const total = st.carrito.reduce((t,l) => t + l.precio, 0);
@@ -631,7 +641,7 @@ function vCobrada(r) {
     <div class="st tab">quedan ${num(m.queda)} ${m.u}</div></div>${m.queda < m.min ? '<span class="et w">Poco</span>' : ''}<div class="v tab" style="color:var(--b);font-size:16px">− ${num(m.c,2)} ${m.u}</div></div>`).join('')}</div>
   <div class="kv" style="padding:16px 4px"><span>Costo de lo que se usó (para reponer)</span><span class="tab">${plata(v.costo)}</span></div>` : ''}
   <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
-    <button class="btn p" data-tab="agenda">Volver a la agenda</button>
+    ${st.cfg.turnos ? '<button class="btn p" data-tab="agenda">Volver a la agenda</button>' : '<button class="btn p" data-tab="vender">Cobrar otro</button>'}
     <button class="btn o">Mandar comprobante por WhatsApp</button>
   </div>`;
 }
@@ -650,11 +660,11 @@ function vCaja(r) {
   <div style="padding:6px 4px 0">
     <div class="kv"><span>Efectivo en el cajón</span><span class="tab">${plata(20000 + Math.round(total*.4))}</span></div>
     <div class="kv"><span>Mercado Pago</span><span class="tab">${plata(Math.round(total*.6))}</span></div>
-    <div class="kv"><span>Señas de turnos de hoy</span><span class="tab">${plata(r.turnos.reduce((t,x)=>t+(x.sena||0),0))}</span></div>
+    ${st.cfg.turnos ? '' : '<!--'}<div class="kv"><span>Señas de turnos de hoy</span><span class="tab">${plata(r.turnos.reduce((t,x)=>t+(x.sena||0),0))}</span></div>${st.cfg.turnos ? '' : '-->'}
   </div>
   ${st.cfg.varios ? `<div class="sec">Por profesional</div><div class="grid2">${Object.entries(porProf).map(([n,v])=>`<div class="mini"><div class="n tab" style="font-size:24px">${plata(v)}</div><div class="l">${n}</div></div>`).join('')}</div>` : ''}
-  <div class="sec">Para reponer insumos</div>
-  <button class="item" style="background:var(--gbg);color:var(--g);border-radius:28px" data-sub="insumos"><div class="circ" style="background:var(--paper);color:var(--g)">${ic('frasco',20)}</div><div class="esp"><div class="t">${plata(reponer)}</div><div class="st" style="color:inherit;opacity:.85">Lo que costó lo que se usó hoy. Separalo para la próxima compra.</div></div>${ic('chevron',20)}</button>
+  ${st.cfg.insumos ? `<div class="sec">Para reponer insumos</div>
+  <button class="item" style="background:var(--gbg);color:var(--g);border-radius:28px" data-sub="insumos"><div class="circ" style="background:var(--paper);color:var(--g)">${ic('frasco',20)}</div><div class="esp"><div class="t">${plata(reponer)}</div><div class="st" style="color:inherit;opacity:.85">Lo que costó lo que se usó hoy. Separalo para la próxima compra.</div></div>${ic('chevron',20)}</button>` : ''}
   <div class="grid2" style="margin-top:16px"><button class="btn s">Gasto o ingreso</button><button class="btn p">Cerrar caja</button></div>`;
 }
 function vInsumos(r) {
@@ -673,13 +683,18 @@ function vMas(r) {
   const fila = (i,t,s,data='') => `<button class="item" ${data}><div class="circ">${ic(i,20)}</div><div class="esp"><div class="t">${t}</div><div class="st">${s}</div></div>${ic('chevron',20,'style="color:var(--mute)"')}</button>`;
   return `<h2 class="h2" style="margin:8px 0 16px">Más</h2>
   <div class="agr">${fila('persona', r.profs[0].n, r.local + ' · cambiar de usuario')}</div>
-  <div class="sec">Turnos</div>
-  <div class="agr">${fila('chat','Turnos por WhatsApp', st.cfg.bot ? 'Prendido · toma turnos solo' : 'Apagado', 'data-sub="bot"')}</div>
-  <div class="sec">Cómo trabajan</div>
+  ${st.cfg.turnos && st.cfg.bot ? `<div class="sec">Turnos</div>
+  <div class="agr">${fila('chat','Turnos por WhatsApp', 'Horarios, recordatorio y seña', 'data-sub="bot"')}</div>` : ''}
+  <div class="sec">Módulos <span>apagado = no se muestra</span></div>
   <div style="display:flex;flex-direction:column;gap:8px">
-    ${swNs('varios','Varios profesionales', st.cfg.varios ? r.profs.map(p=>p.n).join(' y ') + ' · agenda y caja por persona' : 'Una sola agenda')}
-    ${swNs('manoObra','Mano de obra en el costo','Cada profesional pone el valor de su hora')}
-    ${swNs('ajustar','Ajustar insumos al cobrar','Quien atiende corrige lo que usó en esa venta')}
+    ${swNs('turnos','Turnos y agenda','Sin agenda, la app arranca en Cobrar')}
+    ${st.cfg.turnos ? swNs('bot','Turnos por WhatsApp','El bot ofrece horarios y los anota solo') : ''}
+    ${swNs('insumos','Insumos y costos','Recetas, costo por servicio y descuento al cobrar')}
+    ${st.cfg.insumos ? swNs('bloquear','Bloquear si falta un insumo', st.cfg.bloquear ? 'No deja cobrar el servicio' : 'Solo avisa y deja cobrar') : ''}
+    ${st.cfg.insumos ? swNs('ajustar','Ajustar insumos al cobrar','Quien atiende corrige lo que usó en esa venta') : ''}
+    ${st.cfg.insumos ? swNs('manoObra','Mano de obra en el costo','Cada profesional pone el valor de su hora') : ''}
+    ${swNs('varios','Varios profesionales', st.cfg.varios ? r.profs.map(p=>p.n).join(' y ') + ' · agenda y caja por persona' : 'Una sola persona atiende')}
+    ${swNs('productos','Productos de reventa','Vender cosas además de servicios')}
   </div>
   <div class="sec">Negocio</div>
   <div class="agr">${fila('camara','Cargar una factura','Suma a los insumos y a lo que debés')}${fila('camion','Proveedores','Cuenta corriente y pagos')}${fila('ajustes','Configuración','Cobro, ganancia de referencia, impresora')}</div>`;
@@ -736,7 +751,7 @@ function vHoja(r) {
     </div>`;
   } else if (h.startsWith('turno:')) {
     const t = r.turnos.find(x => x.id === h.slice(6)); const s = serv(t.s), p = prof(t.p), [et, ec] = ESTADOS[t.estado];
-    const f = faltante(lineaServicio(s));
+    const f = bloquea(lineaServicio(s));
     c = `<h3>${t.cli}</h3><p class="sub" style="margin:0 0 14px">${s.n} · hoy ${t.h} · ${s.min} min${st.cfg.varios ? ' · ' + p.n : ''}</p>
     <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="et ${ec}">${et}</span>${t.origen==='wa' ? `<span class="et g">${ic('chat',12)} Pidió por WhatsApp</span>` : '<span class="et m">Cargado a mano</span>'}${t.sena ? `<span class="et m">Seña ${plata(t.sena)}</span>` : ''}</div>
     <div style="padding:8px 4px 0"><div class="kv"><span>Teléfono</span><span class="tab">294 15${String(t.cli.length*731).slice(0,3)}-${String(t.cli.length*4217).slice(0,4)}</span></div>
@@ -825,7 +840,7 @@ tel.addEventListener('click', e => {
     r.turnos.push({id:'t'+Date.now(), h:document.getElementById('ntHora').value, s:document.getElementById('ntServ').value, p:document.getElementById('ntProf')?.value || r.profs[0].id, cli, origen:'mano', estado:'confirmado'});
     st.hoja = null; st.dia = 3; toast(`Anotado: ${cli}`);
   }
-  else if (d.cfg) { st.cfg[d.cfg] = !st.cfg[d.cfg]; if (d.cfg === 'varios') st.prof = 'todos'; render(false); }
+  else if (d.cfg) { st.cfg[d.cfg] = !st.cfg[d.cfg]; if (d.cfg === 'varios') st.prof = 'todos'; if (d.cfg === 'insumos') st.servSeg = 0; render(false); }
   else if (d.nuevoServ !== undefined) { st.editor = {nuevo:true, n:'', min:45, cat:r.cats[0], precio:0, mo:false, receta:[]}; ir('servicios','editor'); }
   else if (d.editar) { st.editor = JSON.parse(JSON.stringify(serv(d.editar))); ir('servicios','editor'); }
   else if (d.cerrarEditor !== undefined) ir('servicios');
@@ -847,13 +862,13 @@ tel.addEventListener('click', e => {
     st.servSeg = 0; ir('servicios'); toast(`Guardado: ${e2.n}`);
   }
   else if (d.cat) { st.cat = d.cat; render(false); }
-  else if (d.sumar) { const s = serv(d.sumar); if (!faltante(lineaServicio(s))) { st.carrito.push(lineaServicio(s)); render(false); } }
+  else if (d.sumar) { const s = serv(d.sumar); if (!bloquea(lineaServicio(s))) { st.carrito.push(lineaServicio(s)); render(false); } }
   else if (d.producto) { const p = r.productos.find(x=>x.id===d.producto); if (p.stock > st.carrito.filter(l=>l.id===p.id).length) { st.carrito.push({tipo:'p', id:p.id, n:p.n, precio:p.precio}); render(false); } }
   else if (d.sacar) { st.carrito.splice(+d.sacar,1); if (!st.carrito.length) st.turnoCobrando = null; render(false); }
   else if (d.ajustar) { st.ajusteIdx = +d.ajustar; st.hoja = 'ajustar'; render(false); }
   else if (d.restaurar !== undefined) { const l = st.carrito[st.ajusteIdx]; st.carrito[st.ajusteIdx] = lineaServicio(serv(l.id)); render(false); }
   else if (d.cobrar !== undefined) {
-    const f = faltante(); if (f) { toast(`No alcanza ${f.n.toLowerCase()}: sacá un servicio o ajustá lo que usa`); return; }
+    const f = bloquea(); if (f) { toast(`No alcanza ${f.n.toLowerCase()}: sacá un servicio o ajustá lo que usa`); return; }
     st.medio = null; if (!st.turnoCobrando) st.atendio = null; st.sub = 'cobrar'; render();
   }
   else if (d.atendio) { st.atendio = d.atendio; render(false); }
@@ -887,7 +902,7 @@ function cobrar(r) {
   const total = st.carrito.reduce((t,l) => t + l.precio, 0);
   const tu = st.turnoCobrando && r.turnos.find(x => x.id === st.turnoCobrando);
   const final = (st.medio === 'ef' ? redondeoEf(total) : total) - (tu?.sena || 0);
-  const mov = Object.entries(pedidoCarrito()).map(([id,q]) => { const i = r.insumos.find(x=>x.id===id); i.stock = Math.round((i.stock - q)*100)/100;
+  const mov = !st.cfg.insumos ? [] : Object.entries(pedidoCarrito()).map(([id,q]) => { const i = r.insumos.find(x=>x.id===id); i.stock = Math.round((i.stock - q)*100)/100;
     return {n:i.n, u:i.u, c:q, queda:i.stock, min:i.min, prov:i.prov, costo:costoUnidad(i)*q}; });
   st.carrito.filter(l => l.tipo === 'p').forEach(l => r.productos.find(p => p.id === l.id).stock--);
   const costo = Math.ceil(mov.reduce((t,m)=>t+m.costo,0));
@@ -920,7 +935,8 @@ const PANT = [
 function pintarIrA() {
   const cur = st.sub === 'editor' ? 'Creador de servicio' : st.sub === 'bot' ? 'Bot de WhatsApp' : st.hoja?.startsWith('turno:') ? 'Turno'
     : st.tab === 'servicios' ? (st.servSeg===1?'Insumos':'Servicios') : ({agenda:'Agenda',vender:'Cobrar',caja:'Caja',mas:'Más'})[st.tab];
-  document.getElementById('irA').innerHTML = PANT.map(([t],k)=>`<button data-k="${k}" class="${t===cur?'on':''}">${t}</button>`).join('');
+  const oculto = t => (!st.cfg.turnos && ['Agenda','Turno','Bot de WhatsApp'].includes(t)) || (!st.cfg.bot && t === 'Bot de WhatsApp') || (!st.cfg.insumos && t === 'Insumos');
+  document.getElementById('irA').innerHTML = PANT.map(([t],k)=> oculto(t) ? '' : `<button data-k="${k}" class="${t===cur?'on':''}">${t}</button>`).join('');
 }
 document.getElementById('irA').addEventListener('click', e => { const b = e.target.closest('button'); if (b) PANT[+b.dataset.k][1](); });
 render();
