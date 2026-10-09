@@ -64,6 +64,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 
 **Celular, sincronización y nube**
 
+- [El celular: datos completos, carga lo más simple posible (2026-10-09)](#el-celular-datos-completos-carga-lo-más-simple-posible-2026-10-09)
 - [Sync instantánea por wifi, sin depender de Supabase (2026-09-28)](#sync-instantánea-por-wifi-sin-depender-de-supabase-2026-09-28)
 - [APK de la companion por el sitio (2026-10-01)](#apk-de-la-companion-por-el-sitio-2026-10-01)
 - [Primitivas compartidas entre PC y celular (2026-10-02)](#primitivas-compartidas-entre-pc-y-celular-2026-10-02)
@@ -2274,3 +2275,19 @@ cada empleado).
   instalaciones viejas siguen andando); cuando el dueño guarda la del negocio desde un equipo, la propia de ese equipo se borra. El
   modelo elegido sigue siendo de cada equipo (arranca en el que le anduvo a la clave).
 - Cargarla desde la web (`/negocio`) no se hizo: se carga desde la PC o el celular del dueño, donde ya se probaba.
+
+## El celular: datos completos, carga lo más simple posible (2026-10-09)
+
+El dueño, 2026-10-09, al planear que el celular no dependa de la PC: *"los datos deberían estar al 100%, pero se debe
+pensar la forma más simple y sencilla de poder cargarlos, ese criterio a todas las funciones de la app"*.
+
+- **Los datos no se recortan.** Lo que la PC guarda de algo (un proveedor, una venta, un cierre), el celular también
+  lo puede cargar. Un celular que trabaja solo no puede dejar datos a medias para "completar en la PC".
+- **La carga sí se simplifica.** Primero lo mínimo para empezar; el resto, con valores por defecto razonables, sacado
+  de lo que ya hay (como el MP contado que se arrastra al abrir la caja), o preguntado recién cuando hace falta. Nunca un
+  formulario largo de una vez.
+- **Una pantalla o un botón por función**, no una copia de la pantalla de la PC. Si para explicarla hace falta texto, está
+  mal resuelta.
+
+Se aplica a todo lo que se sume al celular, no solo a lo de la independencia de la PC.
+
