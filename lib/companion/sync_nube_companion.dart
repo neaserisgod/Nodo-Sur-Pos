@@ -5,6 +5,7 @@
 // queda ahí, y de ahí sale hacia la nube; lo que llega de otros dispositivos entra ahí y las pantallas se
 // refrescan con el mismo aviso que usa la sync por wifi.
 
+import '../servicios/catalogo_bot_nube.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -82,6 +83,8 @@ SyncNubeCompanion armarSyncNubeCompanion({
     cliente: cliente,
     almacenEstado: almacenEstado,
     alAplicarBajada: avisarCambiosCompanion,
+    // Cuando el celular sube a la nube (sin PC), publica también el catálogo del bot de WhatsApp (si el negocio lo tiene).
+    alTerminarVuelta: PublicadorCatalogoBot(db: db, cliente: cliente).publicarSiHaceFalta,
   );
   final conmutador = ConmutadorSync(
     hayCuenta: () async => await almacen.leer() != null,

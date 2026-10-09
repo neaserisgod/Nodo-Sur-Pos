@@ -109,8 +109,11 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
 3. ✅ **Bot** (hecho el 2026-10-09, detalle en el README de `botdemo`): plantilla y flujo de almacén (precio y si hay, horarios y ubicación, pedidos); pausa de 1 hora configurable,
    también cuando el dueño contesta a mano; vincularse desde Termux; bajar configuración y catálogo y recargarlos sin
    reiniciarse; `instalar.sh` de un comando. Tests como los de barbería.
-4. **App del celular**: pantalla Bot de WhatsApp (estado, configuración, instalar), publicar el catálogo, pedidos por
-   confirmar en Encargues. APK beta.
+4. **App del celular** (a medias, 2026-10-09): ✅ cliente del sitio para el bot y avisos en vivo de pedidos; ✅ publicar el
+   catálogo (el equipo que sube la sync lo publica solo si hay plan con bot y si cambió; la PC también, así que hace falta
+   un release nuevo de Windows). Falta: pedidos por confirmar en Encargues (sin stock no deja aceptar y dice qué falta;
+   cualquiera de la app acepta o rechaza), pantalla Bot de WhatsApp en Más (estado, configuración para dueño/encargado,
+   instalar) y APK beta.
 5. **Notificaciones con la app cerrada** (Firebase): registrar el token, mandar el aviso del pedido, pasos para crear el
    proyecto desde el celular.
 6. Después: editar desde `/negocio` para "Solo el bot"; turnos de servicios (`PLAN-SERVICIOS.md`).

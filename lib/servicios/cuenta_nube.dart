@@ -12,9 +12,11 @@ import 'package:http/http.dart' as h;
 import 'package:path/path.dart' as p;
 
 import '../domain/avisos_mp.dart';
+import '../domain/bot_whatsapp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../domain/saldo_mp.dart';
 import '../domain/vinculacion.dart';
+import 'avisos_bot.dart';
 import 'avisos_cobro_mp.dart';
 import 'registro_errores.dart';
 
@@ -205,6 +207,11 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'mp_sin_respuesta' => 'Mercado Pago no respondió a tiempo. Probá de nuevo en un momento.',
   'orden_de_otra_sucursal' => 'Ese cobro es de otra sucursal: hay que cancelarlo o devolverlo desde la caja que lo cobró.',
   'no_cobrada' => 'Ese cobro no figura como cobrado en Mercado Pago: no hay nada para devolver.',
+  'sin_plan_bot' => 'El negocio no tiene un plan con el bot de WhatsApp.',
+  'bot_no_configurado' => 'El bot de WhatsApp todavía no está listo en el servidor. Probá más tarde.',
+  'ya_resuelto' => 'Ese pedido ya lo resolvió otro equipo.',
+  'no_existe' => 'Ese pedido ya no existe.',
+  'forbidden' => 'No tenés permiso para hacer eso.',
   _ => 'El servicio respondió con un error ($codigo).',
 };
 
@@ -456,6 +463,69 @@ class ClienteNube {
         return (estado: r.statusCode, cuerpo: r.body);
       });
 
+  // ─── Bot de WhatsApp (`docs/PLAN-BOT.md`; en el sitio, `/api/bot/*`) ───
+
+  /// Si el negocio tiene el bot, si este equipo lo puede configurar (dueño o encargado), la versión de su configuración y los bots
+  /// vinculados con su última señal. Sin el plan contesta `tieneBot: false` (la app esconde la pantalla del bot).
+  Future<EstadoBot> estadoBot(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/estado'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return estadoBotDesdeJson(jsonDecode(r.body) as Map<String, dynamic>);
+  });
+
+  /// La configuración del bot guardada en el sitio (`config: null` si nunca se guardó).
+  Future<({int version, Map<String, dynamic>? config})> configBot(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/config'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (version: (j['version'] as num?)?.toInt() ?? 0, config: (j['config'] as Map?)?.cast<String, dynamic>());
+  });
+
+  /// Guarda la configuración del bot (dueño o encargado). El bot se entera al toque y la recarga. Devuelve la versión nueva.
+  Future<int> guardarConfigBot(String token, Map<String, dynamic> config) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/bot/config'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'config': config}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return ((jsonDecode(r.body) as Map<String, dynamic>)['version'] as num).toInt();
+  });
+
+  /// Publica el catálogo corto que usa el bot. Devuelve si cambió (si no, el sitio no despierta al bot).
+  Future<bool> publicarCatalogoBot(String token, List<ItemCatalogoBot> items) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/bot/catalogo'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'items': [for (final x in items) x.toJson()]}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['cambiado'] == true;
+  });
+
+  /// Los pedidos del bot que cambiaron después de [desde] (milisegundos del sitio), con el cursor para la próxima vez.
+  Future<({List<PedidoBot> pedidos, int hasta, bool mas})> pedidosBot(String token, {int desde = 0}) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/pedidos', {'desde': '$desde'}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (
+      pedidos: [
+        for (final x in (j['pedidos'] as List? ?? const []))
+          if (x is Map) ?pedidoBotDesdeJson(x.cast<String, dynamic>()),
+      ],
+      hasta: (j['hasta'] as num?)?.toInt() ?? desde,
+      mas: j['mas'] == true,
+    );
+  });
+
+  /// Acepta o rechaza un pedido del bot, una sola vez: si otro equipo ya lo resolvió, tira [ErrorNube] `ya_resuelto`.
+  Future<void> resolverPedidoBot(String token, int id, {required bool aceptado}) => _conRed(() async {
+    final r = await http
+        .post(
+          _uri('/api/bot/pedido/resolver'),
+          headers: _auth(token, {'Content-Type': 'application/json'}),
+          body: jsonEncode({'id': id, 'estado': aceptado ? 'aceptado' : 'rechazado'}),
+        )
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   // ─── Cobro con la terminal Point a través del servidor (el token de Mercado Pago del negocio no sale de ahí) ───
 
   /// Si el negocio de este dispositivo puede cobrar por el servidor: Mercado Pago conectado y terminal elegida para su sucursal.
@@ -705,13 +775,28 @@ class ClienteNube {
       final uri = Uri(scheme: esquema == 'https' ? 'wss' : 'ws', host: host, port: puerto, path: '/api/sync/escuchar');
       final mensajes = await _abrirEscucha(uri, _auth(token));
       avisarConexionEnVivoAbierta();
-      return mensajes.where((m) => m is String && !_esAvisoOrdenMp(m)).map((_) {});
+      return mensajes.where((m) => m is String && !_esAvisoOrdenMp(m) && !_esAvisoBot(m)).map((_) {});
     } on TimeoutException {
       throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
     } on SocketException {
       throw const ErrorNube('sin_red', 'No hay conexión con el servidor. Probá de nuevo en un rato.');
     } on WebSocketException catch (e) {
       throw ErrorNube('sin_escucha', 'No se pudo abrir el aviso en vivo: ${e.message}');
+    }
+  }
+
+  /// Un aviso del bot de WhatsApp (`{"bot":{"pedido":N}}`, un pedido nuevo) se entrega a [avisarPedidoBot] y no cuenta como
+  /// cambio de datos: no hay lotes nuevos que bajar. Lo que no se entiende sigue siendo "bajá", como con Mercado Pago.
+  static bool _esAvisoBot(String mensaje) {
+    if (!mensaje.contains('"bot"')) return false;
+    try {
+      final j = jsonDecode(mensaje);
+      final bot = j is Map ? j['bot'] : null;
+      if (bot is! Map) return false;
+      if (bot['pedido'] is int) avisarPedidoBot(bot['pedido'] as int);
+      return true;
+    } on FormatException {
+      return false;
     }
   }
 
