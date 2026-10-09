@@ -75,8 +75,11 @@ void main() {
   });
 
   test('rubro guardado con una clave que esta versión no conoce: se lee como sin elegir, no rompe', () async {
-    await db.update(db.configuracionNegocioTabla).write(const ConfiguracionNegocioTablaCompanion(rubro: Value('barberia')));
+    await db.update(db.configuracionNegocioTabla).write(const ConfiguracionNegocioTablaCompanion(rubro: Value('rubro_del_futuro')));
     expect(await rubroActual(db), isNull);
+    // Barbería era desconocida antes de los rubros de servicios; ahora se lee.
+    await db.update(db.configuracionNegocioTabla).write(const ConfiguracionNegocioTablaCompanion(rubro: Value('barberia')));
+    expect(await rubroActual(db), PlantillaRubro.barberia);
   });
 
   test('configuracionNegocioActual devuelve defaults de fábrica si la tabla está vacía (companion sin sync)', () async {
