@@ -138,6 +138,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sw .pista i{display:block;width:26px;height:26px;border-radius:50%;background:var(--paper);transition:transform .15s}
 .sw.on .pista{background:var(--ink)}.sw.on .pista i{transform:translateX(24px)}
 .sw .t{font-size:17px;font-weight:500;letter-spacing:-.02em}.sw .st{font-size:14px;color:var(--mute);margin-top:2px;line-height:1.3}
+.opc{display:flex;align-items:center;gap:14px;background:var(--s);border-radius:26px;padding:14px 18px;min-height:72px;width:100%;text-align:left;box-shadow:inset 0 0 0 2px transparent;transition:box-shadow .15s}
+.opc.on{box-shadow:inset 0 0 0 2px var(--ink)}
+.opc .t{font-size:17px;font-weight:500;letter-spacing:-.02em}.opc .st{font-size:14px;color:var(--mute);margin-top:2px;line-height:1.3}
+.opc .marca{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--line);display:grid;place-items:center;flex:none}
+.opc.on .marca{background:var(--ink);color:var(--paper);box-shadow:none}
 .ava{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:700;flex:none}
 
 /* agenda */
@@ -196,6 +201,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="rot">Mock · App del celular · versión 2</div>
       <h1 style="margin-top:8px">Nodo Sur para servicios</h1>
     </div>
+    <p><b>Una sola app</b>: en el onboarding, al elegir el rubro, se decide qué pantallas ve el negocio. Un almacén sigue viendo la app de hoy; una barbería o un local de uñas ven esta. Probá "Onboarding" abajo.</p>
     <p><b>Todo es opcional</b>: es un SaaS para muchos negocios, así que cada parte nueva es un módulo que cada uno prende o apaga en Más › Módulos (como los módulos que ya tiene la app). Apagado, no se ve ni entra en las cuentas. Probá apagar Agenda o Insumos.</p>
     <p>Misma estética que la app del celular, con menos cosas. La <b>agenda</b> es la pantalla principal: los turnos llegan solos desde el bot de WhatsApp o se cargan a mano, y de un turno se pasa a cobrar en un toque. Todo el teléfono se puede tocar.</p>
     <div>
@@ -410,9 +416,9 @@ const tel = document.getElementById('tel');
 function render(anim = true) {
   const r = R();
   if (!st.cfg.turnos && st.tab === 'agenda') st.tab = 'vender';
-  const sub = {editor:vEditor, cobrar:vCobrar, cobrada:vCobrada, bot:vBot, insumos:vInsumos}[st.sub];
+  const sub = {editor:vEditor, cobrar:vCobrar, cobrada:vCobrada, bot:vBot, insumos:vInsumos, onboarding:vOnboarding}[st.sub];
   const html = sub ? sub(r) : ({agenda:vAgenda, servicios:vServicios, vender:vVender, caja:vCaja, mas:vMas})[st.tab](r);
-  const conNav = !['editor','cobrar','cobrada'].includes(st.sub);
+  const conNav = !['editor','cobrar','cobrada','onboarding'].includes(st.sub);
   const scroll = !anim ? document.getElementById('pant')?.scrollTop : 0;
   tel.innerHTML = `<div class="pant ${anim ? 'entra' : ''}" id="pant">${html}</div>` + (conNav ? vNav() : '') + (st.hoja ? vHoja(r) : '') + (st.toast ? `<div class="toast" role="status">${st.toast}</div>` : '');
   if (!anim) document.getElementById('pant').scrollTop = scroll || 0;
@@ -739,6 +745,37 @@ function vBot(r) {
   <div class="info" style="margin-top:14px">${ic('chat',20)}<span>Número conectado: +54 9 294 412-3456. Si el bot no entiende algo, te avisa en la campanita.</span></div>`;
 }
 
+// ---------------- Onboarding: el rubro decide qué app se ve ----------------
+// Mismo paso que lib/companion/configurar/asistente_negocio.dart ("Contanos de tu negocio"), con los rubros de
+// servicios sumados. Cada rubro trae su forma de trabajar (productos o servicios) y sus módulos prendidos.
+const RUBROS_ALTA = [
+  ['Vendés productos', [
+    ['kiosco','Kiosco','Golosinas, bebidas, cigarrillos y artículos de paso.', 'productos', ['Caja aparte (lata)','Promos']],
+    ['almacen','Almacén','Comestibles, bebidas, limpieza y fiambres.', 'productos', ['Productos por peso','Encargues','Promos']],
+    ['fiambreria','Fiambrería','Fiambres, quesos y lácteos por peso.', 'productos', ['Productos por peso','Encargues']],
+  ]],
+  ['Das servicios', [
+    ['barberia','Barbería','Cortes, barba y color, con turnos.', 'servicios', ['Agenda','Turnos por WhatsApp','Insumos','Varios profesionales']],
+    ['unias','Uñas y belleza','Manos, pies, cejas y pestañas, con turnos.', 'servicios', ['Agenda','Turnos por WhatsApp','Insumos','Varios profesionales']],
+    ['servicio','Otro servicio','Peluquería, estética, masajes, tatuajes…', 'servicios', ['Agenda','Insumos']],
+  ]],
+  ['', [['otro','Otro','Empezar desde cero y elegir los módulos a mano.', 'productos', []]]],
+];
+function vOnboarding() {
+  const el = st.alta;
+  const todos = RUBROS_ALTA.flatMap(g => g[1]);
+  const sel = todos.find(x => x[0] === el);
+  return `
+  <div class="sub" style="margin:4px 0 6px">Paso 1 de 3</div>
+  <h2 class="h2">Contanos de tu negocio</h2>
+  <p class="sub" style="margin:8px 0 18px;line-height:1.4">Con esto armamos la app a tu medida. Todo se puede cambiar después.</p>
+  <label class="campo"><small>Nombre del comercio</small><input id="altaNombre" value="${st.altaNombre || ''}" placeholder="Ej.: Barbería del Centro"></label>
+  ${RUBROS_ALTA.map(([g, ops]) => `<div class="sec">${g || '¿Ninguno?'}</div><div style="display:flex;flex-direction:column;gap:8px">${ops.map(([k,n,d]) =>
+    `<button class="opc ${el===k?'on':''}" data-alta="${k}"><span class="esp"><span class="t" style="display:block">${n}</span><span class="st" style="display:block">${d}</span></span><span class="marca">${el===k ? ic('tilde',16) : ''}</span></button>`).join('')}</div>`).join('')}
+  ${sel ? `<div class="info ${sel[3]==='servicios'?'g':''}" style="margin-top:14px">${ic(sel[3]==='servicios'?'agenda':'carrito',20)}<span>${sel[3]==='servicios' ? 'La app arranca en la <b>Agenda</b>.' : 'La app arranca en <b>Vender</b>, como hoy.'}${sel[4].length ? ' Te prendemos: ' + sel[4].join(', ') + '.' : ' Sin módulos extra: los elegís vos.'} Se cambia en Más › Módulos.</span></div>` : ''}
+  <button class="btn p" style="margin-top:18px" data-alta-seguir ${sel ? '' : 'disabled'}>Siguiente</button>`;
+}
+
 // ---------------- hojas ----------------
 function vHoja(r) {
   const h = st.hoja; let c = '';
@@ -840,6 +877,18 @@ tel.addEventListener('click', e => {
     r.turnos.push({id:'t'+Date.now(), h:document.getElementById('ntHora').value, s:document.getElementById('ntServ').value, p:document.getElementById('ntProf')?.value || r.profs[0].id, cli, origen:'mano', estado:'confirmado'});
     st.hoja = null; st.dia = 3; toast(`Anotado: ${cli}`);
   }
+  else if (d.alta) { st.alta = d.alta; render(false); }
+  else if (d.altaSeguir !== undefined) {
+    const sel = RUBROS_ALTA.flatMap(g => g[1]).find(x => x[0] === st.alta);
+    if (sel[3] === 'productos') { toast('Sigue la app de almacén de hoy (no es parte de este mock)'); return; }
+    rubro = st.alta === 'barberia' ? 'barberia' : 'unias';
+    datos = JSON.parse(JSON.stringify(RUBROS));
+    if (st.altaNombre) datos[rubro].local = st.altaNombre;
+    [...document.getElementById('segRubro').children].forEach(x => x.classList.toggle('on', x.dataset.r === rubro));
+    Object.assign(st.cfg, {turnos:true, bot: st.alta !== 'servicio', insumos:true, varios: st.alta !== 'servicio'});
+    Object.assign(st, {carrito:[], ventas:[], cat:'Todos', prof:'todos', dia:3});
+    ir('agenda'); toast('Listo: así arranca tu app');
+  }
   else if (d.cfg) { st.cfg[d.cfg] = !st.cfg[d.cfg]; if (d.cfg === 'varios') st.prof = 'todos'; if (d.cfg === 'insumos') st.servSeg = 0; render(false); }
   else if (d.nuevoServ !== undefined) { st.editor = {nuevo:true, n:'', min:45, cat:r.cats[0], precio:0, mo:false, receta:[]}; ir('servicios','editor'); }
   else if (d.editar) { st.editor = JSON.parse(JSON.stringify(serv(d.editar))); ir('servicios','editor'); }
@@ -894,6 +943,7 @@ tel.addEventListener('input', e => {
 tel.addEventListener('change', e => {
   const el = e.target;
   if (['edPrecio','edNombre','edMin'].includes(el.id) || el.dataset.qi || el.dataset.ai) render(false);
+  if (el.id === 'altaNombre') st.altaNombre = el.value;
   if (el.id === 'senaValor') { st.cfg.senaValor = +el.value.replace(/\D/g,'') || 0; render(false); }
   if (el.id === 'cpIns') { st.compraId = el.value; render(false); calcCompra(); }
 });
@@ -922,6 +972,7 @@ document.getElementById('segRubro').addEventListener('click', e => {
   render();
 });
 const PANT = [
+  ['Onboarding', () => { st.alta = null; ir('mas','onboarding'); }],
   ['Agenda', () => ir('agenda')],
   ['Turno', () => { ir('agenda'); st.hoja = 'turno:t5'; render(false); }],
   ['Bot de WhatsApp', () => ir('mas','bot')],
@@ -933,7 +984,7 @@ const PANT = [
   ['Más', () => ir('mas')],
 ];
 function pintarIrA() {
-  const cur = st.sub === 'editor' ? 'Creador de servicio' : st.sub === 'bot' ? 'Bot de WhatsApp' : st.hoja?.startsWith('turno:') ? 'Turno'
+  const cur = st.sub === 'onboarding' ? 'Onboarding' : st.sub === 'editor' ? 'Creador de servicio' : st.sub === 'bot' ? 'Bot de WhatsApp' : st.hoja?.startsWith('turno:') ? 'Turno'
     : st.tab === 'servicios' ? (st.servSeg===1?'Insumos':'Servicios') : ({agenda:'Agenda',vender:'Cobrar',caja:'Caja',mas:'Más'})[st.tab];
   const oculto = t => (!st.cfg.turnos && ['Agenda','Turno','Bot de WhatsApp'].includes(t)) || (!st.cfg.bot && t === 'Bot de WhatsApp') || (!st.cfg.insumos && t === 'Insumos');
   document.getElementById('irA').innerHTML = PANT.map(([t],k)=> oculto(t) ? '' : `<button data-k="${k}" class="${t===cur?'on':''}">${t}</button>`).join('');
