@@ -227,4 +227,10 @@ void main() {
       expect(configBotDesdeJson(null).pausaMinutos, 60);
     });
   });
+
+  test('el comando de instalar anda en un Termux recién instalado: primero instala curl', () {
+    // Primera instalación real (2026-10-09): Termux nuevo no trae curl y el comando fallaba con "curl: command not found".
+    expect(comandoInstalarBot, startsWith('pkg install -y curl && curl -fsSL '));
+    expect(comandoInstalarBot, endsWith('/neaserisgod/botdemo/main/instalar.sh | bash'));
+  });
 }

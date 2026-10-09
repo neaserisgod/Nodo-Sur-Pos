@@ -397,5 +397,7 @@ Map<String, dynamic> configBotParaGuardar(
 /// El WhatsApp de contacto de Nodo Sur (horsepos.com): recibe solo el latido de salud de los bots.
 const numeroSoporteNodoSur = '5492944796044';
 
-/// El comando que se pega en Termux para instalar el bot (`botdemo/instalar.sh`).
-const comandoInstalarBot = 'curl -fsSL https://raw.githubusercontent.com/neaserisgod/botdemo/main/instalar.sh | bash';
+/// El comando que se pega en Termux para instalar el bot (`botdemo/instalar.sh`). Empieza instalando curl: un Termux recién
+/// instalado no lo trae (primera instalación real, 2026-10-09, `TRAMPAS.md`).
+const comandoInstalarBot =
+    'pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/neaserisgod/botdemo/main/instalar.sh | bash';

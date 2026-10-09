@@ -276,7 +276,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     final ns = context.ns;
     const pasos = [
       'En el celular que va a quedar con el bot, instalá Termux, Termux:Boot y Termux:API desde F-Droid. Abrí Termux:Boot una vez.',
-      'En Termux, pegá el comando de abajo y tocá Enter.',
+      'Copiá el comando de abajo. En Termux, mantené apretado en la pantalla negra › Paste (no pegues desde el teclado: se rompe) y tocá Enter.',
       'Se abre el navegador: entrá con tu cuenta de Google y elegí el negocio.',
       'Aparece un código. En el celular con el WhatsApp del local: Dispositivos vinculados › Vincular con el número de teléfono, y escribilo.',
       'Listo: queda andando y arranca solo al prender el celular. Para que Android no lo cierre: Ajustes › Apps › Termux › Batería › Sin restricciones.',
