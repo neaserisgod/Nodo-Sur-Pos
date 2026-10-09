@@ -101,4 +101,33 @@ void main() {
     expect(carrito.map((l) => l.nombreProducto), ['Cerveza lata 473 ml']);
     await t.pump(const Duration(seconds: 6));
   });
+
+  testWidgets('con el teclado: el campo no pierde el foco, Enter agrega el primero y queda listo para el siguiente '
+      '(El dueño, 2026-10-09: "tiene que escribir y seleccionar")', (t) async {
+    await abrir(t);
+    await t.runAsync(() => PuertoLocal(baseLocalCompanion()).crearProducto(
+          nombre: 'Coca Cola 2,25 L', esPesable: false, precioCentavos: 290000, costoCentavos: 200000, stock: 10, usuarioId: 1,
+        ));
+    final campo = find.byType(TextField).first;
+    await t.tap(campo);
+    // Se abre el teclado: el título se achica y el campo tiene que seguir con el foco.
+    t.view.viewInsets = const FakeViewPadding(bottom: 600);
+    await esperar(t);
+    final editable = t.widget<EditableText>(find.descendant(of: campo, matching: find.byType(EditableText)));
+    expect(editable.focusNode.hasFocus, isTrue);
+
+    await t.enterText(campo, 'coca');
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await esperar(t);
+    expect(find.text('Coca Cola 2,25 L'), findsOneWidget);
+    expect(find.textContaining('Enter para agregar'), findsOneWidget);
+
+    await t.testTextInput.receiveAction(TextInputAction.search);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await esperar(t);
+    expect(carrito.map((l) => l.nombreProducto), contains('Coca Cola 2,25 L'));
+    expect(t.widget<TextField>(campo).controller!.text, isEmpty);
+    expect(editable.focusNode.hasFocus, isTrue, reason: 'el teclado queda abierto para el siguiente producto');
+  });
 }
+

@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import '../../domain/pedido_whatsapp.dart';
+import '../../domain/periodo.dart' show diasDePedido;
 
 import '../../data/repositorio_reposicion.dart' show mediosPagoProveedor;
 import '../comun/botones.dart';
@@ -116,7 +117,7 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
       spacing: Espaciado.sm,
       runSpacing: Espaciado.sm,
       children: [
-        for (final d in _dias)
+        for (final d in diasDePedido)
           ChipAtajo(
             texto: d.substring(0, 3),
             elegido: elegido == d,
@@ -202,4 +203,3 @@ class _DialogoNuevoProveedorState extends State<_DialogoNuevoProveedor> {
   }
 }
 
-const _dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
