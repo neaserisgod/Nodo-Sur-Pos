@@ -6,7 +6,10 @@
 // márgenes: el margen de referencia de una categoría es de cada comercio y
 // arranca en 0 ("sin referencia", Regla 14) en vez de regalar los de otro.
 //
-// Las claves no se renombran nunca: se van a guardar en la configuración.
+// Las claves no se renombran nunca: se guardan en la configuración (`configuracion_negocio.rubro`, v63) y el bot de
+// WhatsApp usa las mismas (`botdemo/src/plantillas.js`): el rubro que se elige en la app le llega tal cual.
+
+import 'forma_de_trabajo.dart';
 
 /// Una categoría de ejemplo. [markupDefaultBp] es informativo (Regla 14).
 class CategoriaDePlantilla {
@@ -21,6 +24,7 @@ class PlantillaRubro {
     required this.clave,
     required this.nombre,
     required this.descripcion,
+    this.forma = FormaDeTrabajo.productos,
     this.categorias = const [],
     this.gastosFijos = const [],
   });
@@ -28,6 +32,9 @@ class PlantillaRubro {
   final String clave;
   final String nombre;
   final String descripcion;
+
+  /// Vende productos o da servicios: decide qué partes de la app se ven (`forma_de_trabajo.dart`).
+  final FormaDeTrabajo forma;
   final List<CategoriaDePlantilla> categorias;
 
   /// Conceptos de gastos fijos, sin monto: el monto se carga por mes
@@ -88,6 +95,42 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
   );
 
+  static const barberia = PlantillaRubro(
+    clave: 'barberia',
+    nombre: 'Barbería',
+    descripcion: 'Cortes, barba y color, con turnos.',
+    forma: FormaDeTrabajo.servicios,
+    categorias: [
+      CategoriaDePlantilla('Cortes'),
+      CategoriaDePlantilla('Barba'),
+      CategoriaDePlantilla('Color'),
+    ],
+    gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
+  );
+
+  /// La clave es `unas` (sin tilde ni eñe), la que ya guarda el bot en los negocios instalados.
+  static const unas = PlantillaRubro(
+    clave: 'unas',
+    nombre: 'Uñas y belleza',
+    descripcion: 'Manos, pies, cejas y pestañas, con turnos.',
+    forma: FormaDeTrabajo.servicios,
+    categorias: [
+      CategoriaDePlantilla('Manos'),
+      CategoriaDePlantilla('Pies'),
+      CategoriaDePlantilla('Cejas y pestañas'),
+    ],
+    gastosFijos: ['Alquiler', 'Luz', 'Internet', 'Sueldos'],
+  );
+
+  /// Un servicio que no es barbería ni uñas: sin categorías de ejemplo.
+  static const servicio = PlantillaRubro(
+    clave: 'servicio',
+    nombre: 'Otro servicio',
+    descripcion: 'Peluquería, estética, masajes, tatuajes…',
+    forma: FormaDeTrabajo.servicios,
+    gastosFijos: ['Alquiler', 'Luz', 'Internet'],
+  );
+
   /// Sin ejemplos: el comercio arma todo a mano.
   static const otro = PlantillaRubro(
     clave: 'otro',
@@ -96,7 +139,10 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
 
-  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, otro];
+  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, barberia, unas, servicio, otro];
+
+  /// Las de una forma de trabajar, en el orden de [todas] (el alta los muestra en dos grupos). "Otro" es de productos.
+  static List<PlantillaRubro> deForma(FormaDeTrabajo forma) => [for (final p in todas) if (p.forma == forma && p != otro) p];
 
   static PlantillaRubro? desdeClave(String clave) {
     for (final plantilla in todas) {
@@ -105,3 +151,7 @@ class PlantillaRubro {
     return null;
   }
 }
+
+/// La forma de trabajar según la clave guardada. Sin rubro elegido (un negocio anterior a la v63) o con una clave de una
+/// versión más nueva, productos: es la app de siempre, y actualizar no le cambia nada a un negocio que ya funciona.
+FormaDeTrabajo formaDeRubro(String clave) => PlantillaRubro.desdeClave(clave)?.forma ?? FormaDeTrabajo.productos;

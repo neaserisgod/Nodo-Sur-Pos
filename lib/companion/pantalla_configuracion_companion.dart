@@ -22,6 +22,8 @@ import 'package:flutter/material.dart';
 
 import '../data/repositorio_productos.dart' show crearCategoria;
 import '../domain/dinero.dart';
+import '../domain/forma_de_trabajo.dart';
+import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/gemini.dart';
 import '../ui/comun/campo_texto.dart';
@@ -445,16 +447,45 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             style: estiloNs(14, peso: FontWeight.w600, color: ns.mute),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final p in PlantillaRubro.todas) ChipNs(texto: p.nombre, activo: rubro == p.clave, onTap: () => setState(() => _rubroPendiente = p.clave)),
-            ],
-          ),
+          // Dos grupos, como en el alta (`asistente_negocio.dart`): el rubro decide si la app es de productos o de servicios.
+          for (final (titulo, rubros) in [
+            ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
+            ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          ]) ...[
+            Text(titulo, style: estiloNs(13, color: ns.mute)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final p in rubros)
+                  KeyedSubtree(
+                    key: Key('config_rubro_${p.clave}'),
+                    child: ChipNs(texto: p.nombre, activo: rubro == p.clave, onTap: () => setState(() => _rubroPendiente = p.clave)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (_avisoCambioDeForma() case final aviso?) InfoNs(aviso, tono: TonoNs.warn),
         ],
       ),
     );
+  }
+
+  /// Si el rubro elegido cambia la forma de trabajar (de productos a servicios o al revés), qué se deja de ver. Nada se
+  /// borra: los módulos que no valen para la forma nueva solo se esconden (`ModulosNegocio.estaActivo`).
+  String? _avisoCambioDeForma() {
+    final pendiente = _rubroPendiente;
+    if (pendiente == null || !_rubroCambio) return null;
+    final antes = formaDeRubro(_config!.rubro ?? '');
+    final despues = formaDeRubro(pendiente);
+    if (antes == despues) return null;
+    final ocultos = [for (final m in Modulo.values) if (m.valePara(antes) && !m.valePara(despues)) m.etiqueta];
+    final destino = despues == FormaDeTrabajo.servicios ? 'de servicios' : 'de productos';
+    return ocultos.isEmpty
+        ? 'Pasás a un negocio $destino.'
+        : 'Pasás a un negocio $destino: se dejan de ver ${ocultos.join(', ')}. No se borra nada.';
   }
 
   /// Un monto en pesos con su etiqueta; se interpreta con `parsearARS` al guardar (acepta "1.200" y "1200,50").

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../data/database.dart';
+import '../data/repositorio_configuracion.dart';
 import '../domain/modulos.dart';
 
 final ValueNotifier<ModulosNegocio> modulosActuales = ValueNotifier(ModulosNegocio.todosActivos);
@@ -23,7 +24,7 @@ StreamSubscription<ModulosNegocio> seguirModulos(AppDatabase db) {
   return db
       .select(db.configuracionNegocioTabla)
       .watchSingleOrNull()
-      .map((f) => f == null ? ModulosNegocio.todosActivos : ModulosNegocio.desdeTexto(f.modulosDesactivados))
+      .map(modulosDeConfiguracion)
       .listen((m) => modulosActuales.value = m);
 }
 

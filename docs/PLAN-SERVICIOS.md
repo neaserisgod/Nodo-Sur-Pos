@@ -1,6 +1,7 @@
 # Plan · Nodo Sur para servicios (barbería, uñas y belleza)
 
-**Estado al 2026-10-09: mock hecho, sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
+**Estado al 2026-10-09: etapa 1 hecha (forma de trabajar y rubros de servicios, en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar);
+etapas 2 a 5 sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
 por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
 día sobre el bot que ya existe (`neaserisgod/botdemo`).
@@ -8,7 +9,9 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 ## Lo que decidió el dueño (2026-10-09)
 
 1. **Una sola app.** El rubro que se elige en el onboarding decide qué pantallas ve el negocio. Un almacén sigue con la app de
-   hoy; una barbería o un local de uñas arrancan en la Agenda.
+   hoy; una barbería o un local de uñas arrancan en la Agenda. Barbería y uñas **no son paquetes de pantallas distintos**: usan las
+   mismas pantallas (en el mock solo cambian los datos de `RUBROS`). Los "paquetes" son dos formas de trabajar (productos y
+   servicios), y el rubro es un preset dentro de cada una (categorías, textos y diccionario del bot).
 2. **Todo es opcional** (SaaS multi-negocio): cada función nueva es un módulo; apagado no se muestra ni entra en los cálculos.
 3. **Si falta un insumo, el servicio no se cobra** (como "sin stock no se vende", Regla 8). Es un módulo: apagado, solo avisa.
 4. **Varios profesionales**, **mano de obra en el costo** y **ajustar lo que se usó al cobrar**: opcionales.
@@ -48,8 +51,8 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
    actualizar. Hace falta algo arriba de los módulos: la **forma de trabajar del negocio** (`productos` | `servicios`). Los
    módulos de servicios solo valen con `servicios`, y la lista de Configuración de la PC (que recorre `Modulo.values`) no los
    muestra a un almacén.
-2. **El rubro no se guarda en ningún lado.** `PlantillaRubro` solo siembra categorías. Además, **la PC no tiene asistente de
-   rubro**: `aplicarPlantillaRubro` no se usa desde ninguna pantalla. El único onboarding con rubro es el del celular, y solo
+2. **El rubro se guarda desde la v63** (`configuracion_negocio.rubro`, `PLAN-BOT.md`; cuando se escribió este punto todavía no).
+   **La PC no tiene asistente de rubro**: `aplicarPlantillaRubro` no se usa desde ninguna pantalla. El único onboarding con rubro es el del celular, y solo
    corre para el dueño en modo "solo celular" (`negocio_nuevo.dart`). En "PC y celular" la configuración vive en la PC.
 3. **Ya existe el módulo `turnos`**, pero significa *varios usuarios y cambio de turno de caja* (Regla 18). La agenda necesita
    otra clave (`agenda`), y las claves no se renombran nunca.
@@ -95,30 +98,40 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 
 ## Etapas (una por vez, cada una probada antes de la siguiente)
 
-### Etapa 1 · Forma de trabajar y rubro guardado
-- `configuracion_negocio` suma `forma` (migración v65; `rubro` ya está desde la v63, `PLAN-BOT.md`, y la v64 es de los gastos fijos sincronizados). Todo lo que ya existe queda en `productos`: La Plazoleta no
-  cambia.
-- `PlantillaRubro` suma Barbería, Uñas y belleza y Otro servicio, cada uno con su `forma` y sus módulos de arranque.
-- Los módulos nuevos (`agenda`, `turnos_whatsapp`, `insumos`, `bloquear_insumos`, `ajustar_insumos`, `mano_de_obra`,
-  `profesionales`, `reventa`) valen solo con `forma = servicios`.
-- Onboarding del celular: los rubros en dos grupos. Con `servicios`, el celular arranca en la Agenda y Productos pasa a
-  Servicios (la barra inferior depende de la forma).
-- Tests: `domain/` (rubros, forma, módulos efectivos), migración v65, onboarding del celular y "un almacén no ve nada nuevo".
+### Etapa 1 · Forma de trabajar y rubro guardado — hecha (2026-10-09)
+- **La forma sale del rubro, sin columna nueva** (cambia lo que decía este plan: `forma` en `configuracion_negocio`, v65). Cada
+  rubro tiene una sola forma y el rubro ya viaja por la sync desde la v63, así que `formaDeRubro` la deduce; sin rubro es
+  `productos` y La Plazoleta no cambia. Motivo completo en `DECISIONES.md` ("La forma de trabajar sale del rubro").
+- `PlantillaRubro` suma **Barbería (`barberia`), Uñas y belleza (`unas`) y Otro servicio (`servicio`)**, cada uno con su `forma` y
+  sus categorías. Las claves son las del bot (el mock decía `unias`; vale `unas`, que ya está guardada en los bots instalados).
+  `botdemo` suma la plantilla `servicio`.
+- Cada módulo dice para qué formas vale (`Modulo.formas`); `estaActivo` y la lista de Configuración de la PC lo respetan. Los
+  módulos de servicios (`agenda`, `turnos_whatsapp`, `insumos`, `bloquear_insumos`, `ajustar_insumos`, `mano_de_obra`,
+  `profesionales`, `reventa`) **se suman en la etapa que los construye**, con `formas: {servicios}`: un interruptor sin función
+  confunde.
+- Alta y Configuración › Tu negocio del celular: los rubros en dos grupos; cambiar de forma avisa qué se deja de ver.
+- **Movido a las etapas 2 y 4**: que el celular arranque en la Agenda y que Productos pase a Servicios. Una pestaña sin su pantalla no
+  se muestra; el alta de un servicio avisa que la agenda llega después.
+- Tests: `test/domain/modulos_test.dart`, `test/domain/plantillas_rubro_test.dart`, `test/data/repositorio_modulos_test.dart`,
+  `test/companion/negocio_nuevo_test.dart`, `test/ui/configuracion/seccion_modulos_test.dart` (incluye "un almacén no ve nada nuevo").
+- **Falta probarla en un celular real** (alta de una barbería y cambiar de rubro desde Configuración).
 
 ### Etapa 2 · Insumos, servicios y calculador (sin PC)
 - Dominio puro, tests primero (`domain/servicios.dart`): milésimas, costo por unidad, costo del servicio (hacia arriba al
   peso, convención 5), ganancia sobre el precio, precio sugerido, "alcanza para N", qué insumo falta, mano de obra.
-- Migración v66: columnas de insumo y servicio en `productos`.
+- Migración v65: columnas de insumo y servicio en `productos`. Los módulos `insumos`, `bloquear_insumos`, `ajustar_insumos` y
+  `mano_de_obra` (solo servicios). La barra inferior con la forma: Productos pasa a Servicios.
 - Pantallas del celular: Servicios (servicios + insumos) y el creador. Cargar compra de un insumo, por envase.
 
 ### Etapa 3 · Cobrar servicios (sin PC)
-- Tabla de consumos por línea (v67, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
+- Tabla de consumos por línea (v66, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
   módulo. Ajustar lo usado en la venta, si el módulo está prendido.
 - Reposición, Separaciones y ganancia leen los consumos. Se amplía el test de conciliación con ventas de servicios.
 - `REGLAS-NEGOCIO.md` gana la sección "Servicios e insumos" (antes de programar, con el OK del dueño).
 
 ### Etapa 4 · Agenda, profesionales y seña (sin PC)
-- Tabla `turnos` (v68, sincronizada), con cliente de `clientes` y profesional de `usuarios`.
+- Tabla `turnos` (v67, sincronizada), con cliente de `clientes` y profesional de `usuarios`. Los módulos `agenda`,
+  `turnos_whatsapp` y `profesionales`; con `servicios`, el celular arranca en la Agenda.
 - Agenda, nuevo turno, estados y cobrar un turno. Seña con `domain/sena.dart`, que ahora también se usa en el celular. "No
   vino" según la configuración.
 - `REGLAS-NEGOCIO.md` gana la sección "Turnos y seña".

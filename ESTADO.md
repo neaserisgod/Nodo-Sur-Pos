@@ -101,11 +101,12 @@ Distinto del mock a propósito:
 Pendiente / ideas (sin hacer):
 - **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
-  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Mock hecho, sin código**; plan y
-  preguntas abiertas en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapa 1 hecha** (forma de trabajar
+  deducida del rubro y rubros Barbería, Uñas y belleza y Otro servicio; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el resto, plan
+  en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
 - **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
-  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas en ramas sin mezclar
-  (`ccr-e5e5b532-aj3e0g` en esta app, en `NodoSurPage` y en `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
+  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas y mezcladas (esta app en
+  el release #94; `NodoSurPage` #55; `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
   bot en Termux y, en el celular, **pedidos por confirmar en Encargues** (Aceptar los aparta, sin stock dice qué falta y no
   acepta; Rechazar no toca nada) y la pantalla **Más › Bot de WhatsApp** (estado, configuración para dueño/encargado,
   instalar). La PC también publica el catálogo: **hace falta un release nuevo de Windows** además del APK. Probado con
@@ -131,6 +132,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
+- **Servicios, etapa 1** (`docs/PLAN-SERVICIOS.md`; rama `ccr-1a8287aa-6i8nq2`, sin mezclar): rubros **Barbería**, **Uñas y
+  belleza** y **Otro servicio** en el alta y en Configuración › Tu negocio del celular (en dos grupos); la forma de trabajar sale del
+  rubro y esconde a un negocio de servicios lo que es de un comercio con stock (caja aparte, por peso, promos, comparador). La
+  Plazoleta no cambia. El bot suma el rubro `servicio`. Probado con tests; **falta verlo en un celular real**. Motivo en
+  `DECISIONES.md`.
 - **Independizar el celular de la PC** (El dueño: "¿qué falta para independizar?"; sobre el modo "PC y celular": "dejalo como
   respaldo"). La nube pasa a ser el camino principal; el wifi con la PC queda de respaldo. Hecho:
   - **Abrir la caja con la PC apagada** en "PC y celular": se sincroniza por internet y, si con lo último de todos no hay una caja

@@ -73,6 +73,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
+- [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 
 **Diseño y pantallas**
 
@@ -2337,3 +2338,30 @@ Etapa 4 de `docs/PLAN-BOT.md`. Aceptar un pedido es tocar dos lugares (la base d
   eligió eso antes que pedirlo en la pantalla del bot: un solo lugar para el dato). Vacío no se guarda: un campo en blanco no borra el
   nombre que ya había. Con una PC sin actualizar, guardarlo avisa que hay que actualizarla (la ruta nueva da 404).
 
+
+## La forma de trabajar sale del rubro, no es una columna (2026-10-09)
+
+Etapa 1 de `docs/PLAN-SERVICIOS.md`. El plan decía sumar `forma` (`productos` | `servicios`) a `configuracion_negocio` en una
+migración v65. Al hacerlo se vio que no hace falta: **cada rubro tiene una sola forma** (`PlantillaRubro.forma`), y el rubro ya está
+guardado y sincronizado desde la v63. Por eso `formaDeRubro` (`lib/domain/plantillas_rubro.dart`) la deduce:
+
+- **No puede quedar un negocio contradictorio** (rubro "barbería" con forma "productos"): hay un solo dato.
+- **Sin migración ni columna nueva que viaje por la sync**, y un equipo sin actualizar no tiene nada que pisar.
+- **El bot hace lo mismo** (`botdemo/src/plantillas.js`: `forma` sale de la plantilla del rubro, no de `config.json`).
+- **Sin rubro (La Plazoleta y todo negocio anterior a la v63) o con una clave desconocida es `productos`**: actualizar no cambia nada.
+
+Cómo se usa:
+
+- **Cada módulo dice para qué formas vale** (`Modulo.formas`). `ModulosNegocio.estaActivo` exige las dos cosas: que valga para la
+  forma del negocio y que no esté apagado. Los de un comercio con stock (caja aparte, por peso, promos, comparador) no valen para
+  servicios; los demás valen para los dos. **Los módulos de servicios (agenda, insumos…) se suman en la etapa que los construye**, con
+  `formas: {servicios}`: un interruptor que no hace nada confundiría. Así nacen prendidos sin aparecerle a un almacén.
+- **Lo apagado se conserva aunque no valga para la forma**: cambiar de rubro y volver deja los módulos como estaban.
+- **Un solo lugar arma los módulos de una fila** (`modulosDeConfiguracion`): la consulta, el aviso global y la lista de
+  Configuración de la PC (que ahora muestra solo los `disponibles`).
+- **Claves de rubro nuevas: `barberia`, `unas`, `servicio`** (Otro servicio). `unas` y no `unias` (como decía el mock) porque es la
+  que el bot ya guarda en los negocios instalados; `servicio` se sumó también al bot. No se renombran nunca.
+- **El alta y Configuración › Tu negocio del celular muestran los rubros en dos grupos** ("Vendés productos" / "Das servicios").
+  Cambiar a un rubro de otra forma avisa qué se deja de ver (nada se borra). El alta de un servicio **no promete la agenda**: dice que
+  llega en las próximas actualizaciones. La barra inferior del celular todavía no cambia con la forma: Agenda y Servicios son pantallas
+  de las etapas 2 y 4, y una pestaña sin pantalla no se muestra.

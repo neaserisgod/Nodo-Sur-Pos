@@ -55,10 +55,14 @@ Future<void> configurarRubro(AppDatabase db, PlantillaRubro rubro) {
 /// Qué módulos usa este comercio. Sin configuración legible (la companion
 /// antes de la primera sincronización) se asume todo activo: vender nunca
 /// puede frenarse por esto (Regla 8).
-Future<ModulosNegocio> modulosNegocioActuales(AppDatabase db) async {
-  final config = await configuracionNegocioActual(db);
-  return ModulosNegocio.desdeTexto(config.modulosDesactivados);
-}
+Future<ModulosNegocio> modulosNegocioActuales(AppDatabase db) async => modulosDeConfiguracion(await configuracionNegocioActual(db));
+
+/// Los módulos de una fila de configuración, con la forma de trabajar que sale de su rubro. Un solo lugar para armarlos
+/// (Regla 3): lo usan esta consulta, el aviso global (`modulos_activos.dart`) y la lista de Configuración. Sin fila, todo
+/// activo, como siempre.
+ModulosNegocio modulosDeConfiguracion(ConfiguracionNegocio? fila) => fila == null
+    ? ModulosNegocio.todosActivos
+    : ModulosNegocio.desdeTexto(fila.modulosDesactivados, forma: formaDeRubro(fila.rubro));
 
 /// Prende o apaga un módulo sin tocar los demás. Solo cambia lo que se ve y
 /// lo que entra en cada cálculo: la lógica y los datos del módulo quedan
