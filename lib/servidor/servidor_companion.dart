@@ -199,6 +199,8 @@ Map<String, dynamic> _productoAJson(Producto p) => {
   'stock': p.stock,
   'stockGramos': p.stockGramos,
   'activo': p.activo,
+  // Para el pedido del bot de WhatsApp, que nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+  'globalId': p.globalId,
 };
 
 /// Dónde queda el rastro de un 500 real — al lado de la base y del `.apk`
@@ -705,6 +707,8 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       'productoVueltoId': ?c.productoVueltoId,
       // v63: sin elegir se omite, como un null.
       'rubro': ?(c.rubro.isEmpty ? null : c.rubro),
+      // El bot de WhatsApp se presenta con este nombre (docs/PLAN-BOT.md).
+      'nombreComercio': c.nombreComercio,
     });
   });
 

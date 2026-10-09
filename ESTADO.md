@@ -104,7 +104,13 @@ Pendiente / ideas (sin hacer):
   de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Mock hecho, sin código**; plan y
   preguntas abiertas en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
 - **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
-  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md); sin código en Nodo Sur ni en el sitio.
+  almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas en ramas sin mezclar
+  (`ccr-e5e5b532-aj3e0g` en esta app, en `NodoSurPage` y en `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
+  bot en Termux y, en el celular, **pedidos por confirmar en Encargues** (Aceptar los aparta, sin stock dice qué falta y no
+  acepta; Rechazar no toca nada) y la pantalla **Más › Bot de WhatsApp** (estado, configuración para dueño/encargado,
+  instalar). La PC también publica el catálogo: **hace falta un release nuevo de Windows** además del APK. Probado con
+  tests; **nada probado en un celular real ni con WhatsApp real**. Falta: APK beta y notificaciones con la app cerrada
+  (etapa 5).
 - **Abrir la caja desde el celular sin la PC** (El dueño, 2026-10-07/09, independencia del celular, etapa 1, opción A):
   con el modo **"Solo celular"** el celular abre la caja sobre su propia base (antes daba "No se puede abrir una nueva
   desde acá" y el modo solo celular no podía arrancar el día). En "PC y celular" sigue bloqueado, para no tener dos cajas

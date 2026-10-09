@@ -70,6 +70,10 @@ class ProductoCompanion {
   /// en Conteo/Precios.
   final String tipoCigarrillo;
 
+  /// Identidad de sincronización: la misma en todos los equipos (el id local no). Con ella vuelve un producto que salió de
+  /// esta base, como los del pedido del bot de WhatsApp. Null si la PC todavía no la manda (versión anterior a 2026-10-09).
+  final String? globalId;
+
   const ProductoCompanion({
     required this.id,
     required this.nombre,
@@ -85,6 +89,7 @@ class ProductoCompanion {
     this.stockGramos,
     required this.activo,
     this.tipoCigarrillo = 'ninguno',
+    this.globalId,
   });
 
   factory ProductoCompanion.desdeJson(Map<String, dynamic> j) =>
@@ -103,6 +108,7 @@ class ProductoCompanion {
         stockGramos: j['stockGramos'] as int?,
         activo: j['activo'] as bool,
         tipoCigarrillo: j['tipoCigarrillo'] as String? ?? 'ninguno',
+        globalId: j['globalId'] as String?,
       );
 }
 
@@ -250,6 +256,9 @@ class ConfiguracionNegocioCompanion {
   /// actualizar no manda el campo).
   final String? rubro;
 
+  /// El nombre del comercio (Configuración de la PC). Vacío si no se cargó o si la PC no lo informa (anterior a 2026-10-09).
+  final String nombreComercio;
+
   const ConfiguracionNegocioCompanion({
     required this.recargoPrimerAtadoCentavos,
     required this.recargoAtadoAdicionalCentavos,
@@ -257,6 +266,7 @@ class ConfiguracionNegocioCompanion {
     required this.pasoRedondeoCentavos,
     this.productoVueltoId,
     this.rubro,
+    this.nombreComercio = '',
   });
 
   factory ConfiguracionNegocioCompanion.desdeJson(Map<String, dynamic> j) => ConfiguracionNegocioCompanion(
@@ -266,6 +276,7 @@ class ConfiguracionNegocioCompanion {
     pasoRedondeoCentavos: j['pasoRedondeoCentavos'] as int,
     productoVueltoId: j['productoVueltoId'] as int?,
     rubro: switch (j['rubro']) { final String r when r.isNotEmpty => r, _ => null },
+    nombreComercio: j['nombreComercio'] as String? ?? '',
   );
 }
 

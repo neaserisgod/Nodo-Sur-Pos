@@ -71,6 +71,7 @@ ProductoCompanion _productoDesdeFila(Producto p) => ProductoCompanion(
   stockGramos: p.stockGramos,
   activo: p.activo,
   tipoCigarrillo: p.tipoCigarrillo,
+  globalId: p.globalId,
 );
 
 /// Mismo mapeo, campo por campo, que `_resumenDiaAJson` en
@@ -262,6 +263,7 @@ class PuertoLocal implements ServicioCompanion {
       pasoRedondeoCentavos: c.pasoRedondeoCentavos,
       productoVueltoId: c.productoVueltoId,
       rubro: c.rubro.isEmpty ? null : c.rubro,
+      nombreComercio: c.nombreComercio,
     );
   }
 

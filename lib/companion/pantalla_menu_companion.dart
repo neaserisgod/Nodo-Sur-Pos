@@ -67,6 +67,8 @@ import 'emparejamiento.dart';
 import 'navegacion.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
+import 'bot_celular.dart' show accesoBotDelCelular, refrescarEstadoBot;
+import 'pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
 import 'pantalla_cargar_factura.dart';
@@ -191,6 +193,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _publicar();
+    // Si el negocio tiene el bot de WhatsApp, Más muestra su pantalla (no frena nada: sin red queda escondida).
+    unawaited(refrescarEstadoBot());
     leerUsuario().then((u) {
       if (mounted) {
         setState(() {
@@ -634,6 +638,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           usuarioId: _usuarioId!,
           hayVentaArmada: _carrito.isNotEmpty,
           sesionCajaId: _sesion?.id,
+          bot: accesoBotDelCelular,
+          registroBot: RegistroPedidosBotPrefs(),
         ),
       );
     } finally {

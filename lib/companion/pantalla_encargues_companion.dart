@@ -3,14 +3,22 @@
 // por wifi que sin ella. Apartar saca el stock ya; "Entregar" vuelve al menú con lo apartado para abrir el carrito;
 // "Cancelar" lo devuelve al stock. "Entregar y anotar deuda" (2026-10-03, el fiado se unificó acá) deja una deuda que se cobra
 // desde la sección "Deudas" de esta misma pantalla.
+// Arriba de todo, los pedidos del bot de WhatsApp por confirmar (`docs/PLAN-BOT.md`, 2026-10-09): Aceptar los aparta como un
+// encargue más (`pedidos_bot.dart`), Rechazar no toca nada. Se refresca solo cuando el sitio avisa que entró uno.
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../domain/bot_whatsapp.dart';
 import '../domain/dinero.dart';
+import '../servicios/acceso_bot.dart';
+import '../servicios/avisos_bot.dart';
 import 'cliente_companion.dart' show ApartadoCompanion, DeudaCompanion, EncargueCompanion, ProductoCompanion;
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
+import 'pedidos_bot.dart';
 import 'servicio_companion.dart';
 
 /// Lo que devuelve la pantalla al elegir "Entregar": el menú arma el carrito con esto.
@@ -20,7 +28,15 @@ class EntregaEncargue {
 }
 
 class PantallaEncarguesCompanion extends StatefulWidget {
-  const PantallaEncarguesCompanion({super.key, required this.servicio, required this.usuarioId, this.hayVentaArmada = false, this.sesionCajaId});
+  const PantallaEncarguesCompanion({
+    super.key,
+    required this.servicio,
+    required this.usuarioId,
+    this.hayVentaArmada = false,
+    this.sesionCajaId,
+    this.bot,
+    this.registroBot,
+  });
 
   final ServicioCompanion servicio;
   final int usuarioId;
@@ -30,6 +46,10 @@ class PantallaEncarguesCompanion extends StatefulWidget {
 
   /// La caja abierta, para cobrar una deuda como venta del día. Null = sin caja abierta.
   final int? sesionCajaId;
+
+  /// Los pedidos del bot de WhatsApp. Null = no se muestran (sin cuenta, o en pruebas que no los usan).
+  final AccesoBot? bot;
+  final RegistroPedidosBot? registroBot;
 
   @override
   State<PantallaEncarguesCompanion> createState() => _PantallaEncarguesCompanionState();
@@ -41,10 +61,118 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   bool _cargando = true;
   String? _error;
 
+  List<PedidoBot> _pedidos = const [];
+
+  /// Pedidos ya apartados como encargue que falta avisar al sitio (ver `pedidos_bot.dart`).
+  Set<int> _pedidosApartados = const {};
+  int? _pedidoEnCurso;
+  StreamSubscription<int>? _avisos;
+
+  RegistroPedidosBot get _registro => widget.registroBot ?? (_registroPorDefecto ??= RegistroPedidosBotEnMemoria());
+  RegistroPedidosBot? _registroPorDefecto;
+
   @override
   void initState() {
     super.initState();
     _cargar();
+    if (widget.bot != null) {
+      _cargarPedidos();
+      _avisos = avisosPedidoBot.listen((_) => _cargarPedidos());
+    }
+  }
+
+  @override
+  void dispose() {
+    _avisos?.cancel();
+    super.dispose();
+  }
+
+  /// Sin plan con bot, sin cuenta o sin internet, la sección simplemente no aparece (o queda la última lista): Encargues
+  /// sigue andando igual sin el bot.
+  Future<void> _cargarPedidos() async {
+    final bot = widget.bot;
+    if (bot == null) return;
+    try {
+      final pedidos = await bot.porConfirmar();
+      final apartados = <int>{for (final p in pedidos) if (await _registro.encargueDe(p.id) != null) p.id};
+      if (mounted) {
+        setState(() {
+          _pedidos = pedidos;
+          _pedidosApartados = apartados;
+        });
+      }
+    } catch (_) {
+      // Ver arriba: el bot nunca le rompe la pantalla a quien atiende.
+    }
+  }
+
+  Future<void> _aceptarPedido(PedidoBot p) async {
+    final bot = widget.bot;
+    if (bot == null || _pedidoEnCurso != null) return;
+    setState(() {
+      _pedidoEnCurso = p.id;
+      _error = null;
+    });
+    try {
+      final r = await aceptarPedidoBot(pedido: p, servicio: widget.servicio, acceso: bot, registro: _registro, usuarioId: widget.usuarioId);
+      if (!mounted) return;
+      switch (r) {
+        case PedidoAceptado():
+          mostrarAvisoNs(context, 'Pedido de ${p.clienteNombre} apartado. El bot le avisa que pase a retirarlo.');
+        case PedidoConFaltantes(:final faltan):
+          await _mostrarFaltantes(p, faltan);
+        case PedidoPcVieja():
+          setState(() => _error = 'Para aceptar pedidos del bot, actualizá Nodo Sur en la PC.');
+        case PedidoYaResuelto():
+          setState(() => _error = 'Ese pedido ya estaba resuelto (quizás desde otro equipo). Revisá que el encargue de ${p.clienteNombre} no haya quedado repetido.');
+        case PedidoSinAvisar(:final error):
+          setState(() => _error = 'El pedido quedó apartado, pero no se le pudo avisar al cliente (${mensajeDeError(error)}). Tocá "Avisar al cliente" de nuevo.');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _pedidoEnCurso = null);
+    }
+    await Future.wait([_cargar(), _cargarPedidos()]);
+  }
+
+  Future<void> _mostrarFaltantes(PedidoBot p, List<String> faltan) async {
+    final rechazar = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'No alcanza para el pedido de ${p.clienteNombre}',
+        texto: 'No se apartó nada y al cliente no se le dijo nada todavía.',
+        bloques: [for (final f in faltan) InfoNs(f, tono: TonoNs.warn)],
+        botones: [
+          BotonNs.peligroSolido(ctx, 'Rechazar el pedido', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Volver', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (rechazar == true) await _rechazar(p);
+  }
+
+  Future<void> _rechazarPedido(PedidoBot p) async {
+    if (!await _confirmar('¿Rechazar el pedido de ${p.clienteNombre}?', 'El bot le avisa que esta vez no se puede. No se toca el stock.', 'Rechazar', volver: 'Volver')) return;
+    await _rechazar(p);
+  }
+
+  Future<void> _rechazar(PedidoBot p) async {
+    final bot = widget.bot;
+    if (bot == null) return;
+    setState(() {
+      _pedidoEnCurso = p.id;
+      _error = null;
+    });
+    try {
+      await rechazarPedidoBot(pedido: p, acceso: bot, registro: _registro);
+      if (mounted) mostrarAvisoNs(context, 'Pedido rechazado. El bot le avisa a ${p.clienteNombre}.');
+    } catch (e) {
+      if (mounted) setState(() => _error = e is StateError ? e.message : mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _pedidoEnCurso = null);
+    }
+    await _cargarPedidos();
   }
 
   Future<void> _cargar() async {
@@ -181,9 +309,52 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
     );
   }
 
+  Widget _pedido(BuildContext context, PedidoBot p) {
+    final ns = context.ns;
+    final enCurso = _pedidoEnCurso == p.id;
+    final apartado = _pedidosApartados.contains(p.id);
+    final hora = '${p.creado.day}/${p.creado.month} ${p.creado.hour.toString().padLeft(2, '0')}:${p.creado.minute.toString().padLeft(2, '0')}';
+    return Column(
+      key: Key('pedido_bot_${p.id}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _fechaYNombre(context, hora, p.clienteNombre),
+        for (final x in p.items) _lineaDeTexto(context, '${x.cantidad} × ${x.nombre}'),
+        if (p.nota != null && p.nota!.trim().isNotEmpty) _lineaDeTexto(context, 'Nota: ${p.nota!.trim()}'),
+        if (p.totalOrientativoCentavos > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'El bot le dijo ${formatearARS(p.totalOrientativoCentavos)}; vale el precio del día que retira.',
+              style: estiloNs(13, color: ns.mute),
+            ),
+          ),
+        const SizedBox(height: 12),
+        KeyedSubtree(
+          key: Key('pedido_bot_aceptar_${p.id}'),
+          child: BotonNs.primario(
+            context,
+            enCurso ? 'Un momento…' : (apartado ? 'Avisar al cliente' : 'Aceptar y apartar'),
+            enCurso ? null : () => _aceptarPedido(p),
+            habilitado: !enCurso,
+            alto: 52,
+            tamanio: 16,
+          ),
+        ),
+        if (!apartado) ...[
+          const SizedBox(height: 8),
+          KeyedSubtree(
+            key: Key('pedido_bot_rechazar_${p.id}'),
+            child: BotonNs.peligroSuave(context, 'Rechazar', enCurso ? null : () => _rechazarPedido(p)),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final vacio = _encargues.isEmpty && _deudas.isEmpty;
+    final vacio = _encargues.isEmpty && _deudas.isEmpty && _pedidos.isEmpty;
     return PaginaNs(
       titulo: 'Encargues',
       cuerpo: _cargando
@@ -198,6 +369,11 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
                     child: InfoNs(_error!, key: const Key('encargues_error'), tono: TonoNs.bad),
                   ),
                 if (vacio) const Padding(padding: EdgeInsets.only(top: 12), child: InfoNs('No hay encargues pendientes.')),
+                if (_pedidos.isNotEmpty) ...[
+                  const Padding(padding: EdgeInsets.only(top: 22, bottom: 4), child: SeccionNs('Por confirmar · WhatsApp')),
+                  for (final p in _pedidos) _pedido(context, p),
+                  if (_encargues.isNotEmpty) const Padding(padding: EdgeInsets.only(top: 22, bottom: 4), child: SeccionNs('Apartados')),
+                ],
                 for (final e in _encargues)
                   Column(
                     key: Key('encargue_${e.id}'),

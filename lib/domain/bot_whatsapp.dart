@@ -143,6 +143,71 @@ PedidoBot? pedidoBotDesdeJson(Map<String, dynamic> j) {
 /// El nombre del encargue que se crea al aceptar: se ve en Encargues y en el ticket que vino por WhatsApp.
 String nombreEncargueDePedido(PedidoBot p) => '${p.clienteNombre.trim()} (WhatsApp)';
 
+/// Lo que hace falta de un producto de la base para convertir un pedido del bot en un encargue.
+class ProductoDelPedido {
+  const ProductoDelPedido({
+    required this.id,
+    required this.globalId,
+    required this.nombre,
+    required this.esPesable,
+    required this.activo,
+    required this.stock,
+    this.stockGramos,
+  });
+  final int id;
+  final String? globalId;
+  final String nombre;
+  final bool esPesable;
+  final bool activo;
+  final int stock;
+  final int? stockGramos;
+}
+
+/// Una línea a apartar: [cantidad] por unidad o [gramos] si se pesa (la forma de `ApartadoCompanion`).
+typedef ApartadoDePedido = ({int productoId, int? cantidad, int? gramos});
+
+/// Lo que se aparta al aceptar [pedido], o lo que falta. Todo o nada, como apartar (`repositorio_encargues.dart`): si falta
+/// algo, [lineas] va vacía y [faltan] dice qué, en palabras del mostrador, para que quien acepta sepa qué contestarle al
+/// cliente. Revisarlo antes de crear el encargue evita un rechazo a medias y nombra TODO lo que falta, no solo lo primero.
+///
+/// * El producto vuelve por su `global_id` (el que se publicó en el catálogo del bot): el id local cambia entre equipos.
+/// * Un pesable el bot lo ofrece "por kg" con el precio por kilo, así que la cantidad pedida son kilos.
+/// * Sin stock no se aparta (Regla 8): el catálogo dice "hay" con lo de hace un rato, y en el medio se pudo vender.
+({List<ApartadoDePedido> lineas, List<String> faltan}) apartadosDePedido(PedidoBot pedido, Iterable<ProductoDelPedido> productos) {
+  final porGid = {for (final p in productos) if (p.globalId != null && p.globalId!.isNotEmpty) p.globalId!: p};
+  final pedidoPorProducto = <int, int>{}; // id → unidades (o kilos si se pesa), en el orden en que se pidió
+  final elegidos = <int, ProductoDelPedido>{};
+  final faltan = <String>[];
+  for (final item in pedido.items) {
+    final p = item.gid == null ? null : porGid[item.gid];
+    if (p == null || !p.activo) {
+      faltan.add('${item.nombre}: ya no está en el catálogo');
+      continue;
+    }
+    elegidos[p.id] = p;
+    pedidoPorProducto[p.id] = (pedidoPorProducto[p.id] ?? 0) + item.cantidad;
+  }
+  final lineas = <ApartadoDePedido>[];
+  for (final MapEntry(key: id, value: cantidad) in pedidoPorProducto.entries) {
+    final p = elegidos[id]!;
+    if (p.esPesable) {
+      final gramos = cantidad * 1000, hay = p.stockGramos ?? 0;
+      if (hay < gramos) {
+        faltan.add('${p.nombre}: piden $cantidad kg, ${hay <= 0 ? 'no queda' : 'quedan ${_gramos(hay)}'}');
+      } else {
+        lineas.add((productoId: id, cantidad: null, gramos: gramos));
+      }
+    } else if (p.stock < cantidad) {
+      faltan.add('${p.nombre}: piden $cantidad, ${p.stock <= 0 ? 'no queda' : 'quedan ${p.stock}'}');
+    } else {
+      lineas.add((productoId: id, cantidad: cantidad, gramos: null));
+    }
+  }
+  return faltan.isEmpty ? (lineas: lineas, faltan: const []) : (lineas: const [], faltan: faltan);
+}
+
+String _gramos(int g) => g < 1000 ? '$g g' : '${(g / 1000).toStringAsFixed(g % 1000 == 0 ? 0 : 1).replaceAll('.', ',')} kg';
+
 // ─── Estado y configuración ────────────────────────────────────────────────────────────────────────────────────────────────
 
 class BotVinculado {

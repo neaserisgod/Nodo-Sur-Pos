@@ -84,6 +84,78 @@ void main() {
     });
   });
 
+  group('aceptar un pedido: del catálogo del bot a lo que se aparta', () {
+    ProductoDelPedido prod(int id, String gid, String nombre, {bool pesable = false, bool activo = true, int stock = 10, int? gramos}) =>
+        ProductoDelPedido(id: id, globalId: gid, nombre: nombre, esPesable: pesable, activo: activo, stock: stock, stockGramos: gramos);
+    PedidoBot pedido(List<ItemPedidoBot> items) => PedidoBot(
+      id: 1,
+      estado: EstadoPedidoBot.porConfirmar,
+      clienteNombre: 'Sofi',
+      clienteTelefono: '5492944555555',
+      items: items,
+      creado: DateTime(2026, 10, 9),
+      actualizado: 1,
+    );
+
+    test('cada producto vuelve por su global_id, con la cantidad pedida', () {
+      final r = apartadosDePedido(
+        pedido(const [ItemPedidoBot(gid: 'g-y', nombre: 'Yerba', cantidad: 2), ItemPedidoBot(gid: 'g-c', nombre: 'Coca', cantidad: 1)]),
+        [prod(5, 'g-y', 'Yerba'), prod(9, 'g-c', 'Coca')],
+      );
+      expect(r.faltan, isEmpty);
+      expect(r.lineas, [(productoId: 5, cantidad: 2, gramos: null), (productoId: 9, cantidad: 1, gramos: null)]);
+    });
+
+    test('un pesable va por kilo (el bot lo ofrece "por kg"): 2 son 2000 g', () {
+      final r = apartadosDePedido(
+        pedido(const [ItemPedidoBot(gid: 'g-q', nombre: 'Queso (por kg)', cantidad: 2)]),
+        [prod(3, 'g-q', 'Queso', pesable: true, gramos: 2500)],
+      );
+      expect(r.faltan, isEmpty);
+      expect(r.lineas, [(productoId: 3, cantidad: null, gramos: 2000)]);
+    });
+
+    test('sin stock no se aparta nada y dice qué falta (Regla 8)', () {
+      final r = apartadosDePedido(
+        pedido(const [
+          ItemPedidoBot(gid: 'g-y', nombre: 'Yerba', cantidad: 3),
+          ItemPedidoBot(gid: 'g-c', nombre: 'Coca', cantidad: 1),
+          ItemPedidoBot(gid: 'g-q', nombre: 'Queso (por kg)', cantidad: 1),
+        ]),
+        [prod(5, 'g-y', 'Yerba', stock: 1), prod(9, 'g-c', 'Coca'), prod(3, 'g-q', 'Queso', pesable: true, gramos: 400)],
+      );
+      expect(r.lineas, isEmpty);
+      expect(r.faltan, ['Yerba: piden 3, quedan 1', 'Queso: piden 1 kg, quedan 400 g']);
+    });
+
+    test('stock en cero o negativo cuenta como que no hay', () {
+      final r = apartadosDePedido(pedido(const [ItemPedidoBot(gid: 'g-y', nombre: 'Yerba', cantidad: 1)]), [prod(5, 'g-y', 'Yerba', stock: -2)]);
+      expect(r.faltan, ['Yerba: piden 1, no queda']);
+    });
+
+    test('lo que ya no está (borrado, dado de baja o sin global_id) se nombra como lo pidió el bot', () {
+      final r = apartadosDePedido(
+        pedido(const [
+          ItemPedidoBot(gid: 'g-x', nombre: 'Galletitas', cantidad: 1),
+          ItemPedidoBot(nombre: 'Sin gid', cantidad: 1),
+          ItemPedidoBot(gid: 'g-b', nombre: 'De baja', cantidad: 1),
+        ]),
+        [prod(2, 'g-b', 'De baja', activo: false)],
+      );
+      expect(r.lineas, isEmpty);
+      expect(r.faltan, ['Galletitas: ya no está en el catálogo', 'Sin gid: ya no está en el catálogo', 'De baja: ya no está en el catálogo']);
+    });
+
+    test('el mismo producto dos veces se junta en una línea y se controla el total', () {
+      final r = apartadosDePedido(
+        pedido(const [ItemPedidoBot(gid: 'g-y', nombre: 'Yerba', cantidad: 2), ItemPedidoBot(gid: 'g-y', nombre: 'Yerba', cantidad: 2)]),
+        [prod(5, 'g-y', 'Yerba', stock: 3)],
+      );
+      expect(r.lineas, isEmpty);
+      expect(r.faltan, ['Yerba: piden 4, quedan 3']);
+    });
+  });
+
   group('estado del bot', () {
     test('sin el plan, no hay bot', () {
       expect(estadoBotDesdeJson({'tieneBot': false}).tieneBot, isFalse);

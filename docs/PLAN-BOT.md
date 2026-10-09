@@ -109,11 +109,21 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
 3. ✅ **Bot** (hecho el 2026-10-09, detalle en el README de `botdemo`): plantilla y flujo de almacén (precio y si hay, horarios y ubicación, pedidos); pausa de 1 hora configurable,
    también cuando el dueño contesta a mano; vincularse desde Termux; bajar configuración y catálogo y recargarlos sin
    reiniciarse; `instalar.sh` de un comando. Tests como los de barbería.
-4. **App del celular** (a medias, 2026-10-09): ✅ cliente del sitio para el bot y avisos en vivo de pedidos; ✅ publicar el
-   catálogo (el equipo que sube la sync lo publica solo si hay plan con bot y si cambió; la PC también, así que hace falta
-   un release nuevo de Windows). Falta: pedidos por confirmar en Encargues (sin stock no deja aceptar y dice qué falta;
-   cualquiera de la app acepta o rechaza), pantalla Bot de WhatsApp en Más (estado, configuración para dueño/encargado,
-   instalar) y APK beta.
+4. ✅ **App del celular** (hecha el 2026-10-09, salvo publicar): cliente del sitio para el bot y avisos en vivo de pedidos;
+   publicar el catálogo (el equipo que sube la sync lo publica solo si hay plan con bot y si cambió); **pedidos por
+   confirmar en Encargues** (`pedidos_bot.dart`: cualquiera de la app acepta o rechaza; Aceptar aparta como un encargue más
+   a nombre de "Cliente (WhatsApp)" y recién después avisa; sin stock no acepta y dice qué falta; un pesable se pide por kilo,
+   como lo ofrece el bot); pantalla **Más › Bot de WhatsApp** (`pantalla_bot_whatsapp.dart`: estado para todos;
+   configuración e instalación para dueño/encargado; nombre y rubro salen de Configuración). La PC ahora manda `globalId`
+   en `/productos` y `nombreComercio` en `/configuracion`: con una PC vieja, aceptar pide actualizarla.
+   **Para publicar hacen falta los dos:** release nuevo de **Windows** (la PC también publica el catálogo, y el celular con
+   PC necesita el `globalId`) y **APK beta**.
+
+**Etapa 4, qué no se probó:** nada en un celular real. Con tests: aceptar contra una base real (stock, reintento sin
+duplicar, ya resuelto, PC vieja), la sección de Encargues, la pantalla del bot y la fila de Más. Quedan abiertos: (a) el
+nombre del comercio solo se carga en la PC, así que un negocio **solo celular** sin nombre no puede guardar la
+configuración del bot; (b) en **"PC y celular"**, los pedidos se ven solo si el celular está vinculado a la cuenta (el
+token sale de ahí); (c) `numeroWhatsApp` no saca el 15 ("2944 15 123456" no se entiende; es la misma regla que el bot).
 5. **Notificaciones con la app cerrada** (Firebase): registrar el token, mandar el aviso del pedido, pasos para crear el
    proyecto desde el celular.
 6. Después: editar desde `/negocio` para "Solo el bot"; turnos de servicios (`PLAN-SERVICIOS.md`).

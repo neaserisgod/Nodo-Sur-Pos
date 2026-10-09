@@ -165,6 +165,9 @@ void main() {
     final creado = productos.cast<Map<String, dynamic>>().firstWhere((p) => p['id'] == id);
     expect(creado['nombre'], 'Fernet');
     expect(creado['precioCentavos'], 500000);
+    // El pedido del bot de WhatsApp nombra los productos por su identidad de sincronización (docs/PLAN-BOT.md).
+    expect(creado['globalId'], isA<String>());
+    expect(ProductoCompanion.desdeJson(creado).globalId, creado['globalId']);
   });
 
   // El dueño, 2026-09-19: "filtrar por productos sin proveedor, sin costo,

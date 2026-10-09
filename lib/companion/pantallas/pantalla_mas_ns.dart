@@ -6,12 +6,15 @@ import 'package:flutter/material.dart';
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
+import '../pantalla_bot_whatsapp.dart';
 import '../pantalla_carga_historica.dart';
 import '../pantalla_promos.dart';
 import '../pantalla_proveedores.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
+import '../bot_celular.dart' show accesoBotDelCelular, estadoBotCelular;
+import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 
@@ -29,7 +32,7 @@ class PantallaMasNs extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: Listenable.merge([app.pendientes, modoTemaNs]),
+          listenable: Listenable.merge([app.pendientes, modoTemaNs, estadoBotCelular]),
           builder: (context, _) {
             final pend = app.pendientes.value;
             final nombre = app.nombreUsuario ?? '';
@@ -85,9 +88,22 @@ class PantallaMasNs extends StatelessWidget {
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
-                    _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id))),
+                    _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
                     _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    if (estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                      _Fila(
+                        icono: IconoNs.celular,
+                        titulo: 'Bot de WhatsApp',
+                        detalle: 'Si anda, horarios, números e instalarlo',
+                        onTap: () => app.irA(
+                          (_) => PantallaBotWhatsApp(
+                            acceso: accesoBotDelCelular,
+                            servicio: app.servicio!,
+                            alElegirRubro: () => app.irA((_) => const PantallaConfiguracionCompanion()),
+                          ),
+                        ),
+                      ),
                     _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],
                 ),
