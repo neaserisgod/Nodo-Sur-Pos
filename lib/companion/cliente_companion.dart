@@ -167,13 +167,17 @@ class EncargueCompanion {
 
   /// Una línea de texto por producto apartado ("3 × Galletitas", "250 g Queso barra").
   final List<String> lineas;
-  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas});
+
+  /// La seña que dejó el cliente (0 si no dejó). Una PC vieja no la manda: `as int?`.
+  final int senaCentavos;
+  const EncargueCompanion({required this.id, required this.nombreCliente, required this.desde, required this.lineas, this.senaCentavos = 0});
 
   factory EncargueCompanion.desdeJson(Map<String, dynamic> j) => EncargueCompanion(
     id: j['id'] as int,
     nombreCliente: j['nombreCliente'] as String,
     desde: DateTime.fromMillisecondsSinceEpoch((j['desdeMs'] as num).toInt()),
     lineas: [for (final l in j['lineas'] as List) l as String],
+    senaCentavos: j['senaCentavos'] as int? ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -181,6 +185,7 @@ class EncargueCompanion {
     'nombreCliente': nombreCliente,
     'desdeMs': desde.millisecondsSinceEpoch,
     'lineas': lineas,
+    'senaCentavos': senaCentavos,
   };
 }
 
@@ -466,11 +471,19 @@ class ClienteCompanion implements ServicioCompanion {
     required String nombreCliente,
     required List<ApartadoCompanion> lineas,
     required int usuarioId,
+    int senaCentavos = 0,
+    bool senaEsEfectivo = true,
   }) async {
     final r = await _client.post(
       conexion._url('/encargues'),
       headers: _headers,
-      body: jsonEncode({'nombreCliente': nombreCliente, 'usuarioId': usuarioId, 'lineas': [for (final l in lineas) l.toJson()]}),
+      body: jsonEncode({
+        'nombreCliente': nombreCliente,
+        'usuarioId': usuarioId,
+        'lineas': [for (final l in lineas) l.toJson()],
+        if (senaCentavos > 0) 'senaCentavos': senaCentavos,
+        if (senaCentavos > 0) 'senaEsEfectivo': senaEsEfectivo,
+      }),
     );
     _revisar(r);
     return (jsonDecode(r.body) as Map<String, dynamic>)['id'] as int;

@@ -471,7 +471,6 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
           'nombreCliente': e.nombreCliente,
           'desdeMs': e.desde.millisecondsSinceEpoch,
           'lineas': [for (final l in e.lineas) l.texto],
-          // La seña se entrega y se cancela desde la PC (toca la caja): el celular solo la muestra.
           'senaCentavos': e.senaCentavos,
         },
     ]);
@@ -492,6 +491,10 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
             ),
         ],
         usuarioId: _intRequerido(body, 'usuarioId'),
+        // Seña desde el celular (El dueño, 2026-10-09): entra a la caja abierta de la PC. Un celular viejo no la manda.
+        senaCentavos: body['senaCentavos'] as int? ?? 0,
+        senaEsEfectivo: body['senaEsEfectivo'] as bool? ?? true,
+        sesionCajaId: (await sesionAbierta(db))?.id,
       );
       return _json({'id': id}, status: 201);
     } on EncargueSinStock catch (e) {
@@ -503,11 +506,12 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
 
   router.post('/encargues/<id>/cancelar', (Request request, String id) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    // Un encargue con seña vuelve plata por la caja: se cancela desde la PC, donde está la caja abierta.
-    if ((await senaPendienteDe(db, int.parse(id))).centavos > 0) {
-      return _error(409, 'Este encargue tiene una seña: cancelalo desde la PC para devolverla.');
+    // Con seña, la devolución sale de la caja abierta de la PC (antes solo se podía cancelar desde la PC).
+    try {
+      await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'), sesionCajaId: (await sesionAbierta(db))?.id);
+    } on ArgumentError catch (e) {
+      return _error(409, '${e.message}');
     }
-    await cancelarEncargue(db, int.parse(id), usuarioId: _intRequerido(body, 'usuarioId'));
     return _json({'ok': true});
   });
 

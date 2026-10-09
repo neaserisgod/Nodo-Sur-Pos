@@ -130,7 +130,10 @@ Pendiente / ideas (sin hacer):
   - **Categorías nuevas** desde Configuración del celular (viajan por la sync).
   - **Avisos de Mercado Pago** en la campanita del celular (el mismo `ServicioAvisosMp` de la PC), solo en "Solo celular": con
     PC los muestra la PC y "Visto" no viaja entre equipos.
-  Falta: seña y precio de los encargues; **gastos fijos** (no se sincronizan: hace falta
+  - **Seña de encargues desde el celular**: al apartar (entra a la caja abierta, efectivo o Mercado Pago) y al cancelar (se devuelve),
+    sin la PC y con la PC (rutas `/encargues` y `/encargues/<id>/cancelar` aceptan la seña). Cobrar o anotar deuda de un encargue
+    con seña conectado a la PC sigue yendo por la PC (409).
+  Falta: el precio de las líneas de los encargues; **gastos fijos** (no se sincronizan: hace falta
   migración con `global_id` para sumarlos a `tablasSincronizables`); fondo fijo y umbral de faltantes en el celular (son de cada
   equipo, `configuracion_tabla`); "+ Nuevo" proveedor/categoría en el formulario de producto; dejar de preguntar el modo al
   configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.

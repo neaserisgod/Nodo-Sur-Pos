@@ -1240,7 +1240,8 @@ void main() {
     });
 
     group('encargues por apartado', () {
-      test('un encargue con seña: el celular lo ve, pero cobrarlo, anotar deuda o cancelarlo se hace desde la PC (409, sin tocar la caja)', () async {
+      test('un encargue con seña: el celular lo ve, cobrarlo o anotar deuda se hace desde la PC (409), y cancelarlo devuelve la seña '
+          'desde la caja abierta de la PC (El dueño, 2026-10-09)', () async {
         final cocaId = await insertarProducto(nombre: 'Coca-Cola 500ml', precioCentavos: 112000);
         final sesionId = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
         final id = await crearEncargueApartando(
@@ -1267,9 +1268,13 @@ void main() {
         );
         expect(cobro.statusCode, 409);
         expect((await http.post(url('/encargues/$id/deuda'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
-        expect((await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 409);
         expect(await db.select(db.ventas).get(), isEmpty);
         expect(await listarEnarguesPendientes(db), hasLength(1), reason: 'sigue apartado');
+
+        expect((await http.post(url('/encargues/$id/cancelar'), headers: headers(), body: jsonEncode({'usuarioId': usuarioId}))).statusCode, 200);
+        expect(await listarEnarguesPendientes(db), isEmpty);
+        final movimientos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesionId))).get();
+        expect(movimientos, hasLength(2), reason: 'la seña y su devolución');
       });
 
       test('apartar por HTTP baja el stock; el listado, las líneas y la entrega por /ventas/cobrar liberan lo apartado', () async {

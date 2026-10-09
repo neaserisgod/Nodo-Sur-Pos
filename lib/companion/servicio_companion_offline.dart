@@ -95,8 +95,8 @@ class ServicioCompanionOffline implements ServicioCompanion {
   Future<List<EncargueCompanion>> encargues() => _local.encargues();
 
   @override
-  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId}) =>
-      _local.crearEncargue(nombreCliente: nombreCliente, lineas: lineas, usuarioId: usuarioId);
+  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId, int senaCentavos = 0, bool senaEsEfectivo = true}) =>
+      _local.crearEncargue(nombreCliente: nombreCliente, lineas: lineas, usuarioId: usuarioId, senaCentavos: senaCentavos, senaEsEfectivo: senaEsEfectivo);
 
   @override
   Future<void> cancelarEncargue(int id, {required int usuarioId}) => _local.cancelarEncargue(id, usuarioId: usuarioId);

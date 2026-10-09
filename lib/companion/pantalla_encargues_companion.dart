@@ -88,7 +88,8 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
   }
 
   Future<void> _cancelar(EncargueCompanion e) async {
-    if (!await _confirmar('¿Cancelar el encargue de ${e.nombreCliente}?', 'Lo apartado vuelve al stock.', 'Cancelar encargue', volver: 'Volver')) return;
+    final texto = e.senaCentavos > 0 ? 'Lo apartado vuelve al stock y se le devuelve la seña de ${plataNs(e.senaCentavos)} desde la caja abierta.' : 'Lo apartado vuelve al stock.';
+    if (!await _confirmar('¿Cancelar el encargue de ${e.nombreCliente}?', texto, 'Cancelar encargue', volver: 'Volver')) return;
     try {
       await widget.servicio.cancelarEncargue(e.id, usuarioId: widget.usuarioId);
       await _cargar();
@@ -205,6 +206,7 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
                     children: [
                       _fechaYNombre(context, '${e.desde.day}/${e.desde.month}', e.nombreCliente),
                       for (final l in e.lineas) _lineaDeTexto(context, l),
+                      if (e.senaCentavos > 0) Padding(padding: const EdgeInsets.only(top: 10), child: InfoNs('Dejó una seña de ${plataNs(e.senaCentavos)}: se descuenta al entregar.')),
                       const SizedBox(height: 12),
                       BotonNs.primario(context, 'Entregar', () => _entregar(e), alto: 52, tamanio: 16),
                       const SizedBox(height: 8),
@@ -248,6 +250,10 @@ class _PantallaNuevoEncargue extends StatefulWidget {
 class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
   final _nombre = TextEditingController();
   final _buscador = TextEditingController();
+
+  /// Seña opcional (El dueño, 2026-10-09: independizar el celular; antes solo en la PC). Entra a la caja abierta.
+  final _sena = TextEditingController();
+  bool _senaEfectivo = true;
   List<ProductoCompanion> _resultados = const [];
   final List<({ProductoCompanion producto, int cantidad})> _elegidos = [];
   String? _error;
@@ -257,6 +263,7 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
   void dispose() {
     _nombre.dispose();
     _buscador.dispose();
+    _sena.dispose();
     super.dispose();
   }
 
@@ -315,6 +322,8 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
             ),
         ],
         usuarioId: widget.usuarioId,
+        senaCentavos: (int.tryParse(_sena.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0) * centavosPorPeso,
+        senaEsEfectivo: _senaEfectivo,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -373,6 +382,14 @@ class _PantallaNuevoEncargueState extends State<_PantallaNuevoEncargue> {
                 ),
               ),
             ),
+          if (_elegidos.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            CampoNs(etiqueta: 'Seña (opcional)', controller: _sena, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+            if (_sena.text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              SegmentoNs(opciones: const ['Efectivo', 'Mercado Pago'], indice: _senaEfectivo ? 0 : 1, onCambio: (i) => setState(() => _senaEfectivo = i == 0)),
+            ],
+          ],
         ],
       ),
       botones: [

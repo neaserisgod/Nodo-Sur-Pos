@@ -38,7 +38,8 @@ abstract class ServicioCompanion {
   Future<List<EncargueCompanion>> encargues();
 
   /// Aparta lo pedido (baja el stock). Tira [ErrorCompanion] si no alcanza o falta algún dato.
-  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId});
+  /// Con [senaCentavos] > 0 el cliente deja una seña: entra a la caja abierta (cajón si [senaEsEfectivo], Mercado Pago si no).
+  Future<int> crearEncargue({required String nombreCliente, required List<ApartadoCompanion> lineas, required int usuarioId, int senaCentavos = 0, bool senaEsEfectivo = true});
 
   /// Devuelve lo apartado al stock. Cancelar uno ya entregado o ya cancelado no hace nada.
   Future<void> cancelarEncargue(int id, {required int usuarioId});

@@ -172,7 +172,7 @@ class PuertoLocal implements ServicioCompanion {
     final lista = await repo_encargues.listarEnarguesPendientes(db);
     return [
       for (final e in lista)
-        EncargueCompanion(id: e.id, nombreCliente: e.nombreCliente, desde: e.desde, lineas: [for (final l in e.lineas) l.texto]),
+        EncargueCompanion(id: e.id, nombreCliente: e.nombreCliente, desde: e.desde, lineas: [for (final l in e.lineas) l.texto], senaCentavos: e.senaCentavos),
     ];
   }
 
@@ -181,6 +181,8 @@ class PuertoLocal implements ServicioCompanion {
     required String nombreCliente,
     required List<ApartadoCompanion> lineas,
     required int usuarioId,
+    int senaCentavos = 0,
+    bool senaEsEfectivo = true,
   }) async {
     try {
       return await repo_encargues.crearEncargueApartando(
@@ -191,6 +193,10 @@ class PuertoLocal implements ServicioCompanion {
             repo_encargues.LineaEncargueNueva(productoId: l.productoId, cantidad: l.cantidad, gramos: l.gramos),
         ],
         usuarioId: usuarioId,
+        // La seña entra a la caja abierta de esta base, como en la PC (El dueño, 2026-10-09: independizar el celular).
+        senaCentavos: senaCentavos,
+        senaEsEfectivo: senaEsEfectivo,
+        sesionCajaId: senaCentavos > 0 ? (await repo_ventas.sesionAbierta(db))?.id : null,
       );
     } on repo_encargues.EncargueSinStock catch (e) {
       throw ErrorCompanion(409, 'No alcanza el stock de ${e.nombreProducto}.');
@@ -200,8 +206,14 @@ class PuertoLocal implements ServicioCompanion {
   }
 
   @override
-  Future<void> cancelarEncargue(int id, {required int usuarioId}) =>
-      repo_encargues.cancelarEncargue(db, id, usuarioId: usuarioId);
+  Future<void> cancelarEncargue(int id, {required int usuarioId}) async {
+    try {
+      // Con seña, la devolución sale de la caja abierta de esta base, como en la PC.
+      await repo_encargues.cancelarEncargue(db, id, usuarioId: usuarioId, sesionCajaId: (await repo_ventas.sesionAbierta(db))?.id);
+    } on ArgumentError catch (e) {
+      throw ErrorCompanion(400, '${e.message}');
+    }
+  }
 
   @override
   Future<List<LineaVenta>> lineasDeEncargue(int id) => repo_encargues.lineasParaEntregar(db, id);
