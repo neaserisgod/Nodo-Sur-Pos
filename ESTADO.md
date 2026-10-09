@@ -128,7 +128,9 @@ Pendiente / ideas (sin hacer):
     grabadas en la PC se siguen imprimiendo por la PC.
   - **"Traer saldo de Mercado Pago"** en el cierre del celular, como en la PC.
   - **Categorías nuevas** desde Configuración del celular (viajan por la sync).
-  Falta: avisos de Mercado Pago en el celular; seña y precio de los encargues; **gastos fijos** (no se sincronizan: hace falta
+  - **Avisos de Mercado Pago** en la campanita del celular (el mismo `ServicioAvisosMp` de la PC), solo en "Solo celular": con
+    PC los muestra la PC y "Visto" no viaja entre equipos.
+  Falta: seña y precio de los encargues; **gastos fijos** (no se sincronizan: hace falta
   migración con `global_id` para sumarlos a `tablasSincronizables`); fondo fijo y umbral de faltantes en el celular (son de cada
   equipo, `configuracion_tabla`); "+ Nuevo" proveedor/categoría en el formulario de producto; dejar de preguntar el modo al
   configurar. **Reserva diaria de fijos y día del retiro semanal ya no se usan** (columnas vestigiales), no hace falta pasarlos.

@@ -8,6 +8,7 @@ import '../app_ns.dart';
 import '../cliente_companion.dart' show SesionCerradaCompanion;
 import '../funciones_ns.dart' show AccionFuncion;
 import '../kit/kit_ns.dart';
+import '../sync_nube_companion.dart' show avisosMpCompanion;
 
 class PantallaNotificacionesNs extends StatelessWidget {
   const PantallaNotificacionesNs({super.key});
@@ -100,9 +101,46 @@ class _Contenido extends StatelessWidget {
         onTap: () => app.abrirActualizacion(),
       ));
     }
+    final avisos = avisosMpCompanion;
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
+        // Avisos de Mercado Pago (solo sin la PC, ver `_iniciarAvisosMp` del menú): solo avisan, "Visto" los saca.
+        if (avisos != null)
+          ValueListenableBuilder(
+            valueListenable: avisos.pendientes,
+            builder: (context, lista, _) => lista.isEmpty
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SeccionNs('Mercado Pago'),
+                      const SizedBox(height: 10),
+                      for (final a in lista) ...[
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(18, 14, 10, 14),
+                          decoration: BoxDecoration(color: ns.wbg, borderRadius: BorderRadius.circular(26)),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(a.titulo, style: estiloNs(16, peso: FontWeight.w600, color: ns.w)),
+                                    const SizedBox(height: 2),
+                                    Text(a.texto, style: estiloNs(13, altura: 1.35, color: ns.w)),
+                                  ],
+                                ),
+                              ),
+                              BotonNs(texto: 'Visto', onTap: () => avisos.marcarVisto(a.aviso), alto: 40, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 16),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+          ),
         const SeccionNs('Pendientes'),
         const SizedBox(height: 10),
         for (var i = 0; i < filas.length; i++) ...[EntradaNs(retraso: Duration(milliseconds: 70 * i), child: filas[i]), const SizedBox(height: 10)],

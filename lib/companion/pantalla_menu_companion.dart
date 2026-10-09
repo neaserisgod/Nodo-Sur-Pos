@@ -261,6 +261,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _modoUso = modo;
     });
     sinConexionGlobalNs.value = sinConexion;
+    unawaited(_iniciarAvisosMp(modo));
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
@@ -286,6 +287,45 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       escuchaPcCompanion?.detener();
       escuchaPcCompanion = null;
     }
+  }
+
+  /// Avisos de Mercado Pago en el celular (El dueño, 2026-10-09: independizar el celular). El mismo servicio de la PC sobre la
+  /// base del celular, solo en "Solo celular": con una PC, la campanita de la PC ya los muestra (y "Visto" no viaja entre
+  /// equipos, así que se verían dos veces).
+  int _avisosMp = 0;
+
+  Future<void> _iniciarAvisosMp(ModoUso? modo) async {
+    try {
+      if (modo != ModoUso.soloCelular) {
+        avisosMpCompanion?.detener();
+        _alCambiarAvisosMp(0);
+        return;
+      }
+      final avisos = await avisosMpDelCelular();
+      avisos.pendientes.removeListener(_escucharAvisosMp);
+      avisos.pendientes.addListener(_escucharAvisosMp);
+      avisos.iniciar();
+    } catch (_) {
+      // Sin cuenta o sin internet no hay avisos: no es un error para mostrar.
+    }
+  }
+
+  void _escucharAvisosMp() => _alCambiarAvisosMp(avisosMpCompanion?.pendientes.value.length ?? 0);
+
+  void _alCambiarAvisosMp(int n) {
+    if (!mounted || n == _avisosMp) return;
+    _avisosMp = n;
+    final p = pendientes.value;
+    pendientes.value = PendientesNs(
+      faltaSepararCentavos: p.faltaSepararCentavos,
+      proveedoresPendientes: p.proveedoresPendientes,
+      proveedoresTotal: p.proveedoresTotal,
+      sinStock: p.sinStock,
+      hayActualizacion: p.hayActualizacion,
+      arqueoVencido: p.arqueoVencido,
+      minutosDesdeConteo: p.minutosDesdeConteo,
+      avisosMp: n,
+    );
   }
 
   /// La PC dejó de contestar o volvió (2026-10-01: "si se apaga la PC el sistema tiene que seguir funcionando").
@@ -403,6 +443,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     WidgetsBinding.instance.removeObserver(this);
     _tickArqueoIntermedio.cancel();
     _subCambiosSync?.cancel();
+    avisosMpCompanion?.pendientes.removeListener(_escucharAvisosMp);
     sinConexionGlobalNs.value = false;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (puenteAppNs.value?.controlador == this) puenteAppNs.value = null;
@@ -597,6 +638,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         hayActualizacion: _hayActualizacion,
         arqueoVencido: _arqueoIntermedioVencido,
         minutosDesdeConteo: _minutosDesdeArqueo,
+        avisosMp: _avisosMp,
       );
       setState(() => _version++);
     } catch (_) {
@@ -707,6 +749,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           hayActualizacion: _hayActualizacion,
           arqueoVencido: p.arqueoVencido,
           minutosDesdeConteo: p.minutosDesdeConteo,
+          avisosMp: p.avisosMp,
         );
       }
     } catch (_) {
