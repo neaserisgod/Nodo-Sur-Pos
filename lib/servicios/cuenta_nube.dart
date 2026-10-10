@@ -528,6 +528,15 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// Registra el token de notificaciones (Firebase Cloud Messaging) de este celular: le llegan los pedidos y turnos nuevos del bot
+  /// aunque la app esté cerrada (`push.dart`).
+  Future<void> registrarPush(String token, String tokenPush) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/device/push'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'token': tokenPush}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   // ─── Turnos del bot (negocios de servicios; en el sitio, `functions/_lib/bot_turnos.js`) ───
 
   /// Lo que ocupa la Agenda de esta app de hoy en adelante, sin nombres ni teléfonos: el bot no ofrece esos horarios. Reemplaza lo

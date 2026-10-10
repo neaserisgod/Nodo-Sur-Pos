@@ -72,7 +72,7 @@ import 'emparejamiento.dart';
 import 'navegacion.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
-import 'bot_celular.dart' show accesoBotDelCelular, refrescarEstadoBot;
+import 'bot_celular.dart' show accesoBotDelCelular, refrescarEstadoBot, registrarPushDelCelular;
 import 'pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
@@ -200,6 +200,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _publicar();
     // Si el negocio tiene el bot de WhatsApp, Más muestra su pantalla (no frena nada: sin red queda escondida).
     unawaited(refrescarEstadoBot());
+    unawaited(registrarPushDelCelular());
     leerUsuario().then((u) {
       if (mounted) {
         setState(() {

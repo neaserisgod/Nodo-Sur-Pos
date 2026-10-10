@@ -3,6 +3,8 @@
          igual para cualquier tráfico de red) para hablarle a la PC, cámara
          para escanear el QR de emparejamiento. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: mostrar las notificaciones de pedidos y turnos del bot (`MainActivity.kt`). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Sistema de actualización (2026-09-07): instalar el .apk que el
          servidor de la PC ofrece, sin pasar por ninguna tienda de apps. -->
