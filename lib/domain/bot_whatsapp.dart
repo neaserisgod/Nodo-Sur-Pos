@@ -450,6 +450,10 @@ int _pesosHaciaArriba(int centavos) => (centavos + 99) ~/ 100;
 ///
 /// La seña viaja solo si el negocio cargó a dónde se transfiere (alias y titular): sin eso el bot no puede pedirla y rechazaría
 /// la configuración entera (`botdemo/src/config.js`). Sin servicios devuelve [anterior] tal cual (el bot necesita al menos uno).
+///
+/// [cobroConLink] (Nodo Sur Servicios, El dueño, 2026-10-10: "todo Mercado Pago"): la seña se cobra con el link de Mercado Pago que
+/// crea Nodo Sur, con media hora para pagar; el alias pasa a ser el plan B (si el negocio todavía no conectó Mercado Pago), así que
+/// la seña viaja aunque no haya alias.
 Map<String, dynamic> configBotConServicios(
   Map<String, dynamic> anterior, {
   required List<ServicioParaBot> servicios,
@@ -457,6 +461,7 @@ Map<String, dynamic> configBotConServicios(
   required int pasoMinutos,
   required String aliasSena,
   required String titularSena,
+  bool cobroConLink = false,
 }) {
   if (servicios.isEmpty) return anterior;
   final idsPrevios = <String, int>{};
@@ -467,7 +472,7 @@ Map<String, dynamic> configBotConServicios(
     if (id > maximo) maximo = id;
     if (x['catalogo_id'] is String && (x['catalogo_id'] as String).isNotEmpty) idsPrevios[x['catalogo_id'] as String] = id;
   }
-  final conSena = aliasSena.trim().isNotEmpty && titularSena.trim().isNotEmpty;
+  final conSena = cobroConLink || (aliasSena.trim().isNotEmpty && titularSena.trim().isNotEmpty);
   final lista = <Map<String, dynamic>>[];
   for (final s in servicios) {
     final id = idsPrevios[s.gid] ?? ++maximo;
@@ -487,7 +492,8 @@ Map<String, dynamic> configBotConServicios(
       'habilitadas': conSena && lista.any((s) => (s['sena'] as int) > 0),
       'alias_mp': aliasSena.trim(),
       'titular': titularSena.trim(),
-      'vencimiento_horas': senasPrevias['vencimiento_horas'] is int ? senasPrevias['vencimiento_horas'] : 2,
+      'vencimiento_horas': cobroConLink ? 0.5 : (senasPrevias['vencimiento_horas'] is int ? senasPrevias['vencimiento_horas'] : 2),
+      'cobro': cobroConLink ? 'mp' : 'alias',
     },
   };
 }

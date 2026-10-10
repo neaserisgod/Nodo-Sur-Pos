@@ -150,7 +150,7 @@ class SincronizadorTurnosBot {
       final usuario = await (db.select(db.usuarios)..limit(1)).getSingleOrNull();
       if (usuario == null) return null;
       final vence = x['senaVence'];
-      return crearTurno(
+      final nuevo = await crearTurno(
         db,
         servicioId: servicio.id,
         inicio: inicio,
@@ -165,6 +165,8 @@ class SincronizadorTurnosBot {
         origen: 'BOT',
         idRemoto: idRemoto,
       );
+      await _senaPagadaPorLink(nuevo, usuario.id, x['senaPagada']);
+      return nuevo;
     }
     // Ya está: lo que el cliente hizo por WhatsApp (canceló, lo cambió, la dueña aprobó la seña ahí). Lo que ya se cerró acá
     // (cobrado, no vino, cancelado) no se reabre.
@@ -183,8 +185,21 @@ class SincronizadorTurnosBot {
       await (db.update(db.turnos)..where((t) => t.id.equals(existente.id)))
           .write(TurnosCompanion(estado: Value(EstadoTurno.confirmado.clave), actualizadoEn: Value(DateTime.now())));
     }
+    if (estado.abierto) await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada']);
     if (estado.abierto && existente.inicio != inicio) await moverTurno(db, existente.id, inicio);
     return existente.id;
+  }
+
+  /// La seña que la clienta pagó con el link de Mercado Pago del bot (`senaPagada` del sitio): entra a la caja como Mercado Pago, una
+  /// sola vez. Sin caja abierta queda anotada y entra al abrirla (`ingresarSenasPendientes`). Una pagada tarde (el horario ya se
+  /// había liberado) no entra: la dueña decide desde la notificación.
+  Future<void> _senaPagadaPorLink(int turnoId, int usuarioId, Object? pagada) async {
+    if (pagada is! Map || pagada['tarde'] == true) return;
+    final centavos = pagada['centavos'];
+    if (centavos is! int || centavos <= 0) return;
+    final t = await (db.select(db.turnos)..where((x) => x.id.equals(turnoId))).getSingleOrNull();
+    if (t == null || t.senaCentavos > 0 || !EstadoTurno.desdeClave(t.estado).abierto) return;
+    await registrarSenaDeTurno(db, turnoId, montoCentavos: centavos, esEfectivo: false, usuarioId: usuarioId, sesionCajaId: await sesionAbiertaId(db));
   }
 
   Future<Producto?> _servicioDe(Object? s) async {
@@ -257,6 +272,7 @@ class SincronizadorTurnosBot {
       pasoMinutos: agenda.pasoMinutos,
       aliasSena: agenda.aliasSena,
       titularSena: agenda.titularSena,
+      cobroConLink: esEdicionServicios,
     );
     if (jsonEncode(nueva) != jsonEncode(anterior)) await cliente.guardarConfigBot(token, nueva);
     _ultimaConfig = entrada;

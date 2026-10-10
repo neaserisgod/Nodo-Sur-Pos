@@ -149,6 +149,37 @@ void main() {
     expect((await elDelBot()).estado, 'CANCELADO');
   });
 
+  test('la seña pagada con el link de Mercado Pago entra a la caja como Mercado Pago, una sola vez', () async {
+    await sinc.vuelta('tok');
+    final sesion = await abrirSesion(db, usuarioId: usuario, fondoInicialCentavos: 0);
+    remotos.single
+      ..['estado'] = 'confirmado'
+      ..['senaPagada'] = {'centavos': 540000, 'pagoId': '77001'}
+      ..['actualizado'] = 99;
+    await sinc.vuelta('tok');
+    var t = await elDelBot();
+    expect(t.estado, 'CONFIRMADO');
+    expect(t.senaCentavos, 540000);
+    expect(t.senaEsEfectivo, isFalse);
+    expect(t.senaEnCaja, isTrue);
+    remotos.single['actualizado'] = 100;
+    await sinc.vuelta('tok');
+    t = await elDelBot();
+    expect(t.senaCentavos, 540000, reason: 'no se anota dos veces');
+    final ingresos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesion))).get();
+    expect(ingresos.where((m) => m.montoCentavos == 540000), hasLength(1));
+  });
+
+  test('un turno que llega ya pagado (la app estaba cerrada) también anota la seña', () async {
+    remotos.single
+      ..['estado'] = 'confirmado'
+      ..['senaPagada'] = {'centavos': 540000, 'pagoId': '77002'};
+    await sinc.vuelta('tok');
+    final t = await elDelBot();
+    expect(t.senaCentavos, 540000);
+    expect(t.senaEnCaja, isFalse, reason: 'sin caja abierta entra al abrirla');
+  });
+
   test('lo que carga la dueña se publica como ocupado, sin datos de clientes y sin los turnos del bot', () async {
     await sinc.vuelta('tok');
     await crearTurno(db, servicioId: semi, inicio: manana10.add(const Duration(hours: 5)), nombreCliente: 'Bea', telefono: '5492944222222', usuarioId: usuario);

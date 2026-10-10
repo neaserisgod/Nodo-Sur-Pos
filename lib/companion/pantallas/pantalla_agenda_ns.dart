@@ -17,6 +17,7 @@ import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/medio_pago.dart';
 import '../../domain/turnos.dart';
+import '../../servicios/sena_mp_nube.dart';
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
@@ -178,23 +179,42 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     if (!mounted) return null;
     final sena = t.turno.senaCentavos;
     final devuelve = sena > 0 && config.sena.devolverAlCancelar;
+    // Una seña del bot que entró por Mercado Pago (el link, Nodo Sur Servicios): se le devuelve a la clienta por Mercado Pago, con
+    // un toque, si la dueña lo confirma (El dueño, 2026-10-10).
+    final porLink = devuelve && !t.turno.senaEsEfectivo && t.turno.origen == 'BOT' && t.turno.idRemoto != null;
     final ok = await mostrarHojaNs<bool>(
       context,
       builder: (ctx) => HojaNs(
         titulo: '¿Cancelar el turno?',
         texto: sena == 0
             ? 'Se libera el horario de las ${horaNs(t.inicio)}.'
-            : devuelve
-                ? 'Se libera el horario y se devuelve la seña de ${plataNs(sena)} por la caja por la que entró.'
-                : 'Se libera el horario. La seña de ${plataNs(sena)} queda en la caja (así está configurado: si cancelan, se pierde).',
+            : porLink
+                ? '¿Devolver ${plataNs(sena)} a ${t.turno.nombreCliente}? Se libera el horario y la seña le vuelve por Mercado Pago.'
+                : devuelve
+                    ? 'Se libera el horario y se devuelve la seña de ${plataNs(sena)} por la caja por la que entró.'
+                    : 'Se libera el horario. La seña de ${plataNs(sena)} queda en la caja (así está configurado: si cancelan, se pierde).',
         botones: [
-          BotonNs.peligroSuave(ctx, 'Cancelar el turno', () => Navigator.of(ctx).pop(true)),
+          BotonNs.peligroSuave(ctx, porLink ? 'Devolver y cancelar' : 'Cancelar el turno', () => Navigator.of(ctx).pop(true)),
           BotonNs.secundario(ctx, 'Volver', () => Navigator.of(ctx).pop(false)),
         ],
       ),
     );
     if (ok != true) return null;
+    var porMercadoPago = false;
+    if (porLink) {
+      final r = await devolverSenaMpDelCelular(t.turno.idRemoto!);
+      switch (r.resultado) {
+        case ResultadoDevolucionSena.devuelta:
+          porMercadoPago = true;
+        case ResultadoDevolucionSena.noEsDelLink:
+          break; // se anotó a mano: se devuelve como siempre
+        case ResultadoDevolucionSena.error:
+          // Sin devolver no se cancela: la clienta se quedaría sin su plata y sin turno.
+          return 'No se canceló: ${r.mensaje ?? 'no se pudo devolver la seña'}';
+      }
+    }
     final devuelto = await cancelarTurno(_db, t.turno.id, usuarioId: usuarioId, sesionCajaId: sesion);
+    if (porMercadoPago) return 'Turno cancelado. Le devolvimos ${plataNs(devuelto > 0 ? devuelto : sena)} por Mercado Pago.';
     return devuelto > 0 ? 'Turno cancelado. Devolvé ${plataNs(devuelto)} de la seña.' : 'Turno cancelado';
   }
 

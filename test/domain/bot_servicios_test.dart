@@ -17,8 +17,8 @@ void main() {
     'senas': {'vencimiento_horas': 3},
   };
 
-  Map<String, dynamic> armar({String alias = 'caro.unas', String titular = 'Carolina Pérez', List<ServicioParaBot> servicios = const [semi, retiro]}) =>
-      configBotConServicios(anterior, servicios: servicios, horario: HorarioAtencion.porDefecto, pasoMinutos: 15, aliasSena: alias, titularSena: titular);
+  Map<String, dynamic> armar({String alias = 'caro.unas', String titular = 'Carolina Pérez', List<ServicioParaBot> servicios = const [semi, retiro], bool conLink = false}) =>
+      configBotConServicios(anterior, servicios: servicios, horario: HorarioAtencion.porDefecto, pasoMinutos: 15, aliasSena: alias, titularSena: titular, cobroConLink: conLink);
 
   test('los servicios en pesos enteros, y cada uno conserva su número de menú', () {
     final c = armar();
@@ -38,7 +38,7 @@ void main() {
     final c = armar();
     expect(c['horarios'], HorarioAtencion.porDefecto.toJson());
     expect((c['turnos'] as Map)['intervalo_slot_min'], 15);
-    expect(c['senas'], {'vencimiento_horas': 3, 'habilitadas': true, 'alias_mp': 'caro.unas', 'titular': 'Carolina Pérez'});
+    expect(c['senas'], {'vencimiento_horas': 3, 'habilitadas': true, 'alias_mp': 'caro.unas', 'titular': 'Carolina Pérez', 'cobro': 'alias'});
     expect(c['numero_actual'], '5492944111111');
     expect(c['pausa_minutos'], 60);
   });
@@ -51,5 +51,17 @@ void main() {
 
   test('sin servicios no cambia nada (el bot necesita al menos uno)', () {
     expect(armar(servicios: const []), same(anterior));
+  });
+
+  test('Nodo Sur Servicios: la seña va con el link de Mercado Pago y media hora para pagar, aunque no haya alias', () {
+    final c = armar(alias: '', titular: '', conLink: true);
+    final senas = c['senas'] as Map;
+    expect(senas['cobro'], 'mp');
+    expect(senas['habilitadas'], isTrue);
+    expect(senas['vencimiento_horas'], 0.5);
+    expect((c['servicios'] as List).first['sena'], 5400);
+    final sinLink = armar();
+    expect((sinLink['senas'] as Map)['cobro'], 'alias');
+    expect((sinLink['senas'] as Map)['vencimiento_horas'], 3);
   });
 }

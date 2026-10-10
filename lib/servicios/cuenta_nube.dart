@@ -730,6 +730,18 @@ class ClienteNube {
     return (jsonDecode(r.body) as Map<String, dynamic>)['status'] as String?;
   });
 
+  /// Devuelve por Mercado Pago la seña que la clienta pagó con el link del bot (Nodo Sur Servicios). [turnoRemoto] es el id del
+  /// turno en el sitio. Reintentar no devuelve dos veces. Lanza [ErrorNube] con `sin_sena_mp` si esa seña no entró por el link.
+  Future<int> devolverSenaMp(String token, String turnoRemoto) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/sena/devolver'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'turnoId': turnoRemoto}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return ((jsonDecode(r.body) as Map<String, dynamic>)['centavos'] as num? ?? 0).toInt();
+  });
+
   Future<void> cancelarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
     final r = await http.post(
       _uri('/api/mp/orden/cancelar'),
