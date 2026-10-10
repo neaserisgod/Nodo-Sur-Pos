@@ -1,7 +1,8 @@
 # Plan · Nodo Sur para servicios (barbería, uñas y belleza)
 
 **Estado al 2026-10-10: etapas 1 a 4 hechas (forma de trabajar y rubros de servicios; insumos, servicios y calculador; cobrar
-servicios; agenda, profesionales y seña), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapa 5 (bot) sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
+servicios; agenda, profesionales y seña), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapa 5 (bot) con los pasos 1 y 2
+hechos (en `botdemo` y `NodoSurPage`, misma rama).** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
 por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
 día sobre el bot que ya existe (`neaserisgod/botdemo`).
@@ -286,9 +287,15 @@ del celular (Más › Bot de WhatsApp) solo con un plan con bot, y el bot la baj
 desde el celular con Termux: [`PLAN-BOT.md`](./PLAN-BOT.md).
 
 **Orden de trabajo (cada paso probado antes del siguiente):**
-1. `botdemo`: arreglar `npm test`; pasar el núcleo a asincrónico sin cambiar comportamiento (los 98 escenarios tienen que
-   seguir pasando); seña que nunca se confirma sola por OCR.
-2. Servidor: horarios ocupados y `reservar`/`liberar`/`libres` atómicos por sucursal, con tests de carrera.
+1. **Hecho (2026-10-10, `botdemo` rama `ccr-1a8287aa-6i8nq2`)**: `npm test` ya andaba en un clon limpio. El motor devuelve
+   promesas y la conversación de turnos espera en cada consulta a la agenda y a los turnos (pasarlas a la red no cambia el
+   flujo); los mensajes de un mismo número se procesan de a uno (cola por número). Mismo comportamiento: los 98 escenarios
+   pasan, más 3 chequeos de la cola. **Un comprobante leído nunca confirma solo**: queda para que la dueña lo apruebe con `!ok`,
+   y si todo coincide se lo dice.
+2. **Hecho (2026-10-10, `NodoSurPage` rama `ccr-1a8287aa-6i8nq2`)**: la agenda vive en el SQLite del hub de cada sucursal
+   (`functions/_lib/agenda.js`): `POST /api/agenda/reservar` (409 con el turno con que choca), `/liberar` y
+   `GET /api/agenda/ocupados`, con el acceso de la sync. Prueba de 20 reservas simultáneas del mismo horario: gana una.
+   **Falta** que la app reserve ahí al anotar, mover o cancelar (hoy solo mira su base).
 3. El bot como equipo de la sync: vincularse, leer servicios, horarios, clientes y turnos; subir los suyos.
 4. Link de seña de MP y confirmación por el webhook `payment`; verificar si las transferencias al CVU aparecen en los cobros.
 5. IA de respaldo.
