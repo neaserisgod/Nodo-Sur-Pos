@@ -74,6 +74,9 @@ seña, IA, API oficial) está en [`PLAN-SERVICIOS.md`](./PLAN-SERVICIOS.md), eta
   precio y si hay stock. **Sin costo ni proveedor.** El bot contesta con eso.
 - **Pedido de punta a punta:**
   1. El cliente pide por WhatsApp; el bot arma la lista con productos del catálogo y cantidades, y le pide un nombre.
+     Lo que se pesa va en **gramos** con el precio por kilo ("1/4 de jamón" son 250 g). El
+     sitio lo acepta solo si todas las apps de la sucursal que leen pedidos lo entienden (una app anterior descartaba el
+     pedido sin avisar); si no, el bot se lo manda al local por WhatsApp.
   2. El bot lo manda al sitio (`POST /api/bot/pedido`) y le dice al cliente que el local lo confirma enseguida.
   3. El sitio guarda el pedido, **manda la notificación** a los celulares de la sucursal con la app y despierta a los
      equipos abiertos.

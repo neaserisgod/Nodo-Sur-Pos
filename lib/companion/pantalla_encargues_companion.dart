@@ -320,7 +320,7 @@ class _PantallaEncarguesCompanionState extends State<PantallaEncarguesCompanion>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _fechaYNombre(context, hora, p.clienteNombre),
-        for (final x in p.items) _lineaDeTexto(context, '${x.cantidad} × ${x.nombre}'),
+        for (final x in p.items) _lineaDeTexto(context, textoLineaPedido(x)),
         if (p.nota != null && p.nota!.trim().isNotEmpty) _lineaDeTexto(context, 'Nota: ${p.nota!.trim()}'),
         if (p.totalOrientativoCentavos > 0)
           Padding(
