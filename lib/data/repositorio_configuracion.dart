@@ -77,6 +77,18 @@ Future<void> configurarModulo(AppDatabase db, Modulo modulo, {required bool acti
       );
 }
 
+/// Lo que vale una hora de trabajo (v65), para la mano de obra de los servicios. Null: sin cargar (los servicios cuestan
+/// solo sus insumos).
+Future<void> configurarValorHora(AppDatabase db, int? montoCentavos) {
+  if (montoCentavos != null && montoCentavos < 0) throw const FormatException('El valor de la hora no puede ser negativo');
+  return db.update(db.configuracionNegocioTabla).write(
+        ConfiguracionNegocioTablaCompanion(
+          valorHoraCentavos: Value(montoCentavos),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
 Future<void> configurarNombreComercio(AppDatabase db, String nombre) {
   return db.update(db.configuracionNegocioTabla).write(
         ConfiguracionNegocioTablaCompanion(

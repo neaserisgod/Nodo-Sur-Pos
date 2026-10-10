@@ -329,7 +329,8 @@ Variable _variableDesde(Object? v) {
 /// nada que preservar) pero se ignoran al actualizar uno que ya existe: el
 /// número de verdad lo arma [_aplicarDeltaDeMovimientoStock] fila por fila,
 /// a partir del log de `movimientos_de_stock` (`lib/domain/stock.dart`).
-const _columnasStockDeProductos = {'stock', 'stock_gramos'};
+/// `stock_milesimas` (v65) es el stock de un insumo de servicios: mismo contador, mismo trato.
+const _columnasStockDeProductos = {'stock', 'stock_gramos', 'stock_milesimas'};
 
 /// Cuando [fila] es un movimiento de stock recién insertado (no uno que ya
 /// existía, ver [aplicarCambios]), aplica su delta al `productos` local
@@ -362,6 +363,18 @@ Future<void> _aplicarDeltaDeMovimientoStock(
     final delta = DeltaStock(anterior: gramosAnterior, posterior: gramosPosterior).delta;
     await db.customUpdate(
       'UPDATE productos SET stock_gramos = COALESCE(stock_gramos, 0) + ? WHERE id = ?',
+      variables: [Variable.withInt(delta), Variable.withInt(productoId)],
+    );
+  }
+
+  // Milésimas de un insumo (v65, `repositorio_servicios.dart`): lo mismo que los gramos. Un equipo anterior a la v65 no tiene
+  // la columna y descarta estas claves al insertar (ver [aplicarCambios]), así que nunca llega acá con ellas.
+  final milesimasAnterior = (fila['milesimas_anterior'] as num?)?.toInt();
+  final milesimasPosterior = (fila['milesimas_posterior'] as num?)?.toInt();
+  if (milesimasAnterior != null && milesimasPosterior != null) {
+    final delta = DeltaStock(anterior: milesimasAnterior, posterior: milesimasPosterior).delta;
+    await db.customUpdate(
+      'UPDATE productos SET stock_milesimas = COALESCE(stock_milesimas, 0) + ? WHERE id = ?',
       variables: [Variable.withInt(delta), Variable.withInt(productoId)],
     );
   }
