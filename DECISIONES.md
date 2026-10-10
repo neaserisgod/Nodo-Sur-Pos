@@ -2420,3 +2420,32 @@ solo, y lo que un rubro no usa se apaga para ese rubro (no se borra), con valore
   y los pagos (que tienen que sumar el total exacto, `TRAMPAS.md`); como ingreso, el arqueo la cuenta y la ganancia no.
 - **Si falta un insumo, el stock queda en negativo y se cobra igual** (§20: por defecto solo avisa). El bloqueo es un
   interruptor que llega con Más › Módulos.
+
+## La Agenda y los turnos del bot: reserva en el sitio, sin Durable Object (El dueño, 2026-10-10)
+
+Etapas 4 y 5 de `docs/PLAN-SERVICIOS.md`. El dueño pidió terminar "recibir un turno y que llegue" y aprobó la versión simple.
+
+- **Turnos en tabla propia** (`turnos`, v66, sincronizada), no en `pendientes`: tienen hora y duración, y mezclarlos ensuciaba
+  las consultas del almacén. La seña y el cobro son los de los encargues: `registrarVenta(turnoId:)` aplica la seña como un pago
+  `canal = 'sena'` que no vuelve a mover la caja y deja el turno atendido en la misma transacción.
+- **Una seña sin caja abierta** queda anotada (`sena_en_caja = 0`) y entra como ingreso al abrir la próxima caja **en el mismo
+  equipo** (`ingresarSenasPendientes`): si la ingresara cualquier equipo, dos que abren su caja la contarían dos veces.
+- **El plan decía que el bot entrara a la sync como un equipo más, con un Durable Object para reservar.** Se hizo como los
+  pedidos: el sitio guarda los turnos del bot (cifrados) y lo que ocupa la Agenda de la app (sin datos de clientes), y reserva
+  con **una sola sentencia** `INSERT … SELECT … WHERE NOT EXISTS (choque)`: D1 ejecuta cada sentencia de forma atómica, así
+  que dos clientes con las 10:00 a la vez no entran los dos. No hubo que reescribir el bot en asincrónico ni leer los lotes de
+  la sync en JavaScript.
+- **Solo el equipo que sube la sync baja los turnos del bot** (como el catálogo del bot): si lo hicieran dos, el mismo turno
+  entraría con dos `global_id` y la sync lo duplicaría.
+- **La app puede dar sobreturnos; el bot no** (§21): el bot reserva y mueve con control de choque, la app no.
+- **Los datos del negocio son los del bot** (El dueño: "no tiene que haber una sección específica para bot"): los servicios
+  con su precio y seña, el horario de atención y el alias viajan solos a la configuración del bot (`configBotConServicios`),
+  conservando el número de menú de cada servicio. Con eso, cambiar un precio por WhatsApp quedó cerrado cuando el bot está
+  vinculado: la próxima configuración lo pisaría y la caja cobraría otro.
+
+## Notificaciones: canal propio en Kotlin, sin los plugins de Firebase (2026-10-10)
+
+`firebase_core` para Flutter tiene versión de Windows y baja el SDK de Firebase para C++ al compilar la PC, que no usa
+notificaciones. Se hizo un canal propio (`nodosur/push`, `MainActivity.kt`) con `firebase-messaging` de Android, inicializado
+desde Dart con los datos del proyecto (sin el plugin de Google Services: el build no depende de `google-services.json`). Con la
+app cerrada la notificación la muestra Android solo. El sitio firma el JWT de la cuenta de servicio y usa la API HTTP v1.

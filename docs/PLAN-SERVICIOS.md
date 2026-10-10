@@ -1,6 +1,6 @@
 # Plan · Nodo Sur para servicios (barbería, uñas y belleza)
 
-**Estado al 2026-10-09: etapas 1 y 2 hechas (rama `ccr-a0284350-02fhfg`, sin mezclar); etapas 3 a 5 sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
+**Estado al 2026-10-10: etapas 1 a 3 publicadas; etapa 4 (Agenda) y la versión simple de la etapa 5 (turnos del bot en la Agenda) hechas en la rama `ccr-d9ff719e-qd8uv7` de los tres repos, sin publicar.** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
 por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
 día sobre el bot que ya existe (`neaserisgod/botdemo`).
@@ -193,14 +193,23 @@ Lo que decía el plan:
 - Reposición, Separaciones y ganancia leen los consumos. Se amplía el test de conciliación con ventas de servicios.
 - `REGLAS-NEGOCIO.md` gana la sección "Servicios e insumos" (antes de programar, con el OK del dueño).
 
-### Etapa 4 · Agenda, profesionales y seña (sin PC)
+### Etapa 4 · Agenda, profesionales y seña (sin PC) — hecha (2026-10-10), falta probar en un celular real
+Hecho: tabla `turnos` (v66), `domain/turnos.dart`, `data/repositorio_turnos.dart`, `pantalla_agenda_ns.dart` y Configuración ›
+Agenda y seña (ver `ESTADO.md` y `DECISIONES.md`). No se hizo: la pantalla por profesional (la base y los horarios libres ya
+separan por profesional; la Agenda muestra todos), el módulo `agenda` en Más › Módulos y cobrar un turno con la Point.
+
 - Tabla `turnos` (v67, sincronizada), con cliente de `clientes` y profesional de `usuarios`. Los módulos `agenda`,
   `turnos_whatsapp` y `profesionales`; con `servicios`, el celular arranca en la Agenda.
 - Agenda, nuevo turno, estados y cobrar un turno. Seña con `domain/sena.dart`, que ahora también se usa en el celular. "No
   vino" según la configuración.
 - `REGLAS-NEGOCIO.md` gana la sección "Turnos y seña".
 
-### Etapa 5 · Bot de WhatsApp (desde `botdemo`)
+### Etapa 5 · Bot de WhatsApp (desde `botdemo`) — versión simple hecha (2026-10-10)
+El dueño aprobó hacerla como los pedidos (`DECISIONES.md`, "La Agenda y los turnos del bot"): reserva atómica en D1
+(`NodoSurPage/functions/_lib/bot_turnos.js`), el bot reserva y se entera de los cambios (`botdemo/src/nube/sincronizar.js`),
+la app baja los turnos a la Agenda y publica lo ocupado (`lib/servicios/turnos_bot_nube.dart`). Lo de abajo (bot como equipo
+de la sync, Durable Object, link de seña de MP, IA) queda como estaba: es el plan grande, para después.
+
 
 Revisado contra el código de los tres repos el 2026-10-09 (`botdemo` en `main` 39f8902, `NodoSurPage` en `main` #54). Lo de
 Cloudflare, contra su documentación oficial del mismo día.
