@@ -311,6 +311,7 @@ Future<int> crearServicio(
   bool sumaManoDeObra = false,
   int? gananciaBuscadaBp,
   int? categoriaId,
+  bool pideSena = false,
   required int usuarioId,
 }) {
   _validarNombre(nombre);
@@ -330,6 +331,7 @@ Future<int> crearServicio(
         recetaServicio: Value(await _recetaEnJson(db, receta)),
         sumaManoDeObra: Value(sumaManoDeObra),
         gananciaBuscadaBp: Value(gananciaBuscadaBp),
+        pideSena: Value(pideSena),
         actualizadoEn: Value(DateTime.now()),
       ),
     );
@@ -348,6 +350,8 @@ Future<void> editarServicio(
   bool sumaManoDeObra = false,
   int? gananciaBuscadaBp,
   int? categoriaId,
+  // Null: no se toca (quien edita sin mirar la seña no la cambia).
+  bool? pideSena,
   required int usuarioId,
 }) {
   _validarNombre(nombre);
@@ -364,6 +368,7 @@ Future<void> editarServicio(
         sumaManoDeObra: Value(sumaManoDeObra),
         gananciaBuscadaBp: Value(gananciaBuscadaBp),
         categoriaId: Value(categoriaId),
+        pideSena: pideSena == null ? const Value.absent() : Value(pideSena),
         actualizadoEn: Value(DateTime.now()),
       ),
     );
