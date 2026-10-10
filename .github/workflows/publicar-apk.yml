@@ -1,6 +1,10 @@
 # Compila el APK de la companion app (celular) y lo publica en el sitio (Cloudflare) como plataforma "android".
-# El celular lo busca ahí al abrir el menú (lib/companion/actualizacion.dart). Se dispara a mano:
-# Actions → publicar-apk → Run workflow.
+# El celular lo busca ahí al abrir el menú (lib/companion/actualizacion.dart). Se dispara:
+#   * al mergear con un título que empieza con "release:" (estable) o "beta:" (beta), A LA VEZ que Windows (2026-10-09: el
+#     celular salía siempre después, a mano, y un negocio de servicios usa solo el celular);
+#   * o a mano: Actions → publicar-apk → Run workflow.
+# Tiene su propia fila de publicación: no comparte nada con Windows (en el sitio cada plataforma es un registro aparte y su
+# archivo va a otra ruta de R2), y este workflow no escribe en el repo.
 #
 # Secretos (los mismos de publicar-beta, más uno):
 #   RELEASE_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
@@ -10,13 +14,19 @@
 #                            PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.android\debug.keystore"))
 # Opcional: SITE_REPO_TOKEN si el repo del sitio es privado.
 #
-# Número de compilación: por defecto el que ya esté en pubspec.yaml (no lo sube): el de la última versión publicada de la PC.
-# Con el dato "build" el APK lleva SU PROPIO número, independiente de Windows: sirve para relanzar un APK sin esperar una beta
-# de la PC, o para publicar un arreglo cuando la última versión salió mal (Android no deja instalar una versión más vieja encima
-# de una más nueva: volver atrás = publicar un número MÁS ALTO). Tiene que ser mayor que el último APK publicado.
+# Número de compilación: sin el dato "build", el mayor entre el que va a publicar Windows (el de pubspec.yaml + 1, que
+# publicar-beta sube en paralelo) y el último APK publicado en ese canal + 1. Android no deja instalar una versión más vieja
+# encima de una más nueva, así que nunca puede quedar por debajo del último APK. Con "build" se usa ese número tal cual.
 name: publicar-apk
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - '.github/**'
   workflow_dispatch:
     inputs:
       canal:
@@ -39,7 +49,7 @@ on:
         default: "100"
 
 concurrency:
-  group: publicar
+  group: publicar-apk
   cancel-in-progress: false
 
 permissions:
@@ -47,6 +57,8 @@ permissions:
 
 jobs:
   apk:
+    # Un merge común no publica nada (como publicar-beta): solo los "release:" y "beta:".
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.event.head_commit.message, 'beta:')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -55,6 +67,12 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
+      # Al disparar por merge no hay inputs: canal según el título (release: → stable, beta: → beta), al 100 %, y la primera
+      # línea del título como nota.
+      CANAL: ${{ inputs.canal || (startsWith(github.event.head_commit.message, 'release:') && 'stable') || 'beta' }}
+      ROLLOUT: ${{ inputs.rollout || '100' }}
+      BUILD: ${{ inputs.build }}
+      MENSAJE: ${{ inputs.notas || github.event.head_commit.message || 'Actualización de la companion' }}
     steps:
       - name: Comprobar secretos
         run: |
@@ -90,29 +108,35 @@ jobs:
 
       - run: flutter pub get
 
-      # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
-      # (ver tool/publicar_actualizacion_companion.sh).
-      - name: Compilar el APK
-        env:
-          BUILD: ${{ inputs.build }}
+      - name: Número de compilación
         run: |
           if [ -n "$BUILD" ]; then
             [[ "$BUILD" =~ ^[0-9]+$ ]] || { echo "::error::build tiene que ser un número entero (recibí '$BUILD')"; exit 1; }
-            flutter build apk --release --target-platform android-arm64 --build-number "$BUILD"
+            numero="$BUILD"
           else
-            flutter build apk --release --target-platform android-arm64
+            pubspec=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*[^+]*\+//')
+            # El último APK publicado en CUALQUIER canal (un administrador recibe también las beta), según el registro del sitio.
+            ultimo=$(curl -fsS -A "Mozilla/5.0 (publicar-apk)" -H "Authorization: Bearer $RELEASE_TOKEN" -H "X-Release-Token: $RELEASE_TOKEN" "$SITE_URL/api/admin/releases" \
+              | node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{let m=0;
+                  for(const r of JSON.parse(t).releases||[]) if(r.platform==="android"){const b=+String(r.version).split("+")[1]||0;if(b>m)m=b}
+                  console.log(m)})') \
+              || { echo "::error::No se pudo leer el último APK publicado del sitio: no se compila con un número que podría ser viejo"; exit 1; }
+            numero=$(( pubspec + 1 > ultimo + 1 ? pubspec + 1 : ultimo + 1 ))
+            echo "pubspec +1 = $((pubspec + 1)) · último APK publicado = $ultimo → $numero"
           fi
+          echo "NUMERO=$numero" >> "$GITHUB_ENV"
+          echo "NOTAS=$(printf '%s' "$MENSAJE" | head -n 1)" >> "$GITHUB_ENV"
+
+      # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
+      # (ver tool/publicar_actualizacion_companion.sh).
+      - name: Compilar el APK
+        run: flutter build apk --release --target-platform android-arm64 --build-number "$NUMERO"
 
       - name: Publicar en el sitio
-        env:
-          NOTAS: ${{ inputs.notas }}
-          CANAL: ${{ inputs.canal }}
-          ROLLOUT: ${{ inputs.rollout }}
-          BUILD: ${{ inputs.build }}
         run: |
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
-          # Con build propio, la versión publicada lleva ese número (el mismo que quedó adentro del APK).
-          if [ -n "$BUILD" ]; then version="${version%%+*}+${BUILD}"; fi
+          # La versión publicada lleva el número que quedó adentro del APK.
+          version="${version%%+*}+${NUMERO}"
           cp build/app/outputs/flutter-apk/app-release.apk "NodoSurPOS-Companion-${version}.apk"
           node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
             --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"

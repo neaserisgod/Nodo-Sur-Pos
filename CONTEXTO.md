@@ -104,12 +104,12 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 - **Windows**: el merge a `main` publica **solo si el título del commit empieza con `release:`** (estable) o `beta:`
   (beta). Cualquier otro merge no compila nada. También se puede disparar a mano (`publicar-beta.yml`). El número de
   compilación lo sube el propio workflow.
-- **Android**: a mano, `publicar-apk.yml` con `canal`, `notas` y **`build` mayor que el último APK publicado — mirarlo en
-  el sitio, no en estos docs** (el 03/10 los docs decían 2128 y ya existía la 2129: se pisó el archivo)
-  (consultarlo en `/admin/` → Versiones del sitio, o en la tabla `releases`). Sin `build` usa el de `pubspec.yaml`, que
-  puede chocar con uno ya publicado (error "exists").
-- Todos los workflows de publicación comparten el grupo de concurrencia `publicar`: van de a uno. **Nunca publicar dos
-  veces la misma versión a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
+- **Android** (desde el 09/10): sale **a la vez que Windows** con el mismo merge `release:`/`beta:` (`publicar-apk.yml`). El
+  número lo calcula solo: el mayor entre el de Windows (`pubspec.yaml` + 1) y el último APK publicado + 1, leído del sitio.
+  A mano también se puede, con `canal`, `notas` y, si hace falta, un `build` propio.
+- Windows y Android van en **filas de publicación separadas** (`publicar` y `publicar-apk`): en el sitio cada plataforma es
+  un registro aparte y su archivo va a otra ruta de R2. Dentro de cada fila van de a uno. **Nunca publicar dos veces la
+  misma versión de la misma plataforma a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
   `flutter pub get`, `flutter analyze` (tiene que dar "No issues found!", CI lo exige) y
   `flutter test --exclude-tags bench` (~2.550 tests, ~5 minutos; las capturas en versión corta, ver `test/helpers/capturas.dart`).
