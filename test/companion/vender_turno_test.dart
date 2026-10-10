@@ -7,7 +7,6 @@ import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
-import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/data/repositorio_turnos.dart';
