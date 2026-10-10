@@ -14,6 +14,7 @@ import '../domain/periodo.dart';
 import '../domain/stock_valorizado.dart';
 import 'database.dart';
 import 'linea_venta_reconstruccion.dart';
+import 'lineas_de_servicio.dart';
 
 class ResumenProveedorNivel1 {
   final Proveedor proveedor;
@@ -83,22 +84,30 @@ class ResumenAgregadoProductos {
 /// [resumenTodosLosProductos] y [resumenProductosSinProveedor], mismo motivo
 /// que ya separaba esta cuenta del loop de `resumenProveedoresNivel1`
 /// (Convención 3: una fórmula, un solo lugar).
+///
+/// [soloSinProveedor]: solo lo que no es de ningún proveedor. Una línea de servicio se reparte antes por el proveedor de
+/// cada insumo (Regla 20), así que de ella solo cuenta lo de insumos sin proveedor.
 Future<({int vendido, int ganancia})> _ventasEnRango(
   AppDatabase db, {
   required DateTime? inicio,
-  required Expression<bool> filtroLineas,
+  bool soloSinProveedor = false,
 }) async {
   final query = db.select(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
   // Sin ventas anuladas (El dueño, 2026-09-26): una venta revertida no generó
   // nada que reponer, ni vendido, ni ganancia.
   ])..where(
-      filtroLineas &
+      (soloSinProveedor ? db.lineasDeVenta.proveedorIdFoto.isNull() : const Constant(true)) &
           db.ventas.anuladaEn.isNull() &
           (inicio == null ? const Constant(true) : db.ventas.fecha.isBiggerOrEqualValue(inicio)),
     );
-  final filas = await query.get();
-  final lineas = filas.map((fila) => lineaParaReposicionDesde(fila.readTable(db.lineasDeVenta), venta: fila.readTable(db.ventas))).toList();
+  final filas = await conServiciosRepartidos(db, [
+    for (final fila in await query.get()) (fila.readTable(db.lineasDeVenta), fila.readTable(db.ventas)),
+  ]);
+  final lineas = [
+    for (final (linea, venta) in filas)
+      if (!soloSinProveedor || linea.proveedorIdFoto == null) lineaParaReposicionDesde(linea, venta: venta),
+  ];
   final ganancia = calcularGananciaBruta(lineas: lineas);
   return (
     vendido: ganancia.ventaConCostoCentavos + ganancia.vendidoSinCostoCentavos,
@@ -166,7 +175,6 @@ Future<ResumenAgregadoProductos> resumenTodosLosProductos(
   final ventas = await _ventasEnRango(
     db,
     inicio: _inicioParaAgregado(periodo, ahora),
-    filtroLineas: const Constant(true),
   );
   return _resumenDesdeValorizadoYVentas(valorizado, _claveAgregado, ventas);
 }
@@ -199,7 +207,7 @@ Future<ResumenAgregadoProductos> resumenProductosSinProveedor(
   final ventas = await _ventasEnRango(
     db,
     inicio: _inicioParaAgregado(periodo, ahora),
-    filtroLineas: db.lineasDeVenta.proveedorIdFoto.isNull(),
+    soloSinProveedor: true,
   );
   return _resumenDesdeValorizadoYVentas(valorizado, _claveAgregado, ventas);
 }
@@ -265,15 +273,20 @@ Future<List<ResumenProveedorNivel1>> resumenProveedoresNivel1(
     final query = db.select(db.lineasDeVenta).join([
       innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
     ])..where(
-        db.lineasDeVenta.proveedorIdFoto.isIn(idsProveedores) &
+        // Las líneas de servicio, repartidas por el proveedor de cada insumo (Regla 20).
+        (db.lineasDeVenta.proveedorIdFoto.isIn(idsProveedores) | db.lineasDeVenta.esServicio.equals(true)) &
             db.ventas.anuladaEn.isNull() &
             // Solo lo que alguna fila va a usar: el inicio más viejo entre los proveedores (null = alguno cuenta desde siempre).
             (inicioMasViejo == null ? const Constant(true) : db.ventas.fecha.isBiggerOrEqualValue(inicioMasViejo)),
       );
-    final filas = await query.get();
-    for (final fila in filas) {
-      final linea = fila.readTable(db.lineasDeVenta);
-      filasPorProveedor.putIfAbsent(linea.proveedorIdFoto!, () => []).add((linea, fila.readTable(db.ventas)));
+    final filas = await conServiciosRepartidos(db, [
+      for (final fila in await query.get()) (fila.readTable(db.lineasDeVenta), fila.readTable(db.ventas)),
+    ]);
+    final pedidos = idsProveedores.toSet();
+    for (final (linea, venta) in filas) {
+      final proveedor = linea.proveedorIdFoto;
+      if (proveedor == null || !pedidos.contains(proveedor)) continue;
+      filasPorProveedor.putIfAbsent(proveedor, () => []).add((linea, venta));
     }
   }
 

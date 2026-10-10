@@ -118,6 +118,7 @@ const seccionesMenuIniciales = [
     ArqueosIntermedios,
     Ventas,
     LineasDeVenta,
+    ConsumosDeLinea,
     Pagos,
     MovimientosDeStock,
     Pendientes,
@@ -156,7 +157,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 65;
+  int get schemaVersion => 66;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -164,6 +165,8 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
       await _crearIndicesDeConsultasCalientes(this);
       await _crearIndicesUnicosDeSincronizacion(this);
+      // Aparte de `_crearIndicesDeConsultasCalientes`: esa también corre en la migración v23, cuando esta tabla no existía.
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_consumos_de_linea_linea_venta_id ON consumos_de_linea (linea_venta_id)');
       await _seedDatosFijos(this);
       await _alCrear?.call(this);
     },
@@ -1189,6 +1192,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 65) {
         await _sumarServiciosEInsumos(this, m);
       }
+      // v65 → v66 (2026-10-10): cobrar servicios (`docs/PLAN-SERVICIOS.md`, etapa 3; Regla 20). La línea de un servicio queda
+      // marcada (`lineas_de_venta.es_servicio`) y lo que gastó de cada insumo va en `consumos_de_linea`, que viaja por la sync.
+      if (from < 66) {
+        await _sumarConsumosDeServicios(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1249,6 +1257,21 @@ Future<void> _sumarServiciosEInsumos(AppDatabase db, Migrator m) async {
   if (!(await columnasDe('configuracion_negocio_tabla')).contains('valor_hora_centavos')) {
     await m.addColumn(db.configuracionNegocioTabla, db.configuracionNegocioTabla.valorHoraCentavos);
   }
+}
+
+const tablasDeSyncV66 = ['consumos_de_linea'];
+
+/// v65 → v66: la marca de servicio en las líneas y la tabla de consumos, con su índice único de sincronización y el de la
+/// línea (se busca por línea al anular, editar y repartir la reposición). Con chequeo, como v64→v65.
+Future<void> _sumarConsumosDeServicios(AppDatabase db, Migrator m) async {
+  final deLineas = (await db.customSelect("SELECT name FROM pragma_table_info('lineas_de_venta')").get())
+      .map((c) => c.data['name'] as String)
+      .toSet();
+  if (!deLineas.contains('es_servicio')) await m.addColumn(db.lineasDeVenta, db.lineasDeVenta.esServicio);
+  final existe = await db.customSelect("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'consumos_de_linea'").get();
+  if (existe.isEmpty) await m.createTable(db.consumosDeLinea);
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV66);
+  await db.customStatement('CREATE INDEX IF NOT EXISTS idx_consumos_de_linea_linea_venta_id ON consumos_de_linea (linea_venta_id)');
 }
 
 /// Índices sobre las columnas que reciben WHERE/JOIN en la ruta caliente de
@@ -1341,6 +1364,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'medios_de_pago',
   ...tablasDeSyncV61,
   ...tablasDeSyncV64,
+  ...tablasDeSyncV66,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(

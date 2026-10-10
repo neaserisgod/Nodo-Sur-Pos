@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../domain/equilibrio.dart';
 import 'database.dart';
 import 'linea_venta_reconstruccion.dart';
+import 'lineas_de_servicio.dart';
 
 class ResumenDia {
   final SesionCaja sesion;
@@ -203,10 +204,15 @@ Future<DetalleDelDia> detalleDelDia(AppDatabase db, int sesionId) async {
   final reconstruidas = lineasValidas.map((l) => lineaParaReposicionDesde(l, venta: ventaPorId[l.ventaId])).toList();
   final ganancia = calcularGananciaBruta(lineas: reconstruidas);
   final porProv = <String, int>{};
-  for (var i = 0; i < lineasValidas.length; i++) {
-    final id = lineasValidas[i].proveedorIdFoto;
+  // Lo vendido de un servicio va a los proveedores de sus insumos (Regla 20); la ganancia de arriba no cambia con eso.
+  final repartidas = await conServiciosRepartidos(db, [
+    for (final l in lineasValidas)
+      if (ventaPorId[l.ventaId] case final venta?) (l, venta),
+  ]);
+  for (final (linea, venta) in repartidas) {
+    final id = linea.proveedorIdFoto;
     final nombre = id == null ? 'Sin proveedor' : (nombresProveedor[id] ?? 'Sin proveedor');
-    porProv[nombre] = (porProv[nombre] ?? 0) + reconstruidas[i].precioLineaCentavos;
+    porProv[nombre] = (porProv[nombre] ?? 0) + lineaParaReposicionDesde(linea, venta: venta).precioLineaCentavos;
   }
   final porProveedor = [for (final e in porProv.entries) (nombre: e.key, vendidoCentavos: e.value)]
     ..sort((a, b) => b.vendidoCentavos.compareTo(a.vendidoCentavos));

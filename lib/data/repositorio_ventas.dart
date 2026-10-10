@@ -16,6 +16,7 @@ import 'numero_venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
+import 'repositorio_servicios.dart' show exigirInsumosParaCobrar, registrarServicioEnVenta;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
@@ -330,6 +331,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     // Dentro de la transacción, igual que gastos e ingresos: si el cierre llega justo antes, la venta se rechaza en vez de
     // grabarse contra una sesión cerrada (cambiaría los totales de un cierre ya hecho).
     if (exigirSesionAbierta) await verificarSesionAbierta(db, sesionCajaId);
+    // Un servicio al que le falta un insumo no se cobra (Regla 20), mirando lo que pide el carrito entero. La carga histórica
+    // no descuenta insumos, así que no tiene nada que exigir.
+    if (afectaStock) await exigirInsumosParaCobrar(db, venta.lineas);
     if (ventaAbiertaId != null) {
       await (db.delete(db.ventasAbiertas)..where((v) => v.id.equals(ventaAbiertaId))).go();
     }
@@ -466,6 +470,11 @@ Future<List<ActualizacionStock>> registrarLineaOPromo(
   if (linea is LineaVentaPorUnidad && !linea.esVarios) {
     final id = int.tryParse(linea.productoId);
     final producto = id == null ? null : await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingleOrNull();
+    if (producto != null && producto.esServicio) {
+      // Una línea con el nombre del servicio; los insumos se descuentan aparte (Regla 20).
+      await registrarServicioEnVenta(db, ventaId: ventaId, usuarioId: usuarioId, servicio: producto, linea: linea, afectaStock: afectaStock);
+      return const [];
+    }
     if (producto != null && producto.esPromo) {
       return registrarPromoEnVenta(
         db,

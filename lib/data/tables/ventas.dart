@@ -119,6 +119,11 @@ class LineasDeVenta extends Table {
   /// completa sin estarlo.
   IntColumn get costoUnitarioCentavos => integer().nullable()();
 
+  /// Línea de un servicio (v66, Regla 20): lo que gastó de cada insumo está en `consumos_de_linea`, y la reposición, las
+  /// Separaciones y los proveedores la leen repartida por el proveedor de cada insumo (`lineas_de_servicio.dart`). Su
+  /// costo es el de sus insumos (0 si no usa ninguno: un corte no cuesta insumos, no es un costo que falta).
+  BoolColumn get esServicio => boolean().withDefault(const Constant(false))();
+
   /// Identidad de sincronización — ver el comentario de [Ventas.globalId].
   /// Acá "editar la venta" es un delete+reinsert completo de estas filas
   /// (`repositorio_edicion_venta.dart::editarVenta`), así que un
@@ -147,6 +152,30 @@ class Pagos extends Table {
   /// Identidad de sincronización — mismo criterio que
   /// [LineasDeVenta.globalId]: un delete+reinsert al editar la venta ya deja
   /// el `actualizadoEn` del insert como la última vez que se tocó la fila.
+  TextColumn get globalId => text().nullable()();
+  TextColumn get origenDispositivo => text().nullable()();
+  DateTimeColumn get actualizadoEn => dateTime().nullable()();
+}
+
+/// Lo que gastó de cada insumo una línea de servicio cobrada (v66, Regla 20): costo-foto y proveedor del insumo en ese
+/// momento (Regla 4), para que la reposición sepa a quién se le repone qué aunque después cambie el costo o el proveedor.
+/// Es parte de la línea: se escribe con ella al cobrar y se borra con ella al editar la venta (como las líneas, un borrar y
+/// volver a escribir); nunca se edita, así que viaja como un registro (solo inserción).
+@DataClassName('FilaConsumoDeLinea')
+class ConsumosDeLinea extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get lineaVentaId => integer().references(LineasDeVenta, #id)();
+  IntColumn get insumoId => integer().references(Productos, #id)();
+
+  /// Lo que se usó en toda la línea (cantidad × lo de cada servicio, o lo que se ajustó), en milésimas de la unidad del
+  /// insumo.
+  IntColumn get milesimas => integer()();
+
+  /// Su parte del costo de la línea (`consumosDeLinea`, `domain/servicios.dart`): la suma de los consumos de una línea es
+  /// justo su costo.
+  IntColumn get costoCentavos => integer()();
+  IntColumn get proveedorIdFoto => integer().nullable().references(Proveedores, #id)();
+
   TextColumn get globalId => text().nullable()();
   TextColumn get origenDispositivo => text().nullable()();
   DateTimeColumn get actualizadoEn => dateTime().nullable()();

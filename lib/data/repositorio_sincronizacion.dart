@@ -55,6 +55,8 @@ const Map<String, bool> tablasSincronizables = {
   'sesiones_de_caja': true,
   'ventas': true,
   'lineas_de_venta': true,
+  // v66 (Regla 20): lo que gastó cada línea de servicio. Un registro (solo inserción), justo después de su línea.
+  'consumos_de_linea': false,
   'pagos': true,
   'movimientos_de_stock': false,
   'movimientos_de_caja': false,
@@ -82,6 +84,8 @@ const tablasSincronizablesV61 = {
   // Las de la v64: mismo trato con una PC anterior a la v64.
   'gastos_fijos',
   'gastos_fijos_montos',
+  // La de la v66: mismo trato con una PC anterior a la v66.
+  'consumos_de_linea',
 };
 
 bool _tablaValida(String tabla) {
@@ -119,6 +123,11 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
   'lineas_de_venta': {
     'venta_id': 'ventas',
     'producto_id': 'productos',
+    'proveedor_id_foto': 'proveedores',
+  },
+  'consumos_de_linea': {
+    'linea_venta_id': 'lineas_de_venta',
+    'insumo_id': 'productos',
     'proveedor_id_foto': 'proveedores',
   },
   'pagos': {'venta_id': 'ventas'},

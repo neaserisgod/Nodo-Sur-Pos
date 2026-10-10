@@ -12,6 +12,7 @@ import '../domain/equilibrio.dart';
 import '../domain/reposicion.dart';
 import 'database.dart';
 import 'linea_venta_reconstruccion.dart';
+import 'lineas_de_servicio.dart';
 import 'repositorio_equilibrio.dart';
 import 'repositorio_ventas_abiertas.dart';
 
@@ -326,8 +327,10 @@ Future<ResultadoReposicion> reposicionDelDia(AppDatabase db, int sesionId) async
   ])
         ..where(db.ventas.sesionCajaId.equals(sesionId) & db.ventas.anuladaEn.isNull()))
       .get();
+  // Un servicio se repone por el proveedor de cada insumo (Regla 20).
+  final pares = await conServiciosRepartidos(db, [for (final f in filas) (f.readTable(db.lineasDeVenta), f.readTable(db.ventas))]);
 
-  final lineas = filas.map((fila) => lineaParaReposicionDesde(fila.readTable(db.lineasDeVenta), venta: fila.readTable(db.ventas))).toList();
+  final lineas = [for (final (linea, venta) in pares) lineaParaReposicionDesde(linea, venta: venta)];
 
   return calcularReposicion(lineas: lineas);
 }

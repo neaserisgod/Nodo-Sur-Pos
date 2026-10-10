@@ -87,6 +87,10 @@ class LineaVentaPorUnidad extends LineaVenta {
   /// Foto del costo al momento de la venta. Ver [LineaVenta.costoLineaCentavos].
   final int? costoUnitarioCentavos;
 
+  /// Solo en un servicio con "Ajustar insumos al cobrar" (Regla 20): lo que usa CADA servicio de esta línea, por id del
+  /// insumo, en milésimas, en lugar de la receta. Cambia solo esta venta. Null: la receta de siempre.
+  final Map<int, int>? insumosAjustados;
+
   const LineaVentaPorUnidad({
     required this.productoId,
     required this.nombreProducto,
@@ -96,6 +100,7 @@ class LineaVentaPorUnidad extends LineaVenta {
     this.tipoCigarrillo = TipoCigarrillo.ninguno,
     required this.precioUnitarioCentavos,
     this.costoUnitarioCentavos,
+    this.insumosAjustados,
   });
 
   @override

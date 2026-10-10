@@ -12,6 +12,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/modulos.dart';
 import '../domain/servicios.dart';
+import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart';
@@ -461,4 +462,181 @@ ServicioConCosto _conCosto(Producto servicio, Map<String, Producto> insumosPorGi
     alcanzaPara: alcanzaPara(usos),
     seAcabaPrimero: primero == null ? null : receta[primero].insumo,
   );
+}
+
+// ───────────────────────── Cobrar servicios (etapa 3, Regla 20) ─────────────────────────
+
+/// Un servicio no se cobra porque le falta un insumo (módulo "Bloquear si falta un insumo"). Es un `ArgumentError` para que
+/// las pantallas que ya muestran el mensaje de uno (cobrar en el celular) lo muestren igual.
+class InsumoFaltante extends ArgumentError {
+  InsumoFaltante({required this.insumo, required this.servicio, required this.faltanMilesimas})
+      : super(
+          'Falta ${insumo.nombre.toLowerCase()} para "${servicio.nombre}": quedan '
+          '${textoDeMilesimas(insumo.stockMilesimas ?? 0)} ${insumo.unidadInsumo ?? ''}. Cargá la compra primero.',
+        );
+
+  final Producto insumo;
+  final Producto servicio;
+  final int faltanMilesimas;
+}
+
+/// Lo que usa cada servicio de [linea] (por unidad): los ajustes de esa venta si los tiene y el módulo está prendido, si no
+/// la receta. Un insumo que todavía no llegó por la sync se saltea (no hay de dónde descontarlo). Con el módulo de insumos
+/// apagado no se usa nada: el servicio se cobra sin tocar insumos.
+Future<List<(Producto insumo, int milesimas)>> _usoDeLinea(
+  AppDatabase db,
+  Producto servicio,
+  LineaVentaPorUnidad linea,
+  ModulosNegocio modulos,
+) async {
+  if (!modulos.estaActivo(Modulo.insumos)) return const [];
+  final ajustes = modulos.estaActivo(Modulo.ajustarInsumos) ? linea.insumosAjustados : null;
+  if (ajustes != null) {
+    final insumos = ajustes.isEmpty ? const <Producto>[] : await (db.select(db.productos)..where((p) => p.id.isIn(ajustes.keys))).get();
+    return [
+      for (final i in insumos)
+        if (i.esInsumo && (ajustes[i.id] ?? 0) > 0) (i, ajustes[i.id]!),
+    ];
+  }
+  final receta = recetaGuardada(servicio);
+  if (receta.isEmpty) return const [];
+  final porGid = {
+    for (final i in await (db.select(db.productos)..where((p) => p.globalId.isIn([for (final l in receta) l.gid]))).get()) i.globalId!: i,
+  };
+  return [
+    for (final l in receta)
+      if (porGid[l.gid] case final insumo?) (insumo, l.milesimas),
+  ];
+}
+
+Future<Producto?> _servicioDeLinea(AppDatabase db, LineaVenta linea) async {
+  if (linea is! LineaVentaPorUnidad || linea.esVarios) return null;
+  final id = int.tryParse(linea.productoId);
+  if (id == null) return null;
+  final p = await (db.select(db.productos)..where((t) => t.id.equals(id))).getSingleOrNull();
+  return p != null && p.esServicio ? p : null;
+}
+
+/// Si "Bloquear si falta un insumo" está prendido, que alcance lo que pide el carrito ENTERO (dos kappings piden el doble de
+/// top coat). Si no alcanza, [InsumoFaltante]. Apagado, nada: se cobra igual y el stock puede quedar negativo (Regla 20).
+Future<void> exigirInsumosParaCobrar(AppDatabase db, List<LineaVenta> lineas) async {
+  final modulos = await modulosNegocioActuales(db);
+  if (!modulos.estaActivo(Modulo.insumos) || !modulos.estaActivo(Modulo.bloquearInsumos)) return;
+  final necesario = <int, int>{};
+  final insumos = <int, Producto>{};
+  final deQuien = <int, Producto>{};
+  for (final linea in lineas) {
+    final servicio = await _servicioDeLinea(db, linea);
+    if (servicio == null) continue;
+    for (final (insumo, milesimas) in await _usoDeLinea(db, servicio, linea as LineaVentaPorUnidad, modulos)) {
+      necesario.update(insumo.id, (a) => a + milesimas * linea.cantidad, ifAbsent: () => milesimas * linea.cantidad);
+      insumos[insumo.id] = insumo;
+      deQuien.putIfAbsent(insumo.id, () => servicio);
+    }
+  }
+  final falta = primerFaltante(necesario, (id) => insumos[id]!.stockMilesimas ?? 0);
+  if (falta != null) {
+    throw InsumoFaltante(
+      insumo: insumos[falta]!,
+      servicio: deQuien[falta]!,
+      faltanMilesimas: necesario[falta]! - (insumos[falta]!.stockMilesimas ?? 0),
+    );
+  }
+}
+
+/// Graba la línea de un servicio cobrado: UNA línea con el nombre del servicio (la del ticket) y su costo de insumos, lo que
+/// gastó de cada insumo en `consumos_de_linea` (costo-foto y proveedor de cada uno) y, si [afectaStock], el descuento de cada
+/// insumo con su movimiento. Lo llama `registrarLineaOPromo` (`repositorio_ventas.dart`) al cobrar y al editar una venta.
+Future<void> registrarServicioEnVenta(
+  AppDatabase db, {
+  required int ventaId,
+  required int usuarioId,
+  required Producto servicio,
+  required LineaVentaPorUnidad linea,
+  bool afectaStock = true,
+}) async {
+  final usos = await _usoDeLinea(db, servicio, linea, await modulosNegocioActuales(db));
+  final calculo = consumosDeLinea(
+    [for (final (insumo, milesimas) in usos) UsoDeInsumo(insumo: insumoParaCalculo(insumo), cantidadMilesimas: milesimas)],
+    cantidad: linea.cantidad,
+  );
+  final lineaId = await db.into(db.lineasDeVenta).insert(
+        LineasDeVentaCompanion.insert(
+          ventaId: ventaId,
+          productoId: Value(servicio.id),
+          nombreProductoFoto: linea.nombreProducto,
+          esServicio: const Value(true),
+          cantidad: Value(linea.cantidad),
+          precioUnitarioCentavos: linea.precioUnitarioCentavos,
+          // El costo de hoy de sus insumos (no el que traía el carrito): es el que se descuenta ahora.
+          costoUnitarioCentavos: Value(calculo.costoUnitarioCentavos),
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+  for (var k = 0; k < usos.length; k++) {
+    final insumo = usos[k].$1;
+    final consumo = calculo.consumos[k];
+    await db.into(db.consumosDeLinea).insert(
+          ConsumosDeLineaCompanion.insert(
+            lineaVentaId: lineaId,
+            insumoId: insumo.id,
+            milesimas: consumo.milesimas,
+            costoCentavos: consumo.costoCentavos,
+            proveedorIdFoto: Value(insumo.proveedorId),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+            actualizadoEn: Value(DateTime.now()),
+          ),
+        );
+    if (!afectaStock) continue;
+    // Se relee: el mismo insumo puede haberse descontado recién por otra línea de esta venta.
+    final anterior = (await _producto(db, insumo.id)).stockMilesimas ?? 0;
+    final posterior = anterior - consumo.milesimas;
+    await (db.update(db.productos)..where((p) => p.id.equals(insumo.id))).write(ProductosCompanion(stockMilesimas: Value(posterior)));
+    await db.into(db.movimientosDeStock).insert(
+          MovimientosDeStockCompanion.insert(
+            productoId: insumo.id,
+            usuarioId: usuarioId,
+            tipo: 'VENTA',
+            ventaId: Value(ventaId),
+            milesimas: Value(consumo.milesimas),
+            milesimasAnterior: Value(anterior),
+            milesimasPosterior: Value(posterior),
+            motivo: Value(servicio.nombre),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+          ),
+        );
+  }
+}
+
+/// Devuelve al stock lo que gastó una línea de servicio (al anular o editar la venta, Regla 9), con su movimiento.
+Future<void> devolverInsumosDeLinea(
+  AppDatabase db, {
+  required FilaLineaVenta linea,
+  required int usuarioId,
+  required String motivo,
+}) async {
+  final consumos = await (db.select(db.consumosDeLinea)..where((c) => c.lineaVentaId.equals(linea.id))).get();
+  for (final c in consumos) {
+    final anterior = (await _producto(db, c.insumoId)).stockMilesimas ?? 0;
+    final posterior = anterior + c.milesimas;
+    await (db.update(db.productos)..where((p) => p.id.equals(c.insumoId))).write(ProductosCompanion(stockMilesimas: Value(posterior)));
+    await db.into(db.movimientosDeStock).insert(
+          MovimientosDeStockCompanion.insert(
+            productoId: c.insumoId,
+            usuarioId: usuarioId,
+            tipo: 'AJUSTE',
+            ventaId: Value(linea.ventaId),
+            milesimas: Value(c.milesimas),
+            milesimasAnterior: Value(anterior),
+            milesimasPosterior: Value(posterior),
+            motivo: Value(motivo),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+          ),
+        );
+  }
 }

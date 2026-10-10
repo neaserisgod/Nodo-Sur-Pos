@@ -57,8 +57,16 @@ enum Modulo {
   /// etapa 2). Solo servicios.
   insumos('insumos'),
 
-  /// Sumar la mano de obra (lo que vale la hora de trabajo) al costo de un servicio. Solo servicios.
-  manoDeObra('mano_de_obra');
+  /// Sumar la mano de obra (lo que vale la hora de trabajo) al calcular el precio de un servicio. Es una referencia: no es
+  /// costo de la venta (Regla 20). Solo servicios.
+  manoDeObra('mano_de_obra'),
+
+  /// Un servicio al que le falta un insumo no se cobra (Regla 20, como "sin stock no se vende"). Apagado, solo avisa. Solo
+  /// servicios; nace prendido, como pidió el dueño.
+  bloquearInsumos('bloquear_insumos'),
+
+  /// Corregir al cobrar lo que se usó de cada insumo, solo en esa venta (Regla 20). Solo servicios.
+  ajustarInsumos('ajustar_insumos');
 
   const Modulo(this.clave);
 
@@ -75,7 +83,9 @@ enum Modulo {
     compararPrecios => 'Comparador de precios',
     cobroPoint => 'Cobro con Mercado Pago Point',
     insumos => 'Insumos',
-    manoDeObra => 'Mano de obra en el costo',
+    manoDeObra => 'Mano de obra en el precio',
+    bloquearInsumos => 'Bloquear si falta un insumo',
+    ajustarInsumos => 'Ajustar insumos al cobrar',
   };
 
   String get descripcion => switch (this) {
@@ -90,7 +100,9 @@ enum Modulo {
     compararPrecios => 'Comparar tus precios con supermercados de Bariloche (SEPA) y una tienda online de la zona.',
     cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
     insumos => 'Lo que usa cada servicio, su costo y para cuántos alcanza.',
-    manoDeObra => 'Sumar lo que vale la hora de trabajo al costo de cada servicio.',
+    manoDeObra => 'Sumar lo que vale la hora de trabajo al calcular el precio de cada servicio.',
+    bloquearInsumos => 'Un servicio al que le falta un insumo no se cobra. Apagado, solo avisa.',
+    ajustarInsumos => 'Quien atiende corrige lo que usó en esa venta, sin cambiar la receta.',
   };
 
   /// Identificador estable que se guarda en la base.
@@ -103,7 +115,7 @@ enum Modulo {
   Set<FormaDeTrabajo> get formas => switch (this) {
     cajaAparte || pesables || promos || compararPrecios => const {FormaDeTrabajo.productos},
     fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint => const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios},
-    insumos || manoDeObra => const {FormaDeTrabajo.servicios},
+    insumos || manoDeObra || bloquearInsumos || ajustarInsumos => const {FormaDeTrabajo.servicios},
   };
 
   bool valePara(FormaDeTrabajo forma) => formas.contains(forma);

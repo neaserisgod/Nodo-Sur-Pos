@@ -15,6 +15,11 @@ import 'package:la_plazoleta/data/repositorio_gastos.dart';
 import 'package:la_plazoleta/data/repositorio_ingresos.dart';
 import 'package:la_plazoleta/data/repositorio_reposicion.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/data/repositorio_servicios.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
+import 'package:la_plazoleta/domain/servicios.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/recargo_cigarrillos.dart';
 import 'package:la_plazoleta/domain/venta.dart';
@@ -41,6 +46,23 @@ void main() {
       for (var i = 0; i < 4; i++) {
         final id = await db.into(db.productos).insert(ProductosCompanion.insert(
             nombre: 'P$i', precioCentavos: Value(((r.nextInt(40) + 1) * 10000) + r.nextInt(10) * 1000), stock: const Value(1000)));
+        productos.add(await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle());
+      }
+      // La mitad de las semillas es un negocio de uñas (Regla 20) que además cobra un servicio con dos insumos: su venta,
+      // anulación y edición tienen que dejar la caja igual de bien, y el stock de cada insumo tiene que ser el de partida
+      // menos lo que gastaron las líneas que siguen vivas.
+      final conServicios = semilla.isEven;
+      int? topCoat;
+      if (conServicios) {
+        await configurarRubro(db, PlantillaRubro.unas);
+        // Al azar se pide más top coat del que hay: con el bloqueo apagado se cobra igual (el stock puede quedar negativo).
+        await configurarModulo(db, Modulo.bloquearInsumos, activo: false);
+        topCoat = await crearInsumo(db, nombre: 'Top coat', unidad: UnidadInsumo.ml, contenidoEnvaseMilesimas: 15000,
+            costoEnvaseCentavos: 1100000, stockMilesimas: 50000, proveedorId: proveedores[0].id, usuarioId: usuario);
+        final guantes = await crearInsumo(db, nombre: 'Guantes', unidad: UnidadInsumo.u, contenidoEnvaseMilesimas: 100000,
+            costoEnvaseCentavos: 1400000, stockMilesimas: 100000, proveedorId: proveedores[1].id, usuarioId: usuario);
+        final id = await guardarServicio(db, nombre: 'Kapping', precioCentavos: 2000000 + r.nextInt(10) * 1000, duracionMinutos: 60,
+            receta: [(insumoId: topCoat, milesimas: 400), (insumoId: guantes, milesimas: 2000)], usuarioId: usuario);
         productos.add(await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle());
       }
       // Un proveedor que se paga en efectivo y otro por Mercado Pago.
@@ -126,6 +148,15 @@ void main() {
         final vivo = await estadoCajaEnVivo(db, sesion);
         expect(vivo.efectivoEsperadoCentavos, libro.cajon, reason: 'efectivo esperado, paso $paso (op $op)');
         expect(vivo.mpEsperadoCentavos, libro.mp, reason: 'MP esperado, paso $paso (op $op)');
+        if (topCoat != null) {
+          final vivas = await (db.select(db.consumosDeLinea).join([
+            innerJoin(db.lineasDeVenta, db.lineasDeVenta.id.equalsExp(db.consumosDeLinea.lineaVentaId)),
+            innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
+          ])..where(db.consumosDeLinea.insumoId.equals(topCoat) & db.ventas.anuladaEn.isNull())).get();
+          final gastado = vivas.fold<int>(0, (a, f) => a + f.readTable(db.consumosDeLinea).milesimas);
+          final hay = (await (db.select(db.productos)..where((p) => p.id.equals(topCoat!))).getSingle()).stockMilesimas;
+          expect(hay, 50000 - gastado, reason: 'top coat: lo de partida menos lo que gastaron las ventas vivas (paso $paso)');
+        }
         final resumen = await calcularResumenCierre(db, sesionId: sesion, efectivoContadoCentavos: libro.cajon);
         expect(resumen.efectivoEsperadoCentavos, libro.cajon, reason: 'cierre: efectivo, paso $paso');
         expect(resumen.diferenciaCentavos, 0, reason: 'contando exactamente lo que hay, la diferencia es 0 (paso $paso)');

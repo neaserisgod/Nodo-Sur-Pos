@@ -23,8 +23,9 @@ LineaParaReposicion lineaParaReposicionDesde(FilaLineaVenta linea, {FilaVenta? v
   // Un costo $0 guardado es un costo sin cargar, no mercadería gratis (Regla
   // 4): tomarlo como costo inventaría una ganancia del 100% en Equilibrio,
   // Proveedores y la reposición. Mismo criterio que el backfill de v37.
+  // Un servicio sin insumos (un corte) sí cuesta $0 de verdad (Regla 20): no es un costo que falta.
   final guardado = linea.costoUnitarioCentavos;
-  final costoUnitario = (guardado == null || guardado <= 0) ? null : guardado;
+  final costoUnitario = (guardado == null || (guardado <= 0 && !linea.esServicio)) ? null : guardado;
   final costoLineaCentavos = costoUnitario == null
       ? null
       : linea.esPesable

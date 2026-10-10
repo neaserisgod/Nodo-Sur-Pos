@@ -27,6 +27,7 @@ import '../domain/separacion_por_medio.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'linea_venta_reconstruccion.dart';
+import 'lineas_de_servicio.dart';
 import 'repositorio_cierre.dart';
 import 'repositorio_productos.dart' show sinServiciosNiInsumos;
 
@@ -123,18 +124,23 @@ _lineasPorProveedorDesde(AppDatabase db, List<int> proveedorIds, {DateTime? desd
   // Sin ventas anuladas (El dueño, 2026-09-26): una venta revertida no generó
   // nada que reponer, ni vendido, ni ganancia.
   ])..where(
-    db.lineasDeVenta.proveedorIdFoto.isIn(proveedorIds) &
+    // Las líneas de servicio no tienen proveedor: se traen todas y se reparten por el de cada insumo (Regla 20).
+    (db.lineasDeVenta.proveedorIdFoto.isIn(proveedorIds) | db.lineasDeVenta.esServicio.equals(true)) &
         db.ventas.anuladaEn.isNull() &
         // [desde] = el corte más viejo que va a mirar quien llama (null = desde siempre). Filtrar acá, en la base, evita traer
         // años de ventas a memoria para después descartarlas: con el historial acumulado esto era lo que más tardaba.
         (desde == null ? const Constant(true) : db.ventas.fecha.isBiggerThanValue(desde)),
   );
-  final filas = await query.get();
+  final filas = await conServiciosRepartidos(db, [
+    for (final fila in await query.get()) (fila.readTable(db.lineasDeVenta), fila.readTable(db.ventas)),
+  ]);
 
+  final pedidos = proveedorIds.toSet();
   final resultado = <int, List<(FilaLineaVenta, FilaVenta)>>{};
-  for (final fila in filas) {
-    final linea = fila.readTable(db.lineasDeVenta);
-    resultado.putIfAbsent(linea.proveedorIdFoto!, () => []).add((linea, fila.readTable(db.ventas)));
+  for (final (linea, venta) in filas) {
+    final proveedor = linea.proveedorIdFoto;
+    if (proveedor == null || !pedidos.contains(proveedor)) continue;
+    resultado.putIfAbsent(proveedor, () => []).add((linea, venta));
   }
   return resultado;
 }
@@ -192,8 +198,11 @@ Future<Map<int, ParteMpDeLinea>> _parteMpDeLineasDesde(AppDatabase db, DateTime?
   final lineasQuery = db.select(db.lineasDeVenta).join([
     innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
   ])..where(db.ventas.sesionCajaId.isIn(sesionIds) & db.ventas.anuladaEn.isNull());
-  for (final fila in await lineasQuery.get()) {
-    final l = fila.readTable(db.lineasDeVenta);
+  // Con los servicios repartidos igual que en [_lineasPorProveedorDesde]: la parte MP se busca por el id de cada parte.
+  final lineas = await conServiciosRepartidos(db, [
+    for (final fila in await lineasQuery.get()) (fila.readTable(db.lineasDeVenta), fila.readTable(db.ventas)),
+  ]);
+  for (final (l, _) in lineas) {
     lineasPorVenta.putIfAbsent(l.ventaId, () => []).add(l);
   }
   final mp = await (db.select(db.mediosDePago)..where((m) => m.esEfectivo.equals(false))).getSingle();
@@ -447,18 +456,20 @@ Future<List<VendidoSinCosto>> vendidoSinCostoDesde(AppDatabase db, DateTime desd
     leftOuterJoin(db.proveedores, db.proveedores.id.equalsExp(db.lineasDeVenta.proveedorIdFoto)),
   ])
         ..where(
-          db.lineasDeVenta.costoUnitarioCentavos.isNull() &
+          // Un servicio puede usar un insumo sin costo cargado: esa parte también es "sin costo" (Regla 20).
+          (db.lineasDeVenta.costoUnitarioCentavos.isNull() | db.lineasDeVenta.esServicio.equals(true)) &
               db.lineasDeVenta.tipoCigarrillo.equals('ninguno') &
               db.ventas.anuladaEn.isNull() &
               db.ventas.fecha.isBiggerOrEqualValue(desde),
         ))
       .get();
+  final nombresProveedor = {for (final p in await db.select(db.proveedores).get()) p.id: p.nombre};
+  final pares = await conServiciosRepartidos(db, [for (final f in filas) (f.readTable(db.lineasDeVenta), f.readTable(db.ventas))]);
 
   final grupos = <(int?, bool, String, String?), ({int cantidad, int gramos, int vendido})>{};
-  for (final f in filas) {
-    final linea = f.readTable(db.lineasDeVenta);
-    final ventaFila = f.readTable(db.ventas);
-    final clave = (linea.productoId, linea.esPesable, linea.nombreProductoFoto, f.readTableOrNull(db.proveedores)?.nombre);
+  for (final (linea, ventaFila) in pares) {
+    if (lineaParaReposicionDesde(linea).costoLineaCentavos != null) continue;
+    final clave = (linea.productoId, linea.esPesable, linea.nombreProductoFoto, nombresProveedor[linea.proveedorIdFoto]);
     final previo = grupos[clave] ?? (cantidad: 0, gramos: 0, vendido: 0);
     grupos[clave] = (
       cantidad: previo.cantidad + (linea.esPesable ? 0 : (linea.cantidad ?? 1)),
@@ -491,7 +502,10 @@ Future<List<(FilaLineaVenta, FilaVenta)>> _lineasSinProveedorDesde(AppDatabase d
               db.ventas.fecha.isBiggerThanValue(desde),
         ))
       .get();
-  return [for (final f in filas) (f.readTable(db.lineasDeVenta), f.readTable(db.ventas))];
+  // Una línea de servicio no tiene proveedor propio: sus partes van a los proveedores de sus insumos, y acá quedan solo las
+  // de insumos sin proveedor (o el servicio entero, si no usa insumos).
+  final pares = await conServiciosRepartidos(db, [for (final f in filas) (f.readTable(db.lineasDeVenta), f.readTable(db.ventas))]);
+  return [for (final par in pares) if (par.$1.proveedorIdFoto == null) par];
 }
 
 /// La plata que hay AHORA para separar, de la caja abierta: el efectivo que
@@ -950,19 +964,21 @@ Future<({int efectivoCentavos, int virtualCentavos})> gananciaPorMedioDesde(
       db.select(db.lineasDeVenta).join([
         innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
       ])..where(
-        db.lineasDeVenta.proveedorIdFoto.equals(proveedor.id) &
+        (db.lineasDeVenta.proveedorIdFoto.equals(proveedor.id) | db.lineasDeVenta.esServicio.equals(true)) &
             db.ventas.anuladaEn.isNull() &
             (corte == null
                 ? const Constant(true)
                 : db.ventas.fecha.isBiggerThanValue(corte)),
       );
-  final filas = await query.get();
+  final filas = await conServiciosRepartidos(db, [
+    for (final fila in await query.get()) (fila.readTable(db.lineasDeVenta), fila.readTable(db.ventas)),
+  ]);
 
   final lineasPorVenta = <int, List<FilaLineaVenta>>{};
   final ventaPorId = <int, FilaVenta>{};
-  for (final fila in filas) {
-    final linea = fila.readTable(db.lineasDeVenta);
-    ventaPorId[linea.ventaId] = fila.readTable(db.ventas);
+  for (final (linea, venta) in filas) {
+    if (linea.proveedorIdFoto != proveedor.id) continue;
+    ventaPorId[linea.ventaId] = venta;
     lineasPorVenta.update(
       linea.ventaId,
       (l) => l..add(linea),

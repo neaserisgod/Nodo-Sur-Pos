@@ -10,6 +10,7 @@ FilaLineaVenta _linea({int? costo, bool pesable = false}) => FilaLineaVenta(
       esVarios: false,
       tipoCigarrillo: 'ninguno',
       esPesable: pesable,
+      esServicio: false,
       cantidad: pesable ? null : 2,
       gramos: pesable ? 250 : null,
       precioUnitarioCentavos: 750000,

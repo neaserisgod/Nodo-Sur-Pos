@@ -75,6 +75,8 @@ void main() {
           'cobro_point',
           'insumos',
           'mano_de_obra',
+          'bloquear_insumos',
+          'ajustar_insumos',
         },
       );
     });
@@ -119,6 +121,8 @@ void main() {
       final barberia = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios);
       expect(barberia.estaActivo(Modulo.insumos), isTrue);
       expect(barberia.estaActivo(Modulo.manoDeObra), isTrue);
+      expect(barberia.estaActivo(Modulo.bloquearInsumos), isTrue, reason: 'nace prendido (Regla 20)');
+      expect(almacen.estaActivo(Modulo.bloquearInsumos), isFalse);
     });
 
     test('en un negocio de servicios, lo que es de un comercio con stock no se ve ni cuenta aunque no esté apagado', () {

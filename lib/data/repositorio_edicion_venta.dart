@@ -23,6 +23,7 @@ import '../domain/sena.dart' show canalSena;
 import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
+import 'repositorio_servicios.dart' show devolverInsumosDeLinea;
 import 'repositorio_ventas.dart';
 
 const _motivoReversion = 'Reversión por edición de venta';
@@ -75,6 +76,8 @@ Future<void> _revertirLinea(
   required String motivo,
 }) async {
   if (linea.esVarios || linea.productoId == null) return;
+  // Un servicio no tiene stock propio: se devuelven los insumos que gastó (Regla 20).
+  if (linea.esServicio) return devolverInsumosDeLinea(db, linea: linea, usuarioId: usuarioId, motivo: motivo);
   final productoId = linea.productoId!;
   final producto = await (db.select(db.productos)..where((p) => p.id.equals(productoId))).getSingle();
 
@@ -186,6 +189,8 @@ Future<void> editarVenta(
           );
     }
 
+    // Lo que gastaron las líneas de servicio es parte de ellas: se va con ellas (ya se devolvió al stock arriba).
+    await (db.delete(db.consumosDeLinea)..where((c) => c.lineaVentaId.isIn([for (final l in lineasViejas) l.id]))).go();
     await (db.delete(db.lineasDeVenta)..where((l) => l.ventaId.equals(ventaId))).go();
     await (db.delete(db.pagos)..where((p) => p.ventaId.equals(ventaId))).go();
 

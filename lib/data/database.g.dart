@@ -12030,6 +12030,21 @@ class $LineasDeVentaTable extends LineasDeVenta
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _esServicioMeta = const VerificationMeta(
+    'esServicio',
+  );
+  @override
+  late final GeneratedColumn<bool> esServicio = GeneratedColumn<bool>(
+    'es_servicio',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("es_servicio" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -12079,6 +12094,7 @@ class $LineasDeVentaTable extends LineasDeVenta
     gramos,
     precioUnitarioCentavos,
     costoUnitarioCentavos,
+    esServicio,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -12185,6 +12201,12 @@ class $LineasDeVentaTable extends LineasDeVenta
         ),
       );
     }
+    if (data.containsKey('es_servicio')) {
+      context.handle(
+        _esServicioMeta,
+        esServicio.isAcceptableOrUnknown(data['es_servicio']!, _esServicioMeta),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -12266,6 +12288,10 @@ class $LineasDeVentaTable extends LineasDeVenta
         DriftSqlType.int,
         data['${effectivePrefix}costo_unitario_centavos'],
       ),
+      esServicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}es_servicio'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -12319,6 +12345,11 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
   /// completa sin estarlo.
   final int? costoUnitarioCentavos;
 
+  /// Línea de un servicio (v66, Regla 20): lo que gastó de cada insumo está en `consumos_de_linea`, y la reposición, las
+  /// Separaciones y los proveedores la leen repartida por el proveedor de cada insumo (`lineas_de_servicio.dart`). Su
+  /// costo es el de sus insumos (0 si no usa ninguno: un corte no cuesta insumos, no es un costo que falta).
+  final bool esServicio;
+
   /// Identidad de sincronización — ver el comentario de [Ventas.globalId].
   /// Acá "editar la venta" es un delete+reinsert completo de estas filas
   /// (`repositorio_edicion_venta.dart::editarVenta`), así que un
@@ -12340,6 +12371,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
     this.gramos,
     required this.precioUnitarioCentavos,
     this.costoUnitarioCentavos,
+    required this.esServicio,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -12369,6 +12401,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
     if (!nullToAbsent || costoUnitarioCentavos != null) {
       map['costo_unitario_centavos'] = Variable<int>(costoUnitarioCentavos);
     }
+    map['es_servicio'] = Variable<bool>(esServicio);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -12405,6 +12438,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
       costoUnitarioCentavos: costoUnitarioCentavos == null && nullToAbsent
           ? const Value.absent()
           : Value(costoUnitarioCentavos),
+      esServicio: Value(esServicio),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -12441,6 +12475,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
       costoUnitarioCentavos: serializer.fromJson<int?>(
         json['costoUnitarioCentavos'],
       ),
+      esServicio: serializer.fromJson<bool>(json['esServicio']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -12464,6 +12499,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
       'gramos': serializer.toJson<int?>(gramos),
       'precioUnitarioCentavos': serializer.toJson<int>(precioUnitarioCentavos),
       'costoUnitarioCentavos': serializer.toJson<int?>(costoUnitarioCentavos),
+      'esServicio': serializer.toJson<bool>(esServicio),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -12483,6 +12519,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
     Value<int?> gramos = const Value.absent(),
     int? precioUnitarioCentavos,
     Value<int?> costoUnitarioCentavos = const Value.absent(),
+    bool? esServicio,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -12504,6 +12541,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
     costoUnitarioCentavos: costoUnitarioCentavos.present
         ? costoUnitarioCentavos.value
         : this.costoUnitarioCentavos,
+    esServicio: esServicio ?? this.esServicio,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -12538,6 +12576,9 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
       costoUnitarioCentavos: data.costoUnitarioCentavos.present
           ? data.costoUnitarioCentavos.value
           : this.costoUnitarioCentavos,
+      esServicio: data.esServicio.present
+          ? data.esServicio.value
+          : this.esServicio,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -12563,6 +12604,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
           ..write('gramos: $gramos, ')
           ..write('precioUnitarioCentavos: $precioUnitarioCentavos, ')
           ..write('costoUnitarioCentavos: $costoUnitarioCentavos, ')
+          ..write('esServicio: $esServicio, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -12584,6 +12626,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
     gramos,
     precioUnitarioCentavos,
     costoUnitarioCentavos,
+    esServicio,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -12604,6 +12647,7 @@ class FilaLineaVenta extends DataClass implements Insertable<FilaLineaVenta> {
           other.gramos == this.gramos &&
           other.precioUnitarioCentavos == this.precioUnitarioCentavos &&
           other.costoUnitarioCentavos == this.costoUnitarioCentavos &&
+          other.esServicio == this.esServicio &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -12622,6 +12666,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
   final Value<int?> gramos;
   final Value<int> precioUnitarioCentavos;
   final Value<int?> costoUnitarioCentavos;
+  final Value<bool> esServicio;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -12638,6 +12683,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
     this.gramos = const Value.absent(),
     this.precioUnitarioCentavos = const Value.absent(),
     this.costoUnitarioCentavos = const Value.absent(),
+    this.esServicio = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -12655,6 +12701,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
     this.gramos = const Value.absent(),
     required int precioUnitarioCentavos,
     this.costoUnitarioCentavos = const Value.absent(),
+    this.esServicio = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -12674,6 +12721,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
     Expression<int>? gramos,
     Expression<int>? precioUnitarioCentavos,
     Expression<int>? costoUnitarioCentavos,
+    Expression<bool>? esServicio,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -12694,6 +12742,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
         'precio_unitario_centavos': precioUnitarioCentavos,
       if (costoUnitarioCentavos != null)
         'costo_unitario_centavos': costoUnitarioCentavos,
+      if (esServicio != null) 'es_servicio': esServicio,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -12713,6 +12762,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
     Value<int?>? gramos,
     Value<int>? precioUnitarioCentavos,
     Value<int?>? costoUnitarioCentavos,
+    Value<bool>? esServicio,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -12732,6 +12782,7 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
           precioUnitarioCentavos ?? this.precioUnitarioCentavos,
       costoUnitarioCentavos:
           costoUnitarioCentavos ?? this.costoUnitarioCentavos,
+      esServicio: esServicio ?? this.esServicio,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -12781,6 +12832,9 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
         costoUnitarioCentavos.value,
       );
     }
+    if (esServicio.present) {
+      map['es_servicio'] = Variable<bool>(esServicio.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -12808,6 +12862,612 @@ class LineasDeVentaCompanion extends UpdateCompanion<FilaLineaVenta> {
           ..write('gramos: $gramos, ')
           ..write('precioUnitarioCentavos: $precioUnitarioCentavos, ')
           ..write('costoUnitarioCentavos: $costoUnitarioCentavos, ')
+          ..write('esServicio: $esServicio, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConsumosDeLineaTable extends ConsumosDeLinea
+    with TableInfo<$ConsumosDeLineaTable, FilaConsumoDeLinea> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConsumosDeLineaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _lineaVentaIdMeta = const VerificationMeta(
+    'lineaVentaId',
+  );
+  @override
+  late final GeneratedColumn<int> lineaVentaId = GeneratedColumn<int>(
+    'linea_venta_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES lineas_de_venta (id)',
+    ),
+  );
+  static const VerificationMeta _insumoIdMeta = const VerificationMeta(
+    'insumoId',
+  );
+  @override
+  late final GeneratedColumn<int> insumoId = GeneratedColumn<int>(
+    'insumo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES productos (id)',
+    ),
+  );
+  static const VerificationMeta _milesimasMeta = const VerificationMeta(
+    'milesimas',
+  );
+  @override
+  late final GeneratedColumn<int> milesimas = GeneratedColumn<int>(
+    'milesimas',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _costoCentavosMeta = const VerificationMeta(
+    'costoCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> costoCentavos = GeneratedColumn<int>(
+    'costo_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proveedorIdFotoMeta = const VerificationMeta(
+    'proveedorIdFoto',
+  );
+  @override
+  late final GeneratedColumn<int> proveedorIdFoto = GeneratedColumn<int>(
+    'proveedor_id_foto',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES proveedores (id)',
+    ),
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    lineaVentaId,
+    insumoId,
+    milesimas,
+    costoCentavos,
+    proveedorIdFoto,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'consumos_de_linea';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FilaConsumoDeLinea> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('linea_venta_id')) {
+      context.handle(
+        _lineaVentaIdMeta,
+        lineaVentaId.isAcceptableOrUnknown(
+          data['linea_venta_id']!,
+          _lineaVentaIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lineaVentaIdMeta);
+    }
+    if (data.containsKey('insumo_id')) {
+      context.handle(
+        _insumoIdMeta,
+        insumoId.isAcceptableOrUnknown(data['insumo_id']!, _insumoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_insumoIdMeta);
+    }
+    if (data.containsKey('milesimas')) {
+      context.handle(
+        _milesimasMeta,
+        milesimas.isAcceptableOrUnknown(data['milesimas']!, _milesimasMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_milesimasMeta);
+    }
+    if (data.containsKey('costo_centavos')) {
+      context.handle(
+        _costoCentavosMeta,
+        costoCentavos.isAcceptableOrUnknown(
+          data['costo_centavos']!,
+          _costoCentavosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_costoCentavosMeta);
+    }
+    if (data.containsKey('proveedor_id_foto')) {
+      context.handle(
+        _proveedorIdFotoMeta,
+        proveedorIdFoto.isAcceptableOrUnknown(
+          data['proveedor_id_foto']!,
+          _proveedorIdFotoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FilaConsumoDeLinea map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FilaConsumoDeLinea(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      lineaVentaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}linea_venta_id'],
+      )!,
+      insumoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}insumo_id'],
+      )!,
+      milesimas: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}milesimas'],
+      )!,
+      costoCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}costo_centavos'],
+      )!,
+      proveedorIdFoto: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}proveedor_id_foto'],
+      ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
+    );
+  }
+
+  @override
+  $ConsumosDeLineaTable createAlias(String alias) {
+    return $ConsumosDeLineaTable(attachedDatabase, alias);
+  }
+}
+
+class FilaConsumoDeLinea extends DataClass
+    implements Insertable<FilaConsumoDeLinea> {
+  final int id;
+  final int lineaVentaId;
+  final int insumoId;
+
+  /// Lo que se usó en toda la línea (cantidad × lo de cada servicio, o lo que se ajustó), en milésimas de la unidad del
+  /// insumo.
+  final int milesimas;
+
+  /// Su parte del costo de la línea (`consumosDeLinea`, `domain/servicios.dart`): la suma de los consumos de una línea es
+  /// justo su costo.
+  final int costoCentavos;
+  final int? proveedorIdFoto;
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
+  const FilaConsumoDeLinea({
+    required this.id,
+    required this.lineaVentaId,
+    required this.insumoId,
+    required this.milesimas,
+    required this.costoCentavos,
+    this.proveedorIdFoto,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['linea_venta_id'] = Variable<int>(lineaVentaId);
+    map['insumo_id'] = Variable<int>(insumoId);
+    map['milesimas'] = Variable<int>(milesimas);
+    map['costo_centavos'] = Variable<int>(costoCentavos);
+    if (!nullToAbsent || proveedorIdFoto != null) {
+      map['proveedor_id_foto'] = Variable<int>(proveedorIdFoto);
+    }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
+    return map;
+  }
+
+  ConsumosDeLineaCompanion toCompanion(bool nullToAbsent) {
+    return ConsumosDeLineaCompanion(
+      id: Value(id),
+      lineaVentaId: Value(lineaVentaId),
+      insumoId: Value(insumoId),
+      milesimas: Value(milesimas),
+      costoCentavos: Value(costoCentavos),
+      proveedorIdFoto: proveedorIdFoto == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proveedorIdFoto),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
+    );
+  }
+
+  factory FilaConsumoDeLinea.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FilaConsumoDeLinea(
+      id: serializer.fromJson<int>(json['id']),
+      lineaVentaId: serializer.fromJson<int>(json['lineaVentaId']),
+      insumoId: serializer.fromJson<int>(json['insumoId']),
+      milesimas: serializer.fromJson<int>(json['milesimas']),
+      costoCentavos: serializer.fromJson<int>(json['costoCentavos']),
+      proveedorIdFoto: serializer.fromJson<int?>(json['proveedorIdFoto']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'lineaVentaId': serializer.toJson<int>(lineaVentaId),
+      'insumoId': serializer.toJson<int>(insumoId),
+      'milesimas': serializer.toJson<int>(milesimas),
+      'costoCentavos': serializer.toJson<int>(costoCentavos),
+      'proveedorIdFoto': serializer.toJson<int?>(proveedorIdFoto),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
+    };
+  }
+
+  FilaConsumoDeLinea copyWith({
+    int? id,
+    int? lineaVentaId,
+    int? insumoId,
+    int? milesimas,
+    int? costoCentavos,
+    Value<int?> proveedorIdFoto = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
+  }) => FilaConsumoDeLinea(
+    id: id ?? this.id,
+    lineaVentaId: lineaVentaId ?? this.lineaVentaId,
+    insumoId: insumoId ?? this.insumoId,
+    milesimas: milesimas ?? this.milesimas,
+    costoCentavos: costoCentavos ?? this.costoCentavos,
+    proveedorIdFoto: proveedorIdFoto.present
+        ? proveedorIdFoto.value
+        : this.proveedorIdFoto,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
+  );
+  FilaConsumoDeLinea copyWithCompanion(ConsumosDeLineaCompanion data) {
+    return FilaConsumoDeLinea(
+      id: data.id.present ? data.id.value : this.id,
+      lineaVentaId: data.lineaVentaId.present
+          ? data.lineaVentaId.value
+          : this.lineaVentaId,
+      insumoId: data.insumoId.present ? data.insumoId.value : this.insumoId,
+      milesimas: data.milesimas.present ? data.milesimas.value : this.milesimas,
+      costoCentavos: data.costoCentavos.present
+          ? data.costoCentavos.value
+          : this.costoCentavos,
+      proveedorIdFoto: data.proveedorIdFoto.present
+          ? data.proveedorIdFoto.value
+          : this.proveedorIdFoto,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FilaConsumoDeLinea(')
+          ..write('id: $id, ')
+          ..write('lineaVentaId: $lineaVentaId, ')
+          ..write('insumoId: $insumoId, ')
+          ..write('milesimas: $milesimas, ')
+          ..write('costoCentavos: $costoCentavos, ')
+          ..write('proveedorIdFoto: $proveedorIdFoto, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    lineaVentaId,
+    insumoId,
+    milesimas,
+    costoCentavos,
+    proveedorIdFoto,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FilaConsumoDeLinea &&
+          other.id == this.id &&
+          other.lineaVentaId == this.lineaVentaId &&
+          other.insumoId == this.insumoId &&
+          other.milesimas == this.milesimas &&
+          other.costoCentavos == this.costoCentavos &&
+          other.proveedorIdFoto == this.proveedorIdFoto &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
+}
+
+class ConsumosDeLineaCompanion extends UpdateCompanion<FilaConsumoDeLinea> {
+  final Value<int> id;
+  final Value<int> lineaVentaId;
+  final Value<int> insumoId;
+  final Value<int> milesimas;
+  final Value<int> costoCentavos;
+  final Value<int?> proveedorIdFoto;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
+  const ConsumosDeLineaCompanion({
+    this.id = const Value.absent(),
+    this.lineaVentaId = const Value.absent(),
+    this.insumoId = const Value.absent(),
+    this.milesimas = const Value.absent(),
+    this.costoCentavos = const Value.absent(),
+    this.proveedorIdFoto = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  });
+  ConsumosDeLineaCompanion.insert({
+    this.id = const Value.absent(),
+    required int lineaVentaId,
+    required int insumoId,
+    required int milesimas,
+    required int costoCentavos,
+    this.proveedorIdFoto = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  }) : lineaVentaId = Value(lineaVentaId),
+       insumoId = Value(insumoId),
+       milesimas = Value(milesimas),
+       costoCentavos = Value(costoCentavos);
+  static Insertable<FilaConsumoDeLinea> custom({
+    Expression<int>? id,
+    Expression<int>? lineaVentaId,
+    Expression<int>? insumoId,
+    Expression<int>? milesimas,
+    Expression<int>? costoCentavos,
+    Expression<int>? proveedorIdFoto,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lineaVentaId != null) 'linea_venta_id': lineaVentaId,
+      if (insumoId != null) 'insumo_id': insumoId,
+      if (milesimas != null) 'milesimas': milesimas,
+      if (costoCentavos != null) 'costo_centavos': costoCentavos,
+      if (proveedorIdFoto != null) 'proveedor_id_foto': proveedorIdFoto,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+    });
+  }
+
+  ConsumosDeLineaCompanion copyWith({
+    Value<int>? id,
+    Value<int>? lineaVentaId,
+    Value<int>? insumoId,
+    Value<int>? milesimas,
+    Value<int>? costoCentavos,
+    Value<int?>? proveedorIdFoto,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
+  }) {
+    return ConsumosDeLineaCompanion(
+      id: id ?? this.id,
+      lineaVentaId: lineaVentaId ?? this.lineaVentaId,
+      insumoId: insumoId ?? this.insumoId,
+      milesimas: milesimas ?? this.milesimas,
+      costoCentavos: costoCentavos ?? this.costoCentavos,
+      proveedorIdFoto: proveedorIdFoto ?? this.proveedorIdFoto,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (lineaVentaId.present) {
+      map['linea_venta_id'] = Variable<int>(lineaVentaId.value);
+    }
+    if (insumoId.present) {
+      map['insumo_id'] = Variable<int>(insumoId.value);
+    }
+    if (milesimas.present) {
+      map['milesimas'] = Variable<int>(milesimas.value);
+    }
+    if (costoCentavos.present) {
+      map['costo_centavos'] = Variable<int>(costoCentavos.value);
+    }
+    if (proveedorIdFoto.present) {
+      map['proveedor_id_foto'] = Variable<int>(proveedorIdFoto.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConsumosDeLineaCompanion(')
+          ..write('id: $id, ')
+          ..write('lineaVentaId: $lineaVentaId, ')
+          ..write('insumoId: $insumoId, ')
+          ..write('milesimas: $milesimas, ')
+          ..write('costoCentavos: $costoCentavos, ')
+          ..write('proveedorIdFoto: $proveedorIdFoto, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -26345,6 +27005,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ArqueosIntermediosTable arqueosIntermedios =
       $ArqueosIntermediosTable(this);
   late final $LineasDeVentaTable lineasDeVenta = $LineasDeVentaTable(this);
+  late final $ConsumosDeLineaTable consumosDeLinea = $ConsumosDeLineaTable(
+    this,
+  );
   late final $PagosTable pagos = $PagosTable(this);
   late final $MovimientosDeStockTable movimientosDeStock =
       $MovimientosDeStockTable(this);
@@ -26400,6 +27063,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     movimientosDeCaja,
     arqueosIntermedios,
     lineasDeVenta,
+    consumosDeLinea,
     pagos,
     movimientosDeStock,
     pendientes,
@@ -28439,6 +29103,26 @@ final class $$ProveedoresTableReferences
     );
   }
 
+  static MultiTypedResultKey<$ConsumosDeLineaTable, List<FilaConsumoDeLinea>>
+  _consumosDeLineaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.consumosDeLinea,
+    aliasName: 'proveedores__id__consumos_de_linea__proveedor_id_foto',
+  );
+
+  $$ConsumosDeLineaTableProcessedTableManager get consumosDeLineaRefs {
+    final manager = $$ConsumosDeLineaTableTableManager(
+      $_db,
+      $_db.consumosDeLinea,
+    ).filter((f) => f.proveedorIdFoto.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _consumosDeLineaRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$HistorialPedidosTable, List<HistorialPedido>>
   _historialPedidosRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.historialPedidos,
@@ -28741,6 +29425,31 @@ class $$ProveedoresTableFilterComposer
           }) => $$LineasDeVentaTableFilterComposer(
             $db: $db,
             $table: $db.lineasDeVenta,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> consumosDeLineaRefs(
+    Expression<bool> Function($$ConsumosDeLineaTableFilterComposer f) f,
+  ) {
+    final $$ConsumosDeLineaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.proveedorIdFoto,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableFilterComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -29215,6 +29924,31 @@ class $$ProveedoresTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> consumosDeLineaRefs<T extends Object>(
+    Expression<T> Function($$ConsumosDeLineaTableAnnotationComposer a) f,
+  ) {
+    final $$ConsumosDeLineaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.proveedorIdFoto,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> historialPedidosRefs<T extends Object>(
     Expression<T> Function($$HistorialPedidosTableAnnotationComposer a) f,
   ) {
@@ -29358,6 +30092,7 @@ class $$ProveedoresTableTableManager
             bool productosRefs,
             bool movimientosDeCajaRefs,
             bool lineasDeVentaRefs,
+            bool consumosDeLineaRefs,
             bool historialPedidosRefs,
             bool movimientosDeudaRefs,
             bool vinculosFacturaRefs,
@@ -29505,6 +30240,7 @@ class $$ProveedoresTableTableManager
                 productosRefs = false,
                 movimientosDeCajaRefs = false,
                 lineasDeVentaRefs = false,
+                consumosDeLineaRefs = false,
                 historialPedidosRefs = false,
                 movimientosDeudaRefs = false,
                 vinculosFacturaRefs = false,
@@ -29517,6 +30253,7 @@ class $$ProveedoresTableTableManager
                     if (productosRefs) db.productos,
                     if (movimientosDeCajaRefs) db.movimientosDeCaja,
                     if (lineasDeVentaRefs) db.lineasDeVenta,
+                    if (consumosDeLineaRefs) db.consumosDeLinea,
                     if (historialPedidosRefs) db.historialPedidos,
                     if (movimientosDeudaRefs) db.movimientosDeuda,
                     if (vinculosFacturaRefs) db.vinculosFactura,
@@ -29583,6 +30320,27 @@ class $$ProveedoresTableTableManager
                                 table,
                                 p0,
                               ).lineasDeVentaRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.proveedorIdFoto == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (consumosDeLineaRefs)
+                        await $_getPrefetchedData<
+                          Proveedor,
+                          $ProveedoresTable,
+                          FilaConsumoDeLinea
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProveedoresTableReferences
+                              ._consumosDeLineaRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProveedoresTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).consumosDeLineaRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.proveedorIdFoto == item.id,
@@ -29718,6 +30476,7 @@ typedef $$ProveedoresTableProcessedTableManager =
         bool productosRefs,
         bool movimientosDeCajaRefs,
         bool lineasDeVentaRefs,
+        bool consumosDeLineaRefs,
         bool historialPedidosRefs,
         bool movimientosDeudaRefs,
         bool vinculosFacturaRefs,
@@ -30793,6 +31552,26 @@ final class $$ProductosTableReferences
     );
   }
 
+  static MultiTypedResultKey<$ConsumosDeLineaTable, List<FilaConsumoDeLinea>>
+  _consumosDeLineaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.consumosDeLinea,
+    aliasName: 'productos__id__consumos_de_linea__insumo_id',
+  );
+
+  $$ConsumosDeLineaTableProcessedTableManager get consumosDeLineaRefs {
+    final manager = $$ConsumosDeLineaTableTableManager(
+      $_db,
+      $_db.consumosDeLinea,
+    ).filter((f) => f.insumoId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _consumosDeLineaRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$MovimientosDeStockTable, List<MovimientoStock>>
   _movimientosDeStockRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -31212,6 +31991,31 @@ class $$ProductosTableFilterComposer
           }) => $$LineasDeVentaTableFilterComposer(
             $db: $db,
             $table: $db.lineasDeVenta,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> consumosDeLineaRefs(
+    Expression<bool> Function($$ConsumosDeLineaTableFilterComposer f) f,
+  ) {
+    final $$ConsumosDeLineaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.insumoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableFilterComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -31893,6 +32697,31 @@ class $$ProductosTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> consumosDeLineaRefs<T extends Object>(
+    Expression<T> Function($$ConsumosDeLineaTableAnnotationComposer a) f,
+  ) {
+    final $$ConsumosDeLineaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.insumoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> movimientosDeStockRefs<T extends Object>(
     Expression<T> Function($$MovimientosDeStockTableAnnotationComposer a) f,
   ) {
@@ -32116,6 +32945,7 @@ class $$ProductosTableTableManager
             bool categoriaId,
             bool proveedorId,
             bool lineasDeVentaRefs,
+            bool consumosDeLineaRefs,
             bool movimientosDeStockRefs,
             bool historialDePreciosRefs,
             bool accesosDirectosRefs,
@@ -32310,6 +33140,7 @@ class $$ProductosTableTableManager
                 categoriaId = false,
                 proveedorId = false,
                 lineasDeVentaRefs = false,
+                consumosDeLineaRefs = false,
                 movimientosDeStockRefs = false,
                 historialDePreciosRefs = false,
                 accesosDirectosRefs = false,
@@ -32323,6 +33154,7 @@ class $$ProductosTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (lineasDeVentaRefs) db.lineasDeVenta,
+                    if (consumosDeLineaRefs) db.consumosDeLinea,
                     if (movimientosDeStockRefs) db.movimientosDeStock,
                     if (historialDePreciosRefs) db.historialDePrecios,
                     if (accesosDirectosRefs) db.accesosDirectos,
@@ -32398,6 +33230,27 @@ class $$ProductosTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.productoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (consumosDeLineaRefs)
+                        await $_getPrefetchedData<
+                          Producto,
+                          $ProductosTable,
+                          FilaConsumoDeLinea
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductosTableReferences
+                              ._consumosDeLineaRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).consumosDeLineaRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.insumoId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -32593,6 +33446,7 @@ typedef $$ProductosTableProcessedTableManager =
         bool categoriaId,
         bool proveedorId,
         bool lineasDeVentaRefs,
+        bool consumosDeLineaRefs,
         bool movimientosDeStockRefs,
         bool historialDePreciosRefs,
         bool accesosDirectosRefs,
@@ -38405,6 +39259,7 @@ typedef $$LineasDeVentaTableCreateCompanionBuilder =
       Value<int?> gramos,
       required int precioUnitarioCentavos,
       Value<int?> costoUnitarioCentavos,
+      Value<bool> esServicio,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -38423,6 +39278,7 @@ typedef $$LineasDeVentaTableUpdateCompanionBuilder =
       Value<int?> gramos,
       Value<int> precioUnitarioCentavos,
       Value<int?> costoUnitarioCentavos,
+      Value<bool> esServicio,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -38487,6 +39343,26 @@ final class $$LineasDeVentaTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$ConsumosDeLineaTable, List<FilaConsumoDeLinea>>
+  _consumosDeLineaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.consumosDeLinea,
+    aliasName: 'lineas_de_venta__id__consumos_de_linea__linea_venta_id',
+  );
+
+  $$ConsumosDeLineaTableProcessedTableManager get consumosDeLineaRefs {
+    final manager = $$ConsumosDeLineaTableTableManager(
+      $_db,
+      $_db.consumosDeLinea,
+    ).filter((f) => f.lineaVentaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _consumosDeLineaRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LineasDeVentaTableFilterComposer
@@ -38540,6 +39416,11 @@ class $$LineasDeVentaTableFilterComposer
 
   ColumnFilters<int> get costoUnitarioCentavos => $composableBuilder(
     column: $table.costoUnitarioCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38626,6 +39507,31 @@ class $$LineasDeVentaTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> consumosDeLineaRefs(
+    Expression<bool> Function($$ConsumosDeLineaTableFilterComposer f) f,
+  ) {
+    final $$ConsumosDeLineaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.lineaVentaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableFilterComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LineasDeVentaTableOrderingComposer
@@ -38679,6 +39585,11 @@ class $$LineasDeVentaTableOrderingComposer
 
   ColumnOrderings<int> get costoUnitarioCentavos => $composableBuilder(
     column: $table.costoUnitarioCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -38811,6 +39722,11 @@ class $$LineasDeVentaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get esServicio => $composableBuilder(
+    column: $table.esServicio,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
 
@@ -38892,6 +39808,31 @@ class $$LineasDeVentaTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> consumosDeLineaRefs<T extends Object>(
+    Expression<T> Function($$ConsumosDeLineaTableAnnotationComposer a) f,
+  ) {
+    final $$ConsumosDeLineaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumosDeLinea,
+      getReferencedColumn: (t) => t.lineaVentaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumosDeLineaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.consumosDeLinea,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LineasDeVentaTableTableManager
@@ -38911,6 +39852,7 @@ class $$LineasDeVentaTableTableManager
             bool ventaId,
             bool productoId,
             bool proveedorIdFoto,
+            bool consumosDeLineaRefs,
           })
         > {
   $$LineasDeVentaTableTableManager(_$AppDatabase db, $LineasDeVentaTable table)
@@ -38938,6 +39880,7 @@ class $$LineasDeVentaTableTableManager
                 Value<int?> gramos = const Value.absent(),
                 Value<int> precioUnitarioCentavos = const Value.absent(),
                 Value<int?> costoUnitarioCentavos = const Value.absent(),
+                Value<bool> esServicio = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -38954,6 +39897,7 @@ class $$LineasDeVentaTableTableManager
                 gramos: gramos,
                 precioUnitarioCentavos: precioUnitarioCentavos,
                 costoUnitarioCentavos: costoUnitarioCentavos,
+                esServicio: esServicio,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -38972,6 +39916,7 @@ class $$LineasDeVentaTableTableManager
                 Value<int?> gramos = const Value.absent(),
                 required int precioUnitarioCentavos,
                 Value<int?> costoUnitarioCentavos = const Value.absent(),
+                Value<bool> esServicio = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -38988,6 +39933,7 @@ class $$LineasDeVentaTableTableManager
                 gramos: gramos,
                 precioUnitarioCentavos: precioUnitarioCentavos,
                 costoUnitarioCentavos: costoUnitarioCentavos,
+                esServicio: esServicio,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -39001,10 +39947,17 @@ class $$LineasDeVentaTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ventaId = false, productoId = false, proveedorIdFoto = false}) {
+              ({
+                ventaId = false,
+                productoId = false,
+                proveedorIdFoto = false,
+                consumosDeLineaRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (consumosDeLineaRefs) db.consumosDeLinea,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -39070,7 +40023,29 @@ class $$LineasDeVentaTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (consumosDeLineaRefs)
+                        await $_getPrefetchedData<
+                          FilaLineaVenta,
+                          $LineasDeVentaTable,
+                          FilaConsumoDeLinea
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LineasDeVentaTableReferences
+                              ._consumosDeLineaRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LineasDeVentaTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).consumosDeLineaRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.lineaVentaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -39093,6 +40068,604 @@ typedef $$LineasDeVentaTableProcessedTableManager =
       PrefetchHooks Function({
         bool ventaId,
         bool productoId,
+        bool proveedorIdFoto,
+        bool consumosDeLineaRefs,
+      })
+    >;
+typedef $$ConsumosDeLineaTableCreateCompanionBuilder =
+    ConsumosDeLineaCompanion Function({
+      Value<int> id,
+      required int lineaVentaId,
+      required int insumoId,
+      required int milesimas,
+      required int costoCentavos,
+      Value<int?> proveedorIdFoto,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+typedef $$ConsumosDeLineaTableUpdateCompanionBuilder =
+    ConsumosDeLineaCompanion Function({
+      Value<int> id,
+      Value<int> lineaVentaId,
+      Value<int> insumoId,
+      Value<int> milesimas,
+      Value<int> costoCentavos,
+      Value<int?> proveedorIdFoto,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+
+final class $$ConsumosDeLineaTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConsumosDeLineaTable,
+          FilaConsumoDeLinea
+        > {
+  $$ConsumosDeLineaTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LineasDeVentaTable _lineaVentaIdTable(_$AppDatabase db) => db
+      .lineasDeVenta
+      .createAlias('consumos_de_linea__linea_venta_id__lineas_de_venta__id');
+
+  $$LineasDeVentaTableProcessedTableManager get lineaVentaId {
+    final $_column = $_itemColumn<int>('linea_venta_id')!;
+
+    final manager = $$LineasDeVentaTableTableManager(
+      $_db,
+      $_db.lineasDeVenta,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_lineaVentaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductosTable _insumoIdTable(_$AppDatabase db) =>
+      db.productos.createAlias('consumos_de_linea__insumo_id__productos__id');
+
+  $$ProductosTableProcessedTableManager get insumoId {
+    final $_column = $_itemColumn<int>('insumo_id')!;
+
+    final manager = $$ProductosTableTableManager(
+      $_db,
+      $_db.productos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_insumoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProveedoresTable _proveedorIdFotoTable(_$AppDatabase db) => db
+      .proveedores
+      .createAlias('consumos_de_linea__proveedor_id_foto__proveedores__id');
+
+  $$ProveedoresTableProcessedTableManager? get proveedorIdFoto {
+    final $_column = $_itemColumn<int>('proveedor_id_foto');
+    if ($_column == null) return null;
+    final manager = $$ProveedoresTableTableManager(
+      $_db,
+      $_db.proveedores,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_proveedorIdFotoTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConsumosDeLineaTableFilterComposer
+    extends Composer<_$AppDatabase, $ConsumosDeLineaTable> {
+  $$ConsumosDeLineaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get milesimas => $composableBuilder(
+    column: $table.milesimas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get costoCentavos => $composableBuilder(
+    column: $table.costoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LineasDeVentaTableFilterComposer get lineaVentaId {
+    final $$LineasDeVentaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lineaVentaId,
+      referencedTable: $db.lineasDeVenta,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LineasDeVentaTableFilterComposer(
+            $db: $db,
+            $table: $db.lineasDeVenta,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableFilterComposer get insumoId {
+    final $$ProductosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.insumoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableFilterComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProveedoresTableFilterComposer get proveedorIdFoto {
+    final $$ProveedoresTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorIdFoto,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableFilterComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumosDeLineaTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConsumosDeLineaTable> {
+  $$ConsumosDeLineaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get milesimas => $composableBuilder(
+    column: $table.milesimas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get costoCentavos => $composableBuilder(
+    column: $table.costoCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LineasDeVentaTableOrderingComposer get lineaVentaId {
+    final $$LineasDeVentaTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lineaVentaId,
+      referencedTable: $db.lineasDeVenta,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LineasDeVentaTableOrderingComposer(
+            $db: $db,
+            $table: $db.lineasDeVenta,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableOrderingComposer get insumoId {
+    final $$ProductosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.insumoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableOrderingComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProveedoresTableOrderingComposer get proveedorIdFoto {
+    final $$ProveedoresTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorIdFoto,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableOrderingComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumosDeLineaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConsumosDeLineaTable> {
+  $$ConsumosDeLineaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get milesimas =>
+      $composableBuilder(column: $table.milesimas, builder: (column) => column);
+
+  GeneratedColumn<int> get costoCentavos => $composableBuilder(
+    column: $table.costoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  $$LineasDeVentaTableAnnotationComposer get lineaVentaId {
+    final $$LineasDeVentaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lineaVentaId,
+      referencedTable: $db.lineasDeVenta,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LineasDeVentaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.lineasDeVenta,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableAnnotationComposer get insumoId {
+    final $$ProductosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.insumoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProveedoresTableAnnotationComposer get proveedorIdFoto {
+    final $$ProveedoresTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.proveedorIdFoto,
+      referencedTable: $db.proveedores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProveedoresTableAnnotationComposer(
+            $db: $db,
+            $table: $db.proveedores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumosDeLineaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConsumosDeLineaTable,
+          FilaConsumoDeLinea,
+          $$ConsumosDeLineaTableFilterComposer,
+          $$ConsumosDeLineaTableOrderingComposer,
+          $$ConsumosDeLineaTableAnnotationComposer,
+          $$ConsumosDeLineaTableCreateCompanionBuilder,
+          $$ConsumosDeLineaTableUpdateCompanionBuilder,
+          (FilaConsumoDeLinea, $$ConsumosDeLineaTableReferences),
+          FilaConsumoDeLinea,
+          PrefetchHooks Function({
+            bool lineaVentaId,
+            bool insumoId,
+            bool proveedorIdFoto,
+          })
+        > {
+  $$ConsumosDeLineaTableTableManager(
+    _$AppDatabase db,
+    $ConsumosDeLineaTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConsumosDeLineaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConsumosDeLineaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConsumosDeLineaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> lineaVentaId = const Value.absent(),
+                Value<int> insumoId = const Value.absent(),
+                Value<int> milesimas = const Value.absent(),
+                Value<int> costoCentavos = const Value.absent(),
+                Value<int?> proveedorIdFoto = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => ConsumosDeLineaCompanion(
+                id: id,
+                lineaVentaId: lineaVentaId,
+                insumoId: insumoId,
+                milesimas: milesimas,
+                costoCentavos: costoCentavos,
+                proveedorIdFoto: proveedorIdFoto,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int lineaVentaId,
+                required int insumoId,
+                required int milesimas,
+                required int costoCentavos,
+                Value<int?> proveedorIdFoto = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => ConsumosDeLineaCompanion.insert(
+                id: id,
+                lineaVentaId: lineaVentaId,
+                insumoId: insumoId,
+                milesimas: milesimas,
+                costoCentavos: costoCentavos,
+                proveedorIdFoto: proveedorIdFoto,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ConsumosDeLineaTable, FilaConsumoDeLinea>(table),
+                  $$ConsumosDeLineaTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                lineaVentaId = false,
+                insumoId = false,
+                proveedorIdFoto = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (lineaVentaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.lineaVentaId,
+                                    referencedTable:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._lineaVentaIdTable(db),
+                                    referencedColumn:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._lineaVentaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (insumoId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.insumoId,
+                                    referencedTable:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._insumoIdTable(db),
+                                    referencedColumn:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._insumoIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (proveedorIdFoto) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.proveedorIdFoto,
+                                    referencedTable:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._proveedorIdFotoTable(db),
+                                    referencedColumn:
+                                        $$ConsumosDeLineaTableReferences
+                                            ._proveedorIdFotoTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ConsumosDeLineaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConsumosDeLineaTable,
+      FilaConsumoDeLinea,
+      $$ConsumosDeLineaTableFilterComposer,
+      $$ConsumosDeLineaTableOrderingComposer,
+      $$ConsumosDeLineaTableAnnotationComposer,
+      $$ConsumosDeLineaTableCreateCompanionBuilder,
+      $$ConsumosDeLineaTableUpdateCompanionBuilder,
+      (FilaConsumoDeLinea, $$ConsumosDeLineaTableReferences),
+      FilaConsumoDeLinea,
+      PrefetchHooks Function({
+        bool lineaVentaId,
+        bool insumoId,
         bool proveedorIdFoto,
       })
     >;
@@ -48832,6 +50405,8 @@ class $AppDatabaseManager {
       $$ArqueosIntermediosTableTableManager(_db, _db.arqueosIntermedios);
   $$LineasDeVentaTableTableManager get lineasDeVenta =>
       $$LineasDeVentaTableTableManager(_db, _db.lineasDeVenta);
+  $$ConsumosDeLineaTableTableManager get consumosDeLinea =>
+      $$ConsumosDeLineaTableTableManager(_db, _db.consumosDeLinea);
   $$PagosTableTableManager get pagos =>
       $$PagosTableTableManager(_db, _db.pagos);
   $$MovimientosDeStockTableTableManager get movimientosDeStock =>
