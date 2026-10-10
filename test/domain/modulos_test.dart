@@ -77,6 +77,8 @@ void main() {
           'mano_de_obra',
           'bloquear_insumos',
           'ajustar_insumos',
+          'agenda',
+          'profesionales',
         },
       );
     });

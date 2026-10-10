@@ -66,7 +66,14 @@ enum Modulo {
   bloquearInsumos('bloquear_insumos'),
 
   /// Corregir al cobrar lo que se usó de cada insumo, solo en esa venta (Regla 20). Solo servicios.
-  ajustarInsumos('ajustar_insumos');
+  ajustarInsumos('ajustar_insumos'),
+
+  /// La agenda de turnos (Regla 21): con ella el celular arranca en la Agenda. No es `turnos` (varios usuarios y cambio de
+  /// turno de caja, Regla 18): las claves no se renombran. Solo servicios.
+  agenda('agenda'),
+
+  /// Varios profesionales: cada turno dice quién lo atiende y cada uno tiene su agenda (Regla 21). Solo servicios.
+  profesionales('profesionales');
 
   const Modulo(this.clave);
 
@@ -86,6 +93,8 @@ enum Modulo {
     manoDeObra => 'Mano de obra en el precio',
     bloquearInsumos => 'Bloquear si falta un insumo',
     ajustarInsumos => 'Ajustar insumos al cobrar',
+    agenda => 'Agenda de turnos',
+    profesionales => 'Varios profesionales',
   };
 
   String get descripcion => switch (this) {
@@ -103,6 +112,8 @@ enum Modulo {
     manoDeObra => 'Sumar lo que vale la hora de trabajo al calcular el precio de cada servicio.',
     bloquearInsumos => 'Un servicio al que le falta un insumo no se cobra. Apagado, solo avisa.',
     ajustarInsumos => 'Quien atiende corrige lo que usó en esa venta, sin cambiar la receta.',
+    agenda => 'Turnos por día, horarios libres y seña. Sin agenda, el celular arranca en Inicio.',
+    profesionales => 'Cada turno dice quién atiende, y cada uno tiene su agenda.',
   };
 
   /// Identificador estable que se guarda en la base.
@@ -115,7 +126,7 @@ enum Modulo {
   Set<FormaDeTrabajo> get formas => switch (this) {
     cajaAparte || pesables || promos || compararPrecios => const {FormaDeTrabajo.productos},
     fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint => const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios},
-    insumos || manoDeObra || bloquearInsumos || ajustarInsumos => const {FormaDeTrabajo.servicios},
+    insumos || manoDeObra || bloquearInsumos || ajustarInsumos || agenda || profesionales => const {FormaDeTrabajo.servicios},
   };
 
   bool valePara(FormaDeTrabajo forma) => formas.contains(forma);

@@ -23,6 +23,7 @@ no se apaga nunca.
 | Comparador de precios | 14 (precios de referencia) |
 | Cobro con Mercado Pago Point | 2 y 9 (canales QR/Débito) |
 | Insumos, mano de obra, bloquear si falta un insumo, ajustar insumos al cobrar (solo negocios de servicios) | 20 |
+| Agenda y varios profesionales (solo negocios de servicios) | 21 |
 
 Las reglas 16 (lista de proveedores) y 17 (cliente recurrente) describen **datos del comercio de origen**, no del
 producto: un comercio nuevo carga sus proveedores y clientes desde la app.
@@ -688,6 +689,35 @@ Solo en un negocio de **servicios** (el rubro lo decide: barbería, uñas y bell
 - **Los productos se siguen vendiendo** en un negocio de servicios (un shampoo, una lima), con su stock de siempre (El dueño,
   2026-10-10). Esconderlos será un módulo aparte ("Productos de reventa"), más adelante.
 - Por ahora se cobra **solo desde el celular en "Solo celular"**: la PC todavía no tiene servicios.
+
+## 21. Turnos, agenda y seña (El dueño, 2026-10-09 y 2026-10-10)
+
+Solo en un negocio de **servicios**, con el módulo **Agenda**. Plan en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md),
+etapa 4; el bot de WhatsApp que también toma turnos es la etapa 5.
+
+- Un **turno** es un cliente (de `clientes`, por nombre y teléfono), un servicio, un día y hora de inicio y lo que dura (la
+  del servicio al anotarlo), y, con el módulo **Varios profesionales**, quién lo atiende (un usuario de la app; uno sin
+  celular figura igual, solo con su nombre).
+- **Estados**: sin confirmar → confirmado → llegó → cobrado; o no vino, o cancelado. Un turno anotado desde la app nace
+  **confirmado** (lo anotó alguien del negocio); el que pide un cliente por WhatsApp nace sin confirmar (etapa 5).
+- **Un profesional no puede tener dos turnos que se pisan** (El dueño, 2026-10-10): la app no deja anotarlo ni moverlo ahí y
+  dice con cuál choca. Sin varios profesionales, la agenda es una sola. Un turno cancelado o que no vino deja libre su
+  horario.
+- **Horario de atención: una franja por día de la semana** (El dueño, 2026-10-10), o cerrado. Ej.: lunes a viernes de 9 a
+  20, sábado de 9 a 14. La agenda muestra los huecos libres dentro de esa franja; un turno fuera de horario se puede anotar
+  igual (se avisa), porque quien atiende puede quedarse más.
+- **Seña**: cada negocio elige si la pide (nunca / algunos servicios / todos), cuánto (% del precio o monto fijo; un % se
+  redondea hacia arriba a la centena) y qué pasa si el cliente no viene (se pierde o se devuelve). De fábrica: algunos
+  servicios, 30 %, se pierde. Eso lo usa el bot (etapa 5) para pedirla; **en un turno anotado a mano se puede tomar una seña
+  en el momento, en efectivo o por Mercado Pago** (El dueño, 2026-10-10), con la sugerencia de la configuración.
+- **La seña es la de los encargues** (§15): entra como **ingreso** a la caja con que se pagó (necesita la caja abierta) y
+  **no es una venta**. Al cobrar el turno, la venta es por el total del día y la seña es un pago de esa venta que **no vuelve a
+  mover la caja**; si fuera más que el total, la diferencia se devuelve.
+- **Si el cliente cancela, la seña se devuelve** por la misma caja (El dueño, 2026-10-10: avisó). **Si no vino**, según la
+  configuración: **se pierde** (no se mueve nada: ya está en la caja como ingreso) o se devuelve.
+- **Cobrar un turno** lleva su servicio a Vender (con su seña y, con varios profesionales, quién atendió) y lo marca cobrado
+  con la venta. Se pueden sumar más cosas a esa venta. Un servicio al que le falta un insumo no se cobra (§20).
+- Con la Agenda prendida, el celular arranca en la **Agenda** (reemplaza a Inicio).
 
 ---
 
