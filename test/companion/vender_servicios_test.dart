@@ -2,7 +2,6 @@
 // alcanza, con candado si le falta un insumo, se ajusta lo que se usó y al cobrar descuenta los insumos.
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
