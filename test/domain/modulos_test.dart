@@ -140,5 +140,23 @@ void main() {
       expect(otra.forma, FormaDeTrabajo.servicios);
       expect(ModulosNegocio.desdeTexto(otra.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.turnos});
     });
+
+    test('la app Nodo Sur Servicios: siempre servicios, aunque el rubro sea de almacén, y solo sus módulos', () {
+      final almacen = ModulosNegocio.desdeTexto('insumos').paraEdicionServicios();
+      expect(almacen.forma, FormaDeTrabajo.servicios);
+      expect(almacen.disponibles, [Modulo.cobroPoint, Modulo.insumos, Modulo.manoDeObra]);
+      expect(almacen.estaActivo(Modulo.insumos), isFalse, reason: 'lo apagado a propósito sigue apagado');
+      expect(almacen.estaActivo(Modulo.manoDeObra), isTrue);
+      // Caja simple: sin arqueo ni varios usuarios, sin encargues de productos, sin separaciones ni gastos fijos.
+      for (final m in [Modulo.turnos, Modulo.fiado, Modulo.retiroGanancias, Modulo.equilibrio, Modulo.cargaHistorica, Modulo.pesables]) {
+        expect(almacen.estaActivo(m), isFalse, reason: m.clave);
+      }
+    });
+
+    test('prender o apagar en la app de servicios no pierde lo que apagó la de almacén', () {
+      final m = ModulosNegocio.desdeTexto('fiado,pesables').paraEdicionServicios().conModulo(Modulo.insumos, activo: false);
+      expect(m.disponibles, [Modulo.cobroPoint, Modulo.insumos, Modulo.manoDeObra]);
+      expect(ModulosNegocio.desdeTexto(m.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.insumos});
+    });
   });
 }

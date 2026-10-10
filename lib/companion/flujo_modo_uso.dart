@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../edicion.dart';
 import 'bienvenida/pantalla_bienvenida.dart';
 import 'emparejamiento.dart';
 import 'escucha_pc.dart';
@@ -23,10 +24,13 @@ Future<void> aplicarModoSoloCelular() async {
 }
 
 /// Lo primero que ve una instalación nueva: la bienvenida, y al terminarla (o saltarla) elegir el modo.
+/// Nodo Sur Servicios no tiene PC: de la bienvenida va directo a entrar con la cuenta, como "solo celular".
 Widget pantallaDeBienvenidaInicial() => PantallaBienvenida(
-  alTerminar: (context) => Navigator.of(context).pushReplacement(
-    MaterialPageRoute<void>(builder: (_) => pantallaDeElegirModoInicial()),
-  ),
+  alTerminar: (context) => esEdicionServicios
+      ? elegirModo(context, ModoUso.soloCelular, actual: null)
+      : Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => pantallaDeElegirModoInicial()),
+        ),
 );
 
 /// La pantalla de elegir el modo en el primer arranque (después de la bienvenida).

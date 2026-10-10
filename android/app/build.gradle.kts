@@ -47,12 +47,12 @@ android {
     productFlavors {
         create("almacen") {
             dimension = "edicion"
-            resValue("string", "app_name", "Nodo Sur POS")
+            manifestPlaceholders["nombreApp"] = "Nodo Sur POS"
         }
         create("servicios") {
             dimension = "edicion"
             applicationId = "com.laplazoleta.servicios"
-            resValue("string", "app_name", "Nodo Sur Servicios")
+            manifestPlaceholders["nombreApp"] = "Nodo Sur Servicios"
         }
     }
 

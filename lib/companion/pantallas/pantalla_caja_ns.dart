@@ -18,6 +18,7 @@ import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../cliente_companion.dart';
+import '../../edicion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
@@ -183,8 +184,9 @@ class _ResumenState extends State<_Resumen> {
             Row(
               children: [
                 Expanded(child: _Accion(icono: IconoNs.intercambio, titulo: 'Gasto o ingreso', detalle: 'Plata que sale o entra', onTap: () => app.irA((_) => const PantallaMovimientoCaja()))),
-                const SizedBox(width: 10),
-                Expanded(
+                // Nodo Sur Servicios: caja simple, sin arqueo (`docs/PLAN-APP-SERVICIOS.md`).
+                if (!esEdicionServicios) const SizedBox(width: 10),
+                if (!esEdicionServicios) Expanded(
                   child: _Accion(
                     icono: IconoNs.calculadora,
                     titulo: 'Contar la caja',

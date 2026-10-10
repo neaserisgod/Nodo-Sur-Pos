@@ -20,7 +20,8 @@ import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 import 'pantalla_prueba_bot_ns.dart';
 import '../../edicion.dart';
-import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../../domain/modulos.dart' show Modulo;
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 
 class PantallaMasNs extends StatelessWidget {
   const PantallaMasNs({super.key, this.alAbrirEncargues});
@@ -93,12 +94,14 @@ class PantallaMasNs extends StatelessWidget {
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
-                    _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
+                    // Nodo Sur Servicios: sin encargues de productos, y proveedores solo si lleva insumos.
+                    if (!esEdicionServicios) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
                     // servicios no los usa.
                     if (!servicios) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
-                    _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
-                    if (estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    if (!esEdicionServicios || moduloActivo(Modulo.insumos)) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    // El bot en Termux; Nodo Sur Servicios lo trae adentro.
+                    if (!esEdicionServicios && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',
@@ -131,15 +134,18 @@ class PantallaMasNs extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                BotonNs(
-                  texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',
-                  onTap: app.cambiarModo,
-                  alto: 56,
-                  tamanio: 16,
-                  fondo: ns.bbg,
-                  color: ns.b,
-                ),
+                // Nodo Sur Servicios no tiene PC: es siempre solo celular.
+                if (!esEdicionServicios) ...[
+                  const SizedBox(height: 8),
+                  BotonNs(
+                    texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',
+                    onTap: app.cambiarModo,
+                    alto: 56,
+                    tamanio: 16,
+                    fondo: ns.bbg,
+                    color: ns.b,
+                  ),
+                ],
               ],
             );
           },

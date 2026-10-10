@@ -14,8 +14,11 @@ import '../data/database.dart';
 import '../data/repositorio_configuracion.dart';
 import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
+import '../edicion.dart';
 
-final ValueNotifier<ModulosNegocio> modulosActuales = ValueNotifier(ModulosNegocio.todosActivos);
+// La app Nodo Sur Servicios es de servicios desde el arranque, antes de leer la base.
+final ValueNotifier<ModulosNegocio> modulosActuales =
+    ValueNotifier(esEdicionServicios ? ModulosNegocio.todosActivos.paraEdicionServicios() : ModulosNegocio.todosActivos);
 
 /// Atajo para el código que no es una pantalla.
 bool moduloActivo(Modulo modulo) => modulosActuales.value.estaActivo(modulo);
@@ -26,6 +29,7 @@ StreamSubscription<ModulosNegocio> seguirModulos(AppDatabase db) {
       .select(db.configuracionNegocioTabla)
       .watchSingleOrNull()
       .map(modulosDeConfiguracion)
+      .map((m) => esEdicionServicios ? m.paraEdicionServicios() : m)
       .listen((m) => modulosActuales.value = m);
 }
 

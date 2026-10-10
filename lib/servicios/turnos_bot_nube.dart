@@ -27,6 +27,7 @@ import '../domain/bot_whatsapp.dart';
 import '../domain/forma_de_trabajo.dart';
 import '../domain/turnos.dart';
 import 'avisos_bot.dart';
+import '../edicion.dart';
 import 'cuenta_nube.dart';
 
 const _claveCursor = 'turnosBot.cursor';
@@ -81,7 +82,7 @@ class SincronizadorTurnosBot {
 
   Future<void> _vuelta(String token) async {
     try {
-      if ((await modulosNegocioActuales(db)).forma != FormaDeTrabajo.servicios) return;
+      if (!esEdicionServicios && (await modulosNegocioActuales(db)).forma != FormaDeTrabajo.servicios) return;
       final ahora = _ahora();
       if (_estado == null || _planRevisado == null || ahora.difference(_planRevisado!) >= revisarPlanCada) {
         _estado = await cliente.estadoBot(token);

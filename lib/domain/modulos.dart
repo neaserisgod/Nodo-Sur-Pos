@@ -118,7 +118,15 @@ enum Modulo {
 
 /// Qué módulos tiene apagados un comercio, y su forma de trabajar. Inmutable.
 class ModulosNegocio {
-  const ModulosNegocio(this.desactivados, {this.forma = FormaDeTrabajo.productos});
+  const ModulosNegocio(this.desactivados, {this.forma = FormaDeTrabajo.productos, this.soloEstos});
+
+  /// Los únicos que puede tener la app Nodo Sur Servicios (`docs/PLAN-APP-SERVICIOS.md`, El dueño, 2026-10-10): caja simple,
+  /// sin arqueo ni varios usuarios (`turnos`), sin encargues de productos, separaciones, gastos fijos ni carga histórica.
+  static const modulosEdicionServicios = {Modulo.cobroPoint, Modulo.insumos, Modulo.manoDeObra};
+
+  /// Lo mismo, visto desde la app Nodo Sur Servicios: siempre de servicios (aunque el rubro guardado sea de almacén) y solo
+  /// [modulosEdicionServicios]. Lo apagado se conserva tal cual: la app de almacén lo encuentra como lo dejó.
+  ModulosNegocio paraEdicionServicios() => ModulosNegocio(desactivados, forma: FormaDeTrabajo.servicios, soloEstos: modulosEdicionServicios);
 
   /// Todo activo: cómo funciona la app hoy, y lo que se asume mientras la
   /// configuración no se pudo leer (vender nunca puede frenarse por esto).
@@ -143,11 +151,16 @@ class ModulosNegocio {
 
   final FormaDeTrabajo forma;
 
-  /// Prendido = vale para la forma del negocio y no se apagó a propósito.
-  bool estaActivo(Modulo modulo) => modulo.valePara(forma) && !desactivados.contains(modulo);
+  /// Null: todos los de [forma]. Si no, solo estos (la app Nodo Sur Servicios).
+  final Set<Modulo>? soloEstos;
+
+  bool _disponible(Modulo modulo) => modulo.valePara(forma) && (soloEstos?.contains(modulo) ?? true);
+
+  /// Prendido = vale para la forma del negocio (y la app) y no se apagó a propósito.
+  bool estaActivo(Modulo modulo) => _disponible(modulo) && !desactivados.contains(modulo);
 
   /// Los que se pueden prender o apagar en este negocio (la lista de Configuración), en el orden de [Modulo.values].
-  List<Modulo> get disponibles => [for (final m in Modulo.values) if (m.valePara(forma)) m];
+  List<Modulo> get disponibles => [for (final m in Modulo.values) if (_disponible(m)) m];
 
   /// Copia con [modulo] prendido o apagado.
   ModulosNegocio conModulo(Modulo modulo, {required bool activo}) {
@@ -157,7 +170,7 @@ class ModulosNegocio {
     } else {
       nuevos.add(modulo);
     }
-    return ModulosNegocio(nuevos, forma: forma);
+    return ModulosNegocio(nuevos, forma: forma, soloEstos: soloEstos);
   }
 
   /// Texto para guardar: siempre en el orden de [Modulo.values], sin
