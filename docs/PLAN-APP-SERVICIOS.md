@@ -53,8 +53,7 @@ rama `ccr-d9ff719e-qd8uv7` (pantalla "Probar el bot acá", `lib/servicios/bot_en
 
 ## Abierto
 
-- **Firebase**: la edición nueva es otra app para Firebase. Registrar `com.laplazoleta.servicios` en el proyecto y cargar su
-  `mobilesdk_app_id` en `_appIdServicios` (`lib/servicios/push.dart`); mientras tanto prueba con el de la companion.
+- **Firebase**: hecho (10/10), la app `com.laplazoleta.servicios` está registrada y su id cargado en `lib/servicios/push.dart`.
 - Mezclar el sitio **antes** de publicar: sin `android-servicios` en el sitio, el workflow no puede subir el APK de servicios.
 - Sacarle el modo servicios a la app de almacén cuando los negocios de servicios se hayan pasado.
 

@@ -36,9 +36,9 @@ const opcionesFirebase = OpcionesFirebase(
 );
 
 // Nodo Sur Servicios es otra app para Firebase (otro applicationId, `com.laplazoleta.servicios`): tiene su propio id de app en el
-// mismo proyecto (el `mobilesdk_app_id` de su google-services.json). Mientras esté vacío, prueba con el de la companion.
-const _appIdServicios = '';
-OpcionesFirebase get opcionesFirebaseDeEdicion => esEdicionServicios && _appIdServicios.isNotEmpty
+// mismo proyecto (el `mobilesdk_app_id` de su google-services.json, El dueño, 2026-10-10).
+const _appIdServicios = '1:831126263942:android:212f489bb142cb40a81907';
+OpcionesFirebase get opcionesFirebaseDeEdicion => esEdicionServicios
     ? OpcionesFirebase(apiKey: opcionesFirebase.apiKey, appId: _appIdServicios, senderId: opcionesFirebase.senderId, projectId: opcionesFirebase.projectId)
     : opcionesFirebase;
 
