@@ -22,5 +22,8 @@ String mensajeDeError(Object error) {
   if (error is FormatException) {
     return 'La PC devolvió algo que la app no pudo entender.';
   }
+  // Las reglas de negocio de la base del celular (sin la PC) avisan con un `ArgumentError` en español ("Falta top coat para
+  // Kapping…"): se muestra el mensaje, sin el "Invalid argument(s):" de adelante.
+  if (error is ArgumentError && error.message is String) return error.message as String;
   return '$error';
 }

@@ -33,6 +33,7 @@ import '../data/repositorio_ingresos.dart' as repo_ingresos;
 import '../data/repositorio_medios_pago.dart' as repo_medios_pago;
 import '../data/repositorio_productos.dart' as repo_productos;
 import '../data/repositorio_promos.dart' as repo_promos;
+import '../data/repositorio_servicios.dart' as repo_servicios;
 import '../data/repositorio_ticket.dart' as repo_ticket;
 import '../data/repositorio_faltantes.dart' as repo_faltantes;
 import '../data/repositorio_faltantes.dart' show DestinoFaltante;
@@ -78,6 +79,26 @@ ProductoCompanion _productoDesdeFila(Producto p) => ProductoCompanion(
   tipoCigarrillo: p.tipoCigarrillo,
   globalId: p.globalId,
 );
+
+/// Un servicio para Vender (Regla 20): el mismo DTO que un producto, con su estado de insumos.
+ProductoCompanion productoCompanionDeServicio(repo_servicios.ServicioParaVender s) {
+  final base = _productoDesdeFila(s.servicio);
+  return ProductoCompanion(
+    id: base.id,
+    nombre: base.nombre,
+    categoriaId: base.categoriaId,
+    esPesable: false,
+    precioCentavos: base.precioCentavos,
+    costoCentavos: base.costoCentavos,
+    stock: base.stock,
+    activo: base.activo,
+    globalId: base.globalId,
+    esServicio: true,
+    duracionMinutos: s.servicio.duracionMinutos,
+    alcanzaPara: s.alcanzaPara,
+    faltaInsumo: s.falta?.nombre,
+  );
+}
 
 /// Mismo mapeo, campo por campo, que `_resumenDiaAJson` en
 /// `servidor_companion.dart` — ahí arma un JSON, acá el DTO Dart
@@ -1101,9 +1122,18 @@ class PuertoLocal implements ServicioCompanion {
         .buscarProductos(catalogo: catalogo, textoBuscado: texto, exigirStock: exigirStock)
         .where((p) => !p.esVarios)
         .toList();
+    // Los servicios (Regla 20) van primero, con su estado: uno al que le falta un insumo se muestra igual, con candado, para
+    // que se vea qué falta (no se puede agregar, `lineaDesdeResultadoBusqueda`).
+    final servicios = {for (final s in await repo_servicios.serviciosParaVender(db)) s.servicio.id: s};
+    final deServicios = servicios.isEmpty
+        ? const <Producto>[]
+        : busqueda.buscarProductos(catalogo: [for (final s in servicios.values) s.servicio], textoBuscado: texto, exigirStock: false);
     return (
       gramos: consulta.gramos,
-      resultados: [for (final p in resultados) _productoDesdeFila(p)],
+      resultados: [
+        for (final p in deServicios) productoCompanionDeServicio(servicios[p.id]!),
+        for (final p in resultados) _productoDesdeFila(p),
+      ],
     );
   }
 

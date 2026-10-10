@@ -76,6 +76,17 @@ class ProductoCompanion {
   /// esta base, como los del pedido del bot de WhatsApp. Null si la PC todavía no la manda (versión anterior a 2026-10-09).
   final String? globalId;
 
+  /// Un servicio (Regla 20): sin stock propio. Solo lo arma la base del celular (`PuertoLocal.buscarVenta`); la PC todavía no
+  /// tiene servicios.
+  final bool esServicio;
+  final int? duracionMinutos;
+
+  /// Para cuántos alcanza hoy, cuando eso limita el cobro ("Bloquear si falta un insumo"). Null: sin límite.
+  final int? alcanzaPara;
+
+  /// El insumo que no alcanza ni para uno: el servicio se muestra con candado y no se agrega.
+  final String? faltaInsumo;
+
   const ProductoCompanion({
     required this.id,
     required this.nombre,
@@ -92,6 +103,10 @@ class ProductoCompanion {
     required this.activo,
     this.tipoCigarrillo = 'ninguno',
     this.globalId,
+    this.esServicio = false,
+    this.duracionMinutos,
+    this.alcanzaPara,
+    this.faltaInsumo,
   });
 
   factory ProductoCompanion.desdeJson(Map<String, dynamic> j) =>

@@ -18,9 +18,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
 import '../data/identidad_sync.dart' show generarGlobalId;
+import '../data/repositorio_servicios.dart' show InsumoConCosto, listarInsumos, recetaGuardada, serviciosParaVender;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 import '../domain/descuento.dart';
+import '../domain/forma_de_trabajo.dart';
+import '../domain/modulos.dart';
+import '../domain/servicios.dart' show UnidadInsumo, milesimasPorUnidad, textoDeMilesimas;
 import '../domain/dinero.dart';
 import '../domain/pesables.dart' show subtotalPesable;
 import '../domain/venta.dart';
@@ -36,6 +40,7 @@ import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
+import '../servicios/modulos_activos.dart' show moduloActivo, modulosActuales;
 import 'servicio_companion.dart';
 
 /// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
@@ -140,6 +145,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   /// "Más vendidos": cuatro productos para tocar con el carrito vacío.
   List<ProductoCompanion> _masVendidos = [];
 
+  /// Los productos del carrito que son servicios (Regla 20): sus líneas ofrecen "Ajustar" lo que se usó.
+  final Set<String> _idsServicio = {};
+
   // Identifica este intento de cobro ante el servidor (ver `/ventas/cobrar`): se renueva cuando cambia lo que se cobra y al
   // cobrar, así un reintento por mala señal no duplica la venta pero una venta igual a la anterior sí se graba.
   String? _claveCobroActual;
@@ -173,7 +181,14 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Future<void> _cargarMasVendidos() async {
     try {
       final todos = await widget.servicio.productos();
-      final activos = todos.where((p) => p.activo && !p.esPesable && p.precioCentavos != null).toList();
+      // En un negocio de servicios, los servicios primero (Regla 20); los que no se pueden cobrar no van a los atajos.
+      final servicios = modulosActuales.value.forma == FormaDeTrabajo.servicios
+          ? [
+              for (final s in await serviciosParaVender(baseLocalCompanion()))
+                if (s.falta == null) productoCompanionDeServicio(s),
+            ]
+          : const <ProductoCompanion>[];
+      final activos = [...servicios, ...todos.where((p) => p.activo && !p.esPesable && p.precioCentavos != null)];
       final nombres = <String>[];
       try {
         final t = await tableroDelDia(baseLocalCompanion());
@@ -247,6 +262,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final nueva = resultado.linea!;
     _claveCobroActual = null;
     _cerrarUltimaVenta();
+    if (producto.esServicio) _idsServicio.add(nueva.productoId);
     setState(() {
       final i = widget.carrito.indexWhere((l) => l.productoId == nueva.productoId);
       if (i != -1) {
@@ -313,7 +329,56 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       tipoCigarrillo: u.tipoCigarrillo,
       precioUnitarioCentavos: u.precioUnitarioCentavos,
       costoUnitarioCentavos: u.costoUnitarioCentavos,
+      insumosAjustados: u.insumosAjustados,
     );
+  }
+
+  /// "Ajustar" una línea de servicio (Regla 20, módulo "Ajustar insumos al cobrar"): lo que usa cada servicio de esa línea,
+  /// solo en esta venta. Arranca con la receta (o con lo ya ajustado). Sobre la base del celular: los servicios son solo de
+  /// "Solo celular".
+  Future<void> _ajustarInsumos(int index) async {
+    final l = widget.carrito[index];
+    if (l is! LineaVentaPorUnidad) return;
+    final db = baseLocalCompanion();
+    final servicio = await (db.select(db.productos)..where((p) => p.id.equals(int.parse(l.productoId)))).getSingleOrNull();
+    if (servicio == null || !mounted) return;
+    final insumos = await listarInsumos(db);
+    final porGid = {for (final i in insumos) if (i.insumo.globalId != null) i.insumo.globalId!: i};
+    final receta = <int, int>{
+      for (final r in recetaGuardada(servicio))
+        if (porGid[r.gid] case final i?) i.insumo.id: r.milesimas,
+    };
+    if (!mounted) return;
+    final elegido = await mostrarHojaNs<({Map<int, int>? ajustes})>(
+      context,
+      builder: (_) => _HojaAjustarInsumos(
+        servicio: servicio.nombre,
+        insumos: insumos,
+        receta: receta,
+        actual: l.insumosAjustados ?? receta,
+        cantidad: l.cantidad,
+      ),
+    );
+    if (elegido == null || !mounted) return;
+    final ajustes = elegido.ajustes;
+    _actualizarLinea(
+      index,
+      LineaVentaPorUnidad(
+        productoId: l.productoId,
+        nombreProducto: l.nombreProducto,
+        proveedorId: l.proveedorId,
+        cantidad: l.cantidad,
+        precioUnitarioCentavos: l.precioUnitarioCentavos,
+        costoUnitarioCentavos: l.costoUnitarioCentavos,
+        // Igual a la receta = sin ajustar.
+        insumosAjustados: ajustes == null || _mismosUsos(ajustes, receta) ? null : ajustes,
+      ),
+    );
+  }
+
+  static bool _mismosUsos(Map<int, int> a, Map<int, int> b) {
+    final sinCeros = {for (final e in a.entries) if (e.value > 0) e.key: e.value};
+    return sinCeros.length == b.length && sinCeros.entries.every((e) => b[e.key] == e.value);
   }
 
   /// − / + de una línea: 1 unidad, o 50 g si es por peso (docs/02 §3.2).
@@ -1083,6 +1148,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             onMas: () => _ajustarLinea(i, 1),
             onQuitar: () => _quitarLinea(i),
             onEditar: () => _editarExacto(i),
+            onAjustar: _idsServicio.contains(widget.carrito[i].productoId) &&
+                    moduloActivo(Modulo.insumos) &&
+                    moduloActivo(Modulo.ajustarInsumos)
+                ? () => _ajustarInsumos(i)
+                : null,
           ),
         );
       },
@@ -1572,10 +1642,13 @@ class _ResultadosBusqueda extends StatelessWidget {
         final precio = p.esPesable
             ? (gramos == null ? '${plataNs(p.precioPorKiloCentavos ?? 0)}/kg' : plataNs(subtotalPesable(montoPorKiloCentavos: p.precioPorKiloCentavos, gramos: gramos!)))
             : plataNs(p.precioCentavos ?? 0);
+        final falta = p.faltaInsumo;
         final detalle = [
           if (p.esPesable && gramos != null) '$gramos g',
-          'Quedan ${stockTextoNs(p)}',
-          if (marcado) 'Enter para agregar',
+          if (!p.esServicio) 'Quedan ${stockTextoNs(p)}',
+          if (p.esServicio && p.duracionMinutos != null) duracionTextoNs(p.duracionMinutos!),
+          if (falta != null) 'Falta ${falta.toLowerCase()}' else if (p.alcanzaPara != null) 'Alcanza para ${p.alcanzaPara}',
+          if (marcado && falta == null) 'Enter para agregar',
         ].join(' · ');
         return PresionNs(
           onTap: () => onElegir(p),
@@ -1592,10 +1665,12 @@ class _ResultadosBusqueda extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(p.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w500, altura: 1.2, color: ns.ink)),
-                      Text(detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, color: marcado ? ns.i : ns.mute)),
+                      Text(detalle, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, color: falta != null ? ns.b : (marcado ? ns.i : ns.mute))),
                     ],
                   ),
                 ),
+                // Un servicio que no se puede cobrar (Regla 20): candado, como en el mock.
+                if (falta != null) ...[const SizedBox(width: 8), IconoNsWidget(IconoNs.candado, tamanio: 18, color: ns.b)],
                 const SizedBox(width: 10),
                 Text(precio, style: estiloNs(17, peso: FontWeight.w600, color: ns.ink, tabular: true)),
               ],
@@ -1608,13 +1683,16 @@ class _ResultadosBusqueda extends StatelessWidget {
 }
 
 class _LineaCarrito extends StatelessWidget {
-  const _LineaCarrito({required this.linea, required this.onMenos, required this.onMas, required this.onQuitar, required this.onEditar});
+  const _LineaCarrito({required this.linea, required this.onMenos, required this.onMas, required this.onQuitar, required this.onEditar, this.onAjustar});
 
   final LineaVenta linea;
   final VoidCallback onMenos;
   final VoidCallback onMas;
   final VoidCallback onQuitar;
   final VoidCallback onEditar;
+
+  /// Solo en un servicio con "Ajustar insumos al cobrar" (Regla 20).
+  final VoidCallback? onAjustar;
 
   @override
   Widget build(BuildContext context) {
@@ -1637,11 +1715,15 @@ class _LineaCarrito extends StatelessWidget {
               Text(plataNs(linea.subtotalCentavos), maxLines: 1, style: estiloNs(19, peso: FontWeight.w500, track: -0.03, color: ns.ink, tabular: true)),
             ],
           ),
+          if (linea case LineaVentaPorUnidad(insumosAjustados: _?))
+            Text('Insumos ajustados', style: estiloNs(13, peso: FontWeight.w600, color: ns.i)),
           const SizedBox(height: 10),
           Row(
             children: [
               StepperNs(cantidad: cantidad, onMenos: onMenos, onMas: onMas, onTapCantidad: onEditar),
               const SizedBox(width: 8),
+              if (onAjustar != null)
+                BotonNs(texto: 'Ajustar', onTap: onAjustar, alto: 44, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 16),
               Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
@@ -1762,6 +1844,72 @@ class _ChipPago extends StatelessWidget {
         decoration: BoxDecoration(color: activo ? ns.prim : ns.paper, borderRadius: BorderRadius.circular(999)),
         child: Center(widthFactor: 1, child: Text(texto, style: estiloNs(15, peso: FontWeight.w600, color: activo ? TokensNs.blanco : ns.ink, tabular: true))),
       ),
+    );
+  }
+}
+
+/// "Ajustar lo que se usó" de una línea de servicio (Regla 20): una fila por insumo con − / +, empezando por lo de siempre.
+/// Devuelve los usos por servicio (por id del insumo), o `ajustes: null` para volver a la receta.
+class _HojaAjustarInsumos extends StatefulWidget {
+  const _HojaAjustarInsumos({required this.servicio, required this.insumos, required this.receta, required this.actual, required this.cantidad});
+
+  final String servicio;
+  final List<InsumoConCosto> insumos;
+  final Map<int, int> receta;
+  final Map<int, int> actual;
+  final int cantidad;
+
+  @override
+  State<_HojaAjustarInsumos> createState() => _HojaAjustarInsumosState();
+}
+
+class _HojaAjustarInsumosState extends State<_HojaAjustarInsumos> {
+  late final Map<int, int> _usos = {...widget.actual};
+
+  int _paso(InsumoConCosto i) => i.unidad == UnidadInsumo.u
+      ? milesimasPorUnidad
+      : i.unidad == UnidadInsumo.g && (i.insumo.contenidoEnvaseMilesimas ?? 0) > 100 * milesimasPorUnidad
+          ? 5 * milesimasPorUnidad
+          : 100;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final enUso = [for (final i in widget.insumos) if (_usos.containsKey(i.insumo.id) || widget.receta.containsKey(i.insumo.id)) i];
+    return HojaNs(
+      titulo: 'Ajustar lo que se usó',
+      texto: '${widget.servicio}, solo en esta venta${widget.cantidad > 1 ? ' (cada uno de los ${widget.cantidad})' : ''}. '
+          'La receta del servicio no cambia.',
+      bloques: [
+        for (final i in enUso)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(i.insumo.nombre, style: estiloNs(16, peso: FontWeight.w500, color: ns.ink)),
+                      Text('Quedan ${textoDeMilesimas(i.stockMilesimas)} ${i.unidad.abreviatura}', style: estiloNs(13, color: ns.mute)),
+                    ],
+                  ),
+                ),
+                StepperNs(
+                  cantidad: '${textoDeMilesimas(_usos[i.insumo.id] ?? 0)} ${i.unidad.abreviatura}',
+                  anchoCantidad: 74,
+                  tamanioCantidad: 15,
+                  onMenos: () => setState(() => _usos[i.insumo.id] = ((_usos[i.insumo.id] ?? 0) - _paso(i)).clamp(0, 1 << 40)),
+                  onMas: () => setState(() => _usos[i.insumo.id] = (_usos[i.insumo.id] ?? 0) + _paso(i)),
+                ),
+              ],
+            ),
+          ),
+      ],
+      botones: [
+        BotonNs.primario(context, 'Listo', () => Navigator.of(context).pop((ajustes: {for (final e in _usos.entries) if (e.value > 0) e.key: e.value}))),
+        BotonNs.secundario(context, 'Volver a lo de siempre', () => Navigator.of(context).pop((ajustes: null))),
+      ],
     );
   }
 }

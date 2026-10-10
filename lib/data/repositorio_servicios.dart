@@ -640,3 +640,32 @@ Future<void> devolverInsumosDeLinea(
         );
   }
 }
+
+/// Un servicio tal como lo muestra Vender (Regla 20).
+class ServicioParaVender {
+  const ServicioParaVender({required this.servicio, this.alcanzaPara, this.falta});
+
+  final Producto servicio;
+
+  /// Para cuántos alcanza hoy, solo cuando eso limita el cobro (módulo de insumos y "Bloquear si falta un insumo"
+  /// prendidos, con receta). Null: sin límite.
+  final int? alcanzaPara;
+
+  /// El insumo que no alcanza ni para uno: el servicio se ve con candado y no se puede agregar. Null si se puede cobrar.
+  final Producto? falta;
+}
+
+/// Los servicios que se ofrecen, por nombre, con lo que necesita Vender para mostrarlos.
+Future<List<ServicioParaVender>> serviciosParaVender(AppDatabase db) async {
+  final servicios = await listarServicios(db);
+  if (servicios.isEmpty) return const [];
+  final modulos = await modulosNegocioActuales(db);
+  final limita = modulos.estaActivo(Modulo.insumos) && modulos.estaActivo(Modulo.bloquearInsumos);
+  return [
+    for (final s in servicios)
+      if (!limita || s.alcanzaPara == null)
+        ServicioParaVender(servicio: s.servicio)
+      else
+        ServicioParaVender(servicio: s.servicio, alcanzaPara: s.alcanzaPara, falta: s.alcanzaPara! < 1 ? s.seAcabaPrimero : null),
+  ];
+}

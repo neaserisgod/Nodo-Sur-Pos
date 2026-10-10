@@ -101,9 +101,9 @@ Distinto del mock a propósito:
 Pendiente / ideas (sin hacer):
 - **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
-  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapas 1 y 2 hechas** (forma de
-  trabajar deducida del rubro; insumos, servicios y el calculador en el celular; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el
-  resto, plan en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapas 1 a 3 hechas** (forma de
+  trabajar deducida del rubro; insumos, servicios y el calculador en el celular; cobrar servicios; rama `ccr-1a8287aa-6i8nq2`,
+  sin mezclar); el resto, plan en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
 - **Sync: un producto que se crea y mueve su stock antes de llegar al otro equipo cuenta ese movimiento dos veces allá**
   (encontrado el 2026-10-10, sin arreglar): la fila nueva viaja con el stock de ese momento y además se aplica el delta del
   movimiento (creado con 10, ajustado a 7, llega como 4). Pasa con `stock`, `stock_gramos` y `stock_milesimas`. Raro con la sync
@@ -135,6 +135,13 @@ Pendiente / ideas (sin hacer):
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
 ## Últimos cambios (10/10/2026)
+
+- **Servicios, etapa 3: cobrar servicios** (`REGLAS-NEGOCIO.md` §20, con el OK del dueño: la mano de obra es solo referencia
+  para el precio y los productos se siguen vendiendo). En Vender del celular, en "Solo celular", los servicios salen en la
+  búsqueda y en "Más vendidos" con para cuántos alcanza; si falta un insumo, con candado y sin poder cobrarse (módulo "Bloquear
+  si falta un insumo", prendido de fábrica). Cobrar descuenta los insumos y guarda qué se usó (v66); "Ajustar" corrige lo
+  usado en esa venta; anular devuelve. La reposición y Separaciones reparten el servicio por el proveedor de cada insumo.
+  Probado con tests (incluida la conciliación de caja con servicios); **falta verlo en un celular real**.
 
 - **Servicios, etapa 2** (`docs/PLAN-SERVICIOS.md`; rama `ccr-1a8287aa-6i8nq2`, sin mezclar): en un negocio de servicios, en
   "Solo celular", la pestaña Productos pasa a **Servicios**: servicios con su receta de insumos y el **calculador** (lo que cuesta,

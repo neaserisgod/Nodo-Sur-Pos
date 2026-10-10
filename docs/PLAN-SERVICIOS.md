@@ -1,7 +1,7 @@
 # Plan · Nodo Sur para servicios (barbería, uñas y belleza)
 
-**Estado al 2026-10-10: etapas 1 y 2 hechas (forma de trabajar y rubros de servicios; insumos, servicios y calculador en el
-celular), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapas 3 a 5 sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
+**Estado al 2026-10-10: etapas 1, 2 y 3 hechas (forma de trabajar y rubros de servicios; insumos, servicios y calculador en el
+celular; cobrar servicios), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapas 4 y 5 sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
 por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
 día sobre el bot que ya existe (`neaserisgod/botdemo`).
@@ -143,11 +143,30 @@ servicios son productos").
   `test/data/sync_servicios_test.dart`, `test/companion/pantalla_servicios_test.dart`.
 - **Falta probarla en un celular real** (alta de un insumo, compra, servicio con el calculador).
 
-### Etapa 3 · Cobrar servicios (sin PC)
-- Tabla de consumos por línea (v66, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
-  módulo. Ajustar lo usado en la venta, si el módulo está prendido.
-- Reposición, Separaciones y ganancia leen los consumos. Se amplía el test de conciliación con ventas de servicios.
-- `REGLAS-NEGOCIO.md` gana la sección "Servicios e insumos" (antes de programar, con el OK del dueño).
+### Etapa 3 · Cobrar servicios (sin PC) — hecha (2026-10-10)
+
+Reglas en `REGLAS-NEGOCIO.md` §20, con el OK del dueño del 2026-10-10: **la mano de obra es solo referencia para el precio**
+(no es costo de la venta) y **los productos se siguen vendiendo** en un negocio de servicios. Cómo está hecho, en `DECISIONES.md`
+("Un servicio cobrado es una línea y sus consumos").
+
+- **Dominio**: `consumosDeLinea` (el costo por servicio es el del calculador, repartido entre los insumos sin perder un centavo)
+  y `primerFaltante` (lo que pide el carrito entero contra el stock).
+- **Migración v66**: `lineas_de_venta.es_servicio` y la tabla `consumos_de_linea` (insumo, milésimas, costo-foto, proveedor),
+  que viaja por la sync como un registro.
+- **Cobrar** (`registrarServicioEnVenta`, desde `registrarLineaOPromo`): una línea con el nombre del servicio y su costo de
+  insumos, los consumos y el descuento de cada insumo con su movimiento. **Anular y editar** devuelven los insumos.
+- **Módulos nuevos de servicios**: `bloquear_insumos` (prendido de fábrica; mira el carrito entero) y `ajustar_insumos`. Con
+  `insumos` apagado, el servicio se cobra sin tocar insumos.
+- **Reposición, Separaciones, proveedores, cierre e historial** leen la línea repartida por el proveedor de cada insumo
+  (`lineas_de_servicio.dart`); la ganancia del día y el equilibrio la ven entera (da lo mismo).
+- **Celular, Vender**: los servicios salen primero en la búsqueda (duración y "alcanza para N"; con candado y "falta …" si no
+  alcanza un insumo, sin poder agregarse) y en "Más vendidos"; cada línea de servicio tiene **Ajustar** (lo que usa cada
+  servicio, solo en esa venta).
+- **Limitación conocida**: el editor de ventas (PC) reconstruye una línea de servicio con la receta, no con lo que se ajustó al
+  cobrarla. No afecta hoy: los servicios son solo del celular, y el celular no edita ventas (anula).
+- Tests: `test/domain/servicios_test.dart`, `test/data/cobrar_servicios_test.dart`, `test/data/migracion_v66_test.dart`,
+  `test/data/conciliacion_caja_test.dart` (la mitad de las semillas con servicios), `test/companion/vender_servicios_test.dart`.
+- **Falta probarla en un celular real.**
 
 ### Etapa 4 · Agenda, profesionales y seña (sin PC)
 - Tabla `turnos` (v67, sincronizada), con cliente de `clientes` y profesional de `usuarios`. Los módulos `agenda`,
@@ -273,6 +292,6 @@ Todas respondidas el 2026-10-09: ver las decisiones 1 a 19 arriba. La que decía
 etapa 5: reservar es trabajo nuevo en el servidor, por sucursal.
 
 ## Qué no se probó
-Las etapas 1 y 2 están probadas solo con tests (dominio, base, sync y la pantalla del celular en un widget test): nada en un
+Las etapas 1 a 3 están probadas solo con tests (dominio, base, sync, conciliación de caja y las pantallas del celular en widget tests): nada en un
 celular real todavía. El resto solo existe en el mock (Chromium de escritorio y ancho de celular). De `botdemo` corren sus tests
 (con `config.example.json` copiado como `config.json`); no se probó nada contra el sitio ni con Gemini.

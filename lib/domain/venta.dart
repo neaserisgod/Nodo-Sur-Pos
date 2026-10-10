@@ -180,6 +180,7 @@ LineaVenta sumarLineasVenta(LineaVenta actual, LineaVenta nueva) {
       tipoCigarrillo: actual.tipoCigarrillo,
       precioUnitarioCentavos: actual.precioUnitarioCentavos,
       costoUnitarioCentavos: actual.costoUnitarioCentavos,
+      insumosAjustados: actual.insumosAjustados,
     );
   }
   if (actual is LineaVentaPesable && nueva is LineaVentaPesable) {

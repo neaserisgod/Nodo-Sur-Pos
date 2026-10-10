@@ -75,6 +75,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 - [Insumos y servicios son productos; el stock de un insumo va en milésimas (2026-10-10)](#insumos-y-servicios-son-productos-el-stock-de-un-insumo-va-en-milésimas-2026-10-10)
+- [Un servicio cobrado es una línea y sus consumos (2026-10-10)](#un-servicio-cobrado-es-una-línea-y-sus-consumos-2026-10-10)
 
 **Diseño y pantallas**
 
@@ -2397,3 +2398,29 @@ centena hacia arriba** (la misma cuenta que la Regla 14). El resto, decisiones d
 - **El valor de la hora se carga en la pestaña Servicios**, no en Configuración como decía el plan: Configuración del celular pasa
   por `ServicioCompanion` (doble camino, PC y base local) y los servicios son solo del celular; la fila aparece arriba de la lista
   cuando el módulo de mano de obra está prendido.
+
+## Un servicio cobrado es una línea y sus consumos (2026-10-10)
+
+Etapa 3 de `docs/PLAN-SERVICIOS.md`, Regla 20. El ticket tiene que decir "Kapping", pero a cada proveedor se le repone lo que
+costaron SUS insumos. La promo resuelve lo segundo abriéndose en las líneas de sus artículos, y eso rompe lo primero. Se eligió:
+
+- **Una sola línea en `lineas_de_venta`** (`es_servicio`), con el precio del servicio y el costo de todos sus insumos. Es la que
+  ven el ticket, el historial, la ganancia del día y el equilibrio: para ellos un servicio es una venta más.
+- **Lo que gastó de cada insumo va aparte, en `consumos_de_linea`**: milésimas, costo-foto y proveedor del insumo en ese momento
+  (Regla 4). El costo de la línea es el del calculador (`costoInsumosCentavos`, una sola fórmula) y se reparte entre los insumos
+  en proporción a lo que vale cada uno, con `repartirEnProporcion` (el mismo de la promo): los consumos suman justo el costo.
+- **Las cuentas por proveedor leen la línea repartida** (`conServiciosRepartidos`, `lib/data/lineas_de_servicio.dart`): cada
+  consumo pasa a ser una "parte" con el proveedor y el costo del insumo y su parte del precio (en proporción al costo). Así la
+  reposición, Separaciones (con su cajón / Mercado Pago por línea), los resúmenes de proveedores, el cierre y el historial
+  siguen con el mismo código: solo cambia de quién es cada peso. Las consultas que filtran por proveedor traen además las
+  líneas de servicio y filtran después de repartir. Se descartó reescribir esas cuentas para leer consumos (son seis lugares
+  con la plata de por medio).
+- **Un servicio sin insumos cuesta $0 de verdad** (`lineaParaReposicionDesde`): no es "sin costo", que es lo que significa un $0
+  en un producto (Regla 4). Una parte de un insumo sin costo cargado sí queda "sin costo" y se avisa.
+- **"Bloquear si falta un insumo" mira el carrito entero** dentro de la misma transacción que graba la venta: dos kappings piden
+  el doble de top coat. Si falta, no se graba nada (`InsumoFaltante`, un `ArgumentError` con el mensaje para mostrar).
+- **Los ajustes son por servicio, no por línea** (`LineaVentaPorUnidad.insumosAjustados`): una línea de 2 con un ajuste gasta el
+  doble de lo ajustado, y el costo por unidad sigue saliendo entero.
+- **Los consumos viajan por la sync como un registro** (solo inserción), justo después de su línea; editar la venta los borra y
+  vuelve a escribir con ella, como a las líneas.
+

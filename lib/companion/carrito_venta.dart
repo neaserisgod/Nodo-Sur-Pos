@@ -50,6 +50,13 @@ ResultadoAgregarLinea lineaDesdeResultadoBusqueda(
     );
   }
 
+  if (producto.faltaInsumo != null) {
+    // Regla 20, "Bloquear si falta un insumo": no entra al carrito, como un producto sin stock.
+    return ResultadoAgregarLinea.error(
+      'Falta ${producto.faltaInsumo!.toLowerCase()}: ${producto.nombre} no se puede cobrar hasta que cargues la compra.',
+    );
+  }
+
   return ResultadoAgregarLinea.ok(
     LineaVentaPorUnidad(
       productoId: '${producto.id}',
