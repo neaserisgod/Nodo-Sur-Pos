@@ -339,7 +339,8 @@ verde (en `Nodo-Sur-Pos` falla a veces `escucha_pc_test`, que ya fallaba antes p
   `pantalla_carrito_venta.dart`; cobro offline en `puerto_local.dart`.
 - Servidor (`NodoSurPage`): `functions/_lib/agenda.js` + el handler `/agenda/*` de `functions/_lib/sync_hub.js`; rutas en
   `functions/api/agenda.js` y `worker.js`; tests en `tests/agenda.test.mjs`. Cuerpo de `reservar`:
-  `{turno, profesional, inicio, fin}` (fechas ISO); 409 trae el turno con que choca.
+  `{id, profesional, inicio, fin, porProfesional}`: `id` es el `global_id` del turno, horas como texto local
+  `'YYYY-MM-DD HH:MM'` del mismo día, `profesional` `''` si la agenda es una sola; 409 trae el turno con que choca.
 - Bot (`botdemo`): `src/core/motor.js` (cola por número), `src/core/maquina.js` (async), `src/core/flujos/senas.js`
   (siempre `a_revisar`).
 
