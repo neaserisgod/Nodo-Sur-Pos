@@ -38,12 +38,15 @@ class InsumoListado {
   /// Por debajo del mínimo que se cargó (0 o null: sin aviso).
   bool get pocoStock => (producto.stockMinimoMilesimas ?? 0) > 0 && stockMilesimas <= producto.stockMinimoMilesimas!;
 
-  InsumoParaCalculo get paraCalculo => InsumoParaCalculo(
-        costoEnvaseCentavos: producto.costoCentavos ?? 0,
-        contenidoEnvaseMilesimas: producto.contenidoEnvaseMilesimas ?? 0,
-        stockMilesimas: stockMilesimas,
-      );
+  InsumoParaCalculo get paraCalculo => _paraCalculo(producto);
 }
+
+/// Un insumo de la base con lo que piden las cuentas de `domain/servicios.dart`.
+InsumoParaCalculo _paraCalculo(Producto p) => InsumoParaCalculo(
+      costoEnvaseCentavos: p.costoCentavos ?? 0,
+      contenidoEnvaseMilesimas: p.contenidoEnvaseMilesimas ?? 0,
+      stockMilesimas: p.stockMilesimas ?? 0,
+    );
 
 /// Una línea de la receta ya resuelta contra la base.
 class UsoListado {
@@ -196,6 +199,8 @@ Future<void> _moverStockDeInsumo(
   required int milesimas,
   required int usuarioId,
   required String motivo,
+  String tipo = 'AJUSTE',
+  int? ventaId,
 }) async {
   final anterior = insumo.stockMilesimas ?? 0;
   await (db.update(db.productos)..where((p) => p.id.equals(insumo.id))).write(
@@ -205,7 +210,8 @@ Future<void> _moverStockDeInsumo(
         MovimientosDeStockCompanion.insert(
           productoId: insumo.id,
           usuarioId: usuarioId,
-          tipo: 'AJUSTE',
+          tipo: tipo,
+          ventaId: Value(ventaId),
           milesimas: Value(milesimas),
           milesimasAnterior: Value(anterior),
           milesimasPosterior: Value(posterior),
@@ -383,9 +389,7 @@ InsumoListado _insumoListado(Producto p) {
   return InsumoListado(
     producto: p,
     unidad: unidad,
-    costoPorUnidadCentavos: costo == null || contenido <= 0
-        ? null
-        : costoPorUnidadCentavos(InsumoParaCalculo(costoEnvaseCentavos: costo, contenidoEnvaseMilesimas: contenido, stockMilesimas: 0)),
+    costoPorUnidadCentavos: costo == null || contenido <= 0 ? null : costoPorUnidadCentavos(_paraCalculo(p)),
   );
 }
 
@@ -490,15 +494,7 @@ Future<List<({Producto insumo, int milesimas})>> _recetaResuelta(AppDatabase db,
 Future<int> costoInsumosDeServicio(AppDatabase db, Producto servicio) async {
   final usos = [
     for (final r in await _recetaResuelta(db, servicio))
-      if ((r.insumo.contenidoEnvaseMilesimas ?? 0) > 0)
-        UsoDeInsumo(
-          insumo: InsumoParaCalculo(
-            costoEnvaseCentavos: r.insumo.costoCentavos ?? 0,
-            contenidoEnvaseMilesimas: r.insumo.contenidoEnvaseMilesimas!,
-            stockMilesimas: r.insumo.stockMilesimas ?? 0,
-          ),
-          cantidadMilesimas: r.milesimas,
-        ),
+      if ((r.insumo.contenidoEnvaseMilesimas ?? 0) > 0) UsoDeInsumo(insumo: _paraCalculo(r.insumo), cantidadMilesimas: r.milesimas),
   ];
   return costoInsumosCentavos(usos);
 }
@@ -513,27 +509,17 @@ Future<void> consumirInsumosDeServicio(
   required int usuarioId,
 }) async {
   for (final r in await _recetaResuelta(db, servicio)) {
-    final actual = await _producto(db, r.insumo.id);
     final usa = r.milesimas * cantidad;
-    final anterior = actual.stockMilesimas ?? 0;
-    final posterior = anterior - usa;
-    await (db.update(db.productos)..where((p) => p.id.equals(actual.id))).write(
-      ProductosCompanion(stockMilesimas: Value(posterior), actualizadoEn: Value(DateTime.now())),
+    await _moverStockDeInsumo(
+      db,
+      insumo: r.insumo,
+      posterior: (r.insumo.stockMilesimas ?? 0) - usa,
+      milesimas: usa,
+      usuarioId: usuarioId,
+      motivo: servicio.nombre,
+      tipo: 'VENTA',
+      ventaId: ventaId,
     );
-    await db.into(db.movimientosDeStock).insert(
-          MovimientosDeStockCompanion.insert(
-            productoId: actual.id,
-            usuarioId: usuarioId,
-            tipo: 'VENTA',
-            ventaId: Value(ventaId),
-            milesimas: Value(usa),
-            milesimasAnterior: Value(anterior),
-            milesimasPosterior: Value(posterior),
-            motivo: Value(servicio.nombre),
-            globalId: Value(generarGlobalId()),
-            origenDispositivo: Value(idDispositivoActual),
-          ),
-        );
   }
 }
 
@@ -551,25 +537,15 @@ Future<void> devolverInsumosDeVenta(AppDatabase db, {required int ventaId, requi
   for (final MapEntry(key: insumoId, value: gastado) in gastadoPorInsumo.entries) {
     if (gastado == 0) continue;
     final actual = await _producto(db, insumoId);
-    final anterior = actual.stockMilesimas ?? 0;
-    final posterior = anterior + gastado;
-    await (db.update(db.productos)..where((p) => p.id.equals(insumoId))).write(
-      ProductosCompanion(stockMilesimas: Value(posterior), actualizadoEn: Value(DateTime.now())),
+    await _moverStockDeInsumo(
+      db,
+      insumo: actual,
+      posterior: (actual.stockMilesimas ?? 0) + gastado,
+      milesimas: gastado,
+      usuarioId: usuarioId,
+      motivo: motivo,
+      ventaId: ventaId,
     );
-    await db.into(db.movimientosDeStock).insert(
-          MovimientosDeStockCompanion.insert(
-            productoId: insumoId,
-            usuarioId: usuarioId,
-            tipo: 'AJUSTE',
-            ventaId: Value(ventaId),
-            milesimas: Value(gastado),
-            milesimasAnterior: Value(anterior),
-            milesimasPosterior: Value(posterior),
-            motivo: Value(motivo),
-            globalId: Value(generarGlobalId()),
-            origenDispositivo: Value(idDispositivoActual),
-          ),
-        );
   }
 }
 

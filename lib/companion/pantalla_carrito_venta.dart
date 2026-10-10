@@ -247,7 +247,19 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       mostrarAvisoNs(context, resultado.error!, largo: true);
       return;
     }
-    final nueva = resultado.linea!;
+    _sumarAlCarrito(resultado.linea!);
+    if (limpiar) {
+      setState(() {
+        _busquedaCtrl.clear();
+        _resultadosBusqueda = [];
+        _gramosBusqueda = null;
+        _textoDeResultados = null;
+      });
+    }
+  }
+
+  /// Un producto o servicio repetido suma en la misma línea.
+  void _sumarAlCarrito(LineaVenta nueva) {
     _claveCobroActual = null;
     _cerrarUltimaVenta();
     setState(() {
@@ -258,29 +270,12 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         widget.carrito.add(nueva);
       }
       _resultado = null;
-      if (limpiar) {
-        _busquedaCtrl.clear();
-        _resultadosBusqueda = [];
-        _gramosBusqueda = null;
-        _textoDeResultados = null;
-      }
     });
   }
 
   /// Suma un servicio tocado en la grilla (§20). Si con el stock de hoy no alcanza un insumo, avisa y lo suma igual.
   void _agregarServicio(ServicioListado servicio) {
-    final nueva = lineaDeServicio(servicio);
-    _claveCobroActual = null;
-    _cerrarUltimaVenta();
-    setState(() {
-      final i = widget.carrito.indexWhere((l) => l.productoId == nueva.productoId);
-      if (i != -1) {
-        widget.carrito[i] = sumarLineasVenta(widget.carrito[i], nueva);
-      } else {
-        widget.carrito.add(nueva);
-      }
-      _resultado = null;
-    });
+    _sumarAlCarrito(lineaDeServicio(servicio));
     if (avisoDeInsumos(servicio) case final aviso?) mostrarAvisoNs(context, '$aviso: se cobra igual');
   }
 
