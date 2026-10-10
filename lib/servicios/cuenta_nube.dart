@@ -601,7 +601,7 @@ class ClienteNube {
   });
 
   /// Crea la orden en la terminal. [idempotencyKey] repetida no duplica el cobro (mismo criterio que el cobro directo).
-  Future<({String id, String estado})> crearOrdenPoint(
+  Future<({String id, String estado, String? qrData})> crearOrdenPoint(
     String token, {
     required String externalReference,
     required String idempotencyKey,
@@ -618,7 +618,9 @@ class ClienteNube {
     final id = j['id']?.toString();
     final estado = j['status']?.toString();
     if (id == null || estado == null) throw const ErrorNube('respuesta_invalida', 'Mercado Pago respondió sin id o estado de la orden.');
-    return (id: id, estado: estado);
+    // Canal 'qr_pantalla' (Nodo Sur Servicios): la trama del QR que se dibuja en el celular.
+    final qr = j['qrData'];
+    return (id: id, estado: estado, qrData: qr is String && qr.isNotEmpty ? qr : null);
   });
 
   Future<String> consultarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {

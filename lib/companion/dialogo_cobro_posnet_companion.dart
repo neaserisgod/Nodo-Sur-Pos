@@ -12,11 +12,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
 import '../domain/venta.dart';
 import '../servicios/avisos_cobro_mp.dart';
+import '../servicios/pasarela_point_nube.dart' show qrEnPantallaDe;
 import 'cliente_companion.dart' show ErrorCompanion;
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
@@ -349,6 +351,7 @@ class _DialogoCobroPosnetCompanionState
     final monto = plataNs(widget.montoCentavos);
     final List<Widget> bloques = switch (_fase) {
       _Fase.creando => [FilaEsperaNs('Enviando la orden a la terminal — $monto')],
+      _Fase.esperando when qrEnPantallaDe(_ordenIdMp) != null => [_QrEnPantalla(datos: qrEnPantallaDe(_ordenIdMp)!, monto: monto)],
       _Fase.esperando => [FilaEsperaNs(_enTerminal ? 'El cliente tiene que confirmar en la terminal — $monto' : 'Esperando el pago — $monto')],
       _Fase.cancelando => [const FilaEsperaNs('Cancelando en la terminal...')],
       _Fase.cobrandoAMano || _Fase.guardandoVenta => [FilaEsperaNs('Grabando la venta — $monto')],
@@ -382,5 +385,32 @@ class _DialogoCobroPosnetCompanionState
         BotonNs.texto(context, 'Cancelar', () => Navigator.of(context).pop()),
       ],
     };
+  }
+}
+
+/// El QR de la orden en la pantalla del celular (Nodo Sur Servicios, El dueño, 2026-10-10): la clienta lo escanea con cualquier
+/// billetera o la app de su banco. Fondo blanco siempre, también en modo oscuro: un lector no lee un QR invertido.
+class _QrEnPantalla extends StatelessWidget {
+  const _QrEnPantalla({required this.datos, required this.monto});
+  final String datos;
+  final String monto;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Column(
+      children: [
+        Container(
+          key: const Key('cobro_qr_pantalla'),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+          child: QrImageView(data: datos, size: 240, padding: EdgeInsets.zero, backgroundColor: Colors.white),
+        ),
+        const SizedBox(height: 12),
+        Text('Escaneá para pagar $monto', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
+        const SizedBox(height: 4),
+        Text('Con Mercado Pago, la app de tu banco o cualquier billetera', textAlign: TextAlign.center, style: estiloNs(14, color: ns.mute)),
+      ],
+    );
   }
 }
