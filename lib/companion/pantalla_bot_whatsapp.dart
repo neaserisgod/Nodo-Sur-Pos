@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import '../domain/bot_whatsapp.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/acceso_bot.dart';
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ConfiguracionNegocioCompanion;
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
@@ -246,8 +247,18 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
         key: const Key('bot_direccion'),
         child: CampoNs(etiqueta: 'Dirección (para "¿dónde están?")', controller: _direccion, placeholder: 'Ej: Mitre 123'),
       ),
-      _seccion('Horarios'),
-      for (final d in diasBot) _dia(d),
+      // En un negocio de servicios, el horario, los servicios y la seña son los del negocio (Agenda y seña, Servicios) y le llegan
+      // solos al bot (`turnos_bot_nube.dart`; El dueño, 2026-10-10: sin una configuración aparte para el bot).
+      if (esNegocioDeServicios()) ...[
+        _seccion('Horario, servicios y seña'),
+        const InfoNs(
+          'Salen de tu negocio: el horario y la seña de Más › Configuración › Agenda y seña, y los servicios con su precio de la pestaña Servicios. El bot los recibe solo cada vez que los cambiás.',
+          icono: IconoNs.calendario,
+        ),
+      ] else ...[
+        _seccion('Horarios'),
+        for (final d in diasBot) _dia(d),
+      ],
       _seccion('Cuando contestás vos'),
       Text('El bot se calla en ese chat durante:', style: estiloNs(14, color: context.ns.mute)),
       const SizedBox(height: 10),

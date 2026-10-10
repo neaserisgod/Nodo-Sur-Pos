@@ -11,3 +11,10 @@ Stream<int> get avisosPedidoBot => _pedidos.stream;
 
 /// Lo llama la conexión en vivo de la sync al recibir un pedido nuevo del bot.
 void avisarPedidoBot(int id) => _pedidos.add(id);
+
+final StreamController<String> _turnos = StreamController<String>.broadcast();
+
+/// Ids (del sitio) de los turnos que dio o cambió el bot (negocios de servicios): la Agenda los baja en el momento.
+Stream<String> get avisosTurnoBot => _turnos.stream;
+
+void avisarTurnoBot(String id) => _turnos.add(id);

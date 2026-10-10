@@ -101,7 +101,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('0,2 ml'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Usar'));
+    // El editor es una lista: con "Pide seña" (§21) el sugerido queda más abajo y hay que bajar hasta él.
+    await tester.dragUntilVisible(find.text('Usar'), find.byType(ListView).last, const Offset(0, -200));
     await tester.tap(find.text('Usar'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Guardar servicio'));

@@ -53,6 +53,7 @@ import 'modo_uso.dart';
 import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
+import 'pantallas/pantalla_agenda_ns.dart';
 import 'pantallas/hoja_actualizar_ns.dart';
 import 'app_ns.dart';
 import 'funciones_ns.dart';
@@ -816,7 +817,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             child: IndexedStack(
             index: _pestania.index,
             children: [
-              const PantallaInicioNs(),
+              // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
+              ValueListenableBuilder<ModulosNegocio>(
+                valueListenable: modulosActuales,
+                builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
+              ),
               ValueListenableBuilder<ModulosNegocio>(
                 valueListenable: modulosActuales,
                 builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs(),

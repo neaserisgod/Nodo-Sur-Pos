@@ -65,8 +65,15 @@ class BarraInferiorNs extends StatelessWidget {
                   child: p == PestaniaNs.vender
                       ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p))
                       : _Pestania(
-                          etiqueta: p == PestaniaNs.productos && conServicios ? 'Servicios' : etiqueta,
-                          icono: icono,
+                          // En servicios la Agenda reemplaza al Inicio (`REGLAS-NEGOCIO.md` §21) y Productos pasa a Servicios.
+                          etiqueta: !conServicios
+                              ? etiqueta
+                              : switch (p) {
+                                  PestaniaNs.inicio => 'Agenda',
+                                  PestaniaNs.productos => 'Servicios',
+                                  _ => etiqueta,
+                                },
+                          icono: p == PestaniaNs.inicio && conServicios ? IconoNs.calendario : icono,
                           activa: activa == p,
                           punto: p == PestaniaNs.mas && hayActualizacion && activa != p,
                           onTap: () => onSeleccionar(p),

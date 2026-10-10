@@ -3,6 +3,7 @@
 // app publica y los pedidos que toma (`NodoSurPage`, `/api/bot/*`).
 
 import 'pesables.dart';
+import 'turnos.dart';
 
 /// Un producto tal como lo ve el bot: lo justo para contestar "¿cuánto sale?" y "¿hay?". Nada de costos, proveedores ni stock
 /// exacto (el catálogo sale de la base del negocio hacia un servidor; lo que no hace falta no viaja).
@@ -426,6 +427,68 @@ Map<String, dynamic> configBotParaGuardar(
     'numero_duena': numeroWhatsApp(c.numeroAvisos),
     'horarios': {for (final d in diasBot) d: c.horarios[d] == null ? null : {'desde': c.horarios[d]!.desde, 'hasta': c.horarios[d]!.hasta}},
     'pausa_minutos': c.pausaMinutos,
+  };
+}
+
+/// Un servicio tal como lo ofrece el bot (negocios de servicios): sale de los datos del negocio, no de una configuración aparte
+/// (El dueño, 2026-10-10: "no tiene que haber una sección específica para bot").
+class ServicioParaBot {
+  const ServicioParaBot({required this.gid, required this.nombre, required this.duracionMinutos, required this.precioCentavos, required this.senaCentavos});
+  final String gid;
+  final String nombre;
+  final int duracionMinutos;
+  final int precioCentavos;
+  final int senaCentavos;
+}
+
+int _pesosHaciaArriba(int centavos) => (centavos + 99) ~/ 100;
+
+/// La configuración del bot con los servicios, el horario de atención y la seña del negocio, encima de [anterior] (lo que ya
+/// tenía: números, textos, pausa). El bot habla en pesos enteros y usa números chicos para su menú ("*1* — Semipermanente"):
+/// cada servicio conserva el número que ya tenía (por su `gid`), así un turno o un menú abierto no cambia de servicio; uno nuevo
+/// toma el siguiente.
+///
+/// La seña viaja solo si el negocio cargó a dónde se transfiere (alias y titular): sin eso el bot no puede pedirla y rechazaría
+/// la configuración entera (`botdemo/src/config.js`). Sin servicios devuelve [anterior] tal cual (el bot necesita al menos uno).
+Map<String, dynamic> configBotConServicios(
+  Map<String, dynamic> anterior, {
+  required List<ServicioParaBot> servicios,
+  required HorarioAtencion horario,
+  required int pasoMinutos,
+  required String aliasSena,
+  required String titularSena,
+}) {
+  if (servicios.isEmpty) return anterior;
+  final idsPrevios = <String, int>{};
+  var maximo = 0;
+  for (final x in (anterior['servicios'] is List ? anterior['servicios'] as List : const [])) {
+    if (x is! Map || x['id'] is! int) continue;
+    final id = x['id'] as int;
+    if (id > maximo) maximo = id;
+    if (x['catalogo_id'] is String && (x['catalogo_id'] as String).isNotEmpty) idsPrevios[x['catalogo_id'] as String] = id;
+  }
+  final conSena = aliasSena.trim().isNotEmpty && titularSena.trim().isNotEmpty;
+  final lista = <Map<String, dynamic>>[];
+  for (final s in servicios) {
+    final id = idsPrevios[s.gid] ?? ++maximo;
+    final precio = _pesosHaciaArriba(s.precioCentavos);
+    final sena = conSena ? _pesosHaciaArriba(s.senaCentavos).clamp(0, precio) : 0;
+    lista.add({'id': id, 'nombre': s.nombre, 'duracion_min': s.duracionMinutos, 'precio': precio, 'sena': sena, 'catalogo_id': s.gid});
+  }
+  final senasPrevias = anterior['senas'] is Map ? Map<String, dynamic>.from(anterior['senas'] as Map) : <String, dynamic>{};
+  final turnosPrevios = anterior['turnos'] is Map ? Map<String, dynamic>.from(anterior['turnos'] as Map) : <String, dynamic>{};
+  return {
+    ...anterior,
+    'servicios': lista,
+    'horarios': horario.toJson(),
+    'turnos': {...turnosPrevios, 'intervalo_slot_min': pasoMinutos},
+    'senas': {
+      ...senasPrevias,
+      'habilitadas': conSena && lista.any((s) => (s['sena'] as int) > 0),
+      'alias_mp': aliasSena.trim(),
+      'titular': titularSena.trim(),
+      'vencimiento_horas': senasPrevias['vencimiento_horas'] is int ? senasPrevias['vencimiento_horas'] : 2,
+    },
   };
 }
 
