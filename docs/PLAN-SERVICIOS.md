@@ -45,6 +45,15 @@ día sobre el bot que ya existe (`neaserisgod/botdemo`).
 19. **Lo que el sitio promete del bot se construye** (no se saca de la página), después de los turnos y en este orden:
     catálogo y pedidos con stock → pedir el cierre de caja por WhatsApp y compararlo con el POS → cotizador de usados.
 
+### Turnos del bot y del celular (El dueño, 2026-10-10)
+20. **Sin internet, el celular anota igual** y reserva en el servidor cuando vuelve la conexión. Si al reservar el horario
+    ya lo había dado el bot, la Agenda avisa el choque y se resuelve a mano. Atender nunca se frena por la red.
+21. **Un turno del bot entra confirmado si el servicio no pide seña**; si la pide, entra "Sin confirmar" hasta que la seña
+    se pague (link de MP) o la dueña la apruebe (`!ok`).
+22. **Seña sin pagar: el horario se guarda 30 minutos.** Pasado ese tiempo el bot le avisa al cliente y el horario se libera.
+23. **Recordatorio: la tarde anterior**, con la opción de responder para cancelar (cancelar devuelve la seña, decisión de
+    etapa 4).
+
 ## Lo que encontró la revisión del código (cambia el plan)
 
 1. **Un módulo nuevo nace PRENDIDO en todos los negocios que ya existen.** `modulosDesactivados` guarda los apagados a
@@ -296,6 +305,8 @@ desde el celular con Termux: [`PLAN-BOT.md`](./PLAN-BOT.md).
    (`functions/_lib/agenda.js`): `POST /api/agenda/reservar` (409 con el turno con que choca), `/liberar` y
    `GET /api/agenda/ocupados`, con el acceso de la sync. Prueba de 20 reservas simultáneas del mismo horario: gana una.
    **Falta** que la app reserve ahí al anotar, mover o cancelar (hoy solo mira su base).
+2b. **Siguiente (sin empezar)**: la app reserva en el servidor al anotar, mover o cancelar (decisión 20). Ver "Para
+   retomar" abajo.
 3. El bot como equipo de la sync: vincularse, leer servicios, horarios, clientes y turnos; subir los suyos.
 4. Link de seña de MP y confirmación por el webhook `payment`; verificar si las transferencias al CVU aparecen en los cobros.
 5. IA de respaldo.
@@ -311,6 +322,40 @@ desde el celular con Termux: [`PLAN-BOT.md`](./PLAN-BOT.md).
   3. **Cotizador de usados**: precio orientativo de un equipo usado.
   También **correr en la compu del sistema** (la PC con Windows), además del celular: `botdemo` ya anda en PC con el
   adaptador Baileys, falta instalarlo junto con Nodo Sur.
+
+## Para retomar (estado al 2026-10-10)
+
+Rama `ccr-1a8287aa-6i8nq2` en los tres repos (`Nodo-Sur-Pos`, `botdemo`, `NodoSurPage`), todo pusheado y con los tests en
+verde (en `Nodo-Sur-Pos` falla a veces `escucha_pc_test`, que ya fallaba antes por tiempos). `schemaVersion` **67**.
+
+**Dónde está cada cosa ya hecha:**
+- Dominio: `lib/domain/servicios.dart` (receta, costo, `consumosDeLinea`, `primerFaltante`), `lib/domain/turnos.dart`
+  (estados, `conQuienChoca`, horario, huecos, seña sugerida y a devolver).
+- Base: `lib/data/repositorio_servicios.dart`, `lib/data/repositorio_turnos.dart` (`anotarTurno`, `moverTurno`,
+  `cambiarEstadoTurno`, `tomarSenaDeTurno`, `TurnoSuperpuesto`), `lib/data/lineas_de_servicio.dart`, tablas
+  `lib/data/tables/turnos.dart` y `consumos_de_linea` en `ventas.dart`; migraciones v65–v67 en `database.dart`; sync de
+  `turnos` y `consumos_de_linea` en `repositorio_sincronizacion.dart`.
+- Celular: `lib/companion/pantallas/pantalla_servicios_ns.dart`, `pantalla_agenda_ns.dart`, servicios y turno en
+  `pantalla_carrito_venta.dart`; cobro offline en `puerto_local.dart`.
+- Servidor (`NodoSurPage`): `functions/_lib/agenda.js` + el handler `/agenda/*` de `functions/_lib/sync_hub.js`; rutas en
+  `functions/api/agenda.js` y `worker.js`; tests en `tests/agenda.test.mjs`. Cuerpo de `reservar`:
+  `{turno, profesional, inicio, fin}` (fechas ISO); 409 trae el turno con que choca.
+- Bot (`botdemo`): `src/core/motor.js` (cola por número), `src/core/maquina.js` (async), `src/core/flujos/senas.js`
+  (siempre `a_revisar`).
+
+**Próximo paso concreto (2b, decisión 20):**
+1. En `Nodo-Sur-Pos`, un cliente de `/api/agenda/*` con el token de dispositivo de la sync (mirar cómo arma los pedidos
+   `registro_sync_nube.dart`). Solo cuando el equipo está vinculado a la nube; sin vincular, todo sigue local como hoy.
+2. `anotarTurno`/`moverTurno` siguen grabando local primero (como hoy) y después piden `reservar`; `cambiarEstadoTurno` a
+   cancelado o no vino pide `liberar`. Un fallo de red deja el turno marcado "sin reservar" (columna nueva → migración v68)
+   y se reintenta en cada sync. Un 409 deja el turno con el choque anotado y la Agenda lo muestra para resolverlo a mano.
+3. Tests: cliente falso del servidor (ok, 409, sin red) en `test/data/repositorio_turnos_test.dart` y la Agenda mostrando
+   el choque en `test/companion/pantalla_agenda_test.dart`.
+
+**Después, en orden:** paso 3 (el bot como equipo de la sync, con las decisiones 21–23: estado inicial del turno, 30
+minutos para pagar la seña, recordatorio la tarde anterior), paso 4 (link de seña de MP), paso 5 (IA de respaldo), paso 6
+(API oficial). De la etapa 4 quedó sin hacer: el módulo `turnos_whatsapp`, los turnos sin confirmar en la campanita y el
+recordatorio desde la app.
 
 ## Preguntas antes de programar
 

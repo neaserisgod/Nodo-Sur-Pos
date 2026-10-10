@@ -103,7 +103,7 @@ Pendiente / ideas (sin hacer):
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
   de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapas 1 a 4 hechas** (forma de
   trabajar deducida del rubro; insumos, servicios y el calculador en el celular; cobrar servicios; agenda, profesionales y seña;
-  rama `ccr-1a8287aa-6i8nq2`, sin mezclar); falta el bot (etapa 5), plan en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  rama `ccr-1a8287aa-6i8nq2`, sin mezclar); etapa 5 (bot) a medias: hechos el bot asincrónico y la agenda en el servidor; sigue que la app reserve ahí. Para retomar: sección "Para retomar" de [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
 - **Sync: un producto que se crea y mueve su stock antes de llegar al otro equipo cuenta ese movimiento dos veces allá**
   (encontrado el 2026-10-10, sin arreglar): la fila nueva viaja con el stock de ese momento y además se aplica el delta del
   movimiento (creado con 10, ajustado a 7, llega como 4). Pasa con `stock`, `stock_gramos` y `stock_milesimas`. Raro con la sync
