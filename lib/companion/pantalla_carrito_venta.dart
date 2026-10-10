@@ -37,6 +37,7 @@ import 'mensaje_error.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 /// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
 /// (QR, débito o crédito) se elige adentro del mixto.
@@ -994,7 +995,11 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       padding: EdgeInsets.zero,
       children: [
         if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
-        Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
+        if (esNegocioDeServicios())
+          // Cobrar servicios (con lo que usa cada uno) es la etapa 3 de `docs/PLAN-SERVICIOS.md`: no se promete lo que no hay.
+          const InfoNs('Cobrar los servicios desde acá llega en la próxima actualización. Mientras tanto, cargá tus servicios e insumos en la pestaña Servicios.')
+        else
+          Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
         if (_encargues.isNotEmpty) ...[
           const SizedBox(height: 8),
           PresionNs(

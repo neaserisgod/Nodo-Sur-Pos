@@ -278,10 +278,42 @@ void main() {
       await t.tap(find.byKey(const Key('rubro-unas')));
       await t.pump();
       expect(find.textContaining('Manos, Pies, Cejas y pestañas', skipOffstage: false), findsOneWidget);
-      expect(find.textContaining('La agenda y los servicios', skipOffstage: false), findsOneWidget, reason: 'no se promete lo que todavía no está');
+      expect(find.textContaining('La agenda y cobrar los servicios', skipOffstage: false), findsOneWidget, reason: 'no se promete lo que todavía no está');
       await t.tap(find.byKey(const Key('asistente-seguir')));
       await t.pumpAndSettle();
       expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
+    });
+
+    testWidgets('en un negocio de servicios el segundo paso es el primer servicio, sin código de barras ni stock', (t) async {
+      await tamanio(t);
+      ServicioDePrueba? guardado;
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.producto,
+        rubroInicial: PlantillaRubro.peluqueria,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => fail('no se escanea nada'),
+        alGuardarProducto: (_) async => fail('no se carga un producto'),
+        alGuardarServicio: (s) async => guardado = s,
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.text('Cargá tu primer servicio'), findsOneWidget);
+      expect(find.textContaining('código'), findsNothing);
+      expect(find.text('¿Cuántos tenés?'), findsNothing);
+
+      await t.enterText(find.descendant(of: find.byKey(const Key('servicio-nombre')), matching: find.byType(TextField)), 'Corte de dama');
+      await t.enterText(find.descendant(of: find.byKey(const Key('servicio-duracion')), matching: find.byType(TextField)), '45');
+      await t.enterText(find.descendant(of: find.byKey(const Key('servicio-precio')), matching: find.byType(TextField)), '18000');
+      await t.tap(find.text('Cortes'));
+      await t.pump();
+      await t.tap(find.byKey(const Key('servicio-guardar')));
+      await t.pumpAndSettle();
+      expect(guardado?.nombre, 'Corte de dama');
+      expect(guardado?.duracionMinutos, 45);
+      expect(guardado?.precioCentavos, 1800000);
+      expect(guardado?.categoria, 'Cortes');
+      expect(find.textContaining('Servicios › Insumos'), findsOneWidget);
     });
 
     testWidgets('"Después" deja el paso pendiente y no lo da por hecho', (t) async {

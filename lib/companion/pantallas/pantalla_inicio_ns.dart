@@ -14,6 +14,7 @@ import '../pantalla_movimiento_caja.dart';
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 import 'tablero_ns.dart';
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 class PantallaInicioNs extends StatelessWidget {
   const PantallaInicioNs({super.key});
@@ -239,7 +240,7 @@ class _Carrusel extends StatelessWidget {
     final cartas = <Widget>[
       _TarjetaHoy(dia: dia),
       _TarjetaCajon(app: app),
-      _TarjetaSeparar(app: app, pend: pend),
+      if (!esNegocioDeServicios()) _TarjetaSeparar(app: app, pend: pend),
     ];
     return SizedBox(
       height: 232,
@@ -457,18 +458,26 @@ class _Atajos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final atajos = <(String, IconoNs, VoidCallback)>[
-      ('Consultar precio', IconoNs.escanear, () => app.irA((_) => const PantallaConsultarPrecio())),
-      ('Gasto o ingreso', IconoNs.intercambio, () => app.irA((_) => const PantallaMovimientoCaja(tipoInicial: TipoMovimientoCaja.gasto))),
-      (
-        'Controlar stock',
-        IconoNs.portapapeles,
-        () {
-          app.productosEnConteo.value = true;
-          app.irAPestania(PestaniaNs.productos);
-        },
-      ),
-    ];
+    final gastoOIngreso = ('Gasto o ingreso', IconoNs.intercambio, () => app.irA((_) => const PantallaMovimientoCaja(tipoInicial: TipoMovimientoCaja.gasto)));
+    // En un negocio de servicios no hay códigos que escanear ni stock de productos que contar: los insumos se ven en
+    // la pestaña Servicios.
+    final atajos = esNegocioDeServicios()
+        ? <(String, IconoNs, VoidCallback)>[
+            ('Servicios e insumos', IconoNs.producto, () => app.irAPestania(PestaniaNs.productos)),
+            gastoOIngreso,
+          ]
+        : <(String, IconoNs, VoidCallback)>[
+            ('Consultar precio', IconoNs.escanear, () => app.irA((_) => const PantallaConsultarPrecio())),
+            gastoOIngreso,
+            (
+              'Controlar stock',
+              IconoNs.portapapeles,
+              () {
+                app.productosEnConteo.value = true;
+                app.irAPestania(PestaniaNs.productos);
+              },
+            ),
+          ];
     return Row(
       children: [
         for (var i = 0; i < atajos.length; i++) ...[

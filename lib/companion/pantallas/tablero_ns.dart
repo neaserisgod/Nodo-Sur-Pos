@@ -13,6 +13,7 @@ import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../kit/kit_ns.dart';
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 class TableroNs extends StatefulWidget {
   const TableroNs({super.key});
@@ -95,7 +96,7 @@ class _TableroNsState extends State<TableroNs> {
           _VentasPorHora(porHora: t.porHora),
           const SizedBox(height: 14),
           if (t.masVendidos.isNotEmpty) ...[_MasVendidos(productos: t.masVendidos), const SizedBox(height: 14)],
-          if (t.stockBajo.isNotEmpty) ...[_StockBajo(productos: t.stockBajo), const SizedBox(height: 14)],
+          if (t.stockBajo.isNotEmpty && !esNegocioDeServicios()) ...[_StockBajo(productos: t.stockBajo), const SizedBox(height: 14)],
           if (t.pendientes.isNotEmpty) _Pendientes(pendientes: t.pendientes),
         ],
       ),

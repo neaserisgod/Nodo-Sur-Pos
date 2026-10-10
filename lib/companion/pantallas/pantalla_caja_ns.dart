@@ -11,7 +11,7 @@ import '../../data/repositorio_reposicion.dart' show SeparacionDelDia;
 import '../../data/repositorio_ventas.dart' show sesionAbierta;
 import '../../domain/modulos.dart' show Modulo;
 import '../../domain/periodo.dart' show PeriodoResumen;
-import '../../servicios/modulos_activos.dart' show moduloActivo;
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 import '../../ui/historial/devolucion_mp_dialogo.dart' show ofrecerDevolucionDeCobro;
 import '../../ui/separaciones/separaciones_controlador.dart';
 import '../app_ns.dart';
@@ -69,7 +69,11 @@ class PantallaCajaNs extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: margenNs),
               child: ValueListenableBuilder<int>(
                 valueListenable: app.segmentoCaja,
-                builder: (context, seg, _) => SegmentoNs(opciones: const ['Resumen', 'Separar', 'Ventas'], indice: seg, onCambio: (i) => app.segmentoCaja.value = i),
+                // Un negocio de servicios no separa para proveedores (mock de servicios: Caja queda en Resumen y Ventas). El valor
+                // del segmento sigue siendo 0 Resumen, 1 Separar, 2 Ventas para todos.
+                builder: (context, seg, _) => esNegocioDeServicios()
+                    ? SegmentoNs(opciones: const ['Resumen', 'Ventas'], indice: seg == 2 ? 1 : 0, onCambio: (i) => app.segmentoCaja.value = i == 1 ? 2 : 0)
+                    : SegmentoNs(opciones: const ['Resumen', 'Separar', 'Ventas'], indice: seg, onCambio: (i) => app.segmentoCaja.value = i),
               ),
             ),
             const SizedBox(height: 12),
@@ -78,6 +82,7 @@ class PantallaCajaNs extends StatelessWidget {
                 valueListenable: app.segmentoCaja,
                 builder: (context, seg, _) => switch (seg) {
                   0 => const _Resumen(),
+                  1 when esNegocioDeServicios() => const _Resumen(),
                   1 => const _Separar(),
                   _ => const _Ventas(),
                 },

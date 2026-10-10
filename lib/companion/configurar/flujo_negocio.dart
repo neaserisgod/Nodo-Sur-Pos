@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositorio_productos.dart' as repo_productos;
+import '../../data/repositorio_servicios.dart' as repo_servicios;
 import '../../servicios/marca_actual.dart';
 import '../base_local.dart';
 import '../emparejamiento.dart';
@@ -32,6 +33,7 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
       alGuardarNegocio: (nombre, rubro) => guardarNegocio(db, nombre: nombre, rubro: rubro),
       alEscanear: escanearCodigo,
       alGuardarProducto: (p) => _guardarProducto(p),
+      alGuardarServicio: (s) => _guardarServicio(s),
       alAbrirWeb: (_) => launchUrl(urlPaginaNegocio, mode: LaunchMode.externalApplication),
       alTerminar: (context, _) {
         final navigator = Navigator.of(context);
@@ -71,6 +73,27 @@ Future<void> _guardarProducto(ProductoDePrueba p) async {
     esPesable: false,
     precioCentavos: p.precioCentavos,
     stock: p.stock,
+    usuarioId: usuario?.id ?? 0,
+  );
+}
+
+/// El primer servicio de un negocio de servicios, por el mismo alta que la pestaña Servicios (`repositorio_servicios.dart`).
+/// Sin insumos todavía: la receta se arma después.
+Future<void> _guardarServicio(ServicioDePrueba s) async {
+  final db = baseLocalCompanion();
+  final usuario = await leerUsuario();
+  int? categoriaId;
+  if (s.categoria != null) {
+    for (final c in await repo_productos.listarCategorias(db)) {
+      if (c.nombre == s.categoria) categoriaId = c.id;
+    }
+  }
+  await repo_servicios.crearServicio(
+    db,
+    nombre: s.nombre,
+    precioCentavos: s.precioCentavos,
+    duracionMinutos: s.duracionMinutos,
+    categoriaId: categoriaId,
     usuarioId: usuario?.id ?? 0,
   );
 }

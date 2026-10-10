@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../app_ns.dart';
 import '../funciones_ns.dart';
 import '../kit/kit_ns.dart';
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 class PantallaBuscadorNs extends StatefulWidget {
   const PantallaBuscadorNs({super.key, required this.origen});
@@ -39,7 +40,10 @@ class _PantallaBuscadorNsState extends State<PantallaBuscadorNs> {
     final ns = context.ns;
     final consulta = _ctrl.text;
     final hayTokens = normalizarNs(consulta).split(RegExp(r'\s+')).any((t) => t.isNotEmpty);
-    final resultados = hayTokens ? [for (final f in buscarFunciones(consulta)) ResultadoFuncion(f)] : (_todas ? todasLasFunciones() : <ResultadoFuncion>[]);
+    final servicios = esNegocioDeServicios();
+    final resultados = hayTokens
+        ? [for (final f in buscarFunciones(consulta, servicios: servicios)) ResultadoFuncion(f)]
+        : (_todas ? todasLasFunciones(servicios: servicios) : <ResultadoFuncion>[]);
     final intro = !hayTokens
         ? (_todas ? 'Todo lo que hace la app, ordenado por sección.' : 'Escribí lo que querés hacer o tocá una idea.')
         : resultados.isNotEmpty
@@ -80,7 +84,7 @@ class _PantallaBuscadorNsState extends State<PantallaBuscadorNs> {
                       if (sugerir)
                         Padding(
                           padding: const EdgeInsets.only(top: 2, bottom: 6),
-                          child: Wrap(spacing: 8, runSpacing: 8, children: [for (final s in sugerenciasFunciones) ChipNs(texto: s, activo: false, onTap: () => _poner(s))]),
+                          child: Wrap(spacing: 8, runSpacing: 8, children: [for (final s in servicios ? sugerenciasFuncionesServicios : sugerenciasFunciones) ChipNs(texto: s, activo: false, onTap: () => _poner(s))]),
                         ),
                       if (!hayTokens && !_todas)
                         Padding(

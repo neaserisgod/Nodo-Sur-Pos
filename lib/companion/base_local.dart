@@ -27,3 +27,11 @@ AppDatabase baseLocalCompanion() => _instancia ??= AppDatabase();
 /// Solo para tests y capturas: reemplaza la base local por una en memoria.
 @visibleForTesting
 void usarBaseLocalDeTest(AppDatabase db) => _instancia = db;
+
+/// Cierra la base local si está abierta, para poder borrar su archivo (`borrar_celular.dart`). La próxima vez que algo la
+/// pida se abre de nuevo.
+Future<void> cerrarBaseLocalCompanion() async {
+  final db = _instancia;
+  _instancia = null;
+  await db?.close();
+}

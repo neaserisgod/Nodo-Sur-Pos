@@ -27,7 +27,7 @@ import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/gemini.dart';
-import '../servicios/modulos_activos.dart' show moduloActivo;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
@@ -383,12 +383,15 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               ],
             ),
           ),
-          _seccion('Recargo de cigarrillos'),
-          _campoMonto(_primerAtadoCtrl, 'Primer atado'),
-          _campoMonto(_atadoAdicionalCtrl, 'Atado adicional'),
-          _campoMonto(_sueltoCtrl, 'Cigarrillo suelto'),
-          _seccion('Producto para dar de vuelto'),
-          _filaVuelto(context),
+          // Cigarrillos y el producto de vuelto son de un almacén: un negocio de servicios no los ve (lo guardado no se toca).
+          if (!esNegocioDeServicios()) ...[
+            _seccion('Recargo de cigarrillos'),
+            _campoMonto(_primerAtadoCtrl, 'Primer atado'),
+            _campoMonto(_atadoAdicionalCtrl, 'Atado adicional'),
+            _campoMonto(_sueltoCtrl, 'Cigarrillo suelto'),
+            _seccion('Producto para dar de vuelto'),
+            _filaVuelto(context),
+          ],
           _seccion('Formas de cobro que aceptás'),
           for (final m in _mediosPago)
             Padding(
@@ -398,14 +401,21 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
                 child: InterruptorNs(etiqueta: m.nombre, descripcion: _medioActivo(m) ? 'Activo' : 'Inactivo', encendido: _medioActivo(m), onCambio: (v) => setState(() => v == m.activo ? _mediosPendientes.remove(m.id) : _mediosPendientes[m.id] = v)),
               ),
             ),
-          _seccion('Ganancia que esperás por categoría'),
-          Text('Sobre el precio de venta', style: estiloNs(14, color: ns.mute)),
-          const SizedBox(height: 10),
-          for (final c in _categorias)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _FilaPorcentaje(nombre: c.nombre, porcentaje: _markup(c), onMenos: () => _cambiarMarkup(c, -5), onMas: () => _cambiarMarkup(c, 5)),
-            ),
+          // En servicios la ganancia buscada es de cada servicio (se pone en el creador), no de la categoría.
+          if (esNegocioDeServicios()) ...[
+            _seccion('Categorías'),
+            if (_categorias.isNotEmpty) Text(_categorias.map((c) => c.nombre).join(' · '), style: estiloNs(15, altura: 1.4, color: ns.ink)),
+            const SizedBox(height: 10),
+          ] else ...[
+            _seccion('Ganancia que esperás por categoría'),
+            Text('Sobre el precio de venta', style: estiloNs(14, color: ns.mute)),
+            const SizedBox(height: 10),
+            for (final c in _categorias)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _FilaPorcentaje(nombre: c.nombre, porcentaje: _markup(c), onMenos: () => _cambiarMarkup(c, -5), onMas: () => _cambiarMarkup(c, 5)),
+              ),
+          ],
           const SizedBox(height: 2),
           BotonNs.secundario(context, '+ Nueva categoría', _agregarCategoria),
           _seccion('Quiénes usan la app'),

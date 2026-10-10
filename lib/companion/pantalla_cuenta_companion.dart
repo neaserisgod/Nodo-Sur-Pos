@@ -5,17 +5,19 @@
 // a internet si la PC no contesta (`conmutador_sync.dart`) y vuelve a la PC cuando contesta.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
+import 'borrar_celular.dart';
 import 'conmutador_sync.dart';
 import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
-  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar});
+  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo});
 
   /// La sync del celular (en la app real, `syncNubeDelCelular()`).
   final SyncNubeCompanion sync;
@@ -23,6 +25,9 @@ class PantallaCuentaCompanion extends StatefulWidget {
   /// Al elegir "solo celular" por primera vez la pantalla se ofrece como un paso más (vincular ahora o después):
   /// con esto aparece el botón para seguir.
   final void Function(BuildContext context)? alContinuar;
+
+  /// Borra todo lo del celular y cierra la app (`borrar_celular.dart`). Para tests.
+  final Future<void> Function()? borrarTodo;
 
   @override
   State<PantallaCuentaCompanion> createState() => _PantallaCuentaCompanionState();
@@ -96,6 +101,63 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       _ocupado = false;
       _mensaje = textoDeResultado(r);
     });
+  }
+
+  /// Cerrar sesión y dejar el celular como recién instalado (El dueño, 2026-10-10: sin tener que ir a las
+  /// configuraciones de Android). Con cuenta, antes se sube lo que falte: así no se pierde nada de lo cargado acá.
+  Future<void> _cerrarSesion() async {
+    final cuenta = _cuenta;
+    final seguir = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '¿Cerrar sesión y borrar este celular?',
+        texto: cuenta != null
+            ? 'Primero se manda a tu cuenta lo que falte subir. Después se borra todo lo de este celular y la app se cierra. '
+                  'Entrando de nuevo con tu cuenta, vuelve a bajar.'
+            : 'Este celular no está vinculado a una cuenta: todo lo que cargaste acá se pierde. La app se cierra y arranca de cero.',
+        botones: [
+          BotonNs.peligroSolido(ctx, 'Cerrar sesión y borrar', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (seguir != true || !mounted) return;
+    setState(() {
+      _ocupado = true;
+      _mensaje = cuenta != null ? 'Subiendo lo último…' : null;
+    });
+    if (cuenta != null) {
+      final r = await _sync.servicio.sincronizar();
+      if (!mounted) return;
+      if (r is! SyncNubeOk) {
+        final igual = await mostrarHojaNs<bool>(
+          context,
+          builder: (ctx) => HojaNs(
+            titulo: 'No se pudo subir lo último',
+            texto: '${textoDeResultado(r)} Si borrás igual, lo que no subió se pierde.',
+            botones: [
+              BotonNs.peligroSolido(ctx, 'Borrar igual', () => Navigator.of(ctx).pop(true)),
+              BotonNs.secundario(ctx, 'No borrar', () => Navigator.of(ctx).pop(false)),
+            ],
+          ),
+        );
+        if (igual != true) {
+          if (mounted) {
+            setState(() {
+              _ocupado = false;
+              _mensaje = textoDeResultado(r);
+            });
+          }
+          return;
+        }
+      }
+    }
+    if (widget.borrarTodo != null) {
+      await widget.borrarTodo!();
+      return;
+    }
+    await borrarTodoDelCelular();
+    await SystemNavigator.pop();
   }
 
   Future<void> _volverABajarTodo() async {
@@ -173,7 +235,9 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
           BotonNs.peligroSuave(context, 'Desvincular', _ocupado ? null : _desvincular),
         ],
         if (widget.alContinuar != null)
-          BotonNs.secundario(context, cuenta == null ? 'Vincular más tarde' : 'Continuar', _ocupado ? null : () => widget.alContinuar!(context)),
+          BotonNs.secundario(context, cuenta == null ? 'Vincular más tarde' : 'Continuar', _ocupado ? null : () => widget.alContinuar!(context))
+        else
+          BotonNs.peligroSuave(context, 'Cerrar sesión y borrar este celular', _ocupado ? null : _cerrarSesion),
       ],
     );
   }

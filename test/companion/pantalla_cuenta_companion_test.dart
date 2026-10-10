@@ -37,12 +37,12 @@ void main() {
     return sync;
   }
 
-  Future<void> abrir(WidgetTester tester, SyncNubeCompanion sync) async {
+  Future<void> abrir(WidgetTester tester, SyncNubeCompanion sync, {Future<void> Function()? borrarTodo}) async {
     await tester.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
       builder: (context, child) =>
           MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
-      home: PantallaCuentaCompanion(sync: sync),
+      home: PantallaCuentaCompanion(sync: sync, borrarTodo: borrarTodo),
     ));
     await tester.pumpAndSettle();
   }
@@ -105,5 +105,50 @@ void main() {
     expect(textoDeResultado(const SyncNubeSinCuenta()), contains('vinculá'));
     expect(textoDeResultado(const SyncNubeFallida('x', sinRed: true)), 'Sin conexión a internet.');
     expect(textoDeResultado(const SyncNubeExpirada()), contains('bajar todo'));
+  });
+
+  testWidgets('cerrar sesión sin cuenta: avisa que se pierde lo cargado y borra todo', (tester) async {
+    final sync = await armar();
+    var borrado = false;
+    await abrir(tester, sync, borrarTodo: () async => borrado = true);
+    await tester.ensureVisible(find.text('Cerrar sesión y borrar este celular'));
+    await tester.tap(find.text('Cerrar sesión y borrar este celular'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('todo lo que cargaste acá se pierde'), findsOneWidget);
+    await tester.tap(find.text('Cerrar sesión y borrar'));
+    await tester.pumpAndSettle();
+    expect(borrado, isTrue);
+  });
+
+  testWidgets('cerrar sesión con cuenta: primero sube lo que falte y después borra; cancelar no borra', (tester) async {
+    final sync = await armar(vinculada: true);
+    var borrado = false;
+    await abrir(tester, sync, borrarTodo: () async => borrado = true);
+    await tester.ensureVisible(find.text('Cerrar sesión y borrar este celular'));
+    await tester.tap(find.text('Cerrar sesión y borrar este celular'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(borrado, isFalse);
+
+    await tester.tap(find.text('Cerrar sesión y borrar este celular'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Primero se manda a tu cuenta'), findsOneWidget);
+    await tester.tap(find.text('Cerrar sesión y borrar'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await tester.pumpAndSettle();
+    if (find.text('Borrar igual').evaluate().isNotEmpty) {
+      // El servidor falso puede no contestar la vuelta: igual tiene que preguntar antes de borrar.
+      await tester.tap(find.text('Borrar igual'));
+      await tester.pumpAndSettle();
+    }
+    expect(borrado, isTrue);
+  });
+
+  testWidgets('en el paso del alta (con "Continuar") no se ofrece borrar', (tester) async {
+    final sync = await armar();
+    await tester.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: PantallaCuentaCompanion(sync: sync, alContinuar: (_) {})));
+    await tester.pumpAndSettle();
+    expect(find.text('Cerrar sesión y borrar este celular'), findsNothing);
   });
 }

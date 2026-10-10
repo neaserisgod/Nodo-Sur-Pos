@@ -14,6 +14,9 @@ import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
+import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 
 Future<void> _asentar(WidgetTester t) async {
   for (var i = 0; i < 4; i++) {
@@ -214,5 +217,18 @@ void main() {
     expect(find.text('Ya hay una categoría llamada "limpieza"'), findsOneWidget);
     expect((await t.runAsync(() => db.select(db.categorias).get()))!, hasLength(antes.length + 1));
   });
-}
 
+  testWidgets('un negocio de servicios no ve cigarrillos, vuelto ni ganancia por categoría; sí sus categorías', (t) async {
+    await _preparar(t);
+    modulosActuales.value = const ModulosNegocio({}, forma: FormaDeTrabajo.servicios);
+    addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+    await _abrir(t);
+    // Los títulos de sección se muestran en mayúsculas: se buscan por el texto original de la sección.
+    Finder seccion(String texto) => find.byWidgetPredicate((w) => w is SeccionNs && w.texto == texto);
+    expect(seccion('Recargo de cigarrillos'), findsNothing);
+    expect(seccion('Producto para dar de vuelto'), findsNothing);
+    expect(seccion('Ganancia que esperás por categoría'), findsNothing);
+    expect(seccion('Categorías'), findsOneWidget);
+    expect(seccion('Formas de cobro que aceptás'), findsOneWidget, reason: 'lo que vale para todos sigue');
+  });
+}
