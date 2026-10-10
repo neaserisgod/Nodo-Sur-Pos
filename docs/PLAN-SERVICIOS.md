@@ -311,6 +311,35 @@ desde el celular con Termux: [`PLAN-BOT.md`](./PLAN-BOT.md).
   También **correr en la compu del sistema** (la PC con Windows), además del celular: `botdemo` ya anda en PC con el
   adaptador Baileys, falta instalarlo junto con Nodo Sur.
 
+### Versión web para iPhone (El dueño, 2026-10-10) — plan, sin código
+
+Para llegar a quien tiene iPhone sin hacer una app para iOS: la **misma app del celular compilada a web** (Flutter web, modo
+"Solo celular"), publicada en el sitio como app que se agrega a la pantalla de inicio. No es un producto aparte.
+
+Decidido por el dueño:
+1. **Solo negocios de servicios.** Un almacén sigue con Android o la PC (en web le faltaría escanear y la venta con stock).
+2. **Mismo precio, misma funcionalidad**: ninguna de las dos versiones tiene ventaja. Lo que un negocio de servicios hace en
+   el celular Android se tiene que poder hacer en la web, y cada función nueva de servicios se prueba en las dos.
+3. **MVP de una sola persona**: la que emprende es la que usa el sistema. Sin empleados ni equipo compartido por ahora.
+
+Por qué Flutter web y no páginas nuevas en JS: el sitio no ve los datos (lotes cifrados con el esquema de la app) y el
+dominio no se puede duplicar (convención 3 de `CLAUDE.md`). `driftDatabase` anda en web (SQLite en WebAssembly); si Safari
+borra los datos del sitio, se baja de nuevo toda la historia (el sitio la guarda 365 días, `functions/_lib/sync.js`), así
+que cada cambio se sube al momento.
+
+Lo que falta para que haya igualdad (revisado contra el código el mismo día):
+- `dart:io` en la sync y la cuenta (`sync_nube.dart`, `sync_nube_companion.dart`, `cuenta_nube.dart`, `nube.dart`,
+  `registro_sync_nube.dart` por `gzip`): imports condicionales; el estado y la cuenta van al almacenamiento del navegador.
+- El PDF del cierre se abre con `open_filex` (`pantalla_cierres.dart`): en web, descargar o compartir.
+- La foto de la factura (`image_picker`, `file_selector`) anda en web; probarla con la cámara del iPhone.
+- **El bot**: con Baileys corre en un celular Android aparte con Termux. Quien solo tiene iPhone no puede hostearlo hasta
+  que exista el adaptador de la API oficial de Meta en el Worker (etapa 5, paso 6). **Pregunta abierta para el dueño.**
+- Sitio: equipo tipo `web` en `/api/device/authorize` (hoy devuelve el código a `127.0.0.1`), que vuelva a `/app`.
+- Compilar en GitHub Actions como el APK y publicar los archivos en el sitio.
+
+Primer paso: una prueba en un iPhone real (Servicios + sync contra una sucursal de prueba) para medir peso, velocidad y
+cómo se siente Flutter web en Safari, antes de comprometer el resto.
+
 ## Preguntas antes de programar
 
 Todas respondidas el 2026-10-09: ver las decisiones 1 a 19 arriba. La que decía "reserva el `SyncHub`" quedó corregida en la
