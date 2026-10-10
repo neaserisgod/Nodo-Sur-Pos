@@ -490,6 +490,17 @@ class ClienteNube {
     return ((jsonDecode(r.body) as Map<String, dynamic>)['version'] as num).toInt();
   });
 
+  /// El token del bot que corre adentro de este celular (Nodo Sur Servicios), sin navegador: [deviceId] lo genera la app y lo
+  /// guarda; pedirlo de nuevo renueva el mismo bot. `expiresAt` en segundos.
+  Future<({String token, String email, int expiresAt})> tokenBot(String token, String deviceId) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/bot/token'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'deviceId': deviceId}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (token: j['token'] as String, email: '${j['email'] ?? ''}', expiresAt: (j['expiresAt'] as num).toInt());
+  });
+
   /// Publica el catálogo corto que usa el bot. Devuelve si cambió (si no, el sitio no despierta al bot).
   Future<bool> publicarCatalogoBot(String token, List<ItemCatalogoBot> items) => _conRed(() async {
     final r = await http

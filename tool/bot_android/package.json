@@ -1,2 +1,0 @@
-{ "name": "prueba-bot-apk", "private": true, "type": "commonjs",
-  "dependencies": { "@whiskeysockets/baileys": "7.0.0-rc14", "pino": "^9.0.0" } }

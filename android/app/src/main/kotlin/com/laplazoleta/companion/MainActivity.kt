@@ -78,18 +78,24 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
-        // Prueba del bot adentro de la app (`ServicioBot.kt`): mantener viva la app mientras corre el Node que lanzó Dart.
+        // El bot adentro de Nodo Sur Servicios (`ServicioBot.kt`): lo enciende y lo apaga la app; después anda solo.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/bot").setMethodCallHandler { call, result ->
             when (call.method) {
-                "mantener" -> {
-                    val intent = Intent(this, ServicioBot::class.java).putExtra("pid", call.argument<Int>("pid") ?: 0)
-                    if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+                "encender" -> {
+                    val intent = Intent(this, ServicioBot::class.java)
+                        .putExtra("codigo", call.argument<String>("codigo"))
+                        .putExtra("datos", call.argument<String>("datos"))
+                        .putExtra("numero", call.argument<String>("numero") ?: "")
+                    ServicioBot.iniciar(this, intent)
                     result.success(null)
                 }
-                "soltar" -> {
-                    stopService(Intent(this, ServicioBot::class.java))
+                "apagar" -> {
+                    if (ServicioBot.encendido(this)) {
+                        ServicioBot.iniciar(this, Intent(this, ServicioBot::class.java).setAction(ServicioBot.ACCION_APAGAR))
+                    }
                     result.success(null)
                 }
+                "encendido" -> result.success(ServicioBot.encendido(this))
                 // Si Android ya lo deja correr sin restricciones de batería.
                 "sinRestricciones" -> result.success(
                     Build.VERSION.SDK_INT < 23 ||

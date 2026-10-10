@@ -48,6 +48,10 @@ on:
         description: "Porcentaje de celulares que la reciben (1-100). Conviene 10 y subirlo desde /admin → Versiones; 100 = a todos"
         required: true
         default: "100"
+      bot_ref:
+        description: "Rama del bot (repo botdemo) que va adentro de Nodo Sur Servicios"
+        required: false
+        default: main
       solo_compilar:
         description: "Solo compilar los dos APK y dejarlos como artefactos del run, sin publicar (para probar una rama)"
         type: boolean
@@ -91,6 +95,13 @@ jobs:
           repository: neaserisgod/NodoSurPage
           path: sitio
           token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
+
+      # El bot de WhatsApp que va adentro de Nodo Sur Servicios (público).
+      - uses: actions/checkout@v4
+        with:
+          repository: neaserisgod/botdemo
+          ref: ${{ inputs.bot_ref || 'main' }}
+          path: botdemo
 
       - uses: actions/setup-java@v4
         with:
@@ -141,7 +152,7 @@ jobs:
       - name: Node y el bot (servicios)
         run: |
           sudo apt-get install -y patchelf
-          bash tool/preparar_bot_android.sh
+          BOT_DIR=botdemo bash tool/preparar_bot_android.sh
       - name: Compilar el APK (servicios)
         run: flutter build apk --release --flavor servicios --target-platform android-arm64 --build-number "$NUMERO"
 

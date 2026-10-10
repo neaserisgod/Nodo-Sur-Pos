@@ -14,11 +14,11 @@ import '../pantalla_proveedores.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
-import '../bot_celular.dart' show accesoBotDelCelular, estadoBotCelular;
+import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, estadoBotCelular;
 import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
-import 'pantalla_prueba_bot_ns.dart';
+import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
 import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
@@ -114,9 +114,21 @@ class PantallaMasNs extends StatelessWidget {
                           ),
                         ),
                       ),
-                    // El bot adentro de la app, sin Termux: solo Nodo Sur Servicios trae Node.
-                    if (Platform.isAndroid && esEdicionServicios)
-                      _Fila(icono: IconoNs.celular, titulo: 'Probar el bot acá (prueba)', detalle: 'El bot de WhatsApp corriendo en esta app, sin Termux', onTap: () => app.irA((_) => const PantallaPruebaBotNs())),
+                    // Nodo Sur Servicios trae el bot adentro: la misma pantalla, con el bot de este celular en vez de Termux.
+                    if (esEdicionServicios && Platform.isAndroid && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                      _Fila(
+                        icono: IconoNs.celular,
+                        titulo: 'Bot de WhatsApp',
+                        detalle: 'Encenderlo, vincularlo y ver si está atendiendo',
+                        onTap: () => app.irA(
+                          (_) => PantallaBotWhatsApp(
+                            acceso: accesoBotDelCelular,
+                            servicio: app.servicio!,
+                            alIrATuNegocio: () => app.irA((_) => const PantallaConfiguracionCompanion()),
+                            enEsteCelular: (context, numero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero),
+                          ),
+                        ),
+                      ),
                     if (!servicios) _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],
                 ),

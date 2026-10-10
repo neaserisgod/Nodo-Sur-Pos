@@ -1,23 +1,26 @@
-// Prueba (El dueño, 2026-10-10): el bot de WhatsApp adentro de la app, sin Termux.
+// El bot de WhatsApp adentro de Nodo Sur Servicios, sin Termux (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`).
 //
-// Corre el Node que Termux compila para Android, empaquetado en el APK como `libns_node.so` (lo arma
-// `tool/preparar_bot_android.sh`). Android solo deja ejecutar lo que quedó en la carpeta de librerías de la app, que desde Dart
-// se encuentra mirando dónde se cargó `libflutter.so` (`/proc/self/maps`). El JavaScript (Baileys y el script de prueba) viene
-// en `assets/bot/bot.zip` y se descomprime en la carpeta de la app. Solo corre ese script, con argumentos fijos: no baja ni
-// ejecuta código de afuera.
-//
-// Node se lanza suelto (no atado a esta pantalla ni a Dart): si se cierra la pantalla o la app pasa a segundo plano, sigue. Lo que
-// lo mantiene vivo es `ServicioBot.kt` (servicio en primer plano con notificación fija y wakelock). Lo que escribe va a
-// `bot-datos/bot.log`, que esta clase lee; el pid queda en `bot-datos/bot.pid` para retomarlo al volver a abrir la pantalla.
+// Corre el Node que Termux compila para Android, empaquetado en el APK como `libns_node.so`, con el bot de verdad (repo botdemo)
+// que viene en `assets/bot/bot.zip` (los arma `tool/preparar_bot_android.sh`). Lo que hace esta clase:
+//  * descomprime el bot en una carpeta por versión (`bot/<huella>`): al actualizar la app, el Node que corre sigue con la suya
+//    hasta que Android lo reinicia con la nueva, sin que se le cambien los archivos abajo;
+//  * le consigue al bot su token de Nodo Sur (`nodosur.json`) con la cuenta vinculada de este celular, sin navegador;
+//  * le pide a Android que lo encienda o lo apague (`ServicioBot.kt`, que lo mantiene vivo, lo levanta si se cae y lo enciende
+//    al prender el celular).
+// Los datos del bot (sesión de WhatsApp, su base, el estado) van aparte, en `bot-datos/`, y no se tocan al actualizar.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+import '../domain/bot_en_celular.dart';
+import 'acceso_bot.dart';
 
 const _canal = MethodChannel('nodosur/bot');
 
@@ -34,157 +37,129 @@ Future<String?> carpetaLibrerias() async {
   return null;
 }
 
-/// Si ese pid es nuestro Node (y no otro proceso que reusó el número).
-bool _esNode(int pid) {
-  try {
-    return File('/proc/$pid/cmdline').readAsStringSync().contains('libns_node');
-  } catch (_) {
-    return false;
-  }
-}
-
 class BotEnCelular {
-  final _lineas = StreamController<String>.broadcast();
-  Timer? _lector;
-  int _leido = 0;
-  String _resto = '';
-  int? _pid;
+  BotEnCelular({required this.acceso, Future<Directory> Function()? soporte, MethodChannel? canal, Future<ByteData> Function()? zip})
+      : _soporte = soporte ?? getApplicationSupportDirectory,
+        _canalBot = canal ?? _canal,
+        _zip = zip ?? (() => rootBundle.load('assets/bot/bot.zip'));
 
-  Stream<String> get lineas => _lineas.stream;
-  bool get andando => _pid != null && _esNode(_pid!);
+  final AccesoBot acceso;
+  final Future<Directory> Function() _soporte;
+  final MethodChannel _canalBot;
+  final Future<ByteData> Function() _zip;
 
-  Future<Directory> _datos() async => Directory(p.join((await getApplicationSupportDirectory()).path, 'bot-datos'));
+  Future<Directory> datos() async => Directory(p.join((await _soporte()).path, 'bot-datos'));
 
-  /// Si ya hay un bot andando de antes (se cerró la pantalla y se volvió a abrir), lo retoma: muestra el registro desde el
-  /// principio y sigue leyendo. Devuelve si lo encontró.
-  Future<bool> retomar() async {
-    final datos = await _datos();
-    final archivoPid = File(p.join(datos.path, 'bot.pid'));
-    if (!archivoPid.existsSync()) return false;
-    final pid = int.tryParse(archivoPid.readAsStringSync().trim());
-    if (pid == null || !_esNode(pid)) return false;
-    _pid = pid;
-    _leerDesde(File(p.join(datos.path, 'bot.log')), 0);
-    return true;
-  }
-
-  /// Arranca la prueba. [numero] (opcional): pide el código para vincular ese WhatsApp. Devuelve null si arrancó, o qué falta.
-  Future<String?> iniciar({String? numero}) async {
-    if (andando) return 'Ya está andando';
-    final libs = await carpetaLibrerias();
-    if (libs == null) return 'No encontré la carpeta de librerías de la app';
-    final node = File(p.join(libs, 'libns_node.so'));
-    if (!node.existsSync()) return 'Esta versión de la app no trae Node (falta libns_node.so en $libs)';
-    final soporte = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(soporte.path, 'bot'));
+  /// Si la dueña lo dejó encendido (Android lo sigue manteniendo aunque la app esté cerrada).
+  Future<bool> encendido() async {
     try {
-      await _descomprimir(dir);
-    } catch (e) {
-      return 'No pude preparar el JavaScript del bot: $e';
-    }
-    final datos = await _datos();
-    datos.createSync(recursive: true);
-    final log = File(p.join(datos.path, 'bot.log'))..writeAsStringSync('Node: ${node.path} (${node.lengthSync() ~/ 1048576} MB)\n');
-    final args = [p.join(dir.path, 'prueba.js'), datos.path];
-    final digitos = (numero ?? '').replaceAll(RegExp(r'\D'), '');
-    if (digitos.isNotEmpty) args.add(digitos);
-    try {
-      final proc = await Process.start(
-        node.path,
-        args,
-        workingDirectory: dir.path,
-        environment: {'LD_LIBRARY_PATH': libs, 'HOME': soporte.path, 'TMPDIR': (await getTemporaryDirectory()).path},
-        mode: ProcessStartMode.detached,
-      );
-      _pid = proc.pid;
-      File(p.join(datos.path, 'bot.pid')).writeAsStringSync('${proc.pid}');
-    } catch (e) {
-      return 'Node no arrancó: $e';
-    }
-    try {
-      await _canal.invokeMethod('mantener', {'pid': _pid});
-    } catch (e) {
-      _lineas.add('ERROR no pude dejar el servicio en primer plano: $e (el bot anda, pero Android puede cerrarlo)');
-    }
-    _leerDesde(log, 0);
-    return null;
-  }
-
-  Future<void> detener() async {
-    final pid = _pid;
-    if (pid != null && _esNode(pid)) Process.killPid(pid);
-    _pid = null;
-    try {
-      await _canal.invokeMethod('soltar');
-    } catch (_) {}
-    try {
-      File(p.join((await _datos()).path, 'bot.pid')).deleteSync();
-    } catch (_) {}
-  }
-
-  /// Si Android ya deja correr la app sin el ahorro de batería (que en muchas marcas congela las apps con la pantalla apagada).
-  Future<bool> sinRestriccionesDeBateria() async {
-    try {
-      return await _canal.invokeMethod<bool>('sinRestricciones') ?? false;
+      return await _canalBot.invokeMethod<bool>('encendido') ?? false;
     } catch (_) {
       return false;
     }
   }
 
-  Future<void> pedirSinRestriccionesDeBateria() async {
+  /// Lo que el bot dice de sí mismo. Null si todavía no escribió nada.
+  Future<EstadoBotLocal?> leerEstado() async {
     try {
-      await _canal.invokeMethod('pedirSinRestricciones');
+      final f = File(p.join((await datos()).path, 'estado.json'));
+      if (!f.existsSync()) return null;
+      return EstadoBotLocal.desdeJson(jsonDecode(await f.readAsString()));
+    } catch (_) {
+      return null; // a medio escribir: la próxima vuelta
+    }
+  }
+
+  /// Las últimas líneas del registro del bot, para ver qué pasó.
+  Future<List<String>> ultimasLineas([int cuantas = 60]) async {
+    try {
+      final f = File(p.join((await datos()).path, 'bot.log'));
+      if (!f.existsSync()) return const [];
+      final largo = f.lengthSync();
+      final r = f.openSync();
+      r.setPositionSync(max(0, largo - 16000));
+      final texto = utf8.decode(r.readSync(min(largo, 16000)), allowMalformed: true);
+      r.closeSync();
+      final lineas = texto.split('\n').where((l) => l.trim().isNotEmpty).toList();
+      return lineas.sublist(max(0, lineas.length - cuantas));
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Enciende el bot para [numero] (el WhatsApp del local, `5492944…`). Devuelve null si quedó encendido, o qué falta.
+  Future<String?> encender({required String numero}) async {
+    final libs = await carpetaLibrerias();
+    if (libs != null && !File(p.join(libs, 'libns_node.so')).existsSync()) {
+      return 'Esta versión de la app no trae el bot. Actualizala.';
+    }
+    final Directory codigo;
+    try {
+      codigo = await preparar();
+    } catch (e) {
+      return 'No se pudo preparar el bot: $e';
+    }
+    final dirDatos = await datos();
+    try {
+      await asegurarCuenta(dirDatos);
+    } catch (e) {
+      return 'No se pudo vincular el bot a tu negocio (¿hay internet?): $e';
+    }
+    try {
+      await _canalBot.invokeMethod('encender', {'codigo': codigo.path, 'datos': dirDatos.path, 'numero': numero});
+    } catch (e) {
+      return 'Android no dejó encender el bot: $e';
+    }
+    await _borrarVersionesViejas(codigo);
+    return null;
+  }
+
+  Future<void> apagar() async {
+    try {
+      await _canalBot.invokeMethod('apagar');
     } catch (_) {}
   }
 
-  /// Deja de leer el registro (la pantalla se cerró). El bot sigue andando.
-  void soltarPantalla() {
-    _lector?.cancel();
-    _lector = null;
-  }
-
-  // Lee lo nuevo del registro cada segundo. Cuando Node termina, lo avisa una vez y para.
-  void _leerDesde(File log, int desde) {
-    _lector?.cancel();
-    _leido = desde;
-    _resto = '';
-    void leer() {
+  /// Borra la sesión de WhatsApp (la desvincularon, o se quiere usar otro número) y lo vuelve a encender: pide un código nuevo.
+  Future<String?> vincularDeNuevo({required String numero}) async {
+    await apagar();
+    final d = await datos();
+    // Que Android termine de parar a Node antes de borrarle la sesión.
+    await Future<void>.delayed(const Duration(seconds: 2));
+    for (final x in [Directory(p.join(d.path, 'sesion-baileys')), File(p.join(d.path, 'estado.json'))]) {
       try {
-        final largo = log.existsSync() ? log.lengthSync() : 0;
-        if (largo > _leido) {
-          final f = log.openSync();
-          f.setPositionSync(_leido);
-          final bytes = f.readSync(largo - _leido);
-          f.closeSync();
-          _leido = largo;
-          final texto = _resto + utf8.decode(bytes, allowMalformed: true);
-          final partes = texto.split('\n');
-          _resto = partes.removeLast();
-          partes.where((l) => l.isNotEmpty).forEach(_lineas.add);
-        }
+        if (x.existsSync()) x.deleteSync(recursive: true);
       } catch (_) {}
-      if (_pid != null && !_esNode(_pid!)) {
-        _lineas.add('— Node terminó');
-        _pid = null;
-        _lector?.cancel();
-        _canal.invokeMethod('soltar').catchError((_) => null);
-      }
     }
-
-    leer();
-    _lector = Timer.periodic(const Duration(seconds: 1), (_) => leer());
+    return encender(numero: numero);
   }
 
-  /// Descomprime `assets/bot/bot.zip` si cambió desde la última vez (por su tamaño, que cambia con cada versión del bot).
-  Future<void> _descomprimir(Directory dir) async {
-    final datos = await rootBundle.load('assets/bot/bot.zip');
-    final marca = File(p.join(dir.path, '.version'));
-    final version = '${datos.lengthInBytes}';
-    if (marca.existsSync() && marca.readAsStringSync() == version) return;
-    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  /// Si Android ya deja correr la app sin el ahorro de batería (que en muchas marcas congela las apps con la pantalla apagada).
+  Future<bool> sinRestriccionesDeBateria() async {
+    try {
+      return await _canalBot.invokeMethod<bool>('sinRestricciones') ?? false;
+    } catch (_) {
+      return true; // si no se puede saber, no molestar
+    }
+  }
+
+  Future<void> pedirSinRestriccionesDeBateria() async {
+    try {
+      await _canalBot.invokeMethod('pedirSinRestricciones');
+    } catch (_) {}
+  }
+
+  /// Descomprime el bot en `bot/<huella>` si no está. Devuelve la carpeta.
+  Future<Directory> preparar() async {
+    final datosZip = await _zip();
+    final bytes = datosZip.buffer.asUint8List(datosZip.offsetInBytes, datosZip.lengthInBytes);
+    final huella = sha1.convert(bytes).toString().substring(0, 12);
+    final dir = Directory(p.join((await _soporte()).path, 'bot', huella));
+    final listo = File(p.join(dir.path, '.listo'));
+    if (listo.existsSync()) return dir;
+    if (dir.existsSync()) dir.deleteSync(recursive: true); // quedó a medias
     dir.createSync(recursive: true);
-    final zip = ZipDecoder().decodeBytes(datos.buffer.asUint8List(datos.offsetInBytes, datos.lengthInBytes));
-    for (final f in zip.files) {
+    for (final f in ZipDecoder().decodeBytes(bytes).files) {
       final destino = p.normalize(p.join(dir.path, f.name));
       if (!p.isWithin(dir.path, destino)) continue;
       if (f.isFile) {
@@ -195,6 +170,39 @@ class BotEnCelular {
         Directory(destino).createSync(recursive: true);
       }
     }
-    marca.writeAsStringSync(version);
+    listo.writeAsStringSync(huella);
+    return dir;
+  }
+
+  Future<void> _borrarVersionesViejas(Directory enUso) async {
+    try {
+      for (final d in Directory(p.dirname(enUso.path)).listSync().whereType<Directory>()) {
+        if (p.equals(d.path, enUso.path)) continue;
+        d.deleteSync(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  /// `nodosur.json` del bot con un token vigente. Conserva lo que el bot anotó ahí (el cursor de pedidos, un token renovado).
+  Future<void> asegurarCuenta(Directory dirDatos, {DateTime? ahora}) async {
+    dirDatos.createSync(recursive: true);
+    final archivo = File(p.join(dirDatos.path, 'nodosur.json'));
+    Map<String, dynamic> previo = {};
+    try {
+      if (archivo.existsSync()) previo = Map<String, dynamic>.from(jsonDecode(archivo.readAsStringSync()) as Map);
+    } catch (_) {}
+    final vence = previo['expiresAt'] is num ? (previo['expiresAt'] as num).toInt() : null;
+    if (previo['token'] is String && !tokenBotPorVencer(venceSegundos: vence, ahora: ahora ?? DateTime.now())) return;
+    final deviceId = previo['deviceId'] is String && (previo['deviceId'] as String).startsWith('bot-') ? previo['deviceId'] as String : _idNuevo();
+    final t = await acceso.tokenDelBot(deviceId);
+    final cuenta = {...previo, 'sitio': t.sitio, 'token': t.token, 'email': t.email, 'deviceId': deviceId, 'expiresAt': t.expiresAt};
+    previo.putIfAbsent('vinculadoEn', () => DateTime.now().toUtc().toIso8601String());
+    final tmp = File('${archivo.path}.tmp')..writeAsStringSync(jsonEncode({...cuenta, 'vinculadoEn': previo['vinculadoEn']}));
+    tmp.renameSync(archivo.path);
+  }
+
+  static String _idNuevo() {
+    final r = Random.secure();
+    return 'bot-${List.generate(16, (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0')).join()}';
   }
 }

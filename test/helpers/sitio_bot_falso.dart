@@ -13,6 +13,12 @@ class SitioBotFalso implements AccesoBot {
   Map<String, dynamic>? configGuardada;
   int version = 0;
 
+  final List<String> tokensPedidos = [];
+  @override
+  Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId) async {
+    tokensPedidos.add(deviceId);
+    return (sitio: 'https://sitio.prueba', token: 'token-bot-${tokensPedidos.length}', email: 'duena@x.com', expiresAt: DateTime(2027, 10, 10).millisecondsSinceEpoch ~/ 1000);
+  }
   @override
   Future<EstadoBot?> estado() async => estadoBot;
   @override
