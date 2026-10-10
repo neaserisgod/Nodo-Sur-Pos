@@ -76,6 +76,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 - [Servicios e insumos son productos; el costo del servicio no se guarda (2026-10-09)](#servicios-e-insumos-son-productos-el-costo-del-servicio-no-se-guarda-2026-10-09)
 - [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
+- [Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)](#cobrar-servicios-sin-tabla-de-consumos-y-la-propina-después-de-cobrar-2026-10-10)
 
 **Diseño y pantallas**
 
@@ -2403,3 +2404,19 @@ servicios usa solo el celular, así que el celular no puede llegar último.
 - **El número lo calcula solo**: el mayor entre el que publica Windows (`pubspec.yaml` + 1) y el último APK publicado + 1 (de
   `/api/admin/releases`, en cualquier canal). Si no puede leer el sitio, no compila: un número viejo deja al celular sin
   actualizarse. El dato `build` a mano sigue mandando.
+
+## Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)
+
+Etapa 3 de `docs/PLAN-SERVICIOS.md` (reglas en `REGLAS-NEGOCIO.md` §20). El dueño eligió ese día: el cliente tipo emprende
+solo, y lo que un rubro no usa se apaga para ese rubro (no se borra), con valores por defecto.
+
+- **Sin tabla de consumos por línea.** El plan la pedía para saber qué gastó cada servicio. Los movimientos de stock ya
+  llevan `venta_id` y las milésimas: con eso anular o editar devuelve exactamente lo gastado (aunque la receta haya cambiado
+  después), sumando el neto de la venta una sola vez. "Para reponer insumos" sale del costo-foto de las líneas. Una tabla más
+  que sincronizar no aportaba nada hoy; si algún día hace falta reponer por proveedor de cada insumo, se suma.
+- **El costo-foto se calcula al cobrar**, en `registrarLineaOPromo`, si la línea no lo trae (el celular ya lo trae desde la
+  grilla). Sin mano de obra: no entra en la ganancia.
+- **La propina va después de cobrar**, como un ingreso de caja ("Propina · nombre"). Meterla en el cobro cambiaba el total
+  y los pagos (que tienen que sumar el total exacto, `TRAMPAS.md`); como ingreso, el arqueo la cuenta y la ganancia no.
+- **Si falta un insumo, el stock queda en negativo y se cobra igual** (§20: por defecto solo avisa). El bloqueo es un
+  interruptor que llega con Más › Módulos.

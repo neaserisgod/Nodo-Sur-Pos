@@ -23,6 +23,7 @@ import '../domain/sena.dart' show canalSena;
 import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
+import 'repositorio_servicios.dart' show devolverInsumosDeVenta;
 import 'repositorio_ventas.dart';
 
 const _motivoReversion = 'Reversión por edición de venta';
@@ -77,6 +78,8 @@ Future<void> _revertirLinea(
   if (linea.esVarios || linea.productoId == null) return;
   final productoId = linea.productoId!;
   final producto = await (db.select(db.productos)..where((p) => p.id.equals(productoId))).getSingle();
+  // Un servicio no tiene stock propio: sus insumos se devuelven una vez por venta (`devolverInsumosDeVenta`).
+  if (producto.esServicio) return;
 
   if (linea.esPesable) {
     final anterior = producto.stockGramos ?? 0;
@@ -160,6 +163,7 @@ Future<void> editarVenta(
         motivo: _motivoReversion,
       );
     }
+    await devolverInsumosDeVenta(db, ventaId: ventaId, usuarioId: usuarioId, motivo: _motivoReversion);
 
     Caja? cajaNormal;
     Future<Caja> obtenerCajaNormal() async {
@@ -284,6 +288,7 @@ Future<void> anularVenta(
         motivo: _motivoReversionAnulacion,
       );
     }
+    await devolverInsumosDeVenta(db, ventaId: ventaId, usuarioId: usuarioId, motivo: _motivoReversionAnulacion);
 
     Caja? cajaNormal;
     Future<Caja> obtenerCajaNormal() async {

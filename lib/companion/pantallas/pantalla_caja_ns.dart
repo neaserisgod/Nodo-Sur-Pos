@@ -32,6 +32,7 @@ import 'hoja_contar_caja_ns.dart';
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_cierre_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
+import '../../data/repositorio_servicios.dart' show paraReponerInsumosCentavos;
 
 class PantallaCajaNs extends StatelessWidget {
   const PantallaCajaNs({super.key});
@@ -108,6 +109,9 @@ class _ResumenState extends State<_Resumen> {
   EstadoArqueoIntermedioCompanion? _esperados;
   int _versionSesion = -1;
 
+  /// Lo que costaron los insumos usados hoy, para reponerlos (servicios, §20).
+  int _paraReponer = 0;
+
   Future<void> _cargarEsperados(ControladorAppNs app) async {
     if (!app.cajaAbierta || app.servicio == null) {
       if (_esperados != null) setState(() => _esperados = null);
@@ -118,6 +122,15 @@ class _ResumenState extends State<_Resumen> {
       if (mounted) setState(() => _esperados = e);
     } catch (_) {
       // Sin esperados todavía: quedan en cero.
+    }
+    final sesionId = app.sesion?.id;
+    if (esNegocioDeServicios() && sesionId != null) {
+      try {
+        final reponer = await paraReponerInsumosCentavos(baseLocalCompanion(), sesionCajaId: sesionId);
+        if (mounted) setState(() => _paraReponer = reponer);
+      } catch (_) {
+        // Sin la base del celular (con la PC): queda en cero.
+      }
     }
   }
 
@@ -132,6 +145,7 @@ class _ResumenState extends State<_Resumen> {
       WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _cargarEsperados(app) : null);
     }
     final abierta = app.cajaAbierta;
+    final servicios = esNegocioDeServicios();
     final efectivo = app.estadoCaja?.efectivoEsperadoCentavos ?? 0;
     final mp = app.estadoCaja?.mpEsperadoCentavos ?? 0;
     final lata = _esperados?.lataEsperadoCentavos ?? app.estadoCaja?.lataInicialCentavos ?? 0;
@@ -187,7 +201,7 @@ class _ResumenState extends State<_Resumen> {
             _Bloque(filas: [
               FilaClaveValorNs(clave: 'Efectivo', valor: plataNs(efectivo)),
               FilaClaveValorNs(clave: 'Mercado Pago', valor: plataNs(mp)),
-              FilaClaveValorNs(clave: 'Lata de cigarrillos', valor: plataNs(lata)),
+              if (!servicios) FilaClaveValorNs(clave: 'Lata de cigarrillos', valor: plataNs(lata)),
             ]),
             const SizedBox(height: 22),
             const SeccionNs('Cómo va el día'),
@@ -195,7 +209,10 @@ class _ResumenState extends State<_Resumen> {
             _Bloque(filas: [
               FilaClaveValorNs(clave: 'Vendido', valor: plataNs(dia.vendidoCentavos)),
               FilaClaveValorNs(clave: 'Ganancia', valor: plataNs(dia.gananciaCentavos), colorValor: ns.g),
-              FilaClaveValorNs(clave: 'Por separar', valor: plataNs(pend.faltaSepararCentavos), colorValor: ns.w),
+              if (servicios)
+                FilaClaveValorNs(clave: 'Para reponer insumos', valor: plataNs(_paraReponer), colorValor: ns.w)
+              else
+                FilaClaveValorNs(clave: 'Por separar', valor: plataNs(pend.faltaSepararCentavos), colorValor: ns.w),
               FilaClaveValorNs(clave: 'Ventas registradas', valor: '${dia.ventas}'),
             ]),
             const SizedBox(height: 14),
