@@ -1,6 +1,7 @@
 # Plan · Nodo Sur Servicios (la app de turnos con el bot adentro)
 
-**Estado al 2026-10-10: plan, nada construido todavía.** La prueba de que el bot corre adentro de la app sin Termux está en la
+**Estado al 2026-10-10 (noche): las seis etapas hechas en la rama `ccr-d9ff719e-qd8uv7`** (este repo, `NodoSurPage` y `botdemo`),
+con sus pruebas, sin mezclar. Falta probarlo en un celular real con un turno de verdad (ver "Abierto"). La prueba de que el bot corre adentro de la app sin Termux está en la
 rama `ccr-d9ff719e-qd8uv7` (pantalla "Probar el bot acá", `lib/servicios/bot_en_celular.dart`, `ServicioBot.kt`,
 `tool/preparar_bot_android.sh`). Node, SQLite, internet, Baileys y la conexión con WhatsApp anduvieron en el celular del dueño
 (2026-10-10). **Falta la prueba larga** (una noche con la pantalla apagada) antes de construir sobre esto.
@@ -51,6 +52,11 @@ rama `ccr-d9ff719e-qd8uv7` (pantalla "Probar el bot acá", `lib/servicios/bot_en
    están en la app de almacén.
 
 ## Abierto
+
+- **Firebase**: la edición nueva es otra app para Firebase. Registrar `com.laplazoleta.servicios` en el proyecto y cargar su
+  `mobilesdk_app_id` en `_appIdServicios` (`lib/servicios/push.dart`); mientras tanto prueba con el de la companion.
+- Mezclar el sitio **antes** de publicar: sin `android-servicios` en el sitio, el workflow no puede subir el APK de servicios.
+- Sacarle el modo servicios a la app de almacén cuando los negocios de servicios se hayan pasado.
 
 - Precio del plan Emprendedor (recomendado $18.000) y el link del plan de suscripción de Mercado Pago: los tiene que crear el dueño.
 - Que la prueba larga del bot adentro (una noche, pantalla apagada) salga bien. Si Android lo frena, se ve en el registro.

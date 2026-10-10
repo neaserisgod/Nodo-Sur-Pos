@@ -2449,3 +2449,21 @@ Etapas 4 y 5 de `docs/PLAN-SERVICIOS.md`. El dueño pidió terminar "recibir un 
 notificaciones. Se hizo un canal propio (`nodosur/push`, `MainActivity.kt`) con `firebase-messaging` de Android, inicializado
 desde Dart con los datos del proyecto (sin el plugin de Google Services: el build no depende de `google-services.json`). Con la
 app cerrada la notificación la muestra Android solo. El sitio firma el JWT de la cuenta de servicio y usa la API HTTP v1.
+
+## Nodo Sur Servicios: otra app del mismo código, con el bot adentro (El dueño, 2026-10-10)
+
+El dueño quería "reutilizar el APK de Flutter sacando lo que literalmente no va" y el bot sin Termux. Se decidió (con él):
+
+- **Otra edición, no otra app**: flavor de Gradle `servicios` con su `applicationId`, así se instala al lado de la de almacén (el dueño
+  corre el negocio de su amiga, que tiene iPhone, en su propio celular). `lib/edicion.dart` sale de `appFlavor`; Windows y las pruebas
+  son la de almacén. Sacar lo de almacén ahorra poco peso: lo que pesa es Node (~110 MB en el APK); la ganancia es que el almacén no lo carga.
+- **Node de Termux renombrado a `libns_*.so`** en `jniLibs` con `useLegacyPackaging`: Android solo deja ejecutar lo que quedó en la carpeta
+  de librerías de la app. El bot (repo `botdemo`) va en `assets/bot/bot.zip` y se descomprime por versión (`bot/<huella>`); sus datos van
+  aparte (`bot-datos/`, `DIR_DATOS`) para que actualizar la app no los toque.
+- **Lo arranca Kotlin, no Dart** (`ServicioBot.kt`): tiene que poder hacerlo sin la app abierta (al prender el celular y cuando Node se
+  cae). Servicio en primer plano + wakelock, como Termux. Solo arranca ese Node con ese bot: nada que venga de afuera.
+- **El bot le cuenta su estado a la app por un archivo** (`estado.json`): no hay otra forma de hablar con un proceso suelto.
+- **Mercado Pago**: seña por link de Checkout Pro (vence a la media hora, `binary_mode`) y QR en pantalla con la Orders API en modo
+  dinámico. La caja de Mercado Pago que pide el QR se crea sola en el primer local de la cuenta; crear un local pide la ubicación exacta,
+  así que si no hay ninguno se le pide a la dueña que lo cree una vez en Mercado Pago, en vez de inventar coordenadas. La comisión la paga
+  la emprendedora. Una seña pagada después de que se liberó el horario no revive el turno: queda para que la dueña decida.

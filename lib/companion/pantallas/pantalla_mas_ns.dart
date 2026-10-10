@@ -3,6 +3,7 @@
 
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
@@ -89,6 +90,29 @@ class PantallaMasNs extends StatelessWidget {
                   onCambio: (i) => guardarModoTemaNs(const [ThemeMode.light, ThemeMode.dark, ThemeMode.system][i]),
                 ),
                 const SizedBox(height: 12),
+                // Un negocio de servicios en la app de almacén: se le ofrece pasarse a Nodo Sur Servicios (El dueño, 2026-10-10,
+                // `docs/PLAN-APP-SERVICIOS.md`), que trae el bot adentro. Misma cuenta: los datos llegan solos por la sincronización.
+                if (!esEdicionServicios && servicios && Platform.isAndroid) ...[
+                  Container(
+                    key: const Key('mas_pasarse_a_servicios'),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Pasate a Nodo Sur Servicios', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'La app para turnos, más simple, con el bot de WhatsApp adentro (sin Termux). Instalala y entrá con tu misma cuenta: tus turnos, servicios y clientes llegan solos.',
+                          style: estiloNs(14, color: ns.ink),
+                        ),
+                        const SizedBox(height: 10),
+                        BotonNs.primario(context, 'Descargarla', () => launchUrl(Uri.parse('https://horsepos.com/descargar/'), mode: LaunchMode.externalApplication), alto: 48, tamanio: 15),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 const SeccionNs('Negocio'),
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(

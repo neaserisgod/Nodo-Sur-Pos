@@ -132,6 +132,13 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (10/10/2026)
 
+- **Nodo Sur Servicios** (rama `ccr-d9ff719e-qd8uv7`, **sin mezclar todavía**; plan en `docs/PLAN-APP-SERVICIOS.md`): segunda edición
+  del celular (flavor `servicios`, `com.laplazoleta.servicios`) que se instala al lado de la de almacén. Solo lo de servicios y caja
+  simple; **el bot de WhatsApp corre adentro** (Node de Termux empaquetado, `ServicioBot.kt`), sin Termux, vinculado sin navegador
+  (`POST /api/bot/token`). Seña con **link de Mercado Pago** (media hora, se confirma sola, recibo por WhatsApp, devolución con un
+  toque) y cobro con **QR en la pantalla** (orden QR dinámica). El workflow arma y publica las dos (`android` y `android-servicios`).
+  Probado: Node, SQLite, internet, Baileys y la conexión cifrada con WhatsApp en el celular del dueño (10/10). **Falta**: la prueba
+  larga con la pantalla apagada, un turno real con la seña por link, el id de app de Firebase de la edición nueva y el plan Emprendedor.
 - **Agenda** (etapa 4 de `docs/PLAN-SERVICIOS.md`, reglas en `REGLAS-NEGOCIO.md` §21; migración v66, `schemaVersion` **66**): en
   un negocio de servicios la pestaña Inicio pasa a ser la **Agenda** y la app abre ahí. Turnos del día por hora; "+ Turno" con
   los horarios libres cada 15 minutos (u otra hora a mano: sobreturno o fuera de horario, avisa y deja); cada turno se cobra
