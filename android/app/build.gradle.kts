@@ -40,6 +40,22 @@ android {
         }
     }
 
+    // Dos ediciones del mismo código (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`): la de siempre (almacén) y Nodo Sur
+    // Servicios, con el bot de WhatsApp adentro. Otro applicationId: se instalan una al lado de la otra (el dueño tiene su almacén
+    // y el negocio de servicios que atiende en el mismo celular). Node y el bot (`src/servicios/`) van solo en la de servicios.
+    flavorDimensions += "edicion"
+    productFlavors {
+        create("almacen") {
+            dimension = "edicion"
+            resValue("string", "app_name", "Nodo Sur POS")
+        }
+        create("servicios") {
+            dimension = "edicion"
+            applicationId = "com.laplazoleta.servicios"
+            resValue("string", "app_name", "Nodo Sur Servicios")
+        }
+    }
+
     // Prueba del bot adentro de la app: Node (libns_node.so) tiene que quedar descomprimido en la carpeta de librerías para poder
     // ejecutarlo (Android no deja ejecutar desde los datos de la app).
     packaging {

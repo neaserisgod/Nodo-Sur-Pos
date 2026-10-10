@@ -38,10 +38,10 @@ version_nueva="$nombre+$build_nuevo"
 
 sed -i "s/^version:.*/version: $version_nueva/" "$pubspec"
 
-flutter build apk --release --target-platform android-arm64
+flutter build apk --release --flavor almacen --target-platform android-arm64
 
 destino="$USERPROFILE/Documents/la_plazoleta_companion.apk"
-cp "build/app/outputs/flutter-apk/app-release.apk" "$destino"
+cp "build/app/outputs/flutter-apk/app-almacen-release.apk" "$destino"
 
 version_destino="$USERPROFILE/Documents/la_plazoleta_companion.version"
 printf '%s' "$version_nueva" > "$version_destino"

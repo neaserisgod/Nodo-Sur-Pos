@@ -1,4 +1,5 @@
-# Compila el APK de la companion app (celular) y lo publica en el sitio (Cloudflare) como plataforma "android".
+# Compila los dos APK del celular y los publica en el sitio (Cloudflare): la companion de almacén como plataforma "android" y
+# Nodo Sur Servicios (con el bot de WhatsApp adentro, `docs/PLAN-APP-SERVICIOS.md`) como "android-servicios".
 # El celular lo busca ahí al abrir el menú (lib/companion/actualizacion.dart). Se dispara:
 #   * al mergear con un título que empieza con "release:" (estable) o "beta:" (beta), A LA VEZ que Windows (2026-10-09: el
 #     celular salía siempre después, a mano, y un negocio de servicios usa solo el celular);
@@ -47,6 +48,10 @@ on:
         description: "Porcentaje de celulares que la reciben (1-100). Conviene 10 y subirlo desde /admin → Versiones; 100 = a todos"
         required: true
         default: "100"
+      solo_compilar:
+        description: "Solo compilar los dos APK y dejarlos como artefactos del run, sin publicar (para probar una rama)"
+        type: boolean
+        default: false
 
 concurrency:
   group: publicar-apk
@@ -118,7 +123,7 @@ jobs:
             # El último APK publicado en CUALQUIER canal (un administrador recibe también las beta), según el registro del sitio.
             ultimo=$(curl -fsS -A "Mozilla/5.0 (publicar-apk)" -H "Authorization: Bearer $RELEASE_TOKEN" -H "X-Release-Token: $RELEASE_TOKEN" "$SITE_URL/api/admin/releases" \
               | node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{let m=0;
-                  for(const r of JSON.parse(t).releases||[]) if(r.platform==="android"){const b=+String(r.version).split("+")[1]||0;if(b>m)m=b}
+                  for(const r of JSON.parse(t).releases||[]) if(r.platform==="android"||r.platform==="android-servicios"){const b=+String(r.version).split("+")[1]||0;if(b>m)m=b}
                   console.log(m)})') \
               || { echo "::error::No se pudo leer el último APK publicado del sitio: no se compila con un número que podría ser viejo"; exit 1; }
             numero=$(( pubspec + 1 > ultimo + 1 ? pubspec + 1 : ultimo + 1 ))
@@ -127,22 +132,36 @@ jobs:
           echo "NUMERO=$numero" >> "$GITHUB_ENV"
           echo "NOTAS=$(printf '%s' "$MENSAJE" | head -n 1)" >> "$GITHUB_ENV"
 
-      # Prueba del bot adentro de la app (solo en esta rama): Node de Termux y el JavaScript del bot.
-      - name: Node para el bot
+      # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
+      # (ver tool/publicar_actualizacion_companion.sh).
+      - name: Compilar el APK (almacén)
+        run: flutter build apk --release --flavor almacen --target-platform android-arm64 --build-number "$NUMERO"
+
+      # Nodo Sur Servicios (`docs/PLAN-APP-SERVICIOS.md`): lleva Node de Termux y el bot de WhatsApp adentro.
+      - name: Node y el bot (servicios)
         run: |
           sudo apt-get install -y patchelf
           bash tool/preparar_bot_android.sh
+      - name: Compilar el APK (servicios)
+        run: flutter build apk --release --flavor servicios --target-platform android-arm64 --build-number "$NUMERO"
 
-      # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
-      # (ver tool/publicar_actualizacion_companion.sh).
-      - name: Compilar el APK
-        run: flutter build apk --release --target-platform android-arm64 --build-number "$NUMERO"
+      - name: Guardar los APK (solo compilar)
+        if: inputs.solo_compilar
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          retention-days: 7
 
       - name: Publicar en el sitio
+        if: ${{ !inputs.solo_compilar }}
         run: |
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
           # La versión publicada lleva el número que quedó adentro del APK.
           version="${version%%+*}+${NUMERO}"
-          cp build/app/outputs/flutter-apk/app-release.apk "NodoSurPOS-Companion-${version}.apk"
+          cp build/app/outputs/flutter-apk/app-almacen-release.apk "NodoSurPOS-Companion-${version}.apk"
           node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
+            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
+          cp build/app/outputs/flutter-apk/app-servicios-release.apk "NodoSurServicios-${version}.apk"
+          node sitio/scripts/publicar-release.mjs --file "NodoSurServicios-${version}.apk" --platform android-servicios \
             --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"

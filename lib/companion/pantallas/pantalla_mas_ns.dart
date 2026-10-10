@@ -19,6 +19,7 @@ import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 import 'pantalla_prueba_bot_ns.dart';
+import '../../edicion.dart';
 import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 class PantallaMasNs extends StatelessWidget {
@@ -110,8 +111,8 @@ class PantallaMasNs extends StatelessWidget {
                           ),
                         ),
                       ),
-                    // Prueba del bot adentro de la app, sin Termux (rama de prueba, no va a main así).
-                    if (Platform.isAndroid)
+                    // El bot adentro de la app, sin Termux: solo Nodo Sur Servicios trae Node.
+                    if (Platform.isAndroid && esEdicionServicios)
                       _Fila(icono: IconoNs.celular, titulo: 'Probar el bot acá (prueba)', detalle: 'El bot de WhatsApp corriendo en esta app, sin Termux', onTap: () => app.irA((_) => const PantallaPruebaBotNs())),
                     if (!servicios) _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],

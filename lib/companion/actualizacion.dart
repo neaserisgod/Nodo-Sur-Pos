@@ -13,6 +13,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../edicion.dart';
 import 'cliente_companion.dart';
 
 /// Servidor de actualizaciones (el mismo sitio que usa la app de escritorio).
@@ -47,7 +48,7 @@ Future<OfertaSitio?> consultarSitio(
     final r = await c
         .get(
           Uri.https(hostActualizaciones, '/api/update/latest.json', {
-            'platform': 'android',
+            'platform': plataformaActualizacion,
             'channel': 'stable',
             'version': versionPropia,
           }),
@@ -116,7 +117,8 @@ Future<EstadoActualizacion> revisarActualizacion(
   } catch (_) {
     // sigue con la PC
   }
-  if (cliente == null) throw const HttpException('Sin conexión al sitio ni a la PC');
+  // Nodo Sur Servicios no tiene PC, y la PC ofrece el APK de la otra edición.
+  if (cliente == null || esEdicionServicios) throw const HttpException('Sin conexión al sitio ni a la PC');
   final delServidor = await cliente.versionServidor();
   return EstadoActualizacion(
     hayActualizacion: propiaTexto != delServidor,

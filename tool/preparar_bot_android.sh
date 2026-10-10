@@ -2,7 +2,7 @@
 # Prueba: el bot de WhatsApp adentro del APK, sin Termux (El dueño, 2026-10-10).
 #
 # Arma lo que el APK necesita para correr Node en el celular:
-#  * android/app/src/main/jniLibs/arm64-v8a/libns_*.so: el Node 24 que Termux compila para Android (aarch64) y sus librerías.
+#  * android/app/src/servicios/jniLibs/arm64-v8a/libns_*.so (solo en la edición servicios): el Node 24 que Termux compila para Android (aarch64) y sus librerías.
 #    Android solo empaqueta archivos `lib*.so`, y solo deja ejecutar lo que queda en la carpeta de librerías de la app: por eso el
 #    ejecutable se llama libns_node.so y a las librerías se les cambia el nombre (sin versión, con prefijo ns_ para no chocar con
 #    las de otros plugins) y se les saca la ruta de Termux (patchelf).
@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO=https://packages.termux.dev/apt/termux-main
 TMP=$(mktemp -d)
-LIBS=android/app/src/main/jniLibs/arm64-v8a
+LIBS=android/app/src/servicios/jniLibs/arm64-v8a
 ASSETS=assets/bot
 rm -rf "$LIBS" && mkdir -p "$LIBS" "$ASSETS"
 
