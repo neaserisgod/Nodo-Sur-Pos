@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color del ícono de las notificaciones (el acento de la app). -->
+    <color name="notificacion">#2F5BE8</color>
+</resources>

@@ -1,8 +1,11 @@
 package com.laplazoleta.companion
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -15,6 +18,28 @@ import io.flutter.plugin.common.MethodChannel
 // con la app cerrada la muestra Android solo. Firebase se inicializa con los datos que manda Dart (lib/servicios/push.dart), sin
 // el plugin de Google Services ni el google-services.json en el build.
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        crearCanalPedidos()
+    }
+
+    // El canal de los pedidos y turnos, con importancia ALTA: la notificación salta en pantalla con sonido, como WhatsApp. Sin esto
+    // Firebase usa su canal genérico, que solo aparece en la barra. La importancia de un canal no se puede cambiar después de
+    // crearlo (Android lo prohíbe): si hiciera falta otra, va con otro id.
+    private fun crearCanalPedidos() {
+        if (Build.VERSION.SDK_INT < 26) return
+        val canal = NotificationChannel(CANAL_PEDIDOS, "Pedidos y turnos", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Pedidos y turnos nuevos del bot de WhatsApp"
+            enableVibration(true)
+        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(canal)
+    }
+
+    companion object {
+        // Tiene que coincidir con `channel_id` del sitio (`NodoSurPage/functions/_lib/push.js`) y el del AndroidManifest.
+        const val CANAL_PEDIDOS = "pedidos_turnos"
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/push").setMethodCallHandler { call, result ->
