@@ -127,6 +127,12 @@ jobs:
           echo "NUMERO=$numero" >> "$GITHUB_ENV"
           echo "NOTAS=$(printf '%s' "$MENSAJE" | head -n 1)" >> "$GITHUB_ENV"
 
+      # Prueba del bot adentro de la app (solo en esta rama): Node de Termux y el JavaScript del bot.
+      - name: Node para el bot
+        run: |
+          sudo apt-get install -y patchelf
+          bash tool/preparar_bot_android.sh
+
       # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
       # (ver tool/publicar_actualizacion_companion.sh).
       - name: Compilar el APK

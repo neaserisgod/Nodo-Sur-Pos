@@ -6,16 +6,16 @@
 #    Android solo empaqueta archivos `lib*.so`, y solo deja ejecutar lo que queda en la carpeta de librerías de la app: por eso el
 #    ejecutable se llama libns_node.so y a las librerías se les cambia el nombre (sin versión, con prefijo ns_ para no chocar con
 #    las de otros plugins) y se les saca la ruta de Termux (patchelf).
-#  * android/app/src/main/assets/bot.zip: el JavaScript (Baileys y el script de prueba), que la app descomprime al arrancar.
+#  * assets/bot/bot.zip: el JavaScript (Baileys y el script de prueba), que la app descomprime la primera vez (Dart, `archive`).
 #
 # Nada de esto va al repo (.gitignore): pesa ~110 MB. Lo corre el workflow antes de compilar, o a mano para compilar local.
-# Necesita: curl, ar, tar, zip, npm y patchelf (pip install patchelf).
+# Necesita: curl, ar, tar, zip, npm y patchelf (apt install patchelf o pip install patchelf).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO=https://packages.termux.dev/apt/termux-main
 TMP=$(mktemp -d)
 LIBS=android/app/src/main/jniLibs/arm64-v8a
-ASSETS=android/app/src/main/assets
+ASSETS=assets/bot
 rm -rf "$LIBS" && mkdir -p "$LIBS" "$ASSETS"
 
 curl -fsSL -o "$TMP/Packages" "$REPO/dists/stable/main/binary-aarch64/Packages"

@@ -40,6 +40,14 @@ android {
         }
     }
 
+    // Prueba del bot adentro de la app: Node (libns_node.so) tiene que quedar descomprimido en la carpeta de librerías para poder
+    // ejecutarlo (Android no deja ejecutar desde los datos de la app).
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName(if (keystoreCI != null) "ci" else "debug")
