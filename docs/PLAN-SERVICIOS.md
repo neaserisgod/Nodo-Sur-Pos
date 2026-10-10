@@ -332,8 +332,16 @@ Lo que falta para que haya igualdad (revisado contra el código el mismo día):
   `registro_sync_nube.dart` por `gzip`): imports condicionales; el estado y la cuenta van al almacenamiento del navegador.
 - El PDF del cierre se abre con `open_filex` (`pantalla_cierres.dart`): en web, descargar o compartir.
 - La foto de la factura (`image_picker`, `file_selector`) anda en web; probarla con la cámara del iPhone.
-- **El bot**: con Baileys corre en un celular Android aparte con Termux. Quien solo tiene iPhone no puede hostearlo hasta
-  que exista el adaptador de la API oficial de Meta en el Worker (etapa 5, paso 6). **Pregunta abierta para el dueño.**
+- **El bot lo corre el dueño de Nodo Sur** (El dueño, 2026-10-10), no el negocio: así el iPhone no es impedimento. Baileys se
+  vincula como dispositivo del WhatsApp del negocio, y eso se hace igual desde WhatsApp de iPhone (QR o el código de
+  emparejamiento que ya tiene `botdemo`). Falta:
+  - **Vincular el bot a Nodo Sur sin estar al lado.** Hoy `/vincular` devuelve el código a `127.0.0.1` del mismo equipo
+    (`functions/api/device/authorize.js`) y solo lo puede hacer el dueño o un encargado del negocio (`configurar_bot`): hace
+    falta un código que el bot muestra y la emprendedora confirma desde su iPhone (como el login de una tele).
+  - **Varios negocios en el mismo equipo**: `botdemo` es un número por instalación (`data/sesion-baileys`, `config.json`);
+    una carpeta y un proceso por negocio (`ecosystem.config.js`). Medir cuántos aguanta el equipo.
+  - **Riesgo**: varios números con Baileys desde la misma conexión; si WhatsApp bloquea, pierde el número del negocio.
+  - La política de privacidad tiene que decir que los mensajes de sus clientes pasan por un equipo de Nodo Sur.
 - Sitio: equipo tipo `web` en `/api/device/authorize` (hoy devuelve el código a `127.0.0.1`), que vuelva a `/app`.
 - Compilar en GitHub Actions como el APK y publicar los archivos en el sitio.
 
