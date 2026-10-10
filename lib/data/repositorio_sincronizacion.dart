@@ -58,6 +58,8 @@ const Map<String, bool> tablasSincronizables = {
   // v66 (Regla 20): lo que gastó cada línea de servicio. Un registro (solo inserción), justo después de su línea.
   'consumos_de_linea': false,
   'pagos': true,
+  // v67 (Regla 21): la agenda. Después de `ventas` (un turno cobrado apunta a su venta), `clientes`, `productos` y `usuarios`.
+  'turnos': true,
   'movimientos_de_stock': false,
   'movimientos_de_caja': false,
   'arqueos_intermedios': false,
@@ -86,6 +88,8 @@ const tablasSincronizablesV61 = {
   'gastos_fijos_montos',
   // La de la v66: mismo trato con una PC anterior a la v66.
   'consumos_de_linea',
+  // La de la v67.
+  'turnos',
 };
 
 bool _tablaValida(String tabla) {
@@ -131,6 +135,12 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
     'proveedor_id_foto': 'proveedores',
   },
   'pagos': {'venta_id': 'ventas'},
+  'turnos': {
+    'cliente_id': 'clientes',
+    'servicio_id': 'productos',
+    'profesional_id': 'usuarios',
+    'venta_id': 'ventas',
+  },
   'movimientos_de_stock': {
     'producto_id': 'productos',
     'venta_id': 'ventas',

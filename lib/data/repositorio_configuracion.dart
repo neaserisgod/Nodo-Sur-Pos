@@ -34,6 +34,8 @@ Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
         encabezadoTicket: '',
         modulosDesactivados: '',
         rubro: '',
+        horarioAtencion: '',
+        configSena: '',
       );
 }
 

@@ -17,6 +17,7 @@ import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
 import 'repositorio_servicios.dart' show exigirInsumosParaCobrar, registrarServicioEnVenta;
+import 'repositorio_turnos.dart' show marcarTurnoCobrado, senaPendienteDeTurno;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
@@ -298,8 +299,12 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // transacción. Antes eran dos escrituras sueltas: una caída en el medio dejaba la venta grabada y la orden "sin resolver"
   // (falsa alarma en el cierre), y un reintento del celular grababa la venta otra vez.
   int? ordenCobroPendienteId,
+  // El turno de la agenda que esta venta cobra (Regla 21): su seña se aplica igual que la de un encargue y el turno queda
+  // cobrado con esta venta, en la MISMA transacción.
+  int? turnoId,
 }) {
   return db.transaction(() async {
+    if (encargueId != null && turnoId != null) throw ArgumentError('Una venta cobra un encargue o un turno, no los dos');
     // Un pago negativo no es plata que entró: restaría del esperado de su caja (revisión 2026-10-03: un mixto cuyo
     // total bajó después de cargar el efectivo grababa Mercado Pago en negativo).
     if (pagos.any((p) => p.montoCentavos < 0)) {
@@ -313,8 +318,8 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     var senaAplicada = 0;
     var senaADevolver = 0;
     var senaEsEfectivo = true;
-    if (encargueId != null) {
-      final sena = await senaPendienteDe(db, encargueId);
+    if (encargueId != null || turnoId != null) {
+      final sena = encargueId != null ? await senaPendienteDe(db, encargueId) : await senaPendienteDeTurno(db, turnoId!);
       if (sena.centavos > 0) {
         final aplicacion = aplicarSena(totalCentavos: resultado.totalCentavos, senaCentavos: sena.centavos);
         senaAplicada = aplicacion.aplicadaCentavos;
@@ -364,6 +369,7 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     if (encargueId != null) {
       await liberarEncargueEntregado(db, encargueId, ventaId: ventaId, usuarioId: usuarioId);
     }
+    if (turnoId != null) await marcarTurnoCobrado(db, turnoId, ventaId: ventaId);
 
     final stockActualizado = <ActualizacionStock>[];
     for (final linea in venta.lineas) {
@@ -808,6 +814,14 @@ Future<List<PagoARegistrar>> pagosSegunMedio(
   ];
 }
 
+/// Lo que queda por cobrar de una venta de [totalCentavos] que cobra el turno [turnoId], descontada su seña (Regla 21). Sin
+/// turno, el total. Lo usan el cobro y la terminal Point (que cobra solo esto).
+Future<int> aCobrarConSena(AppDatabase db, {required int totalCentavos, int? turnoId}) async {
+  if (turnoId == null) return totalCentavos;
+  final sena = await senaPendienteDeTurno(db, turnoId);
+  return aplicarSena(totalCentavos: totalCentavos, senaCentavos: sena.centavos).aCobrarCentavos;
+}
+
 /// Un mixto tiene que dejar algo en cada punta: con $0 en efectivo es un pago virtual, y con todo en efectivo no queda
 /// nada que mandar a Mercado Pago (`clasificarComposicion`). Cobrarlo igual como mixto le pondría redondeo o recargo de
 /// más al cliente, así que se rechaza y quien cobra elige el medio que corresponde.
@@ -845,6 +859,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   int? encargueId,
   int? ordenCobroPendienteId,
   int? montoEfectivoMixtoCentavos,
+  int? turnoId,
 }) {
   return db.transaction(() async {
     if (ordenCobroPendienteId != null) {
@@ -867,16 +882,20 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
+    // La seña de un turno ya está en la caja: se cobra solo lo que falta (Regla 21). Con la seña cubriendo todo, no hay pago.
+    final aCobrar = await aCobrarConSena(db, totalCentavos: resultado.totalCentavos, turnoId: turnoId);
     if (medio == ComposicionPago.mixto) {
-      validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: resultado.totalCentavos);
+      validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: aCobrar);
     }
-    final pagos = await pagosSegunMedio(
-      db,
-      medio: medio,
-      totalCentavos: resultado.totalCentavos,
-      canal: canal,
-      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
-    );
+    final pagos = aCobrar == 0
+        ? const <PagoARegistrar>[]
+        : await pagosSegunMedio(
+            db,
+            medio: medio,
+            totalCentavos: aCobrar,
+            canal: canal,
+            montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+          );
     final (ventaId, _) = await registrarVenta(
       db,
       venta: Venta(lineas: lineas),
@@ -886,6 +905,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       pagos: pagos,
       encargueId: encargueId,
       ordenCobroPendienteId: ordenCobroPendienteId,
+      turnoId: turnoId,
     );
     return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
   });

@@ -34,6 +34,7 @@ import 'tables/pendientes.dart';
 import 'tables/secciones_menu.dart';
 import 'tables/stock.dart';
 import 'tables/usuarios.dart';
+import 'tables/turnos.dart';
 import 'tables/ventas.dart';
 import 'tables/deuda_proveedores.dart';
 import 'tables/promos.dart';
@@ -138,6 +139,7 @@ const seccionesMenuIniciales = [
     CuitsProveedor,
     FacturasCompra,
     ProductosFacturaCompra,
+    Turnos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -157,7 +159,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 66;
+  int get schemaVersion => 67;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -167,6 +169,7 @@ class AppDatabase extends _$AppDatabase {
       await _crearIndicesUnicosDeSincronizacion(this);
       // Aparte de `_crearIndicesDeConsultasCalientes`: esa también corre en la migración v23, cuando esta tabla no existía.
       await customStatement('CREATE INDEX IF NOT EXISTS idx_consumos_de_linea_linea_venta_id ON consumos_de_linea (linea_venta_id)');
+      await customStatement('CREATE INDEX IF NOT EXISTS idx_turnos_inicio ON turnos (inicio)');
       await _seedDatosFijos(this);
       await _alCrear?.call(this);
     },
@@ -1197,6 +1200,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 66) {
         await _sumarConsumosDeServicios(this, m);
       }
+      // v66 → v67 (2026-10-10): la agenda de turnos (`docs/PLAN-SERVICIOS.md`, etapa 4; Regla 21). Tabla `turnos` (viaja por
+      // la sync), el horario de atención y la seña en la configuración, y "pide seña" en cada servicio.
+      if (from < 67) {
+        await _sumarAgenda(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1260,6 +1268,21 @@ Future<void> _sumarServiciosEInsumos(AppDatabase db, Migrator m) async {
 }
 
 const tablasDeSyncV66 = ['consumos_de_linea'];
+const tablasDeSyncV67 = ['turnos'];
+
+/// v66 → v67: con chequeo, como v64→v65.
+Future<void> _sumarAgenda(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+  final config = await columnasDe('configuracion_negocio_tabla');
+  if (!config.contains('horario_atencion')) await m.addColumn(db.configuracionNegocioTabla, db.configuracionNegocioTabla.horarioAtencion);
+  if (!config.contains('config_sena')) await m.addColumn(db.configuracionNegocioTabla, db.configuracionNegocioTabla.configSena);
+  if (!(await columnasDe('productos')).contains('pide_sena')) await m.addColumn(db.productos, db.productos.pideSena);
+  final existe = await db.customSelect("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'turnos'").get();
+  if (existe.isEmpty) await m.createTable(db.turnos);
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV67);
+  await db.customStatement('CREATE INDEX IF NOT EXISTS idx_turnos_inicio ON turnos (inicio)');
+}
 
 /// v65 → v66: la marca de servicio en las líneas y la tabla de consumos, con su índice único de sincronización y el de la
 /// línea (se busca por línea al anular, editar y repartir la reposición). Con chequeo, como v64→v65.
@@ -1365,6 +1388,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   ...tablasDeSyncV61,
   ...tablasDeSyncV64,
   ...tablasDeSyncV66,
+  ...tablasDeSyncV67,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(

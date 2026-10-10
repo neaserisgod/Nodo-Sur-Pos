@@ -72,6 +72,12 @@ class ConfiguracionNegocioTabla extends Table {
   /// valor por negocio). Null: sin cargar.
   IntColumn get valorHoraCentavos => integer().nullable()();
 
+  /// Horario de atención (v67, Regla 21): una franja por día, como texto (`HorarioSemana.aTexto`). Vacío: el de fábrica.
+  TextColumn get horarioAtencion => text().withDefault(const Constant(''))();
+
+  /// Cómo pide seña el negocio (v67, Regla 21), como texto (`ConfigSena.aTexto`). Vacío: la de fábrica.
+  TextColumn get configSena => text().withDefault(const Constant(''))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

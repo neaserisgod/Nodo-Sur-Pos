@@ -309,6 +309,9 @@ class Productos extends Table {
   /// (`gananciaBuscadaPorDefectoBp`).
   IntColumn get gananciaBuscadaBp => integer().nullable()();
 
+  /// El servicio pide seña cuando el negocio la pide en "algunos servicios" (v67, Regla 21).
+  BoolColumn get pideSena => boolean().withDefault(const Constant(false))();
+
   BoolColumn get activo => boolean().withDefault(const Constant(true))();
   DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get actualizadoEn =>
