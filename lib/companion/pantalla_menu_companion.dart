@@ -646,11 +646,13 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         mpCentavos: t.mpCentavos,
         ventas: t.tickets,
       );
+      // Un negocio de servicios no separa para proveedores ni tiene productos sin stock que avisar.
+      final servicios = esNegocioDeServicios();
       pendientes.value = PendientesNs(
-        faltaSepararCentavos: t.faltaSepararCentavos,
-        proveedoresPendientes: t.proveedoresPendientes,
-        proveedoresTotal: t.proveedoresConAlgoQueSeparar,
-        sinStock: sinStock,
+        faltaSepararCentavos: servicios ? 0 : t.faltaSepararCentavos,
+        proveedoresPendientes: servicios ? 0 : t.proveedoresPendientes,
+        proveedoresTotal: servicios ? 0 : t.proveedoresConAlgoQueSeparar,
+        sinStock: servicios ? 0 : sinStock,
         hayActualizacion: _hayActualizacion,
         arqueoVencido: _arqueoIntermedioVencido,
         minutosDesdeConteo: _minutosDesdeArqueo,

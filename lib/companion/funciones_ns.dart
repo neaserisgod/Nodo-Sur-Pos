@@ -82,8 +82,42 @@ const List<FuncionNs> indiceFunciones = [
   FuncionNs(seccion: 3, titulo: 'Desconectar de esta PC', ruta: 'Más › Modo · Cambiar', claves: 'emparejar qr vincular', icono: IconoNs.enchufe, accion: AccionFuncion.desconectar),
 ];
 
+/// En un negocio de servicios (peluquería, barbería…), "Productos y stock" son sus servicios e insumos, y lo que es de un
+/// almacén no se ofrece: escanear códigos, stock de productos, separar para proveedores, cigarrillos, vuelto, promos y la
+/// carga histórica (planillas de productos).
+const List<FuncionNs> _funcionesDeServicios = [
+  FuncionNs(seccion: 1, titulo: 'Servicios y lo que cuestan', ruta: 'Servicios', claves: 'lista precio costo ganancia corte peinado color', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Agregar un servicio nuevo', ruta: 'Servicios › + Nuevo', claves: 'alta agregar crear cargar', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Insumos: comprar y contar', ruta: 'Servicios › Insumos', claves: 'stock tintura shampoo guantes compra envase reponer', icono: IconoNs.portapapeles, accion: AccionFuncion.productosCatalogo),
+];
+
+bool _esDeAlmacen(FuncionNs f) =>
+    const {
+      AccionFuncion.consultarPrecio,
+      AccionFuncion.productosCatalogo,
+      AccionFuncion.productoNuevo,
+      AccionFuncion.productosEnLote,
+      AccionFuncion.controlarStock,
+      AccionFuncion.productosSinStock,
+      AccionFuncion.cajaSeparar,
+      AccionFuncion.promos,
+      AccionFuncion.diasAnteriores,
+    }.contains(f.accion) ||
+    const {'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría'}.contains(f.titulo);
+
+/// Las funciones que se ofrecen, según el negocio. Ordenadas por sección, como [indiceFunciones].
+List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
+  if (!servicios) return indiceFunciones;
+  final lista = [for (final f in indiceFunciones) if (!_esDeAlmacen(f)) f, ..._funcionesDeServicios];
+  return lista..sort((a, b) => a.seccion.compareTo(b.seccion));
+}
+
+String nombreDeSeccion(int seccion, {bool servicios = false}) =>
+    servicios && seccion == 1 ? 'Servicios e insumos' : seccionesFunciones[seccion];
+
 /// Sugerencias del estado inicial y de "sin resultados".
 const List<String> sugerenciasFunciones = ['Cerrar caja', 'Controlar stock', 'Subir precios', 'Imprimir ticket'];
+const List<String> sugerenciasFuncionesServicios = ['Cerrar caja', 'Insumos', 'Agregar un servicio', 'Gasto'];
 
 /// Minúsculas, sin tildes ni diacríticos, sin espacios de más.
 String normalizarNs(String texto) {
@@ -109,11 +143,11 @@ class ResultadoFuncion {
 }
 
 /// Todas las funciones agrupadas por sección (con encabezado en la primera de cada grupo).
-List<ResultadoFuncion> todasLasFunciones() {
+List<ResultadoFuncion> todasLasFunciones({bool servicios = false}) {
   final salida = <ResultadoFuncion>[];
   int? anterior;
-  for (final f in indiceFunciones) {
-    salida.add(ResultadoFuncion(f, encabezado: f.seccion != anterior ? seccionesFunciones[f.seccion] : null));
+  for (final f in funcionesDelNegocio(servicios: servicios)) {
+    salida.add(ResultadoFuncion(f, encabezado: f.seccion != anterior ? nombreDeSeccion(f.seccion, servicios: servicios) : null));
     anterior = f.seccion;
   }
   return salida;
@@ -121,14 +155,15 @@ List<ResultadoFuncion> todasLasFunciones() {
 
 /// Busca funciones: todos los términos tienen que coincidir; ordena por
 /// puntaje descendente (a igual puntaje, el orden del índice).
-List<FuncionNs> buscarFunciones(String consulta) {
+List<FuncionNs> buscarFunciones(String consulta, {bool servicios = false}) {
   final tokens = normalizarNs(consulta).split(RegExp(r'\s+')).where((t) => t.isNotEmpty).map(_raiz).toList();
   if (tokens.isEmpty) return const [];
+  final funciones = funcionesDelNegocio(servicios: servicios);
   final puntuadas = <(FuncionNs, int, int)>[];
-  for (var i = 0; i < indiceFunciones.length; i++) {
-    final f = indiceFunciones[i];
+  for (var i = 0; i < funciones.length; i++) {
+    final f = funciones[i];
     final lab = normalizarNs(f.titulo);
-    final resto = normalizarNs('${f.ruta} ${f.claves} ${seccionesFunciones[f.seccion]}');
+    final resto = normalizarNs('${f.ruta} ${f.claves} ${nombreDeSeccion(f.seccion, servicios: servicios)}');
     var puntos = 0;
     var coincide = true;
     for (final t in tokens) {

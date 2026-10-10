@@ -130,6 +130,18 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (10/10/2026)
+
+- **Cerrar sesión y borrar este celular** (Más › Cuenta; El dueño: "no se puede cerrar sesión y eliminar los datos sin
+  borrarlos desde configuraciones"): con cuenta, primero sube lo que falte; borra la base, la cuenta, la sync y las
+  preferencias, y cierra la app. Al abrirla arranca de cero.
+- **Un negocio de servicios ya no ve lo de almacén** en el celular (El dueño: "muchas cosas siguen siendo genéricas de
+  almacén"): el alta pide el primer **servicio** (nombre, duración y precio) en vez de escanear un código; Configuración sin
+  cigarrillos, vuelto ni ganancia por categoría; Caja en Resumen y Ventas (sin Separar); Inicio sin "Separar para
+  proveedores", sin stock bajo y con atajos de servicios; Más sin Promos ni Carga histórica; la campanita sin avisos de
+  stock ni de separar; el buscador de funciones sin lo de almacén y con servicios e insumos; Vender avisa que cobrar
+  servicios llega en la próxima actualización. Nada se borra: un almacén ve todo como siempre.
+
 ## Últimos cambios (09/10/2026)
 
 - **Servicios, etapas 1 y 2** (`docs/PLAN-SERVICIOS.md`; rama `ccr-a0284350-02fhfg`, sin mezclar): rubros **Barbería**, **Uñas

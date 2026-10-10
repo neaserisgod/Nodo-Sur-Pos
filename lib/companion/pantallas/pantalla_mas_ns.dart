@@ -17,6 +17,7 @@ import '../bot_celular.dart' show accesoBotDelCelular, estadoBotCelular;
 import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 class PantallaMasNs extends StatelessWidget {
   const PantallaMasNs({super.key, this.alAbrirEncargues});
@@ -42,6 +43,7 @@ class PantallaMasNs extends StatelessWidget {
               ThemeMode.system => 2,
             };
             final soloCelular = app.modoUso == ModoUso.soloCelular || !app.pcEmparejada;
+            final servicios = esNegocioDeServicios();
             return ListView(
               padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, BarraInferiorNs.espacioReservado - 4),
               children: [
@@ -89,8 +91,10 @@ class PantallaMasNs extends StatelessWidget {
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
                     _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
-                    _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
-                    _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
+                    // servicios no los usa.
+                    if (!servicios) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
+                    _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
                     if (estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
@@ -104,7 +108,7 @@ class PantallaMasNs extends StatelessWidget {
                           ),
                         ),
                       ),
-                    _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
+                    if (!servicios) _Fila(icono: IconoNs.calendario, titulo: 'Carga histórica', detalle: 'Días anteriores: completá ventas que no registraste', onTap: () => app.irA((_) => const PantallaCargaHistorica())),
                   ],
                 ),
                 const SizedBox(height: 12),

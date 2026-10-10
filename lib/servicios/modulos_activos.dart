@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart';
 
 import '../data/database.dart';
 import '../data/repositorio_configuracion.dart';
+import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
 
 final ValueNotifier<ModulosNegocio> modulosActuales = ValueNotifier(ModulosNegocio.todosActivos);
@@ -41,3 +42,7 @@ class SiModulo extends StatelessWidget {
     builder: (context, modulos, _) => modulos.estaActivo(modulo) ? hijo : const SizedBox.shrink(),
   );
 }
+
+/// El negocio da servicios (peluquería, barbería…) en vez de vender productos con stock: lo que es de un almacén
+/// (código de barras, cigarrillos, separar para proveedores, stock bajo) no se le muestra.
+bool esNegocioDeServicios() => modulosActuales.value.forma == FormaDeTrabajo.servicios;
