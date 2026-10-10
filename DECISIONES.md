@@ -76,6 +76,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 - [Insumos y servicios son productos; el stock de un insumo va en milésimas (2026-10-10)](#insumos-y-servicios-son-productos-el-stock-de-un-insumo-va-en-milésimas-2026-10-10)
 - [Un servicio cobrado es una línea y sus consumos (2026-10-10)](#un-servicio-cobrado-es-una-línea-y-sus-consumos-2026-10-10)
+- [La agenda: turnos en la sync y la seña de los encargues (2026-10-10)](#la-agenda-turnos-en-la-sync-y-la-seña-de-los-encargues-2026-10-10)
 
 **Diseño y pantallas**
 
@@ -2423,4 +2424,24 @@ costaron SUS insumos. La promo resuelve lo segundo abriéndose en las líneas de
   doble de lo ajustado, y el costo por unidad sigue saliendo entero.
 - **Los consumos viajan por la sync como un registro** (solo inserción), justo después de su línea; editar la venta los borra y
   vuelve a escribir con ella, como a las líneas.
+
+## La agenda: turnos en la sync y la seña de los encargues (2026-10-10)
+
+Etapa 4 de `docs/PLAN-SERVICIOS.md`, Regla 21.
+
+- **Un turno es una fila de `turnos` que viaja por la sync** (gana el último cambio, como un pendiente). Apunta a `clientes`,
+  al servicio (`productos`), al profesional (`usuarios`) y, cobrado, a su venta, todo traducido por `global_id`. La agenda del
+  bot (etapa 5) va a escribir en la misma tabla. Que dos equipos no den el mismo horario sin verse es trabajo del servidor
+  (etapa 5): acá, el chequeo de superposición es contra lo que tiene la base de este equipo.
+- **La duración se copia del servicio al anotar**: cambiar lo que dura un servicio no corre los turnos ya dados.
+- **El cliente se busca por nombre (sin mayúsculas ni acentos) y teléfono antes de crear uno**, para no repetirlo cada vez.
+- **La seña es la de los encargues**: `registrarIngresoRapido` al tomarla, `registrarDevolucionSena` al devolverla, y al cobrar,
+  un pago `canal = 'sena'` que no mueve la caja (`registrarVenta(turnoId:)`, el mismo código que la entrega de un encargue).
+  Para el celular, los cobros (`cobrarEfectivo`, `cobrarVirtualAMano`, `iniciarCobroPosnet`, `confirmarCobroPosnet`) reciben el
+  turno, y Vender muestra y cobra solo lo que falta. Una seña que cubre todo deja la venta sin pagos nuevos.
+- **"No vino" con "se pierde" no mueve nada**: la seña ya está en la caja como ingreso. Cancelar la devuelve siempre (avisó).
+- **Horario y seña en la configuración del negocio como texto** (`HorarioSemana.aTexto`, `ConfigSena.aTexto`), así viajan con la
+  fila de configuración sin una tabla nueva. Un texto que no se entiende es el de fábrica: la agenda nunca se rompe por eso.
+- **Con la Agenda prendida, la primera pestaña del celular es la Agenda** (reemplaza a Inicio, como el mock). Los huecos libres
+  se muestran mirando una sola agenda (sin varios profesionales, o con uno elegido).
 

@@ -477,6 +477,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int? encargueId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) => _local.cobrarVirtualAMano(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
@@ -486,6 +487,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     valorDescuento: valorDescuento,
     encargueId: encargueId,
     montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+    turnoId: turnoId,
   );
 
   @override
@@ -496,6 +498,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) => _local.iniciarCobroPosnet(
     lineas: lineas,
     canal: canal,
@@ -503,6 +506,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
     montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+    turnoId: turnoId,
   );
 
   @override
@@ -520,6 +524,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) => _local.confirmarCobroPosnet(
     ordenPendienteId: ordenPendienteId,
     lineas: lineas,
@@ -530,6 +535,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     valorDescuento: valorDescuento,
     encargueId: encargueId,
     montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+    turnoId: turnoId,
   );
 
   @override
@@ -620,6 +626,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? turnoId,
   }) => _local.cobrarEfectivo(
     lineas: lineas,
     sesionCajaId: sesionCajaId,
@@ -627,5 +634,6 @@ class ServicioCompanionOffline implements ServicioCompanion {
     tipoDescuento: tipoDescuento,
     valorDescuento: valorDescuento,
     encargueId: encargueId,
+    turnoId: turnoId,
   );
 }

@@ -1335,6 +1335,7 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? turnoId,
   }) async {
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1375,6 +1376,7 @@ class ClienteCompanion implements ServicioCompanion {
     int? encargueId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
@@ -1412,6 +1414,8 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? montoEfectivoMixtoCentavos,
+    // La agenda (Regla 21) es solo del celular: con la PC no hay turnos que cobrar.
+    int? turnoId,
   }) async {
     final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
@@ -1461,6 +1465,7 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(

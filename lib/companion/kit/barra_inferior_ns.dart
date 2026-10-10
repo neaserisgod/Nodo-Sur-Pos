@@ -14,7 +14,7 @@ import 'tokens_ns.dart';
 enum PestaniaNs { inicio, productos, vender, caja, mas }
 
 class BarraInferiorNs extends StatelessWidget {
-  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.servicios = false});
+  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.servicios = false, this.agenda = false});
 
   final PestaniaNs activa;
   final ValueChanged<PestaniaNs> onSeleccionar;
@@ -22,6 +22,9 @@ class BarraInferiorNs extends StatelessWidget {
 
   /// Negocio de servicios (`docs/PLAN-SERVICIOS.md`): la pestaña Productos se llama Servicios.
   final bool servicios;
+
+  /// Con la Agenda (Regla 21), la primera pestaña es la Agenda en lugar de Inicio.
+  final bool agenda;
 
   /// Cuánto espacio inferior necesita el contenido para no quedar tapado:
   /// barra 68 + margen 16 + aire 40 (doc 01 §3).
@@ -65,8 +68,8 @@ class BarraInferiorNs extends StatelessWidget {
                   child: p == PestaniaNs.vender
                       ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p))
                       : _Pestania(
-                          etiqueta: p == PestaniaNs.productos && servicios ? 'Servicios' : etiqueta,
-                          icono: icono,
+                          etiqueta: p == PestaniaNs.productos && servicios ? 'Servicios' : (p == PestaniaNs.inicio && agenda ? 'Agenda' : etiqueta),
+                          icono: p == PestaniaNs.inicio && agenda ? IconoNs.calendario : icono,
                           activa: activa == p,
                           punto: p == PestaniaNs.mas && hayActualizacion && activa != p,
                           onTap: () => onSeleccionar(p),

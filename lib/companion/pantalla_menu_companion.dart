@@ -43,7 +43,7 @@ import 'package:flutter/scheduler.dart';
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/caja.dart' show necesitaArqueoIntermedio;
 import '../domain/forma_de_trabajo.dart';
-import '../domain/modulos.dart' show ModulosNegocio;
+import '../domain/modulos.dart' show Modulo, ModulosNegocio;
 import '../domain/venta.dart';
 import '../servicios/modulos_activos.dart' show modulosActuales, seguirModulos;
 import 'cambios_companion.dart';
@@ -64,6 +64,7 @@ import 'pantallas/pantalla_caja_ns.dart';
 import 'pantallas/pantalla_inicio_ns.dart';
 import 'pantallas/pantalla_mas_ns.dart';
 import 'pantallas/pantalla_productos_ns.dart';
+import 'pantallas/pantalla_agenda_ns.dart';
 import 'pantallas/pantalla_servicios_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
@@ -678,6 +679,9 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// El encargue por apartado que el carrito está entregando (null en una venta común).
   final ValueNotifier<int?> _encargueEnVenta = ValueNotifier<int?>(null);
 
+  @override
+  final ValueNotifier<int?> turnoEnVenta = ValueNotifier<int?>(null);
+
   /// Encargues (El dueño, 2026-10-02). "Entregar" vuelve acá con el encargue elegido: se arma el carrito con lo
   /// apartado a los precios de hoy y se abre; al cobrar, la venta libera lo apartado.
   Future<void> _abrirEncargues() async {
@@ -814,7 +818,10 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             child: IndexedStack(
             index: _pestania.index,
             children: [
-              const PantallaInicioNs(),
+              ValueListenableBuilder<ModulosNegocio>(
+                valueListenable: modulosActuales,
+                builder: (context, modulos, _) => modulos.estaActivo(Modulo.agenda) ? const PantallaAgendaNs() : const PantallaInicioNs(),
+              ),
               ValueListenableBuilder<ModulosNegocio>(
                 valueListenable: modulosActuales,
                 builder: (context, modulos, _) =>
@@ -828,6 +835,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                       usuarioId: _usuarioId!,
                       carrito: _carrito,
                       encargue: _encargueEnVenta,
+                      turno: turnoEnVenta,
                     ),
               const PantallaCajaNs(),
               PantallaMasNs(alAbrirEncargues: _abrirEncargues),
@@ -848,6 +856,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                         onSeleccionar: irAPestania,
                         hayActualizacion: _hayActualizacion,
                         servicios: modulos.forma == FormaDeTrabajo.servicios,
+                        agenda: modulos.estaActivo(Modulo.agenda),
                       ),
                     ),
             ),

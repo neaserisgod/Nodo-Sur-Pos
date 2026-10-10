@@ -349,6 +349,7 @@ abstract class ServicioCompanion {
     int? encargueId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   });
 
   /// Crea la orden en la terminal Point — `canal`: `'qr'` | `'debit_card'`.
@@ -361,6 +362,7 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   });
 
   Future<ResultadoOrdenCobro> consultarEstadoPosnet(String ordenIdMp);
@@ -377,6 +379,7 @@ abstract class ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   });
 
   Future<void> resolverCobroPosnetNoAprobado({
@@ -451,6 +454,7 @@ abstract class ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? turnoId,
   });
 }
 

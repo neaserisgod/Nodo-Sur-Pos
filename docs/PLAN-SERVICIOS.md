@@ -1,7 +1,7 @@
 # Plan · Nodo Sur para servicios (barbería, uñas y belleza)
 
-**Estado al 2026-10-10: etapas 1, 2 y 3 hechas (forma de trabajar y rubros de servicios; insumos, servicios y calculador en el
-celular; cobrar servicios), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapas 4 y 5 sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
+**Estado al 2026-10-10: etapas 1 a 4 hechas (forma de trabajar y rubros de servicios; insumos, servicios y calculador; cobrar
+servicios; agenda, profesionales y seña), en la rama `ccr-1a8287aa-6i8nq2`, sin mezclar; etapa 5 (bot) sin código.** Mock: `docs/mock-servicios/NodoSurServicios.html`
 (vivo: https://claude.ai/artifact/2RdUiVVqZkPvn9qezwW2gJ). Sigue la regla de `CLAUDE.md`: plan antes de código, una etapa
 por vez, tests primero en `domain/`. Revisado contra el código (base v62, sync, módulos, promos, seña, celular) el mismo día. La etapa 5 se rehízo el mismo
 día sobre el bot que ya existe (`neaserisgod/botdemo`).
@@ -168,12 +168,31 @@ Reglas en `REGLAS-NEGOCIO.md` §20, con el OK del dueño del 2026-10-10: **la ma
   `test/data/conciliacion_caja_test.dart` (la mitad de las semillas con servicios), `test/companion/vender_servicios_test.dart`.
 - **Falta probarla en un celular real.**
 
-### Etapa 4 · Agenda, profesionales y seña (sin PC)
-- Tabla `turnos` (v67, sincronizada), con cliente de `clientes` y profesional de `usuarios`. Los módulos `agenda`,
-  `turnos_whatsapp` y `profesionales`; con `servicios`, el celular arranca en la Agenda.
-- Agenda, nuevo turno, estados y cobrar un turno. Seña con `domain/sena.dart`, que ahora también se usa en el celular. "No
-  vino" según la configuración.
-- `REGLAS-NEGOCIO.md` gana la sección "Turnos y seña".
+### Etapa 4 · Agenda, profesionales y seña (sin PC) — hecha (2026-10-10)
+
+Reglas en `REGLAS-NEGOCIO.md` §21, con lo que decidió el dueño el 2026-10-10: **cancelar con aviso devuelve la seña**, **un
+turno anotado a mano puede tomar seña** (efectivo o MP), **el horario es una franja por día** y **un profesional no puede
+tener dos turnos que se pisan**. Cómo está hecho, en `DECISIONES.md` ("La agenda: turnos en la sync y la seña de los encargues").
+
+- **Dominio** (`lib/domain/turnos.dart`): estados (siempre para adelante), con quién choca un turno, horario de la semana,
+  dentro de horario, huecos libres, seña sugerida (% a la centena o monto fijo, nunca más que el precio), cuánto se devuelve y
+  horas escritas a mano.
+- **Migración v67**: tabla `turnos` (cliente, servicio, profesional, inicio, duración, estado, origen, seña, venta), que viaja
+  por la sync; `configuracion_negocio.horario_atencion` y `config_sena`; `productos.pide_sena`.
+- **`lib/data/repositorio_turnos.dart`**: anotar (con el cliente, sin repetirlo), mover y cambiar de estado sin pisar a otro,
+  tomar seña (ingreso de caja), devolverla al cancelar o, si no vino, según la configuración; el día y la semana.
+- **Cobrar un turno**: `registrarVenta(turnoId:)` aplica la seña como la de un encargue (un pago que no mueve la caja) y deja el
+  turno cobrado con la venta, en la misma transacción. Los cobros del celular (efectivo, a mano, terminal Point) reciben el turno;
+  la terminal cobra solo lo que falta.
+- **Módulos** `agenda` y `profesionales` (solo servicios). Con la Agenda, la primera pestaña del celular es **Agenda**.
+- **Celular** (`pantalla_agenda_ns.dart`): el día con sus turnos y los huecos libres, la tira de la semana con puntos, los
+  profesionales, **nuevo turno** (con seña sugerida), el turno (confirmar, llegó, no vino, mover, seña, cancelar y **cobrar**, que
+  lo lleva a Vender con la seña descontada) y **Horario y seña**. Solo en "Solo celular"; con PC, un aviso.
+- **No se hizo** (queda para la etapa 5): el módulo `turnos_whatsapp`, los turnos sin confirmar en la campanita y el
+  recordatorio del día antes.
+- Tests: `test/domain/turnos_test.dart`, `test/data/repositorio_turnos_test.dart`, `test/data/migracion_v67_test.dart`,
+  `test/companion/pantalla_agenda_test.dart`, `test/companion/vender_turno_test.dart`.
+- **Falta probarla en un celular real.**
 
 ### Etapa 5 · Bot de WhatsApp (desde `botdemo`)
 
@@ -292,6 +311,6 @@ Todas respondidas el 2026-10-09: ver las decisiones 1 a 19 arriba. La que decía
 etapa 5: reservar es trabajo nuevo en el servidor, por sucursal.
 
 ## Qué no se probó
-Las etapas 1 a 3 están probadas solo con tests (dominio, base, sync, conciliación de caja y las pantallas del celular en widget tests): nada en un
+Las etapas 1 a 4 están probadas solo con tests (dominio, base, sync, conciliación de caja y las pantallas del celular en widget tests): nada en un
 celular real todavía. El resto solo existe en el mock (Chromium de escritorio y ancho de celular). De `botdemo` corren sus tests
 (con `config.example.json` copiado como `config.json`); no se probó nada contra el sitio ni con Gemini.

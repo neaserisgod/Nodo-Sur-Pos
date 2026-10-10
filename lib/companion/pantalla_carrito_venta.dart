@@ -20,6 +20,7 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import '../data/identidad_sync.dart' show generarGlobalId;
 import '../data/repositorio_servicios.dart' show InsumoConCosto, listarInsumos, recetaGuardada, serviciosParaVender;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
+import '../data/repositorio_turnos.dart' show senaPendienteDeTurno;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 import '../domain/descuento.dart';
 import '../domain/forma_de_trabajo.dart';
@@ -68,6 +69,7 @@ class PantallaCarritoVenta extends StatefulWidget {
     required this.usuarioId,
     required this.carrito,
     this.encargue,
+    this.turno,
   });
 
   /// Imprimir ticket — exclusivo de la PC. Null sin PC emparejada.
@@ -84,6 +86,10 @@ class PantallaCarritoVenta extends StatefulWidget {
   /// El encargue por apartado que esta venta entrega (id): al cobrar libera lo apartado. Se comparte con el menú, que lo
   /// pone cuando se elige "Entregar" desde Más → Encargues; acá se limpia al cobrar o al vaciar la venta.
   final ValueNotifier<int?>? encargue;
+
+  /// El turno de la agenda que se está cobrando (Regla 21; id compartido con el menú): su seña se descuenta de lo que se
+  /// cobra y queda cobrado con la venta. Solo en el celular sin PC.
+  final ValueNotifier<int?>? turno;
 
   @override
   State<PantallaCarritoVenta> createState() => _PantallaCarritoVentaState();
@@ -119,6 +125,18 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   /// El encargue que se está entregando (id compartido con el menú) y el nombre del cliente para mostrarlo.
   late final ValueNotifier<int?> _encargue = widget.encargue ?? ValueNotifier<int?>(null);
+  late final ValueNotifier<int?> _turno = widget.turno ?? ValueNotifier<int?>(null);
+
+  /// La seña del turno que se está cobrando (ya está en la caja) y de quién es el turno.
+  int _senaTurno = 0;
+  String? _clienteTurno;
+
+  /// Lo que falta cobrar: el total menos la seña del turno (Regla 21). Null mientras no está calculado.
+  int? get _totalACobrar {
+    final total = _resultado?.totalCentavos;
+    if (total == null) return null;
+    return total > _senaTurno ? total - _senaTurno : 0;
+  }
   String? _encargueNombre;
   List<EncargueCompanion> _encargues = [];
 
@@ -159,12 +177,39 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _cargarMasVendidos();
     _cargarEncargues();
     _encargue.addListener(_alCambiarEncargue);
+    _turno.addListener(_alCambiarTurno);
+    _alCambiarTurno();
+  }
+
+  Future<void> _alCambiarTurno() async {
+    final id = _turno.value;
+    if (id == null) {
+      if (mounted) {
+        setState(() {
+          _senaTurno = 0;
+          _clienteTurno = null;
+        });
+      }
+      return;
+    }
+    final db = baseLocalCompanion();
+    final sena = await senaPendienteDeTurno(db, id);
+    final turno = await (db.select(db.turnos)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final cliente = turno == null ? null : await (db.select(db.clientes)..where((c) => c.id.equals(turno.clienteId))).getSingleOrNull();
+    if (!mounted || _turno.value != id) return;
+    setState(() {
+      _senaTurno = sena.centavos;
+      _clienteTurno = cliente?.nombre;
+      _resultado = null;
+    });
   }
 
   @override
   void dispose() {
     _encargue.removeListener(_alCambiarEncargue);
     if (widget.encargue == null) _encargue.dispose();
+    _turno.removeListener(_alCambiarTurno);
+    if (widget.turno == null) _turno.dispose();
     _otroCtrl.dispose();
     _mixtoCtrl.dispose();
     _busquedaCtrl.dispose();
@@ -305,7 +350,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       }
       _resultado = null;
     });
-    if (widget.carrito.isEmpty) _encargue.value = null; // sin líneas ya no se está entregando nada
+    if (widget.carrito.isEmpty) {
+      _encargue.value = null; // sin líneas ya no se está entregando nada
+      _turno.value = null;
+    }
   }
 
   LineaVenta _conValor(LineaVenta l, int valor) {
@@ -735,7 +783,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _confirmar() async {
-    final total = _resultado?.totalCentavos;
+    final total = _totalACobrar;
     if (total == null || _calculando || _cobrando) return;
     if (_medio == _MedioVenta.efectivo) {
       final falta = total - _pagaEfectivoCentavos(total);
@@ -772,6 +820,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         claveCobro: _claveCobro,
+        turnoId: _turno.value,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
     } catch (e) {
@@ -790,7 +839,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       _error = null;
     });
     try {
-      final total = _resultado?.totalCentavos;
+      final total = _totalACobrar;
       if (total == null) {
         setState(() => _error = 'Elegí el medio de pago de nuevo antes de cobrar.');
         return;
@@ -808,6 +857,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         montoEfectivoMixtoCentavos: efectivoMixto,
+        turnoId: _turno.value,
       );
       if (resultado != null) {
         await _ventaCobrada(resultado.ventaId, resultado.totalCentavos, aMano: resultado.aMano, efectivoMixto: efectivoMixto);
@@ -825,7 +875,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final sesionId = AppNs.of(context).sesion?.id;
     if (_medio == _MedioVenta.efectivo || sesionId == null) return;
     final mixto = _medio == _MedioVenta.mixto;
-    final total = _resultado?.totalCentavos;
+    final total = _totalACobrar;
     if (mixto) {
       final problema = total == null ? 'Elegí el medio de pago de nuevo antes de cobrar.' : _problemaMixto(total);
       if (problema != null) {
@@ -849,6 +899,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         encargueId: _encargue.value,
         claveCobro: _claveCobro,
         montoEfectivoMixtoCentavos: efectivoMixto,
+        turnoId: _turno.value,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos, aMano: true, efectivoMixto: efectivoMixto);
     } catch (e) {
@@ -865,13 +916,16 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     // y cuánto se devuelve dependen de lo que había.
     final medio = _medio;
     final productos = widget.carrito.length;
-    final vuelto = medio == _MedioVenta.efectivo ? vueltoCentavos(pagaCentavos: _pagaEfectivoCentavos(totalCentavos), totalCentavos: totalCentavos) : 0;
+    // Con seña, el cliente pagó solo lo que faltaba (Regla 21): el vuelto es sobre eso.
+    final pagado = totalCentavos > _senaTurno ? totalCentavos - _senaTurno : 0;
+    final vuelto = medio == _MedioVenta.efectivo ? vueltoCentavos(pagaCentavos: _pagaEfectivoCentavos(pagado), totalCentavos: pagado) : 0;
     widget.carrito.clear();
     _valorDescuento = 0;
     _cobradoAMano = aMano;
     _cobradoEnPc = widget.servicio is ClienteCompanion;
     _encargueEntregado = _encargueNombre;
     _encargue.value = null;
+    _turno.value = null;
     if (!mounted) return;
     setState(() {
       _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
@@ -1027,6 +1081,18 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             },
           ),
           SizedBox(height: teclado ? 10 : 14),
+          if (_turno.value != null && n > 0 && !buscando) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(color: ns.gbg, borderRadius: BorderRadius.circular(22)),
+              child: Text(
+                'Turno de ${_clienteTurno ?? 'un cliente'}${_senaTurno > 0 ? ' · ya dejó ${plataNs(_senaTurno)} de seña' : ''}',
+                style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.g),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           if (_encargue.value != null && n > 0 && !buscando) ...[
             Container(
               width: double.infinity,
@@ -1243,7 +1309,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _vistaCobro(BuildContext context) {
     final ns = context.ns;
-    final total = _resultado?.totalCentavos;
+    final total = _totalACobrar;
     final efectivo = _medio == _MedioVenta.efectivo;
     final falta = (efectivo && total != null) ? total - _pagaEfectivoCentavos(total) : 0;
     final puede = total != null && !_calculando && !_cobrando;
@@ -1267,8 +1333,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                Text('Total a cobrar', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                Text(_senaTurno > 0 ? 'Falta cobrar' : 'Total a cobrar', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
                 Text(total == null ? '…' : plataNs(total), style: tituloNs(62, track: -0.06, color: ns.ink)),
+                if (_senaTurno > 0 && r != null)
+                  Text('Total ${plataNs(r.totalCentavos)} · seña −${plataNs(_senaTurno)}', style: estiloNs(14, color: ns.mute, tabular: true)),
                 if (r != null && (r.recargoCigarrillosCentavos > 0 || r.descuentoCentavos > 0 || r.redondeoCentavos > 0))
                   Padding(
                     padding: const EdgeInsets.only(top: 2),

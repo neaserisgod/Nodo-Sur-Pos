@@ -137,4 +137,15 @@ void main() {
           reason: 'cancelar con aviso siempre devuelve (El dueño, 2026-10-10)');
     });
   });
+
+  test('horas escritas a mano', () {
+    expect(minutosDesdeTexto('10'), 600);
+    expect(minutosDesdeTexto('10:30'), 630);
+    expect(minutosDesdeTexto('1030'), 630);
+    expect(minutosDesdeTexto(' 9.15 '), 555);
+    expect(minutosDesdeTexto('25:00'), isNull);
+    expect(minutosDesdeTexto('10:75'), isNull);
+    expect(minutosDesdeTexto('mañana'), isNull);
+    expect(textoDeMinutos(545), '9:05');
+  });
 }

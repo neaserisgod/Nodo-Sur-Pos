@@ -1162,6 +1162,7 @@ class PuertoLocal implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? turnoId,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
       db,
@@ -1172,6 +1173,7 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      turnoId: turnoId,
     );
   }
 
@@ -1186,6 +1188,7 @@ class PuertoLocal implements ServicioCompanion {
     int? encargueId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) {
     return _registrarVirtualOMixto(
       lineas: lineas,
@@ -1196,6 +1199,7 @@ class PuertoLocal implements ServicioCompanion {
       valorDescuento: valorDescuento,
       encargueId: encargueId,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+      turnoId: turnoId,
     );
   }
 
@@ -1211,6 +1215,7 @@ class PuertoLocal implements ServicioCompanion {
     int? encargueId,
     int? ordenCobroPendienteId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     try {
       return await repo_ventas.registrarVentaSegunMedio(
@@ -1225,6 +1230,7 @@ class PuertoLocal implements ServicioCompanion {
         encargueId: encargueId,
         ordenCobroPendienteId: ordenCobroPendienteId,
         montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+        turnoId: turnoId,
       );
     } on repo_ventas.MixtoInvalido catch (e) {
       throw ErrorCompanion(400, e.mensaje);
@@ -1319,6 +1325,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     final pasarela = await _pasarela();
     final mixto = montoEfectivoMixtoCentavos != null;
@@ -1329,11 +1336,13 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
     );
-    // En un mixto la terminal cobra solo la parte que no se pagó en efectivo (mismo `montoParaPosnet` de la PC).
+    // En un mixto la terminal cobra solo la parte que no se pagó en efectivo (mismo `montoParaPosnet` de la PC), y de un turno
+    // con seña, solo lo que falta (Regla 21).
+    final aCobrar = await repo_ventas.aCobrarConSena(db, totalCentavos: resultado.totalCentavos, turnoId: turnoId);
     final int montoTerminal;
     try {
-      if (mixto) repo_ventas.validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: resultado.totalCentavos);
-      montoTerminal = resultado.totalCentavos - (montoEfectivoMixtoCentavos ?? 0);
+      if (mixto) repo_ventas.validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: aCobrar);
+      montoTerminal = aCobrar - (montoEfectivoMixtoCentavos ?? 0);
     } on repo_ventas.MixtoInvalido catch (e) {
       throw ErrorCompanion(400, e.mensaje);
     }
@@ -1376,6 +1385,7 @@ class PuertoLocal implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     // La venta y la orden quedan ligadas en la MISMA transacción, y confirmar dos veces devuelve la misma venta.
     return _registrarVirtualOMixto(
@@ -1388,6 +1398,7 @@ class PuertoLocal implements ServicioCompanion {
       encargueId: encargueId,
       ordenCobroPendienteId: ordenPendienteId,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+      turnoId: turnoId,
     );
   }
 

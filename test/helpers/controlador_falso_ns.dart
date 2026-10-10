@@ -28,6 +28,8 @@ class ControladorFalsoNs implements ControladorAppNs {
   final ValueNotifier<bool> productosEnConteo = ValueNotifier(false);
   @override
   final ValueNotifier<bool> ocultarBarra = ValueNotifier(false);
+  @override
+  final ValueNotifier<int?> turnoEnVenta = ValueNotifier(null);
 
   @override
   final List<LineaVenta> carrito = [];

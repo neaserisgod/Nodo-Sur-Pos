@@ -161,6 +161,7 @@ class _PuertoPosnet extends PuertoLocal {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     if (nuncaCrea) await Completer<void>().future;
     if (falloAlCrear != null) throw falloAlCrear!;
@@ -186,6 +187,7 @@ class _PuertoPosnet extends PuertoLocal {
     int valorDescuento = 0,
     int? encargueId,
     String? claveCobro,
+    int? turnoId,
   }) async => (ventaId: 1, totalCentavos: Venta(lineas: lineas).subtotalCentavos);
 
   @override
@@ -199,6 +201,7 @@ class _PuertoPosnet extends PuertoLocal {
     int? encargueId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async => (ventaId: 1, totalCentavos: Venta(lineas: lineas).subtotalCentavos);
 
   @override
@@ -215,6 +218,7 @@ class _PuertoPosnet extends PuertoLocal {
     int valorDescuento = 0,
     int? encargueId,
     int? montoEfectivoMixtoCentavos,
+    int? turnoId,
   }) async {
     if (falloAlGuardar != null) throw falloAlGuardar!;
     return (ventaId: 1, totalCentavos: 1625000);

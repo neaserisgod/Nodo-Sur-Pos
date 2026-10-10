@@ -303,3 +303,17 @@ int senaADevolver({required int senaCentavos, required EstadoTurno estadoFinal, 
     _ => 0,
   };
 }
+
+/// Una hora escrita por una persona ("10", "10:30", "1030", "9.15") a minutos desde la medianoche. Null si no es una hora.
+int? minutosDesdeTexto(String texto) {
+  final limpio = texto.trim().replaceAll('.', ':').replaceAll(' ', '');
+  final m = RegExp(r'^(\d{1,2})(?::?(\d{2}))?$').firstMatch(limpio);
+  if (m == null) return null;
+  final h = int.parse(m.group(1)!);
+  final min = m.group(2) == null ? 0 : int.parse(m.group(2)!);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/// Minutos desde la medianoche a "9:05".
+String textoDeMinutos(int minutos) => '${minutos ~/ 60}:${(minutos % 60).toString().padLeft(2, '0')}';

@@ -40,6 +40,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
   int valorDescuento = 0,
   int? encargueId,
   int? montoEfectivoMixtoCentavos,
+  int? turnoId,
 }) {
   return mostrarHojaNs<({int ventaId, int totalCentavos, bool aMano})?>(
     context,
@@ -55,6 +56,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
       valorDescuento: valorDescuento,
       encargueId: encargueId,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+      turnoId: turnoId,
     ),
   );
 }
@@ -83,6 +85,7 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
     this.valorDescuento = 0,
     this.encargueId,
     this.montoEfectivoMixtoCentavos,
+    this.turnoId,
   });
 
   final ServicioCompanion cliente;
@@ -96,6 +99,9 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
 
   /// El encargue por apartado que esta venta entrega: se libera al grabar la venta, por Point o a mano.
   final int? encargueId;
+
+  /// El turno de la agenda que esta venta cobra (Regla 21): su seña se descuenta y queda cobrado.
+  final int? turnoId;
 
   /// Con valor, la venta es mixta: [montoCentavos] es solo la parte que va a la terminal.
   final int? montoEfectivoMixtoCentavos;
@@ -147,6 +153,7 @@ class _DialogoCobroPosnetCompanionState
         tipoDescuento: widget.tipoDescuento,
         valorDescuento: widget.valorDescuento,
         montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
+        turnoId: widget.turnoId,
       );
       if (_cancelado) {
         await _ejecutarCancelacion(
@@ -239,6 +246,7 @@ class _DialogoCobroPosnetCompanionState
           valorDescuento: widget.valorDescuento,
           montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
           encargueId: widget.encargueId,
+          turnoId: widget.turnoId,
         );
         _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
         if (mounted) setState(() => _fase = _Fase.aprobado);
@@ -320,6 +328,7 @@ class _DialogoCobroPosnetCompanionState
         valorDescuento: widget.valorDescuento,
         montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
         encargueId: widget.encargueId,
+        turnoId: widget.turnoId,
       );
       if (mounted) Navigator.of(context).pop((ventaId: resultado.ventaId, totalCentavos: resultado.totalCentavos, aMano: true));
     } catch (e) {

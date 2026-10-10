@@ -81,6 +81,9 @@ abstract class ControladorAppNs {
   /// Vender en el paso de cobro o de "hecho": la barra inferior se esconde.
   ValueNotifier<bool> get ocultarBarra;
 
+  /// El turno de la agenda que Vender está cobrando (Regla 21), o null.
+  ValueNotifier<int?> get turnoEnVenta;
+
   PestaniaNs get pestania;
   void irAPestania(PestaniaNs p);
 
