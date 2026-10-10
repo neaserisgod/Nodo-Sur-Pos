@@ -10,13 +10,12 @@ tiene que servir con empleados; lo que un rubro no usa se apaga para ese rubro (
 - PR #97: el APK sale solo con el merge `release:`/`beta:`, en su propia fila, con el número calculado solo.
 - PR #98: cerrar sesión y borrar el celular desde Más › Cuenta; un negocio de servicios ya no ve lo de almacén. Windows 2156,
   APK (número calculado: el último era 2160, debería ser 2161; no se verificó en el registro).
-- PR #99 (**verificar que se haya mergeado y publicado**): cobrar servicios (etapa 3). Si quedó abierto: CI verde → merge
-  (squash, título `release: …`).
+- PR #99: cobrar servicios (etapa 3), mergeado 01:05 UTC; **verificar que la publicación (Windows y APK) terminó bien**
 - `botdemo` PR #7: rubros Peluquería y Estética; un salón con turnos no se vuelve comercio por Nodo Sur.
 
 ## 1. Agenda (etapa 4), EN CURSO
 
-Hecho y probado (rama `ccr-a0284350-02fhfg`, commit "Agenda (en curso)"; si no está, buscar la rama `agenda-local`):
+Hecho y probado (rama `ccr-a0284350-02fhfg`, sin PR todavía):
 - `lib/domain/agenda.dart` + `test/domain/agenda_test.dart` (12 tests): `HorarioAtencion` (por defecto lunes a sábado
   9–19, JSON), `horariosLibres` (intervalo, sin pisar ocupados, sin horas pasadas), `seSuperponen`, `urlGoogleCalendar`
   (sin permisos de Google), `EstadoTurno` (esperando_seña, confirmado, llegó, cobrado, no vino, cancelado).
