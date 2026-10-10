@@ -227,8 +227,9 @@ Future<void> contarInsumo(
 typedef LineaDeReceta = ({int insumoId, int milesimas});
 
 /// Crea (o, con [servicioId], edita) un servicio. La receta se guarda por `global_id` de cada insumo para que viaje por la
-/// sync (como `componentes_promo`). `costo_centavos` queda con el costo de hoy (insumos y, si corresponde, mano de obra): el
-/// que se muestra al día sale siempre de [listarServicios], que lo recalcula con los costos de cada insumo.
+/// sync (como `componentes_promo`). `costo_centavos` queda con lo que cuestan hoy sus insumos (la mano de obra no
+/// es costo, Regla 20): el que se muestra al día sale siempre de [listarServicios], que lo recalcula con los costos de cada
+/// insumo, y el de una venta, del momento en que se cobra.
 ///
 /// Devuelve el id del servicio.
 Future<int> guardarServicio(
@@ -265,11 +266,8 @@ Future<int> guardarServicio(
       recetaGuardada.add({'gid': insumo.globalId!, 'milesimas': linea.milesimas});
     }
 
-    final costo = costoDeServicio(
-      receta: usos,
-      duracionMinutos: duracionMinutos,
-      valorHoraCentavos: await _valorHoraSiSuma(db, sumaManoDeObra),
-    ).totalCentavos;
+    // Solo los insumos: la mano de obra es una referencia para el precio, no un costo de la venta (Regla 20).
+    final costo = costoInsumosCentavos(usos);
 
     final anterior = servicioId == null ? null : await _producto(db, servicioId);
     if (anterior != null && !anterior.esServicio) throw ArgumentError('"${anterior.nombre}" no es un servicio');
@@ -327,15 +325,6 @@ Future<int> guardarServicio(
 
 /// Deja de ofrecer un servicio (o de usar un insumo). No se borra: lo vendido y su historial siguen apuntando a la fila.
 Future<void> dejarDeOfrecer(AppDatabase db, int productoId) => cambiarActivo(db, id: productoId, activo: false);
-
-/// El valor de la hora para sumar mano de obra: solo si el servicio la suma, el módulo está prendido y el valor está
-/// cargado. Si no, null (esa parte del costo es 0).
-Future<int?> _valorHoraSiSuma(AppDatabase db, bool sumaManoDeObra) async {
-  if (!sumaManoDeObra) return null;
-  final config = await configuracionNegocioActual(db);
-  if (!modulosDeConfiguracion(config).estaActivo(Modulo.manoDeObra)) return null;
-  return config.valorHoraCentavos;
-}
 
 /// Un insumo de la lista, con su costo por unidad de uso ("$ 733/ml") y si está bajo el mínimo.
 class InsumoConCosto {

@@ -14,6 +14,7 @@
 
 import 'dinero.dart';
 import 'ganancia.dart';
+import 'promo.dart' show repartirEnProporcion;
 
 /// Milésimas en una unidad de uso.
 const int milesimasPorUnidad = 1000;
@@ -183,6 +184,43 @@ int? seAcabaPrimero(List<UsoDeInsumo> receta) {
     }
   }
   return indice;
+}
+
+/// Lo que gasta una línea cobrada de [cantidad] servicios iguales (Regla 20): cada insumo de la receta con lo que usa en
+/// total y su parte del costo de la línea, en el mismo orden que [recetaPorUnidad].
+///
+/// El costo por servicio es [costoInsumosCentavos], el mismo número que muestra el calculador (una sola fórmula). Ese
+/// costo se reparte entre los insumos en proporción a lo que vale lo usado de cada uno, sin perder ni inventar un
+/// centavo ([repartirEnProporcion], como el precio de una promo): así la reposición de cada proveedor suma justo el
+/// costo de la línea.
+({int costoUnitarioCentavos, List<({int milesimas, int costoCentavos})> consumos}) consumosDeLinea(
+  List<UsoDeInsumo> recetaPorUnidad, {
+  required int cantidad,
+}) {
+  if (cantidad < 1) throw ArgumentError('La cantidad tiene que ser al menos 1');
+  final unitario = costoInsumosCentavos(recetaPorUnidad);
+  // Peso de cada insumo: lo que vale lo usado, en milésimas de centavo (solo sirve para repartir, no es un costo).
+  final pesos = [
+    for (final u in recetaPorUnidad)
+      u.insumo.costoEnvaseCentavos * u.cantidadMilesimas * milesimasPorUnidad ~/ u.insumo.contenidoEnvaseMilesimas,
+  ];
+  final partes = repartirEnProporcion(unitario * cantidad, pesos);
+  return (
+    costoUnitarioCentavos: unitario,
+    consumos: [
+      for (var k = 0; k < recetaPorUnidad.length; k++)
+        (milesimas: recetaPorUnidad[k].cantidadMilesimas * cantidad, costoCentavos: partes[k]),
+    ],
+  );
+}
+
+/// El primer insumo que no alcanza para lo que pide el carrito entero ([necesario]: insumo → milésimas, ya sumadas todas
+/// las líneas), o null si alcanza todo. Lo que pide 0 nunca falta.
+K? primerFaltante<K>(Map<K, int> necesario, int Function(K insumo) stockMilesimas) {
+  for (final MapEntry(key: insumo, value: pide) in necesario.entries) {
+    if (pide > 0 && stockMilesimas(insumo) < pide) return insumo;
+  }
+  return null;
 }
 
 /// Lo que entra al stock con una compra de [envases] envases de [contenidoEnvaseMilesimas] cada uno.

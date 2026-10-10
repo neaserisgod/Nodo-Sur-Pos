@@ -127,4 +127,44 @@ void main() {
       expect(UnidadInsumo.desdeClave('litros'), isNull);
     });
   });
+
+  group('consumos de una línea cobrada (Regla 20)', () {
+    test('cada insumo lleva lo que usa por la cantidad, y su parte del costo de la línea suma justo el costo', () {
+      final receta = [_uso(_top, 400), _uso(_guantes, 2000)];
+      final c = consumosDeLinea(receta, cantidad: 2);
+      expect(c.costoUnitarioCentavos, 57400, reason: 'el mismo costo que muestra el calculador');
+      expect(c.consumos.map((x) => x.milesimas), [800, 4000]);
+      expect(c.consumos.fold<int>(0, (a, x) => a + x.costoCentavos), 2 * 57400);
+      // 293,33 contra 280 por servicio: el top coat se lleva un poco más de la mitad.
+      expect(c.consumos.first.costoCentavos, greaterThan(c.consumos.last.costoCentavos));
+    });
+
+    test('sin receta no hay consumos y la línea cuesta 0', () {
+      final c = consumosDeLinea(const [], cantidad: 3);
+      expect(c.consumos, isEmpty);
+      expect(c.costoUnitarioCentavos, 0);
+    });
+
+    test('un insumo sin costo usa igual (descuenta stock) pero no se lleva costo', () {
+      const gratis = InsumoParaCalculo(costoEnvaseCentavos: 0, contenidoEnvaseMilesimas: 1000, stockMilesimas: 5000);
+      final c = consumosDeLinea([_uso(gratis, 500), _uso(_guantes, 1000)], cantidad: 1);
+      expect(c.consumos.map((x) => (x.milesimas, x.costoCentavos)), [(500, 0), (1000, 14000)]);
+    });
+
+    test('la cantidad tiene que ser al menos 1', () {
+      expect(() => consumosDeLinea([_uso(_top, 400)], cantidad: 0), throwsArgumentError);
+    });
+  });
+
+  group('qué falta para cobrar el carrito (Regla 20, bloquear si falta un insumo)', () {
+    test('suma lo que piden todas las líneas de un mismo insumo antes de comparar con el stock', () {
+      final stock = {'top': 1000, 'guantes': 96000};
+      expect(primerFaltante({'top': 800, 'guantes': 4000}, (k) => stock[k] ?? 0), isNull);
+      expect(primerFaltante({'guantes': 4000, 'top': 1200}, (k) => stock[k] ?? 0), 'top');
+    });
+
+    test('un insumo que pide 0 no falta aunque no haya stock', () {
+      expect(primerFaltante({'top': 0}, (_) => -5), isNull);
+    });
+  });
 }

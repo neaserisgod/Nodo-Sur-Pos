@@ -22,6 +22,7 @@ no se apaga nunca.
 | Carga histórica | 19 |
 | Comparador de precios | 14 (precios de referencia) |
 | Cobro con Mercado Pago Point | 2 y 9 (canales QR/Débito) |
+| Insumos, mano de obra, bloquear si falta un insumo, ajustar insumos al cobrar (solo negocios de servicios) | 20 |
 
 Las reglas 16 (lista de proveedores) y 17 (cliente recurrente) describen **datos del comercio de origen**, no del
 producto: un comercio nuevo carga sus proveedores y clientes desde la app.
@@ -652,6 +653,41 @@ proveedor, más salidas, apertura, cierre y retiro.
 - Cada renglón histórico trae letra de proveedor, así que alimenta la
   reposición igual que una venta del día — aunque no tenga un producto real
   del catálogo asociado.
+
+## 20. Servicios e insumos (El dueño, 2026-10-09 y 2026-10-10)
+
+Solo en un negocio de **servicios** (el rubro lo decide: barbería, uñas y belleza, otro servicio). Plan completo en
+[`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+
+- Un **insumo** se compra por envase y se gasta de a poco (un frasco de 15 ml de top coat). Su stock y lo que usa cada
+  servicio van en **milésimas** de su unidad (ml, g o unidades), en enteros, como la plata (Regla 1).
+- Un **servicio** tiene duración, precio y una **receta**: qué insumo usa y cuánto cada vez. No tiene stock propio: su
+  stock es **para cuántos alcanza** lo que hay (el insumo que menos rinde manda).
+- **Lo que cuesta un servicio son sus insumos**: lo que vale lo usado de cada envase, hacia arriba al peso (Regla 5 de
+  `CLAUDE.md`). **La mano de obra es solo una referencia para poner el precio** (El dueño, 2026-10-10): el calculador la
+  suma si el servicio la usa (duración × valor de la hora del negocio), pero no entra en el costo de la venta. La ganancia
+  del día incluye el trabajo, como cuando el dueño atiende el almacén.
+- El precio sugerido es el que gana la **ganancia buscada de ese servicio** (arranca en 60 %) sobre el precio, hacia
+  arriba a la centena (la misma cuenta que la Regla 14).
+- **Se cobra como un producto más** (búsqueda y grilla de Vender): el ticket y el historial dicen "Kapping", no la lista
+  de insumos (a diferencia de la promo, §14b).
+- **Al cobrar se descuenta lo que usa cada servicio**, y queda guardado en la venta qué insumo se usó, cuánto, a qué costo
+  y de qué proveedor (costo-foto, Regla 4), con su movimiento de stock (Regla 8). El costo de la línea es la suma de esos
+  insumos.
+- **Si falta un insumo, el servicio no se cobra** (como "sin stock no se vende", §8): se ve con un candado y dice qué
+  falta. Es el módulo **"Bloquear si falta un insumo"**, prendido de fábrica; apagado, solo avisa: se cobra igual y el
+  stock del insumo puede quedar negativo. Un servicio sin receta (un corte) no tiene límite.
+- **Ajustar lo que se usó** (módulo opcional): quien atiende corrige lo que usó en esa venta (más o menos de un insumo).
+  Cambia solo esa venta (lo que se descuenta, su costo y su reposición); la receta del servicio no cambia.
+- **Anular o editar** una venta devuelve los insumos que descontó, como devuelve el stock de un producto (Regla 9).
+- **Reposición y Separaciones** (Regla 5) toman lo que costaron los insumos usados, **por el proveedor de cada insumo**: el
+  precio del servicio se reparte entre ellos en proporción a ese costo, así lo vendido, la reposición y la ganancia de cada
+  proveedor cierran con lo cobrado. Un insumo sin costo suma $0 (se avisa, como lo vendido sin costo); uno sin proveedor va
+  a "sin proveedor".
+- Redondeo, descuento y medios de pago, igual que en cualquier venta.
+- **Los productos se siguen vendiendo** en un negocio de servicios (un shampoo, una lima), con su stock de siempre (El dueño,
+  2026-10-10). Esconderlos será un módulo aparte ("Productos de reventa"), más adelante.
+- Por ahora se cobra **solo desde el celular en "Solo celular"**: la PC todavía no tiene servicios.
 
 ---
 
