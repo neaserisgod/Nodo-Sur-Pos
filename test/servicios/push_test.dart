@@ -51,8 +51,8 @@ void main() {
     expect(await push.registrarSiHaceFalta('tok-cuenta'), isTrue, reason: 'si cambió el token, se vuelve a registrar');
   });
 
-  test('sin el proyecto de Firebase cargado, o fuera de Android, no hace nada', () async {
-    expect(await RegistroPush(cliente: cliente, opciones: opcionesFirebase, canal: canal, esAndroid: true).registrarSiHaceFalta('tok-cuenta'), isFalse);
+  test('sin los datos del proyecto de Firebase, o fuera de Android, no hace nada', () async {
+    expect(await RegistroPush(cliente: cliente, opciones: const OpcionesFirebase(apiKey: '', appId: '', senderId: '', projectId: ''), canal: canal, esAndroid: true).registrarSiHaceFalta('tok-cuenta'), isFalse);
     expect(await RegistroPush(cliente: cliente, opciones: opciones, canal: canal, esAndroid: false).registrarSiHaceFalta('tok-cuenta'), isFalse);
     expect(llamadas, isEmpty);
     expect(registrados, isEmpty);
