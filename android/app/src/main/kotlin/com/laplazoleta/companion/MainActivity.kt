@@ -3,9 +3,13 @@ package com.laplazoleta.companion
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -68,6 +72,37 @@ class MainActivity : FlutterActivity() {
                         checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                     ) {
                         requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7001)
+                    }
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        // Prueba del bot adentro de la app (`ServicioBot.kt`): mantener viva la app mientras corre el Node que lanzó Dart.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/bot").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "mantener" -> {
+                    val intent = Intent(this, ServicioBot::class.java).putExtra("pid", call.argument<Int>("pid") ?: 0)
+                    if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+                    result.success(null)
+                }
+                "soltar" -> {
+                    stopService(Intent(this, ServicioBot::class.java))
+                    result.success(null)
+                }
+                // Si Android ya lo deja correr sin restricciones de batería.
+                "sinRestricciones" -> result.success(
+                    Build.VERSION.SDK_INT < 23 ||
+                        (getSystemService(POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(packageName)
+                )
+                // El cartel del sistema "¿Permitir que la app se ejecute siempre en segundo plano?".
+                "pedirSinRestricciones" -> {
+                    if (Build.VERSION.SDK_INT >= 23) {
+                        try {
+                            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+                        } catch (e: Exception) {
+                            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                        }
                     }
                     result.success(null)
                 }

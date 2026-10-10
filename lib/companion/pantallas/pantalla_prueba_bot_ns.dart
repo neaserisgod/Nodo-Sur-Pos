@@ -1,6 +1,7 @@
 // Prueba (El dueño, 2026-10-10): ¿anda el bot de WhatsApp adentro de la app, sin Termux? Arranca el Node empaquetado con un
 // script que prueba Node, SQLite, internet, Baileys y la conexión con WhatsApp, y muestra lo que va pasando. Con un número, pide
-// el código para vincular ese WhatsApp (se escribe en Dispositivos vinculados del celular del negocio).
+// el código para vincular ese WhatsApp (se escribe en Dispositivos vinculados del celular del negocio). Cerrar esta pantalla no
+// lo frena: sigue andando con la notificación fija hasta tocar Detener, y al volver se retoma lo que va escribiendo.
 
 import 'dart:async';
 
@@ -22,6 +23,7 @@ class _PantallaPruebaBotNsState extends State<PantallaPruebaBotNs> {
   final _lineas = <String>[];
   StreamSubscription<String>? _sub;
   String? _error;
+  bool _sinRestricciones = true;
 
   @override
   void initState() {
@@ -29,14 +31,28 @@ class _PantallaPruebaBotNsState extends State<PantallaPruebaBotNs> {
     _sub = _bot.lineas.listen((l) {
       if (mounted) setState(() => _lineas.add(l));
     });
+    _bot.retomar().then((_) {
+      if (mounted) setState(() {});
+    });
+    _revisarBateria();
+  }
+
+  Future<void> _revisarBateria() async {
+    final ok = await _bot.sinRestriccionesDeBateria();
+    if (mounted) setState(() => _sinRestricciones = ok);
   }
 
   @override
   void dispose() {
     _sub?.cancel();
-    _bot.detener();
+    _bot.soltarPantalla();
     _numero.dispose();
     super.dispose();
+  }
+
+  Future<void> _detener() async {
+    await _bot.detener();
+    if (mounted) setState(() => _lineas.add('— Detenido'));
   }
 
   Future<void> _iniciar() async {
@@ -65,6 +81,16 @@ class _PantallaPruebaBotNsState extends State<PantallaPruebaBotNs> {
                 'Prueba si el bot de WhatsApp puede correr adentro de esta app, sin Termux. Con un número, pide el código para vincularlo.',
                 style: estiloNs(14, color: ns.mute),
               ),
+              if (!_sinRestricciones) ...[
+                const SizedBox(height: 10),
+                InfoNs('Para que Android no lo frene con la pantalla apagada, dejá que la app corra sin restricciones de batería.', tono: TonoNs.warn, icono: IconoNs.alertaCirculo),
+                const SizedBox(height: 8),
+                BotonNs.secundario(context, 'Permitir en segundo plano', () async {
+                  await _bot.pedirSinRestriccionesDeBateria();
+                  await Future<void>.delayed(const Duration(seconds: 2));
+                  _revisarBateria();
+                }, alto: 48),
+              ],
               const SizedBox(height: 12),
               CampoNs(etiqueta: 'Número (opcional)', controller: _numero, placeholder: '5492944123456', teclado: TextInputType.phone),
               const SizedBox(height: 10),
@@ -72,7 +98,7 @@ class _PantallaPruebaBotNsState extends State<PantallaPruebaBotNs> {
                 children: [
                   Expanded(child: BotonNs.primario(context, 'Probar', _iniciar, alto: 52, tamanio: 16)),
                   const SizedBox(width: 10),
-                  Expanded(child: BotonNs.secundario(context, 'Detener', _bot.detener, alto: 52)),
+                  Expanded(child: BotonNs.secundario(context, 'Detener', _detener, alto: 52)),
                 ],
               ),
               if (_error != null) ...[

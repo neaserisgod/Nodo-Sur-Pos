@@ -6,6 +6,12 @@
     <!-- Android 13+: mostrar las notificaciones de pedidos y turnos del bot (`MainActivity.kt`). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Prueba del bot adentro de la app (`ServicioBot.kt`): servicio en primer plano para que Android no mate al bot, el CPU
+         despierto con la pantalla apagada, y pedir que no le apliquen el ahorro de batería. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Sistema de actualización (2026-09-07): instalar el .apk que el
          servidor de la PC ofrece, sin pasar por ninguna tienda de apps. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -48,6 +54,14 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="pedidos_turnos" />
+        <service
+            android:name=".ServicioBot"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Bot de WhatsApp del negocio: mantiene la conexión abierta para contestar mensajes de clientes" />
+        </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
