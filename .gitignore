@@ -78,3 +78,7 @@ signing/
 /android/build/
 /android/app/build/
 /android/.kotlin/
+
+# Prueba del bot adentro del APK: lo arma tool/preparar_bot_android.sh al compilar (~110 MB, no va al repo).
+android/app/src/servicios/jniLibs/arm64-v8a/libns_*.so
+assets/bot/bot.zip

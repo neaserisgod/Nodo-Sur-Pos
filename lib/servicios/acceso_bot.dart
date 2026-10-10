@@ -18,6 +18,9 @@ abstract class AccesoBot {
 
   /// Tira [ErrorNube] `ya_resuelto` si otro equipo lo resolvió antes.
   Future<void> resolver(int id, {required bool aceptado});
+
+  /// El token del bot que corre adentro de este celular (Nodo Sur Servicios), con la dirección del sitio para el bot.
+  Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId);
 }
 
 class AccesoBotNube implements AccesoBot {
@@ -40,6 +43,15 @@ class AccesoBotNube implements AccesoBot {
     final v = await _vinculada();
     if (v == null) throw const ErrorNube('no_device', 'Este equipo no está vinculado a la cuenta.');
     return v;
+  }
+
+  @override
+  Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId) async {
+    final v = await _exigir();
+    final r = await v.cliente.tokenBot(v.token, deviceId);
+    final c = v.cliente;
+    final sitio = Uri(scheme: c.esquema, host: c.host, port: c.puerto).toString();
+    return (sitio: sitio, token: r.token, email: r.email, expiresAt: r.expiresAt);
   }
 
   @override

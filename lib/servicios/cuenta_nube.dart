@@ -490,6 +490,17 @@ class ClienteNube {
     return ((jsonDecode(r.body) as Map<String, dynamic>)['version'] as num).toInt();
   });
 
+  /// El token del bot que corre adentro de este celular (Nodo Sur Servicios), sin navegador: [deviceId] lo genera la app y lo
+  /// guarda; pedirlo de nuevo renueva el mismo bot. `expiresAt` en segundos.
+  Future<({String token, String email, int expiresAt})> tokenBot(String token, String deviceId) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/bot/token'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'deviceId': deviceId}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (token: j['token'] as String, email: '${j['email'] ?? ''}', expiresAt: (j['expiresAt'] as num).toInt());
+  });
+
   /// Publica el catálogo corto que usa el bot. Devuelve si cambió (si no, el sitio no despierta al bot).
   Future<bool> publicarCatalogoBot(String token, List<ItemCatalogoBot> items) => _conRed(() async {
     final r = await http
@@ -590,7 +601,7 @@ class ClienteNube {
   });
 
   /// Crea la orden en la terminal. [idempotencyKey] repetida no duplica el cobro (mismo criterio que el cobro directo).
-  Future<({String id, String estado})> crearOrdenPoint(
+  Future<({String id, String estado, String? qrData})> crearOrdenPoint(
     String token, {
     required String externalReference,
     required String idempotencyKey,
@@ -607,7 +618,9 @@ class ClienteNube {
     final id = j['id']?.toString();
     final estado = j['status']?.toString();
     if (id == null || estado == null) throw const ErrorNube('respuesta_invalida', 'Mercado Pago respondió sin id o estado de la orden.');
-    return (id: id, estado: estado);
+    // Canal 'qr_pantalla' (Nodo Sur Servicios): la trama del QR que se dibuja en el celular.
+    final qr = j['qrData'];
+    return (id: id, estado: estado, qrData: qr is String && qr.isNotEmpty ? qr : null);
   });
 
   Future<String> consultarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {
@@ -717,6 +730,18 @@ class ClienteNube {
     ).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     return (jsonDecode(r.body) as Map<String, dynamic>)['status'] as String?;
+  });
+
+  /// Devuelve por Mercado Pago la seña que la clienta pagó con el link del bot (Nodo Sur Servicios). [turnoRemoto] es el id del
+  /// turno en el sitio. Reintentar no devuelve dos veces. Lanza [ErrorNube] con `sin_sena_mp` si esa seña no entró por el link.
+  Future<int> devolverSenaMp(String token, String turnoRemoto) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/mp/sena/devolver'),
+      headers: _auth(token, {'Content-Type': 'application/json'}),
+      body: jsonEncode({'turnoId': turnoRemoto}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return ((jsonDecode(r.body) as Map<String, dynamic>)['centavos'] as num? ?? 0).toInt();
   });
 
   Future<void> cancelarOrdenPoint(String token, String ordenIdMp) => _conRed(() async {

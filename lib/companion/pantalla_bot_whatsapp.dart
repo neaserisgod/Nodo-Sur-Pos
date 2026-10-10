@@ -19,7 +19,7 @@ import 'mensaje_error.dart';
 import 'servicio_companion.dart';
 
 class PantallaBotWhatsApp extends StatefulWidget {
-  const PantallaBotWhatsApp({super.key, required this.acceso, required this.servicio, this.alIrATuNegocio, this.ahora});
+  const PantallaBotWhatsApp({super.key, required this.acceso, required this.servicio, this.alIrATuNegocio, this.ahora, this.enEsteCelular});
 
   final AccesoBot acceso;
   final ServicioCompanion servicio;
@@ -27,6 +27,10 @@ class PantallaBotWhatsApp extends StatefulWidget {
   /// Abre Configuración › Tu negocio (rubro y nombre del comercio). Null = solo se avisa.
   final VoidCallback? alIrATuNegocio;
   final DateTime Function()? ahora;
+
+  /// Nodo Sur Servicios, que trae el bot adentro: en vez de cómo instalarlo en Termux, el bot de este celular. Recibe el WhatsApp
+  /// del local como está escrito arriba (normalizado; null si falta).
+  final Widget Function(BuildContext context, String? numeroBot)? enEsteCelular;
 
   @override
   State<PantallaBotWhatsApp> createState() => _PantallaBotWhatsAppState();
@@ -334,7 +338,10 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
                   const InfoNs('El negocio no tiene un plan con el bot de WhatsApp.')
                 else ...[
                   _salud(e),
-                  if (e.puedeConfigurar) ...[..._configuracion(), ..._instalar()] else ...[
+                  if (e.puedeConfigurar) ...[
+                    ..._configuracion(),
+                    if (widget.enEsteCelular case final enEste?) enEste(context, numeroWhatsApp(_numeroBot.text)) else ..._instalar(),
+                  ] else ...[
                     const SizedBox(height: 12),
                     const InfoNs('La configuración y la instalación las hace el dueño o un encargado.'),
                   ],

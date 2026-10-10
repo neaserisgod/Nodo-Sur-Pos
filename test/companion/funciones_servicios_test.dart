@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/funciones_ns.dart';
+import 'package:la_plazoleta/edicion.dart';
 
 /// El buscador de funciones en un negocio de servicios (El dueño, 2026-10-10: "muchas cosas siguen siendo genéricas de
 /// almacén"): no ofrece lo que es de un almacén y suma servicios e insumos.
@@ -23,5 +24,16 @@ void main() {
   test('las secciones siguen en orden y "Productos y stock" se llama "Servicios e insumos"', () {
     final encabezados = todasLasFunciones(servicios: true).map((r) => r.encabezado).whereType<String>().toList();
     expect(encabezados, ['Vender', 'Servicios e insumos', 'Caja', 'Configuración y cuenta']);
+  });
+
+  test('la app Nodo Sur Servicios: además, sin PC, arqueo, varios usuarios ni facturas de compra, aunque el rubro sea de almacén', () {
+    edicionActual = Edicion.servicios;
+    addTearDown(() => edicionActual = Edicion.almacen);
+    final titulos = funcionesDelNegocio().map((f) => f.titulo).toList();
+    for (final t in ['Contar la plata de la caja (sin cerrar)', 'Cargar una factura de compra', 'Cambiar de usuario', 'Desconectar de esta PC',
+        'Estado de la conexión con la PC', 'Agregar o desactivar usuarios', 'Recargo de cigarrillos', 'Controlar el stock']) {
+      expect(titulos, isNot(contains(t)), reason: t);
+    }
+    expect(titulos, containsAll(['Agregar un servicio nuevo', 'Cerrar la caja', 'Actualizar la aplicación']));
   });
 }

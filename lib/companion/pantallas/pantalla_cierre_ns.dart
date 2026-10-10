@@ -16,6 +16,7 @@ import '../../data/repositorio_faltantes.dart' show DestinoFaltante, destinoPosi
 import '../../domain/dinero.dart';
 import '../../domain/faltantes_cierre.dart';
 import '../../domain/saldo_mp.dart' show SaldoMp;
+import '../../edicion.dart';
 import '../../servicios/saldo_mp_nube.dart';
 import '../app_ns.dart';
 import '../cliente_companion.dart' show ProveedorCompanion, ResumenCierreCompanion;
@@ -157,6 +158,29 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
   }
 
   static String _pesos(int? centavos) => centavos == null ? '' : '${centavos ~/ centavosPorPeso}';
+
+  @override
+  void initState() {
+    super.initState();
+    if (esEdicionServicios) unawaited(_cierreSimple());
+  }
+
+  /// Nodo Sur Servicios: caja simple, sin contar (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`). Arranca en la revisión
+  /// con lo que tendría que haber como contado: se ve cuánto entró y se cierra; si algo no coincide, se corrige ahí mismo.
+  Future<void> _cierreSimple() async {
+    setState(() => _trabajando = true);
+    try {
+      final esperado = await widget.servicio.calcularCierre(efectivoContadoCentavos: 0);
+      _efectivo.text = _pesos(esperado.efectivoEsperadoCentavos);
+      _mp.text = _pesos(esperado.mpEsperadoCentavos);
+      _lata.text = _pesos(esperado.lataFinalCentavos);
+      await _confirmarConteo();
+    } catch (e) {
+      if (mounted) setState(() => _error = mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _trabajando = false);
+    }
+  }
 
   @override
   void dispose() {

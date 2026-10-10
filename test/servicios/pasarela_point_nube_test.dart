@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/cobro_posnet.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/servicios/pasarela_point_nube.dart';
 
 http.Response _json(Object o, [int s = 200]) => http.Response(jsonEncode(o), s, headers: {'content-type': 'application/json'});
@@ -136,6 +137,33 @@ void main() {
     test('un dispositivo ya no vinculado (401) pide volver a vincularlo', () async {
       final p = PasarelaPointNube(token: 't', cliente: _cliente((r) async => _json({'error': 'no_device'}, 401)));
       await expectLater(p.consultar('ORD1'), throwsA(isA<CobroPosnetException>().having((e) => e.mensaje, 'mensaje', contains('ya no está vinculado'))));
+    });
+  });
+
+  group('Nodo Sur Servicios: QR en la pantalla', () {
+    setUp(() => edicionActual = Edicion.servicios);
+    tearDown(() => edicionActual = Edicion.almacen);
+
+    test('sin terminal elegida igual cobra por el servidor (el QR no la necesita)', () async {
+      final p = await elegirPasarelaPoint(almacen: await _conCuenta(), cliente: _cliente((r) async => _json(_estado(terminal: false))));
+      expect(p, isA<PasarelaPointNube>());
+    });
+
+    test('el QR pide la orden "qr_pantalla" y deja la trama para el diálogo; débito va a la terminal como siempre', () async {
+      final canales = <String>[];
+      final p = PasarelaPointNube(
+        token: 'tok',
+        cliente: _cliente((r) async {
+          final canal = (jsonDecode(r.body) as Map)['canal'] as String;
+          canales.add(canal);
+          return _json({'id': 'ORD-$canal', 'status': 'created', if (canal == 'qr_pantalla') 'qrData': '000201QR'});
+        }),
+      );
+      final qr = await p.crear(externalReference: 'venta-1', idempotencyKey: 'clave-0001', montoCentavos: 150000, canal: 'qr');
+      final debito = await p.crear(externalReference: 'venta-2', idempotencyKey: 'clave-0002', montoCentavos: 150000, canal: 'debit_card');
+      expect(canales, ['qr_pantalla', 'debit_card']);
+      expect(qrEnPantallaDe(qr.ordenIdMp), '000201QR');
+      expect(qrEnPantallaDe(debito.ordenIdMp), isNull);
     });
   });
 }

@@ -55,6 +55,7 @@ import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'pantallas/pantalla_agenda_ns.dart';
 import 'pantallas/hoja_actualizar_ns.dart';
+import '../edicion.dart';
 import 'app_ns.dart';
 import 'funciones_ns.dart';
 import 'kit/kit_ns.dart';
@@ -401,7 +402,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// escritorio (`domain/caja.dart`, Regla 3): "desde" es el último arqueo
   /// intermedio de esta sesión, o la apertura si todavía no hubo ninguno.
   bool _calcularArqueoIntermedioVencido(SesionCompanion sesion) {
-    if (!sesion.abierta) return false;
+    // Nodo Sur Servicios: caja simple, sin arqueo.
+    if (!sesion.abierta || esEdicionServicios) return false;
     final desde = sesion.fechaUltimoArqueoIntermedio ?? sesion.fechaApertura;
     if (desde == null) return false;
     _minutosDesdeArqueo = DateTime.now().difference(desde).inMinutes;

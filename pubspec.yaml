@@ -95,6 +95,16 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Android tiene dos ediciones (`android/app/build.gradle.kts`, `lib/edicion.dart`): sin --flavor se compila la de almacén.
+  default-flavor: almacen
+
+  # El bot de WhatsApp de Nodo Sur Servicios: assets/bot/bot.zip lo arma tool/preparar_bot_android.sh al compilar (no va al
+  # repo). Solo en esa edición. Sin él, la carpeta queda solo con su .gitkeep y la pantalla del bot lo dice.
+  assets:
+    - path: assets/bot/
+      flavors:
+        - servicios
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

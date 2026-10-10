@@ -4,6 +4,8 @@
 // cargado sigue cobrando directo (`elegirPasarelaPoint`).
 
 import '../data/cobro_posnet.dart';
+import '../domain/cobro_posnet.dart' show canalQr;
+import '../edicion.dart';
 import 'cuenta_nube.dart';
 
 class PasarelaPointNube implements PasarelaPoint {
@@ -34,7 +36,10 @@ class PasarelaPointNube implements PasarelaPoint {
     required int montoCentavos,
     required String canal,
   }) => _traducir(() async {
-    final r = await cliente.crearOrdenPoint(token, externalReference: externalReference, idempotencyKey: idempotencyKey, montoCentavos: montoCentavos, canal: canal);
+    // Nodo Sur Servicios no tiene terminal: el QR lo muestra el mismo celular (lo lee cualquier billetera).
+    final enPantalla = esEdicionServicios && canal == canalQr;
+    final r = await cliente.crearOrdenPoint(token, externalReference: externalReference, idempotencyKey: idempotencyKey, montoCentavos: montoCentavos, canal: enPantalla ? 'qr_pantalla' : canal);
+    if (r.qrData != null) recordarQrEnPantalla(r.id, r.qrData!);
     return OrdenCobroCreada(ordenIdMp: r.id, estado: r.estado);
   });
 
@@ -54,6 +59,18 @@ class PasarelaPointNube implements PasarelaPoint {
     }
   }
 }
+
+// El QR para mostrar en el celular, por orden. Se guarda acá (y no en la respuesta de cada capa del cobro) porque solo existe en Nodo
+// Sur Servicios, donde el cobro corre en el mismo celular que lo muestra: el diálogo lo busca con el id de la orden que ya conoce.
+final Map<String, String> _qrsEnPantalla = {};
+
+void recordarQrEnPantalla(String ordenIdMp, String qrData) {
+  if (_qrsEnPantalla.length > 20) _qrsEnPantalla.remove(_qrsEnPantalla.keys.first);
+  _qrsEnPantalla[ordenIdMp] = qrData;
+}
+
+/// La trama del QR de esa orden si se cobra con QR en la pantalla; null si va a la terminal.
+String? qrEnPantallaDe(String? ordenIdMp) => ordenIdMp == null ? null : _qrsEnPantalla[ordenIdMp];
 
 /// Elige por dónde cobrar. Con access token Y terminal cargados en este equipo (la PC de siempre) se cobra directo, sin cambiar
 /// nada de lo que ya anda. Si no, y el dispositivo está vinculado a la cuenta, se cobra por el servidor siempre que el negocio
@@ -90,7 +107,8 @@ Future<PasarelaPoint> elegirPasarelaPoint({
   if (!estado.conectado) {
     throw const CobroPosnetException('Mercado Pago todavía no está conectado: el dueño lo conecta en horsepos.com/negocio.');
   }
-  if (!estado.terminalElegida) {
+  // Nodo Sur Servicios cobra con el QR en la pantalla: no necesita terminal (el débito y el crédito sí, y lo avisa el sitio).
+  if (!estado.terminalElegida && !esEdicionServicios) {
     throw const CobroPosnetException('Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.');
   }
   return PasarelaPointNube(cliente: cliente, token: cuenta.token);

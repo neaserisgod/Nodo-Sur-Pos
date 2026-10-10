@@ -1,7 +1,9 @@
 // Más, tal cual el mock (docs/03 B5): la tarjeta del usuario, la apariencia (claro,
 // oscuro o automático), NEGOCIO, ESTA APLICACIÓN y "Modo: … · Cambiar".
 
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
@@ -13,11 +15,14 @@ import '../pantalla_proveedores.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
-import '../bot_celular.dart' show accesoBotDelCelular, estadoBotCelular;
+import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, estadoBotCelular;
 import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
-import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import 'seccion_bot_en_celular_ns.dart';
+import '../../edicion.dart';
+import '../../domain/modulos.dart' show Modulo;
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 
 class PantallaMasNs extends StatelessWidget {
   const PantallaMasNs({super.key, this.alAbrirEncargues});
@@ -85,17 +90,42 @@ class PantallaMasNs extends StatelessWidget {
                   onCambio: (i) => guardarModoTemaNs(const [ThemeMode.light, ThemeMode.dark, ThemeMode.system][i]),
                 ),
                 const SizedBox(height: 12),
+                // Un negocio de servicios en la app de almacén: se le ofrece pasarse a Nodo Sur Servicios (El dueño, 2026-10-10,
+                // `docs/PLAN-APP-SERVICIOS.md`), que trae el bot adentro. Misma cuenta: los datos llegan solos por la sincronización.
+                if (!esEdicionServicios && servicios && Platform.isAndroid) ...[
+                  Container(
+                    key: const Key('mas_pasarse_a_servicios'),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Pasate a Nodo Sur Servicios', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'La app para turnos, más simple, con el bot de WhatsApp adentro (sin Termux). Instalala y entrá con tu misma cuenta: tus turnos, servicios y clientes llegan solos.',
+                          style: estiloNs(14, color: ns.ink),
+                        ),
+                        const SizedBox(height: 10),
+                        BotonNs.primario(context, 'Descargarla', () => launchUrl(Uri.parse('https://horsepos.com/descargar/'), mode: LaunchMode.externalApplication), alto: 48, tamanio: 15),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 const SeccionNs('Negocio'),
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
-                    _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
+                    // Nodo Sur Servicios: sin encargues de productos, y proveedores solo si lleva insumos.
+                    if (!esEdicionServicios) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
                     // servicios no los usa.
                     if (!servicios) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
-                    _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
-                    if (estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    if (!esEdicionServicios || moduloActivo(Modulo.insumos)) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    // El bot en Termux; Nodo Sur Servicios lo trae adentro.
+                    if (!esEdicionServicios && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',
@@ -105,6 +135,21 @@ class PantallaMasNs extends StatelessWidget {
                             acceso: accesoBotDelCelular,
                             servicio: app.servicio!,
                             alIrATuNegocio: () => app.irA((_) => const PantallaConfiguracionCompanion()),
+                          ),
+                        ),
+                      ),
+                    // Nodo Sur Servicios trae el bot adentro: la misma pantalla, con el bot de este celular en vez de Termux.
+                    if (esEdicionServicios && Platform.isAndroid && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                      _Fila(
+                        icono: IconoNs.celular,
+                        titulo: 'Bot de WhatsApp',
+                        detalle: 'Encenderlo, vincularlo y ver si está atendiendo',
+                        onTap: () => app.irA(
+                          (_) => PantallaBotWhatsApp(
+                            acceso: accesoBotDelCelular,
+                            servicio: app.servicio!,
+                            alIrATuNegocio: () => app.irA((_) => const PantallaConfiguracionCompanion()),
+                            enEsteCelular: (context, numero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero),
                           ),
                         ),
                       ),
@@ -125,15 +170,18 @@ class PantallaMasNs extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                BotonNs(
-                  texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',
-                  onTap: app.cambiarModo,
-                  alto: 56,
-                  tamanio: 16,
-                  fondo: ns.bbg,
-                  color: ns.b,
-                ),
+                // Nodo Sur Servicios no tiene PC: es siempre solo celular.
+                if (!esEdicionServicios) ...[
+                  const SizedBox(height: 8),
+                  BotonNs(
+                    texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',
+                    onTap: app.cambiarModo,
+                    alto: 56,
+                    tamanio: 16,
+                    fondo: ns.bbg,
+                    color: ns.b,
+                  ),
+                ],
               ],
             );
           },

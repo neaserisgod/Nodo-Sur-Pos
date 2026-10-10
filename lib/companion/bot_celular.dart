@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../domain/bot_whatsapp.dart';
 import '../servicios/acceso_bot.dart';
+import '../servicios/bot_en_celular.dart';
 import '../servicios/push.dart';
 import '../servicios/cuenta_nube.dart' show AlmacenCuenta, AlmacenCuentaEnArchivo, ClienteNube;
 
@@ -19,6 +20,9 @@ final AccesoBot accesoBotDelCelular = AccesoBotNube(() async {
   final soporte = await getApplicationSupportDirectory();
   return (almacen: AlmacenCuentaEnArchivo(soporte.path) as AlmacenCuenta, cliente: _clienteNubeBot);
 });
+
+/// El bot que corre adentro de este celular (solo Nodo Sur Servicios trae Node; en la otra app no se usa).
+final BotEnCelular botDelCelular = BotEnCelular(acceso: accesoBotDelCelular);
 
 /// Lo último que dijo el sitio del bot (null = todavía no se preguntó, o el equipo no está vinculado). Más lo escucha para
 /// mostrar la fila "Bot de WhatsApp" solo si el negocio lo tiene.

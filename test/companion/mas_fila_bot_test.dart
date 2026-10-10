@@ -9,6 +9,9 @@ import 'package:la_plazoleta/companion/pantallas/pantalla_mas_ns.dart';
 import 'package:la_plazoleta/companion/servicio_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/domain/bot_whatsapp.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/edicion.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 
 import '../helpers/controlador_falso_ns.dart';
 import '../helpers/sitio_bot_falso.dart';
@@ -55,5 +58,26 @@ void main() {
     await t.runAsync(() => refrescarEstadoBot(acceso: sitio, forzar: true));
     await t.pump();
     expect(find.text('Bot de WhatsApp'), findsNothing);
+  });
+
+  testWidgets('Nodo Sur Servicios: sin encargues, sin el bot de Termux ni el modo PC; proveedores solo con insumos', (t) async {
+    edicionActual = Edicion.servicios;
+    final antes = modulosActuales.value;
+    modulosActuales.value = ModulosNegocio.todosActivos.paraEdicionServicios();
+    addTearDown(() {
+      edicionActual = Edicion.almacen;
+      modulosActuales.value = antes;
+    });
+    estadoBotCelular.value = const EstadoBot(tieneBot: true);
+    await abrir(t);
+    expect(find.text('Encargues'), findsNothing);
+    expect(find.text('Bot de WhatsApp'), findsNothing);
+    expect(find.textContaining('Modo:'), findsNothing);
+    expect(find.text('Proveedores'), findsOneWidget);
+
+    modulosActuales.value = ModulosNegocio.todosActivos.conModulo(Modulo.insumos, activo: false).paraEdicionServicios();
+    await t.pumpWidget(const SizedBox());
+    await abrir(t);
+    expect(find.text('Proveedores'), findsNothing);
   });
 }

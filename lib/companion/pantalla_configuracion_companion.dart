@@ -26,6 +26,7 @@ import '../domain/dinero.dart';
 import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
+import '../edicion.dart';
 import '../servicios/gemini.dart';
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 import '../ui/comun/campo_texto.dart';
@@ -419,17 +420,20 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           ],
           const SizedBox(height: 2),
           BotonNs.secundario(context, '+ Nueva categoría', _agregarCategoria),
-          _seccion('Quiénes usan la app'),
-          for (final u in _usuarios)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onLongPress: () => _renombrarUsuario(u),
-                child: InterruptorNs(etiqueta: u.nombre, descripcion: _usuarioActivo(u) ? 'Activo' : 'Inactivo', encendido: _usuarioActivo(u), onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v)),
+          // Nodo Sur Servicios: caja simple, de una persona (sin varios usuarios ni gastos fijos, `docs/PLAN-APP-SERVICIOS.md`).
+          if (!esEdicionServicios) ...[
+            _seccion('Quiénes usan la app'),
+            for (final u in _usuarios)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: GestureDetector(
+                  onLongPress: () => _renombrarUsuario(u),
+                  child: InterruptorNs(etiqueta: u.nombre, descripcion: _usuarioActivo(u) ? 'Activo' : 'Inactivo', encendido: _usuarioActivo(u), onCambio: (v) => setState(() => v == u.activo ? _usuariosPendientes.remove(u.id) : _usuariosPendientes[u.id] = v)),
+                ),
               ),
-            ),
-          const SizedBox(height: 2),
-          BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+            const SizedBox(height: 2),
+            BotonNs.secundario(context, '+ Agregar usuario', _agregarUsuario),
+          ],
           if (!_pcEmparejada && moduloActivo(Modulo.manoDeObra)) ...[
             _seccion('Mano de obra'),
             TarjetaFilaNs(
@@ -450,9 +454,11 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaConfigAgendaNs())),
             ),
           ],
-          _seccion('Gastos fijos'),
-          // Desde la v64 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
-          BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
+          if (!esEdicionServicios) ...[
+            _seccion('Gastos fijos'),
+            // Desde la v64 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
+            BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
+          ],
           _seccion('Asistente IA'),
           _filaClaveIa(context),
           if (ClaveGemini.configurada) ...[
@@ -488,8 +494,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           ),
           const SizedBox(height: 8),
           // Dos grupos, como en el alta (`asistente_negocio.dart`): el rubro decide si la app es de productos o de servicios.
+          // Nodo Sur Servicios: solo los de servicios.
           for (final (titulo, rubros) in [
-            ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
+            if (!esEdicionServicios) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
             ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           ]) ...[
             Text(titulo, style: estiloNs(13, color: ns.mute)),

@@ -10,6 +10,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../edicion.dart';
 import 'cuenta_nube.dart';
 
 /// Los datos públicos del proyecto de Firebase (del `google-services.json`: `current_key`, `mobilesdk_app_id`, `project_number`,
@@ -34,12 +35,20 @@ const opcionesFirebase = OpcionesFirebase(
   projectId: 'nodo-sur-eb45a',
 );
 
+// Nodo Sur Servicios es otra app para Firebase (otro applicationId, `com.laplazoleta.servicios`): tiene su propio id de app en el
+// mismo proyecto (el `mobilesdk_app_id` de su google-services.json, El dueño, 2026-10-10).
+const _appIdServicios = '1:831126263942:android:212f489bb142cb40a81907';
+OpcionesFirebase get opcionesFirebaseDeEdicion => esEdicionServicios
+    ? OpcionesFirebase(apiKey: opcionesFirebase.apiKey, appId: _appIdServicios, senderId: opcionesFirebase.senderId, projectId: opcionesFirebase.projectId)
+    : opcionesFirebase;
+
 const _canal = MethodChannel('nodosur/push');
 
 /// Registra el token de este celular en el sitio, una vez por sesión de la app (y otra vez si cambió). Nunca tira.
 class RegistroPush {
-  RegistroPush({required this.cliente, this.opciones = opcionesFirebase, MethodChannel? canal, bool? esAndroid})
-      : _canal2 = canal ?? _canal,
+  RegistroPush({required this.cliente, OpcionesFirebase? opciones, MethodChannel? canal, bool? esAndroid})
+      : opciones = opciones ?? opcionesFirebaseDeEdicion,
+        _canal2 = canal ?? _canal,
         _esAndroid = esAndroid ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
 
   final ClienteNube cliente;

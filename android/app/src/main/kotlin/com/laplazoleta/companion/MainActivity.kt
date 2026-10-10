@@ -3,9 +3,13 @@ package com.laplazoleta.companion
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -68,6 +72,43 @@ class MainActivity : FlutterActivity() {
                         checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                     ) {
                         requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7001)
+                    }
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        // El bot adentro de Nodo Sur Servicios (`ServicioBot.kt`): lo enciende y lo apaga la app; después anda solo.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/bot").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "encender" -> {
+                    val intent = Intent(this, ServicioBot::class.java)
+                        .putExtra("codigo", call.argument<String>("codigo"))
+                        .putExtra("datos", call.argument<String>("datos"))
+                        .putExtra("numero", call.argument<String>("numero") ?: "")
+                    ServicioBot.iniciar(this, intent)
+                    result.success(null)
+                }
+                "apagar" -> {
+                    if (ServicioBot.encendido(this)) {
+                        ServicioBot.iniciar(this, Intent(this, ServicioBot::class.java).setAction(ServicioBot.ACCION_APAGAR))
+                    }
+                    result.success(null)
+                }
+                "encendido" -> result.success(ServicioBot.encendido(this))
+                // Si Android ya lo deja correr sin restricciones de batería.
+                "sinRestricciones" -> result.success(
+                    Build.VERSION.SDK_INT < 23 ||
+                        (getSystemService(POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(packageName)
+                )
+                // El cartel del sistema "¿Permitir que la app se ejecute siempre en segundo plano?".
+                "pedirSinRestricciones" -> {
+                    if (Build.VERSION.SDK_INT >= 23) {
+                        try {
+                            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+                        } catch (e: Exception) {
+                            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                        }
                     }
                     result.success(null)
                 }

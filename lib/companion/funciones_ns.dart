@@ -2,6 +2,7 @@
 // (docs/06). Es lógica pura: no sabe de pantallas. Cada función lleva una
 // [AccionFuncion] que el menú principal traduce a una navegación directa.
 
+import '../edicion.dart';
 import 'kit/iconos_ns.dart';
 
 /// A dónde lleva cada función del índice (docs/06 §3, columna "Acción").
@@ -105,10 +106,25 @@ bool _esDeAlmacen(FuncionNs f) =>
     }.contains(f.accion) ||
     const {'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría'}.contains(f.titulo);
 
+/// Lo que la app Nodo Sur Servicios no tiene (`docs/PLAN-APP-SERVICIOS.md`): PC, arqueo, varios usuarios, facturas de compra.
+bool _noEstaEnLaAppDeServicios(FuncionNs f) =>
+    const {
+      AccionFuncion.contarCaja,
+      AccionFuncion.cargarFactura,
+      AccionFuncion.cambiarUsuario,
+      AccionFuncion.desconectar,
+      AccionFuncion.irAMas,
+    }.contains(f.accion) ||
+    f.titulo == 'Agregar o desactivar usuarios';
+
 /// Las funciones que se ofrecen, según el negocio. Ordenadas por sección, como [indiceFunciones].
 List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
-  if (!servicios) return indiceFunciones;
-  final lista = [for (final f in indiceFunciones) if (!_esDeAlmacen(f)) f, ..._funcionesDeServicios];
+  if (!servicios && !esEdicionServicios) return indiceFunciones;
+  final lista = [
+    for (final f in indiceFunciones)
+      if (!_esDeAlmacen(f) && !(esEdicionServicios && _noEstaEnLaAppDeServicios(f))) f,
+    ..._funcionesDeServicios,
+  ];
   return lista..sort((a, b) => a.seccion.compareTo(b.seccion));
 }
 
