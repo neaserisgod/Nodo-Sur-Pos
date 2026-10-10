@@ -26,7 +26,13 @@ class OpcionesFirebase {
   Map<String, String> toJson() => {'apiKey': apiKey, 'appId': appId, 'senderId': senderId, 'projectId': projectId};
 }
 
-const opcionesFirebase = OpcionesFirebase(apiKey: '', appId: '', senderId: '', projectId: '');
+// Proyecto "Nodo Sur" de Firebase (El dueño, 2026-10-10), app Android `com.laplazoleta.companion`.
+const opcionesFirebase = OpcionesFirebase(
+  apiKey: 'AIzaSyDKTQ9qM53kwrpu-T2KHLiXQtLrT2L6roI',
+  appId: '1:831126263942:android:909951cf843fc985a81907',
+  senderId: '831126263942',
+  projectId: 'nodo-sur-eb45a',
+);
 
 const _canal = MethodChannel('nodosur/push');
 
