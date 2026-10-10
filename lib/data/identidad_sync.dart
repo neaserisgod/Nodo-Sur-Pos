@@ -11,11 +11,19 @@
 // acá se reusa tal cual (Regla 3: una sola fórmula) en vez de reinventar
 // otro generador de claves random para el mismo propósito.
 
+import 'dart:convert';
 import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 
 /// 128 bits de aleatoriedad criptográfica en hex (32 caracteres) — la misma
 /// garantía de no-colisión que esta app ya acepta hoy para no duplicar un
 /// cobro a Mercado Pago, sin agregar el paquete `uuid` para esto.
+/// El `global_id` de un turno que tomó el bot de WhatsApp: sale de su id en el sitio, así el MISMO turno tiene el mismo id en cada
+/// celular que lo baje (la app de almacén y Nodo Sur Servicios entradas al mismo negocio). Con uno al azar, cada una creaba el suyo
+/// y la sincronización juntaba los dos: turnos duplicados (El dueño, 2026-10-10). Mismo formato que [generarGlobalId].
+String globalIdDeTurnoRemoto(String idRemoto) => sha256.convert(utf8.encode('turno-bot:$idRemoto')).toString().substring(0, 32);
+
 String generarGlobalId() {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));

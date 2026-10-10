@@ -141,7 +141,12 @@ class SincronizadorTurnosBot {
     final inicioMs = x['inicio'], finMs = x['fin'];
     if (idRemoto is! String || estado == null || inicioMs is! int || finMs is! int) return null;
     final inicio = DateTime.fromMillisecondsSinceEpoch(inicioMs);
-    final existente = await (db.select(db.turnos)..where((t) => t.idRemoto.equals(idRemoto))).getSingleOrNull();
+    // El primero que entró, si quedó dos veces (antes de `globalIdDeTurnoRemoto`).
+    final existente = await (db.select(db.turnos)
+          ..where((t) => t.idRemoto.equals(idRemoto))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)])
+          ..limit(1))
+        .getSingleOrNull();
     if (existente == null) {
       if (!estado.abierto) return null; // uno que el bot ya canceló antes de llegar acá no hace falta
       final servicio = await _servicioDe(x['servicio']);
@@ -251,7 +256,8 @@ class SincronizadorTurnosBot {
             senaCentavos: senaDeServicio(precioCentavos: p.precioCentavos!, pideSena: p.pideSena, config: agenda.sena),
           ),
     ];
-    if (servicios.isEmpty) return;
+    // Sin servicios, la app de almacén no toca lo que el bot ya tiene; Nodo Sur Servicios le manda la lista vacía (no ofrece los de ejemplo).
+    if (servicios.isEmpty && !esEdicionServicios) return;
     // Lo que entra, para no pedirle la configuración al sitio en cada vuelta si nada cambió acá.
     final entrada = jsonEncode([
       for (final s in servicios) [s.gid, s.nombre, s.duracionMinutos, s.precioCentavos, s.senaCentavos],

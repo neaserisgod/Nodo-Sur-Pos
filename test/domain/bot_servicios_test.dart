@@ -64,4 +64,10 @@ void main() {
     expect((sinLink['senas'] as Map)['cobro'], 'alias');
     expect((sinLink['senas'] as Map)['vencimiento_horas'], 3);
   });
+
+  test('Nodo Sur Servicios sin servicios cargados: manda la lista vacía (el bot no ofrece los de antes ni los de ejemplo)', () {
+    final c = armar(servicios: const [], conLink: true);
+    expect(c['servicios'], isEmpty);
+    expect((c['senas'] as Map)['habilitadas'], isFalse);
+  });
 }

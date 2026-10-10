@@ -108,7 +108,15 @@ Future<List<TurnoAgenda>> turnosEntre(
     ..orderBy([(t) => OrderingTerm.asc(t.inicio)]);
   if (profesionalId != null) q.where((t) => t.profesionalId.equals(profesionalId));
   if (!incluirLiberados) q.where((t) => t.estado.equals(EstadoTurno.cancelado.clave).not());
-  final filas = await q.get();
+  // Un turno del bot que quedó dos veces (antes de `globalIdDeTurnoRemoto`, cada celular le ponía su propio id y la sincronización
+  // traía los dos) se muestra una sola vez: el primero que entró.
+  final todas = await q.get();
+  final primero = <String, int>{};
+  for (final t in todas) {
+    final r = t.idRemoto;
+    if (r != null && (primero[r] == null || t.id < primero[r]!)) primero[r] = t.id;
+  }
+  final filas = [for (final t in todas) if (t.idRemoto == null || primero[t.idRemoto] == t.id) t];
   final usuarios = {for (final u in await db.select(db.usuarios).get()) u.id: u.nombre};
   final faltas = await _faltasPorCliente(db, {for (final t in filas) if (t.clienteId != null) t.clienteId!});
   return [
@@ -237,8 +245,13 @@ Future<int> crearTurno(
   if (senaCentavos < 0) throw ArgumentError('La seña no puede ser negativa');
   return db.transaction(() async {
     if (idRemoto != null) {
-      final ya = await (db.select(db.turnos)..where((t) => t.idRemoto.equals(idRemoto))).getSingleOrNull();
-      if (ya != null) return ya.id; // el mismo turno del bot que vuelve a bajar
+      // El mismo turno del bot que vuelve a bajar, o que ya llegó por la sincronización desde el otro celular.
+      final ya = await (db.select(db.turnos)
+            ..where((t) => t.idRemoto.equals(idRemoto) | t.globalId.equals(globalIdDeTurnoRemoto(idRemoto)))
+            ..orderBy([(t) => OrderingTerm.asc(t.id)])
+            ..limit(1))
+          .getSingleOrNull();
+      if (ya != null) return ya.id;
     }
     final servicio = await (db.select(db.productos)..where((p) => p.id.equals(servicioId))).getSingle();
     final duracion = duracionMinutos ?? servicio.duracionMinutos ?? 0;
@@ -270,7 +283,7 @@ Future<int> crearTurno(
           idRemoto: Value(idRemoto),
           nota: Value(nota?.trim().isEmpty ?? true ? null : nota!.trim()),
           usuarioId: usuarioId,
-          globalId: Value(generarGlobalId()),
+          globalId: Value(idRemoto != null ? globalIdDeTurnoRemoto(idRemoto) : generarGlobalId()),
           origenDispositivo: Value(idDispositivoActual),
           actualizadoEn: Value(DateTime.now()),
         ));
