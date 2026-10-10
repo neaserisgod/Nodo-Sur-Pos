@@ -28,6 +28,7 @@ import 'database.dart';
 import 'identidad_sync.dart';
 import 'linea_venta_reconstruccion.dart';
 import 'repositorio_cierre.dart';
+import 'repositorio_productos.dart' show sinServiciosNiInsumos;
 
 /// Dropdown en el editor de proveedor — texto libre no, mismo criterio que
 /// `motivosAjusteDeStock` (`repositorio_productos.dart`).
@@ -1577,7 +1578,7 @@ Future<List<ProductoDeProveedor>> productosDeProveedor(
 Future<List<ProductoDeProveedor>> productosTodos(AppDatabase db) async {
   final productos =
       await (db.select(db.productos)
-            ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false))
+            ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false) & sinServiciosNiInsumos(p))
             ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
           .get();
   return productos.map(_productoDeProveedorDesde).toList();
@@ -1593,7 +1594,8 @@ Future<List<ProductoDeProveedor>> productosSinProveedor(AppDatabase db) async {
                   p.proveedorId.isNull() &
                   p.activo.equals(true) &
                   p.esVarios.equals(false) &
-                  p.esPromo.equals(false),
+                  p.esPromo.equals(false) &
+                  sinServiciosNiInsumos(p),
             )
             ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
           .get();

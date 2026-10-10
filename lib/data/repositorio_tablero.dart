@@ -11,6 +11,7 @@ import '../domain/tablero.dart';
 import 'database.dart';
 import 'linea_venta_reconstruccion.dart';
 import 'repositorio_pendientes.dart';
+import 'repositorio_productos.dart' show sinServiciosNiInsumos;
 import 'repositorio_reposicion.dart';
 
 class ProductoConStockBajo {
@@ -172,7 +173,7 @@ Future<List<ProductoConStockBajo>> _stockQueAvisa(AppDatabase db, DateTime momen
   final nombresCategoria = {for (final c in await db.select(db.categorias).get()) c.id: c.nombre};
 
   final productos = await (db.select(db.productos)
-        ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false)))
+        ..where((p) => p.activo.equals(true) & p.esVarios.equals(false) & p.esPromo.equals(false) & sinServiciosNiInsumos(p)))
       .get();
   final nombresProveedor = {for (final p in await db.select(db.proveedores).get()) p.id: p.nombre};
 

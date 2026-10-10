@@ -13,7 +13,7 @@ import '../domain/ganancia.dart';
 import '../domain/promo.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
-import 'repositorio_productos.dart' show listarProductos, registrarCambioDePrecio;
+import 'repositorio_productos.dart' show listarProductos, registrarCambioDePrecio, sinServiciosNiInsumos;
 
 class ComponenteDePromo {
   const ComponenteDePromo({required this.producto, required this.cantidad});
@@ -269,7 +269,7 @@ Future<List<Producto>> productosParaPromo(AppDatabase db) async {
 /// para mostrar una promo solo si alcanza (Regla 8). La pantalla de venta de la PC hace la misma cuenta en memoria
 /// (`VentaControlador`); esta es la de la búsqueda del celular, en su base o en la de la PC.
 Future<List<Producto>> catalogoConStockDePromos(AppDatabase db) async {
-  final catalogo = await db.select(db.productos).get();
+  final catalogo = await (db.select(db.productos)..where(sinServiciosNiInsumos)).get();
   final componentes = await componentesDePromos(db);
   if (componentes.isEmpty) return catalogo;
   final stockPorId = {for (final p in catalogo) p.id: p.stock};

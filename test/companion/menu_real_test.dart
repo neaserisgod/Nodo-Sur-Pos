@@ -11,7 +11,12 @@ import 'package:la_plazoleta/companion/pantalla_consultar_precio.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_buscador_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_notificaciones_ns.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
+import 'package:la_plazoleta/companion/pantallas/pantalla_servicios_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
+import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/domain/plantillas_rubro.dart';
+import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
@@ -76,5 +81,33 @@ void main() {
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await t.pump(const Duration(seconds: 1));
     expect(find.textContaining('escaneá o tocá un producto'), findsOneWidget, reason: 'Vender quedó en blanco');
+
+    // El menú sigue la configuración de la base (los módulos): al cerrarlo, drift cierra esa consulta con un timer corto.
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('en un negocio de servicios la segunda pestaña es Servicios (`docs/PLAN-SERVICIOS.md`, etapa 2)', (t) async {
+    addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
+    SharedPreferences.setMockInitialValues({'companion_usuario_id': 1, 'companion_usuario_nombre': 'Ana'});
+    final db = await t.runAsync(() async => baseDeTest());
+    usarBaseLocalDeTest(db!);
+    await t.runAsync(() => configurarRubro(db, PlantillaRubro.barberia));
+    t.view.physicalSize = const Size(390 * 2, 844 * 2);
+    t.view.devicePixelRatio = 2;
+    addTearDown(t.view.reset);
+
+    await t.pumpWidget(MaterialApp(theme: TemaCompanion.claro, builder: (context, nav) => PuenteAppNs(child: nav!), home: const PantallaMenuCompanion()));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+    await t.pump(const Duration(seconds: 1));
+
+    expect(find.text('Productos'), findsNothing);
+    await t.tap(find.text('Servicios').last);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(PantallaServiciosNs), findsOneWidget);
+
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 1));
   });
 }

@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/busqueda_productos.dart';
 import '../../data/database.dart';
+import '../../data/repositorio_productos.dart' show sinServiciosNiInsumos;
 import '../../domain/modulos.dart';
 import '../../domain/normalizacion_texto.dart';
 import '../../servicios/modulos_activos.dart';
@@ -69,7 +70,7 @@ Future<void> abrirAsistente(
 }) async {
   final secciones = await itemsNavGestion(db);
   if (!context.mounted) return;
-  final catalogo = await db.select(db.productos).get();
+  final catalogo = await (db.select(db.productos)..where(sinServiciosNiInsumos)).get();
   if (!context.mounted) return;
   final lanzador = LanzadorCaja(db);
   final hayTurnos = moduloActivo(Modulo.turnos);

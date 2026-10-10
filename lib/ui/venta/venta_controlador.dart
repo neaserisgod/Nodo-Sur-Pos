@@ -23,7 +23,7 @@ import '../../data/repositorio_cierre.dart' show esDeOtroDia;
 import '../../data/repositorio_cobro.dart';
 import '../../data/repositorio_encargues.dart' show lineasParaEntregar, senaPendienteDe;
 import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
-import '../../data/repositorio_productos.dart' show listarCategorias;
+import '../../data/repositorio_productos.dart' show listarCategorias, sinServiciosNiInsumos;
 import '../../data/repositorio_ventas.dart';
 import '../../domain/caja.dart' show necesitaArqueoIntermedio;
 import '../../domain/cobro_posnet.dart';
@@ -331,7 +331,7 @@ class VentaControlador extends ChangeNotifier {
   static const _vidaMasVendidos = Duration(minutes: 10);
 
   Future<void> cargarTodo() async {
-    _catalogo = await db.select(db.productos).get();
+    _catalogo = await (db.select(db.productos)..where(sinServiciosNiInsumos)).get();
     _componentesPromos = await componentesDePromos(db);
     _recalcularStockDePromos();
     _nombresNormalizados = {

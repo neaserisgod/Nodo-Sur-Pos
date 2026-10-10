@@ -101,9 +101,13 @@ Distinto del mock a propósito:
 Pendiente / ideas (sin hacer):
 - **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
-  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapa 1 hecha** (forma de trabajar
-  deducida del rubro y rubros Barbería, Uñas y belleza y Otro servicio; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el resto, plan
-  en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapas 1 y 2 hechas** (forma de
+  trabajar deducida del rubro; insumos, servicios y el calculador en el celular; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el
+  resto, plan en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+- **Sync: un producto que se crea y mueve su stock antes de llegar al otro equipo cuenta ese movimiento dos veces allá**
+  (encontrado el 2026-10-10, sin arreglar): la fila nueva viaja con el stock de ese momento y además se aplica el delta del
+  movimiento (creado con 10, ajustado a 7, llega como 4). Pasa con `stock`, `stock_gramos` y `stock_milesimas`. Raro con la sync
+  andando (el producto suele llegar antes que su primer movimiento), pero posible sin red.
 - **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
   almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas y mezcladas (esta app en
   el release #94; `NodoSurPage` #55; `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
@@ -129,6 +133,15 @@ Pendiente / ideas (sin hacer):
 - **IA de Google (Gemini) y promos sugeridas, 2026-10-05**: cliente en `lib/servicios/gemini.dart`; la clave se carga en Configuración › Asistente IA de la PC y del celular (desde el 2026-10-07 es la del negocio, guardada en la cuenta: ver "Clave de la IA por cuenta" en `DECISIONES.md`; `probarYGuardarClave` no guarda una clave rota y elige el modelo que le anda a la clave: la 2133 de Windows salió con `gemini-2.5-flash` fijo y daba 404 con claves nuevas, corregido después). **Sugerir promos** (solo PC, Proveedores › Promos › "Sugerir promos"): `domain/sugerencia_promos.dart` busca los pares que se llevan juntos (≥2 ventas, lift ≥ 1,2, últimos 90 días, sin anuladas), `data/repositorio_sugerencia_promos.dart` les calcula el precio con `calcularPromo`, y Gemini (`servicios/asistente_promos.dart`, que no ve precios ni costos) solo les pone nombre y motivo; cada sugerencia deja elegir el porcentaje como el creador; sin clave o sin cupo se ven igual con "A + B". "Crear" abre el creador precargado. Probado con `flutter analyze` y tests; **no probado con una clave real de Google ni en un celular**. Desde el 2026-10-07 el celular tiene promos con sugerencias. **Facturas de compra con IA**: plan en `docs/PLAN-FACTURAS.md` (decidido el 2026-10-05); hechas las cuentas (`domain/factura_compra.dart`) y la lectura con Gemini (`servicios/lector_facturas.dart`, `domain/lectura_factura.dart`, achicar la foto) con la pantalla en Proveedores › "Leer factura"; **no probada con la clave ni las facturas reales**; hechos también los vínculos con tus productos (por CUIT del proveedor, aprendido, parecido de nombre y ayuda de la IA; migración v52, `schemaVersion` **52**); **bultos vs. unidades** propuestos por la descripción y el costo que ya tenés cargado (`domain/unidades_bulto.dart`, confirmás vos y se aprende por producto); **aplicar** hecho el 2026-10-07 (stock, costo, deuda, "No va", aviso de precio perdedor, sin repetir, "Deshacer"; migraciones v56–v57). Falta: notas de crédito, adjuntar la imagen y el celular con cámara.
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
+
+## Últimos cambios (10/10/2026)
+
+- **Servicios, etapa 2** (`docs/PLAN-SERVICIOS.md`; rama `ccr-1a8287aa-6i8nq2`, sin mezclar): en un negocio de servicios, en
+  "Solo celular", la pestaña Productos pasa a **Servicios**: servicios con su receta de insumos y el **calculador** (lo que cuesta,
+  para cuántos alcanza, el precio para ganar lo buscado a la centena), **insumos** con alta, cargar compra por envases y contar, y el
+  valor de la hora para la mano de obra. Migración v65 (columnas en `productos`, `movimientos_de_stock` y la configuración); el
+  stock de un insumo va en milésimas y la sync suma sus deltas. Insumos y servicios todavía no se venden (etapa 3). La Plazoleta no
+  cambia. Probado con tests; **falta verlo en un celular real**. Motivos en `DECISIONES.md`.
 
 ## Últimos cambios (09/10/2026)
 

@@ -74,6 +74,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
+- [Insumos y servicios son productos; el stock de un insumo va en milésimas (2026-10-10)](#insumos-y-servicios-son-productos-el-stock-de-un-insumo-va-en-milésimas-2026-10-10)
 
 **Diseño y pantallas**
 
@@ -2363,5 +2364,36 @@ Cómo se usa:
   que el bot ya guarda en los negocios instalados; `servicio` se sumó también al bot. No se renombran nunca.
 - **El alta y Configuración › Tu negocio del celular muestran los rubros en dos grupos** ("Vendés productos" / "Das servicios").
   Cambiar a un rubro de otra forma avisa qué se deja de ver (nada se borra). El alta de un servicio **no promete la agenda**: dice que
-  llega en las próximas actualizaciones. La barra inferior del celular todavía no cambia con la forma: Agenda y Servicios son pantallas
-  de las etapas 2 y 4, y una pestaña sin pantalla no se muestra.
+  llega en las próximas actualizaciones. La barra inferior del celular no cambiaba con la forma en esta etapa (una pestaña sin
+  pantalla no se muestra); desde la etapa 2, Productos pasa a Servicios (ver la entrada siguiente). La Agenda llega en la etapa 4.
+
+## Insumos y servicios son productos; el stock de un insumo va en milésimas (2026-10-10)
+
+Etapa 2 de `docs/PLAN-SERVICIOS.md`. Decidido por el dueño el 2026-10-09: **mano de obra = un valor de la hora por negocio**
+(`configuracion_negocio.valor_hora_centavos`), **ganancia buscada por servicio** (arranca en 60 %) y el precio sugerido **a la
+centena hacia arriba** (la misma cuenta que la Regla 14). El resto, decisiones de implementación:
+
+- **Insumo y servicio son filas de `productos`** (`es_insumo`, `es_servicio`, v65). Heredan sin nada nuevo la sync, el historial de
+  precios, el proveedor y las categorías. El costo de un insumo es el de su envase (`costo_centavos`); el de un servicio queda
+  guardado con lo de hoy, pero **la lista lo recalcula siempre** con el costo de cada insumo (`listarServicios`): un insumo que sube
+  sube todos los servicios que lo usan sin tocarlos.
+- **El stock de un insumo va en milésimas de su unidad** (`stock_milesimas`, µl / mg / milésimas de unidad), en enteros: la misma
+  convención que la plata y que los gramos de un pesable. Cada cambio deja su movimiento con `milesimas_anterior/posterior`, y la
+  sync lo trata igual que `stock` y `stock_gramos`: nunca pisa el número, suma los deltas (`_aplicarDeltaDeMovimientoStock`). Un
+  equipo anterior a la v65 descarta esas columnas al recibirlas (`aplicarCambios` ignora las que no tiene).
+- **El stock inicial va en el alta, sin movimiento**, como `crearProducto`: la fila nueva viaja con el stock que tiene, y un
+  movimiento además lo contaría dos veces en el otro equipo. Comprar y contar sí dejan movimiento (compra = ajuste con motivo
+  "Compra · N envases", igual que una factura).
+- **La receta va por `global_id`** (`[{gid, milesimas}]`, como `componentes_promo`): los `id` no coinciden entre equipos. Un insumo que
+  todavía no llegó por la sync se cuenta aparte (`insumosSinLlegar`) en vez de mostrar un costo de menos como si fuera bueno.
+- **La mano de obra suma solo si las tres cosas**: el servicio la suma, el módulo `mano_de_obra` está prendido y el valor de la hora
+  está cargado. Si no, esa parte es 0.
+- **Hasta la etapa 3, insumos y servicios no se venden**: `sinServiciosNiInsumos` (`repositorio_productos.dart`, un solo lugar) los
+  saca de la venta de la PC, la búsqueda del celular, el Asistente, las listas de Productos/Proveedores y el stock bajo del tablero.
+- **El celular sigue los módulos de su base** (`seguirModulos`, antes solo en la PC): con forma `servicios` la pestaña Productos pasa
+  a **Servicios** (segmentos Servicios / Insumos, como el mock). **Solo en "Solo celular"**: con una PC, la pestaña avisa que
+  todavía no está (la PC no tiene pantallas ni rutas de servicios). Efecto colateral buscado: un módulo apagado en la PC ahora
+  también se apaga en el celular (hoy solo cambia "Retiro de ganancias" en Caja).
+- **El valor de la hora se carga en la pestaña Servicios**, no en Configuración como decía el plan: Configuración del celular pasa
+  por `ServicioCompanion` (doble camino, PC y base local) y los servicios son solo del celular; la fila aparece arriba de la lista
+  cuando el módulo de mano de obra está prendido.

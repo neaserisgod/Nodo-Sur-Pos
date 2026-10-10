@@ -42,7 +42,10 @@ import 'package:flutter/scheduler.dart';
 
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/caja.dart' show necesitaArqueoIntermedio;
+import '../domain/forma_de_trabajo.dart';
+import '../domain/modulos.dart' show ModulosNegocio;
 import '../domain/venta.dart';
+import '../servicios/modulos_activos.dart' show modulosActuales, seguirModulos;
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
 import 'flujo_modo_uso.dart';
@@ -61,6 +64,7 @@ import 'pantallas/pantalla_caja_ns.dart';
 import 'pantallas/pantalla_inicio_ns.dart';
 import 'pantallas/pantalla_mas_ns.dart';
 import 'pantallas/pantalla_productos_ns.dart';
+import 'pantallas/pantalla_servicios_ns.dart';
 import 'base_local.dart';
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
@@ -162,6 +166,10 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// refrescar Inicio y el catálogo del escáner solo, apenas la sync trae
   /// algo nuevo a la base local, en vez de esperar al chequeo de 1 minuto.
   StreamSubscription<void>? _subCambiosSync;
+
+  /// Los módulos y la forma de trabajar del negocio, leídos de la base del celular (`docs/PLAN-SERVICIOS.md`, etapa 2): antes
+  /// solo la PC los seguía y el celular veía todo prendido. La forma decide si la segunda pestaña es Productos o Servicios.
+  StreamSubscription<ModulosNegocio>? _subModulos;
 
   /// Cada cambio del menú (el servicio que se resuelve recién después de abrir, el usuario, la caja…) avisa a las
   /// pestañas que lo leen por `AppNs`: sin esto, Productos y Vender se quedaban esperando un servicio que ya estaba.
@@ -265,6 +273,9 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       _modoUso = modo;
     });
     sinConexionGlobalNs.value = sinConexion;
+    // La base del celular ya está abierta acá (la usa el servicio o la escucha de la PC): recién ahora se sigue la
+    // configuración, así abrir el menú no la abre antes de tiempo.
+    _subModulos ??= seguirModulos(baseLocalCompanion());
     unawaited(_iniciarAvisosMp(modo));
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
@@ -447,6 +458,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     WidgetsBinding.instance.removeObserver(this);
     _tickArqueoIntermedio.cancel();
     _subCambiosSync?.cancel();
+    _subModulos?.cancel();
     avisosMpCompanion?.pendientes.removeListener(_escucharAvisosMp);
     sinConexionGlobalNs.value = false;
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -803,7 +815,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             index: _pestania.index,
             children: [
               const PantallaInicioNs(),
-              const PantallaProductosNs(),
+              ValueListenableBuilder<ModulosNegocio>(
+                valueListenable: modulosActuales,
+                builder: (context, modulos, _) =>
+                    modulos.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs(),
+              ),
               _servicio == null || _usuarioId == null
                   ? const SizedBox.shrink()
                   : PantallaCarritoVenta(
@@ -825,7 +841,15 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             builder: (context, oculta, _) => ConTecladoNs(
               builder: (context, teclado) => oculta || teclado
                   ? const SizedBox.shrink()
-                  : BarraInferiorNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+                  : ValueListenableBuilder<ModulosNegocio>(
+                      valueListenable: modulosActuales,
+                      builder: (context, modulos, _) => BarraInferiorNs(
+                        activa: _pestania,
+                        onSeleccionar: irAPestania,
+                        hayActualizacion: _hayActualizacion,
+                        servicios: modulos.forma == FormaDeTrabajo.servicios,
+                      ),
+                    ),
             ),
           ),
         ),

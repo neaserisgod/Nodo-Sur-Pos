@@ -4,6 +4,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/data/repositorio_productos.dart';
+import 'package:la_plazoleta/data/repositorio_promos.dart';
+import 'package:la_plazoleta/data/repositorio_reposicion.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
@@ -243,5 +246,18 @@ void main() {
       expect(s.insumosSinLlegar, 1);
       expect(s.alcanzaPara, isNull);
     });
+  });
+
+  test('hasta la etapa 3, insumos y servicios no aparecen en la venta ni en las listas de productos', () async {
+    final coat = await topCoat(stock: 15000);
+    await guardarServicio(db, nombre: 'Kapping', precioCentavos: 2000000, duracionMinutos: 60, receta: [(insumoId: coat, milesimas: 400)], usuarioId: usuario);
+    await crearProducto(db, nombre: 'Quitaesmalte', precioCentavos: 300000, stock: 4, usuarioId: usuario);
+
+    List<String> nombres(Iterable<Producto> ps) => [for (final p in ps) p.nombre];
+    expect(nombres(await listarProductos(db)), ['Quitaesmalte']);
+    expect(nombres(await listarProductos(db, busqueda: 'k')), isEmpty);
+    expect(nombres(await catalogoConStockDePromos(db)), isNot(anyOf(contains('Top coat'), contains('Kapping'))));
+    expect([for (final p in await productosTodos(db)) p.nombre], ['Quitaesmalte']);
+    expect([for (final p in await productosSinProveedor(db)) p.nombre], ['Quitaesmalte']);
   });
 }

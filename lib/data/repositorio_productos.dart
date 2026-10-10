@@ -611,6 +611,11 @@ Future<List<HistorialDePrecio>> historialDelProducto(
       .get();
 }
 
+/// Insumos y servicios (v65, `docs/PLAN-SERVICIOS.md`): no se venden ni se gestionan como un artículo del almacén. Hasta
+/// que cobrar un servicio exista (etapa 3) quedan fuera de la venta, la búsqueda y las listas de productos; tienen su propia
+/// pantalla (`repositorio_servicios.dart`). Un solo lugar para el criterio (Regla 3).
+Expression<bool> sinServiciosNiInsumos($ProductosTable p) => p.esInsumo.equals(false) & p.esServicio.equals(false);
+
 /// Lista para la columna izquierda de la pantalla de productos. "Varios"
 /// nunca aparece acá: no es un producto editable, es la pieza estructural
 /// de la Regla 5.
@@ -636,8 +641,9 @@ Future<List<Producto>> listarProductos(
   bool sinCodigoBarras = false,
 }) async {
   // Las promos no son un producto editable con costo y stock propios: tienen su
-  // propio creador y no van al celular ni a las listas de gestión.
-  final query = db.select(db.productos)..where((p) => p.esVarios.equals(false) & p.esPromo.equals(false));
+  // propio creador y no van al celular ni a las listas de gestión. Los insumos y servicios, lo mismo.
+  final query = db.select(db.productos)
+    ..where((p) => p.esVarios.equals(false) & p.esPromo.equals(false) & sinServiciosNiInsumos(p));
   if (soloActivos) query.where((p) => p.activo.equals(true));
   if (categoriaId != null) {
     query.where((p) => p.categoriaId.equals(categoriaId));
