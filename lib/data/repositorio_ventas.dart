@@ -17,6 +17,7 @@ import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
+import 'repositorio_servicios.dart' show consumirInsumosDeServicio, costoInsumosDeServicio;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
 
@@ -466,6 +467,27 @@ Future<List<ActualizacionStock>> registrarLineaOPromo(
   if (linea is LineaVentaPorUnidad && !linea.esVarios) {
     final id = int.tryParse(linea.productoId);
     final producto = id == null ? null : await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingleOrNull();
+    // Un servicio (§20): la línea no toca su stock (no tiene); se descuentan los insumos de su receta. El costo-foto es lo
+    // que cuestan hoy esos insumos, si la línea no lo trae ya calculado.
+    if (producto != null && producto.esServicio) {
+      final conCosto = linea.costoUnitarioCentavos != null
+          ? linea
+          : LineaVentaPorUnidad(
+              productoId: linea.productoId,
+              nombreProducto: linea.nombreProducto,
+              proveedorId: linea.proveedorId,
+              cantidad: linea.cantidad,
+              esVarios: false,
+              tipoCigarrillo: linea.tipoCigarrillo,
+              precioUnitarioCentavos: linea.precioUnitarioCentavos,
+              costoUnitarioCentavos: await costoInsumosDeServicio(db, producto),
+            );
+      await registrarLineaDeVenta(db, ventaId: ventaId, usuarioId: usuarioId, linea: conCosto, afectaStock: false);
+      if (afectaStock) {
+        await consumirInsumosDeServicio(db, servicio: producto, cantidad: linea.cantidad, ventaId: ventaId, usuarioId: usuarioId);
+      }
+      return const [];
+    }
     if (producto != null && producto.esPromo) {
       return registrarPromoEnVenta(
         db,

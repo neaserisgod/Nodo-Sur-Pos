@@ -467,3 +467,125 @@ List<({String gid, int milesimas})> recetaDesdeJson(String? json) {
     return const [];
   }
 }
+
+// --- Cobrar servicios (etapa 3, `REGLAS-NEGOCIO.md` §20) -----------------------------------------------------------------
+
+/// Los insumos de la receta de [servicio], con lo que usa cada vez, resueltos contra la base. Los que todavía no llegaron por
+/// la sync (o se borraron) no están: no se puede descontar lo que no existe.
+Future<List<({Producto insumo, int milesimas})>> _recetaResuelta(AppDatabase db, Producto servicio) async {
+  final receta = recetaDesdeJson(servicio.recetaServicio);
+  if (receta.isEmpty) return const [];
+  final gids = [for (final l in receta) l.gid];
+  final porGid = {
+    for (final p in await (db.select(db.productos)..where((p) => p.globalId.isIn(gids) & p.esInsumo.equals(true))).get()) p.globalId!: p,
+  };
+  return [
+    for (final l in receta)
+      if (porGid[l.gid] != null) (insumo: porGid[l.gid]!, milesimas: l.milesimas),
+  ];
+}
+
+/// Lo que cuestan hoy los insumos de una vez de [servicio], hacia arriba al peso: el costo-foto de la línea (Regla 4). Sin
+/// mano de obra: no entra en la ganancia (§20). Un servicio sin insumos cuesta 0 a la caja.
+Future<int> costoInsumosDeServicio(AppDatabase db, Producto servicio) async {
+  final usos = [
+    for (final r in await _recetaResuelta(db, servicio))
+      if ((r.insumo.contenidoEnvaseMilesimas ?? 0) > 0)
+        UsoDeInsumo(
+          insumo: InsumoParaCalculo(
+            costoEnvaseCentavos: r.insumo.costoCentavos ?? 0,
+            contenidoEnvaseMilesimas: r.insumo.contenidoEnvaseMilesimas!,
+            stockMilesimas: r.insumo.stockMilesimas ?? 0,
+          ),
+          cantidadMilesimas: r.milesimas,
+        ),
+  ];
+  return costoInsumosCentavos(usos);
+}
+
+/// Descuenta los insumos de [cantidad] veces [servicio], con un movimiento `VENTA` por insumo atado a la venta. El stock
+/// puede quedar negativo: por defecto, si falta un insumo se avisa y se cobra igual (§20).
+Future<void> consumirInsumosDeServicio(
+  AppDatabase db, {
+  required Producto servicio,
+  required int cantidad,
+  required int ventaId,
+  required int usuarioId,
+}) async {
+  for (final r in await _recetaResuelta(db, servicio)) {
+    final actual = await _producto(db, r.insumo.id);
+    final usa = r.milesimas * cantidad;
+    final anterior = actual.stockMilesimas ?? 0;
+    final posterior = anterior - usa;
+    await (db.update(db.productos)..where((p) => p.id.equals(actual.id))).write(
+      ProductosCompanion(stockMilesimas: Value(posterior), actualizadoEn: Value(DateTime.now())),
+    );
+    await db.into(db.movimientosDeStock).insert(
+          MovimientosDeStockCompanion.insert(
+            productoId: actual.id,
+            usuarioId: usuarioId,
+            tipo: 'VENTA',
+            ventaId: Value(ventaId),
+            milesimas: Value(usa),
+            milesimasAnterior: Value(anterior),
+            milesimasPosterior: Value(posterior),
+            motivo: Value(servicio.nombre),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+          ),
+        );
+  }
+}
+
+/// Devuelve todo lo que la venta [ventaId] gastó de insumos, según sus propios movimientos (no según la receta de hoy, que
+/// pudo cambiar). Se llama una sola vez por venta al anularla o editarla: suma el neto de cada insumo, así una venta ya
+/// editada antes (consumo, devolución, consumo) devuelve solo lo que quedó gastado.
+Future<void> devolverInsumosDeVenta(AppDatabase db, {required int ventaId, required int usuarioId, required String motivo}) async {
+  final movimientos = await (db.select(db.movimientosDeStock)
+        ..where((m) => m.ventaId.equals(ventaId) & m.milesimasAnterior.isNotNull() & m.milesimasPosterior.isNotNull()))
+      .get();
+  final gastadoPorInsumo = <int, int>{};
+  for (final m in movimientos) {
+    gastadoPorInsumo[m.productoId] = (gastadoPorInsumo[m.productoId] ?? 0) + (m.milesimasAnterior! - m.milesimasPosterior!);
+  }
+  for (final MapEntry(key: insumoId, value: gastado) in gastadoPorInsumo.entries) {
+    if (gastado == 0) continue;
+    final actual = await _producto(db, insumoId);
+    final anterior = actual.stockMilesimas ?? 0;
+    final posterior = anterior + gastado;
+    await (db.update(db.productos)..where((p) => p.id.equals(insumoId))).write(
+      ProductosCompanion(stockMilesimas: Value(posterior), actualizadoEn: Value(DateTime.now())),
+    );
+    await db.into(db.movimientosDeStock).insert(
+          MovimientosDeStockCompanion.insert(
+            productoId: insumoId,
+            usuarioId: usuarioId,
+            tipo: 'AJUSTE',
+            ventaId: Value(ventaId),
+            milesimas: Value(gastado),
+            milesimasAnterior: Value(anterior),
+            milesimasPosterior: Value(posterior),
+            motivo: Value(motivo),
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+          ),
+        );
+  }
+}
+
+/// Para reponer insumos (§20): lo que costaron los insumos de los servicios cobrados en la sesión de caja [sesionCajaId]
+/// (costo-foto de cada línea, sin las ventas anuladas). Reemplaza a "Separar para proveedores" en un negocio de servicios.
+Future<int> paraReponerInsumosCentavos(AppDatabase db, {required int sesionCajaId}) async {
+  final filas = await (db.select(db.lineasDeVenta).join([
+    innerJoin(db.ventas, db.ventas.id.equalsExp(db.lineasDeVenta.ventaId)),
+    innerJoin(db.productos, db.productos.id.equalsExp(db.lineasDeVenta.productoId)),
+  ])
+        ..where(db.ventas.sesionCajaId.equals(sesionCajaId) & db.ventas.anuladaEn.isNull() & db.productos.esServicio.equals(true)))
+      .get();
+  var total = 0;
+  for (final f in filas) {
+    final l = f.readTable(db.lineasDeVenta);
+    total += (l.costoUnitarioCentavos ?? 0) * (l.cantidad ?? 1);
+  }
+  return total;
+}

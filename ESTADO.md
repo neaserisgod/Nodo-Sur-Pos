@@ -132,6 +132,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (10/10/2026)
 
+- **Cobrar servicios** (etapa 3 de `docs/PLAN-SERVICIOS.md`, reglas en `REGLAS-NEGOCIO.md` §20): en un negocio de
+  servicios, Vender es una grilla de servicios; cobrar descuenta los insumos, la línea guarda lo que costaron ese día (sin
+  mano de obra), anular o editar los devuelven, "+ Propina" después de cobrar y "Para reponer insumos" en Caja. Solo
+  "Solo celular". Probado con tests; falta verlo en un celular real.
 - **Cerrar sesión y borrar este celular** (Más › Cuenta; El dueño: "no se puede cerrar sesión y eliminar los datos sin
   borrarlos desde configuraciones"): con cuenta, primero sube lo que falte; borra la base, la cuenta, la sync y las
   preferencias, y cierra la app. Al abrirla arranca de cero.

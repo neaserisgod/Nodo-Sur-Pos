@@ -653,6 +653,50 @@ proveedor, más salidas, apertura, cierre y retiro.
   reposición igual que una venta del día — aunque no tenga un producto real
   del catálogo asociado.
 
+## 20. Servicios e insumos (El dueño, 2026-10-10)
+
+Vale para un negocio que **da servicios** (barbería, uñas, peluquería, estética: la forma de trabajar sale del rubro). El
+cliente tipo es quien emprende solo, pero todo tiene que servir igual con empleados. **Lo que un rubro no usa no se borra:
+se apaga para ese rubro** (no se ve ni entra en las cuentas), y todo arranca con valores por defecto.
+
+- **Un insumo** se compra por envase y se gasta de a poco. Su stock va en milésimas de su unidad (ml, g o unidades) y su
+  costo es el del envase: lo que vale una unidad sale de ahí. Comprar y contar dejan rastro (Regla 6).
+- **Un servicio** tiene precio, duración y una receta: qué insumos usa cada vez. No tiene stock propio.
+- **Al cobrar un servicio se descuentan sus insumos**, con su movimiento de stock. Anular o editar la venta los devuelve.
+- **El costo de la línea es lo que costaron sus insumos ese día** (costo-foto, Regla 4): si después sube un insumo, esa venta
+  no cambia. Hacia arriba al peso, sumando las fracciones y redondeando una sola vez.
+- **La mano de obra no entra en la ganancia** del día: para quien trabaja solo, su hora no es plata que sale de la caja. Sirve
+  para el precio sugerido del servicio (ganancia buscada de cada servicio, 60 % de arranque, a la centena).
+- **Si falta un insumo, por defecto solo avisa y deja cobrar.** Bloquear el cobro es opcional, para el negocio que lleva el
+  stock al día.
+- **Propina (opcional al cobrar):** entra a la caja con el medio con que se pagó, pero no es venta ni ganancia del negocio, y
+  queda anotada para quien atendió.
+- **Para reponer insumos:** lo que costaron los insumos usados en el día se separa para la próxima compra. Reemplaza a
+  "Separar para proveedores" en la Caja.
+- **Vender productos además de servicios** (reventa) arranca apagado; se prende en Más › Módulos.
+- Descuento y redondeo del efectivo, igual que en un comercio (Reglas 9 y 17).
+
+## 21. Turnos y seña (El dueño, 2026-10-10)
+
+- **La Agenda reemplaza al Inicio** en un negocio de servicios: la app abre ahí, y las cifras del día pasan a Caja › Resumen.
+- **Horario de atención: uno solo, en Configuración**, que usan la agenda y el bot.
+- **Los horarios que se ofrecen arrancan cada 15 minutos** (cada negocio puede cambiarlo); cuánto dura el turno sale del
+  servicio.
+- **Dos turnos que se pisan con el mismo profesional:** la app avisa y deja guardarlo (sobreturno). El bot nunca ofrece un
+  horario ocupado.
+- **Cliente:** alcanza con el nombre; el teléfono es opcional (el del bot llega solo). Al confirmarse un turno, la persona
+  queda guardada como cliente.
+- **Seña:** la de los encargues (Regla 15): es ingreso de caja, no venta, y al cobrar el turno se descuenta. Configurable
+  por negocio (nunca / algunos servicios / todos; % o monto fijo; por defecto algunos servicios, 30 %). Si cancelan, se
+  pierde o se devuelve según lo configurado (por defecto se pierde). Una seña que entra sin caja abierta entra como ingreso
+  en la próxima caja que se abra.
+- **No vino:** el turno se marca y el cliente lleva la cuenta ("faltó 2 veces"), sin bloquear nada.
+- **Varios profesionales:** el dueño o encargado ve y mueve todas las agendas; cada empleado ve la suya.
+- **Turnos del bot:** entran confirmados; si piden seña, quedan "esperando seña" ocupando el horario hasta que pague o venza.
+- **Google Calendar:** cada turno tiene "Agregar a Google Calendar" (sin permisos extra). La sincronización automática llega
+  como módulo cuando Google verifique la app.
+- En servicios, **Encargues pasa a ser "Turnos con seña y deudas"** (sin apartados de productos).
+
 ---
 
 ## Anexo: lecciones del sistema anterior

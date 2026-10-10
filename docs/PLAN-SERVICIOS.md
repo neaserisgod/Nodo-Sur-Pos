@@ -161,7 +161,33 @@ facturas suma unidades, no milésimas) y el proveedor del insumo en el alta del 
   `mano_de_obra` (solo servicios). La barra inferior con la forma: Productos pasa a Servicios.
 - Pantallas del celular: Servicios (servicios + insumos) y el creador. Cargar compra de un insumo, por envase.
 
-### Etapa 3 · Cobrar servicios (sin PC)
+### Respuestas del dueño para las etapas 3 y 4 (2026-10-10)
+
+Escritas como reglas en `REGLAS-NEGOCIO.md` §20 (servicios e insumos) y §21 (turnos y seña). Además:
+- **Principio:** el cliente tipo emprende solo; lo que un rubro no usa se apaga para ese rubro (no se borra), con valores por
+  defecto. Tiene que servir igual con empleados.
+- **Turnos en tabla propia** (no dentro de `pendientes`): reusan la lógica de la seña y de convertir en venta de los
+  encargues, sin mezclar turnos en las consultas del almacén.
+- **Orden:** cobrar servicios → agenda → Más › Módulos como el mock → turnos del bot en la agenda.
+- **Publicación:** cada etapa sale estable directo (merge `release:`), con los tests en verde.
+
+### Etapa 3 · Cobrar servicios (sin PC) — hecha (2026-10-10)
+- **Cobrar** (pestaña Vender en servicios): grilla de servicios por categoría, sin buscar ni escanear; "+ Otro servicio"
+  con el carrito armado. Avisa si con el stock de hoy no alcanza un insumo y cobra igual (§20).
+- **Al registrar la venta** (`registrarLineaOPromo`): la línea del servicio guarda como costo-foto lo que cuestan hoy sus
+  insumos (sin mano de obra) y se descuentan los insumos con un movimiento `VENTA` por insumo atado a la venta. Anular o
+  editar devuelven **lo que la venta gastó según sus movimientos** (`devolverInsumosDeVenta`), no según la receta de hoy.
+- **Sin tabla de consumos** (cambia lo que decía este plan): los movimientos de stock con `venta_id` ya dicen qué gastó
+  cada venta, y "Para reponer insumos" sale del costo-foto de las líneas. La reposición por proveedor de cada insumo queda
+  para cuando haga falta (hoy un negocio de servicios no separa por proveedor).
+- **Propina:** "+ Propina" en la tarjeta de la venta recién cobrada; entra como ingreso de caja ("Propina · nombre"), así el
+  cobro no cambia y no suma a la ganancia.
+- **Caja › Resumen:** "Para reponer insumos" en vez de "Por separar", sin la lata de cigarrillos.
+- Tests: `test/data/cobrar_servicios_test.dart`, `test/companion/grilla_servicios_ns_test.dart`.
+- Lo que no se hizo (va con Más › Módulos): el interruptor de bloquear el cobro si falta un insumo, ajustar lo usado en una
+  venta y vender productos de reventa.
+
+Lo que decía el plan:
 - Tabla de consumos por línea (v66, sincronizada). Cobrar descuenta, anular y editar devuelven. Bloquear o avisar según el
   módulo. Ajustar lo usado en la venta, si el módulo está prendido.
 - Reposición, Separaciones y ganancia leen los consumos. Se amplía el test de conciliación con ventas de servicios.

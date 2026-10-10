@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
 import '../data/identidad_sync.dart' show generarGlobalId;
+import '../data/repositorio_servicios.dart' show ServicioListado;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
 import '../domain/descuento.dart';
@@ -34,6 +35,7 @@ import 'dialogo_cobro_posnet_companion.dart';
 import 'escanear_codigo.dart';
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
+import 'pantallas/grilla_servicios_ns.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
@@ -263,6 +265,84 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         _textoDeResultados = null;
       }
     });
+  }
+
+  /// Suma un servicio tocado en la grilla (§20). Si con el stock de hoy no alcanza un insumo, avisa y lo suma igual.
+  void _agregarServicio(ServicioListado servicio) {
+    final nueva = lineaDeServicio(servicio);
+    _claveCobroActual = null;
+    _cerrarUltimaVenta();
+    setState(() {
+      final i = widget.carrito.indexWhere((l) => l.productoId == nueva.productoId);
+      if (i != -1) {
+        widget.carrito[i] = sumarLineasVenta(widget.carrito[i], nueva);
+      } else {
+        widget.carrito.add(nueva);
+      }
+      _resultado = null;
+    });
+    if (avisoDeInsumos(servicio) case final aviso?) mostrarAvisoNs(context, '$aviso: se cobra igual');
+  }
+
+  Future<void> _elegirOtroServicio() async {
+    final elegido = await mostrarHojaNs<ServicioListado>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Otro servicio',
+        bloques: [GrillaServiciosNs(onElegir: (s) => Navigator.of(ctx).pop(s))],
+      ),
+    );
+    if (elegido != null && mounted) _agregarServicio(elegido);
+  }
+
+  /// La propina (§20): entra a la caja con el medio con que se pagó, como ingreso a nombre de quien atendió. No es venta
+  /// ni ganancia. Se anota después de cobrar, así el cobro no cambia.
+  Future<void> _anotarPropina() async {
+    final app = AppNs.of(context);
+    final sesionId = app.sesion?.id;
+    if (sesionId == null) return;
+    final quien = app.nombreUsuario;
+    final ctrl = TextEditingController();
+    var medio = MedioGastoCompanion.cajonNormal;
+    final monto = await mostrarHojaNs<int>(
+      context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHoja) => HojaNs(
+          titulo: 'Propina',
+          texto: 'Queda anotada para ${quien ?? 'quien atendió'}. No suma a la ganancia del negocio.',
+          bloques: [
+            CampoNs(etiqueta: 'Monto', controller: ctrl, grande: true, placeholder: r'$ 0', teclado: TextInputType.number, formatos: [FilteringTextInputFormatter.digitsOnly], autofoco: true),
+            Wrap(
+              spacing: 8,
+              children: [
+                ChipNs(texto: 'Efectivo', activo: medio == MedioGastoCompanion.cajonNormal, onTap: () => setHoja(() => medio = MedioGastoCompanion.cajonNormal)),
+                ChipNs(texto: 'Mercado Pago', activo: medio == MedioGastoCompanion.mercadoPago, onTap: () => setHoja(() => medio = MedioGastoCompanion.mercadoPago)),
+              ],
+            ),
+          ],
+          botones: [
+            BotonNs.primario(ctx, 'Anotar propina', () {
+              final pesos = int.tryParse(ctrl.text) ?? 0;
+              Navigator.of(ctx).pop(pesos > 0 ? pesos * 100 : null);
+            }),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    if (monto == null || !mounted) return;
+    try {
+      await widget.servicio.registrarIngreso(
+        sesionCajaId: sesionId,
+        usuarioId: widget.usuarioId,
+        montoCentavos: monto,
+        medio: medio,
+        motivo: 'Propina · ${quien ?? 'sin nombre'}',
+      );
+      if (mounted) mostrarAvisoNs(context, 'Propina de ${plataNs(monto)} anotada');
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
+    }
   }
 
   void _quitarLinea(int index) {
@@ -917,7 +997,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Widget _vistaCarritoCon(BuildContext context, bool teclado) {
     final ns = context.ns;
     final n = widget.carrito.length;
-    final buscando = _busquedaCtrl.text.trim().isNotEmpty;
+    final servicios = esNegocioDeServicios();
+    // En servicios no se busca ni se escanea: se toca el servicio en la grilla (mock de servicios, "Cobrar").
+    final buscando = !servicios && _busquedaCtrl.text.trim().isNotEmpty;
     // Con el teclado abierto se esconde todo lo que no sea buscar o el carrito (El dueño, 2026-10-09: "arriba del
     // teclado hay una franja muy grande que tapa la lista"): el título, el espacio de la barra de pestañas (que también
     // se esconde) y el descuento.
@@ -940,13 +1022,17 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
-                    if (n > 0) Text(n == 1 ? '1 producto' : '$n productos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+                    if (n > 0)
+                      Text(
+                        servicios ? (n == 1 ? '1 servicio' : '$n servicios') : (n == 1 ? '1 producto' : '$n productos'),
+                        style: estiloNs(15, peso: FontWeight.w600, color: ns.mute),
+                      ),
                   ],
                 ),
               ),
             ),
           ),
-          _FilaBuscador(
+          if (!servicios) _FilaBuscador(
             controller: _busquedaCtrl,
             foco: _busquedaFocus,
             escaneando: _escaneando,
@@ -991,15 +1077,21 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _vacio(BuildContext context) {
     final ns = context.ns;
+    // Un negocio de servicios cobra tocando el servicio: sin más vendidos ni encargues de productos.
+    if (esNegocioDeServicios()) {
+      return ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
+          GrillaServiciosNs(onElegir: _agregarServicio),
+        ],
+      );
+    }
     return ListView(
       padding: EdgeInsets.zero,
       children: [
         if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
-        if (esNegocioDeServicios())
-          // Cobrar servicios (con lo que usa cada uno) es la etapa 3 de `docs/PLAN-SERVICIOS.md`: no se promete lo que no hay.
-          const InfoNs('Cobrar los servicios desde acá llega en la próxima actualización. Mientras tanto, cargá tus servicios e insumos en la pestaña Servicios.')
-        else
-          Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
+        Text('Buscá, escaneá o tocá un producto para empezar.', style: estiloNs(15, color: ns.mute)),
         if (_encargues.isNotEmpty) ...[
           const SizedBox(height: 8),
           PresionNs(
@@ -1074,6 +1166,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (i == n) {
+          if (esNegocioDeServicios()) {
+            return BotonNs(texto: '+ Otro servicio', onTap: _elegirOtroServicio, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i);
+          }
           return EntradaNs(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(6, 2, 6, 8),
@@ -1454,7 +1549,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
-              child: BotonNs(texto: 'Imprimir ticket', onTap: () => _imprimirTicket(c.ventaId), alto: 44, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18, icono: IconoNs.imprimir),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  BotonNs(texto: 'Imprimir ticket', onTap: () => _imprimirTicket(c.ventaId), alto: 44, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18, icono: IconoNs.imprimir),
+                  if (esNegocioDeServicios())
+                    BotonNs(texto: '+ Propina', onTap: _anotarPropina, alto: 44, tamanio: 15, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18),
+                ],
+              ),
             ),
           ],
         ),
