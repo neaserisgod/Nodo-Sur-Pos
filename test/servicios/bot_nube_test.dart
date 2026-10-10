@@ -57,6 +57,7 @@ void main() {
   test('pedidos: con el cursor; lo que no se entiende se saltea', () async {
     final c = ClienteNube(http: MockClient((r) async {
       expect(r.url.queryParameters['desde'], '55');
+      expect(r.url.queryParameters['gramos'], '1', reason: 'sin esto, el sitio no deja entrar pedidos con gramos');
       return _json({
         'pedidos': [
           {'id': 1, 'estado': 'por_confirmar', 'cliente': {'nombre': 'Sofi', 'telefono': '549'}, 'items': [{'nombre': 'Yerba', 'cantidad': 2}], 'creado': 1, 'actualizado': 60},

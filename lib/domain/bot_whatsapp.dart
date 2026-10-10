@@ -2,6 +2,8 @@
 // pantalla. El bot corre en un celular con Termux (`neaserisgod/botdemo`); el sitio guarda su configuración, el catálogo que la
 // app publica y los pedidos que toma (`NodoSurPage`, `/api/bot/*`).
 
+import 'pesables.dart';
+
 /// Un producto tal como lo ve el bot: lo justo para contestar "¿cuánto sale?" y "¿hay?". Nada de costos, proveedores ni stock
 /// exacto (el catálogo sale de la base del negocio hacia un servidor; lo que no hace falta no viaja).
 class ItemCatalogoBot {
@@ -65,14 +67,33 @@ List<ItemCatalogoBot> catalogoParaBot(Iterable<ProductoParaBot> productos) {
 
 // ─── Pedidos ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+/// Una línea del pedido: [cantidad] (unidades, o kilos enteros de un pesable) o [gramos] (lo que se pesa: "1/4 de jamón" son
+/// 250), nunca las dos.
 class ItemPedidoBot {
-  const ItemPedidoBot({this.gid, required this.nombre, required this.cantidad, this.precioCentavos});
+  const ItemPedidoBot({this.gid, required this.nombre, this.cantidad, this.gramos, this.precioCentavos})
+    : assert((cantidad == null) != (gramos == null), 'cantidad o gramos, uno solo');
   final String? gid;
   final String nombre;
-  final int cantidad;
+  final int? cantidad;
+  final int? gramos;
 
-  /// El precio que le dijo el bot en ese momento: solo orienta (vale el del día que se entrega, Regla 4).
+  /// El precio que le dijo el bot en ese momento: solo orienta (vale el del día que se entrega, Regla 4). Por kilo si se pesa.
   final int? precioCentavos;
+
+  /// Lo que salía según el bot: por kilo × gramos por el helper de pesables (Regla 7), o precio × cantidad.
+  int get subtotalOrientativoCentavos {
+    final precio = precioCentavos;
+    if (precio == null) return 0;
+    final g = gramos;
+    return g != null ? subtotalPesable(montoPorKiloCentavos: precio, gramos: g) : precio * cantidad!;
+  }
+}
+
+/// La línea como se lee en el mostrador: "2 × Yerba" o "250 g de Jamón cocido" (sin el "(por kg)" con que el bot lo ofrece).
+String textoLineaPedido(ItemPedidoBot x) {
+  final g = x.gramos;
+  if (g == null) return '${x.cantidad} × ${x.nombre}';
+  return '${_gramos(g)} de ${x.nombre.replaceFirst(RegExp(r'\s*\(por kg\)\s*$', caseSensitive: false), '').trim()}';
 }
 
 enum EstadoPedidoBot { porConfirmar, aceptado, rechazado }
@@ -100,7 +121,7 @@ class PedidoBot {
   final int actualizado;
 
   /// Lo que dijo el bot que salía todo (orientativo).
-  int get totalOrientativoCentavos => items.fold(0, (s, x) => s + (x.precioCentavos ?? 0) * x.cantidad);
+  int get totalOrientativoCentavos => items.fold(0, (s, x) => s + x.subtotalOrientativoCentavos);
 }
 
 EstadoPedidoBot? _estadoPedido(Object? e) => switch (e) {
@@ -120,11 +141,17 @@ PedidoBot? pedidoBotDesdeJson(Map<String, dynamic> j) {
   if (nombre is! String || telefono is! String) return null;
   final lineas = <ItemPedidoBot>[];
   for (final x in items) {
-    if (x is! Map || x['nombre'] is! String || x['cantidad'] is! int) return null;
+    if (x is! Map || x['nombre'] is! String) return null;
+    final cantidad = x['cantidad'], gramos = x['gramos'];
+    // Una cosa o la otra: con las dos (o ninguna) no se sabe qué apartar.
+    if ((cantidad == null) == (gramos == null)) return null;
+    if (cantidad != null && cantidad is! int) return null;
+    if (gramos != null && (gramos is! int || gramos <= 0)) return null;
     lineas.add(ItemPedidoBot(
       gid: x['gid'] as String?,
       nombre: x['nombre'] as String,
-      cantidad: x['cantidad'] as int,
+      cantidad: cantidad as int?,
+      gramos: gramos as int?,
       precioCentavos: x['precioCentavos'] as int?,
     ));
   }
@@ -171,11 +198,13 @@ typedef ApartadoDePedido = ({int productoId, int? cantidad, int? gramos});
 /// cliente. Revisarlo antes de crear el encargue evita un rechazo a medias y nombra TODO lo que falta, no solo lo primero.
 ///
 /// * El producto vuelve por su `global_id` (el que se publicó en el catálogo del bot): el id local cambia entre equipos.
-/// * Un pesable el bot lo ofrece "por kg" con el precio por kilo, así que la cantidad pedida son kilos.
+/// * Un pesable el bot lo ofrece "por kg" con el precio por kilo: viene en gramos, o en kilos enteros como cantidad (el bot
+///   antes de que el sitio aceptara gramos).
+/// * Algo pedido en gramos que ya no se pesa no se convierte a unidades: no se sabe cuántas son.
 /// * Sin stock no se aparta (Regla 8): el catálogo dice "hay" con lo de hace un rato, y en el medio se pudo vender.
 ({List<ApartadoDePedido> lineas, List<String> faltan}) apartadosDePedido(PedidoBot pedido, Iterable<ProductoDelPedido> productos) {
   final porGid = {for (final p in productos) if (p.globalId != null && p.globalId!.isNotEmpty) p.globalId!: p};
-  final pedidoPorProducto = <int, int>{}; // id → unidades (o kilos si se pesa), en el orden en que se pidió
+  final pedidoPorProducto = <int, int>{}; // id → unidades, o gramos si se pesa, en el orden en que se pidió
   final elegidos = <int, ProductoDelPedido>{};
   final faltan = <String>[];
   for (final item in pedido.items) {
@@ -184,16 +213,22 @@ typedef ApartadoDePedido = ({int productoId, int? cantidad, int? gramos});
       faltan.add('${item.nombre}: ya no está en el catálogo');
       continue;
     }
+    final g = item.gramos;
+    if (g != null && !p.esPesable) {
+      faltan.add('${p.nombre}: se pidió por peso y ya no se vende suelto');
+      continue;
+    }
     elegidos[p.id] = p;
-    pedidoPorProducto[p.id] = (pedidoPorProducto[p.id] ?? 0) + item.cantidad;
+    final pedido = p.esPesable ? (g ?? item.cantidad! * 1000) : item.cantidad!;
+    pedidoPorProducto[p.id] = (pedidoPorProducto[p.id] ?? 0) + pedido;
   }
   final lineas = <ApartadoDePedido>[];
   for (final MapEntry(key: id, value: cantidad) in pedidoPorProducto.entries) {
     final p = elegidos[id]!;
     if (p.esPesable) {
-      final gramos = cantidad * 1000, hay = p.stockGramos ?? 0;
+      final gramos = cantidad, hay = p.stockGramos ?? 0;
       if (hay < gramos) {
-        faltan.add('${p.nombre}: piden $cantidad kg, ${hay <= 0 ? 'no queda' : 'quedan ${_gramos(hay)}'}');
+        faltan.add('${p.nombre}: piden ${_gramos(gramos)}, ${hay <= 0 ? 'no queda' : 'quedan ${_gramos(hay)}'}');
       } else {
         lineas.add((productoId: id, cantidad: null, gramos: gramos));
       }

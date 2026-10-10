@@ -82,6 +82,33 @@ void main() {
       expect(pedidoBotDesdeJson({...json, 'cliente': 'Sofi'}), isNull);
       expect(pedidoBotDesdeJson({...json, 'items': [{'nombre': 'x'}]}), isNull);
     });
+
+    test('lo que se pesa viene en gramos, con el precio por kilo (Regla 7: el subtotal por su helper)', () {
+      final p = pedidoBotDesdeJson({
+        ...json,
+        'items': [
+          {'gid': 'g-j', 'nombre': 'Jamón cocido (por kg)', 'gramos': 250, 'precioCentavos': 1500000},
+          {'gid': 'g-y', 'nombre': 'Yerba', 'cantidad': 2, 'precioCentavos': 520000},
+        ],
+      })!;
+      expect(p.items.first.gramos, 250);
+      expect(p.items.first.cantidad, isNull);
+      expect(p.totalOrientativoCentavos, 375000 + 1040000);
+      expect(textoLineaPedido(p.items.first), '250 g de Jamón cocido');
+      expect(textoLineaPedido(p.items.last), '2 × Yerba');
+      expect(textoLineaPedido(const ItemPedidoBot(nombre: 'Queso (por kg)', gramos: 1500)), '1,5 kg de Queso');
+    });
+
+    test('una línea con cantidad Y gramos, o sin ninguno, o gramos que no son un entero positivo: se descarta', () {
+      for (final malo in [
+        {'nombre': 'x', 'cantidad': 1, 'gramos': 250},
+        {'nombre': 'x', 'gramos': 0},
+        {'nombre': 'x', 'gramos': 2.5},
+        {'nombre': 'x', 'gramos': '250'},
+      ]) {
+        expect(pedidoBotDesdeJson({...json, 'items': [malo]}), isNull, reason: '$malo');
+      }
+    });
   });
 
   group('aceptar un pedido: del catálogo del bot a lo que se aparta', () {
@@ -113,6 +140,32 @@ void main() {
       );
       expect(r.faltan, isEmpty);
       expect(r.lineas, [(productoId: 3, cantidad: null, gramos: 2000)]);
+    });
+
+    test('un pesable en gramos se aparta en esos gramos, y se suma con lo pedido en kilos', () {
+      final r = apartadosDePedido(
+        pedido(const [
+          ItemPedidoBot(gid: 'g-q', nombre: 'Queso (por kg)', gramos: 250),
+          ItemPedidoBot(gid: 'g-q', nombre: 'Queso (por kg)', cantidad: 1),
+        ]),
+        [prod(3, 'g-q', 'Queso', pesable: true, gramos: 2500)],
+      );
+      expect(r.faltan, isEmpty);
+      expect(r.lineas, [(productoId: 3, cantidad: null, gramos: 1250)]);
+    });
+
+    test('gramos que no alcanzan: dice cuánto piden y cuánto queda', () {
+      final r = apartadosDePedido(pedido(const [ItemPedidoBot(gid: 'g-q', nombre: 'Queso (por kg)', gramos: 250)]), [
+        prod(3, 'g-q', 'Queso', pesable: true, gramos: 100),
+      ]);
+      expect(r.lineas, isEmpty);
+      expect(r.faltan, ['Queso: piden 250 g, quedan 100 g']);
+    });
+
+    test('pedido en gramos de algo que ya no se vende suelto: no se adivina cuántas unidades son', () {
+      final r = apartadosDePedido(pedido(const [ItemPedidoBot(gid: 'g-y', nombre: 'Yerba (por kg)', gramos: 500)]), [prod(5, 'g-y', 'Yerba')]);
+      expect(r.lineas, isEmpty);
+      expect(r.faltan, ['Yerba: se pidió por peso y ya no se vende suelto']);
     });
 
     test('sin stock no se aparta nada y dice qué falta (Regla 8)', () {

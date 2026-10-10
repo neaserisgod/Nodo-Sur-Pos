@@ -499,9 +499,11 @@ class ClienteNube {
     return (jsonDecode(r.body) as Map<String, dynamic>)['cambiado'] == true;
   });
 
-  /// Los pedidos del bot que cambiaron después de [desde] (milisegundos del sitio), con el cursor para la próxima vez.
+  /// Los pedidos del bot que cambiaron después de [desde] (milisegundos del sitio), con el cursor para la próxima vez. `gramos=1`
+  /// le dice al sitio que esta app entiende las líneas en gramos: sin eso, no deja entrar pedidos con gramos a la sucursal (una
+  /// app anterior los descartaba sin avisar).
   Future<({List<PedidoBot> pedidos, int hasta, bool mas})> pedidosBot(String token, {int desde = 0}) => _conRed(() async {
-    final r = await http.get(_uri('/api/bot/pedidos', {'desde': '$desde'}), headers: _auth(token)).timeout(_limite);
+    final r = await http.get(_uri('/api/bot/pedidos', {'desde': '$desde', 'gramos': '1'}), headers: _auth(token)).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return (
