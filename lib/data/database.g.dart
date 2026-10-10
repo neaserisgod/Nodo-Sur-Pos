@@ -15460,6 +15460,1107 @@ class PendientesCompanion extends UpdateCompanion<Pendiente> {
   }
 }
 
+class $TurnosTable extends Turnos with TableInfo<$TurnosTable, Turno> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TurnosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _clienteIdMeta = const VerificationMeta(
+    'clienteId',
+  );
+  @override
+  late final GeneratedColumn<int> clienteId = GeneratedColumn<int>(
+    'cliente_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES clientes (id)',
+    ),
+  );
+  static const VerificationMeta _nombreClienteMeta = const VerificationMeta(
+    'nombreCliente',
+  );
+  @override
+  late final GeneratedColumn<String> nombreCliente = GeneratedColumn<String>(
+    'nombre_cliente',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _telefonoMeta = const VerificationMeta(
+    'telefono',
+  );
+  @override
+  late final GeneratedColumn<String> telefono = GeneratedColumn<String>(
+    'telefono',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servicioIdMeta = const VerificationMeta(
+    'servicioId',
+  );
+  @override
+  late final GeneratedColumn<int> servicioId = GeneratedColumn<int>(
+    'servicio_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES productos (id)',
+    ),
+  );
+  static const VerificationMeta _duracionMinutosMeta = const VerificationMeta(
+    'duracionMinutos',
+  );
+  @override
+  late final GeneratedColumn<int> duracionMinutos = GeneratedColumn<int>(
+    'duracion_minutos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profesionalIdMeta = const VerificationMeta(
+    'profesionalId',
+  );
+  @override
+  late final GeneratedColumn<int> profesionalId = GeneratedColumn<int>(
+    'profesional_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES usuarios (id)',
+    ),
+  );
+  static const VerificationMeta _inicioMeta = const VerificationMeta('inicio');
+  @override
+  late final GeneratedColumn<DateTime> inicio = GeneratedColumn<DateTime>(
+    'inicio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _estadoMeta = const VerificationMeta('estado');
+  @override
+  late final GeneratedColumn<String> estado = GeneratedColumn<String>(
+    'estado',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('confirmado'),
+  );
+  static const VerificationMeta _origenMeta = const VerificationMeta('origen');
+  @override
+  late final GeneratedColumn<String> origen = GeneratedColumn<String>(
+    'origen',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('app'),
+  );
+  static const VerificationMeta _senaCentavosMeta = const VerificationMeta(
+    'senaCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> senaCentavos = GeneratedColumn<int>(
+    'sena_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _senaEsEfectivoMeta = const VerificationMeta(
+    'senaEsEfectivo',
+  );
+  @override
+  late final GeneratedColumn<bool> senaEsEfectivo = GeneratedColumn<bool>(
+    'sena_es_efectivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sena_es_efectivo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _ventaIdMeta = const VerificationMeta(
+    'ventaId',
+  );
+  @override
+  late final GeneratedColumn<int> ventaId = GeneratedColumn<int>(
+    'venta_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ventas (id)',
+    ),
+  );
+  static const VerificationMeta _notaMeta = const VerificationMeta('nota');
+  @override
+  late final GeneratedColumn<String> nota = GeneratedColumn<String>(
+    'nota',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _usuarioIdMeta = const VerificationMeta(
+    'usuarioId',
+  );
+  @override
+  late final GeneratedColumn<int> usuarioId = GeneratedColumn<int>(
+    'usuario_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES usuarios (id)',
+    ),
+  );
+  static const VerificationMeta _creadoEnMeta = const VerificationMeta(
+    'creadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> creadoEn = GeneratedColumn<DateTime>(
+    'creado_en',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clienteId,
+    nombreCliente,
+    telefono,
+    servicioId,
+    duracionMinutos,
+    profesionalId,
+    inicio,
+    estado,
+    origen,
+    senaCentavos,
+    senaEsEfectivo,
+    ventaId,
+    nota,
+    usuarioId,
+    creadoEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'turnos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Turno> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('cliente_id')) {
+      context.handle(
+        _clienteIdMeta,
+        clienteId.isAcceptableOrUnknown(data['cliente_id']!, _clienteIdMeta),
+      );
+    }
+    if (data.containsKey('nombre_cliente')) {
+      context.handle(
+        _nombreClienteMeta,
+        nombreCliente.isAcceptableOrUnknown(
+          data['nombre_cliente']!,
+          _nombreClienteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_nombreClienteMeta);
+    }
+    if (data.containsKey('telefono')) {
+      context.handle(
+        _telefonoMeta,
+        telefono.isAcceptableOrUnknown(data['telefono']!, _telefonoMeta),
+      );
+    }
+    if (data.containsKey('servicio_id')) {
+      context.handle(
+        _servicioIdMeta,
+        servicioId.isAcceptableOrUnknown(data['servicio_id']!, _servicioIdMeta),
+      );
+    }
+    if (data.containsKey('duracion_minutos')) {
+      context.handle(
+        _duracionMinutosMeta,
+        duracionMinutos.isAcceptableOrUnknown(
+          data['duracion_minutos']!,
+          _duracionMinutosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_duracionMinutosMeta);
+    }
+    if (data.containsKey('profesional_id')) {
+      context.handle(
+        _profesionalIdMeta,
+        profesionalId.isAcceptableOrUnknown(
+          data['profesional_id']!,
+          _profesionalIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inicio')) {
+      context.handle(
+        _inicioMeta,
+        inicio.isAcceptableOrUnknown(data['inicio']!, _inicioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inicioMeta);
+    }
+    if (data.containsKey('estado')) {
+      context.handle(
+        _estadoMeta,
+        estado.isAcceptableOrUnknown(data['estado']!, _estadoMeta),
+      );
+    }
+    if (data.containsKey('origen')) {
+      context.handle(
+        _origenMeta,
+        origen.isAcceptableOrUnknown(data['origen']!, _origenMeta),
+      );
+    }
+    if (data.containsKey('sena_centavos')) {
+      context.handle(
+        _senaCentavosMeta,
+        senaCentavos.isAcceptableOrUnknown(
+          data['sena_centavos']!,
+          _senaCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_es_efectivo')) {
+      context.handle(
+        _senaEsEfectivoMeta,
+        senaEsEfectivo.isAcceptableOrUnknown(
+          data['sena_es_efectivo']!,
+          _senaEsEfectivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('venta_id')) {
+      context.handle(
+        _ventaIdMeta,
+        ventaId.isAcceptableOrUnknown(data['venta_id']!, _ventaIdMeta),
+      );
+    }
+    if (data.containsKey('nota')) {
+      context.handle(
+        _notaMeta,
+        nota.isAcceptableOrUnknown(data['nota']!, _notaMeta),
+      );
+    }
+    if (data.containsKey('usuario_id')) {
+      context.handle(
+        _usuarioIdMeta,
+        usuarioId.isAcceptableOrUnknown(data['usuario_id']!, _usuarioIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_usuarioIdMeta);
+    }
+    if (data.containsKey('creado_en')) {
+      context.handle(
+        _creadoEnMeta,
+        creadoEn.isAcceptableOrUnknown(data['creado_en']!, _creadoEnMeta),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Turno map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Turno(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      clienteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cliente_id'],
+      ),
+      nombreCliente: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre_cliente'],
+      )!,
+      telefono: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}telefono'],
+      ),
+      servicioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}servicio_id'],
+      ),
+      duracionMinutos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duracion_minutos'],
+      )!,
+      profesionalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profesional_id'],
+      ),
+      inicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}inicio'],
+      )!,
+      estado: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}estado'],
+      )!,
+      origen: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen'],
+      )!,
+      senaCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_centavos'],
+      )!,
+      senaEsEfectivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_es_efectivo'],
+      )!,
+      ventaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}venta_id'],
+      ),
+      nota: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nota'],
+      ),
+      usuarioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}usuario_id'],
+      )!,
+      creadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creado_en'],
+      )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
+    );
+  }
+
+  @override
+  $TurnosTable createAlias(String alias) {
+    return $TurnosTable(attachedDatabase, alias);
+  }
+}
+
+class Turno extends DataClass implements Insertable<Turno> {
+  final int id;
+
+  /// El cliente, si quedó guardado (§21: al confirmarse el turno queda como cliente). [nombreCliente] siempre está, así el
+  /// turno se lee aunque el cliente todavía no llegó por la sync.
+  final int? clienteId;
+  final String nombreCliente;
+  final String? telefono;
+
+  /// El servicio (un producto con `es_servicio`). [duracionMinutos] es la del servicio al anotarlo: si después cambia, el
+  /// turno ya dado no se corre.
+  final int? servicioId;
+  final int duracionMinutos;
+
+  /// Quién atiende (un usuario de la app). Null: el negocio tiene una sola persona.
+  final int? profesionalId;
+  final DateTime inicio;
+
+  /// `EstadoTurno.clave` (`domain/agenda.dart`).
+  final String estado;
+
+  /// 'app' | 'whatsapp'.
+  final String origen;
+
+  /// La seña (§21, como la de un encargue: `domain/sena.dart`): entró a la caja como ingreso y al cobrar se aplica.
+  final int senaCentavos;
+  final bool senaEsEfectivo;
+
+  /// La venta que lo cobró.
+  final int? ventaId;
+  final String? nota;
+
+  /// Quién lo anotó.
+  final int usuarioId;
+  final DateTime creadoEn;
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
+  const Turno({
+    required this.id,
+    this.clienteId,
+    required this.nombreCliente,
+    this.telefono,
+    this.servicioId,
+    required this.duracionMinutos,
+    this.profesionalId,
+    required this.inicio,
+    required this.estado,
+    required this.origen,
+    required this.senaCentavos,
+    required this.senaEsEfectivo,
+    this.ventaId,
+    this.nota,
+    required this.usuarioId,
+    required this.creadoEn,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || clienteId != null) {
+      map['cliente_id'] = Variable<int>(clienteId);
+    }
+    map['nombre_cliente'] = Variable<String>(nombreCliente);
+    if (!nullToAbsent || telefono != null) {
+      map['telefono'] = Variable<String>(telefono);
+    }
+    if (!nullToAbsent || servicioId != null) {
+      map['servicio_id'] = Variable<int>(servicioId);
+    }
+    map['duracion_minutos'] = Variable<int>(duracionMinutos);
+    if (!nullToAbsent || profesionalId != null) {
+      map['profesional_id'] = Variable<int>(profesionalId);
+    }
+    map['inicio'] = Variable<DateTime>(inicio);
+    map['estado'] = Variable<String>(estado);
+    map['origen'] = Variable<String>(origen);
+    map['sena_centavos'] = Variable<int>(senaCentavos);
+    map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo);
+    if (!nullToAbsent || ventaId != null) {
+      map['venta_id'] = Variable<int>(ventaId);
+    }
+    if (!nullToAbsent || nota != null) {
+      map['nota'] = Variable<String>(nota);
+    }
+    map['usuario_id'] = Variable<int>(usuarioId);
+    map['creado_en'] = Variable<DateTime>(creadoEn);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
+    return map;
+  }
+
+  TurnosCompanion toCompanion(bool nullToAbsent) {
+    return TurnosCompanion(
+      id: Value(id),
+      clienteId: clienteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clienteId),
+      nombreCliente: Value(nombreCliente),
+      telefono: telefono == null && nullToAbsent
+          ? const Value.absent()
+          : Value(telefono),
+      servicioId: servicioId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servicioId),
+      duracionMinutos: Value(duracionMinutos),
+      profesionalId: profesionalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profesionalId),
+      inicio: Value(inicio),
+      estado: Value(estado),
+      origen: Value(origen),
+      senaCentavos: Value(senaCentavos),
+      senaEsEfectivo: Value(senaEsEfectivo),
+      ventaId: ventaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ventaId),
+      nota: nota == null && nullToAbsent ? const Value.absent() : Value(nota),
+      usuarioId: Value(usuarioId),
+      creadoEn: Value(creadoEn),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
+    );
+  }
+
+  factory Turno.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Turno(
+      id: serializer.fromJson<int>(json['id']),
+      clienteId: serializer.fromJson<int?>(json['clienteId']),
+      nombreCliente: serializer.fromJson<String>(json['nombreCliente']),
+      telefono: serializer.fromJson<String?>(json['telefono']),
+      servicioId: serializer.fromJson<int?>(json['servicioId']),
+      duracionMinutos: serializer.fromJson<int>(json['duracionMinutos']),
+      profesionalId: serializer.fromJson<int?>(json['profesionalId']),
+      inicio: serializer.fromJson<DateTime>(json['inicio']),
+      estado: serializer.fromJson<String>(json['estado']),
+      origen: serializer.fromJson<String>(json['origen']),
+      senaCentavos: serializer.fromJson<int>(json['senaCentavos']),
+      senaEsEfectivo: serializer.fromJson<bool>(json['senaEsEfectivo']),
+      ventaId: serializer.fromJson<int?>(json['ventaId']),
+      nota: serializer.fromJson<String?>(json['nota']),
+      usuarioId: serializer.fromJson<int>(json['usuarioId']),
+      creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'clienteId': serializer.toJson<int?>(clienteId),
+      'nombreCliente': serializer.toJson<String>(nombreCliente),
+      'telefono': serializer.toJson<String?>(telefono),
+      'servicioId': serializer.toJson<int?>(servicioId),
+      'duracionMinutos': serializer.toJson<int>(duracionMinutos),
+      'profesionalId': serializer.toJson<int?>(profesionalId),
+      'inicio': serializer.toJson<DateTime>(inicio),
+      'estado': serializer.toJson<String>(estado),
+      'origen': serializer.toJson<String>(origen),
+      'senaCentavos': serializer.toJson<int>(senaCentavos),
+      'senaEsEfectivo': serializer.toJson<bool>(senaEsEfectivo),
+      'ventaId': serializer.toJson<int?>(ventaId),
+      'nota': serializer.toJson<String?>(nota),
+      'usuarioId': serializer.toJson<int>(usuarioId),
+      'creadoEn': serializer.toJson<DateTime>(creadoEn),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
+    };
+  }
+
+  Turno copyWith({
+    int? id,
+    Value<int?> clienteId = const Value.absent(),
+    String? nombreCliente,
+    Value<String?> telefono = const Value.absent(),
+    Value<int?> servicioId = const Value.absent(),
+    int? duracionMinutos,
+    Value<int?> profesionalId = const Value.absent(),
+    DateTime? inicio,
+    String? estado,
+    String? origen,
+    int? senaCentavos,
+    bool? senaEsEfectivo,
+    Value<int?> ventaId = const Value.absent(),
+    Value<String?> nota = const Value.absent(),
+    int? usuarioId,
+    DateTime? creadoEn,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
+  }) => Turno(
+    id: id ?? this.id,
+    clienteId: clienteId.present ? clienteId.value : this.clienteId,
+    nombreCliente: nombreCliente ?? this.nombreCliente,
+    telefono: telefono.present ? telefono.value : this.telefono,
+    servicioId: servicioId.present ? servicioId.value : this.servicioId,
+    duracionMinutos: duracionMinutos ?? this.duracionMinutos,
+    profesionalId: profesionalId.present
+        ? profesionalId.value
+        : this.profesionalId,
+    inicio: inicio ?? this.inicio,
+    estado: estado ?? this.estado,
+    origen: origen ?? this.origen,
+    senaCentavos: senaCentavos ?? this.senaCentavos,
+    senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
+    ventaId: ventaId.present ? ventaId.value : this.ventaId,
+    nota: nota.present ? nota.value : this.nota,
+    usuarioId: usuarioId ?? this.usuarioId,
+    creadoEn: creadoEn ?? this.creadoEn,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
+  );
+  Turno copyWithCompanion(TurnosCompanion data) {
+    return Turno(
+      id: data.id.present ? data.id.value : this.id,
+      clienteId: data.clienteId.present ? data.clienteId.value : this.clienteId,
+      nombreCliente: data.nombreCliente.present
+          ? data.nombreCliente.value
+          : this.nombreCliente,
+      telefono: data.telefono.present ? data.telefono.value : this.telefono,
+      servicioId: data.servicioId.present
+          ? data.servicioId.value
+          : this.servicioId,
+      duracionMinutos: data.duracionMinutos.present
+          ? data.duracionMinutos.value
+          : this.duracionMinutos,
+      profesionalId: data.profesionalId.present
+          ? data.profesionalId.value
+          : this.profesionalId,
+      inicio: data.inicio.present ? data.inicio.value : this.inicio,
+      estado: data.estado.present ? data.estado.value : this.estado,
+      origen: data.origen.present ? data.origen.value : this.origen,
+      senaCentavos: data.senaCentavos.present
+          ? data.senaCentavos.value
+          : this.senaCentavos,
+      senaEsEfectivo: data.senaEsEfectivo.present
+          ? data.senaEsEfectivo.value
+          : this.senaEsEfectivo,
+      ventaId: data.ventaId.present ? data.ventaId.value : this.ventaId,
+      nota: data.nota.present ? data.nota.value : this.nota,
+      usuarioId: data.usuarioId.present ? data.usuarioId.value : this.usuarioId,
+      creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Turno(')
+          ..write('id: $id, ')
+          ..write('clienteId: $clienteId, ')
+          ..write('nombreCliente: $nombreCliente, ')
+          ..write('telefono: $telefono, ')
+          ..write('servicioId: $servicioId, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('profesionalId: $profesionalId, ')
+          ..write('inicio: $inicio, ')
+          ..write('estado: $estado, ')
+          ..write('origen: $origen, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
+          ..write('ventaId: $ventaId, ')
+          ..write('nota: $nota, ')
+          ..write('usuarioId: $usuarioId, ')
+          ..write('creadoEn: $creadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clienteId,
+    nombreCliente,
+    telefono,
+    servicioId,
+    duracionMinutos,
+    profesionalId,
+    inicio,
+    estado,
+    origen,
+    senaCentavos,
+    senaEsEfectivo,
+    ventaId,
+    nota,
+    usuarioId,
+    creadoEn,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Turno &&
+          other.id == this.id &&
+          other.clienteId == this.clienteId &&
+          other.nombreCliente == this.nombreCliente &&
+          other.telefono == this.telefono &&
+          other.servicioId == this.servicioId &&
+          other.duracionMinutos == this.duracionMinutos &&
+          other.profesionalId == this.profesionalId &&
+          other.inicio == this.inicio &&
+          other.estado == this.estado &&
+          other.origen == this.origen &&
+          other.senaCentavos == this.senaCentavos &&
+          other.senaEsEfectivo == this.senaEsEfectivo &&
+          other.ventaId == this.ventaId &&
+          other.nota == this.nota &&
+          other.usuarioId == this.usuarioId &&
+          other.creadoEn == this.creadoEn &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
+}
+
+class TurnosCompanion extends UpdateCompanion<Turno> {
+  final Value<int> id;
+  final Value<int?> clienteId;
+  final Value<String> nombreCliente;
+  final Value<String?> telefono;
+  final Value<int?> servicioId;
+  final Value<int> duracionMinutos;
+  final Value<int?> profesionalId;
+  final Value<DateTime> inicio;
+  final Value<String> estado;
+  final Value<String> origen;
+  final Value<int> senaCentavos;
+  final Value<bool> senaEsEfectivo;
+  final Value<int?> ventaId;
+  final Value<String?> nota;
+  final Value<int> usuarioId;
+  final Value<DateTime> creadoEn;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
+  const TurnosCompanion({
+    this.id = const Value.absent(),
+    this.clienteId = const Value.absent(),
+    this.nombreCliente = const Value.absent(),
+    this.telefono = const Value.absent(),
+    this.servicioId = const Value.absent(),
+    this.duracionMinutos = const Value.absent(),
+    this.profesionalId = const Value.absent(),
+    this.inicio = const Value.absent(),
+    this.estado = const Value.absent(),
+    this.origen = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
+    this.ventaId = const Value.absent(),
+    this.nota = const Value.absent(),
+    this.usuarioId = const Value.absent(),
+    this.creadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  });
+  TurnosCompanion.insert({
+    this.id = const Value.absent(),
+    this.clienteId = const Value.absent(),
+    required String nombreCliente,
+    this.telefono = const Value.absent(),
+    this.servicioId = const Value.absent(),
+    required int duracionMinutos,
+    this.profesionalId = const Value.absent(),
+    required DateTime inicio,
+    this.estado = const Value.absent(),
+    this.origen = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
+    this.ventaId = const Value.absent(),
+    this.nota = const Value.absent(),
+    required int usuarioId,
+    this.creadoEn = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  }) : nombreCliente = Value(nombreCliente),
+       duracionMinutos = Value(duracionMinutos),
+       inicio = Value(inicio),
+       usuarioId = Value(usuarioId);
+  static Insertable<Turno> custom({
+    Expression<int>? id,
+    Expression<int>? clienteId,
+    Expression<String>? nombreCliente,
+    Expression<String>? telefono,
+    Expression<int>? servicioId,
+    Expression<int>? duracionMinutos,
+    Expression<int>? profesionalId,
+    Expression<DateTime>? inicio,
+    Expression<String>? estado,
+    Expression<String>? origen,
+    Expression<int>? senaCentavos,
+    Expression<bool>? senaEsEfectivo,
+    Expression<int>? ventaId,
+    Expression<String>? nota,
+    Expression<int>? usuarioId,
+    Expression<DateTime>? creadoEn,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clienteId != null) 'cliente_id': clienteId,
+      if (nombreCliente != null) 'nombre_cliente': nombreCliente,
+      if (telefono != null) 'telefono': telefono,
+      if (servicioId != null) 'servicio_id': servicioId,
+      if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
+      if (profesionalId != null) 'profesional_id': profesionalId,
+      if (inicio != null) 'inicio': inicio,
+      if (estado != null) 'estado': estado,
+      if (origen != null) 'origen': origen,
+      if (senaCentavos != null) 'sena_centavos': senaCentavos,
+      if (senaEsEfectivo != null) 'sena_es_efectivo': senaEsEfectivo,
+      if (ventaId != null) 'venta_id': ventaId,
+      if (nota != null) 'nota': nota,
+      if (usuarioId != null) 'usuario_id': usuarioId,
+      if (creadoEn != null) 'creado_en': creadoEn,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+    });
+  }
+
+  TurnosCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? clienteId,
+    Value<String>? nombreCliente,
+    Value<String?>? telefono,
+    Value<int?>? servicioId,
+    Value<int>? duracionMinutos,
+    Value<int?>? profesionalId,
+    Value<DateTime>? inicio,
+    Value<String>? estado,
+    Value<String>? origen,
+    Value<int>? senaCentavos,
+    Value<bool>? senaEsEfectivo,
+    Value<int?>? ventaId,
+    Value<String?>? nota,
+    Value<int>? usuarioId,
+    Value<DateTime>? creadoEn,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
+  }) {
+    return TurnosCompanion(
+      id: id ?? this.id,
+      clienteId: clienteId ?? this.clienteId,
+      nombreCliente: nombreCliente ?? this.nombreCliente,
+      telefono: telefono ?? this.telefono,
+      servicioId: servicioId ?? this.servicioId,
+      duracionMinutos: duracionMinutos ?? this.duracionMinutos,
+      profesionalId: profesionalId ?? this.profesionalId,
+      inicio: inicio ?? this.inicio,
+      estado: estado ?? this.estado,
+      origen: origen ?? this.origen,
+      senaCentavos: senaCentavos ?? this.senaCentavos,
+      senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
+      ventaId: ventaId ?? this.ventaId,
+      nota: nota ?? this.nota,
+      usuarioId: usuarioId ?? this.usuarioId,
+      creadoEn: creadoEn ?? this.creadoEn,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (clienteId.present) {
+      map['cliente_id'] = Variable<int>(clienteId.value);
+    }
+    if (nombreCliente.present) {
+      map['nombre_cliente'] = Variable<String>(nombreCliente.value);
+    }
+    if (telefono.present) {
+      map['telefono'] = Variable<String>(telefono.value);
+    }
+    if (servicioId.present) {
+      map['servicio_id'] = Variable<int>(servicioId.value);
+    }
+    if (duracionMinutos.present) {
+      map['duracion_minutos'] = Variable<int>(duracionMinutos.value);
+    }
+    if (profesionalId.present) {
+      map['profesional_id'] = Variable<int>(profesionalId.value);
+    }
+    if (inicio.present) {
+      map['inicio'] = Variable<DateTime>(inicio.value);
+    }
+    if (estado.present) {
+      map['estado'] = Variable<String>(estado.value);
+    }
+    if (origen.present) {
+      map['origen'] = Variable<String>(origen.value);
+    }
+    if (senaCentavos.present) {
+      map['sena_centavos'] = Variable<int>(senaCentavos.value);
+    }
+    if (senaEsEfectivo.present) {
+      map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo.value);
+    }
+    if (ventaId.present) {
+      map['venta_id'] = Variable<int>(ventaId.value);
+    }
+    if (nota.present) {
+      map['nota'] = Variable<String>(nota.value);
+    }
+    if (usuarioId.present) {
+      map['usuario_id'] = Variable<int>(usuarioId.value);
+    }
+    if (creadoEn.present) {
+      map['creado_en'] = Variable<DateTime>(creadoEn.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TurnosCompanion(')
+          ..write('id: $id, ')
+          ..write('clienteId: $clienteId, ')
+          ..write('nombreCliente: $nombreCliente, ')
+          ..write('telefono: $telefono, ')
+          ..write('servicioId: $servicioId, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('profesionalId: $profesionalId, ')
+          ..write('inicio: $inicio, ')
+          ..write('estado: $estado, ')
+          ..write('origen: $origen, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
+          ..write('ventaId: $ventaId, ')
+          ..write('nota: $nota, ')
+          ..write('usuarioId: $usuarioId, ')
+          ..write('creadoEn: $creadoEn, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $HistorialDePreciosTable extends HistorialDePrecios
     with TableInfo<$HistorialDePreciosTable, HistorialDePrecio> {
   @override
@@ -18221,6 +19322,28 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _horarioAtencionMeta = const VerificationMeta(
+    'horarioAtencion',
+  );
+  @override
+  late final GeneratedColumn<String> horarioAtencion = GeneratedColumn<String>(
+    'horario_atencion',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intervaloTurnosMinutosMeta =
+      const VerificationMeta('intervaloTurnosMinutos');
+  @override
+  late final GeneratedColumn<int> intervaloTurnosMinutos = GeneratedColumn<int>(
+    'intervalo_turnos_minutos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(15),
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -18269,6 +19392,8 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     modulosDesactivados,
     rubro,
     valorHoraCentavos,
+    horarioAtencion,
+    intervaloTurnosMinutos,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -18375,6 +19500,24 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         ),
       );
     }
+    if (data.containsKey('horario_atencion')) {
+      context.handle(
+        _horarioAtencionMeta,
+        horarioAtencion.isAcceptableOrUnknown(
+          data['horario_atencion']!,
+          _horarioAtencionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('intervalo_turnos_minutos')) {
+      context.handle(
+        _intervaloTurnosMinutosMeta,
+        intervaloTurnosMinutos.isAcceptableOrUnknown(
+          data['intervalo_turnos_minutos']!,
+          _intervaloTurnosMinutosMeta,
+        ),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -18452,6 +19595,14 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         DriftSqlType.int,
         data['${effectivePrefix}valor_hora_centavos'],
       ),
+      horarioAtencion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}horario_atencion'],
+      ),
+      intervaloTurnosMinutos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}intervalo_turnos_minutos'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -18521,6 +19672,11 @@ class ConfiguracionNegocio extends DataClass
   /// valor por negocio). Null: sin cargar.
   final int? valorHoraCentavos;
 
+  /// Agenda (v66, `REGLAS-NEGOCIO.md` §21): el horario de atención (uno solo, que usan la agenda y el bot) como JSON de
+  /// `HorarioAtencion` (null: el de por defecto) y cada cuántos minutos se ofrecen turnos.
+  final String? horarioAtencion;
+  final int intervaloTurnosMinutos;
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   final String? globalId;
@@ -18538,6 +19694,8 @@ class ConfiguracionNegocio extends DataClass
     required this.modulosDesactivados,
     required this.rubro,
     this.valorHoraCentavos,
+    this.horarioAtencion,
+    required this.intervaloTurnosMinutos,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -18564,6 +19722,10 @@ class ConfiguracionNegocio extends DataClass
     if (!nullToAbsent || valorHoraCentavos != null) {
       map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos);
     }
+    if (!nullToAbsent || horarioAtencion != null) {
+      map['horario_atencion'] = Variable<String>(horarioAtencion);
+    }
+    map['intervalo_turnos_minutos'] = Variable<int>(intervaloTurnosMinutos);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -18593,6 +19755,10 @@ class ConfiguracionNegocio extends DataClass
       valorHoraCentavos: valorHoraCentavos == null && nullToAbsent
           ? const Value.absent()
           : Value(valorHoraCentavos),
+      horarioAtencion: horarioAtencion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(horarioAtencion),
+      intervaloTurnosMinutos: Value(intervaloTurnosMinutos),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -18632,6 +19798,10 @@ class ConfiguracionNegocio extends DataClass
       ),
       rubro: serializer.fromJson<String>(json['rubro']),
       valorHoraCentavos: serializer.fromJson<int?>(json['valorHoraCentavos']),
+      horarioAtencion: serializer.fromJson<String?>(json['horarioAtencion']),
+      intervaloTurnosMinutos: serializer.fromJson<int>(
+        json['intervaloTurnosMinutos'],
+      ),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -18658,6 +19828,8 @@ class ConfiguracionNegocio extends DataClass
       'modulosDesactivados': serializer.toJson<String>(modulosDesactivados),
       'rubro': serializer.toJson<String>(rubro),
       'valorHoraCentavos': serializer.toJson<int?>(valorHoraCentavos),
+      'horarioAtencion': serializer.toJson<String?>(horarioAtencion),
+      'intervaloTurnosMinutos': serializer.toJson<int>(intervaloTurnosMinutos),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -18676,6 +19848,8 @@ class ConfiguracionNegocio extends DataClass
     String? modulosDesactivados,
     String? rubro,
     Value<int?> valorHoraCentavos = const Value.absent(),
+    Value<String?> horarioAtencion = const Value.absent(),
+    int? intervaloTurnosMinutos,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -18697,6 +19871,11 @@ class ConfiguracionNegocio extends DataClass
     valorHoraCentavos: valorHoraCentavos.present
         ? valorHoraCentavos.value
         : this.valorHoraCentavos,
+    horarioAtencion: horarioAtencion.present
+        ? horarioAtencion.value
+        : this.horarioAtencion,
+    intervaloTurnosMinutos:
+        intervaloTurnosMinutos ?? this.intervaloTurnosMinutos,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -18738,6 +19917,12 @@ class ConfiguracionNegocio extends DataClass
       valorHoraCentavos: data.valorHoraCentavos.present
           ? data.valorHoraCentavos.value
           : this.valorHoraCentavos,
+      horarioAtencion: data.horarioAtencion.present
+          ? data.horarioAtencion.value
+          : this.horarioAtencion,
+      intervaloTurnosMinutos: data.intervaloTurnosMinutos.present
+          ? data.intervaloTurnosMinutos.value
+          : this.intervaloTurnosMinutos,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -18764,6 +19949,8 @@ class ConfiguracionNegocio extends DataClass
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
           ..write('valorHoraCentavos: $valorHoraCentavos, ')
+          ..write('horarioAtencion: $horarioAtencion, ')
+          ..write('intervaloTurnosMinutos: $intervaloTurnosMinutos, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -18784,6 +19971,8 @@ class ConfiguracionNegocio extends DataClass
     modulosDesactivados,
     rubro,
     valorHoraCentavos,
+    horarioAtencion,
+    intervaloTurnosMinutos,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -18804,6 +19993,8 @@ class ConfiguracionNegocio extends DataClass
           other.modulosDesactivados == this.modulosDesactivados &&
           other.rubro == this.rubro &&
           other.valorHoraCentavos == this.valorHoraCentavos &&
+          other.horarioAtencion == this.horarioAtencion &&
+          other.intervaloTurnosMinutos == this.intervaloTurnosMinutos &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -18822,6 +20013,8 @@ class ConfiguracionNegocioTablaCompanion
   final Value<String> modulosDesactivados;
   final Value<String> rubro;
   final Value<int?> valorHoraCentavos;
+  final Value<String?> horarioAtencion;
+  final Value<int> intervaloTurnosMinutos;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -18837,6 +20030,8 @@ class ConfiguracionNegocioTablaCompanion
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
     this.valorHoraCentavos = const Value.absent(),
+    this.horarioAtencion = const Value.absent(),
+    this.intervaloTurnosMinutos = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18853,6 +20048,8 @@ class ConfiguracionNegocioTablaCompanion
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
     this.valorHoraCentavos = const Value.absent(),
+    this.horarioAtencion = const Value.absent(),
+    this.intervaloTurnosMinutos = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18869,6 +20066,8 @@ class ConfiguracionNegocioTablaCompanion
     Expression<String>? modulosDesactivados,
     Expression<String>? rubro,
     Expression<int>? valorHoraCentavos,
+    Expression<String>? horarioAtencion,
+    Expression<int>? intervaloTurnosMinutos,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -18890,6 +20089,9 @@ class ConfiguracionNegocioTablaCompanion
         'modulos_desactivados': modulosDesactivados,
       if (rubro != null) 'rubro': rubro,
       if (valorHoraCentavos != null) 'valor_hora_centavos': valorHoraCentavos,
+      if (horarioAtencion != null) 'horario_atencion': horarioAtencion,
+      if (intervaloTurnosMinutos != null)
+        'intervalo_turnos_minutos': intervaloTurnosMinutos,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -18908,6 +20110,8 @@ class ConfiguracionNegocioTablaCompanion
     Value<String>? modulosDesactivados,
     Value<String>? rubro,
     Value<int?>? valorHoraCentavos,
+    Value<String?>? horarioAtencion,
+    Value<int>? intervaloTurnosMinutos,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -18927,6 +20131,9 @@ class ConfiguracionNegocioTablaCompanion
       modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
       rubro: rubro ?? this.rubro,
       valorHoraCentavos: valorHoraCentavos ?? this.valorHoraCentavos,
+      horarioAtencion: horarioAtencion ?? this.horarioAtencion,
+      intervaloTurnosMinutos:
+          intervaloTurnosMinutos ?? this.intervaloTurnosMinutos,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -18975,6 +20182,14 @@ class ConfiguracionNegocioTablaCompanion
     if (valorHoraCentavos.present) {
       map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos.value);
     }
+    if (horarioAtencion.present) {
+      map['horario_atencion'] = Variable<String>(horarioAtencion.value);
+    }
+    if (intervaloTurnosMinutos.present) {
+      map['intervalo_turnos_minutos'] = Variable<int>(
+        intervaloTurnosMinutos.value,
+      );
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -19003,6 +20218,8 @@ class ConfiguracionNegocioTablaCompanion
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
           ..write('valorHoraCentavos: $valorHoraCentavos, ')
+          ..write('horarioAtencion: $horarioAtencion, ')
+          ..write('intervaloTurnosMinutos: $intervaloTurnosMinutos, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -26349,6 +27566,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MovimientosDeStockTable movimientosDeStock =
       $MovimientosDeStockTable(this);
   late final $PendientesTable pendientes = $PendientesTable(this);
+  late final $TurnosTable turnos = $TurnosTable(this);
   late final $HistorialDePreciosTable historialDePrecios =
       $HistorialDePreciosTable(this);
   late final $AccesosDirectosTable accesosDirectos = $AccesosDirectosTable(
@@ -26403,6 +27621,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pagos,
     movimientosDeStock,
     pendientes,
+    turnos,
     historialDePrecios,
     accesosDirectos,
     configuracionTabla,
@@ -29790,6 +31009,25 @@ final class $$ClientesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'clientes__id__turnos__cliente_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.clienteId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ClientesTableFilterComposer
@@ -29887,6 +31125,31 @@ class $$ClientesTableFilterComposer
           }) => $$PendientesTableFilterComposer(
             $db: $db,
             $table: $db.pendientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.clienteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -30043,6 +31306,31 @@ class $$ClientesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.clienteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ClientesTableTableManager
@@ -30058,7 +31346,11 @@ class $$ClientesTableTableManager
           $$ClientesTableUpdateCompanionBuilder,
           (Cliente, $$ClientesTableReferences),
           Cliente,
-          PrefetchHooks Function({bool ventasRefs, bool pendientesRefs})
+          PrefetchHooks Function({
+            bool ventasRefs,
+            bool pendientesRefs,
+            bool turnosRefs,
+          })
         > {
   $$ClientesTableTableManager(_$AppDatabase db, $ClientesTable table)
     : super(
@@ -30124,12 +31416,17 @@ class $$ClientesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ventasRefs = false, pendientesRefs = false}) {
+              ({
+                ventasRefs = false,
+                pendientesRefs = false,
+                turnosRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ventasRefs) db.ventas,
                     if (pendientesRefs) db.pendientes,
+                    if (turnosRefs) db.turnos,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -30176,6 +31473,27 @@ class $$ClientesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          Cliente,
+                          $ClientesTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ClientesTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ClientesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.clienteId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -30196,7 +31514,11 @@ typedef $$ClientesTableProcessedTableManager =
       $$ClientesTableUpdateCompanionBuilder,
       (Cliente, $$ClientesTableReferences),
       Cliente,
-      PrefetchHooks Function({bool ventasRefs, bool pendientesRefs})
+      PrefetchHooks Function({
+        bool ventasRefs,
+        bool pendientesRefs,
+        bool turnosRefs,
+      })
     >;
 typedef $$MediosDePagoTableCreateCompanionBuilder =
     MediosDePagoCompanion Function({
@@ -30814,6 +32136,25 @@ final class $$ProductosTableReferences
     );
   }
 
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'productos__id__turnos__servicio_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.servicioId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$HistorialDePreciosTable, List<HistorialDePrecio>>
   _historialDePreciosRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -31237,6 +32578,31 @@ class $$ProductosTableFilterComposer
           }) => $$MovimientosDeStockTableFilterComposer(
             $db: $db,
             $table: $db.movimientosDeStock,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.servicioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -31919,6 +33285,31 @@ class $$ProductosTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.servicioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> historialDePreciosRefs<T extends Object>(
     Expression<T> Function($$HistorialDePreciosTableAnnotationComposer a) f,
   ) {
@@ -32117,6 +33508,7 @@ class $$ProductosTableTableManager
             bool proveedorId,
             bool lineasDeVentaRefs,
             bool movimientosDeStockRefs,
+            bool turnosRefs,
             bool historialDePreciosRefs,
             bool accesosDirectosRefs,
             bool configuracionNegocioTablaRefs,
@@ -32311,6 +33703,7 @@ class $$ProductosTableTableManager
                 proveedorId = false,
                 lineasDeVentaRefs = false,
                 movimientosDeStockRefs = false,
+                turnosRefs = false,
                 historialDePreciosRefs = false,
                 accesosDirectosRefs = false,
                 configuracionNegocioTablaRefs = false,
@@ -32324,6 +33717,7 @@ class $$ProductosTableTableManager
                   explicitlyWatchedTables: [
                     if (lineasDeVentaRefs) db.lineasDeVenta,
                     if (movimientosDeStockRefs) db.movimientosDeStock,
+                    if (turnosRefs) db.turnos,
                     if (historialDePreciosRefs) db.historialDePrecios,
                     if (accesosDirectosRefs) db.accesosDirectos,
                     if (configuracionNegocioTablaRefs)
@@ -32419,6 +33813,27 @@ class $$ProductosTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.productoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          Producto,
+                          $ProductosTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductosTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.servicioId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -32594,6 +34009,7 @@ typedef $$ProductosTableProcessedTableManager =
         bool proveedorId,
         bool lineasDeVentaRefs,
         bool movimientosDeStockRefs,
+        bool turnosRefs,
         bool historialDePreciosRefs,
         bool accesosDirectosRefs,
         bool configuracionNegocioTablaRefs,
@@ -35257,6 +36673,25 @@ final class $$VentasTableReferences
     );
   }
 
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'ventas__id__turnos__venta_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.ventaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<
     $OrdenesCobroPendientesTable,
     List<OrdenCobroPendiente>
@@ -35603,6 +37038,31 @@ class $$VentasTableFilterComposer
           }) => $$PendientesTableFilterComposer(
             $db: $db,
             $table: $db.pendientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.ventaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -36161,6 +37621,31 @@ class $$VentasTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.ventaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> ordenesCobroPendientesRefs<T extends Object>(
     Expression<T> Function($$OrdenesCobroPendientesTableAnnotationComposer a) f,
   ) {
@@ -36212,6 +37697,7 @@ class $$VentasTableTableManager
             bool pagosRefs,
             bool movimientosDeStockRefs,
             bool pendientesRefs,
+            bool turnosRefs,
             bool ordenesCobroPendientesRefs,
           })
         > {
@@ -36338,6 +37824,7 @@ class $$VentasTableTableManager
                 pagosRefs = false,
                 movimientosDeStockRefs = false,
                 pendientesRefs = false,
+                turnosRefs = false,
                 ordenesCobroPendientesRefs = false,
               }) {
                 return PrefetchHooks(
@@ -36348,6 +37835,7 @@ class $$VentasTableTableManager
                     if (pagosRefs) db.pagos,
                     if (movimientosDeStockRefs) db.movimientosDeStock,
                     if (pendientesRefs) db.pendientes,
+                    if (turnosRefs) db.turnos,
                     if (ordenesCobroPendientesRefs) db.ordenesCobroPendientes,
                   ],
                   addJoins:
@@ -36537,6 +38025,23 @@ class $$VentasTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          FilaVenta,
+                          $VentasTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VentasTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VentasTableReferences(db, table, p0).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ventaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (ordenesCobroPendientesRefs)
                         await $_getPrefetchedData<
                           FilaVenta,
@@ -36589,6 +38094,7 @@ typedef $$VentasTableProcessedTableManager =
         bool pagosRefs,
         bool movimientosDeStockRefs,
         bool pendientesRefs,
+        bool turnosRefs,
         bool ordenesCobroPendientesRefs,
       })
     >;
@@ -41059,6 +42565,958 @@ typedef $$PendientesTableProcessedTableManager =
       Pendiente,
       PrefetchHooks Function({bool clienteId, bool ventaId, bool usuarioId})
     >;
+typedef $$TurnosTableCreateCompanionBuilder =
+    TurnosCompanion Function({
+      Value<int> id,
+      Value<int?> clienteId,
+      required String nombreCliente,
+      Value<String?> telefono,
+      Value<int?> servicioId,
+      required int duracionMinutos,
+      Value<int?> profesionalId,
+      required DateTime inicio,
+      Value<String> estado,
+      Value<String> origen,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
+      Value<int?> ventaId,
+      Value<String?> nota,
+      required int usuarioId,
+      Value<DateTime> creadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+typedef $$TurnosTableUpdateCompanionBuilder =
+    TurnosCompanion Function({
+      Value<int> id,
+      Value<int?> clienteId,
+      Value<String> nombreCliente,
+      Value<String?> telefono,
+      Value<int?> servicioId,
+      Value<int> duracionMinutos,
+      Value<int?> profesionalId,
+      Value<DateTime> inicio,
+      Value<String> estado,
+      Value<String> origen,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
+      Value<int?> ventaId,
+      Value<String?> nota,
+      Value<int> usuarioId,
+      Value<DateTime> creadoEn,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+
+final class $$TurnosTableReferences
+    extends BaseReferences<_$AppDatabase, $TurnosTable, Turno> {
+  $$TurnosTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ClientesTable _clienteIdTable(_$AppDatabase db) =>
+      db.clientes.createAlias('turnos__cliente_id__clientes__id');
+
+  $$ClientesTableProcessedTableManager? get clienteId {
+    final $_column = $_itemColumn<int>('cliente_id');
+    if ($_column == null) return null;
+    final manager = $$ClientesTableTableManager(
+      $_db,
+      $_db.clientes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_clienteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProductosTable _servicioIdTable(_$AppDatabase db) =>
+      db.productos.createAlias('turnos__servicio_id__productos__id');
+
+  $$ProductosTableProcessedTableManager? get servicioId {
+    final $_column = $_itemColumn<int>('servicio_id');
+    if ($_column == null) return null;
+    final manager = $$ProductosTableTableManager(
+      $_db,
+      $_db.productos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_servicioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsuariosTable _profesionalIdTable(_$AppDatabase db) =>
+      db.usuarios.createAlias('turnos__profesional_id__usuarios__id');
+
+  $$UsuariosTableProcessedTableManager? get profesionalId {
+    final $_column = $_itemColumn<int>('profesional_id');
+    if ($_column == null) return null;
+    final manager = $$UsuariosTableTableManager(
+      $_db,
+      $_db.usuarios,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profesionalIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VentasTable _ventaIdTable(_$AppDatabase db) =>
+      db.ventas.createAlias('turnos__venta_id__ventas__id');
+
+  $$VentasTableProcessedTableManager? get ventaId {
+    final $_column = $_itemColumn<int>('venta_id');
+    if ($_column == null) return null;
+    final manager = $$VentasTableTableManager(
+      $_db,
+      $_db.ventas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ventaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsuariosTable _usuarioIdTable(_$AppDatabase db) =>
+      db.usuarios.createAlias('turnos__usuario_id__usuarios__id');
+
+  $$UsuariosTableProcessedTableManager get usuarioId {
+    final $_column = $_itemColumn<int>('usuario_id')!;
+
+    final manager = $$UsuariosTableTableManager(
+      $_db,
+      $_db.usuarios,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_usuarioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TurnosTableFilterComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get inicio => $composableBuilder(
+    column: $table.inicio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origen => $composableBuilder(
+    column: $table.origen,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creadoEn => $composableBuilder(
+    column: $table.creadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ClientesTableFilterComposer get clienteId {
+    final $$ClientesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableFilterComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableFilterComposer get servicioId {
+    final $$ProductosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableFilterComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableFilterComposer get profesionalId {
+    final $$UsuariosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableFilterComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableFilterComposer get ventaId {
+    final $$VentasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableFilterComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableFilterComposer get usuarioId {
+    final $$UsuariosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableFilterComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableOrderingComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get inicio => $composableBuilder(
+    column: $table.inicio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origen => $composableBuilder(
+    column: $table.origen,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creadoEn => $composableBuilder(
+    column: $table.creadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ClientesTableOrderingComposer get clienteId {
+    final $$ClientesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableOrderingComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableOrderingComposer get servicioId {
+    final $$ProductosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableOrderingComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableOrderingComposer get profesionalId {
+    final $$UsuariosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableOrderingComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableOrderingComposer get ventaId {
+    final $$VentasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableOrderingComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableOrderingComposer get usuarioId {
+    final $$UsuariosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableOrderingComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get telefono =>
+      $composableBuilder(column: $table.telefono, builder: (column) => column);
+
+  GeneratedColumn<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get inicio =>
+      $composableBuilder(column: $table.inicio, builder: (column) => column);
+
+  GeneratedColumn<String> get estado =>
+      $composableBuilder(column: $table.estado, builder: (column) => column);
+
+  GeneratedColumn<String> get origen =>
+      $composableBuilder(column: $table.origen, builder: (column) => column);
+
+  GeneratedColumn<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nota =>
+      $composableBuilder(column: $table.nota, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get creadoEn =>
+      $composableBuilder(column: $table.creadoEn, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  $$ClientesTableAnnotationComposer get clienteId {
+    final $$ClientesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProductosTableAnnotationComposer get servicioId {
+    final $$ProductosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableAnnotationComposer get profesionalId {
+    final $$UsuariosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableAnnotationComposer get ventaId {
+    final $$VentasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableAnnotationComposer get usuarioId {
+    final $$UsuariosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TurnosTable,
+          Turno,
+          $$TurnosTableFilterComposer,
+          $$TurnosTableOrderingComposer,
+          $$TurnosTableAnnotationComposer,
+          $$TurnosTableCreateCompanionBuilder,
+          $$TurnosTableUpdateCompanionBuilder,
+          (Turno, $$TurnosTableReferences),
+          Turno,
+          PrefetchHooks Function({
+            bool clienteId,
+            bool servicioId,
+            bool profesionalId,
+            bool ventaId,
+            bool usuarioId,
+          })
+        > {
+  $$TurnosTableTableManager(_$AppDatabase db, $TurnosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TurnosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TurnosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TurnosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> clienteId = const Value.absent(),
+                Value<String> nombreCliente = const Value.absent(),
+                Value<String?> telefono = const Value.absent(),
+                Value<int?> servicioId = const Value.absent(),
+                Value<int> duracionMinutos = const Value.absent(),
+                Value<int?> profesionalId = const Value.absent(),
+                Value<DateTime> inicio = const Value.absent(),
+                Value<String> estado = const Value.absent(),
+                Value<String> origen = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
+                Value<int?> ventaId = const Value.absent(),
+                Value<String?> nota = const Value.absent(),
+                Value<int> usuarioId = const Value.absent(),
+                Value<DateTime> creadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => TurnosCompanion(
+                id: id,
+                clienteId: clienteId,
+                nombreCliente: nombreCliente,
+                telefono: telefono,
+                servicioId: servicioId,
+                duracionMinutos: duracionMinutos,
+                profesionalId: profesionalId,
+                inicio: inicio,
+                estado: estado,
+                origen: origen,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
+                ventaId: ventaId,
+                nota: nota,
+                usuarioId: usuarioId,
+                creadoEn: creadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> clienteId = const Value.absent(),
+                required String nombreCliente,
+                Value<String?> telefono = const Value.absent(),
+                Value<int?> servicioId = const Value.absent(),
+                required int duracionMinutos,
+                Value<int?> profesionalId = const Value.absent(),
+                required DateTime inicio,
+                Value<String> estado = const Value.absent(),
+                Value<String> origen = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
+                Value<int?> ventaId = const Value.absent(),
+                Value<String?> nota = const Value.absent(),
+                required int usuarioId,
+                Value<DateTime> creadoEn = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => TurnosCompanion.insert(
+                id: id,
+                clienteId: clienteId,
+                nombreCliente: nombreCliente,
+                telefono: telefono,
+                servicioId: servicioId,
+                duracionMinutos: duracionMinutos,
+                profesionalId: profesionalId,
+                inicio: inicio,
+                estado: estado,
+                origen: origen,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
+                ventaId: ventaId,
+                nota: nota,
+                usuarioId: usuarioId,
+                creadoEn: creadoEn,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TurnosTable, Turno>(table),
+                  $$TurnosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                clienteId = false,
+                servicioId = false,
+                profesionalId = false,
+                ventaId = false,
+                usuarioId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (clienteId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.clienteId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._clienteIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._clienteIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (servicioId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.servicioId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._servicioIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._servicioIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (profesionalId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profesionalId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._profesionalIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._profesionalIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (ventaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ventaId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._ventaIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._ventaIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (usuarioId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.usuarioId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._usuarioIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._usuarioIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TurnosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TurnosTable,
+      Turno,
+      $$TurnosTableFilterComposer,
+      $$TurnosTableOrderingComposer,
+      $$TurnosTableAnnotationComposer,
+      $$TurnosTableCreateCompanionBuilder,
+      $$TurnosTableUpdateCompanionBuilder,
+      (Turno, $$TurnosTableReferences),
+      Turno,
+      PrefetchHooks Function({
+        bool clienteId,
+        bool servicioId,
+        bool profesionalId,
+        bool ventaId,
+        bool usuarioId,
+      })
+    >;
 typedef $$HistorialDePreciosTableCreateCompanionBuilder =
     HistorialDePreciosCompanion Function({
       Value<int> id,
@@ -42544,6 +45002,8 @@ typedef $$ConfiguracionNegocioTablaTableCreateCompanionBuilder =
       Value<String> modulosDesactivados,
       Value<String> rubro,
       Value<int?> valorHoraCentavos,
+      Value<String?> horarioAtencion,
+      Value<int> intervaloTurnosMinutos,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -42561,6 +45021,8 @@ typedef $$ConfiguracionNegocioTablaTableUpdateCompanionBuilder =
       Value<String> modulosDesactivados,
       Value<String> rubro,
       Value<int?> valorHoraCentavos,
+      Value<String?> horarioAtencion,
+      Value<int> intervaloTurnosMinutos,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -42655,6 +45117,16 @@ class $$ConfiguracionNegocioTablaTableFilterComposer
 
   ColumnFilters<int> get valorHoraCentavos => $composableBuilder(
     column: $table.valorHoraCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intervaloTurnosMinutos => $composableBuilder(
+    column: $table.intervaloTurnosMinutos,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -42756,6 +45228,16 @@ class $$ConfiguracionNegocioTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intervaloTurnosMinutos => $composableBuilder(
+    column: $table.intervaloTurnosMinutos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -42850,6 +45332,16 @@ class $$ConfiguracionNegocioTablaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intervaloTurnosMinutos => $composableBuilder(
+    column: $table.intervaloTurnosMinutos,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
 
@@ -42937,6 +45429,8 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
                 Value<int?> valorHoraCentavos = const Value.absent(),
+                Value<String?> horarioAtencion = const Value.absent(),
+                Value<int> intervaloTurnosMinutos = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -42952,6 +45446,8 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
                 valorHoraCentavos: valorHoraCentavos,
+                horarioAtencion: horarioAtencion,
+                intervaloTurnosMinutos: intervaloTurnosMinutos,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -42969,6 +45465,8 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
                 Value<int?> valorHoraCentavos = const Value.absent(),
+                Value<String?> horarioAtencion = const Value.absent(),
+                Value<int> intervaloTurnosMinutos = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -42984,6 +45482,8 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
                 valorHoraCentavos: valorHoraCentavos,
+                horarioAtencion: horarioAtencion,
+                intervaloTurnosMinutos: intervaloTurnosMinutos,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -48838,6 +51338,8 @@ class $AppDatabaseManager {
       $$MovimientosDeStockTableTableManager(_db, _db.movimientosDeStock);
   $$PendientesTableTableManager get pendientes =>
       $$PendientesTableTableManager(_db, _db.pendientes);
+  $$TurnosTableTableManager get turnos =>
+      $$TurnosTableTableManager(_db, _db.turnos);
   $$HistorialDePreciosTableTableManager get historialDePrecios =>
       $$HistorialDePreciosTableTableManager(_db, _db.historialDePrecios);
   $$AccesosDirectosTableTableManager get accesosDirectos =>

@@ -61,6 +61,8 @@ const Map<String, bool> tablasSincronizables = {
   'arqueos_intermedios': false,
   'historial_de_precios': false,
   'pendientes': true,
+  // v66 (2026-10-10): la agenda de servicios. Después de clientes, productos, usuarios y ventas, a los que apunta.
+  'turnos': true,
   // v61 (El dueño, 2026-10-07: "independizar la apk de desktop"): la cuenta corriente y las facturas de compra, para que el
   // celular cargue una factura sin la PC y la deuda, el "ya se cargó" y lo aprendido lleguen a los dos equipos. Después de
   // `movimientos_de_caja` (un pago apunta a su movimiento de caja) y en orden de claves foráneas entre ellas.
@@ -82,6 +84,8 @@ const tablasSincronizablesV61 = {
   // Las de la v64: mismo trato con una PC anterior a la v64.
   'gastos_fijos',
   'gastos_fijos_montos',
+  // Y la de la v66.
+  'turnos',
 };
 
 bool _tablaValida(String tabla) {
@@ -138,6 +142,13 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
   'arqueos_intermedios': {'sesion_caja_id': 'sesiones_de_caja', 'usuario_id': 'usuarios'},
   'historial_de_precios': {'producto_id': 'productos', 'usuario_id': 'usuarios'},
   'pendientes': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
+  'turnos': {
+    'cliente_id': 'clientes',
+    'servicio_id': 'productos',
+    'profesional_id': 'usuarios',
+    'venta_id': 'ventas',
+    'usuario_id': 'usuarios',
+  },
   'movimientos_deuda': {
     'proveedor_id': 'proveedores',
     'usuario_id': 'usuarios',

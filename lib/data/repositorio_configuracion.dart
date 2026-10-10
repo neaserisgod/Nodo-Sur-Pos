@@ -34,6 +34,7 @@ Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
         encabezadoTicket: '',
         modulosDesactivados: '',
         rubro: '',
+        intervaloTurnosMinutos: 15,
       );
 }
 

@@ -72,6 +72,11 @@ class ConfiguracionNegocioTabla extends Table {
   /// valor por negocio). Null: sin cargar.
   IntColumn get valorHoraCentavos => integer().nullable()();
 
+  /// Agenda (v66, `REGLAS-NEGOCIO.md` §21): el horario de atención (uno solo, que usan la agenda y el bot) como JSON de
+  /// `HorarioAtencion` (null: el de por defecto) y cada cuántos minutos se ofrecen turnos.
+  TextColumn get horarioAtencion => text().nullable()();
+  IntColumn get intervaloTurnosMinutos => integer().withDefault(const Constant(15))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

@@ -40,6 +40,7 @@ import 'tables/promos.dart';
 import 'tables/ventas_abiertas.dart';
 import 'tables/facturas_compra.dart';
 import 'tables/vinculos_factura.dart';
+import 'tables/turnos.dart';
 
 part 'database.g.dart';
 
@@ -121,6 +122,7 @@ const seccionesMenuIniciales = [
     Pagos,
     MovimientosDeStock,
     Pendientes,
+    Turnos,
     HistorialDePrecios,
     AccesosDirectos,
     ConfiguracionTabla,
@@ -156,7 +158,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 65;
+  int get schemaVersion => 66;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1189,6 +1191,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 65) {
         await _sumarServiciosEInsumos(this, m);
       }
+      // v65 → v66 (2026-10-10): la agenda de servicios (`REGLAS-NEGOCIO.md` §21). Tabla `turnos` (viaja por la sync) y el
+      // horario de atención y el intervalo de los turnos en la configuración. Un almacén no
+      // cambia: la tabla nace vacía y las columnas con sus valores por defecto.
+      if (from < 66) {
+        await _sumarAgenda(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1341,6 +1349,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'medios_de_pago',
   ...tablasDeSyncV61,
   ...tablasDeSyncV64,
+  ...tablasDeSyncV66,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1611,4 +1620,22 @@ Future<void> _sumarComponentesDePromoALaSync(AppDatabase db, Migrator m) async {
       [jsonEncode(lista)],
     );
   }
+}
+
+const tablasDeSyncV66 = ['turnos'];
+
+/// v65 → v66: la tabla de turnos y las columnas de la agenda en la configuración. Con chequeo, así una base a medio migrar
+/// no se rompe.
+Future<void> _sumarAgenda(AppDatabase db, Migrator m) async {
+  final tablas = (await db.customSelect("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'turnos'").get());
+  if (tablas.isEmpty) await m.createTable(db.turnos);
+  final columnas =
+      (await db.customSelect("SELECT name FROM pragma_table_info('configuracion_negocio_tabla')").get()).map((c) => c.data['name'] as String).toSet();
+  for (final (nombre, columna) in [
+    ('horario_atencion', db.configuracionNegocioTabla.horarioAtencion),
+    ('intervalo_turnos_minutos', db.configuracionNegocioTabla.intervaloTurnosMinutos),
+  ]) {
+    if (!columnas.contains(nombre)) await m.addColumn(db.configuracionNegocioTabla, columna);
+  }
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV66);
 }
