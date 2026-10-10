@@ -33,6 +33,7 @@ import 'tables/historial_precios.dart';
 import 'tables/pendientes.dart';
 import 'tables/secciones_menu.dart';
 import 'tables/stock.dart';
+import 'tables/turnos.dart';
 import 'tables/usuarios.dart';
 import 'tables/ventas.dart';
 import 'tables/deuda_proveedores.dart';
@@ -137,6 +138,7 @@ const seccionesMenuIniciales = [
     CuitsProveedor,
     FacturasCompra,
     ProductosFacturaCompra,
+    Turnos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -156,7 +158,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 65;
+  int get schemaVersion => 66;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1189,6 +1191,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 65) {
         await _sumarServiciosEInsumos(this, m);
       }
+      // v65 → v66 (2026-10-10): la Agenda (`docs/PLAN-SERVICIOS.md`, etapa 4; `REGLAS-NEGOCIO.md` §21). Tabla `turnos`
+      // (sincronizada), la configuración de la agenda y la seña, y "pide seña" en cada servicio. Un almacén no cambia.
+      if (from < 66) {
+        await _sumarAgenda(this, m);
+      }
       if (from < 37 && !Platform.isAndroid) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1341,6 +1348,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   'medios_de_pago',
   ...tablasDeSyncV61,
   ...tablasDeSyncV64,
+  ...tablasDeSyncV66,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1550,6 +1558,32 @@ Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
 }
 
 const tablasDeSyncV64 = ['gastos_fijos', 'gastos_fijos_montos'];
+
+const tablasDeSyncV66 = ['turnos'];
+
+/// v65 → v66: la Agenda. La tabla nace vacía (con su índice único de `global_id`); las columnas nuevas nacen con su valor de
+/// arranque. Con chequeo de columna, como v59→v60.
+Future<void> _sumarAgenda(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+
+  if ((await columnasDe('turnos')).isEmpty) await m.createTable(db.turnos);
+  final deConfig = await columnasDe('configuracion_negocio_tabla');
+  for (final (nombre, columna) in [
+    ('horario_atencion', db.configuracionNegocioTabla.horarioAtencion),
+    ('paso_turnos_minutos', db.configuracionNegocioTabla.pasoTurnosMinutos),
+    ('sena_modo', db.configuracionNegocioTabla.senaModo),
+    ('sena_porcentaje', db.configuracionNegocioTabla.senaPorcentaje),
+    ('sena_monto_fijo_centavos', db.configuracionNegocioTabla.senaMontoFijoCentavos),
+    ('sena_devolver_al_cancelar', db.configuracionNegocioTabla.senaDevolverAlCancelar),
+    ('alias_sena', db.configuracionNegocioTabla.aliasSena),
+    ('titular_sena', db.configuracionNegocioTabla.titularSena),
+  ]) {
+    if (!deConfig.contains(nombre)) await m.addColumn(db.configuracionNegocioTabla, columna);
+  }
+  if (!(await columnasDe('productos')).contains('pide_sena')) await m.addColumn(db.productos, db.productos.pideSena);
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV66);
+}
 
 /// v63 → v64: identidad de sincronización para los gastos fijos y sus montos (El dueño, 2026-10-09: independizar el celular). Lo
 /// que ya había lo creó este equipo; sale con `actualizado_en` de ahora para que suba. Dos equipos con el mismo fijo (la plantilla

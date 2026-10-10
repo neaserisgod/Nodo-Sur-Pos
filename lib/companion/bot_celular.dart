@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../domain/bot_whatsapp.dart';
 import '../servicios/acceso_bot.dart';
+import '../servicios/push.dart';
 import '../servicios/cuenta_nube.dart' show AlmacenCuenta, AlmacenCuentaEnArchivo, ClienteNube;
 
 final _clienteNubeBot = ClienteNube(http: http.Client());
@@ -34,5 +35,20 @@ Future<void> refrescarEstadoBot({AccesoBot? acceso, bool forzar = false}) async 
     estadoBotCelular.value = await (acceso ?? accesoBotDelCelular).estado();
   } catch (_) {
     // Sin red o sin plan: queda lo que había.
+  }
+}
+
+RegistroPush? _push;
+
+/// Registra el token de notificaciones de este celular en el sitio (una vez por sesión, `push.dart`), con la cuenta vinculada:
+/// también en "PC y celular", donde la sync la sube la PC. Nunca tira.
+Future<void> registrarPushDelCelular() async {
+  try {
+    final soporte = await getApplicationSupportDirectory();
+    final cuenta = await AlmacenCuentaEnArchivo(soporte.path).leer();
+    if (cuenta == null) return;
+    await (_push ??= RegistroPush(cliente: _clienteNubeBot)).registrarSiHaceFalta(cuenta.token);
+  } catch (_) {
+    // Sin cuenta o sin red: la próxima vez que se abra el menú.
   }
 }

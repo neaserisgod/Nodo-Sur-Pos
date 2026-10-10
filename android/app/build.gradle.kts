@@ -56,3 +56,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Notificaciones con la app cerrada (`MainActivity.kt`). Sin el plugin de Google Services: Firebase se inicializa desde Dart.
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
+}

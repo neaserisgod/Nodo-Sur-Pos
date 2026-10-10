@@ -580,6 +580,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
   late final _precio = TextEditingController(text: _plataEnCampo(widget.existente?.producto.precioCentavos));
   late final List<_LineaEditable> _receta = [for (final u in widget.existente?.receta ?? const <UsoListado>[]) _LineaEditable(u.insumo, u.milesimas)];
   late bool _manoDeObra = widget.existente?.producto.sumaManoDeObra ?? false;
+  late bool _pideSena = widget.existente?.producto.pideSena ?? false;
   late int? _categoriaId = widget.existente?.producto.categoriaId;
   List<InsumoListado> _insumos = const [];
   List<Categoria> _categorias = const [];
@@ -698,10 +699,10 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
       final e = widget.existente;
       if (e == null) {
         await crearServicio(widget.db, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
-            sumaManoDeObra: _manoDeObra, categoriaId: _categoriaId, usuarioId: widget.usuarioId);
+            sumaManoDeObra: _manoDeObra, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
       } else {
         await editarServicio(widget.db, id: e.producto.id, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
-            sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, usuarioId: widget.usuarioId);
+            sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
       }
       if (mounted) Navigator.of(context).pop(e == null ? 'Servicio creado' : 'Servicio guardado');
     } on ArgumentError catch (e) {
@@ -749,6 +750,15 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
             for (final l in _receta) _filaReceta(context, l),
             BotonNs(texto: '+ Agregar un insumo', onTap: _agregarInsumo, alto: 52, tamanio: 15, fondo: ns.s, color: ns.i),
           ],
+          const SizedBox(height: 12),
+          // §21: el negocio elige si pide seña en algunos servicios (estos), en todos o en ninguno (Más › Configuración).
+          InterruptorNs(
+            key: const Key('servicio_pide_sena'),
+            etiqueta: 'Pide seña',
+            descripcion: 'Al dar el turno se pide la seña que configuraste (por defecto, el 30 %)',
+            encendido: _pideSena,
+            onCambio: (v) => setState(() => _pideSena = v),
+          ),
           if (_conManoDeObra) ...[
             const SizedBox(height: 12),
             InterruptorNs(

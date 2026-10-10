@@ -72,6 +72,29 @@ class ConfiguracionNegocioTabla extends Table {
   /// valor por negocio). Null: sin cargar.
   IntColumn get valorHoraCentavos => integer().nullable()();
 
+  // --- Agenda y seña de turnos (v66, `REGLAS-NEGOCIO.md` §21, `domain/turnos.dart`) ---
+
+  /// El horario de atención: uno solo, que usan la Agenda y el bot (§21). JSON con el formato del bot
+  /// (`{"lunes": {"desde": "09:00", "hasta": "18:00"}, "domingo": null}`). Null: el de arranque (`HorarioAtencion.porDefecto`).
+  TextColumn get horarioAtencion => text().nullable()();
+
+  /// Cada cuántos minutos arrancan los horarios que se ofrecen (§21: 15, cada negocio puede cambiarlo).
+  IntColumn get pasoTurnosMinutos => integer().withDefault(const Constant(15))();
+
+  /// `ModoSena.clave`: nunca, algunos servicios (los que piden seña) o todos. Por defecto, algunos.
+  TextColumn get senaModo => text().withDefault(const Constant('ALGUNOS'))();
+  IntColumn get senaPorcentaje => integer().withDefault(const Constant(30))();
+
+  /// Un monto fijo en vez del porcentaje. Null: va el porcentaje.
+  IntColumn get senaMontoFijoCentavos => integer().nullable()();
+
+  /// Si cancelan, la seña se devuelve (true) o se pierde (false, el arranque).
+  BoolColumn get senaDevolverAlCancelar => boolean().withDefault(const Constant(false))();
+
+  /// A dónde se transfiere la seña (lo dice el bot): alias de Mercado Pago o CBU, y a nombre de quién.
+  TextColumn get aliasSena => text().withDefault(const Constant(''))();
+  TextColumn get titularSena => text().withDefault(const Constant(''))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

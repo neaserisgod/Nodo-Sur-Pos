@@ -16,6 +16,7 @@ import 'numero_venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
+import 'repositorio_turnos.dart' show senaPendienteDeTurno, marcarTurnoAtendido;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
 import 'repositorio_servicios.dart' show consumirInsumosDeServicio, costoInsumosDeServicio;
 
@@ -291,6 +292,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // El encargue por apartado que esta venta entrega (`repositorio_encargues.dart`): se libera en la MISMA transacción,
   // porque la venta descuenta el stock y lo apartado ya estaba descontado.
   int? encargueId,
+  // El turno de la Agenda que esta venta cobra (`repositorio_turnos.dart`): su seña se descuenta igual que la de un encargue y
+  // el turno queda atendido en la MISMA transacción.
+  int? turnoId,
   // Cargar un día histórico escribe ventas en una sesión que nace cerrada (`repositorio_carga_historica.dart`): es la única
   // excepción a "no se cobra contra una caja cerrada". Todo lo demás (PC, celular, posnet) tiene que dejarla en `true`.
   bool exigirSesionAbierta = true,
@@ -313,8 +317,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     var senaAplicada = 0;
     var senaADevolver = 0;
     var senaEsEfectivo = true;
-    if (encargueId != null) {
-      final sena = await senaPendienteDe(db, encargueId);
+    if (encargueId != null && turnoId != null) throw ArgumentError('Una venta entrega un encargue o cobra un turno, no los dos');
+    if (encargueId != null || turnoId != null) {
+      final sena = encargueId != null ? await senaPendienteDe(db, encargueId) : await senaPendienteDeTurno(db, turnoId!);
       if (sena.centavos > 0) {
         final aplicacion = aplicarSena(totalCentavos: resultado.totalCentavos, senaCentavos: sena.centavos);
         senaAplicada = aplicacion.aplicadaCentavos;
@@ -360,6 +365,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
     // aplica en memoria) ya es el final, sin pasar por un valor intermedio.
     if (encargueId != null) {
       await liberarEncargueEntregado(db, encargueId, ventaId: ventaId, usuarioId: usuarioId);
+    }
+    if (turnoId != null) {
+      await marcarTurnoAtendido(db, turnoId, ventaId: ventaId);
     }
 
     final stockActualizado = <ActualizacionStock>[];
@@ -856,6 +864,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   TipoDescuento? tipoDescuento,
   int valorDescuento = 0,
   int? encargueId,
+  int? turnoId,
   int? ordenCobroPendienteId,
   int? montoEfectivoMixtoCentavos,
 }) {
@@ -883,13 +892,19 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
     if (medio == ComposicionPago.mixto) {
       validarEfectivoMixto(montoEfectivoMixtoCentavos, totalCentavos: resultado.totalCentavos);
     }
-    final pagos = await pagosSegunMedio(
-      db,
-      medio: medio,
-      totalCentavos: resultado.totalCentavos,
-      canal: canal,
-      montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
-    );
+    // Un turno con seña: se cobra solo lo que falta (la seña ya está en la caja); `registrarVenta` la suma como pago.
+    final senaTurno = turnoId == null
+        ? 0
+        : aplicarSena(totalCentavos: resultado.totalCentavos, senaCentavos: (await senaPendienteDeTurno(db, turnoId)).centavos).aplicadaCentavos;
+    final pagos = resultado.totalCentavos - senaTurno == 0
+        ? const <PagoARegistrar>[]
+        : await pagosSegunMedio(
+            db,
+            medio: medio,
+            totalCentavos: resultado.totalCentavos - senaTurno,
+            canal: canal,
+            montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
+          );
     final (ventaId, _) = await registrarVenta(
       db,
       venta: Venta(lineas: lineas),
@@ -898,6 +913,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       usuarioId: usuarioId,
       pagos: pagos,
       encargueId: encargueId,
+      turnoId: turnoId,
       ordenCobroPendienteId: ordenCobroPendienteId,
     );
     return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);

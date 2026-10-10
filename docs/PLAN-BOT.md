@@ -127,8 +127,12 @@ duplicar, ya resuelto, PC vieja), la sección de Encargues, la pantalla del bot 
 ahora también se carga en el celular (Configuración › Tu negocio, El dueño, 2026-10-09), así un negocio **solo celular**
 puede configurar el bot. Quedan abiertos: (b) en **"PC y celular"**, los pedidos se ven solo si el celular está vinculado a la cuenta (el
 token sale de ahí); (c) `numeroWhatsApp` no saca el 15 ("2944 15 123456" no se entiende; es la misma regla que el bot).
-5. **Notificaciones con la app cerrada** (Firebase): registrar el token, mandar el aviso del pedido, pasos para crear el
-   proyecto desde el celular.
+5. **Notificaciones con la app cerrada** (Firebase) — código hecho (2026-10-10), falta el proyecto: el celular registra su
+   token (`lib/servicios/push.dart`, `MainActivity.kt`) y el sitio manda pedidos y turnos nuevos (`functions/_lib/push.js`).
+   Para que ande: (1) proyecto en console.firebase.google.com con una app Android `com.laplazoleta.companion`; (2) de su
+   `google-services.json`, `current_key`, `mobilesdk_app_id`, `project_number` y `project_id` en `opcionesFirebase`
+   (`push.dart`) y publicar la app; (3) en Cuentas de servicio, "Generar nueva clave privada" y el JSON entero como secreto
+   `FCM_SERVICE_ACCOUNT` del Worker. Sin (2) o (3) no hace nada.
 6. Después: editar desde `/negocio` para "Solo el bot"; turnos de servicios (`PLAN-SERVICIOS.md`).
 
 **Confirmado por el dueño antes de la etapa 3 (2026-10-09):** el pedido es para **retirar en el local** (sin envío); un producto
@@ -146,9 +150,9 @@ Publicado ese día: app (Windows 1.0.0.2155 y APK 2156, estable), sitio (`NodoSu
 Lo que apareció al instalarlo en un celular de verdad, en orden (el detalle técnico de cada uno está en `TRAMPAS.md`):
 
 1. **Termux recién instalado no trae `curl`**: el comando de un paso falla con "curl: command not found". Hay que correr antes
-   `pkg install -y curl`. *Pendiente:* que el comando que copia la app sea `pkg install -y curl && curl -fsSL … | bash`.
+   `pkg install -y curl`. Hecho: el comando que copia la app es `pkg install -y curl && curl -fsSL … | bash`.
 2. **Pegar con el portapapeles del teclado mete basura** (`^[[200~ … ~`, sale "bash~"). Se pega manteniendo apretado en la
-   pantalla de Termux › Paste, o se escribe a mano. *Pendiente:* decirlo en el paso 2 de la pantalla del bot.
+   pantalla de Termux › Paste, o se escribe a mano. Hecho: lo dice el paso 2 de la pantalla del bot.
 3. **Ningún mensaje se descifraba ("Bad MAC")**, ni con sesión nueva. Baileys 6.7.24 había quedado "legacy": se pasó a
    7.0.0-rc14 (fijada), con las claves en caché, y el modo de vincular ya no corta a los 2 s (espera 1 minuto). Arreglado en
    `botdemo` PR #2. Para actualizar un bot ya instalado: `cd ~/bot-turnos && git pull && npm install --omit=optional` y

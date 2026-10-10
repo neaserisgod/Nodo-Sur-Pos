@@ -34,6 +34,12 @@ Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
         encabezadoTicket: '',
         modulosDesactivados: '',
         rubro: '',
+        pasoTurnosMinutos: 15,
+        senaModo: 'ALGUNOS',
+        senaPorcentaje: 30,
+        senaDevolverAlCancelar: false,
+        aliasSena: '',
+        titularSena: '',
       );
 }
 

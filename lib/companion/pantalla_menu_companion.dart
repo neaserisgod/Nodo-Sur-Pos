@@ -53,6 +53,7 @@ import 'modo_uso.dart';
 import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
+import 'pantallas/pantalla_agenda_ns.dart';
 import 'pantallas/hoja_actualizar_ns.dart';
 import 'app_ns.dart';
 import 'funciones_ns.dart';
@@ -71,7 +72,7 @@ import 'emparejamiento.dart';
 import 'navegacion.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
-import 'bot_celular.dart' show accesoBotDelCelular, refrescarEstadoBot;
+import 'bot_celular.dart' show accesoBotDelCelular, refrescarEstadoBot, registrarPushDelCelular;
 import 'pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
@@ -199,6 +200,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _publicar();
     // Si el negocio tiene el bot de WhatsApp, Más muestra su pantalla (no frena nada: sin red queda escondida).
     unawaited(refrescarEstadoBot());
+    unawaited(registrarPushDelCelular());
     leerUsuario().then((u) {
       if (mounted) {
         setState(() {
@@ -816,7 +818,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             child: IndexedStack(
             index: _pestania.index,
             children: [
-              const PantallaInicioNs(),
+              // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
+              ValueListenableBuilder<ModulosNegocio>(
+                valueListenable: modulosActuales,
+                builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
+              ),
               ValueListenableBuilder<ModulosNegocio>(
                 valueListenable: modulosActuales,
                 builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs(),

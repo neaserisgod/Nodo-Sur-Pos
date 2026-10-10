@@ -132,6 +132,23 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (10/10/2026)
 
+- **Agenda** (etapa 4 de `docs/PLAN-SERVICIOS.md`, reglas en `REGLAS-NEGOCIO.md` §21; migración v66, `schemaVersion` **66**): en
+  un negocio de servicios la pestaña Inicio pasa a ser la **Agenda** y la app abre ahí. Turnos del día por hora; "+ Turno" con
+  los horarios libres cada 15 minutos (u otra hora a mano: sobreturno o fuera de horario, avisa y deja); cada turno se cobra
+  con la seña descontada (efectivo o Mercado Pago a mano), se anota la seña, se mueve, "no vino" (el cliente lleva la cuenta),
+  se cancela (la seña se pierde o se devuelve según lo configurado), WhatsApp y Google Calendar. Más › Configuración › **Agenda
+  y seña** (horario de atención, cada cuánto arrancan los turnos, seña nunca / algunos / todos, % o monto fijo, alias) y
+  **"Pide seña"** en cada servicio. Una seña sin caja abierta entra al abrir la próxima. Probado con tests; **falta verlo en
+  un celular real**. Lo que no se hizo: profesionales con agenda propia en pantalla (la base ya los separa), cobrar un turno
+  con la terminal Point (se cobra a mano o desde Vender).
+- **Turnos del bot en la Agenda** (etapa 5, versión simple, `DECISIONES.md`): el bot reserva cada turno en el sitio (que no
+  deja dar dos veces el mismo horario), el equipo que sube la sync lo baja a la Agenda, le avisa al bot lo que hace la dueña
+  (mover, cancelar, cobrar, anotar la seña) y publica lo que ocupa la Agenda sin datos de clientes. Los servicios, el horario y
+  la seña del negocio le llegan solos al bot (sin configuración aparte). **Hace falta publicar los tres repos juntos.**
+- **Notificaciones con la app cerrada** (etapa 5 de `docs/PLAN-BOT.md`): el celular registra su token de Firebase y el sitio
+  le manda los pedidos y turnos nuevos del bot. **Falta el proyecto de Firebase**: los datos de `google-services.json` en
+  `lib/servicios/push.dart` (`opcionesFirebase`) y el secreto `FCM_SERVICE_ACCOUNT` en Cloudflare. Sin eso no hace nada.
+
 - **Cobrar servicios** (etapa 3 de `docs/PLAN-SERVICIOS.md`, reglas en `REGLAS-NEGOCIO.md` §20): en un negocio de
   servicios, Vender es una grilla de servicios; cobrar descuenta los insumos, la línea guarda lo que costaron ese día (sin
   mano de obra), anular o editar los devuelven, "+ Propina" después de cobrar y "Para reponer insumos" en Caja. Solo

@@ -14,6 +14,7 @@
 // `crearProducto(db, ...)` adentro de `PuertoLocal.crearProducto` se
 // llamaría a sí mismo en vez de al repositorio.
 
+import '../data/repositorio_turnos.dart' show ingresarSenasPendientes;
 import '../data/busqueda_productos.dart' as busqueda;
 import '../data/database.dart';
 import '../data/repositorio_arqueo_intermedio.dart' as repo_arqueo;
@@ -996,13 +997,16 @@ class PuertoLocal implements ServicioCompanion {
     required int usuarioId,
     required int fondoInicialCentavos,
     int? mpInicialCentavos,
-  }) {
-    return repo_ventas.abrirSesion(
+  }) async {
+    final id = await repo_ventas.abrirSesion(
       db,
       usuarioId: usuarioId,
       fondoInicialCentavos: fondoInicialCentavos,
       mpInicialCentavos: mpInicialCentavos,
     );
+    // Las señas de turnos que se anotaron sin caja abierta entran en esta (`REGLAS-NEGOCIO.md` §21).
+    await ingresarSenasPendientes(db, sesionCajaId: id, usuarioId: usuarioId);
+    return id;
   }
 
   repo_gastos.MedioGasto _medioGastoDesde(MedioGastoCompanion medio) => switch (medio) {

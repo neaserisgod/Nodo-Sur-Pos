@@ -41,6 +41,7 @@ import 'navegacion.dart';
 import 'pantalla_gastos_fijos.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
+import 'pantallas/pantalla_config_agenda_ns.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/hoja_vidrio.dart';
@@ -437,6 +438,16 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               subtitulo: _valorHora == null ? 'Sin cargar: los servicios no suman mano de obra' : '${plataNs(_valorHora!)} la hora',
               icono: IconoNs.reloj,
               onTap: _editarValorHora,
+            ),
+          ],
+          if (!_pcEmparejada && esNegocioDeServicios()) ...[
+            _seccion('Agenda'),
+            TarjetaFilaNs(
+              key: const Key('config-agenda'),
+              titulo: 'Agenda y seña',
+              subtitulo: 'Horario de atención, cada cuánto arrancan los turnos y la seña',
+              icono: IconoNs.calendario,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaConfigAgendaNs())),
             ),
           ],
           _seccion('Gastos fijos'),

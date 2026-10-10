@@ -4047,6 +4047,21 @@ class $ProductosTable extends Productos
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pideSenaMeta = const VerificationMeta(
+    'pideSena',
+  );
+  @override
+  late final GeneratedColumn<bool> pideSena = GeneratedColumn<bool>(
+    'pide_sena',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pide_sena" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _activoMeta = const VerificationMeta('activo');
   @override
   late final GeneratedColumn<bool> activo = GeneratedColumn<bool>(
@@ -4172,6 +4187,7 @@ class $ProductosTable extends Productos
     recetaServicio,
     sumaManoDeObra,
     gananciaBuscadaBp,
+    pideSena,
     activo,
     creadoEn,
     actualizadoEn,
@@ -4426,6 +4442,12 @@ class $ProductosTable extends Productos
         ),
       );
     }
+    if (data.containsKey('pide_sena')) {
+      context.handle(
+        _pideSenaMeta,
+        pideSena.isAcceptableOrUnknown(data['pide_sena']!, _pideSenaMeta),
+      );
+    }
     if (data.containsKey('activo')) {
       context.handle(
         _activoMeta,
@@ -4614,6 +4636,10 @@ class $ProductosTable extends Productos
         DriftSqlType.int,
         data['${effectivePrefix}ganancia_buscada_bp'],
       ),
+      pideSena: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pide_sena'],
+      )!,
       activo: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}activo'],
@@ -4756,6 +4782,9 @@ class Producto extends DataClass implements Insertable<Producto> {
   /// La ganancia buscada del servicio, sobre el precio (El dueño, 2026-10-09: de cada servicio). Null: la de arranque
   /// (`gananciaBuscadaPorDefectoBp`).
   final int? gananciaBuscadaBp;
+
+  /// Si el servicio pide seña cuando el negocio la pide en "algunos servicios" (v66, §21). Con "todos" o "nunca" no se mira.
+  final bool pideSena;
   final bool activo;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
@@ -4805,6 +4834,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     this.recetaServicio,
     required this.sumaManoDeObra,
     this.gananciaBuscadaBp,
+    required this.pideSena,
     required this.activo,
     required this.creadoEn,
     required this.actualizadoEn,
@@ -4882,6 +4912,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     if (!nullToAbsent || gananciaBuscadaBp != null) {
       map['ganancia_buscada_bp'] = Variable<int>(gananciaBuscadaBp);
     }
+    map['pide_sena'] = Variable<bool>(pideSena);
     map['activo'] = Variable<bool>(activo);
     map['creado_en'] = Variable<DateTime>(creadoEn);
     map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
@@ -4972,6 +5003,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       gananciaBuscadaBp: gananciaBuscadaBp == null && nullToAbsent
           ? const Value.absent()
           : Value(gananciaBuscadaBp),
+      pideSena: Value(pideSena),
       activo: Value(activo),
       creadoEn: Value(creadoEn),
       actualizadoEn: Value(actualizadoEn),
@@ -5038,6 +5070,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       recetaServicio: serializer.fromJson<String?>(json['recetaServicio']),
       sumaManoDeObra: serializer.fromJson<bool>(json['sumaManoDeObra']),
       gananciaBuscadaBp: serializer.fromJson<int?>(json['gananciaBuscadaBp']),
+      pideSena: serializer.fromJson<bool>(json['pideSena']),
       activo: serializer.fromJson<bool>(json['activo']),
       creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
       actualizadoEn: serializer.fromJson<DateTime>(json['actualizadoEn']),
@@ -5091,6 +5124,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       'recetaServicio': serializer.toJson<String?>(recetaServicio),
       'sumaManoDeObra': serializer.toJson<bool>(sumaManoDeObra),
       'gananciaBuscadaBp': serializer.toJson<int?>(gananciaBuscadaBp),
+      'pideSena': serializer.toJson<bool>(pideSena),
       'activo': serializer.toJson<bool>(activo),
       'creadoEn': serializer.toJson<DateTime>(creadoEn),
       'actualizadoEn': serializer.toJson<DateTime>(actualizadoEn),
@@ -5138,6 +5172,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     Value<String?> recetaServicio = const Value.absent(),
     bool? sumaManoDeObra,
     Value<int?> gananciaBuscadaBp = const Value.absent(),
+    bool? pideSena,
     bool? activo,
     DateTime? creadoEn,
     DateTime? actualizadoEn,
@@ -5200,6 +5235,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     gananciaBuscadaBp: gananciaBuscadaBp.present
         ? gananciaBuscadaBp.value
         : this.gananciaBuscadaBp,
+    pideSena: pideSena ?? this.pideSena,
     activo: activo ?? this.activo,
     creadoEn: creadoEn ?? this.creadoEn,
     actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -5292,6 +5328,7 @@ class Producto extends DataClass implements Insertable<Producto> {
       gananciaBuscadaBp: data.gananciaBuscadaBp.present
           ? data.gananciaBuscadaBp.value
           : this.gananciaBuscadaBp,
+      pideSena: data.pideSena.present ? data.pideSena.value : this.pideSena,
       activo: data.activo.present ? data.activo.value : this.activo,
       creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
       actualizadoEn: data.actualizadoEn.present
@@ -5345,6 +5382,7 @@ class Producto extends DataClass implements Insertable<Producto> {
           ..write('recetaServicio: $recetaServicio, ')
           ..write('sumaManoDeObra: $sumaManoDeObra, ')
           ..write('gananciaBuscadaBp: $gananciaBuscadaBp, ')
+          ..write('pideSena: $pideSena, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -5390,6 +5428,7 @@ class Producto extends DataClass implements Insertable<Producto> {
     recetaServicio,
     sumaManoDeObra,
     gananciaBuscadaBp,
+    pideSena,
     activo,
     creadoEn,
     actualizadoEn,
@@ -5432,6 +5471,7 @@ class Producto extends DataClass implements Insertable<Producto> {
           other.recetaServicio == this.recetaServicio &&
           other.sumaManoDeObra == this.sumaManoDeObra &&
           other.gananciaBuscadaBp == this.gananciaBuscadaBp &&
+          other.pideSena == this.pideSena &&
           other.activo == this.activo &&
           other.creadoEn == this.creadoEn &&
           other.actualizadoEn == this.actualizadoEn &&
@@ -5474,6 +5514,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
   final Value<String?> recetaServicio;
   final Value<bool> sumaManoDeObra;
   final Value<int?> gananciaBuscadaBp;
+  final Value<bool> pideSena;
   final Value<bool> activo;
   final Value<DateTime> creadoEn;
   final Value<DateTime> actualizadoEn;
@@ -5512,6 +5553,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.recetaServicio = const Value.absent(),
     this.sumaManoDeObra = const Value.absent(),
     this.gananciaBuscadaBp = const Value.absent(),
+    this.pideSena = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5551,6 +5593,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     this.recetaServicio = const Value.absent(),
     this.sumaManoDeObra = const Value.absent(),
     this.gananciaBuscadaBp = const Value.absent(),
+    this.pideSena = const Value.absent(),
     this.activo = const Value.absent(),
     this.creadoEn = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -5590,6 +5633,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Expression<String>? recetaServicio,
     Expression<bool>? sumaManoDeObra,
     Expression<int>? gananciaBuscadaBp,
+    Expression<bool>? pideSena,
     Expression<bool>? activo,
     Expression<DateTime>? creadoEn,
     Expression<DateTime>? actualizadoEn,
@@ -5633,6 +5677,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       if (recetaServicio != null) 'receta_servicio': recetaServicio,
       if (sumaManoDeObra != null) 'suma_mano_de_obra': sumaManoDeObra,
       if (gananciaBuscadaBp != null) 'ganancia_buscada_bp': gananciaBuscadaBp,
+      if (pideSena != null) 'pide_sena': pideSena,
       if (activo != null) 'activo': activo,
       if (creadoEn != null) 'creado_en': creadoEn,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -5677,6 +5722,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     Value<String?>? recetaServicio,
     Value<bool>? sumaManoDeObra,
     Value<int?>? gananciaBuscadaBp,
+    Value<bool>? pideSena,
     Value<bool>? activo,
     Value<DateTime>? creadoEn,
     Value<DateTime>? actualizadoEn,
@@ -5718,6 +5764,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
       recetaServicio: recetaServicio ?? this.recetaServicio,
       sumaManoDeObra: sumaManoDeObra ?? this.sumaManoDeObra,
       gananciaBuscadaBp: gananciaBuscadaBp ?? this.gananciaBuscadaBp,
+      pideSena: pideSena ?? this.pideSena,
       activo: activo ?? this.activo,
       creadoEn: creadoEn ?? this.creadoEn,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -5828,6 +5875,9 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
     if (gananciaBuscadaBp.present) {
       map['ganancia_buscada_bp'] = Variable<int>(gananciaBuscadaBp.value);
     }
+    if (pideSena.present) {
+      map['pide_sena'] = Variable<bool>(pideSena.value);
+    }
     if (activo.present) {
       map['activo'] = Variable<bool>(activo.value);
     }
@@ -5893,6 +5943,7 @@ class ProductosCompanion extends UpdateCompanion<Producto> {
           ..write('recetaServicio: $recetaServicio, ')
           ..write('sumaManoDeObra: $sumaManoDeObra, ')
           ..write('gananciaBuscadaBp: $gananciaBuscadaBp, ')
+          ..write('pideSena: $pideSena, ')
           ..write('activo: $activo, ')
           ..write('creadoEn: $creadoEn, ')
           ..write('actualizadoEn: $actualizadoEn, ')
@@ -18221,6 +18272,102 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _horarioAtencionMeta = const VerificationMeta(
+    'horarioAtencion',
+  );
+  @override
+  late final GeneratedColumn<String> horarioAtencion = GeneratedColumn<String>(
+    'horario_atencion',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pasoTurnosMinutosMeta = const VerificationMeta(
+    'pasoTurnosMinutos',
+  );
+  @override
+  late final GeneratedColumn<int> pasoTurnosMinutos = GeneratedColumn<int>(
+    'paso_turnos_minutos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(15),
+  );
+  static const VerificationMeta _senaModoMeta = const VerificationMeta(
+    'senaModo',
+  );
+  @override
+  late final GeneratedColumn<String> senaModo = GeneratedColumn<String>(
+    'sena_modo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ALGUNOS'),
+  );
+  static const VerificationMeta _senaPorcentajeMeta = const VerificationMeta(
+    'senaPorcentaje',
+  );
+  @override
+  late final GeneratedColumn<int> senaPorcentaje = GeneratedColumn<int>(
+    'sena_porcentaje',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(30),
+  );
+  static const VerificationMeta _senaMontoFijoCentavosMeta =
+      const VerificationMeta('senaMontoFijoCentavos');
+  @override
+  late final GeneratedColumn<int> senaMontoFijoCentavos = GeneratedColumn<int>(
+    'sena_monto_fijo_centavos',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _senaDevolverAlCancelarMeta =
+      const VerificationMeta('senaDevolverAlCancelar');
+  @override
+  late final GeneratedColumn<bool> senaDevolverAlCancelar =
+      GeneratedColumn<bool>(
+        'sena_devolver_al_cancelar',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("sena_devolver_al_cancelar" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _aliasSenaMeta = const VerificationMeta(
+    'aliasSena',
+  );
+  @override
+  late final GeneratedColumn<String> aliasSena = GeneratedColumn<String>(
+    'alias_sena',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _titularSenaMeta = const VerificationMeta(
+    'titularSena',
+  );
+  @override
+  late final GeneratedColumn<String> titularSena = GeneratedColumn<String>(
+    'titular_sena',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _globalIdMeta = const VerificationMeta(
     'globalId',
   );
@@ -18269,6 +18416,14 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
     modulosDesactivados,
     rubro,
     valorHoraCentavos,
+    horarioAtencion,
+    pasoTurnosMinutos,
+    senaModo,
+    senaPorcentaje,
+    senaMontoFijoCentavos,
+    senaDevolverAlCancelar,
+    aliasSena,
+    titularSena,
     globalId,
     origenDispositivo,
     actualizadoEn,
@@ -18375,6 +18530,72 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         ),
       );
     }
+    if (data.containsKey('horario_atencion')) {
+      context.handle(
+        _horarioAtencionMeta,
+        horarioAtencion.isAcceptableOrUnknown(
+          data['horario_atencion']!,
+          _horarioAtencionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('paso_turnos_minutos')) {
+      context.handle(
+        _pasoTurnosMinutosMeta,
+        pasoTurnosMinutos.isAcceptableOrUnknown(
+          data['paso_turnos_minutos']!,
+          _pasoTurnosMinutosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_modo')) {
+      context.handle(
+        _senaModoMeta,
+        senaModo.isAcceptableOrUnknown(data['sena_modo']!, _senaModoMeta),
+      );
+    }
+    if (data.containsKey('sena_porcentaje')) {
+      context.handle(
+        _senaPorcentajeMeta,
+        senaPorcentaje.isAcceptableOrUnknown(
+          data['sena_porcentaje']!,
+          _senaPorcentajeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_monto_fijo_centavos')) {
+      context.handle(
+        _senaMontoFijoCentavosMeta,
+        senaMontoFijoCentavos.isAcceptableOrUnknown(
+          data['sena_monto_fijo_centavos']!,
+          _senaMontoFijoCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_devolver_al_cancelar')) {
+      context.handle(
+        _senaDevolverAlCancelarMeta,
+        senaDevolverAlCancelar.isAcceptableOrUnknown(
+          data['sena_devolver_al_cancelar']!,
+          _senaDevolverAlCancelarMeta,
+        ),
+      );
+    }
+    if (data.containsKey('alias_sena')) {
+      context.handle(
+        _aliasSenaMeta,
+        aliasSena.isAcceptableOrUnknown(data['alias_sena']!, _aliasSenaMeta),
+      );
+    }
+    if (data.containsKey('titular_sena')) {
+      context.handle(
+        _titularSenaMeta,
+        titularSena.isAcceptableOrUnknown(
+          data['titular_sena']!,
+          _titularSenaMeta,
+        ),
+      );
+    }
     if (data.containsKey('global_id')) {
       context.handle(
         _globalIdMeta,
@@ -18452,6 +18673,38 @@ class $ConfiguracionNegocioTablaTable extends ConfiguracionNegocioTabla
         DriftSqlType.int,
         data['${effectivePrefix}valor_hora_centavos'],
       ),
+      horarioAtencion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}horario_atencion'],
+      ),
+      pasoTurnosMinutos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}paso_turnos_minutos'],
+      )!,
+      senaModo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sena_modo'],
+      )!,
+      senaPorcentaje: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_porcentaje'],
+      )!,
+      senaMontoFijoCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_monto_fijo_centavos'],
+      ),
+      senaDevolverAlCancelar: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_devolver_al_cancelar'],
+      )!,
+      aliasSena: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}alias_sena'],
+      )!,
+      titularSena: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}titular_sena'],
+      )!,
       globalId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
@@ -18521,6 +18774,27 @@ class ConfiguracionNegocio extends DataClass
   /// valor por negocio). Null: sin cargar.
   final int? valorHoraCentavos;
 
+  /// El horario de atención: uno solo, que usan la Agenda y el bot (§21). JSON con el formato del bot
+  /// (`{"lunes": {"desde": "09:00", "hasta": "18:00"}, "domingo": null}`). Null: el de arranque (`HorarioAtencion.porDefecto`).
+  final String? horarioAtencion;
+
+  /// Cada cuántos minutos arrancan los horarios que se ofrecen (§21: 15, cada negocio puede cambiarlo).
+  final int pasoTurnosMinutos;
+
+  /// `ModoSena.clave`: nunca, algunos servicios (los que piden seña) o todos. Por defecto, algunos.
+  final String senaModo;
+  final int senaPorcentaje;
+
+  /// Un monto fijo en vez del porcentaje. Null: va el porcentaje.
+  final int? senaMontoFijoCentavos;
+
+  /// Si cancelan, la seña se devuelve (true) o se pierde (false, el arranque).
+  final bool senaDevolverAlCancelar;
+
+  /// A dónde se transfiere la seña (lo dice el bot): alias de Mercado Pago o CBU, y a nombre de quién.
+  final String aliasSena;
+  final String titularSena;
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   final String? globalId;
@@ -18538,6 +18812,14 @@ class ConfiguracionNegocio extends DataClass
     required this.modulosDesactivados,
     required this.rubro,
     this.valorHoraCentavos,
+    this.horarioAtencion,
+    required this.pasoTurnosMinutos,
+    required this.senaModo,
+    required this.senaPorcentaje,
+    this.senaMontoFijoCentavos,
+    required this.senaDevolverAlCancelar,
+    required this.aliasSena,
+    required this.titularSena,
     this.globalId,
     this.origenDispositivo,
     this.actualizadoEn,
@@ -18564,6 +18846,18 @@ class ConfiguracionNegocio extends DataClass
     if (!nullToAbsent || valorHoraCentavos != null) {
       map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos);
     }
+    if (!nullToAbsent || horarioAtencion != null) {
+      map['horario_atencion'] = Variable<String>(horarioAtencion);
+    }
+    map['paso_turnos_minutos'] = Variable<int>(pasoTurnosMinutos);
+    map['sena_modo'] = Variable<String>(senaModo);
+    map['sena_porcentaje'] = Variable<int>(senaPorcentaje);
+    if (!nullToAbsent || senaMontoFijoCentavos != null) {
+      map['sena_monto_fijo_centavos'] = Variable<int>(senaMontoFijoCentavos);
+    }
+    map['sena_devolver_al_cancelar'] = Variable<bool>(senaDevolverAlCancelar);
+    map['alias_sena'] = Variable<String>(aliasSena);
+    map['titular_sena'] = Variable<String>(titularSena);
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
@@ -18593,6 +18887,18 @@ class ConfiguracionNegocio extends DataClass
       valorHoraCentavos: valorHoraCentavos == null && nullToAbsent
           ? const Value.absent()
           : Value(valorHoraCentavos),
+      horarioAtencion: horarioAtencion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(horarioAtencion),
+      pasoTurnosMinutos: Value(pasoTurnosMinutos),
+      senaModo: Value(senaModo),
+      senaPorcentaje: Value(senaPorcentaje),
+      senaMontoFijoCentavos: senaMontoFijoCentavos == null && nullToAbsent
+          ? const Value.absent()
+          : Value(senaMontoFijoCentavos),
+      senaDevolverAlCancelar: Value(senaDevolverAlCancelar),
+      aliasSena: Value(aliasSena),
+      titularSena: Value(titularSena),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
@@ -18632,6 +18938,18 @@ class ConfiguracionNegocio extends DataClass
       ),
       rubro: serializer.fromJson<String>(json['rubro']),
       valorHoraCentavos: serializer.fromJson<int?>(json['valorHoraCentavos']),
+      horarioAtencion: serializer.fromJson<String?>(json['horarioAtencion']),
+      pasoTurnosMinutos: serializer.fromJson<int>(json['pasoTurnosMinutos']),
+      senaModo: serializer.fromJson<String>(json['senaModo']),
+      senaPorcentaje: serializer.fromJson<int>(json['senaPorcentaje']),
+      senaMontoFijoCentavos: serializer.fromJson<int?>(
+        json['senaMontoFijoCentavos'],
+      ),
+      senaDevolverAlCancelar: serializer.fromJson<bool>(
+        json['senaDevolverAlCancelar'],
+      ),
+      aliasSena: serializer.fromJson<String>(json['aliasSena']),
+      titularSena: serializer.fromJson<String>(json['titularSena']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       origenDispositivo: serializer.fromJson<String?>(
         json['origenDispositivo'],
@@ -18658,6 +18976,14 @@ class ConfiguracionNegocio extends DataClass
       'modulosDesactivados': serializer.toJson<String>(modulosDesactivados),
       'rubro': serializer.toJson<String>(rubro),
       'valorHoraCentavos': serializer.toJson<int?>(valorHoraCentavos),
+      'horarioAtencion': serializer.toJson<String?>(horarioAtencion),
+      'pasoTurnosMinutos': serializer.toJson<int>(pasoTurnosMinutos),
+      'senaModo': serializer.toJson<String>(senaModo),
+      'senaPorcentaje': serializer.toJson<int>(senaPorcentaje),
+      'senaMontoFijoCentavos': serializer.toJson<int?>(senaMontoFijoCentavos),
+      'senaDevolverAlCancelar': serializer.toJson<bool>(senaDevolverAlCancelar),
+      'aliasSena': serializer.toJson<String>(aliasSena),
+      'titularSena': serializer.toJson<String>(titularSena),
       'globalId': serializer.toJson<String?>(globalId),
       'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
       'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
@@ -18676,6 +19002,14 @@ class ConfiguracionNegocio extends DataClass
     String? modulosDesactivados,
     String? rubro,
     Value<int?> valorHoraCentavos = const Value.absent(),
+    Value<String?> horarioAtencion = const Value.absent(),
+    int? pasoTurnosMinutos,
+    String? senaModo,
+    int? senaPorcentaje,
+    Value<int?> senaMontoFijoCentavos = const Value.absent(),
+    bool? senaDevolverAlCancelar,
+    String? aliasSena,
+    String? titularSena,
     Value<String?> globalId = const Value.absent(),
     Value<String?> origenDispositivo = const Value.absent(),
     Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -18697,6 +19031,19 @@ class ConfiguracionNegocio extends DataClass
     valorHoraCentavos: valorHoraCentavos.present
         ? valorHoraCentavos.value
         : this.valorHoraCentavos,
+    horarioAtencion: horarioAtencion.present
+        ? horarioAtencion.value
+        : this.horarioAtencion,
+    pasoTurnosMinutos: pasoTurnosMinutos ?? this.pasoTurnosMinutos,
+    senaModo: senaModo ?? this.senaModo,
+    senaPorcentaje: senaPorcentaje ?? this.senaPorcentaje,
+    senaMontoFijoCentavos: senaMontoFijoCentavos.present
+        ? senaMontoFijoCentavos.value
+        : this.senaMontoFijoCentavos,
+    senaDevolverAlCancelar:
+        senaDevolverAlCancelar ?? this.senaDevolverAlCancelar,
+    aliasSena: aliasSena ?? this.aliasSena,
+    titularSena: titularSena ?? this.titularSena,
     globalId: globalId.present ? globalId.value : this.globalId,
     origenDispositivo: origenDispositivo.present
         ? origenDispositivo.value
@@ -18738,6 +19085,26 @@ class ConfiguracionNegocio extends DataClass
       valorHoraCentavos: data.valorHoraCentavos.present
           ? data.valorHoraCentavos.value
           : this.valorHoraCentavos,
+      horarioAtencion: data.horarioAtencion.present
+          ? data.horarioAtencion.value
+          : this.horarioAtencion,
+      pasoTurnosMinutos: data.pasoTurnosMinutos.present
+          ? data.pasoTurnosMinutos.value
+          : this.pasoTurnosMinutos,
+      senaModo: data.senaModo.present ? data.senaModo.value : this.senaModo,
+      senaPorcentaje: data.senaPorcentaje.present
+          ? data.senaPorcentaje.value
+          : this.senaPorcentaje,
+      senaMontoFijoCentavos: data.senaMontoFijoCentavos.present
+          ? data.senaMontoFijoCentavos.value
+          : this.senaMontoFijoCentavos,
+      senaDevolverAlCancelar: data.senaDevolverAlCancelar.present
+          ? data.senaDevolverAlCancelar.value
+          : this.senaDevolverAlCancelar,
+      aliasSena: data.aliasSena.present ? data.aliasSena.value : this.aliasSena,
+      titularSena: data.titularSena.present
+          ? data.titularSena.value
+          : this.titularSena,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       origenDispositivo: data.origenDispositivo.present
           ? data.origenDispositivo.value
@@ -18764,6 +19131,14 @@ class ConfiguracionNegocio extends DataClass
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
           ..write('valorHoraCentavos: $valorHoraCentavos, ')
+          ..write('horarioAtencion: $horarioAtencion, ')
+          ..write('pasoTurnosMinutos: $pasoTurnosMinutos, ')
+          ..write('senaModo: $senaModo, ')
+          ..write('senaPorcentaje: $senaPorcentaje, ')
+          ..write('senaMontoFijoCentavos: $senaMontoFijoCentavos, ')
+          ..write('senaDevolverAlCancelar: $senaDevolverAlCancelar, ')
+          ..write('aliasSena: $aliasSena, ')
+          ..write('titularSena: $titularSena, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -18772,7 +19147,7 @@ class ConfiguracionNegocio extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     recargoPrimerAtadoCentavos,
     recargoAtadoAdicionalCentavos,
@@ -18784,10 +19159,18 @@ class ConfiguracionNegocio extends DataClass
     modulosDesactivados,
     rubro,
     valorHoraCentavos,
+    horarioAtencion,
+    pasoTurnosMinutos,
+    senaModo,
+    senaPorcentaje,
+    senaMontoFijoCentavos,
+    senaDevolverAlCancelar,
+    aliasSena,
+    titularSena,
     globalId,
     origenDispositivo,
     actualizadoEn,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -18804,6 +19187,14 @@ class ConfiguracionNegocio extends DataClass
           other.modulosDesactivados == this.modulosDesactivados &&
           other.rubro == this.rubro &&
           other.valorHoraCentavos == this.valorHoraCentavos &&
+          other.horarioAtencion == this.horarioAtencion &&
+          other.pasoTurnosMinutos == this.pasoTurnosMinutos &&
+          other.senaModo == this.senaModo &&
+          other.senaPorcentaje == this.senaPorcentaje &&
+          other.senaMontoFijoCentavos == this.senaMontoFijoCentavos &&
+          other.senaDevolverAlCancelar == this.senaDevolverAlCancelar &&
+          other.aliasSena == this.aliasSena &&
+          other.titularSena == this.titularSena &&
           other.globalId == this.globalId &&
           other.origenDispositivo == this.origenDispositivo &&
           other.actualizadoEn == this.actualizadoEn);
@@ -18822,6 +19213,14 @@ class ConfiguracionNegocioTablaCompanion
   final Value<String> modulosDesactivados;
   final Value<String> rubro;
   final Value<int?> valorHoraCentavos;
+  final Value<String?> horarioAtencion;
+  final Value<int> pasoTurnosMinutos;
+  final Value<String> senaModo;
+  final Value<int> senaPorcentaje;
+  final Value<int?> senaMontoFijoCentavos;
+  final Value<bool> senaDevolverAlCancelar;
+  final Value<String> aliasSena;
+  final Value<String> titularSena;
   final Value<String?> globalId;
   final Value<String?> origenDispositivo;
   final Value<DateTime?> actualizadoEn;
@@ -18837,6 +19236,14 @@ class ConfiguracionNegocioTablaCompanion
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
     this.valorHoraCentavos = const Value.absent(),
+    this.horarioAtencion = const Value.absent(),
+    this.pasoTurnosMinutos = const Value.absent(),
+    this.senaModo = const Value.absent(),
+    this.senaPorcentaje = const Value.absent(),
+    this.senaMontoFijoCentavos = const Value.absent(),
+    this.senaDevolverAlCancelar = const Value.absent(),
+    this.aliasSena = const Value.absent(),
+    this.titularSena = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18853,6 +19260,14 @@ class ConfiguracionNegocioTablaCompanion
     this.modulosDesactivados = const Value.absent(),
     this.rubro = const Value.absent(),
     this.valorHoraCentavos = const Value.absent(),
+    this.horarioAtencion = const Value.absent(),
+    this.pasoTurnosMinutos = const Value.absent(),
+    this.senaModo = const Value.absent(),
+    this.senaPorcentaje = const Value.absent(),
+    this.senaMontoFijoCentavos = const Value.absent(),
+    this.senaDevolverAlCancelar = const Value.absent(),
+    this.aliasSena = const Value.absent(),
+    this.titularSena = const Value.absent(),
     this.globalId = const Value.absent(),
     this.origenDispositivo = const Value.absent(),
     this.actualizadoEn = const Value.absent(),
@@ -18869,6 +19284,14 @@ class ConfiguracionNegocioTablaCompanion
     Expression<String>? modulosDesactivados,
     Expression<String>? rubro,
     Expression<int>? valorHoraCentavos,
+    Expression<String>? horarioAtencion,
+    Expression<int>? pasoTurnosMinutos,
+    Expression<String>? senaModo,
+    Expression<int>? senaPorcentaje,
+    Expression<int>? senaMontoFijoCentavos,
+    Expression<bool>? senaDevolverAlCancelar,
+    Expression<String>? aliasSena,
+    Expression<String>? titularSena,
     Expression<String>? globalId,
     Expression<String>? origenDispositivo,
     Expression<DateTime>? actualizadoEn,
@@ -18890,6 +19313,16 @@ class ConfiguracionNegocioTablaCompanion
         'modulos_desactivados': modulosDesactivados,
       if (rubro != null) 'rubro': rubro,
       if (valorHoraCentavos != null) 'valor_hora_centavos': valorHoraCentavos,
+      if (horarioAtencion != null) 'horario_atencion': horarioAtencion,
+      if (pasoTurnosMinutos != null) 'paso_turnos_minutos': pasoTurnosMinutos,
+      if (senaModo != null) 'sena_modo': senaModo,
+      if (senaPorcentaje != null) 'sena_porcentaje': senaPorcentaje,
+      if (senaMontoFijoCentavos != null)
+        'sena_monto_fijo_centavos': senaMontoFijoCentavos,
+      if (senaDevolverAlCancelar != null)
+        'sena_devolver_al_cancelar': senaDevolverAlCancelar,
+      if (aliasSena != null) 'alias_sena': aliasSena,
+      if (titularSena != null) 'titular_sena': titularSena,
       if (globalId != null) 'global_id': globalId,
       if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
       if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
@@ -18908,6 +19341,14 @@ class ConfiguracionNegocioTablaCompanion
     Value<String>? modulosDesactivados,
     Value<String>? rubro,
     Value<int?>? valorHoraCentavos,
+    Value<String?>? horarioAtencion,
+    Value<int>? pasoTurnosMinutos,
+    Value<String>? senaModo,
+    Value<int>? senaPorcentaje,
+    Value<int?>? senaMontoFijoCentavos,
+    Value<bool>? senaDevolverAlCancelar,
+    Value<String>? aliasSena,
+    Value<String>? titularSena,
     Value<String?>? globalId,
     Value<String?>? origenDispositivo,
     Value<DateTime?>? actualizadoEn,
@@ -18927,6 +19368,16 @@ class ConfiguracionNegocioTablaCompanion
       modulosDesactivados: modulosDesactivados ?? this.modulosDesactivados,
       rubro: rubro ?? this.rubro,
       valorHoraCentavos: valorHoraCentavos ?? this.valorHoraCentavos,
+      horarioAtencion: horarioAtencion ?? this.horarioAtencion,
+      pasoTurnosMinutos: pasoTurnosMinutos ?? this.pasoTurnosMinutos,
+      senaModo: senaModo ?? this.senaModo,
+      senaPorcentaje: senaPorcentaje ?? this.senaPorcentaje,
+      senaMontoFijoCentavos:
+          senaMontoFijoCentavos ?? this.senaMontoFijoCentavos,
+      senaDevolverAlCancelar:
+          senaDevolverAlCancelar ?? this.senaDevolverAlCancelar,
+      aliasSena: aliasSena ?? this.aliasSena,
+      titularSena: titularSena ?? this.titularSena,
       globalId: globalId ?? this.globalId,
       origenDispositivo: origenDispositivo ?? this.origenDispositivo,
       actualizadoEn: actualizadoEn ?? this.actualizadoEn,
@@ -18975,6 +19426,34 @@ class ConfiguracionNegocioTablaCompanion
     if (valorHoraCentavos.present) {
       map['valor_hora_centavos'] = Variable<int>(valorHoraCentavos.value);
     }
+    if (horarioAtencion.present) {
+      map['horario_atencion'] = Variable<String>(horarioAtencion.value);
+    }
+    if (pasoTurnosMinutos.present) {
+      map['paso_turnos_minutos'] = Variable<int>(pasoTurnosMinutos.value);
+    }
+    if (senaModo.present) {
+      map['sena_modo'] = Variable<String>(senaModo.value);
+    }
+    if (senaPorcentaje.present) {
+      map['sena_porcentaje'] = Variable<int>(senaPorcentaje.value);
+    }
+    if (senaMontoFijoCentavos.present) {
+      map['sena_monto_fijo_centavos'] = Variable<int>(
+        senaMontoFijoCentavos.value,
+      );
+    }
+    if (senaDevolverAlCancelar.present) {
+      map['sena_devolver_al_cancelar'] = Variable<bool>(
+        senaDevolverAlCancelar.value,
+      );
+    }
+    if (aliasSena.present) {
+      map['alias_sena'] = Variable<String>(aliasSena.value);
+    }
+    if (titularSena.present) {
+      map['titular_sena'] = Variable<String>(titularSena.value);
+    }
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
@@ -19003,6 +19482,14 @@ class ConfiguracionNegocioTablaCompanion
           ..write('modulosDesactivados: $modulosDesactivados, ')
           ..write('rubro: $rubro, ')
           ..write('valorHoraCentavos: $valorHoraCentavos, ')
+          ..write('horarioAtencion: $horarioAtencion, ')
+          ..write('pasoTurnosMinutos: $pasoTurnosMinutos, ')
+          ..write('senaModo: $senaModo, ')
+          ..write('senaPorcentaje: $senaPorcentaje, ')
+          ..write('senaMontoFijoCentavos: $senaMontoFijoCentavos, ')
+          ..write('senaDevolverAlCancelar: $senaDevolverAlCancelar, ')
+          ..write('aliasSena: $aliasSena, ')
+          ..write('titularSena: $titularSena, ')
           ..write('globalId: $globalId, ')
           ..write('origenDispositivo: $origenDispositivo, ')
           ..write('actualizadoEn: $actualizadoEn')
@@ -26325,6 +26812,1375 @@ class ProductosFacturaCompraCompanion
   }
 }
 
+class $TurnosTable extends Turnos with TableInfo<$TurnosTable, Turno> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TurnosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _servicioIdMeta = const VerificationMeta(
+    'servicioId',
+  );
+  @override
+  late final GeneratedColumn<int> servicioId = GeneratedColumn<int>(
+    'servicio_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES productos (id)',
+    ),
+  );
+  static const VerificationMeta _servicioNombreMeta = const VerificationMeta(
+    'servicioNombre',
+  );
+  @override
+  late final GeneratedColumn<String> servicioNombre = GeneratedColumn<String>(
+    'servicio_nombre',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _duracionMinutosMeta = const VerificationMeta(
+    'duracionMinutos',
+  );
+  @override
+  late final GeneratedColumn<int> duracionMinutos = GeneratedColumn<int>(
+    'duracion_minutos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _inicioMeta = const VerificationMeta('inicio');
+  @override
+  late final GeneratedColumn<DateTime> inicio = GeneratedColumn<DateTime>(
+    'inicio',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clienteIdMeta = const VerificationMeta(
+    'clienteId',
+  );
+  @override
+  late final GeneratedColumn<int> clienteId = GeneratedColumn<int>(
+    'cliente_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES clientes (id)',
+    ),
+  );
+  static const VerificationMeta _nombreClienteMeta = const VerificationMeta(
+    'nombreCliente',
+  );
+  @override
+  late final GeneratedColumn<String> nombreCliente = GeneratedColumn<String>(
+    'nombre_cliente',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _telefonoMeta = const VerificationMeta(
+    'telefono',
+  );
+  @override
+  late final GeneratedColumn<String> telefono = GeneratedColumn<String>(
+    'telefono',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _profesionalIdMeta = const VerificationMeta(
+    'profesionalId',
+  );
+  @override
+  late final GeneratedColumn<int> profesionalId = GeneratedColumn<int>(
+    'profesional_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES usuarios (id)',
+    ),
+  );
+  static const VerificationMeta _estadoMeta = const VerificationMeta('estado');
+  @override
+  late final GeneratedColumn<String> estado = GeneratedColumn<String>(
+    'estado',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('CONFIRMADO'),
+  );
+  static const VerificationMeta _senaPedidaCentavosMeta =
+      const VerificationMeta('senaPedidaCentavos');
+  @override
+  late final GeneratedColumn<int> senaPedidaCentavos = GeneratedColumn<int>(
+    'sena_pedida_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _senaCentavosMeta = const VerificationMeta(
+    'senaCentavos',
+  );
+  @override
+  late final GeneratedColumn<int> senaCentavos = GeneratedColumn<int>(
+    'sena_centavos',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _senaEsEfectivoMeta = const VerificationMeta(
+    'senaEsEfectivo',
+  );
+  @override
+  late final GeneratedColumn<bool> senaEsEfectivo = GeneratedColumn<bool>(
+    'sena_es_efectivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sena_es_efectivo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _senaEnCajaMeta = const VerificationMeta(
+    'senaEnCaja',
+  );
+  @override
+  late final GeneratedColumn<bool> senaEnCaja = GeneratedColumn<bool>(
+    'sena_en_caja',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sena_en_caja" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _senaVenceMeta = const VerificationMeta(
+    'senaVence',
+  );
+  @override
+  late final GeneratedColumn<DateTime> senaVence = GeneratedColumn<DateTime>(
+    'sena_vence',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenMeta = const VerificationMeta('origen');
+  @override
+  late final GeneratedColumn<String> origen = GeneratedColumn<String>(
+    'origen',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('APP'),
+  );
+  static const VerificationMeta _idRemotoMeta = const VerificationMeta(
+    'idRemoto',
+  );
+  @override
+  late final GeneratedColumn<String> idRemoto = GeneratedColumn<String>(
+    'id_remoto',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notaMeta = const VerificationMeta('nota');
+  @override
+  late final GeneratedColumn<String> nota = GeneratedColumn<String>(
+    'nota',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ventaIdMeta = const VerificationMeta(
+    'ventaId',
+  );
+  @override
+  late final GeneratedColumn<int> ventaId = GeneratedColumn<int>(
+    'venta_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ventas (id)',
+    ),
+  );
+  static const VerificationMeta _fechaCreacionMeta = const VerificationMeta(
+    'fechaCreacion',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fechaCreacion =
+      GeneratedColumn<DateTime>(
+        'fecha_creacion',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
+  static const VerificationMeta _usuarioIdMeta = const VerificationMeta(
+    'usuarioId',
+  );
+  @override
+  late final GeneratedColumn<int> usuarioId = GeneratedColumn<int>(
+    'usuario_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES usuarios (id)',
+    ),
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    servicioId,
+    servicioNombre,
+    duracionMinutos,
+    inicio,
+    clienteId,
+    nombreCliente,
+    telefono,
+    profesionalId,
+    estado,
+    senaPedidaCentavos,
+    senaCentavos,
+    senaEsEfectivo,
+    senaEnCaja,
+    senaVence,
+    origen,
+    idRemoto,
+    nota,
+    ventaId,
+    fechaCreacion,
+    usuarioId,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'turnos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Turno> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('servicio_id')) {
+      context.handle(
+        _servicioIdMeta,
+        servicioId.isAcceptableOrUnknown(data['servicio_id']!, _servicioIdMeta),
+      );
+    }
+    if (data.containsKey('servicio_nombre')) {
+      context.handle(
+        _servicioNombreMeta,
+        servicioNombre.isAcceptableOrUnknown(
+          data['servicio_nombre']!,
+          _servicioNombreMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_servicioNombreMeta);
+    }
+    if (data.containsKey('duracion_minutos')) {
+      context.handle(
+        _duracionMinutosMeta,
+        duracionMinutos.isAcceptableOrUnknown(
+          data['duracion_minutos']!,
+          _duracionMinutosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_duracionMinutosMeta);
+    }
+    if (data.containsKey('inicio')) {
+      context.handle(
+        _inicioMeta,
+        inicio.isAcceptableOrUnknown(data['inicio']!, _inicioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inicioMeta);
+    }
+    if (data.containsKey('cliente_id')) {
+      context.handle(
+        _clienteIdMeta,
+        clienteId.isAcceptableOrUnknown(data['cliente_id']!, _clienteIdMeta),
+      );
+    }
+    if (data.containsKey('nombre_cliente')) {
+      context.handle(
+        _nombreClienteMeta,
+        nombreCliente.isAcceptableOrUnknown(
+          data['nombre_cliente']!,
+          _nombreClienteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_nombreClienteMeta);
+    }
+    if (data.containsKey('telefono')) {
+      context.handle(
+        _telefonoMeta,
+        telefono.isAcceptableOrUnknown(data['telefono']!, _telefonoMeta),
+      );
+    }
+    if (data.containsKey('profesional_id')) {
+      context.handle(
+        _profesionalIdMeta,
+        profesionalId.isAcceptableOrUnknown(
+          data['profesional_id']!,
+          _profesionalIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('estado')) {
+      context.handle(
+        _estadoMeta,
+        estado.isAcceptableOrUnknown(data['estado']!, _estadoMeta),
+      );
+    }
+    if (data.containsKey('sena_pedida_centavos')) {
+      context.handle(
+        _senaPedidaCentavosMeta,
+        senaPedidaCentavos.isAcceptableOrUnknown(
+          data['sena_pedida_centavos']!,
+          _senaPedidaCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_centavos')) {
+      context.handle(
+        _senaCentavosMeta,
+        senaCentavos.isAcceptableOrUnknown(
+          data['sena_centavos']!,
+          _senaCentavosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_es_efectivo')) {
+      context.handle(
+        _senaEsEfectivoMeta,
+        senaEsEfectivo.isAcceptableOrUnknown(
+          data['sena_es_efectivo']!,
+          _senaEsEfectivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_en_caja')) {
+      context.handle(
+        _senaEnCajaMeta,
+        senaEnCaja.isAcceptableOrUnknown(
+          data['sena_en_caja']!,
+          _senaEnCajaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sena_vence')) {
+      context.handle(
+        _senaVenceMeta,
+        senaVence.isAcceptableOrUnknown(data['sena_vence']!, _senaVenceMeta),
+      );
+    }
+    if (data.containsKey('origen')) {
+      context.handle(
+        _origenMeta,
+        origen.isAcceptableOrUnknown(data['origen']!, _origenMeta),
+      );
+    }
+    if (data.containsKey('id_remoto')) {
+      context.handle(
+        _idRemotoMeta,
+        idRemoto.isAcceptableOrUnknown(data['id_remoto']!, _idRemotoMeta),
+      );
+    }
+    if (data.containsKey('nota')) {
+      context.handle(
+        _notaMeta,
+        nota.isAcceptableOrUnknown(data['nota']!, _notaMeta),
+      );
+    }
+    if (data.containsKey('venta_id')) {
+      context.handle(
+        _ventaIdMeta,
+        ventaId.isAcceptableOrUnknown(data['venta_id']!, _ventaIdMeta),
+      );
+    }
+    if (data.containsKey('fecha_creacion')) {
+      context.handle(
+        _fechaCreacionMeta,
+        fechaCreacion.isAcceptableOrUnknown(
+          data['fecha_creacion']!,
+          _fechaCreacionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('usuario_id')) {
+      context.handle(
+        _usuarioIdMeta,
+        usuarioId.isAcceptableOrUnknown(data['usuario_id']!, _usuarioIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_usuarioIdMeta);
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Turno map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Turno(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      servicioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}servicio_id'],
+      ),
+      servicioNombre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}servicio_nombre'],
+      )!,
+      duracionMinutos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duracion_minutos'],
+      )!,
+      inicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}inicio'],
+      )!,
+      clienteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cliente_id'],
+      ),
+      nombreCliente: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre_cliente'],
+      )!,
+      telefono: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}telefono'],
+      ),
+      profesionalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profesional_id'],
+      ),
+      estado: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}estado'],
+      )!,
+      senaPedidaCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_pedida_centavos'],
+      )!,
+      senaCentavos: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sena_centavos'],
+      )!,
+      senaEsEfectivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_es_efectivo'],
+      )!,
+      senaEnCaja: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sena_en_caja'],
+      )!,
+      senaVence: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sena_vence'],
+      ),
+      origen: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen'],
+      )!,
+      idRemoto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id_remoto'],
+      ),
+      nota: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nota'],
+      ),
+      ventaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}venta_id'],
+      ),
+      fechaCreacion: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha_creacion'],
+      )!,
+      usuarioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}usuario_id'],
+      )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
+    );
+  }
+
+  @override
+  $TurnosTable createAlias(String alias) {
+    return $TurnosTable(attachedDatabase, alias);
+  }
+}
+
+class Turno extends DataClass implements Insertable<Turno> {
+  final int id;
+
+  /// El servicio (`productos.es_servicio`). Null si se borró: el turno conserva [servicioNombre] y [duracionMinutos].
+  final int? servicioId;
+
+  /// Foto del servicio al dar el turno: si después cambia el nombre o la duración, este turno no se corre.
+  final String servicioNombre;
+  final int duracionMinutos;
+  final DateTime inicio;
+
+  /// La persona: alcanza con el nombre; el teléfono es opcional (el del bot llega solo). Al confirmarse queda guardada como
+  /// cliente ([clienteId]).
+  final int? clienteId;
+  final String nombreCliente;
+  final String? telefono;
+
+  /// Quién atiende. Null: el negocio de una sola persona, o "cualquiera".
+  final int? profesionalId;
+
+  /// `EstadoTurno.clave` (`domain/turnos.dart`).
+  final String estado;
+
+  /// La seña que pide el servicio (lo que se le pidió al cliente). 0 = sin seña.
+  final int senaPedidaCentavos;
+
+  /// La seña que ya pagó, por qué caja entró, y si ya entró a una caja (§21: una seña que llega sin caja abierta entra como
+  /// ingreso en la próxima caja que se abra en este equipo).
+  final int senaCentavos;
+  final bool senaEsEfectivo;
+  final bool senaEnCaja;
+
+  /// Hasta cuándo se espera la seña antes de liberar el horario (turnos del bot).
+  final DateTime? senaVence;
+
+  /// 'APP' (cargado a mano) o 'BOT' (lo dio el bot de WhatsApp).
+  final String origen;
+
+  /// El id del turno en el sitio (`/api/bot/turnos`), para no bajarlo dos veces y avisarle al bot de un cambio.
+  final String? idRemoto;
+  final String? nota;
+
+  /// La venta con que se cobró.
+  final int? ventaId;
+  final DateTime fechaCreacion;
+  final int usuarioId;
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
+  const Turno({
+    required this.id,
+    this.servicioId,
+    required this.servicioNombre,
+    required this.duracionMinutos,
+    required this.inicio,
+    this.clienteId,
+    required this.nombreCliente,
+    this.telefono,
+    this.profesionalId,
+    required this.estado,
+    required this.senaPedidaCentavos,
+    required this.senaCentavos,
+    required this.senaEsEfectivo,
+    required this.senaEnCaja,
+    this.senaVence,
+    required this.origen,
+    this.idRemoto,
+    this.nota,
+    this.ventaId,
+    required this.fechaCreacion,
+    required this.usuarioId,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || servicioId != null) {
+      map['servicio_id'] = Variable<int>(servicioId);
+    }
+    map['servicio_nombre'] = Variable<String>(servicioNombre);
+    map['duracion_minutos'] = Variable<int>(duracionMinutos);
+    map['inicio'] = Variable<DateTime>(inicio);
+    if (!nullToAbsent || clienteId != null) {
+      map['cliente_id'] = Variable<int>(clienteId);
+    }
+    map['nombre_cliente'] = Variable<String>(nombreCliente);
+    if (!nullToAbsent || telefono != null) {
+      map['telefono'] = Variable<String>(telefono);
+    }
+    if (!nullToAbsent || profesionalId != null) {
+      map['profesional_id'] = Variable<int>(profesionalId);
+    }
+    map['estado'] = Variable<String>(estado);
+    map['sena_pedida_centavos'] = Variable<int>(senaPedidaCentavos);
+    map['sena_centavos'] = Variable<int>(senaCentavos);
+    map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo);
+    map['sena_en_caja'] = Variable<bool>(senaEnCaja);
+    if (!nullToAbsent || senaVence != null) {
+      map['sena_vence'] = Variable<DateTime>(senaVence);
+    }
+    map['origen'] = Variable<String>(origen);
+    if (!nullToAbsent || idRemoto != null) {
+      map['id_remoto'] = Variable<String>(idRemoto);
+    }
+    if (!nullToAbsent || nota != null) {
+      map['nota'] = Variable<String>(nota);
+    }
+    if (!nullToAbsent || ventaId != null) {
+      map['venta_id'] = Variable<int>(ventaId);
+    }
+    map['fecha_creacion'] = Variable<DateTime>(fechaCreacion);
+    map['usuario_id'] = Variable<int>(usuarioId);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
+    return map;
+  }
+
+  TurnosCompanion toCompanion(bool nullToAbsent) {
+    return TurnosCompanion(
+      id: Value(id),
+      servicioId: servicioId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servicioId),
+      servicioNombre: Value(servicioNombre),
+      duracionMinutos: Value(duracionMinutos),
+      inicio: Value(inicio),
+      clienteId: clienteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clienteId),
+      nombreCliente: Value(nombreCliente),
+      telefono: telefono == null && nullToAbsent
+          ? const Value.absent()
+          : Value(telefono),
+      profesionalId: profesionalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profesionalId),
+      estado: Value(estado),
+      senaPedidaCentavos: Value(senaPedidaCentavos),
+      senaCentavos: Value(senaCentavos),
+      senaEsEfectivo: Value(senaEsEfectivo),
+      senaEnCaja: Value(senaEnCaja),
+      senaVence: senaVence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(senaVence),
+      origen: Value(origen),
+      idRemoto: idRemoto == null && nullToAbsent
+          ? const Value.absent()
+          : Value(idRemoto),
+      nota: nota == null && nullToAbsent ? const Value.absent() : Value(nota),
+      ventaId: ventaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ventaId),
+      fechaCreacion: Value(fechaCreacion),
+      usuarioId: Value(usuarioId),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
+    );
+  }
+
+  factory Turno.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Turno(
+      id: serializer.fromJson<int>(json['id']),
+      servicioId: serializer.fromJson<int?>(json['servicioId']),
+      servicioNombre: serializer.fromJson<String>(json['servicioNombre']),
+      duracionMinutos: serializer.fromJson<int>(json['duracionMinutos']),
+      inicio: serializer.fromJson<DateTime>(json['inicio']),
+      clienteId: serializer.fromJson<int?>(json['clienteId']),
+      nombreCliente: serializer.fromJson<String>(json['nombreCliente']),
+      telefono: serializer.fromJson<String?>(json['telefono']),
+      profesionalId: serializer.fromJson<int?>(json['profesionalId']),
+      estado: serializer.fromJson<String>(json['estado']),
+      senaPedidaCentavos: serializer.fromJson<int>(json['senaPedidaCentavos']),
+      senaCentavos: serializer.fromJson<int>(json['senaCentavos']),
+      senaEsEfectivo: serializer.fromJson<bool>(json['senaEsEfectivo']),
+      senaEnCaja: serializer.fromJson<bool>(json['senaEnCaja']),
+      senaVence: serializer.fromJson<DateTime?>(json['senaVence']),
+      origen: serializer.fromJson<String>(json['origen']),
+      idRemoto: serializer.fromJson<String?>(json['idRemoto']),
+      nota: serializer.fromJson<String?>(json['nota']),
+      ventaId: serializer.fromJson<int?>(json['ventaId']),
+      fechaCreacion: serializer.fromJson<DateTime>(json['fechaCreacion']),
+      usuarioId: serializer.fromJson<int>(json['usuarioId']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'servicioId': serializer.toJson<int?>(servicioId),
+      'servicioNombre': serializer.toJson<String>(servicioNombre),
+      'duracionMinutos': serializer.toJson<int>(duracionMinutos),
+      'inicio': serializer.toJson<DateTime>(inicio),
+      'clienteId': serializer.toJson<int?>(clienteId),
+      'nombreCliente': serializer.toJson<String>(nombreCliente),
+      'telefono': serializer.toJson<String?>(telefono),
+      'profesionalId': serializer.toJson<int?>(profesionalId),
+      'estado': serializer.toJson<String>(estado),
+      'senaPedidaCentavos': serializer.toJson<int>(senaPedidaCentavos),
+      'senaCentavos': serializer.toJson<int>(senaCentavos),
+      'senaEsEfectivo': serializer.toJson<bool>(senaEsEfectivo),
+      'senaEnCaja': serializer.toJson<bool>(senaEnCaja),
+      'senaVence': serializer.toJson<DateTime?>(senaVence),
+      'origen': serializer.toJson<String>(origen),
+      'idRemoto': serializer.toJson<String?>(idRemoto),
+      'nota': serializer.toJson<String?>(nota),
+      'ventaId': serializer.toJson<int?>(ventaId),
+      'fechaCreacion': serializer.toJson<DateTime>(fechaCreacion),
+      'usuarioId': serializer.toJson<int>(usuarioId),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
+    };
+  }
+
+  Turno copyWith({
+    int? id,
+    Value<int?> servicioId = const Value.absent(),
+    String? servicioNombre,
+    int? duracionMinutos,
+    DateTime? inicio,
+    Value<int?> clienteId = const Value.absent(),
+    String? nombreCliente,
+    Value<String?> telefono = const Value.absent(),
+    Value<int?> profesionalId = const Value.absent(),
+    String? estado,
+    int? senaPedidaCentavos,
+    int? senaCentavos,
+    bool? senaEsEfectivo,
+    bool? senaEnCaja,
+    Value<DateTime?> senaVence = const Value.absent(),
+    String? origen,
+    Value<String?> idRemoto = const Value.absent(),
+    Value<String?> nota = const Value.absent(),
+    Value<int?> ventaId = const Value.absent(),
+    DateTime? fechaCreacion,
+    int? usuarioId,
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
+  }) => Turno(
+    id: id ?? this.id,
+    servicioId: servicioId.present ? servicioId.value : this.servicioId,
+    servicioNombre: servicioNombre ?? this.servicioNombre,
+    duracionMinutos: duracionMinutos ?? this.duracionMinutos,
+    inicio: inicio ?? this.inicio,
+    clienteId: clienteId.present ? clienteId.value : this.clienteId,
+    nombreCliente: nombreCliente ?? this.nombreCliente,
+    telefono: telefono.present ? telefono.value : this.telefono,
+    profesionalId: profesionalId.present
+        ? profesionalId.value
+        : this.profesionalId,
+    estado: estado ?? this.estado,
+    senaPedidaCentavos: senaPedidaCentavos ?? this.senaPedidaCentavos,
+    senaCentavos: senaCentavos ?? this.senaCentavos,
+    senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
+    senaEnCaja: senaEnCaja ?? this.senaEnCaja,
+    senaVence: senaVence.present ? senaVence.value : this.senaVence,
+    origen: origen ?? this.origen,
+    idRemoto: idRemoto.present ? idRemoto.value : this.idRemoto,
+    nota: nota.present ? nota.value : this.nota,
+    ventaId: ventaId.present ? ventaId.value : this.ventaId,
+    fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+    usuarioId: usuarioId ?? this.usuarioId,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
+  );
+  Turno copyWithCompanion(TurnosCompanion data) {
+    return Turno(
+      id: data.id.present ? data.id.value : this.id,
+      servicioId: data.servicioId.present
+          ? data.servicioId.value
+          : this.servicioId,
+      servicioNombre: data.servicioNombre.present
+          ? data.servicioNombre.value
+          : this.servicioNombre,
+      duracionMinutos: data.duracionMinutos.present
+          ? data.duracionMinutos.value
+          : this.duracionMinutos,
+      inicio: data.inicio.present ? data.inicio.value : this.inicio,
+      clienteId: data.clienteId.present ? data.clienteId.value : this.clienteId,
+      nombreCliente: data.nombreCliente.present
+          ? data.nombreCliente.value
+          : this.nombreCliente,
+      telefono: data.telefono.present ? data.telefono.value : this.telefono,
+      profesionalId: data.profesionalId.present
+          ? data.profesionalId.value
+          : this.profesionalId,
+      estado: data.estado.present ? data.estado.value : this.estado,
+      senaPedidaCentavos: data.senaPedidaCentavos.present
+          ? data.senaPedidaCentavos.value
+          : this.senaPedidaCentavos,
+      senaCentavos: data.senaCentavos.present
+          ? data.senaCentavos.value
+          : this.senaCentavos,
+      senaEsEfectivo: data.senaEsEfectivo.present
+          ? data.senaEsEfectivo.value
+          : this.senaEsEfectivo,
+      senaEnCaja: data.senaEnCaja.present
+          ? data.senaEnCaja.value
+          : this.senaEnCaja,
+      senaVence: data.senaVence.present ? data.senaVence.value : this.senaVence,
+      origen: data.origen.present ? data.origen.value : this.origen,
+      idRemoto: data.idRemoto.present ? data.idRemoto.value : this.idRemoto,
+      nota: data.nota.present ? data.nota.value : this.nota,
+      ventaId: data.ventaId.present ? data.ventaId.value : this.ventaId,
+      fechaCreacion: data.fechaCreacion.present
+          ? data.fechaCreacion.value
+          : this.fechaCreacion,
+      usuarioId: data.usuarioId.present ? data.usuarioId.value : this.usuarioId,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Turno(')
+          ..write('id: $id, ')
+          ..write('servicioId: $servicioId, ')
+          ..write('servicioNombre: $servicioNombre, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('inicio: $inicio, ')
+          ..write('clienteId: $clienteId, ')
+          ..write('nombreCliente: $nombreCliente, ')
+          ..write('telefono: $telefono, ')
+          ..write('profesionalId: $profesionalId, ')
+          ..write('estado: $estado, ')
+          ..write('senaPedidaCentavos: $senaPedidaCentavos, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
+          ..write('senaEnCaja: $senaEnCaja, ')
+          ..write('senaVence: $senaVence, ')
+          ..write('origen: $origen, ')
+          ..write('idRemoto: $idRemoto, ')
+          ..write('nota: $nota, ')
+          ..write('ventaId: $ventaId, ')
+          ..write('fechaCreacion: $fechaCreacion, ')
+          ..write('usuarioId: $usuarioId, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    servicioId,
+    servicioNombre,
+    duracionMinutos,
+    inicio,
+    clienteId,
+    nombreCliente,
+    telefono,
+    profesionalId,
+    estado,
+    senaPedidaCentavos,
+    senaCentavos,
+    senaEsEfectivo,
+    senaEnCaja,
+    senaVence,
+    origen,
+    idRemoto,
+    nota,
+    ventaId,
+    fechaCreacion,
+    usuarioId,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Turno &&
+          other.id == this.id &&
+          other.servicioId == this.servicioId &&
+          other.servicioNombre == this.servicioNombre &&
+          other.duracionMinutos == this.duracionMinutos &&
+          other.inicio == this.inicio &&
+          other.clienteId == this.clienteId &&
+          other.nombreCliente == this.nombreCliente &&
+          other.telefono == this.telefono &&
+          other.profesionalId == this.profesionalId &&
+          other.estado == this.estado &&
+          other.senaPedidaCentavos == this.senaPedidaCentavos &&
+          other.senaCentavos == this.senaCentavos &&
+          other.senaEsEfectivo == this.senaEsEfectivo &&
+          other.senaEnCaja == this.senaEnCaja &&
+          other.senaVence == this.senaVence &&
+          other.origen == this.origen &&
+          other.idRemoto == this.idRemoto &&
+          other.nota == this.nota &&
+          other.ventaId == this.ventaId &&
+          other.fechaCreacion == this.fechaCreacion &&
+          other.usuarioId == this.usuarioId &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
+}
+
+class TurnosCompanion extends UpdateCompanion<Turno> {
+  final Value<int> id;
+  final Value<int?> servicioId;
+  final Value<String> servicioNombre;
+  final Value<int> duracionMinutos;
+  final Value<DateTime> inicio;
+  final Value<int?> clienteId;
+  final Value<String> nombreCliente;
+  final Value<String?> telefono;
+  final Value<int?> profesionalId;
+  final Value<String> estado;
+  final Value<int> senaPedidaCentavos;
+  final Value<int> senaCentavos;
+  final Value<bool> senaEsEfectivo;
+  final Value<bool> senaEnCaja;
+  final Value<DateTime?> senaVence;
+  final Value<String> origen;
+  final Value<String?> idRemoto;
+  final Value<String?> nota;
+  final Value<int?> ventaId;
+  final Value<DateTime> fechaCreacion;
+  final Value<int> usuarioId;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
+  const TurnosCompanion({
+    this.id = const Value.absent(),
+    this.servicioId = const Value.absent(),
+    this.servicioNombre = const Value.absent(),
+    this.duracionMinutos = const Value.absent(),
+    this.inicio = const Value.absent(),
+    this.clienteId = const Value.absent(),
+    this.nombreCliente = const Value.absent(),
+    this.telefono = const Value.absent(),
+    this.profesionalId = const Value.absent(),
+    this.estado = const Value.absent(),
+    this.senaPedidaCentavos = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
+    this.senaEnCaja = const Value.absent(),
+    this.senaVence = const Value.absent(),
+    this.origen = const Value.absent(),
+    this.idRemoto = const Value.absent(),
+    this.nota = const Value.absent(),
+    this.ventaId = const Value.absent(),
+    this.fechaCreacion = const Value.absent(),
+    this.usuarioId = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  });
+  TurnosCompanion.insert({
+    this.id = const Value.absent(),
+    this.servicioId = const Value.absent(),
+    required String servicioNombre,
+    required int duracionMinutos,
+    required DateTime inicio,
+    this.clienteId = const Value.absent(),
+    required String nombreCliente,
+    this.telefono = const Value.absent(),
+    this.profesionalId = const Value.absent(),
+    this.estado = const Value.absent(),
+    this.senaPedidaCentavos = const Value.absent(),
+    this.senaCentavos = const Value.absent(),
+    this.senaEsEfectivo = const Value.absent(),
+    this.senaEnCaja = const Value.absent(),
+    this.senaVence = const Value.absent(),
+    this.origen = const Value.absent(),
+    this.idRemoto = const Value.absent(),
+    this.nota = const Value.absent(),
+    this.ventaId = const Value.absent(),
+    this.fechaCreacion = const Value.absent(),
+    required int usuarioId,
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  }) : servicioNombre = Value(servicioNombre),
+       duracionMinutos = Value(duracionMinutos),
+       inicio = Value(inicio),
+       nombreCliente = Value(nombreCliente),
+       usuarioId = Value(usuarioId);
+  static Insertable<Turno> custom({
+    Expression<int>? id,
+    Expression<int>? servicioId,
+    Expression<String>? servicioNombre,
+    Expression<int>? duracionMinutos,
+    Expression<DateTime>? inicio,
+    Expression<int>? clienteId,
+    Expression<String>? nombreCliente,
+    Expression<String>? telefono,
+    Expression<int>? profesionalId,
+    Expression<String>? estado,
+    Expression<int>? senaPedidaCentavos,
+    Expression<int>? senaCentavos,
+    Expression<bool>? senaEsEfectivo,
+    Expression<bool>? senaEnCaja,
+    Expression<DateTime>? senaVence,
+    Expression<String>? origen,
+    Expression<String>? idRemoto,
+    Expression<String>? nota,
+    Expression<int>? ventaId,
+    Expression<DateTime>? fechaCreacion,
+    Expression<int>? usuarioId,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (servicioId != null) 'servicio_id': servicioId,
+      if (servicioNombre != null) 'servicio_nombre': servicioNombre,
+      if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
+      if (inicio != null) 'inicio': inicio,
+      if (clienteId != null) 'cliente_id': clienteId,
+      if (nombreCliente != null) 'nombre_cliente': nombreCliente,
+      if (telefono != null) 'telefono': telefono,
+      if (profesionalId != null) 'profesional_id': profesionalId,
+      if (estado != null) 'estado': estado,
+      if (senaPedidaCentavos != null)
+        'sena_pedida_centavos': senaPedidaCentavos,
+      if (senaCentavos != null) 'sena_centavos': senaCentavos,
+      if (senaEsEfectivo != null) 'sena_es_efectivo': senaEsEfectivo,
+      if (senaEnCaja != null) 'sena_en_caja': senaEnCaja,
+      if (senaVence != null) 'sena_vence': senaVence,
+      if (origen != null) 'origen': origen,
+      if (idRemoto != null) 'id_remoto': idRemoto,
+      if (nota != null) 'nota': nota,
+      if (ventaId != null) 'venta_id': ventaId,
+      if (fechaCreacion != null) 'fecha_creacion': fechaCreacion,
+      if (usuarioId != null) 'usuario_id': usuarioId,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+    });
+  }
+
+  TurnosCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? servicioId,
+    Value<String>? servicioNombre,
+    Value<int>? duracionMinutos,
+    Value<DateTime>? inicio,
+    Value<int?>? clienteId,
+    Value<String>? nombreCliente,
+    Value<String?>? telefono,
+    Value<int?>? profesionalId,
+    Value<String>? estado,
+    Value<int>? senaPedidaCentavos,
+    Value<int>? senaCentavos,
+    Value<bool>? senaEsEfectivo,
+    Value<bool>? senaEnCaja,
+    Value<DateTime?>? senaVence,
+    Value<String>? origen,
+    Value<String?>? idRemoto,
+    Value<String?>? nota,
+    Value<int?>? ventaId,
+    Value<DateTime>? fechaCreacion,
+    Value<int>? usuarioId,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
+  }) {
+    return TurnosCompanion(
+      id: id ?? this.id,
+      servicioId: servicioId ?? this.servicioId,
+      servicioNombre: servicioNombre ?? this.servicioNombre,
+      duracionMinutos: duracionMinutos ?? this.duracionMinutos,
+      inicio: inicio ?? this.inicio,
+      clienteId: clienteId ?? this.clienteId,
+      nombreCliente: nombreCliente ?? this.nombreCliente,
+      telefono: telefono ?? this.telefono,
+      profesionalId: profesionalId ?? this.profesionalId,
+      estado: estado ?? this.estado,
+      senaPedidaCentavos: senaPedidaCentavos ?? this.senaPedidaCentavos,
+      senaCentavos: senaCentavos ?? this.senaCentavos,
+      senaEsEfectivo: senaEsEfectivo ?? this.senaEsEfectivo,
+      senaEnCaja: senaEnCaja ?? this.senaEnCaja,
+      senaVence: senaVence ?? this.senaVence,
+      origen: origen ?? this.origen,
+      idRemoto: idRemoto ?? this.idRemoto,
+      nota: nota ?? this.nota,
+      ventaId: ventaId ?? this.ventaId,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      usuarioId: usuarioId ?? this.usuarioId,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (servicioId.present) {
+      map['servicio_id'] = Variable<int>(servicioId.value);
+    }
+    if (servicioNombre.present) {
+      map['servicio_nombre'] = Variable<String>(servicioNombre.value);
+    }
+    if (duracionMinutos.present) {
+      map['duracion_minutos'] = Variable<int>(duracionMinutos.value);
+    }
+    if (inicio.present) {
+      map['inicio'] = Variable<DateTime>(inicio.value);
+    }
+    if (clienteId.present) {
+      map['cliente_id'] = Variable<int>(clienteId.value);
+    }
+    if (nombreCliente.present) {
+      map['nombre_cliente'] = Variable<String>(nombreCliente.value);
+    }
+    if (telefono.present) {
+      map['telefono'] = Variable<String>(telefono.value);
+    }
+    if (profesionalId.present) {
+      map['profesional_id'] = Variable<int>(profesionalId.value);
+    }
+    if (estado.present) {
+      map['estado'] = Variable<String>(estado.value);
+    }
+    if (senaPedidaCentavos.present) {
+      map['sena_pedida_centavos'] = Variable<int>(senaPedidaCentavos.value);
+    }
+    if (senaCentavos.present) {
+      map['sena_centavos'] = Variable<int>(senaCentavos.value);
+    }
+    if (senaEsEfectivo.present) {
+      map['sena_es_efectivo'] = Variable<bool>(senaEsEfectivo.value);
+    }
+    if (senaEnCaja.present) {
+      map['sena_en_caja'] = Variable<bool>(senaEnCaja.value);
+    }
+    if (senaVence.present) {
+      map['sena_vence'] = Variable<DateTime>(senaVence.value);
+    }
+    if (origen.present) {
+      map['origen'] = Variable<String>(origen.value);
+    }
+    if (idRemoto.present) {
+      map['id_remoto'] = Variable<String>(idRemoto.value);
+    }
+    if (nota.present) {
+      map['nota'] = Variable<String>(nota.value);
+    }
+    if (ventaId.present) {
+      map['venta_id'] = Variable<int>(ventaId.value);
+    }
+    if (fechaCreacion.present) {
+      map['fecha_creacion'] = Variable<DateTime>(fechaCreacion.value);
+    }
+    if (usuarioId.present) {
+      map['usuario_id'] = Variable<int>(usuarioId.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TurnosCompanion(')
+          ..write('id: $id, ')
+          ..write('servicioId: $servicioId, ')
+          ..write('servicioNombre: $servicioNombre, ')
+          ..write('duracionMinutos: $duracionMinutos, ')
+          ..write('inicio: $inicio, ')
+          ..write('clienteId: $clienteId, ')
+          ..write('nombreCliente: $nombreCliente, ')
+          ..write('telefono: $telefono, ')
+          ..write('profesionalId: $profesionalId, ')
+          ..write('estado: $estado, ')
+          ..write('senaPedidaCentavos: $senaPedidaCentavos, ')
+          ..write('senaCentavos: $senaCentavos, ')
+          ..write('senaEsEfectivo: $senaEsEfectivo, ')
+          ..write('senaEnCaja: $senaEnCaja, ')
+          ..write('senaVence: $senaVence, ')
+          ..write('origen: $origen, ')
+          ..write('idRemoto: $idRemoto, ')
+          ..write('nota: $nota, ')
+          ..write('ventaId: $ventaId, ')
+          ..write('fechaCreacion: $fechaCreacion, ')
+          ..write('usuarioId: $usuarioId, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -26381,6 +28237,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FacturasCompraTable facturasCompra = $FacturasCompraTable(this);
   late final $ProductosFacturaCompraTable productosFacturaCompra =
       $ProductosFacturaCompraTable(this);
+  late final $TurnosTable turnos = $TurnosTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -26419,6 +28276,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cuitsProveedor,
     facturasCompra,
     productosFacturaCompra,
+    turnos,
   ];
 }
 
@@ -29790,6 +31648,25 @@ final class $$ClientesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'clientes__id__turnos__cliente_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.clienteId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ClientesTableFilterComposer
@@ -29887,6 +31764,31 @@ class $$ClientesTableFilterComposer
           }) => $$PendientesTableFilterComposer(
             $db: $db,
             $table: $db.pendientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.clienteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -30043,6 +31945,31 @@ class $$ClientesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.clienteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ClientesTableTableManager
@@ -30058,7 +31985,11 @@ class $$ClientesTableTableManager
           $$ClientesTableUpdateCompanionBuilder,
           (Cliente, $$ClientesTableReferences),
           Cliente,
-          PrefetchHooks Function({bool ventasRefs, bool pendientesRefs})
+          PrefetchHooks Function({
+            bool ventasRefs,
+            bool pendientesRefs,
+            bool turnosRefs,
+          })
         > {
   $$ClientesTableTableManager(_$AppDatabase db, $ClientesTable table)
     : super(
@@ -30124,12 +32055,17 @@ class $$ClientesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ventasRefs = false, pendientesRefs = false}) {
+              ({
+                ventasRefs = false,
+                pendientesRefs = false,
+                turnosRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (ventasRefs) db.ventas,
                     if (pendientesRefs) db.pendientes,
+                    if (turnosRefs) db.turnos,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -30176,6 +32112,27 @@ class $$ClientesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          Cliente,
+                          $ClientesTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ClientesTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ClientesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.clienteId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -30196,7 +32153,11 @@ typedef $$ClientesTableProcessedTableManager =
       $$ClientesTableUpdateCompanionBuilder,
       (Cliente, $$ClientesTableReferences),
       Cliente,
-      PrefetchHooks Function({bool ventasRefs, bool pendientesRefs})
+      PrefetchHooks Function({
+        bool ventasRefs,
+        bool pendientesRefs,
+        bool turnosRefs,
+      })
     >;
 typedef $$MediosDePagoTableCreateCompanionBuilder =
     MediosDePagoCompanion Function({
@@ -30687,6 +32648,7 @@ typedef $$ProductosTableCreateCompanionBuilder =
       Value<String?> recetaServicio,
       Value<bool> sumaManoDeObra,
       Value<int?> gananciaBuscadaBp,
+      Value<bool> pideSena,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -30727,6 +32689,7 @@ typedef $$ProductosTableUpdateCompanionBuilder =
       Value<String?> recetaServicio,
       Value<bool> sumaManoDeObra,
       Value<int?> gananciaBuscadaBp,
+      Value<bool> pideSena,
       Value<bool> activo,
       Value<DateTime> creadoEn,
       Value<DateTime> actualizadoEn,
@@ -30963,6 +32926,25 @@ final class $$ProductosTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'productos__id__turnos__servicio_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.servicioId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ProductosTableFilterComposer
@@ -31106,6 +33088,11 @@ class $$ProductosTableFilterComposer
 
   ColumnFilters<int> get gananciaBuscadaBp => $composableBuilder(
     column: $table.gananciaBuscadaBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pideSena => $composableBuilder(
+    column: $table.pideSena,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31423,6 +33410,31 @@ class $$ProductosTableFilterComposer
         );
     return f(composer);
   }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.servicioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProductosTableOrderingComposer
@@ -31566,6 +33578,11 @@ class $$ProductosTableOrderingComposer
 
   ColumnOrderings<int> get gananciaBuscadaBp => $composableBuilder(
     column: $table.gananciaBuscadaBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pideSena => $composableBuilder(
+    column: $table.pideSena,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -31786,6 +33803,9 @@ class $$ProductosTableAnnotationComposer
     column: $table.gananciaBuscadaBp,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get pideSena =>
+      $composableBuilder(column: $table.pideSena, builder: (column) => column);
 
   GeneratedColumn<bool> get activo =>
       $composableBuilder(column: $table.activo, builder: (column) => column);
@@ -32097,6 +34117,31 @@ class $$ProductosTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.servicioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProductosTableTableManager
@@ -32124,6 +34169,7 @@ class $$ProductosTableTableManager
             bool promosDondeEntra,
             bool vinculosFacturaRefs,
             bool productosFacturaCompraRefs,
+            bool turnosRefs,
           })
         > {
   $$ProductosTableTableManager(_$AppDatabase db, $ProductosTable table)
@@ -32168,6 +34214,7 @@ class $$ProductosTableTableManager
                 Value<String?> recetaServicio = const Value.absent(),
                 Value<bool> sumaManoDeObra = const Value.absent(),
                 Value<int?> gananciaBuscadaBp = const Value.absent(),
+                Value<bool> pideSena = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -32208,6 +34255,7 @@ class $$ProductosTableTableManager
                 recetaServicio: recetaServicio,
                 sumaManoDeObra: sumaManoDeObra,
                 gananciaBuscadaBp: gananciaBuscadaBp,
+                pideSena: pideSena,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
@@ -32248,6 +34296,7 @@ class $$ProductosTableTableManager
                 Value<String?> recetaServicio = const Value.absent(),
                 Value<bool> sumaManoDeObra = const Value.absent(),
                 Value<int?> gananciaBuscadaBp = const Value.absent(),
+                Value<bool> pideSena = const Value.absent(),
                 Value<bool> activo = const Value.absent(),
                 Value<DateTime> creadoEn = const Value.absent(),
                 Value<DateTime> actualizadoEn = const Value.absent(),
@@ -32288,6 +34337,7 @@ class $$ProductosTableTableManager
                 recetaServicio: recetaServicio,
                 sumaManoDeObra: sumaManoDeObra,
                 gananciaBuscadaBp: gananciaBuscadaBp,
+                pideSena: pideSena,
                 activo: activo,
                 creadoEn: creadoEn,
                 actualizadoEn: actualizadoEn,
@@ -32318,6 +34368,7 @@ class $$ProductosTableTableManager
                 promosDondeEntra = false,
                 vinculosFacturaRefs = false,
                 productosFacturaCompraRefs = false,
+                turnosRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -32332,6 +34383,7 @@ class $$ProductosTableTableManager
                     if (promosDondeEntra) db.promoComponentes,
                     if (vinculosFacturaRefs) db.vinculosFactura,
                     if (productosFacturaCompraRefs) db.productosFacturaCompra,
+                    if (turnosRefs) db.turnos,
                   ],
                   addJoins:
                       <
@@ -32569,6 +34621,27 @@ class $$ProductosTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          Producto,
+                          $ProductosTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductosTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.servicioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -32601,6 +34674,7 @@ typedef $$ProductosTableProcessedTableManager =
         bool promosDondeEntra,
         bool vinculosFacturaRefs,
         bool productosFacturaCompraRefs,
+        bool turnosRefs,
       })
     >;
 typedef $$GastosFijosTableCreateCompanionBuilder =
@@ -35281,6 +37355,25 @@ final class $$VentasTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$TurnosTable, List<Turno>> _turnosRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.turnos,
+    aliasName: 'ventas__id__turnos__venta_id',
+  );
+
+  $$TurnosTableProcessedTableManager get turnosRefs {
+    final manager = $$TurnosTableTableManager(
+      $_db,
+      $_db.turnos,
+    ).filter((f) => f.ventaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_turnosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VentasTableFilterComposer
@@ -35635,6 +37728,31 @@ class $$VentasTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> turnosRefs(
+    Expression<bool> Function($$TurnosTableFilterComposer f) f,
+  ) {
+    final $$TurnosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.ventaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableFilterComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -36186,6 +38304,31 @@ class $$VentasTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> turnosRefs<T extends Object>(
+    Expression<T> Function($$TurnosTableAnnotationComposer a) f,
+  ) {
+    final $$TurnosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.turnos,
+      getReferencedColumn: (t) => t.ventaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TurnosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VentasTableTableManager
@@ -36213,6 +38356,7 @@ class $$VentasTableTableManager
             bool movimientosDeStockRefs,
             bool pendientesRefs,
             bool ordenesCobroPendientesRefs,
+            bool turnosRefs,
           })
         > {
   $$VentasTableTableManager(_$AppDatabase db, $VentasTable table)
@@ -36339,6 +38483,7 @@ class $$VentasTableTableManager
                 movimientosDeStockRefs = false,
                 pendientesRefs = false,
                 ordenesCobroPendientesRefs = false,
+                turnosRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -36349,6 +38494,7 @@ class $$VentasTableTableManager
                     if (movimientosDeStockRefs) db.movimientosDeStock,
                     if (pendientesRefs) db.pendientes,
                     if (ordenesCobroPendientesRefs) db.ordenesCobroPendientes,
+                    if (turnosRefs) db.turnos,
                   ],
                   addJoins:
                       <
@@ -36558,6 +38704,23 @@ class $$VentasTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (turnosRefs)
+                        await $_getPrefetchedData<
+                          FilaVenta,
+                          $VentasTable,
+                          Turno
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VentasTableReferences
+                              ._turnosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VentasTableReferences(db, table, p0).turnosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ventaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -36590,6 +38753,7 @@ typedef $$VentasTableProcessedTableManager =
         bool movimientosDeStockRefs,
         bool pendientesRefs,
         bool ordenesCobroPendientesRefs,
+        bool turnosRefs,
       })
     >;
 typedef $$MovimientosDeCajaTableCreateCompanionBuilder =
@@ -42544,6 +44708,14 @@ typedef $$ConfiguracionNegocioTablaTableCreateCompanionBuilder =
       Value<String> modulosDesactivados,
       Value<String> rubro,
       Value<int?> valorHoraCentavos,
+      Value<String?> horarioAtencion,
+      Value<int> pasoTurnosMinutos,
+      Value<String> senaModo,
+      Value<int> senaPorcentaje,
+      Value<int?> senaMontoFijoCentavos,
+      Value<bool> senaDevolverAlCancelar,
+      Value<String> aliasSena,
+      Value<String> titularSena,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -42561,6 +44733,14 @@ typedef $$ConfiguracionNegocioTablaTableUpdateCompanionBuilder =
       Value<String> modulosDesactivados,
       Value<String> rubro,
       Value<int?> valorHoraCentavos,
+      Value<String?> horarioAtencion,
+      Value<int> pasoTurnosMinutos,
+      Value<String> senaModo,
+      Value<int> senaPorcentaje,
+      Value<int?> senaMontoFijoCentavos,
+      Value<bool> senaDevolverAlCancelar,
+      Value<String> aliasSena,
+      Value<String> titularSena,
       Value<String?> globalId,
       Value<String?> origenDispositivo,
       Value<DateTime?> actualizadoEn,
@@ -42655,6 +44835,46 @@ class $$ConfiguracionNegocioTablaTableFilterComposer
 
   ColumnFilters<int> get valorHoraCentavos => $composableBuilder(
     column: $table.valorHoraCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pasoTurnosMinutos => $composableBuilder(
+    column: $table.pasoTurnosMinutos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senaModo => $composableBuilder(
+    column: $table.senaModo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaPorcentaje => $composableBuilder(
+    column: $table.senaPorcentaje,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaMontoFijoCentavos => $composableBuilder(
+    column: $table.senaMontoFijoCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaDevolverAlCancelar => $composableBuilder(
+    column: $table.senaDevolverAlCancelar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aliasSena => $composableBuilder(
+    column: $table.aliasSena,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get titularSena => $composableBuilder(
+    column: $table.titularSena,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -42756,6 +44976,46 @@ class $$ConfiguracionNegocioTablaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pasoTurnosMinutos => $composableBuilder(
+    column: $table.pasoTurnosMinutos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senaModo => $composableBuilder(
+    column: $table.senaModo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get senaPorcentaje => $composableBuilder(
+    column: $table.senaPorcentaje,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get senaMontoFijoCentavos => $composableBuilder(
+    column: $table.senaMontoFijoCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaDevolverAlCancelar => $composableBuilder(
+    column: $table.senaDevolverAlCancelar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aliasSena => $composableBuilder(
+    column: $table.aliasSena,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get titularSena => $composableBuilder(
+    column: $table.titularSena,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get globalId => $composableBuilder(
     column: $table.globalId,
     builder: (column) => ColumnOrderings(column),
@@ -42850,6 +45110,42 @@ class $$ConfiguracionNegocioTablaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get horarioAtencion => $composableBuilder(
+    column: $table.horarioAtencion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pasoTurnosMinutos => $composableBuilder(
+    column: $table.pasoTurnosMinutos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get senaModo =>
+      $composableBuilder(column: $table.senaModo, builder: (column) => column);
+
+  GeneratedColumn<int> get senaPorcentaje => $composableBuilder(
+    column: $table.senaPorcentaje,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get senaMontoFijoCentavos => $composableBuilder(
+    column: $table.senaMontoFijoCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaDevolverAlCancelar => $composableBuilder(
+    column: $table.senaDevolverAlCancelar,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get aliasSena =>
+      $composableBuilder(column: $table.aliasSena, builder: (column) => column);
+
+  GeneratedColumn<String> get titularSena => $composableBuilder(
+    column: $table.titularSena,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
 
@@ -42937,6 +45233,14 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
                 Value<int?> valorHoraCentavos = const Value.absent(),
+                Value<String?> horarioAtencion = const Value.absent(),
+                Value<int> pasoTurnosMinutos = const Value.absent(),
+                Value<String> senaModo = const Value.absent(),
+                Value<int> senaPorcentaje = const Value.absent(),
+                Value<int?> senaMontoFijoCentavos = const Value.absent(),
+                Value<bool> senaDevolverAlCancelar = const Value.absent(),
+                Value<String> aliasSena = const Value.absent(),
+                Value<String> titularSena = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -42952,6 +45256,14 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
                 valorHoraCentavos: valorHoraCentavos,
+                horarioAtencion: horarioAtencion,
+                pasoTurnosMinutos: pasoTurnosMinutos,
+                senaModo: senaModo,
+                senaPorcentaje: senaPorcentaje,
+                senaMontoFijoCentavos: senaMontoFijoCentavos,
+                senaDevolverAlCancelar: senaDevolverAlCancelar,
+                aliasSena: aliasSena,
+                titularSena: titularSena,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -42969,6 +45281,14 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 Value<String> modulosDesactivados = const Value.absent(),
                 Value<String> rubro = const Value.absent(),
                 Value<int?> valorHoraCentavos = const Value.absent(),
+                Value<String?> horarioAtencion = const Value.absent(),
+                Value<int> pasoTurnosMinutos = const Value.absent(),
+                Value<String> senaModo = const Value.absent(),
+                Value<int> senaPorcentaje = const Value.absent(),
+                Value<int?> senaMontoFijoCentavos = const Value.absent(),
+                Value<bool> senaDevolverAlCancelar = const Value.absent(),
+                Value<String> aliasSena = const Value.absent(),
+                Value<String> titularSena = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<String?> origenDispositivo = const Value.absent(),
                 Value<DateTime?> actualizadoEn = const Value.absent(),
@@ -42984,6 +45304,14 @@ class $$ConfiguracionNegocioTablaTableTableManager
                 modulosDesactivados: modulosDesactivados,
                 rubro: rubro,
                 valorHoraCentavos: valorHoraCentavos,
+                horarioAtencion: horarioAtencion,
+                pasoTurnosMinutos: pasoTurnosMinutos,
+                senaModo: senaModo,
+                senaPorcentaje: senaPorcentaje,
+                senaMontoFijoCentavos: senaMontoFijoCentavos,
+                senaDevolverAlCancelar: senaDevolverAlCancelar,
+                aliasSena: aliasSena,
+                titularSena: titularSena,
                 globalId: globalId,
                 origenDispositivo: origenDispositivo,
                 actualizadoEn: actualizadoEn,
@@ -48800,6 +51128,1061 @@ typedef $$ProductosFacturaCompraTableProcessedTableManager =
       ProductoFacturaCompraFila,
       PrefetchHooks Function({bool facturaId, bool productoId})
     >;
+typedef $$TurnosTableCreateCompanionBuilder =
+    TurnosCompanion Function({
+      Value<int> id,
+      Value<int?> servicioId,
+      required String servicioNombre,
+      required int duracionMinutos,
+      required DateTime inicio,
+      Value<int?> clienteId,
+      required String nombreCliente,
+      Value<String?> telefono,
+      Value<int?> profesionalId,
+      Value<String> estado,
+      Value<int> senaPedidaCentavos,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
+      Value<bool> senaEnCaja,
+      Value<DateTime?> senaVence,
+      Value<String> origen,
+      Value<String?> idRemoto,
+      Value<String?> nota,
+      Value<int?> ventaId,
+      Value<DateTime> fechaCreacion,
+      required int usuarioId,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+typedef $$TurnosTableUpdateCompanionBuilder =
+    TurnosCompanion Function({
+      Value<int> id,
+      Value<int?> servicioId,
+      Value<String> servicioNombre,
+      Value<int> duracionMinutos,
+      Value<DateTime> inicio,
+      Value<int?> clienteId,
+      Value<String> nombreCliente,
+      Value<String?> telefono,
+      Value<int?> profesionalId,
+      Value<String> estado,
+      Value<int> senaPedidaCentavos,
+      Value<int> senaCentavos,
+      Value<bool> senaEsEfectivo,
+      Value<bool> senaEnCaja,
+      Value<DateTime?> senaVence,
+      Value<String> origen,
+      Value<String?> idRemoto,
+      Value<String?> nota,
+      Value<int?> ventaId,
+      Value<DateTime> fechaCreacion,
+      Value<int> usuarioId,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+
+final class $$TurnosTableReferences
+    extends BaseReferences<_$AppDatabase, $TurnosTable, Turno> {
+  $$TurnosTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProductosTable _servicioIdTable(_$AppDatabase db) =>
+      db.productos.createAlias('turnos__servicio_id__productos__id');
+
+  $$ProductosTableProcessedTableManager? get servicioId {
+    final $_column = $_itemColumn<int>('servicio_id');
+    if ($_column == null) return null;
+    final manager = $$ProductosTableTableManager(
+      $_db,
+      $_db.productos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_servicioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ClientesTable _clienteIdTable(_$AppDatabase db) =>
+      db.clientes.createAlias('turnos__cliente_id__clientes__id');
+
+  $$ClientesTableProcessedTableManager? get clienteId {
+    final $_column = $_itemColumn<int>('cliente_id');
+    if ($_column == null) return null;
+    final manager = $$ClientesTableTableManager(
+      $_db,
+      $_db.clientes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_clienteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsuariosTable _profesionalIdTable(_$AppDatabase db) =>
+      db.usuarios.createAlias('turnos__profesional_id__usuarios__id');
+
+  $$UsuariosTableProcessedTableManager? get profesionalId {
+    final $_column = $_itemColumn<int>('profesional_id');
+    if ($_column == null) return null;
+    final manager = $$UsuariosTableTableManager(
+      $_db,
+      $_db.usuarios,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profesionalIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VentasTable _ventaIdTable(_$AppDatabase db) =>
+      db.ventas.createAlias('turnos__venta_id__ventas__id');
+
+  $$VentasTableProcessedTableManager? get ventaId {
+    final $_column = $_itemColumn<int>('venta_id');
+    if ($_column == null) return null;
+    final manager = $$VentasTableTableManager(
+      $_db,
+      $_db.ventas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ventaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsuariosTable _usuarioIdTable(_$AppDatabase db) =>
+      db.usuarios.createAlias('turnos__usuario_id__usuarios__id');
+
+  $$UsuariosTableProcessedTableManager get usuarioId {
+    final $_column = $_itemColumn<int>('usuario_id')!;
+
+    final manager = $$UsuariosTableTableManager(
+      $_db,
+      $_db.usuarios,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_usuarioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TurnosTableFilterComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servicioNombre => $composableBuilder(
+    column: $table.servicioNombre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get inicio => $composableBuilder(
+    column: $table.inicio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaPedidaCentavos => $composableBuilder(
+    column: $table.senaPedidaCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get senaEnCaja => $composableBuilder(
+    column: $table.senaEnCaja,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get senaVence => $composableBuilder(
+    column: $table.senaVence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origen => $composableBuilder(
+    column: $table.origen,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idRemoto => $composableBuilder(
+    column: $table.idRemoto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProductosTableFilterComposer get servicioId {
+    final $$ProductosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableFilterComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ClientesTableFilterComposer get clienteId {
+    final $$ClientesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableFilterComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableFilterComposer get profesionalId {
+    final $$UsuariosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableFilterComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableFilterComposer get ventaId {
+    final $$VentasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableFilterComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableFilterComposer get usuarioId {
+    final $$UsuariosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableFilterComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableOrderingComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servicioNombre => $composableBuilder(
+    column: $table.servicioNombre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get inicio => $composableBuilder(
+    column: $table.inicio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get estado => $composableBuilder(
+    column: $table.estado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get senaPedidaCentavos => $composableBuilder(
+    column: $table.senaPedidaCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get senaEnCaja => $composableBuilder(
+    column: $table.senaEnCaja,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get senaVence => $composableBuilder(
+    column: $table.senaVence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origen => $composableBuilder(
+    column: $table.origen,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idRemoto => $composableBuilder(
+    column: $table.idRemoto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProductosTableOrderingComposer get servicioId {
+    final $$ProductosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableOrderingComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ClientesTableOrderingComposer get clienteId {
+    final $$ClientesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableOrderingComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableOrderingComposer get profesionalId {
+    final $$UsuariosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableOrderingComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableOrderingComposer get ventaId {
+    final $$VentasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableOrderingComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableOrderingComposer get usuarioId {
+    final $$UsuariosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableOrderingComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TurnosTable> {
+  $$TurnosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get servicioNombre => $composableBuilder(
+    column: $table.servicioNombre,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get duracionMinutos => $composableBuilder(
+    column: $table.duracionMinutos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get inicio =>
+      $composableBuilder(column: $table.inicio, builder: (column) => column);
+
+  GeneratedColumn<String> get nombreCliente => $composableBuilder(
+    column: $table.nombreCliente,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get telefono =>
+      $composableBuilder(column: $table.telefono, builder: (column) => column);
+
+  GeneratedColumn<String> get estado =>
+      $composableBuilder(column: $table.estado, builder: (column) => column);
+
+  GeneratedColumn<int> get senaPedidaCentavos => $composableBuilder(
+    column: $table.senaPedidaCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get senaCentavos => $composableBuilder(
+    column: $table.senaCentavos,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaEsEfectivo => $composableBuilder(
+    column: $table.senaEsEfectivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get senaEnCaja => $composableBuilder(
+    column: $table.senaEnCaja,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get senaVence =>
+      $composableBuilder(column: $table.senaVence, builder: (column) => column);
+
+  GeneratedColumn<String> get origen =>
+      $composableBuilder(column: $table.origen, builder: (column) => column);
+
+  GeneratedColumn<String> get idRemoto =>
+      $composableBuilder(column: $table.idRemoto, builder: (column) => column);
+
+  GeneratedColumn<String> get nota =>
+      $composableBuilder(column: $table.nota, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  $$ProductosTableAnnotationComposer get servicioId {
+    final $$ProductosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.servicioId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ClientesTableAnnotationComposer get clienteId {
+    final $$ClientesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clienteId,
+      referencedTable: $db.clientes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.clientes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableAnnotationComposer get profesionalId {
+    final $$UsuariosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profesionalId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VentasTableAnnotationComposer get ventaId {
+    final $$VentasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ventaId,
+      referencedTable: $db.ventas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VentasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ventas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsuariosTableAnnotationComposer get usuarioId {
+    final $$UsuariosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.usuarioId,
+      referencedTable: $db.usuarios,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsuariosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.usuarios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TurnosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TurnosTable,
+          Turno,
+          $$TurnosTableFilterComposer,
+          $$TurnosTableOrderingComposer,
+          $$TurnosTableAnnotationComposer,
+          $$TurnosTableCreateCompanionBuilder,
+          $$TurnosTableUpdateCompanionBuilder,
+          (Turno, $$TurnosTableReferences),
+          Turno,
+          PrefetchHooks Function({
+            bool servicioId,
+            bool clienteId,
+            bool profesionalId,
+            bool ventaId,
+            bool usuarioId,
+          })
+        > {
+  $$TurnosTableTableManager(_$AppDatabase db, $TurnosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TurnosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TurnosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TurnosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> servicioId = const Value.absent(),
+                Value<String> servicioNombre = const Value.absent(),
+                Value<int> duracionMinutos = const Value.absent(),
+                Value<DateTime> inicio = const Value.absent(),
+                Value<int?> clienteId = const Value.absent(),
+                Value<String> nombreCliente = const Value.absent(),
+                Value<String?> telefono = const Value.absent(),
+                Value<int?> profesionalId = const Value.absent(),
+                Value<String> estado = const Value.absent(),
+                Value<int> senaPedidaCentavos = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
+                Value<bool> senaEnCaja = const Value.absent(),
+                Value<DateTime?> senaVence = const Value.absent(),
+                Value<String> origen = const Value.absent(),
+                Value<String?> idRemoto = const Value.absent(),
+                Value<String?> nota = const Value.absent(),
+                Value<int?> ventaId = const Value.absent(),
+                Value<DateTime> fechaCreacion = const Value.absent(),
+                Value<int> usuarioId = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => TurnosCompanion(
+                id: id,
+                servicioId: servicioId,
+                servicioNombre: servicioNombre,
+                duracionMinutos: duracionMinutos,
+                inicio: inicio,
+                clienteId: clienteId,
+                nombreCliente: nombreCliente,
+                telefono: telefono,
+                profesionalId: profesionalId,
+                estado: estado,
+                senaPedidaCentavos: senaPedidaCentavos,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
+                senaEnCaja: senaEnCaja,
+                senaVence: senaVence,
+                origen: origen,
+                idRemoto: idRemoto,
+                nota: nota,
+                ventaId: ventaId,
+                fechaCreacion: fechaCreacion,
+                usuarioId: usuarioId,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> servicioId = const Value.absent(),
+                required String servicioNombre,
+                required int duracionMinutos,
+                required DateTime inicio,
+                Value<int?> clienteId = const Value.absent(),
+                required String nombreCliente,
+                Value<String?> telefono = const Value.absent(),
+                Value<int?> profesionalId = const Value.absent(),
+                Value<String> estado = const Value.absent(),
+                Value<int> senaPedidaCentavos = const Value.absent(),
+                Value<int> senaCentavos = const Value.absent(),
+                Value<bool> senaEsEfectivo = const Value.absent(),
+                Value<bool> senaEnCaja = const Value.absent(),
+                Value<DateTime?> senaVence = const Value.absent(),
+                Value<String> origen = const Value.absent(),
+                Value<String?> idRemoto = const Value.absent(),
+                Value<String?> nota = const Value.absent(),
+                Value<int?> ventaId = const Value.absent(),
+                Value<DateTime> fechaCreacion = const Value.absent(),
+                required int usuarioId,
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => TurnosCompanion.insert(
+                id: id,
+                servicioId: servicioId,
+                servicioNombre: servicioNombre,
+                duracionMinutos: duracionMinutos,
+                inicio: inicio,
+                clienteId: clienteId,
+                nombreCliente: nombreCliente,
+                telefono: telefono,
+                profesionalId: profesionalId,
+                estado: estado,
+                senaPedidaCentavos: senaPedidaCentavos,
+                senaCentavos: senaCentavos,
+                senaEsEfectivo: senaEsEfectivo,
+                senaEnCaja: senaEnCaja,
+                senaVence: senaVence,
+                origen: origen,
+                idRemoto: idRemoto,
+                nota: nota,
+                ventaId: ventaId,
+                fechaCreacion: fechaCreacion,
+                usuarioId: usuarioId,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TurnosTable, Turno>(table),
+                  $$TurnosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                servicioId = false,
+                clienteId = false,
+                profesionalId = false,
+                ventaId = false,
+                usuarioId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (servicioId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.servicioId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._servicioIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._servicioIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (clienteId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.clienteId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._clienteIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._clienteIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (profesionalId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profesionalId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._profesionalIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._profesionalIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (ventaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ventaId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._ventaIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._ventaIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (usuarioId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.usuarioId,
+                                    referencedTable: $$TurnosTableReferences
+                                        ._usuarioIdTable(db),
+                                    referencedColumn: $$TurnosTableReferences
+                                        ._usuarioIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TurnosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TurnosTable,
+      Turno,
+      $$TurnosTableFilterComposer,
+      $$TurnosTableOrderingComposer,
+      $$TurnosTableAnnotationComposer,
+      $$TurnosTableCreateCompanionBuilder,
+      $$TurnosTableUpdateCompanionBuilder,
+      (Turno, $$TurnosTableReferences),
+      Turno,
+      PrefetchHooks Function({
+        bool servicioId,
+        bool clienteId,
+        bool profesionalId,
+        bool ventaId,
+        bool usuarioId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -48882,4 +52265,6 @@ class $AppDatabaseManager {
         _db,
         _db.productosFacturaCompra,
       );
+  $$TurnosTableTableManager get turnos =>
+      $$TurnosTableTableManager(_db, _db.turnos);
 }

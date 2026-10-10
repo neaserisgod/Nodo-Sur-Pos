@@ -6,6 +6,7 @@
 // refrescan con el mismo aviso que usa la sync por wifi.
 
 import '../servicios/catalogo_bot_nube.dart';
+import '../servicios/turnos_bot_nube.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -85,7 +86,7 @@ SyncNubeCompanion armarSyncNubeCompanion({
     almacenEstado: almacenEstado,
     alAplicarBajada: avisarCambiosCompanion,
     // Cuando el celular sube a la nube (sin PC), publica también el catálogo del bot de WhatsApp (si el negocio lo tiene).
-    alTerminarVuelta: PublicadorCatalogoBot(db: db, cliente: cliente).publicarSiHaceFalta,
+    alTerminarVuelta: _alTerminarVuelta(db, cliente),
   );
   final conmutador = ConmutadorSync(
     hayCuenta: () async => await almacen.leer() != null,
@@ -101,6 +102,17 @@ SyncNubeCompanion armarSyncNubeCompanion({
     conmutador: conmutador,
     abrirNavegador: abrirNavegador,
   );
+}
+
+/// Al terminar cada vuelta de subida, el bot de WhatsApp (si el negocio lo tiene): el catálogo (comercios) y los turnos de la
+/// Agenda (servicios). Los dos se fijan solos si les toca.
+Future<void> Function(String token) _alTerminarVuelta(AppDatabase db, ClienteNube cliente) {
+  final catalogo = PublicadorCatalogoBot(db: db, cliente: cliente);
+  final turnos = SincronizadorTurnosBot(db: db, cliente: cliente);
+  return (token) async {
+    await catalogo.publicarSiHaceFalta(token);
+    await turnos.vuelta(token);
+  };
 }
 
 /// Un aviso por cada escritura local en una tabla que se sincroniza (el servicio las agrupa).

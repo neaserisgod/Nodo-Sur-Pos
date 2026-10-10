@@ -528,6 +528,52 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// Registra el token de notificaciones (Firebase Cloud Messaging) de este celular: le llegan los pedidos y turnos nuevos del bot
+  /// aunque la app esté cerrada (`push.dart`).
+  Future<void> registrarPush(String token, String tokenPush) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/device/push'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'token': tokenPush}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
+  // ─── Turnos del bot (negocios de servicios; en el sitio, `functions/_lib/bot_turnos.js`) ───
+
+  /// Lo que ocupa la Agenda de esta app de hoy en adelante, sin nombres ni teléfonos: el bot no ofrece esos horarios. Reemplaza lo
+  /// que se mandó antes. Devuelve si cambió algo.
+  Future<bool> publicarOcupadosBot(String token, List<Map<String, Object>> turnos) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/bot/ocupados'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'turnos': turnos}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['cambiado'] == true;
+  });
+
+  /// Los turnos que cambiaron después de [desde] (milisegundos del sitio), crudos: los arma `turnos_bot_nube.dart`.
+  Future<({List<Map<String, dynamic>> turnos, int hasta, bool mas})> turnosBot(String token, {int desde = 0}) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/turnos', {'desde': '$desde'}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (
+      turnos: [for (final x in (j['turnos'] as List? ?? const [])) if (x is Map) x.cast<String, dynamic>()],
+      hasta: (j['hasta'] as num?)?.toInt() ?? desde,
+      mas: j['mas'] == true,
+    );
+  });
+
+  /// La dueña movió, canceló, cobró o marcó "no vino" un turno del bot: el bot le avisa al cliente. Tira [ErrorNube] `no_existe`
+  /// si el sitio ya no lo tiene (pasaron 30 días).
+  Future<void> cambiarTurnoBot(String token, String id, {String? estado, int? inicio, int? fin}) => _conRed(() async {
+    final r = await http
+        .post(
+          _uri('/api/bot/turno/cambio'),
+          headers: _auth(token, {'Content-Type': 'application/json'}),
+          body: jsonEncode({'id': id, 'estado': ?estado, 'inicio': ?inicio, 'fin': ?fin}),
+        )
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   // ─── Cobro con la terminal Point a través del servidor (el token de Mercado Pago del negocio no sale de ahí) ───
 
   /// Si el negocio de este dispositivo puede cobrar por el servidor: Mercado Pago conectado y terminal elegida para su sucursal.
@@ -796,6 +842,7 @@ class ClienteNube {
       final bot = j is Map ? j['bot'] : null;
       if (bot is! Map) return false;
       if (bot['pedido'] is int) avisarPedidoBot(bot['pedido'] as int);
+      if (bot['turno'] is String) avisarTurnoBot(bot['turno'] as String);
       return true;
     } on FormatException {
       return false;
