@@ -6,7 +6,6 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_edicion_venta.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
-import 'package:la_plazoleta/domain/descuento.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/recargo_cigarrillos.dart';
 import 'package:la_plazoleta/domain/servicios.dart';
