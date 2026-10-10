@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -11,12 +12,18 @@ import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/data/repositorio_turnos.dart';
+import 'package:la_plazoleta/data/repositorio_ventas.dart' show abrirSesion;
+import 'package:la_plazoleta/domain/turnos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/turnos_bot_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
+
+/// Cierra la caja a lo bruto: lo único que importa acá es que no quede una abierta.
+Future<void> cerrarSesionParaTest(AppDatabase db, int id) =>
+    (db.update(db.sesionesDeCaja)..where((s) => s.id.equals(id))).write(SesionesDeCajaCompanion(estado: const Value('CERRADA'), fechaCierre: Value(DateTime.now())));
 
 void main() {
   late AppDatabase db;
@@ -127,6 +134,19 @@ void main() {
     await sinc.vuelta('tok');
     expect((await elDelBot()).estado, 'CANCELADO');
     expect(cambios, isEmpty, reason: 'no se le devuelve al bot su propio cambio');
+  });
+
+  test('cancelado por WhatsApp con seña a devolver y sin caja abierta: se cancela igual y no frena nada', () async {
+    await guardarConfigAgenda(db, const ConfigAgenda(sena: ConfigSena(devolverAlCancelar: true)));
+    await sinc.vuelta('tok');
+    final sesion = await abrirSesion(db, usuarioId: usuario, fondoInicialCentavos: 0);
+    await registrarSenaDeTurno(db, (await elDelBot()).id, montoCentavos: 540000, esEfectivo: true, usuarioId: usuario, sesionCajaId: sesion);
+    await cerrarSesionParaTest(db, sesion);
+    remotos.single
+      ..['estado'] = 'cancelado'
+      ..['actualizado'] = 99;
+    await sinc.vuelta('tok');
+    expect((await elDelBot()).estado, 'CANCELADO');
   });
 
   test('lo que carga la dueña se publica como ocupado, sin datos de clientes y sin los turnos del bot', () async {

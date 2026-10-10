@@ -118,8 +118,14 @@ class SincronizadorTurnosBot {
       final r = await cliente.turnosBot(token, desde: desde);
       for (final x in r.turnos) {
         if (x['origen'] != 'bot') continue; // lo de la app ya está acá
-        final id = await _aplicar(x);
-        if (id != null) huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(id))).getSingle());
+        int? id;
+        try {
+          id = await _aplicar(x);
+        } catch (_) {
+          continue; // uno que no se puede aplicar no frena a los demás
+        }
+        final local = id;
+        if (local != null) huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
       }
       desde = r.hasta;
       await prefs.setInt(_claveCursor, desde);
@@ -164,7 +170,14 @@ class SincronizadorTurnosBot {
     final local = EstadoTurno.desdeClave(existente.estado);
     if (!local.abierto) return existente.id;
     if (estado == EstadoTurno.cancelado) {
-      await cancelarTurno(db, existente.id, usuarioId: existente.usuarioId);
+      try {
+        await cancelarTurno(db, existente.id, usuarioId: existente.usuarioId, sesionCajaId: await sesionAbiertaId(db));
+      } on ArgumentError {
+        // Hay que devolver la seña y no hay caja abierta: el turno se cancela igual (libera el horario) y la seña queda para
+        // que la dueña la devuelva a mano. Si no, este turno frenaría la vuelta entera para siempre.
+        await (db.update(db.turnos)..where((t) => t.id.equals(existente.id)))
+            .write(TurnosCompanion(estado: Value(EstadoTurno.cancelado.clave), actualizadoEn: Value(DateTime.now())));
+      }
     } else if (estado == EstadoTurno.confirmado && local == EstadoTurno.esperandoSena) {
       await (db.update(db.turnos)..where((t) => t.id.equals(existente.id)))
           .write(TurnosCompanion(estado: Value(EstadoTurno.confirmado.clave), actualizadoEn: Value(DateTime.now())));
