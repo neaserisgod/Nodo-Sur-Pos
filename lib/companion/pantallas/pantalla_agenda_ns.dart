@@ -17,6 +17,7 @@ import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/medio_pago.dart';
 import '../../domain/turnos.dart';
+import '../../servicios/calendario.dart';
 import '../../servicios/sena_mp_nube.dart';
 import '../app_ns.dart';
 import '../base_local.dart';
@@ -134,7 +135,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
               if (abierto && pideSena) BotonNs.secundario(ctx, 'Anotar la seña', () => Navigator.of(ctx).pop('sena'), icono: IconoNs.tilde),
               if (abierto) BotonNs.secundario(ctx, 'Mover', () => Navigator.of(ctx).pop('mover'), icono: IconoNs.reloj),
               if (t.turno.telefono != null) BotonNs.secundario(ctx, 'Escribirle por WhatsApp', () => Navigator.of(ctx).pop('whatsapp'), icono: IconoNs.celular),
-              BotonNs.secundario(ctx, 'Agregar a Google Calendar', () => Navigator.of(ctx).pop('calendar'), icono: IconoNs.calendario),
+              BotonNs.secundario(ctx, 'Agendar en el calendario', () => Navigator.of(ctx).pop('calendar'), icono: IconoNs.calendario),
               if (abierto) BotonNs.secundario(ctx, 'No vino', () => Navigator.of(ctx).pop('novino'), icono: IconoNs.alertaCirculo),
               if (abierto) BotonNs.peligroSuave(ctx, 'Cancelar el turno', () => Navigator.of(ctx).pop('cancelar')),
             ],
@@ -157,7 +158,14 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
             case 'whatsapp':
               await _abrir(Uri.parse('https://wa.me/${t.turno.telefono!.replaceAll(RegExp(r'\D'), '')}'));
             case 'calendar':
-              await _abrir(enlaceGoogleCalendar(t));
+              if (!await agendarEnCalendario(
+                titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}',
+                inicio: t.inicio,
+                fin: t.fin,
+                detalle: t.turno.telefono == null ? null : 'Tel: ${t.turno.telefono}',
+              )) {
+                aviso = 'No se pudo abrir el calendario';
+              }
             case 'novino':
               await marcarNoVino(_db, t.turno.id);
               aviso = 'Anotado: ${t.turno.nombreCliente} no vino';
@@ -333,22 +341,6 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
       ],
     ];
   }
-}
-
-/// El link de "Agregar a Google Calendar" (§21: sin permisos extra; la sincronización automática llega como módulo).
-Uri enlaceGoogleCalendar(TurnoAgenda t) {
-  String utc(DateTime d) {
-    final u = d.toUtc();
-    String dos(int n) => n.toString().padLeft(2, '0');
-    return '${u.year}${dos(u.month)}${dos(u.day)}T${dos(u.hour)}${dos(u.minute)}00Z';
-  }
-
-  return Uri.https('calendar.google.com', '/calendar/render', {
-    'action': 'TEMPLATE',
-    'text': '${t.turno.servicioNombre} · ${t.turno.nombreCliente}',
-    'dates': '${utc(t.inicio)}/${utc(t.fin)}',
-    if (t.turno.telefono != null) 'details': 'Tel: ${t.turno.telefono}',
-  });
 }
 
 class _EtiquetaEstado extends StatelessWidget {

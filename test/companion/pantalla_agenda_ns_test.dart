@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/servicios/calendario.dart';
 import 'package:la_plazoleta/companion/kit/barra_inferior_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_agenda_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -150,10 +151,10 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
-  test('el link de Google Calendar lleva el servicio, la persona y el horario en UTC', () async {
+  test('el respaldo de Google Calendar (sin app de calendario) lleva el servicio, la persona y el horario en UTC', () async {
     final id = await crearTurno(db, servicioId: semi, inicio: DateTime.utc(2026, 10, 12, 13).toLocal(), nombreCliente: 'Ana', usuarioId: usuario);
     final t = (await turnosDelDia(db, DateTime.utc(2026, 10, 12, 13).toLocal())).firstWhere((x) => x.turno.id == id);
-    final url = enlaceGoogleCalendar(t);
+    final url = enlaceGoogleCalendar(titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}', inicio: t.inicio, fin: t.fin);
     expect(url.host, 'calendar.google.com');
     expect(url.queryParameters['text'], 'Semipermanente · Ana');
     expect(url.queryParameters['dates'], '20261012T130000Z/20261012T140000Z');
