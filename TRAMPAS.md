@@ -808,3 +808,10 @@ El comando de un paso (`curl … | bash`) falla en un Termux nuevo ("curl: comma
 Pegar desde el portapapeles del teclado (Gboard) agrega los códigos de pegado (`^[[200~ … ~`) y el comando sale roto
 ("bash~"); hay que pegar manteniendo apretado en la pantalla de Termux › Paste.
 
+
+## `default-flavor` en pubspec mueve la compilación de Windows (2026-10-10)
+
+Con `flutter: default-flavor: almacen` (para las dos ediciones de Android), `flutter build windows` también toma el flavor y deja el
+`.exe` en `build/windows/x64/almacen/runner/Release/`. `tool/crear_instalador.ps1` lo busca en `build/windows/x64/runner/Release/` y la
+beta de Windows falló. Se sacó `default-flavor`: Android se compila siempre con `--flavor almacen` o `--flavor servicios` (workflow y
+`tool/publicar_actualizacion_companion.sh` ya lo hacen); Windows y las pruebas no tienen flavor.
