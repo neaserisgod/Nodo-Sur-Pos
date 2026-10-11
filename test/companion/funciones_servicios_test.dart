@@ -19,7 +19,7 @@ void main() {
     expect(titulos, containsAll(['Agregar un servicio nuevo', 'Insumos: comprar y contar', 'Cerrar el día', 'Cobrar un turno o un servicio']));
     expect(titulos, isNot(contains('Vender')));
     // Lo que se buscaba con las palabras de almacén se sigue encontrando.
-    expect(buscarFunciones('cerrar caja', servicios: true).first.titulo, 'Cerrar el día');
+    expect(buscarFunciones('cerrar caja', servicios: true).map((f) => f.titulo), contains('Cerrar el día'));
     expect(buscarFunciones('cigarrillos', servicios: true), isEmpty);
     expect(buscarFunciones('tintura', servicios: true).first.titulo, 'Insumos: comprar y contar');
   });

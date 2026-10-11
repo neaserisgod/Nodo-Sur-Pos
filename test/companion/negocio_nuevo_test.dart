@@ -247,7 +247,7 @@ void main() {
       expect(alFinal, isEmpty);
     });
 
-    testWidgets('los rubros van en dos grupos y uno de servicios avisa que la agenda llega después', (t) async {
+    testWidgets('los rubros van en dos grupos; la agenda ya está, así que no se avisa que llega después', (t) async {
       await tamanio(t);
       (String, PlantillaRubro)? negocio;
       await t.pumpWidget(app(AsistenteNegocio(
@@ -278,7 +278,7 @@ void main() {
       await t.tap(find.byKey(const Key('rubro-unas')));
       await t.pump();
       expect(find.textContaining('Manos, Pies, Cejas y pestañas', skipOffstage: false), findsOneWidget);
-      expect(find.textContaining('La agenda y cobrar los servicios', skipOffstage: false), findsOneWidget, reason: 'no se promete lo que todavía no está');
+      expect(find.textContaining('La agenda y cobrar los servicios', skipOffstage: false), findsNothing);
       await t.tap(find.byKey(const Key('asistente-seguir')));
       await t.pumpAndSettle();
       expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
