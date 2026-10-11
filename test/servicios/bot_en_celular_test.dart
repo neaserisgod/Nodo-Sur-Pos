@@ -1,9 +1,9 @@
 // El bot adentro de Nodo Sur Servicios (`lib/servicios/bot_en_celular.dart`): descomprimir por versión y el token del bot.
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/servicios/bot_en_celular.dart';
 import 'package:path/path.dart' as p;
@@ -61,5 +61,36 @@ void main() {
     expect(sitio.tokensPedidos, [id, id]);
     expect(j['token'], 'token-bot-2');
     expect(j['cursorPedidos'], 42);
+  });
+
+  test('al abrir la app después de actualizarla, el bot encendido pasa a la versión nueva con el mismo número', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const canal = MethodChannel('prueba/bot-al-dia');
+    final llamadas = <MethodCall>[];
+    var encendido = false;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(canal, (c) async {
+      llamadas.add(c);
+      if (c.method == 'encendido') return encendido;
+      if (c.method == 'encender') encendido = true;
+      return null;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(canal, null));
+    BotEnCelular version(String codigo) =>
+        BotEnCelular(acceso: SitioBotFalso(), soporte: () async => tmp, canal: canal, zip: () async => _zipCon({'src/index.js': codigo}));
+
+    // Apagado: no se enciende solo.
+    await version('uno').ponerAlDia();
+    expect(llamadas.where((c) => c.method == 'encender'), isEmpty);
+
+    expect(await version('uno').encender(numero: '5492944123456'), isNull);
+    final v1 = (llamadas.last.arguments as Map)['codigo'] as String;
+
+    await version('dos').ponerAlDia();
+    final ultima = llamadas.last.arguments as Map;
+    expect(llamadas.last.method, 'encender');
+    expect(ultima['codigo'], isNot(v1));
+    expect(ultima['numero'], '5492944123456');
+    expect(File(p.join(ultima['codigo'] as String, 'src/index.js')).readAsStringSync(), 'dos');
+    expect(Directory(v1).existsSync(), isFalse, reason: 'la versión vieja se borra');
   });
 }

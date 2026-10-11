@@ -30,6 +30,7 @@ import '../data/pdf_dia_completo.dart';
 import '../data/repositorio_conciliacion_mp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../servicios/conciliacion_mp_nube.dart';
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'pantallas/seccion_mp_real_ns.dart';
 import 'sync_nube_companion.dart';
 import '../ui/tema/tokens.dart';
@@ -349,7 +350,7 @@ class _DetalleCierreCompanionState extends State<_DetalleCierreCompanion> {
       bloques: [
         _filaCaja('Efectivo', c.efectivoContadoCentavos, c.efectivoEsperadoCentavos, c.diferenciaCentavos),
         _filaCaja('Mercado Pago', c.mpContadoCentavos, c.mpEsperadoCentavos, c.mpDiferenciaCentavos),
-        _filaCaja('Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
+        if (!esNegocioDeServicios()) _filaCaja('Lata', c.lataContadoCentavos, c.lataFinalCentavos, c.lataDiferenciaCentavos),
         BotonNs.secundario(context, _exportando ? 'Armando el PDF…' : 'Exportar el día completo (PDF)', _exportando ? null : _exportarDia, alto: 52),
         if (_errorExportar != null) InfoNs(_errorExportar!, tono: TonoNs.bad),
         SeccionMpRealNs(cargar: _cargarMpReal, mpEsperadoCentavos: c.mpEsperadoCentavos ?? 0, mpContadoCentavos: c.mpContadoCentavos),

@@ -111,7 +111,9 @@ Future<Producto> _producto(AppDatabase db, int id) => (db.select(db.productos)..
 
 // --- Insumos ------------------------------------------------------------------------------------------------------------
 
-/// Alta de un insumo. Arranca con stock 0: lo que hay se carga con [cargarCompraDeInsumo] o [contarInsumo], que dejan rastro.
+/// Alta de un insumo. Con [stockInicialMilesimas], arranca con lo que ya hay (El dueño, 2026-10-11: "al crear un insumo no me
+/// da la opción para poner la cantidad que tengo"), como un movimiento "Stock inicial" que deja rastro (Convención 6). Después,
+/// lo que entra y sale va por [cargarCompraDeInsumo] o [contarInsumo].
 Future<int> crearInsumo(
   AppDatabase db, {
   required String nombre,
@@ -121,10 +123,12 @@ Future<int> crearInsumo(
   int? proveedorId,
   int? categoriaId,
   int? stockMinimoMilesimas,
+  int stockInicialMilesimas = 0,
   required int usuarioId,
 }) {
   _validarNombre(nombre);
   _validarInsumo(contenidoEnvaseMilesimas: contenidoEnvaseMilesimas, costoEnvaseCentavos: costoEnvaseCentavos);
+  if (stockInicialMilesimas < 0) throw ArgumentError('Lo que tenés no puede ser negativo');
   return db.transaction(() async {
     final id = await crearProducto(
       db,
@@ -144,6 +148,16 @@ Future<int> crearInsumo(
         actualizadoEn: Value(DateTime.now()),
       ),
     );
+    if (stockInicialMilesimas > 0) {
+      await _moverStockDeInsumo(
+        db,
+        insumo: await _producto(db, id),
+        posterior: stockInicialMilesimas,
+        milesimas: stockInicialMilesimas,
+        usuarioId: usuarioId,
+        motivo: 'Stock inicial',
+      );
+    }
     return id;
   });
 }

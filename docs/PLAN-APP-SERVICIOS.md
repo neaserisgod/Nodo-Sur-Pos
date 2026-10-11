@@ -51,6 +51,18 @@ rama `ccr-d9ff719e-qd8uv7` (pantalla "Probar el bot acá", `lib/servicios/bot_en
 6. **Sitio**: descarga de Nodo Sur Servicios, plan Emprendedor apuntando a ella, y el paso de los negocios de servicios que hoy
    están en la app de almacén.
 
+## Ajustes después de la primera prueba (El dueño, 2026-10-11)
+
+- **Turnos duplicados**: un turno del bot tiene un `global_id` que sale de su id en el sitio (`globalIdDeTurnoRemoto`), así
+  las dos apps del mismo negocio no crean cada una el suyo; los que ya estaban duplicados se muestran una vez.
+- **Sin servicios cargados** el bot no ofrece los de ejemplo (`BOT_EN_APP` en botdemo): pasa la charla a una persona.
+- **Agendar en el calendario** abre la app de calendario del celular (no Google Calendar en el navegador).
+- **Agenda como el mock**: semana con puntitos, cifras de hoy, línea del día con los huecos libres (`filasDeAgenda`).
+- **Que hable de turnos**: la pestaña del medio es "Cobrar"; la caja es "el día", que empieza sola al cobrar (sin fondo
+  inicial ni Mercado Pago que contar) y se cierra con "Cerrar el día"; sin lata de cigarrillos en ningún lado; "cobros" en vez
+  de "ventas"; el asistente solo ofrece rubros de servicios y no hay bienvenida de almacén.
+- **Insumo nuevo con lo que ya hay** ("Lo que tenés ahora"), como movimiento "Stock inicial".
+
 ## Abierto
 
 - **Firebase**: hecho (10/10), la app `com.laplazoleta.servicios` está registrada y su id cargado en `lib/servicios/push.dart`.

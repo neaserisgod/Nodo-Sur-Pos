@@ -343,7 +343,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
                     if (widget.enEsteCelular case final enEste?) enEste(context, numeroWhatsApp(_numeroBot.text)) else ..._instalar(),
                   ] else ...[
                     const SizedBox(height: 12),
-                    const InfoNs('La configuración y la instalación las hace el dueño o un encargado.'),
+                    const InfoNs('La configuración y la instalación las hace quien administra el negocio.'),
                   ],
                 ],
                 const SizedBox(height: 16),

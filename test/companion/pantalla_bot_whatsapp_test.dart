@@ -65,7 +65,7 @@ void main() {
     expect(find.textContaining('Andando'), findsOneWidget);
     expect(find.byKey(const Key('bot_guardar')), findsNothing);
     expect(find.byKey(const Key('bot_copiar')), findsNothing);
-    expect(find.textContaining('dueño o un encargado'), findsOneWidget);
+    expect(find.textContaining('quien administra el negocio'), findsOneWidget);
   });
 
   testWidgets('sin señal hace más de dos horas lo dice con qué revisar', (t) async {

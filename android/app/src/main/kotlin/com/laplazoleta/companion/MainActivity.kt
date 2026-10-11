@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.provider.CalendarContract
 import android.provider.Settings
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -76,6 +77,22 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 else -> result.notImplemented()
+            }
+        }
+        // Agendar un turno en la app de calendario del celular (la que la persona tenga elegida), con todo cargado: solo falta
+        // tocar Guardar. Sin una app de calendario contesta false y Dart abre Google Calendar en el navegador.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/calendario").setMethodCallHandler { call, result ->
+            if (call.method != "agendar") return@setMethodCallHandler result.notImplemented()
+            val intent = Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.Events.TITLE, call.argument<String>("titulo") ?: "")
+                .putExtra(CalendarContract.Events.DESCRIPTION, call.argument<String>("detalle") ?: "")
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, call.argument<Number>("inicio")?.toLong() ?: 0L)
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, call.argument<Number>("fin")?.toLong() ?: 0L)
+            try {
+                startActivity(intent)
+                result.success(true)
+            } catch (e: Exception) {
+                result.success(false)
             }
         }
         // El bot adentro de Nodo Sur Servicios (`ServicioBot.kt`): lo enciende y lo apaga la app; después anda solo.

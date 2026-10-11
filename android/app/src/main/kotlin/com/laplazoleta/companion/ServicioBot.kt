@@ -102,6 +102,8 @@ class ServicioBot : Service() {
                 put("TMPDIR", cacheDir.path)
                 put("DIR_DATOS", datos.path)
                 put("ADAPTADOR", "baileys")
+                // Todo sale de la app: sin servicios cargados, el bot no ofrece los de ejemplo (`botdemo/src/config.js`).
+                put("BOT_EN_APP", "1")
                 put("PAREO", "1")
                 put("NUMERO_BOT", prefs.getString("numero", "") ?: "")
             }

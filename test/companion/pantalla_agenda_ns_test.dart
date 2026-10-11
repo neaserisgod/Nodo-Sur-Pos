@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/servicios/calendario.dart';
 import 'package:la_plazoleta/companion/kit/barra_inferior_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_agenda_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -50,6 +51,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  // Mañana en la tira de la semana: si hoy es domingo, está en la semana que viene.
+  Future<void> irAManana(WidgetTester tester) async {
+    final clave = ValueKey('dia-${manana.year}-${manana.month.toString().padLeft(2, '0')}-${manana.day.toString().padLeft(2, '0')}');
+    if (find.byKey(clave).evaluate().isEmpty) {
+      await tester.tap(find.byKey(const Key('agenda_semana_siguiente')));
+      await esperar(tester);
+    }
+    await tester.tap(find.byKey(clave));
+    await esperar(tester);
+  }
+
   Future<void> abrir(WidgetTester tester) async {
     tester.view.physicalSize = const Size(430, 1800);
     tester.view.devicePixelRatio = 1;
@@ -74,15 +86,20 @@ void main() {
     await abrir(tester);
     expect(find.textContaining('No hay turnos para este día'), findsOneWidget);
 
-    await tester.tap(find.text('Mañana'));
-    await esperar(tester);
-    expect(find.text('10:00  Ana'), findsOneWidget);
-    expect(find.text('11:00  Bea'), findsOneWidget);
+    await irAManana(tester);
+    expect(find.text('Mañana'), findsOneWidget);
+    expect(find.text('Ana'), findsOneWidget);
+    expect(find.text('Bea'), findsOneWidget);
     expect(find.text('Esperando seña'), findsOneWidget);
     expect(find.text('Confirmado'), findsOneWidget);
     expect(find.textContaining('WhatsApp'), findsOneWidget);
     // Por hora: Ana antes que Bea.
-    expect(tester.getTopLeft(find.text('10:00  Ana')).dy, lessThan(tester.getTopLeft(find.text('11:00  Bea')).dy));
+    expect(tester.getTopLeft(find.text('Ana')).dy, lessThan(tester.getTopLeft(find.text('Bea')).dy));
+    // Los huecos libres de media hora o más se ofrecen en la línea del día: de 9 a 10 y de 12 a 20.
+    expect(find.byKey(const ValueKey('libre-09:00')), findsOneWidget);
+    expect(find.byKey(const ValueKey('libre-12:00')), findsOneWidget);
+    expect(find.text('Libre hasta las 20:00'), findsOneWidget);
+    expect(find.byKey(const ValueKey('libre-10:00')), findsNothing);
   });
 
   testWidgets('dar un turno: elige servicio, día y un horario libre, con la seña pedida a la vista', (tester) async {
@@ -132,12 +149,28 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
+  testWidgets('tocar un hueco libre abre el turno nuevo con esa hora elegida', (tester) async {
+    await tester.runAsync(() => crearTurno(db, servicioId: semi, inicio: manana.add(const Duration(hours: 10)), nombreCliente: 'Ana', usuarioId: usuario));
+    await abrir(tester);
+    await irAManana(tester);
+    await tester.tap(find.byKey(const ValueKey('libre-11:00')));
+    await esperar(tester);
+    expect(find.text('Nuevo turno'), findsOneWidget);
+    await tester.enterText(find.descendant(of: find.byKey(const Key('turno_nombre')), matching: find.byType(EditableText)), 'Bea');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Guardar turno'));
+    await tester.tap(find.text('Guardar turno'));
+    await esperar(tester);
+    final bea = (await tester.runAsync(() => db.select(db.turnos).get()))!.firstWhere((t) => t.nombreCliente == 'Bea');
+    expect(bea.inicio, manana.add(const Duration(hours: 11)));
+    await tester.pump(const Duration(seconds: 10));
+  });
+
   testWidgets('no vino: se marca desde el turno y libera el horario', (tester) async {
     await tester.runAsync(() => crearTurno(db, servicioId: semi, inicio: manana.add(const Duration(hours: 10)), nombreCliente: 'Ana', usuarioId: usuario));
     await abrir(tester);
-    await tester.tap(find.text('Mañana'));
-    await esperar(tester);
-    await tester.tap(find.text('10:00  Ana'));
+    await irAManana(tester);
+    await tester.tap(find.text('Ana'));
     await tester.pumpAndSettle();
     expect(find.text('Cobrar'), findsOneWidget);
     expect(find.text('Anotar la seña'), findsOneWidget);
@@ -150,10 +183,10 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
-  test('el link de Google Calendar lleva el servicio, la persona y el horario en UTC', () async {
+  test('el respaldo de Google Calendar (sin app de calendario) lleva el servicio, la persona y el horario en UTC', () async {
     final id = await crearTurno(db, servicioId: semi, inicio: DateTime.utc(2026, 10, 12, 13).toLocal(), nombreCliente: 'Ana', usuarioId: usuario);
     final t = (await turnosDelDia(db, DateTime.utc(2026, 10, 12, 13).toLocal())).firstWhere((x) => x.turno.id == id);
-    final url = enlaceGoogleCalendar(t);
+    final url = enlaceGoogleCalendar(titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}', inicio: t.inicio, fin: t.fin);
     expect(url.host, 'calendar.google.com');
     expect(url.queryParameters['text'], 'Semipermanente · Ana');
     expect(url.queryParameters['dates'], '20261012T130000Z/20261012T140000Z');

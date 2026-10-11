@@ -63,7 +63,7 @@ class BarraInferiorNs extends StatelessWidget {
                 Expanded(
                   flex: p == PestaniaNs.vender ? 135 : 100,
                   child: p == PestaniaNs.vender
-                      ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p))
+                      ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p), etiqueta: conServicios ? 'Cobrar' : 'Vender')
                       : _Pestania(
                           // En servicios la Agenda reemplaza al Inicio (`REGLAS-NEGOCIO.md` §21) y Productos pasa a Servicios.
                           etiqueta: !conServicios
@@ -142,10 +142,13 @@ class _Pestania extends StatelessWidget {
 }
 
 class _BotonVender extends StatelessWidget {
-  const _BotonVender({required this.activo, required this.onTap});
+  const _BotonVender({required this.activo, required this.onTap, required this.etiqueta});
 
   final bool activo;
   final VoidCallback onTap;
+
+  /// "Cobrar" en un negocio de servicios (mock de servicios): ahí no se vende, se cobra el turno.
+  final String etiqueta;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +156,7 @@ class _BotonVender extends StatelessWidget {
       selected: activo,
       child: PresionNs(
         onTap: onTap,
-        etiqueta: 'Vender',
+        etiqueta: etiqueta,
         child: Center(
           child: Container(
             height: 52,
@@ -165,7 +168,7 @@ class _BotonVender extends StatelessWidget {
               children: [
                 const IconoNsWidget(IconoNs.carrito, tamanio: 22, color: TokensNs.blanco, grosor: 2.1),
                 const SizedBox(height: 1),
-                Text('Vender', style: estiloNs(13, peso: FontWeight.w700, color: TokensNs.blanco)),
+                Text(etiqueta, style: estiloNs(13, peso: FontWeight.w700, color: TokensNs.blanco)),
               ],
             ),
           ),

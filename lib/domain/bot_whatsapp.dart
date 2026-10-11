@@ -449,7 +449,9 @@ int _pesosHaciaArriba(int centavos) => (centavos + 99) ~/ 100;
 /// toma el siguiente.
 ///
 /// La seña viaja solo si el negocio cargó a dónde se transfiere (alias y titular): sin eso el bot no puede pedirla y rechazaría
-/// la configuración entera (`botdemo/src/config.js`). Sin servicios devuelve [anterior] tal cual (el bot necesita al menos uno).
+/// la configuración entera (`botdemo/src/config.js`). Sin servicios devuelve [anterior] tal cual (el bot necesita al menos uno),
+/// salvo con [cobroConLink] (Nodo Sur Servicios, el bot adentro de la app): ahí manda la lista vacía, para que el bot no siga
+/// ofreciendo los servicios que tenía (o los de ejemplo) y pase los pedidos de turno a una persona.
 ///
 /// [cobroConLink] (Nodo Sur Servicios, El dueño, 2026-10-10: "todo Mercado Pago"): la seña se cobra con el link de Mercado Pago que
 /// crea Nodo Sur, con media hora para pagar; el alias pasa a ser el plan B (si el negocio todavía no conectó Mercado Pago), así que
@@ -463,7 +465,7 @@ Map<String, dynamic> configBotConServicios(
   required String titularSena,
   bool cobroConLink = false,
 }) {
-  if (servicios.isEmpty) return anterior;
+  if (servicios.isEmpty && !cobroConLink) return anterior;
   final idsPrevios = <String, int>{};
   var maximo = 0;
   for (final x in (anterior['servicios'] is List ? anterior['servicios'] as List : const [])) {

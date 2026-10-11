@@ -342,6 +342,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
   late final _minimo = TextEditingController(
     text: (widget.existente?.producto.stockMinimoMilesimas ?? 0) > 0 ? textoDeMilesimas(widget.existente!.producto.stockMinimoMilesimas!) : '',
   );
+  final _tengo = TextEditingController();
   late UnidadInsumo _unidad = widget.existente?.unidad ?? UnidadInsumo.ml;
   String? _error;
 
@@ -351,6 +352,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
     _contenido.dispose();
     _costo.dispose();
     _minimo.dispose();
+    _tengo.dispose();
     super.dispose();
   }
 
@@ -358,14 +360,28 @@ class _HojaInsumoState extends State<_HojaInsumo> {
     final contenido = milesimasDesdeTexto(_contenido.text);
     final costo = _plata(_costo.text);
     final minimo = _minimo.text.trim().isEmpty ? null : milesimasDesdeTexto(_minimo.text);
+    final tengo = _tengo.text.trim().isEmpty ? 0 : milesimasDesdeTexto(_tengo.text);
     if (_nombre.text.trim().isEmpty || contenido == null || contenido <= 0 || costo == null) {
       setState(() => _error = 'Completá nombre, lo que trae un envase y lo que sale');
+      return;
+    }
+    if (tengo == null) {
+      setState(() => _error = 'Lo que tenés va en ${_unidad.abreviatura}, como 30 o 7,5');
       return;
     }
     try {
       final e = widget.existente;
       if (e == null) {
-        await crearInsumo(widget.db, nombre: _nombre.text, unidad: _unidad, contenidoEnvaseMilesimas: contenido, costoEnvaseCentavos: costo, stockMinimoMilesimas: minimo, usuarioId: widget.usuarioId);
+        await crearInsumo(
+          widget.db,
+          nombre: _nombre.text,
+          unidad: _unidad,
+          contenidoEnvaseMilesimas: contenido,
+          costoEnvaseCentavos: costo,
+          stockMinimoMilesimas: minimo,
+          stockInicialMilesimas: tengo,
+          usuarioId: widget.usuarioId,
+        );
       } else {
         await editarInsumo(
           widget.db,
@@ -380,7 +396,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
           usuarioId: widget.usuarioId,
         );
       }
-      if (mounted) Navigator.of(context).pop(e == null ? 'Insumo cargado. Sumá lo que tenés con "Cargar compra".' : 'Insumo guardado');
+      if (mounted) Navigator.of(context).pop(e == null && tengo == 0 ? 'Insumo cargado. Sumá lo que tenés con "Cargar compra".' : e == null ? 'Insumo cargado' : 'Insumo guardado');
     } on ArgumentError catch (e) {
       setState(() => _error = '${e.message}');
     }
@@ -407,6 +423,15 @@ class _HojaInsumoState extends State<_HojaInsumo> {
             Expanded(child: CampoNs(etiqueta: 'Sale el envase', controller: _costo, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs)),
           ],
         ),
+        if (widget.existente == null)
+          CampoNs(
+            key: const Key('insumo_tengo'),
+            etiqueta: 'Lo que tenés ahora (${_unidad.abreviatura})',
+            controller: _tengo,
+            placeholder: 'Ej.: 2 envases de 15 = 30',
+            teclado: const TextInputType.numberWithOptions(decimal: true),
+            formatos: decimales,
+          ),
         CampoNs(etiqueta: 'Avisar con menos de (${_unidad.abreviatura}, opcional)', controller: _minimo, teclado: const TextInputType.numberWithOptions(decimal: true), formatos: decimales),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],

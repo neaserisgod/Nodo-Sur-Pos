@@ -4,11 +4,12 @@
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/identidad_sync.dart' show globalIdDeTurnoRemoto;
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/data/repositorio_turnos.dart';
@@ -95,7 +96,7 @@ void main() {
     return db.close();
   });
 
-  Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))).getSingle();
+  Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))..orderBy([(t) => OrderingTerm.asc(t.id)])..limit(1)).getSingle();
 
   test('un turno del bot entra a la Agenda una sola vez, esperando la seña y ocupando el horario', () async {
     await sinc.vuelta('tok');
@@ -124,6 +125,32 @@ void main() {
     expect(cambios.single['inicio'], ms(manana10.add(const Duration(hours: 3))));
     await sinc.vuelta('tok');
     expect(cambios, hasLength(1), reason: 'sin cambios nuevos no se manda nada');
+  });
+
+  test('el mismo turno del bot tiene el mismo id en cada celular; uno que ya quedó doble se ve una sola vez', () async {
+    await sinc.vuelta('tok');
+    final t = await elDelBot();
+    expect(t.globalId, globalIdDeTurnoRemoto('turno-bot-000001'), reason: 'la app de almacén y la de servicios lo bajan igual');
+    // Como quedaba antes: otro celular le puso su propio id y la sincronización lo trajo.
+    await db.into(db.turnos).insert(TurnosCompanion.insert(
+          servicioId: Value(t.servicioId),
+          servicioNombre: t.servicioNombre,
+          duracionMinutos: t.duracionMinutos,
+          inicio: t.inicio,
+          nombreCliente: t.nombreCliente,
+          usuarioId: t.usuarioId,
+          origen: const Value('BOT'),
+          idRemoto: const Value('turno-bot-000001'),
+          globalId: const Value('00000000000000000000000000000abc'),
+        ));
+    final delDia = await turnosDelDia(db, manana10);
+    expect(delDia.where((x) => x.turno.idRemoto == 'turno-bot-000001'), hasLength(1));
+    expect(delDia.single.turno.id, t.id);
+    remotos.single
+      ..['estado'] = 'cancelado'
+      ..['actualizado'] = 99;
+    await sinc.vuelta('tok');
+    expect((await elDelBot()).estado, 'CANCELADO', reason: 'el duplicado no frena los cambios del bot');
   });
 
   test('el cliente lo cancela por WhatsApp: se cancela en la Agenda', () async {

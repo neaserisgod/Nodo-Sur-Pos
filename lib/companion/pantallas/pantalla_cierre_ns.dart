@@ -159,6 +159,9 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
 
   static String _pesos(int? centavos) => centavos == null ? '' : '${centavos ~/ centavosPorPeso}';
 
+  /// Nodo Sur Servicios: el cierre simple (la lata se precarga en [_cierreSimple], por eso no se muestra).
+  bool get _servicios => esEdicionServicios;
+
   @override
   void initState() {
     super.initState();
@@ -305,7 +308,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  CabeceraSubNs(titulo: cerrada ? 'Caja cerrada' : 'Cerrar caja', tamanio: 32, onVolver: _atras),
+                  CabeceraSubNs(titulo: _servicios ? (cerrada ? 'Día cerrado' : 'Cerrar el día') : (cerrada ? 'Caja cerrada' : 'Cerrar caja'), tamanio: 32, onVolver: _atras),
                   const SizedBox(height: 14),
                   Expanded(
                     child: switch (_etapa) {
@@ -389,14 +392,20 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        _titulo(context, 'Etapa 2 de 2', 'Revisá antes de cerrar'),
+        if (_servicios) ...[
+          _titulo(context, 'Cierre del día', 'Lo que entró hoy'),
+          const SizedBox(height: 10),
+          const InfoNs('Todavía no se cerró nada. Si lo que tenés no coincide, corregilo: la diferencia se actualiza sola.'),
+        ] else ...[
+          _titulo(context, 'Etapa 2 de 2', 'Revisá antes de cerrar'),
+          const SizedBox(height: 10),
+          const InfoNs('Todavía no se cerró nada. Podés corregir lo contado: la diferencia se actualiza sola.'),
+        ],
         const SizedBox(height: 10),
-        const InfoNs('Todavía no se cerró nada. Podés corregir lo contado: la diferencia se actualiza sola.'),
-        const SizedBox(height: 10),
-        campo('Efectivo contado (se puede corregir)', _efectivo),
-        if (ef != null) dato('Caja esperada', r.efectivoEsperadoCentavos, ef),
+        campo(_servicios ? 'Efectivo' : 'Efectivo contado (se puede corregir)', _efectivo),
+        if (ef != null) dato(_servicios ? 'Efectivo esperado' : 'Caja esperada', r.efectivoEsperadoCentavos, ef),
         const SizedBox(height: 4),
-        campo('MP contado (según la app de Mercado Pago)', _mp),
+        campo(_servicios ? 'Mercado Pago (según su app)' : 'MP contado (según la app de Mercado Pago)', _mp),
         const SizedBox(height: 8),
         BotonNs.secundario(context, _pidiendoSaldo ? 'Pidiendo el saldo a Mercado Pago…' : 'Traer saldo de Mercado Pago', _pidiendoSaldo ? null : _traerSaldo, icono: IconoNs.descarga),
         if (_saldo != null)
@@ -409,9 +418,12 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
             ),
           ),
         if (mp != null) dato('MP esperado', r.mpEsperadoCentavos, mp),
-        const SizedBox(height: 4),
-        campo('Lata contada', _lata),
-        if (la != null) dato('Lata esperada', r.lataFinalCentavos, la),
+        // Un negocio de servicios no tiene cigarrillos: la lata queda como la calculó la app, sin mostrarse.
+        if (!_servicios) ...[
+          const SizedBox(height: 4),
+          campo('Lata contada', _lata),
+          if (la != null) dato('Lata esperada', r.lataFinalCentavos, la),
+        ],
         for (final f in _faltantes.entries)
           Padding(
             padding: const EdgeInsets.only(top: 10),
@@ -450,7 +462,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           apoyo: todo ? 'El conteo coincide con lo esperado.' : 'Diferencia en efectivo: ${_dif(de).toLowerCase()}.',
         ),
         FilaClaveValorNs(clave: 'Diferencia', valor: _dif(de), colorValor: de == 0 ? ns.g : ns.b),
-        FilaClaveValorNs(clave: 'Lata al cierre', valor: plataNs(r.lataFinalCentavos)),
+        if (!_servicios) FilaClaveValorNs(clave: 'Lata al cierre', valor: plataNs(r.lataFinalCentavos)),
         SeccionExtraCierreCompanion(resumen: r, nota: _nota.text),
       ],
     );

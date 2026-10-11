@@ -208,3 +208,73 @@ String? textoFaltas(int veces) => switch (veces) {
       1 => 'faltó 1 vez',
       _ => 'faltó $veces veces',
     };
+
+/// Una fila de la línea del día en la Agenda: un turno, un hueco libre o la marca de "Ahora".
+sealed class FilaAgenda<T> {
+  const FilaAgenda();
+}
+
+class FilaTurno<T> extends FilaAgenda<T> {
+  const FilaTurno(this.turno);
+  final T turno;
+}
+
+/// Libre de [desdeMin] a [hastaMin] (minutos desde la medianoche).
+class FilaLibre<T> extends FilaAgenda<T> {
+  const FilaLibre(this.desdeMin, this.hastaMin);
+  final int desdeMin;
+  final int hastaMin;
+}
+
+class FilaAhora<T> extends FilaAgenda<T> {
+  const FilaAhora();
+}
+
+/// Arma la línea del día: los [turnos] (ya ordenados por hora, sin los cancelados) con los huecos libres de [huecoMinimoMin] o
+/// más entre ellos dentro de [franja] (para dar un turno ahí con un toque), y la marca de [ahoraMin] si es hoy (null si no).
+///
+/// Un hueco que ya pasó no se muestra, y uno que está pasando arranca en el próximo cuarto de hora: un horario libre a las
+/// 10 cuando son las 12 no sirve para nada. Un turno que no ocupa (no vino) no tapa el hueco. Con [conHuecos] en false (varios
+/// profesionales a la vez: un hueco de uno no es de los otros), solo turnos y la marca.
+List<FilaAgenda<T>> filasDeAgenda<T>({
+  required List<T> turnos,
+  required int Function(T) inicioMin,
+  required int Function(T) duracionMin,
+  required bool Function(T) ocupa,
+  FranjaAtencion? franja,
+  int? ahoraMin,
+  bool conHuecos = true,
+  int huecoMinimoMin = 30,
+}) {
+  final filas = <FilaAgenda<T>>[];
+  var ahoraPuesta = ahoraMin == null;
+  void marcarAhoraAntesDe(int min) {
+    if (!ahoraPuesta && min > ahoraMin!) {
+      filas.add(FilaAhora<T>());
+      ahoraPuesta = true;
+    }
+  }
+
+  void hueco(int desde, int hasta) {
+    if (!conHuecos) return;
+    if (ahoraMin != null) {
+      if (hasta <= ahoraMin) return;
+      if (desde < ahoraMin) desde = (ahoraMin + 14) ~/ 15 * 15;
+    }
+    if (hasta - desde < huecoMinimoMin) return;
+    marcarAhoraAntesDe(desde);
+    filas.add(FilaLibre<T>(desde, hasta));
+  }
+
+  var fin = franja?.desdeMin;
+  for (final t in turnos) {
+    final ini = inicioMin(t);
+    if (fin != null) hueco(fin, ini);
+    marcarAhoraAntesDe(ini);
+    filas.add(FilaTurno<T>(t));
+    if (fin != null && ocupa(t) && ini + duracionMin(t) > fin) fin = ini + duracionMin(t);
+  }
+  if (fin != null) hueco(fin, franja!.hastaMin);
+  if (!ahoraPuesta) filas.add(FilaAhora<T>());
+  return filas;
+}
