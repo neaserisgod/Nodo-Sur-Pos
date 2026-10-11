@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
+import '../edicion.dart';
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'app_ns.dart';
 import 'cliente_companion.dart';
 import 'kit/kit_ns.dart';
@@ -74,7 +76,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     try {
       await servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: centavos, mpInicialCentavos: mpCentavos);
       if (!mounted) return;
-      mostrarAvisoNs(context, 'Caja abierta con ${plataNs(centavos)}');
+      mostrarAvisoNs(context, esEdicionServicios ? 'Día empezado' : 'Caja abierta con ${plataNs(centavos)}');
       await app.refrescar();
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
@@ -137,7 +139,8 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     final listo = _montoCentavos > 0 && !_guardando;
     final cajas = [
       ('Cajón normal', MedioGastoCompanion.cajonNormal),
-      ('Lata cigarrillos', MedioGastoCompanion.lata),
+      // Un negocio de servicios no tiene cigarrillos ni su lata.
+      if (!esNegocioDeServicios()) ('Lata cigarrillos', MedioGastoCompanion.lata),
       ('Mercado Pago', MedioGastoCompanion.mercadoPago),
     ];
     return Scaffold(
@@ -161,6 +164,10 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                           child: ListView(
                             padding: EdgeInsets.zero,
                             children: [
+                              // Nodo Sur Servicios: caja simple, el día empieza con lo que quedó del anterior, sin contar nada.
+                              if (esEdicionServicios)
+                                const InfoNs('El día no empezó. Empezalo para anotar la plata que sale o entra.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w600)
+                              else ...[
                               const InfoNs('No hay caja abierta en la PC ahora mismo.', tono: TonoNs.warn, tamanio: 15, peso: FontWeight.w600),
                               const SizedBox(height: 10),
                               CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondoCtrl, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
@@ -176,12 +183,13 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                                   padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                                   child: Text('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(_lataArrastra!)} de antes — no hace falta contarla ahora.', style: estiloNs(14, altura: 1.4, color: ns.mute)),
                                 ),
+                              ],
                               if (_error != null) ...[const SizedBox(height: 10), InfoNs(_error!, tono: TonoNs.bad)],
                             ],
                           ),
                         ),
                         const SizedBox(height: 14),
-                        BotonNs.primario(context, _guardando ? 'Abriendo…' : 'Abrir caja y continuar', _guardando ? null : () => _abrirCaja(app), alto: 64, tamanio: 18, habilitado: !_guardando),
+                        BotonNs.primario(context, _guardando ? 'Abriendo…' : (esEdicionServicios ? 'Empezar el día y continuar' : 'Abrir caja y continuar'), _guardando ? null : () => _abrirCaja(app), alto: 64, tamanio: 18, habilitado: !_guardando),
                       ],
                     ),
                   )
@@ -190,7 +198,7 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Anotá la plata que sale o entra de la caja sin ser una venta.', style: estiloNs(15, altura: 1.4, color: ns.mute)),
+                        Text(esNegocioDeServicios() ? 'Anotá la plata que sale o entra de la caja sin ser un cobro.' : 'Anotá la plata que sale o entra de la caja sin ser una venta.', style: estiloNs(15, altura: 1.4, color: ns.mute)),
                         const SizedBox(height: 14),
                         SegmentoNs(
                           opciones: const ['Sale plata', 'Entra plata'],

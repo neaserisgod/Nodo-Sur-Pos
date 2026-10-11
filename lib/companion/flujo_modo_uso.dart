@@ -24,14 +24,36 @@ Future<void> aplicarModoSoloCelular() async {
 }
 
 /// Lo primero que ve una instalación nueva: la bienvenida, y al terminarla (o saltarla) elegir el modo.
-/// Nodo Sur Servicios no tiene PC: de la bienvenida va directo a entrar con la cuenta, como "solo celular".
-Widget pantallaDeBienvenidaInicial() => PantallaBienvenida(
-  alTerminar: (context) => esEdicionServicios
-      ? elegirModo(context, ModoUso.soloCelular, actual: null)
-      : Navigator.of(context).pushReplacement(
+/// Nodo Sur Servicios no tiene PC ni pasa por la bienvenida, que cuenta cosas de almacén (separar para proveedores, contar
+/// la caja, el stock con la cámara; El dueño, 2026-10-11: "que parezca que está hecho para turnos"): va directo a entrar con
+/// la cuenta, como "solo celular".
+Widget pantallaDeBienvenidaInicial() => esEdicionServicios
+    ? const _DirectoALaCuenta()
+    : PantallaBienvenida(
+        alTerminar: (context) => Navigator.of(context).pushReplacement(
           MaterialPageRoute<void>(builder: (_) => pantallaDeElegirModoInicial()),
         ),
-);
+      );
+
+class _DirectoALaCuenta extends StatefulWidget {
+  const _DirectoALaCuenta();
+
+  @override
+  State<_DirectoALaCuenta> createState() => _DirectoALaCuentaState();
+}
+
+class _DirectoALaCuentaState extends State<_DirectoALaCuenta> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) elegirModo(context, ModoUso.soloCelular, actual: null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(color: Theme.of(context).scaffoldBackgroundColor);
+}
 
 /// La pantalla de elegir el modo en el primer arranque (después de la bienvenida).
 Widget pantallaDeElegirModoInicial() => PantallaElegirModo(

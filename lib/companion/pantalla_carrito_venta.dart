@@ -39,6 +39,7 @@ import 'pantallas/grilla_servicios_ns.dart';
 import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
+import '../edicion.dart';
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 
 /// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
@@ -1016,7 +1017,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Expanded(child: Text('Venta', style: tituloNs(40, color: ns.ink))),
+                    Expanded(child: Text(servicios ? 'Cobrar' : 'Venta', style: tituloNs(40, color: ns.ink))),
                     if (n > 0)
                       Text(
                         servicios ? (n == 1 ? '1 servicio' : '$n servicios') : (n == 1 ? '1 producto' : '$n productos'),
@@ -1514,7 +1515,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final c = _cobrado!;
     final detalle = [
       _nombres[c.medio]!,
-      c.productos == 1 ? '1 producto' : '${c.productos} productos',
+      if (esNegocioDeServicios()) c.productos == 1 ? '1 servicio' : '${c.productos} servicios' else c.productos == 1 ? '1 producto' : '${c.productos} productos',
       if (c.medio == _MedioVenta.mixto && _efectivoMixtoCobrado != null)
         'Efectivo ${plataNs(_efectivoMixtoCobrado!)} + MP ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
       if (_cobradoAMano) 'cobrado a mano, sin la terminal',
@@ -1575,7 +1576,7 @@ class _CajaCerrada extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Venta', style: tituloNs(40, color: ns.ink)),
+          Text(esEdicionServicios ? 'Cobrar' : 'Venta', style: tituloNs(40, color: ns.ink)),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1583,11 +1584,12 @@ class _CajaCerrada extends StatelessWidget {
               children: [
                 Container(width: 72, height: 72, decoration: BoxDecoration(color: ns.s, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.candado, tamanio: 32, color: ns.ink)),
                 const SizedBox(height: 14),
-                Text('La caja está cerrada', style: tituloNs(34, track: -0.05, color: ns.ink)),
+                // Nodo Sur Servicios: el día empieza con un toque, sin fondo inicial (`mostrarHojaAbrirCaja`).
+                Text(esEdicionServicios ? 'El día no empezó' : 'La caja está cerrada', style: tituloNs(34, track: -0.05, color: ns.ink)),
                 const SizedBox(height: 14),
-                Text('Para cobrar primero abrí la caja con el fondo inicial.', style: estiloNs(16, color: ns.mute)),
+                Text(esEdicionServicios ? 'Empezalo para cobrar. Lo que entre se ve en Caja.' : 'Para cobrar primero abrí la caja con el fondo inicial.', style: estiloNs(16, color: ns.mute)),
                 const SizedBox(height: 14),
-                BotonNs(texto: 'Abrir caja', onTap: onAbrir, alto: 60, tamanio: 17, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 30),
+                BotonNs(texto: esEdicionServicios ? 'Empezar el día' : 'Abrir caja', onTap: onAbrir, alto: 60, tamanio: 17, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 30),
               ],
             ),
           ),

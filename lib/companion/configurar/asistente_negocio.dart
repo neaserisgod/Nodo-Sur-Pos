@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 
 import '../../domain/forma_de_trabajo.dart';
 import '../../domain/plantillas_rubro.dart';
+import '../../edicion.dart';
 import '../../servicios/modulos_activos.dart' show modulosActuales;
 import '../kit/kit_ns.dart';
 
@@ -265,7 +266,7 @@ class _PasoNegocio extends StatelessWidget {
           child: CampoNs(
             etiqueta: 'Nombre del comercio',
             controller: nombreCtrl,
-            placeholder: 'Ej.: Almacén Don Pepe',
+            placeholder: esEdicionServicios ? 'Ej.: Nails Sofi' : 'Ej.: Almacén Don Pepe',
             onChanged: (_) => alCambiarNombre(),
           ),
         ),
@@ -273,9 +274,10 @@ class _PasoNegocio extends StatelessWidget {
         // En dos grupos (`docs/PLAN-SERVICIOS.md`, etapa 1): el rubro decide si la app es de productos o de servicios. Lo
         // que trae el rubro elegido se cuenta debajo de su grupo, a la vista: con siete rubros, al final de la lista
         // quedaba fuera de la pantalla.
+        // Nodo Sur Servicios es solo para turnos: no ofrece los rubros de productos.
         for (final (titulo, rubros) in [
-          ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
-          ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          if (!esEdicionServicios) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
+          (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           ('¿Ninguno?', const [PlantillaRubro.otro]),
         ]) ...[
           SeccionNs(titulo),
@@ -286,11 +288,7 @@ class _PasoNegocio extends StatelessWidget {
             ),
           if (rubro != null && rubros.contains(rubro))
             InfoNs(
-              [
-                categorias.isEmpty ? 'Arrancás sin categorías: las armás vos.' : 'Te dejamos estas categorías para empezar: ${categorias.map((c) => c.nombre).join(', ')}.',
-                // La agenda, los servicios con insumos y la seña son las etapas 2 a 4 del plan: no se promete lo que no está.
-                if (rubro!.forma == FormaDeTrabajo.servicios) 'La agenda y cobrar los servicios llegan en las próximas actualizaciones.',
-              ].join(' '),
+              categorias.isEmpty ? 'Arrancás sin categorías: las armás vos.' : 'Te dejamos estas categorías para empezar: ${categorias.map((c) => c.nombre).join(', ')}.',
               tono: TonoNs.good,
             ),
         ],
@@ -596,20 +594,25 @@ class _PasoCobros extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PaginaArranqueNs(
         cabecera: cabecera,
-        titulo: 'Cobros y equipo',
+        titulo: esEdicionServicios ? 'Cobros' : 'Cobros y equipo',
         tituloChico: true,
-        bajada: 'Las dos cosas se hacen en horsepos.com con tu cuenta. Se abre el navegador y volvés a la app.',
+        bajada: esEdicionServicios
+            ? 'Se conecta en horsepos.com con tu cuenta. Se abre el navegador y volvés a la app.'
+            : 'Las dos cosas se hacen en horsepos.com con tu cuenta. Se abre el navegador y volvés a la app.',
         cuerpo: [
           KeyedSubtree(
             key: const Key('web-mercado-pago'),
             child: OpcionNs(
               titulo: 'Conectá Mercado Pago',
-              detalle: 'Cobrá con QR y débito en tu terminal Point. Lo cobrado entra en la caja como Mercado Pago.',
+              detalle: esEdicionServicios
+                  ? 'Las señas se cobran solas con un link que manda el bot, y en el local cobrás con un QR en la pantalla del celular.'
+                  : 'Cobrá con QR y débito en tu terminal Point. Lo cobrado entra en la caja como Mercado Pago.',
               derecha: 'Conectar',
               onTap: () => alAbrirWeb('mercado-pago'),
             ),
           ),
-          KeyedSubtree(
+          // Nodo Sur Servicios es de una sola persona (sin varios usuarios, `docs/PLAN-APP-SERVICIOS.md`).
+          if (!esEdicionServicios) KeyedSubtree(
             key: const Key('web-equipo'),
             child: OpcionNs(
               titulo: 'Sumá a tu equipo',
@@ -632,11 +635,11 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
   final Set<PasoNegocio> pendientes;
   final VoidCallback alSeguir;
 
-  static const _nombres = {
-    PasoNegocio.negocio: 'Nombre y rubro',
-    PasoNegocio.producto: 'Tu primer producto',
-    PasoNegocio.cobros: 'Mercado Pago y equipo',
-  };
+  static Map<PasoNegocio, String> get _nombres => {
+        PasoNegocio.negocio: 'Nombre y rubro',
+        PasoNegocio.producto: modulosActuales.value.forma == FormaDeTrabajo.servicios ? 'Tu primer servicio' : 'Tu primer producto',
+        PasoNegocio.cobros: esEdicionServicios ? 'Mercado Pago' : 'Mercado Pago y equipo',
+      };
 
   @override
   Widget build(BuildContext context) {

@@ -74,7 +74,7 @@ class PantallaCajaNs extends StatelessWidget {
                 // Un negocio de servicios no separa para proveedores (mock de servicios: Caja queda en Resumen y Ventas). El valor
                 // del segmento sigue siendo 0 Resumen, 1 Separar, 2 Ventas para todos.
                 builder: (context, seg, _) => esNegocioDeServicios()
-                    ? SegmentoNs(opciones: const ['Resumen', 'Ventas'], indice: seg == 2 ? 1 : 0, onCambio: (i) => app.segmentoCaja.value = i == 1 ? 2 : 0)
+                    ? SegmentoNs(opciones: const ['Resumen', 'Cobros'], indice: seg == 2 ? 1 : 0, onCambio: (i) => app.segmentoCaja.value = i == 1 ? 2 : 0)
                     : SegmentoNs(opciones: const ['Resumen', 'Separar', 'Ventas'], indice: seg, onCambio: (i) => app.segmentoCaja.value = i),
               ),
             ),
@@ -168,7 +168,8 @@ class _ResumenState extends State<_Resumen> {
                   FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(plataNs(efectivo), style: tituloNs(50, track: -0.06, altura: 1.02, color: TokensNs.blanco))),
                   const SizedBox(height: 14),
                   BotonNs(
-                    texto: abierta ? 'Cerrar caja' : 'Abrir caja',
+                    // En servicios la caja es el día: se empieza sola al cobrar y se cierra al terminar (mock de servicios).
+                    texto: servicios ? (abierta ? 'Cerrar el día' : 'Empezar el día') : (abierta ? 'Cerrar caja' : 'Abrir caja'),
                     onTap: () => abierta ? _cerrar(context, app) : _abrir(context, app),
                     alto: 52,
                     tamanio: 16,
@@ -209,25 +210,25 @@ class _ResumenState extends State<_Resumen> {
             const SeccionNs('Cómo va el día'),
             const SizedBox(height: 10),
             _Bloque(filas: [
-              FilaClaveValorNs(clave: 'Vendido', valor: plataNs(dia.vendidoCentavos)),
+              FilaClaveValorNs(clave: servicios ? 'Cobrado' : 'Vendido', valor: plataNs(dia.vendidoCentavos)),
               FilaClaveValorNs(clave: 'Ganancia', valor: plataNs(dia.gananciaCentavos), colorValor: ns.g),
               if (servicios)
                 FilaClaveValorNs(clave: 'Para reponer insumos', valor: plataNs(_paraReponer), colorValor: ns.w)
               else
                 FilaClaveValorNs(clave: 'Por separar', valor: plataNs(pend.faltaSepararCentavos), colorValor: ns.w),
-              FilaClaveValorNs(clave: 'Ventas registradas', valor: '${dia.ventas}'),
+              FilaClaveValorNs(clave: servicios ? 'Cobros' : 'Ventas registradas', valor: '${dia.ventas}'),
             ]),
             const SizedBox(height: 14),
             PresionNs(
               onTap: () => app.irA((_) => const PaginaCierresAnteriores()),
-              etiqueta: 'Ver cierres anteriores',
+              etiqueta: servicios ? 'Ver días anteriores' : 'Ver cierres anteriores',
               child: Container(
                 constraints: const BoxConstraints(minHeight: 60),
                 padding: const EdgeInsets.symmetric(horizontal: 22),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: TokensNs.contorno, width: 1.5)),
                 child: Row(
                   children: [
-                    Expanded(child: Text('Ver cierres anteriores', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink))),
+                    Expanded(child: Text(servicios ? 'Ver días anteriores' : 'Ver cierres anteriores', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink))),
                     IconoNsWidget(IconoNs.chevron, tamanio: 18, color: ns.mute, grosor: 2.2),
                   ],
                 ),
@@ -734,7 +735,7 @@ class _VentasState extends State<_Ventas> {
     context,
     builder: (ctx) => HojaNs(
       titulo: '¿Devolver $monto por Mercado Pago?',
-      texto: 'Esta venta se cobró con la terminal. La plata vuelve al cliente por Mercado Pago.',
+      texto: esNegocioDeServicios() ? 'Este cobro entró por Mercado Pago. La plata le vuelve a la clienta por Mercado Pago.' : 'Esta venta se cobró con la terminal. La plata vuelve al cliente por Mercado Pago.',
       botones: [
         BotonNs.primario(ctx, 'Sí, devolver', () => Navigator.of(ctx).pop(true)),
         BotonNs.secundario(ctx, 'No', () => Navigator.of(ctx).pop(false)),
@@ -748,8 +749,10 @@ class _VentasState extends State<_Ventas> {
     final confirmado = await mostrarHojaNs<bool>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: '¿Anular la venta de ${plataNs(v.totalCentavos)}?',
-        texto: 'Se repone el stock y se revierte la caja. La venta sigue viéndose acá, marcada como anulada.',
+        titulo: esNegocioDeServicios() ? '¿Anular el cobro de ${plataNs(v.totalCentavos)}?' : '¿Anular la venta de ${plataNs(v.totalCentavos)}?',
+        texto: esNegocioDeServicios()
+            ? 'Se revierte la caja y vuelven los insumos que usó. El cobro sigue viéndose acá, marcado como anulado.'
+            : 'Se repone el stock y se revierte la caja. La venta sigue viéndose acá, marcada como anulada.',
         bloques: [CampoNs(etiqueta: 'Motivo', controller: motivo, placeholder: 'Ej: error de carga')],
         botones: [
           BotonNs.peligroSolido(ctx, 'Anular', () {
@@ -772,7 +775,7 @@ class _VentasState extends State<_Ventas> {
     try {
       await servicio.anularVenta(ventaId: v.ventaId, usuarioId: usuario, motivo: texto);
       if (!mounted) return;
-      mostrarAvisoNs(context, 'Venta anulada');
+      mostrarAvisoNs(context, esNegocioDeServicios() ? 'Cobro anulado' : 'Venta anulada');
       setState(() => _abierta = null);
       await _cargar();
       await app.refrescar();
@@ -818,7 +821,7 @@ class _VentasState extends State<_Ventas> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: margenNs),
-            child: Text('${vigentes.length} ${vigentes.length == 1 ? 'venta' : 'ventas'} · ${plataNs(total)}', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute, tabular: true)),
+            child: Text('${vigentes.length} ${esNegocioDeServicios() ? (vigentes.length == 1 ? 'cobro' : 'cobros') : (vigentes.length == 1 ? 'venta' : 'ventas')} · ${plataNs(total)}', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute, tabular: true)),
           ),
           const SizedBox(height: 10),
           FilaChipsNs(chips: [for (final p in _Periodo.values) ChipNs(texto: p.texto, activo: _periodo == p, onTap: () {
@@ -839,7 +842,7 @@ class _VentasState extends State<_Ventas> {
           else if (_error != null)
             EstadoErrorNs(texto: _error!, onReintentar: _cargar)
           else if (_ventas.isEmpty)
-            Padding(padding: const EdgeInsets.symmetric(horizontal: margenNs), child: Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text('Sin ventas en este período', style: estiloNs(16, color: ns.mute))))
+            Padding(padding: const EdgeInsets.symmetric(horizontal: margenNs), child: Container(width: double.infinity, padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)), child: Text(esNegocioDeServicios() ? 'Sin cobros en este período' : 'Sin ventas en este período', style: estiloNs(16, color: ns.mute))))
           else
             for (var i = 0; i < _ventas.length; i++) ...[
               if (i == 0 || !_mismoDia(_ventas[i - 1].fecha, _ventas[i].fecha))
@@ -929,7 +932,7 @@ class _FilaVenta extends StatelessWidget {
             children: [
               PresionNs(
                 onTap: v.anulada ? null : onTap,
-                etiqueta: 'Venta ${v.etiqueta}',
+                etiqueta: '${esNegocioDeServicios() ? 'Cobro' : 'Venta'} ${v.etiqueta}',
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 64),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -940,7 +943,7 @@ class _FilaVenta extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Venta ${v.etiqueta}', style: estiloNs(16, peso: FontWeight.w500, color: texto, decoracion: tachado)),
+                            Text('${esNegocioDeServicios() ? 'Cobro' : 'Venta'} ${v.etiqueta}', style: estiloNs(16, peso: FontWeight.w500, color: texto, decoracion: tachado)),
                             Text(medio, style: estiloNs(14, color: apagado)),
                           ],
                         ),
@@ -985,7 +988,7 @@ class _FilaVenta extends StatelessWidget {
                             ),
                             if (onEliminar != null) ...[
                               const SizedBox(height: 10),
-                              BotonNs(texto: 'Anular venta', onTap: onEliminar, alto: 48, tamanio: 15, fondo: const Color(0x24FFFFFF), color: TokensNs.eliminarSobreOscuro),
+                              BotonNs(texto: esNegocioDeServicios() ? 'Anular cobro' : 'Anular venta', onTap: onEliminar, alto: 48, tamanio: 15, fondo: const Color(0x24FFFFFF), color: TokensNs.eliminarSobreOscuro),
                             ],
                           ],
                         ),

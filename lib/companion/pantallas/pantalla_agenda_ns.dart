@@ -18,6 +18,7 @@ import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/medio_pago.dart';
 import '../../domain/turnos.dart';
+import '../../edicion.dart';
 import '../../servicios/calendario.dart';
 import '../../servicios/sena_mp_nube.dart';
 import '../app_ns.dart';
@@ -26,6 +27,7 @@ import '../cambios_companion.dart';
 import '../emparejamiento.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
+import 'hoja_abrir_caja_ns.dart';
 
 const _dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const _meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -802,6 +804,9 @@ class _MarcaAhora extends StatelessWidget {
   }
 }
 
+/// Una seña sin caja abierta entra después: en Nodo Sur Servicios la caja es el día, que empieza solo al cobrar.
+String _cuandoAbra() => esEdicionServicios ? 'cuando empiece el día' : 'cuando la abras';
+
 int? _plata(String texto) {
   final t = texto.trim();
   if (t.isEmpty) return null;
@@ -993,7 +998,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
       final sinCaja = dejo && widget.sesionCajaId == null;
       if (mounted) {
         Navigator.of(context).pop(
-          'Turno anotado: ${textoDiaNs(hora).toLowerCase()} ${horaNs(hora)}${sinCaja ? '. La seña entra a la caja cuando la abras' : ''}',
+          'Turno anotado: ${textoDiaNs(hora).toLowerCase()} ${horaNs(hora)}${sinCaja ? '. La seña entra a la caja ${_cuandoAbra()}' : ''}',
         );
       }
     } on ArgumentError catch (e) {
@@ -1100,7 +1105,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
           if (_sena > 0) ...[
             InterruptorNs(
               etiqueta: 'Dejó la seña (${plataNs(_sena)})',
-              descripcion: widget.sesionCajaId == null ? 'Sin caja abierta: entra cuando la abras.' : 'Entra a la caja como ingreso.',
+              descripcion: widget.sesionCajaId == null ? 'Sin caja abierta: entra ${_cuandoAbra()}.' : 'Entra a la caja como ingreso.',
               encendido: _dejoSena,
               onCambio: (v) => setState(() => _dejoSena = v),
             ),
@@ -1147,7 +1152,7 @@ class _HojaSenaState extends State<_HojaSena> {
     try {
       await registrarSenaDeTurno(widget.db, widget.turno.turno.id, montoCentavos: monto, esEfectivo: _efectivo, usuarioId: widget.usuarioId, sesionCajaId: widget.sesionCajaId);
       if (mounted) {
-        Navigator.of(context).pop(widget.sesionCajaId == null ? 'Seña anotada: entra a la caja cuando la abras' : 'Seña anotada. El turno queda confirmado');
+        Navigator.of(context).pop(widget.sesionCajaId == null ? 'Seña anotada: entra a la caja ${_cuandoAbra()}' : 'Seña anotada. El turno queda confirmado');
       }
     } on ArgumentError catch (e) {
       setState(() => _error = '${e.message}');
@@ -1208,14 +1213,24 @@ class _HojaCobrarTurnoState extends State<_HojaCobrarTurno> {
     }
   }
 
+  /// Nodo Sur Servicios: sin caja abierta, el día empieza solo al cobrar (caja simple, sin fondo inicial).
+  bool get _empiezaSolo => esEdicionServicios && AppNs.maybeOf(context)?.servicio != null;
+
   Future<void> _cobrar(ComposicionPago medio) async {
-    final sesion = widget.sesionCajaId;
-    if (sesion == null) return;
+    var sesion = widget.sesionCajaId;
     setState(() {
       _cobrando = true;
       _error = null;
     });
     try {
+      if (sesion == null && _empiezaSolo) {
+        final app = AppNs.maybeOf(context)!;
+        if (await mostrarHojaAbrirCaja(context, servicio: app.servicio!, usuarioId: widget.usuarioId)) {
+          sesion = (await app.servicio!.sesion()).id;
+          unawaited(app.refrescar());
+        }
+      }
+      if (sesion == null) return;
       final r = await registrarVentaSegunMedio(
         widget.db,
         lineas: [await lineaDeTurno(widget.db, widget.turno.turno.id)],
@@ -1237,7 +1252,7 @@ class _HojaCobrarTurnoState extends State<_HojaCobrarTurno> {
   @override
   Widget build(BuildContext context) {
     final c = _cuenta;
-    final sinCaja = widget.sesionCajaId == null;
+    final sinCaja = widget.sesionCajaId == null && !_empiezaSolo;
     return HojaNs(
       titulo: 'Cobrar ${widget.turno.turno.servicioNombre}',
       texto: 'A ${widget.turno.turno.nombreCliente}.',

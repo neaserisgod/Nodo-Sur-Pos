@@ -16,14 +16,17 @@ void main() {
         'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Promos', 'Cargar días anteriores', 'Ganancia de referencia por categoría']) {
       expect(titulos, isNot(contains(t)), reason: t);
     }
-    expect(titulos, containsAll(['Agregar un servicio nuevo', 'Insumos: comprar y contar', 'Cerrar la caja']));
+    expect(titulos, containsAll(['Agregar un servicio nuevo', 'Insumos: comprar y contar', 'Cerrar el día', 'Cobrar un turno o un servicio']));
+    expect(titulos, isNot(contains('Vender')));
+    // Lo que se buscaba con las palabras de almacén se sigue encontrando.
+    expect(buscarFunciones('cerrar caja', servicios: true).first.titulo, 'Cerrar el día');
     expect(buscarFunciones('cigarrillos', servicios: true), isEmpty);
     expect(buscarFunciones('tintura', servicios: true).first.titulo, 'Insumos: comprar y contar');
   });
 
   test('las secciones siguen en orden y "Productos y stock" se llama "Servicios e insumos"', () {
     final encabezados = todasLasFunciones(servicios: true).map((r) => r.encabezado).whereType<String>().toList();
-    expect(encabezados, ['Vender', 'Servicios e insumos', 'Caja', 'Configuración y cuenta']);
+    expect(encabezados, ['Cobrar', 'Servicios e insumos', 'Caja', 'Configuración y cuenta']);
   });
 
   test('la app Nodo Sur Servicios: además, sin PC, arqueo, varios usuarios ni facturas de compra, aunque el rubro sea de almacén', () {
@@ -34,6 +37,6 @@ void main() {
         'Estado de la conexión con la PC', 'Agregar o desactivar usuarios', 'Recargo de cigarrillos', 'Controlar el stock']) {
       expect(titulos, isNot(contains(t)), reason: t);
     }
-    expect(titulos, containsAll(['Agregar un servicio nuevo', 'Cerrar la caja', 'Actualizar la aplicación']));
+    expect(titulos, containsAll(['Agregar un servicio nuevo', 'Cerrar el día', 'Actualizar la aplicación']));
   });
 }

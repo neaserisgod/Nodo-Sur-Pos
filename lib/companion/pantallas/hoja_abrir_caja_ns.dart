@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../edicion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../servicio_companion.dart';
@@ -29,6 +30,17 @@ Future<bool> mostrarHojaAbrirCaja(BuildContext context, {required ServicioCompan
     // Sin la sesión a mano igual se puede intentar abrir.
   }
   if (!context.mounted) return false;
+  // Nodo Sur Servicios: caja simple (El dueño, 2026-10-10 y 2026-10-11: "abrir cajas, fondo inicial… no va"). El día empieza
+  // solo, con lo que quedó del anterior, sin preguntar nada: lo que entra se ve en Caja y se revisa al cerrar el día.
+  if (esEdicionServicios) {
+    try {
+      await servicio.abrirSesion(usuarioId: usuarioId, fondoInicialCentavos: sugerido ?? 0, mpInicialCentavos: mp ?? 0);
+      return true;
+    } catch (e) {
+      if (context.mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
+      return false;
+    }
+  }
   final abierta = await mostrarHojaNs<bool>(
     context,
     builder: (_) => _HojaAbrirCaja(servicio: servicio, usuarioId: usuarioId, sugeridoCentavos: sugerido, lataCentavos: lata, mpCentavos: mp),

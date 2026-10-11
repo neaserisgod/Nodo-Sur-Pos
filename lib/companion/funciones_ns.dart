@@ -117,23 +117,48 @@ bool _noEstaEnLaAppDeServicios(FuncionNs f) =>
     }.contains(f.accion) ||
     f.titulo == 'Agregar o desactivar usuarios';
 
+/// Cómo se dice en un negocio de servicios (El dueño, 2026-10-11: "que parezca que está hecho para turnos"): se cobra un turno,
+/// no se vende, y la caja es el día (mock de servicios). Título y ruta nuevos; las claves de búsqueda se conservan.
+const Map<String, (String, String)> _comoSeDiceEnServicios = {
+  'Vender': ('Cobrar un turno o un servicio', 'Cobrar'),
+  'Cobrar con efectivo, QR o débito': ('Cobrar con efectivo, QR o débito', 'Cobrar'),
+  'Aplicar un descuento': ('Aplicar un descuento', 'Cobrar'),
+  'Imprimir el ticket': ('Imprimir el ticket', 'Cobrar › Cobrado'),
+  'Cerrar la caja': ('Cerrar el día', 'Caja › Cerrar el día'),
+  'Abrir la caja': ('Empezar el día', 'Caja › Empezar el día'),
+  'Ver las ventas de hoy': ('Ver lo cobrado hoy', 'Caja › Cobros'),
+  'Eliminar una venta': ('Anular un cobro', 'Caja › Cobros › tocar el cobro'),
+  'Ver cierres anteriores': ('Ver días anteriores', 'Caja › Días anteriores'),
+};
+
+FuncionNs _enServicios(FuncionNs f) {
+  final dicho = _comoSeDiceEnServicios[f.titulo];
+  if (dicho == null) return f;
+  return FuncionNs(seccion: f.seccion, titulo: dicho.$1, ruta: dicho.$2, claves: '${f.claves} ${f.titulo}', icono: f.icono, accion: f.accion);
+}
+
 /// Las funciones que se ofrecen, según el negocio. Ordenadas por sección, como [indiceFunciones].
 List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
   if (!servicios && !esEdicionServicios) return indiceFunciones;
   final lista = [
     for (final f in indiceFunciones)
-      if (!_esDeAlmacen(f) && !(esEdicionServicios && _noEstaEnLaAppDeServicios(f))) f,
+      if (!_esDeAlmacen(f) && !(esEdicionServicios && _noEstaEnLaAppDeServicios(f))) _enServicios(f),
     ..._funcionesDeServicios,
   ];
   return lista..sort((a, b) => a.seccion.compareTo(b.seccion));
 }
 
-String nombreDeSeccion(int seccion, {bool servicios = false}) =>
-    servicios && seccion == 1 ? 'Servicios e insumos' : seccionesFunciones[seccion];
+String nombreDeSeccion(int seccion, {bool servicios = false}) => !servicios
+    ? seccionesFunciones[seccion]
+    : switch (seccion) {
+        0 => 'Cobrar',
+        1 => 'Servicios e insumos',
+        _ => seccionesFunciones[seccion],
+      };
 
 /// Sugerencias del estado inicial y de "sin resultados".
 const List<String> sugerenciasFunciones = ['Cerrar caja', 'Controlar stock', 'Subir precios', 'Imprimir ticket'];
-const List<String> sugerenciasFuncionesServicios = ['Cerrar caja', 'Insumos', 'Agregar un servicio', 'Gasto'];
+const List<String> sugerenciasFuncionesServicios = ['Cerrar el día', 'Insumos', 'Agregar un servicio', 'Gasto'];
 
 /// Minúsculas, sin tildes ni diacríticos, sin espacios de más.
 String normalizarNs(String texto) {

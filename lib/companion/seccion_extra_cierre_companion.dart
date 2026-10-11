@@ -19,6 +19,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ResumenCierreCompanion, ResumenProveedorDiaCompanion;
 import 'kit/kit_ns.dart';
 import 'pantalla_carga_historica.dart' show SeccionProductosSinDatos;
@@ -43,18 +44,23 @@ class _SeccionExtraCierreCompanionState extends State<SeccionExtraCierreCompanio
     final r = widget.resumen;
     final nota = widget.nota;
     final ns = context.ns;
+    // Un negocio de servicios no tiene cigarrillos, ni productos sin costo, ni separa por proveedor (El dueño, 2026-10-11:
+    // "lata de cigarrillos… que parezca que está hecho para turnos").
+    final servicios = esNegocioDeServicios();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Cuánta plata mover a la lata AHORA, en este cierre (sin esta línea había que calcularlo de memoria).
-        FilaClaveValorNs(clave: 'A separar a la lata', valor: plataNs(r.separadoCentavos)),
-        if (r.esSeparacionParcial)
+        if (!servicios) FilaClaveValorNs(clave: 'A separar a la lata', valor: plataNs(r.separadoCentavos)),
+        if (!servicios && r.esSeparacionParcial)
           FilaClaveValorNs(clave: 'De eso, no alcanza el efectivo — queda pendiente para el próximo cierre', valor: plataNs(r.pendienteCentavos), colorValor: ns.b),
         FilaClaveValorNs(clave: 'Redondeo acumulado', valor: plataNs(r.redondeoAcumuladoCentavos)),
-        FilaClaveValorNs(clave: 'Vendido sin costo cargado', valor: plataNs(r.vendidoSinCostoCentavos)),
-        // Qué productos componen el "vendido sin costo" (viaja completo en el mismo resumen).
-        SeccionProductosSinDatos(productos: r.productosSinDatos),
+        if (!servicios) ...[
+          FilaClaveValorNs(clave: 'Vendido sin costo cargado', valor: plataNs(r.vendidoSinCostoCentavos)),
+          // Qué productos componen el "vendido sin costo" (viaja completo en el mismo resumen).
+          SeccionProductosSinDatos(productos: r.productosSinDatos),
+        ],
         const SizedBox(height: 14),
         if (r.reservaDiariaFijosCentavos == null)
           const InfoNs('Reserva diaria de fijos: sin cargar los fijos de este mes')
@@ -66,7 +72,7 @@ class _SeccionExtraCierreCompanionState extends State<SeccionExtraCierreCompanio
           const SizedBox(height: 10),
           InfoNs((nota ?? r.nota)!.trim()),
         ],
-        if (r.porProveedor.isNotEmpty) ...[
+        if (!servicios && r.porProveedor.isNotEmpty) ...[
           const SizedBox(height: 18),
           const SeccionNs('A separar por proveedor'),
           const SizedBox(height: 10),
