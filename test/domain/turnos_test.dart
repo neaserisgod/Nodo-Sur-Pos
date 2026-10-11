@@ -137,4 +137,65 @@ void main() {
       expect(textoFaltas(3), 'faltó 3 veces');
     });
   });
+
+  group('filasDeAgenda (la línea del día)', () {
+    // (inicio, duración, ocupa) en minutos; 9 a 20 de atención.
+    const franja = (desdeMin: 540, hastaMin: 1200);
+    List<String> filas(List<(int, int, bool)> ts, {int? ahora, bool conHuecos = true, FranjaAtencion? f = franja}) => [
+          for (final x in filasDeAgenda<(int, int, bool)>(
+            turnos: ts,
+            inicioMin: (t) => t.$1,
+            duracionMin: (t) => t.$2,
+            ocupa: (t) => t.$3,
+            franja: f,
+            ahoraMin: ahora,
+            conHuecos: conHuecos,
+          ))
+            switch (x) {
+              FilaTurno(:final turno) => 'turno ${horaDeMinutos(turno.$1)}',
+              FilaLibre(:final desdeMin, :final hastaMin) => 'libre ${horaDeMinutos(desdeMin)}-${horaDeMinutos(hastaMin)}',
+              FilaAhora() => 'ahora',
+            },
+        ];
+
+    test('huecos de media hora o más entre turnos, desde que abre hasta que cierra', () {
+      expect(filas([(600, 60, true), (680, 30, true), (720, 60, true)]), [
+        'libre 09:00-10:00',
+        'turno 10:00',
+        // 11:00 a 11:20 son 20 minutos: no vale la pena ofrecerlo.
+        'turno 11:20',
+        'turno 12:00',
+        'libre 13:00-20:00',
+      ]);
+    });
+
+    test('un turno al que no vinieron no tapa el hueco; dos que se pisan no dan un hueco negativo', () {
+      expect(filas([(540, 60, false), (600, 120, true), (630, 30, true)]), [
+        'turno 09:00',
+        'libre 09:00-10:00',
+        'turno 10:00',
+        'turno 10:30',
+        'libre 12:00-20:00',
+      ]);
+    });
+
+    test('hoy: la marca de Ahora va donde corresponde y los huecos que ya pasaron no aparecen', () {
+      expect(filas([(600, 60, true), (840, 60, true)], ahora: 730), [
+        'turno 10:00',
+        'ahora',
+        // El hueco de 11 a 14 ya empezó: arranca en el próximo cuarto de hora.
+        'libre 12:15-14:00',
+        'turno 14:00',
+        'libre 15:00-20:00',
+      ]);
+      expect(filas([(600, 60, true)], ahora: 1230), ['turno 10:00', 'ahora']);
+    });
+
+    test('sin franja (día cerrado) o con varios profesionales a la vez: sin huecos', () {
+      expect(filas([(600, 60, true)], f: null), ['turno 10:00']);
+      expect(filas([(600, 60, true)], conHuecos: false, ahora: 500), ['ahora', 'turno 10:00']);
+      expect(filas([], f: null), isEmpty);
+      expect(filas([]), ['libre 09:00-20:00']);
+    });
+  });
 }

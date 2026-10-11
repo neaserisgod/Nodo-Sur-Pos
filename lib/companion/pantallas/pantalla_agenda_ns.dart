@@ -1,5 +1,6 @@
 // La Agenda (`docs/PLAN-SERVICIOS.md`, etapa 4; `REGLAS-NEGOCIO.md` §21): en un negocio de servicios reemplaza al Inicio y es
-// donde abre la app. Un día por vez: los turnos por hora, dar uno nuevo con los horarios libres a mano, y en cada turno
+// donde abre la app. Diseño del mock (`docs/mock-servicios/NodoSurServicios.html`, vAgenda; El dueño, 2026-10-11: "agenda está
+// muy vacío"): la semana con puntitos, las cifras de hoy y la línea del día con los huecos libres. Un día por vez: los turnos por hora, dar uno nuevo con los horarios libres a mano, y en cada turno
 // cobrar (con la seña descontada), anotar la seña, mover, "no vino" y cancelar.
 //
 // Trabaja sobre la base del celular, como Servicios: los servicios son de "Solo celular" (con la PC llegan después). Las
@@ -42,8 +43,6 @@ String textoDiaNs(DateTime dia, {DateTime? hoy}) {
   return '${_dias[d.weekday - 1]} ${d.day}';
 }
 
-String _fechaLarga(DateTime d) => '${_dias[d.weekday - 1]} ${d.day} de ${_meses[d.month - 1]}';
-
 String horaNs(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
 class PantallaAgendaNs extends StatefulWidget {
@@ -62,6 +61,14 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
   late final AppDatabase _db = widget.db ?? baseLocalCompanion();
   late DateTime _dia = _soloDia(widget.hoy ?? DateTime.now());
   List<TurnoAgenda>? _turnos;
+
+  /// Turnos que ocupan, por día, en la semana que se ve (los puntitos de la tira).
+  Map<DateTime, int> _porDia = const {};
+  HorarioAtencion _horario = HorarioAtencion.porDefecto;
+  List<Usuario> _profesionales = const [];
+
+  /// Agenda de quién se mira, con varios profesionales (null = todos).
+  int? _profesionalId;
   int? _usuarioId;
   StreamSubscription<void>? _sub;
 
@@ -87,9 +94,25 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
   Future<void> _recargar() async {
     // Los turnos del bot que no pagaron la seña a tiempo liberan su horario solos (§21).
     await liberarSenasVencidas(_db);
-    final turnos = await turnosDelDia(_db, _dia);
-    if (!mounted) return;
-    setState(() => _turnos = turnos);
+    final lunes = _lunesDe(_dia);
+    final dia = _dia;
+    final turnos = await turnosDelDia(_db, dia);
+    final semana = await turnosEntre(_db, desde: lunes, hasta: DateTime(lunes.year, lunes.month, lunes.day + 7), incluirLiberados: false);
+    final config = await configAgendaActual(_db);
+    final profesionales = await (_db.select(_db.usuarios)..where((u) => u.activo.equals(true))).get();
+    if (!mounted || dia != _dia) return;
+    final porDia = <DateTime, int>{};
+    for (final t in semana) {
+      if (!t.estado.ocupa) continue;
+      final d = _soloDia(t.inicio);
+      porDia[d] = (porDia[d] ?? 0) + 1;
+    }
+    setState(() {
+      _turnos = turnos;
+      _porDia = porDia;
+      _horario = config.horario;
+      _profesionales = profesionales;
+    });
   }
 
   void _irADia(DateTime d) {
@@ -253,6 +276,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     final app = AppNs.maybeOf(context);
     final conPc = app?.modoUso == ModoUso.pcYCelular;
     final hoy = _soloDia(widget.hoy ?? DateTime.now());
+    final titulo = textoDiaNs(_dia, hoy: hoy);
     return PantallaEntradaNs(
       child: SafeArea(
         bottom: false,
@@ -261,41 +285,54 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
           children: [
             Row(
               children: [
-                Expanded(child: Text('Agenda', style: tituloNs(42, track: -0.055, color: ns.ink))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Agenda', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+                      const SizedBox(height: 2),
+                      Text('${titulo[0].toUpperCase()}${titulo.substring(1)}', style: tituloNs(40, track: -0.055, color: ns.ink)),
+                    ],
+                  ),
+                ),
                 if (!conPc)
-                  BotonNs(
+                  BotonCircularNs(
                     key: const Key('agenda_nuevo'),
-                    texto: '+ Turno',
+                    icono: IconoNs.masMas,
+                    etiqueta: 'Nuevo turno',
                     onTap: () => _nuevoTurno(),
-                    alto: 44,
-                    tamanio: 15,
+                    tamanio: 52,
                     fondo: ns.prim,
-                    color: TokensNs.blanco,
-                    rellenar: false,
-                    paddingH: 20,
+                    colorIcono: TokensNs.blanco,
                   ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(_fechaLarga(_dia), style: estiloNs(16, color: ns.mute)),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             if (conPc)
               const InfoNs('Con la PC, la agenda todavía se usa solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
             else ...[
-              SizedBox(
-                height: 44,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 15,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final d = DateTime(hoy.year, hoy.month, hoy.day + i - 1);
-                    return ChipNs(key: ValueKey('dia-$i'), texto: textoDiaNs(d, hoy: hoy), activo: d == _dia, onTap: () => _irADia(d));
-                  },
-                ),
+              _TiraSemana(
+                dia: _dia,
+                hoy: hoy,
+                porDia: _porDia,
+                onDia: _irADia,
               ),
+              if (_dia == hoy) ...[
+                const SizedBox(height: 16),
+                _ResumenHoy(turnos: _turnos ?? const [], app: app),
+              ],
+              if (_profesionales.length > 1) ...[
+                const SizedBox(height: 14),
+                FilaChipsNs(
+                  chips: [
+                    ChipNs(texto: 'Todos', activo: _profesionalId == null, onTap: () => setState(() => _profesionalId = null)),
+                    for (final p in _profesionales)
+                      ChipNs(texto: p.nombre, activo: _profesionalId == p.id, onTap: () => setState(() => _profesionalId = p.id)),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
-              ..._lista(context),
+              ..._lista(context, hoy),
             ],
           ],
         ),
@@ -303,61 +340,465 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     );
   }
 
-  List<Widget> _lista(BuildContext context) {
+  /// Color de la barrita de cada turno: el de quien atiende si hay varios (como en el mock), el de la marca si no.
+  Color _colorDe(BuildContext context, TurnoAgenda t) {
+    final ns = context.ns;
+    if (_profesionales.length < 2) return TokensNs.marca;
+    final i = _profesionales.indexWhere((p) => p.id == t.turno.profesionalId);
+    if (i < 0) return ns.line;
+    return [TokensNs.marca, ns.g, ns.w, ns.i, ns.b][i % 5];
+  }
+
+  List<Widget> _lista(BuildContext context, DateTime hoy) {
     final ns = context.ns;
     final turnos = _turnos;
     if (turnos == null) return const [EsqueletoListaNs()];
-    final visibles = [for (final t in turnos) if (t.estado != EstadoTurno.cancelado) t];
-    final cancelados = turnos.length - visibles.length;
-    if (visibles.isEmpty) {
-      return [
-        InfoNs(cancelados > 0 ? 'No quedan turnos para este día ($cancelados cancelado${cancelados == 1 ? '' : 's'}).' : 'No hay turnos para este día. Con "+ Turno" anotás uno.'),
-      ];
-    }
+    final delDia = [
+      for (final t in turnos)
+        if (_profesionalId == null || t.turno.profesionalId == _profesionalId) t,
+    ];
+    final visibles = [for (final t in delDia) if (t.estado != EstadoTurno.cancelado) t];
+    final cancelados = delDia.length - visibles.length;
+    final ahora = DateTime.now();
+    final esHoy = _dia == _soloDia(ahora);
+    final franja = _horario.delDia(_dia);
+    // Un día que ya pasó no tiene huecos para ofrecer.
+    final pasado = _dia.isBefore(_soloDia(ahora));
+    final filas = filasDeAgenda<TurnoAgenda>(
+      turnos: visibles,
+      inicioMin: (t) => t.inicio.hour * 60 + t.inicio.minute,
+      duracionMin: (t) => t.turno.duracionMinutos,
+      ocupa: (t) => t.estado.ocupa,
+      franja: pasado ? null : franja,
+      ahoraMin: esHoy ? ahora.hour * 60 + ahora.minute : null,
+      // Con varios profesionales mirados todos juntos, un hueco de una no es de las otras.
+      conHuecos: _profesionales.length < 2 || _profesionalId != null,
+    );
+    final vacio = visibles.isEmpty;
     return [
-      ListaAgrupadaNs(
-        filas: [
-          for (final t in visibles)
-            TarjetaFilaNs(
-              key: ValueKey('turno-${t.turno.id}'),
-              titulo: '${horaNs(t.inicio)}  ${t.turno.nombreCliente}',
-              subtitulo: [
-                t.turno.servicioNombre,
-                duracionTextoNs(t.turno.duracionMinutos),
-                if (t.profesional != null) t.profesional!,
-                if (t.turno.origen == 'BOT') 'WhatsApp',
-                ?textoFaltas(t.faltas),
-              ].join(' · '),
-              chevron: false,
-              radio: 0,
-              onTap: () => _acciones(t),
-              derecha: _EtiquetaEstado(t),
-            ),
-        ],
-      ),
-      if (cancelados > 0) ...[
-        const SizedBox(height: 10),
+      if (vacio)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: InfoNs(
+            cancelados > 0
+                ? 'No quedan turnos para este día ($cancelados cancelado${cancelados == 1 ? '' : 's'}).'
+                : franja == null
+                    ? 'No hay turnos para este día. Está cerrado según el horario de atención.'
+                    : 'No hay turnos para este día. Los que pidan por WhatsApp aparecen acá solos.',
+            icono: IconoNs.calendario,
+          ),
+        ),
+      if (!vacio || filas.any((f) => f is FilaLibre))
+        for (final f in filas)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: switch (f) {
+              FilaTurno(:final turno) => _FilaTurno(
+                  key: ValueKey('turno-${turno.turno.id}'),
+                  t: turno,
+                  color: _colorDe(context, turno),
+                  profesional: _profesionales.length > 1 ? turno.profesional : null,
+                  onTap: () => _acciones(turno),
+                ),
+              FilaLibre(:final desdeMin, :final hastaMin) => _FilaLibre(
+                  desdeMin: desdeMin,
+                  hastaMin: hastaMin,
+                  onTap: () => _nuevoTurno(hora: DateTime(_dia.year, _dia.month, _dia.day, 0, desdeMin)),
+                ),
+              FilaAhora() => _MarcaAhora(ahora),
+            },
+          ),
+      if (cancelados > 0 && !vacio) ...[
+        const SizedBox(height: 2),
         Text('$cancelados cancelado${cancelados == 1 ? '' : 's'}', style: estiloNs(13, color: ns.mute)),
       ],
     ];
   }
 }
 
-class _EtiquetaEstado extends StatelessWidget {
-  const _EtiquetaEstado(this.t);
-  final TurnoAgenda t;
+DateTime _lunesDe(DateTime d) => DateTime(d.year, d.month, d.day - (d.weekday - 1));
+
+const _diasCortos = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+/// La semana del día elegido (lunes a domingo), con puntitos por cuántos turnos tiene cada día, y flechas para ir y volver.
+class _TiraSemana extends StatelessWidget {
+  const _TiraSemana({required this.dia, required this.hoy, required this.porDia, required this.onDia});
+  final DateTime dia;
+  final DateTime hoy;
+  final Map<DateTime, int> porDia;
+  final ValueChanged<DateTime> onDia;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    final (texto, color) = switch (t.estado) {
-      EstadoTurno.esperandoSena => ('Esperando seña', ns.w),
-      EstadoTurno.confirmado => (t.turno.senaCentavos > 0 ? 'Con seña' : 'Confirmado', ns.g),
-      EstadoTurno.atendido => ('Atendido', ns.mute),
-      EstadoTurno.noVino => ('No vino', ns.b),
-      EstadoTurno.cancelado => ('Cancelado', ns.mute),
+    final lunes = _lunesDe(dia);
+    final domingo = DateTime(lunes.year, lunes.month, lunes.day + 6);
+    final mes = lunes.month == domingo.month ? _meses[lunes.month - 1] : '${_meses[lunes.month - 1]} – ${_meses[domingo.month - 1]}';
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text('${mes[0].toUpperCase()}${mes.substring(1)}', style: estiloNs(15, peso: FontWeight.w600, color: ns.ink))),
+            if (dia != hoy)
+              PresionNs(
+                key: const Key('agenda_hoy'),
+                onTap: () => onDia(hoy),
+                etiqueta: 'Ir a hoy',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text('Hoy', style: estiloNs(15, peso: FontWeight.w600, color: ns.prim)),
+                ),
+              ),
+            BotonCircularNs(
+              key: const Key('agenda_semana_anterior'),
+              icono: IconoNs.volver,
+              etiqueta: 'Semana anterior',
+              tamanio: 36,
+              tamanioIcono: 18,
+              onTap: () => onDia(DateTime(dia.year, dia.month, dia.day - 7)),
+            ),
+            const SizedBox(width: 8),
+            BotonCircularNs(
+              key: const Key('agenda_semana_siguiente'),
+              icono: IconoNs.chevron,
+              etiqueta: 'Semana siguiente',
+              tamanio: 36,
+              tamanioIcono: 18,
+              onTap: () => onDia(DateTime(dia.year, dia.month, dia.day + 7)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (var i = 0; i < 7; i++)
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: i == 0 ? 0 : 2, right: i == 6 ? 0 : 2),
+                  child: _Dia(
+                    dia: DateTime(lunes.year, lunes.month, lunes.day + i),
+                    hoy: hoy,
+                    elegido: dia,
+                    turnos: porDia[DateTime(lunes.year, lunes.month, lunes.day + i)] ?? 0,
+                    onTap: onDia,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Dia extends StatelessWidget {
+  const _Dia({required this.dia, required this.hoy, required this.elegido, required this.turnos, required this.onTap});
+  final DateTime dia;
+  final DateTime hoy;
+  final DateTime elegido;
+  final int turnos;
+  final ValueChanged<DateTime> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final on = dia == elegido;
+    final esHoy = dia == hoy;
+    final colorNombre = on ? TokensNs.blanco.withValues(alpha: 0.8) : (esHoy ? ns.prim : ns.mute);
+    final colorNumero = on ? TokensNs.blanco : (esHoy ? ns.prim : ns.ink);
+    // Uno, dos o tres puntitos: alcanza para ver de un vistazo qué día está cargado.
+    final puntos = turnos > 4 ? 3 : (turnos > 1 ? 2 : turnos);
+    final clave = '${dia.year}-${dia.month.toString().padLeft(2, '0')}-${dia.day.toString().padLeft(2, '0')}';
+    return PresionNs(
+      key: ValueKey('dia-$clave'),
+      onTap: () => onTap(dia),
+      etiqueta: '${_dias[dia.weekday - 1]} ${dia.day}${turnos > 0 ? ', $turnos turno${turnos == 1 ? '' : 's'}' : ''}',
+      child: AnimatedContainer(
+        duration: sinMovimiento(context) ? Duration.zero : const Duration(milliseconds: 160),
+        curve: curvaNs,
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 10),
+        decoration: BoxDecoration(color: on ? ns.prim : Colors.transparent, borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          children: [
+            Text(_diasCortos[dia.weekday - 1], style: estiloNs(12, peso: FontWeight.w600, color: colorNombre)),
+            const SizedBox(height: 4),
+            Text('${dia.day}', style: estiloNs(20, peso: FontWeight.w500, track: -0.03, color: colorNumero, tabular: true)),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 5,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < puntos; i++)
+                    Container(
+                      width: 5,
+                      height: 5,
+                      margin: EdgeInsets.only(left: i == 0 ? 0 : 3),
+                      decoration: BoxDecoration(color: (on ? TokensNs.blanco : colorNumero).withValues(alpha: 0.7), shape: BoxShape.circle),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Las tres cifras de hoy: turnos, cuánto entró y cuántos esperan la seña.
+class _ResumenHoy extends StatelessWidget {
+  const _ResumenHoy({required this.turnos, required this.app});
+  final List<TurnoAgenda> turnos;
+  final ControladorAppNs? app;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final cuantos = turnos.where((t) => t.estado != EstadoTurno.cancelado && t.estado != EstadoTurno.noVino).length;
+    final esperan = turnos.where((t) => t.estado == EstadoTurno.esperandoSena).length;
+    Widget mini(String n, String etiqueta, {Color? fondo, Color? color, double tamanio = 28}) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            decoration: BoxDecoration(color: fondo ?? ns.s, borderRadius: BorderRadius.circular(24)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 28,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(child: Text(n, style: tituloNs(tamanio, track: -0.05, color: color ?? ns.ink))),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(etiqueta, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, peso: FontWeight.w500, color: color ?? ns.mute)),
+              ],
+            ),
+          ),
+        );
+    final datos = app?.datosDia;
+    return Row(
+      children: [
+        mini('$cuantos', cuantos == 1 ? 'turno' : 'turnos'),
+        const SizedBox(width: 8),
+        if (datos == null)
+          mini(plataNs(0), 'cobrado', tamanio: 22)
+        else
+          ValueListenableBuilder<DatosDiaNs>(
+            valueListenable: datos,
+            builder: (_, d, _) => mini(plataNs(d.vendidoCentavos), 'cobrado', tamanio: 22),
+          ),
+        const SizedBox(width: 8),
+        mini('$esperan', esperan == 1 ? 'espera seña' : 'esperan seña', fondo: esperan > 0 ? ns.wbg : null, color: esperan > 0 ? ns.w : null),
+      ],
+    );
+  }
+}
+
+/// Un turno en la línea del día: la hora y la duración a la izquierda, la tarjeta con quién viene, qué se hace y sus etiquetas.
+class _FilaTurno extends StatelessWidget {
+  const _FilaTurno({super.key, required this.t, required this.color, required this.onTap, this.profesional});
+  final TurnoAgenda t;
+  final Color color;
+  final String? profesional;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final hecho = t.estado == EstadoTurno.atendido || t.estado == EstadoTurno.noVino;
+    final (estado, fondoEstado, colorEstado) = switch (t.estado) {
+      EstadoTurno.esperandoSena => ('Esperando seña', ns.wbg, ns.w),
+      EstadoTurno.confirmado => ('Confirmado', ns.ibg, ns.i),
+      EstadoTurno.atendido => ('Atendido', ns.s2, ns.mute),
+      EstadoTurno.noVino => ('No vino', ns.bbg, ns.b),
+      EstadoTurno.cancelado => ('Cancelado', ns.s2, ns.mute),
     };
-    return Text(texto, style: estiloNs(13, peso: FontWeight.w600, color: color));
+    final faltas = textoFaltas(t.faltas);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 52,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(horaNs(t.inicio), style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true)),
+                const SizedBox(height: 2),
+                Text('${t.turno.duracionMinutos} min', style: estiloNs(12, peso: FontWeight.w500, color: ns.mute)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Opacity(
+            opacity: hecho ? 0.6 : 1,
+            child: PresionNs(
+              onTap: onTap,
+              etiqueta: '${horaNs(t.inicio)} ${t.turno.nombreCliente}',
+              child: Container(
+                decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(24)),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 14,
+                      bottom: 14,
+                      child: Container(
+                        width: 4,
+                        decoration: BoxDecoration(color: color, borderRadius: const BorderRadius.horizontal(right: Radius.circular(4))),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t.turno.nombreCliente, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(17, peso: FontWeight.w600, track: -0.02, color: ns.ink)),
+                          const SizedBox(height: 2),
+                          Text(
+                            [t.turno.servicioNombre, ?profesional].join(' · '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: estiloNs(14, color: ns.mute),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _Etiqueta(estado, fondo: fondoEstado, color: colorEstado),
+                              if (t.turno.origen == 'BOT') _Etiqueta('WhatsApp', fondo: ns.gbg, color: ns.g, icono: IconoNs.celular),
+                              if (t.turno.senaCentavos > 0)
+                                _Etiqueta('Seña ${plataNs(t.turno.senaCentavos)}', fondo: ns.s2, color: ns.mute)
+                              else if (t.turno.senaPedidaCentavos > 0 && t.estado.abierto)
+                                _Etiqueta('Seña ${plataNs(t.turno.senaPedidaCentavos)} sin pagar', fondo: ns.s2, color: ns.mute),
+                              if (faltas != null) _Etiqueta(faltas[0].toUpperCase() + faltas.substring(1), fondo: ns.bbg, color: ns.b, icono: IconoNs.alerta),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Etiqueta extends StatelessWidget {
+  const _Etiqueta(this.texto, {required this.fondo, required this.color, this.icono});
+  final String texto;
+  final Color fondo;
+  final Color color;
+  final IconoNs? icono;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icono != null) ...[IconoNsWidget(icono!, tamanio: 12, color: color, grosor: 2.2), const SizedBox(width: 4)],
+          Text(texto, style: estiloNs(12, peso: FontWeight.w700, color: color)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un hueco libre de media hora o más: con un toque se da un turno ahí.
+class _FilaLibre extends StatelessWidget {
+  const _FilaLibre({required this.desdeMin, required this.hastaMin, required this.onTap});
+  final int desdeMin;
+  final int hastaMin;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 52,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Text(horaDeMinutos(desdeMin), style: estiloNs(15, peso: FontWeight.w600, color: ns.mute, tabular: true)),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: PresionNs(
+            key: ValueKey('libre-${horaDeMinutos(desdeMin)}'),
+            onTap: onTap,
+            etiqueta: 'Dar un turno a las ${horaDeMinutos(desdeMin)}',
+            child: CustomPaint(
+              painter: _BordePunteado(ns.line),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('Libre hasta las ${horaDeMinutos(hastaMin)}', style: estiloNs(14.5, peso: FontWeight.w500, color: ns.mute))),
+                    Text('+ Turno', style: estiloNs(14.5, peso: FontWeight.w600, color: ns.i)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BordePunteado extends CustomPainter {
+  _BordePunteado(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pintura = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final camino = Path()..addRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(24)).deflate(0.75));
+    for (final m in camino.computeMetrics()) {
+      for (var d = 0.0; d < m.length; d += 9) {
+        canvas.drawPath(m.extractPath(d, d + 5), pintura);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BordePunteado old) => old.color != color;
+}
+
+/// La línea roja de "Ahora" entre los turnos de hoy.
+class _MarcaAhora extends StatelessWidget {
+  const _MarcaAhora(this.ahora);
+  final DateTime ahora;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text('Ahora · ${horaNs(ahora)}', style: estiloNs(12, peso: FontWeight.w700, color: TokensNs.globo)),
+        const SizedBox(width: 8),
+        Expanded(child: Container(height: 2, decoration: BoxDecoration(color: TokensNs.globo, borderRadius: BorderRadius.circular(2)))),
+      ],
+    );
   }
 }
 
