@@ -100,6 +100,25 @@ void main() {
       expect(() => contarInsumo(db, insumoId: yerba, stockMilesimas: 1, usuarioId: usuarioId), throwsArgumentError);
     });
 
+    test('al darlo de alta se puede poner lo que ya hay: queda como "Stock inicial", con rastro', () async {
+      final id = await crearInsumo(
+        db,
+        nombre: 'Base coat',
+        unidad: UnidadInsumo.ml,
+        contenidoEnvaseMilesimas: 15000,
+        costoEnvaseCentavos: 900000,
+        stockInicialMilesimas: 30000,
+        usuarioId: usuarioId,
+      );
+      expect((await listarInsumos(db)).single.producto.stockMilesimas, 30000);
+      final m = (await movimientos(id)).single;
+      expect(m.motivo, 'Stock inicial');
+      expect(() => crearInsumo(db, nombre: 'X', unidad: UnidadInsumo.ml, contenidoEnvaseMilesimas: 1000, costoEnvaseCentavos: 1, stockInicialMilesimas: -1, usuarioId: usuarioId), throwsArgumentError);
+      // Sin lo que hay, arranca en cero y sin movimientos, como siempre.
+      final otro = await crearInsumo(db, nombre: 'Algodón', unidad: UnidadInsumo.u, contenidoEnvaseMilesimas: 1000, costoEnvaseCentavos: 1, usuarioId: usuarioId);
+      expect(await movimientos(otro), isEmpty);
+    });
+
     test('poco stock según el mínimo cargado', () async {
       final id = await crearInsumo(
         db,
