@@ -320,12 +320,17 @@ class ConfigBotEditable {
     required this.numeroBot,
     required this.numeroAvisos,
     required this.direccion,
+    this.mapa = '',
     required this.horarios,
     required this.pausaMinutos,
   });
   final String numeroBot;
   final String numeroAvisos;
   final String direccion;
+
+  /// El link de Google Maps del local (el de "Compartir"), o las coordenadas: con eso el bot manda el pin del mapa cuando
+  /// preguntan dónde están (`botdemo/src/mapa.js`; El dueño, 2026-10-11). Vacío = sin pin, solo la dirección escrita.
+  final String mapa;
   final Map<String, FranjaBot?> horarios;
   final int pausaMinutos;
 
@@ -345,11 +350,12 @@ class ConfigBotEditable {
     pausaMinutos: 60,
   );
 
-  ConfigBotEditable copiar({String? numeroBot, String? numeroAvisos, String? direccion, Map<String, FranjaBot?>? horarios, int? pausaMinutos}) =>
+  ConfigBotEditable copiar({String? numeroBot, String? numeroAvisos, String? direccion, String? mapa, Map<String, FranjaBot?>? horarios, int? pausaMinutos}) =>
       ConfigBotEditable(
         numeroBot: numeroBot ?? this.numeroBot,
         numeroAvisos: numeroAvisos ?? this.numeroAvisos,
         direccion: direccion ?? this.direccion,
+        mapa: mapa ?? this.mapa,
         horarios: horarios ?? this.horarios,
         pausaMinutos: pausaMinutos ?? this.pausaMinutos,
       );
@@ -373,6 +379,7 @@ ConfigBotEditable configBotDesdeJson(Map<String, dynamic>? c) {
     numeroBot: c['numero_actual'] is String ? c['numero_actual'] as String : '',
     numeroAvisos: c['numero_duena'] is String ? c['numero_duena'] as String : '',
     direccion: negocio is Map && negocio['direccion'] is String ? negocio['direccion'] as String : '',
+    mapa: negocio is Map && negocio['ubicacion_maps'] is String ? negocio['ubicacion_maps'] as String : '',
     horarios: horarios,
     pausaMinutos: c['pausa_minutos'] is int ? c['pausa_minutos'] as int : base.pausaMinutos,
   );
@@ -404,6 +411,10 @@ List<String> problemasConfigBot(ConfigBotEditable c, {required String nombreNego
   }
   if (!abierto) malos.add('Tiene que haber al menos un día abierto.');
   if (c.pausaMinutos < 5 || c.pausaMinutos > 24 * 60) malos.add('La pausa va de 5 minutos a 24 horas.');
+  final mapa = c.mapa.trim();
+  if (mapa.isNotEmpty && !mapa.startsWith(RegExp(r'https?://')) && !RegExp(r'^-?\d{1,2}\.\d+\s*,\s*-?\d{1,3}\.\d+$').hasMatch(mapa)) {
+    malos.add('El link del mapa va como lo copia Google Maps con "Compartir" (https://maps.app.goo.gl/…).');
+  }
   return malos;
 }
 
@@ -420,7 +431,15 @@ Map<String, dynamic> configBotParaGuardar(
   final negocio = Map<String, dynamic>.from((previo['negocio'] as Map?) ?? const {});
   return {
     ...previo,
-    'negocio': {...negocio, 'nombre': nombreNegocio.trim(), 'rubro': rubro, 'direccion': c.direccion.trim()},
+    // Sin link del mapa, la clave no va (borrar el link lo saca).
+    'negocio': {
+      for (final e in negocio.entries)
+        if (e.key != 'ubicacion_maps') e.key: e.value,
+      'nombre': nombreNegocio.trim(),
+      'rubro': rubro,
+      'direccion': c.direccion.trim(),
+      if (c.mapa.trim().isNotEmpty) 'ubicacion_maps': c.mapa.trim(),
+    },
     // A quién le llega el latido de salud del bot: si no hay uno, el soporte de Nodo Sur.
     'numero_soporte': previo['numero_soporte'] ?? numeroSoporteNodoSur,
     'numero_actual': numeroWhatsApp(c.numeroBot),
