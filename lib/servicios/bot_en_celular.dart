@@ -110,8 +110,26 @@ class BotEnCelular {
     } catch (e) {
       return 'Android no dejó encender el bot: $e';
     }
+    // Para [ponerAlDia]: con qué número se encendió la última vez.
+    try {
+      File(p.join(dirDatos.path, 'numero.txt')).writeAsStringSync(numero);
+    } catch (_) {}
     await _borrarVersionesViejas(codigo);
     return null;
+  }
+
+  /// Al abrir la app: si el bot está encendido, que corra el de esta versión. Después de actualizar la app, Android lo vuelve
+  /// a levantar solo (`ArranqueBot`) pero con la carpeta del bot viejo, y el nuevo recién se descomprime al encender: sin esto,
+  /// el bot quedaba en la versión anterior hasta que alguien tocara "Encender". Si ya está al día, Android no lo reinicia
+  /// (`ServicioBot` compara la carpeta). Nunca tira.
+  Future<void> ponerAlDia() async {
+    try {
+      if (!await encendido()) return;
+      final f = File(p.join((await datos()).path, 'numero.txt'));
+      final numero = f.existsSync() ? f.readAsStringSync().trim() : '';
+      if (numero.isEmpty) return;
+      await encender(numero: numero);
+    } catch (_) {}
   }
 
   Future<void> apagar() async {

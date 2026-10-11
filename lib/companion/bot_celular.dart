@@ -2,12 +2,14 @@
 // el bot, para mostrar o no su pantalla en Más.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../domain/bot_whatsapp.dart';
+import '../edicion.dart';
 import '../servicios/acceso_bot.dart';
 import '../servicios/bot_en_celular.dart';
 import '../servicios/push.dart';
@@ -23,6 +25,12 @@ final AccesoBot accesoBotDelCelular = AccesoBotNube(() async {
 
 /// El bot que corre adentro de este celular (solo Nodo Sur Servicios trae Node; en la otra app no se usa).
 final BotEnCelular botDelCelular = BotEnCelular(acceso: accesoBotDelCelular);
+
+/// Al abrir Nodo Sur Servicios en Android: el bot encendido pasa a la versión que trae la app (`BotEnCelular.ponerAlDia`).
+Future<void> ponerAlDiaElBotDelCelular() async {
+  if (!esEdicionServicios || !Platform.isAndroid) return;
+  await botDelCelular.ponerAlDia();
+}
 
 /// Lo último que dijo el sitio del bot (null = todavía no se preguntó, o el equipo no está vinculado). Más lo escucha para
 /// mostrar la fila "Bot de WhatsApp" solo si el negocio lo tiene.
