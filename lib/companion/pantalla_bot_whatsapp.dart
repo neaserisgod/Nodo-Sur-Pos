@@ -59,6 +59,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
   final _numeroBot = TextEditingController();
   final _numeroAvisos = TextEditingController();
   final _direccion = TextEditingController();
+  final _mapa = TextEditingController();
   final Map<String, ({TextEditingController desde, TextEditingController hasta})> _horas = {};
   final Map<String, bool> _abierto = {};
   int _pausa = ConfigBotEditable.porDefecto.pausaMinutos;
@@ -77,6 +78,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     _numeroBot.dispose();
     _numeroAvisos.dispose();
     _direccion.dispose();
+    _mapa.dispose();
     for (final h in _horas.values) {
       h.desde.dispose();
       h.hasta.dispose();
@@ -112,6 +114,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     _numeroBot.text = c.numeroBot.isEmpty ? '' : _legible(c.numeroBot);
     _numeroAvisos.text = c.numeroAvisos.isEmpty ? '' : _legible(c.numeroAvisos);
     _direccion.text = c.direccion;
+    _mapa.text = c.mapa;
     for (final d in diasBot) {
       final f = c.horarios[d];
       final porDefecto = ConfigBotEditable.porDefecto.horarios[d] ?? (desde: '09:00', hasta: '13:00');
@@ -128,6 +131,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     numeroBot: _numeroBot.text,
     numeroAvisos: _numeroAvisos.text,
     direccion: _direccion.text,
+    mapa: _mapa.text,
     horarios: {
       for (final d in diasBot) d: _abierto[d] == true ? (desde: _horas[d]!.desde.text.trim(), hasta: _horas[d]!.hasta.text.trim()) : null,
     },
@@ -250,6 +254,17 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
       KeyedSubtree(
         key: const Key('bot_direccion'),
         child: CampoNs(etiqueta: 'Dirección (para "¿dónde están?")', controller: _direccion, placeholder: 'Ej: Mitre 123'),
+      ),
+      const SizedBox(height: 10),
+      // Con el link, el bot manda también el pin del mapa (`botdemo/src/mapa.js`).
+      KeyedSubtree(
+        key: const Key('bot_mapa'),
+        child: CampoNs(
+          etiqueta: 'Link de Google Maps (opcional)',
+          controller: _mapa,
+          placeholder: 'En Maps: tu local › Compartir › Copiar',
+          teclado: TextInputType.url,
+        ),
       ),
       // En un negocio de servicios, el horario, los servicios y la seña son los del negocio (Agenda y seña, Servicios) y le llegan
       // solos al bot (`turnos_bot_nube.dart`; El dueño, 2026-10-10: sin una configuración aparte para el bot).

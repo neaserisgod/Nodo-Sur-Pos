@@ -250,6 +250,10 @@ void main() {
       final cerrado = {for (final d in diasBot) d: null as FranjaBot?};
       expect(problemasConfigBot(buena.copiar(horarios: cerrado), nombreNegocio: 'X', rubro: 'almacen'), contains(contains('al menos un día')));
       expect(problemasConfigBot(buena.copiar(pausaMinutos: 1), nombreNegocio: 'X', rubro: 'almacen'), contains(contains('pausa')));
+      // El link del mapa (para el pin): vacío, un link o coordenadas; cualquier otra cosa no.
+      expect(problemasConfigBot(buena.copiar(mapa: 'https://maps.app.goo.gl/abc'), nombreNegocio: 'X', rubro: 'almacen'), isEmpty);
+      expect(problemasConfigBot(buena.copiar(mapa: '-41.1335, -71.3103'), nombreNegocio: 'X', rubro: 'almacen'), isEmpty);
+      expect(problemasConfigBot(buena.copiar(mapa: 'Mitre 150'), nombreNegocio: 'X', rubro: 'almacen'), contains(contains('Compartir')));
     });
 
     test('lo que se guarda tiene la forma del config.json del bot y conserva lo que la app no edita', () {
@@ -258,7 +262,8 @@ void main() {
         'textos': {'quien_atiende': 'Juli'},
         'numero_soporte': '5492944999999',
       };
-      final g = configBotParaGuardar(buena, nombreNegocio: ' La Plazoleta ', rubro: 'almacen', anterior: anterior);
+      // El link del mapa ahora se edita en la app (se lee de la configuración guardada, `configBotDesdeJson`).
+      final g = configBotParaGuardar(buena.copiar(mapa: configBotDesdeJson(anterior).mapa), nombreNegocio: ' La Plazoleta ', rubro: 'almacen', anterior: anterior);
       expect(g['negocio'], {'nombre': 'La Plazoleta', 'rubro': 'almacen', 'direccion': 'Mitre 150', 'ubicacion_maps': 'https://maps'});
       expect(g['numero_actual'], '5492944111111');
       expect(g['numero_duena'], '5492944222222');
@@ -271,10 +276,12 @@ void main() {
     });
 
     test('ida y vuelta: lo guardado se vuelve a leer igual', () {
-      final g = configBotParaGuardar(buena.copiar(pausaMinutos: 30), nombreNegocio: 'X', rubro: 'almacen');
+      final g = configBotParaGuardar(buena.copiar(pausaMinutos: 30, mapa: ' https://maps.app.goo.gl/abc '), nombreNegocio: 'X', rubro: 'almacen');
+      expect((g['negocio'] as Map)['ubicacion_maps'], 'https://maps.app.goo.gl/abc', reason: 'el bot lo lee de negocio.ubicacion_maps');
       final leida = configBotDesdeJson(g);
       expect(leida.numeroBot, '5492944111111');
       expect(leida.direccion, 'Mitre 150');
+      expect(leida.mapa, 'https://maps.app.goo.gl/abc');
       expect(leida.pausaMinutos, 30);
       expect(leida.horarios, buena.horarios);
       expect(configBotDesdeJson(null).pausaMinutos, 60);
