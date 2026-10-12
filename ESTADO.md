@@ -138,6 +138,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (12/10/2026)
 
+- **Nodo Sur Servicios en el navegador** (`horsepos.com/app/`; `docs/PLAN-WEB-SERVICIOS.md`, motivos en `DECISIONES.md`): la misma
+  app del celular, compilada para web, con todo (agenda, turnos, cobrar, servicios, caja, configuración); el bot sigue en un
+  Android. Entrar con Google, sync por la nube con avisos en vivo, base guardada en el navegador. Se publica con `release:`
+  (`publicar-web.yml`); CI la compila en cada PR. Probado en Chromium contra el sitio local; **falta un iPhone real y el sitio
+  real**. Arreglo de paso: entrar desde un equipo nuevo ya no duplica a la persona.
 - **Revisión de los tres repos** (código, documentos y tests). Arreglado:
   - Sitio: **devolver la seña** por Mercado Pago pide el permiso `devolver` (dueño o encargado), como devolver una venta; antes
     lo podía hacer un empleado. El **token del bot de WhatsApp** solo sirve para `/api/bot/*`, escuchar avisos y `device/me`/`ping`

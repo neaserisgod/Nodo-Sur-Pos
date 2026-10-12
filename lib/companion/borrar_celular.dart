@@ -11,11 +11,13 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'base_local.dart';
+import 'borrar_base_navegador.dart';
 import 'escucha_pc.dart';
 import 'sync_nube_companion.dart';
 
@@ -29,6 +31,13 @@ Future<void> borrarTodoDelCelular() async {
   escuchaPcCompanion = null;
   await cerrarBaseLocalCompanion();
 
+  if (kIsWeb) {
+    // En el navegador (Nodo Sur Servicios web) no hay carpetas: la base vive en el almacenamiento del navegador y la cuenta en
+    // las preferencias. Importa más que en un celular: puede ser una compu compartida.
+    await borrarBaseDelNavegador(_nombreBase);
+    await (await SharedPreferences.getInstance()).clear();
+    return;
+  }
   final documentos = await getApplicationDocumentsDirectory();
   for (final sufijo in ['', '-wal', '-shm', '-journal']) {
     await _borrar(File(p.join(documentos.path, '$_nombreBase.sqlite$sufijo')));

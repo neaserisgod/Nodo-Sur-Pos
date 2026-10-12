@@ -5,10 +5,10 @@
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 
 import 'cuenta_nube.dart';
 import 'registro_errores.dart';
+import 'almacenes_del_equipo.dart';
 
 enum ResultadoDevolucionSena {
   devuelta,
@@ -23,7 +23,7 @@ typedef DevolverSenaMp = Future<({ResultadoDevolucionSena resultado, String? men
 /// La devolución de verdad; las pruebas la reemplazan.
 DevolverSenaMp devolverSenaMpDelCelular = (turnoRemoto) async {
   try {
-    final cuenta = await AlmacenCuentaEnArchivo((await getApplicationSupportDirectory()).path).leer();
+    final cuenta = await (await almacenCuentaDelEquipo()).leer();
     if (cuenta == null) return (resultado: ResultadoDevolucionSena.error, mensaje: 'Este celular no está vinculado a la cuenta');
     await ClienteNube(http: http.Client()).devolverSenaMp(cuenta.token, turnoRemoto);
     return (resultado: ResultadoDevolucionSena.devuelta, mensaje: null);

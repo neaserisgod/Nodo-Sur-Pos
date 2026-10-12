@@ -37,6 +37,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -753,6 +754,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   // versión nueva solo prende el aviso y el punto de "Más".
 
   Future<void> _revisarActualizacion() async {
+    // En el navegador no hay APK que instalar: la versión nueva llega sola al volver a cargar la página.
+    if (kIsWeb) return;
     // Sin PC emparejada igual se mira el sitio: ahí vive el APK publicado.
     final conexion = await leerConexion();
     try {

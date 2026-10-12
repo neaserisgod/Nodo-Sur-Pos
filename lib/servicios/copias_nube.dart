@@ -7,7 +7,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-import 'package:sqlite3/sqlite3.dart' as sqlite;
+import 'quitar_secretos_copia.dart';
 
 import '../data/database.dart';
 import '../domain/respaldo.dart';
@@ -50,19 +50,6 @@ String sha256Hex(List<int> bytes) => sha256.convert(bytes).toString();
 /// cargar a mano tras restaurar (el de Mercado Pago en Configuración → Impresión; el del celular, emparejando de nuevo).
 const _sentenciaSinSecretos = 'UPDATE configuracion_tabla SET mp_access_token = NULL, companion_token = NULL';
 
-/// Vacía los secretos de una copia ya hecha. `secure_delete` y `VACUUM` después: sin eso el texto viejo queda en las
-/// páginas libres del archivo y se podría leer igual.
-void _quitarSecretos(String ruta) {
-  final base = sqlite.sqlite3.open(ruta);
-  try {
-    base.execute('PRAGMA secure_delete = ON');
-    base.execute(_sentenciaSinSecretos);
-    base.execute('VACUUM');
-  } finally {
-    base.close();
-  }
-}
-
 /// Copia consistente de la base en uso, comprimida. `VACUUM INTO` es atómico aunque la base esté abierta.
 /// Con [sinSecretos] (lo que va a la nube) se vacían los tokens antes de comprimir.
 Future<CopiaArmada> armarCopia(AppDatabase db, {required Directory carpetaTemporal, bool sinSecretos = true}) async {
@@ -70,7 +57,7 @@ Future<CopiaArmada> armarCopia(AppDatabase db, {required Directory carpetaTempor
   final crudo = File(p.join(carpetaTemporal.path, 'copia_${DateTime.now().microsecondsSinceEpoch}.sqlite'));
   try {
     await db.customStatement('VACUUM INTO ?', [crudo.path]);
-    if (sinSecretos) _quitarSecretos(crudo.path);
+    if (sinSecretos) quitarSecretos(crudo.path, _sentenciaSinSecretos);
     final comprimido = gzip.encode(await crudo.readAsBytes());
     return CopiaArmada(comprimido, sha256Hex(comprimido));
   } finally {

@@ -20,6 +20,7 @@ almacén de barrio en Bariloche, cuyo dueño es quien pide y prueba todo. Tres p
 |---|---|---|
 | **PC** (Windows) | este repo, `lib/` salvo `lib/companion/` | La caja: vender, cobrar, cerrar caja, proveedores, separaciones, historial, configuración. Base SQLite local (drift). |
 | **Celular** (Android, "companion") | este repo, `lib/companion/` | Vender y cobrar, productos y precios, conteo de stock, gastos/ingresos, arqueo y cierre, historial y cierres, configuración. Base propia sincronizada. |
+| **Navegador** (Nodo Sur Servicios web) | este repo, `lib/main_web.dart` (la app del celular compilada para web) | Lo mismo que Nodo Sur Servicios en el celular, en `horsepos.com/app/`, salvo el bot (necesita un Android). Ver `docs/PLAN-WEB-SERVICIOS.md`. |
 | **Sitio** (horsepos.com) | repo `neaserisgod/NodoSurPage` | Web pública, cuentas con Google, negocios/sucursales/miembros, suscripciones, sync en la nube, copias, actualizaciones, y Mercado Pago por negocio. Cloudflare Worker + D1 + R2. |
 
 El tercer repo es **`neaserisgod/botdemo`**: el bot de WhatsApp (Node + Baileys). Corre en un celular con Termux o adentro de

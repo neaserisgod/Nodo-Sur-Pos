@@ -31,3 +31,20 @@ jobs:
       # `flutter test --tags bench`. Las capturas van en su versión corta (claro, 1366; `test/helpers/capturas.dart`).
       - name: Tests
         run: flutter test --exclude-tags bench
+
+  # Nodo Sur Servicios en el navegador (`docs/PLAN-WEB-SERVICIOS.md`): que siga compilando para web. El análisis no lo ve: una
+  # pantalla del celular que importe algo nativo (sqlite3, dart:ffi) anda en Android y rompe solo la compilación web.
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: bash tool/preparar_web.sh
+      - name: Compila para web
+        run: flutter build web --release -t lib/main_web.dart --base-href /app/ --no-web-resources-cdn --pwa-strategy=none

@@ -4,6 +4,7 @@
 // Es lo único que hay que tocar para trabajar sin la PC: vincular la cuenta una vez. Después el celular pasa solo
 // a internet si la PC no contesta (`conmutador_sync.dart`) y vuelve a la PC cuando contesta.
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +13,7 @@ import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
 import 'borrar_celular.dart';
+import '../servicios/recargar_pagina.dart';
 import 'conmutador_sync.dart';
 import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
@@ -157,6 +159,8 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       return;
     }
     await borrarTodoDelCelular();
+    // En el navegador no se puede cerrar la app: se recarga la página, que arranca de cero.
+    if (kIsWeb) return recargarPagina();
     await SystemNavigator.pop();
   }
 

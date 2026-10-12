@@ -4,6 +4,7 @@
 // Con Google no hay dos caminos: la primera vez que alguien entra, horsepos.com le crea la cuenta sola. Por eso es un
 // solo botón y la pantalla lo dice, en vez de un "registrarse" aparte que haría lo mismo.
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../kit/kit_ns.dart';
@@ -34,7 +35,7 @@ class VistaEntrarConGoogle extends StatelessWidget {
     final ns = context.ns;
     return PaginaArranqueNs(
       titulo: 'Entrá con tu cuenta',
-      bajada: 'Lo que hagas desde este celular queda a tu nombre.',
+      bajada: kIsWeb ? 'Lo que hagas desde acá queda a tu nombre.' : 'Lo que hagas desde este celular queda a tu nombre.',
       cuerpo: [
         if (error != null) KeyedSubtree(key: const Key('entrar_error'), child: InfoNs(error!, tono: TonoNs.bad)),
         if (error != null && alReintentar != null)
@@ -42,7 +43,10 @@ class VistaEntrarConGoogle extends StatelessWidget {
         _BotonGoogle(trabajando: trabajando, onTap: trabajando ? null : alEntrar),
         const InfoNs('¿Primera vez? Tu cuenta se crea sola al entrar con Google. Es la misma de horsepos.com.'),
         const InfoNs('¿Te invitaron a un negocio? Entrá con el mismo mail al que te llegó la invitación.'),
-        const InfoNs('Internet, una sola vez: se abre el navegador para entrar. Después el celular sigue andando sin conexión.'),
+        // En el navegador se entra en la misma pestaña y la app trabaja con internet (lo que carga queda guardado en el navegador).
+        InfoNs(kIsWeb
+            ? 'Entrás con tu cuenta de Google en esta misma pestaña. Lo que cargues queda guardado y llega solo a los otros equipos del negocio.'
+            : 'Internet, una sola vez: se abre el navegador para entrar. Después el celular sigue andando sin conexión.'),
       ],
     );
   }

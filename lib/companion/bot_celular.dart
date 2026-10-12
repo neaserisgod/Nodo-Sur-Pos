@@ -2,33 +2,30 @@
 // el bot, para mostrar o no su pantalla en Más.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 
 import '../domain/bot_whatsapp.dart';
 import '../edicion.dart';
 import '../servicios/acceso_bot.dart';
 import '../servicios/bot_en_celular.dart';
 import '../servicios/push.dart';
-import '../servicios/cuenta_nube.dart' show AlmacenCuenta, AlmacenCuentaEnArchivo, ClienteNube;
+import '../servicios/cuenta_nube.dart' show ClienteNube;
+import '../servicios/almacenes_del_equipo.dart';
+import '../plataforma.dart';
 
 final _clienteNubeBot = ClienteNube(http: http.Client());
 
 /// El acceso al bot con la cuenta vinculada de este celular (el mismo archivo de cuenta que la sync y la IA).
-final AccesoBot accesoBotDelCelular = AccesoBotNube(() async {
-  final soporte = await getApplicationSupportDirectory();
-  return (almacen: AlmacenCuentaEnArchivo(soporte.path) as AlmacenCuenta, cliente: _clienteNubeBot);
-});
+final AccesoBot accesoBotDelCelular = AccesoBotNube(() async => (almacen: await almacenCuentaDelEquipo(), cliente: _clienteNubeBot));
 
 /// El bot que corre adentro de este celular (solo Nodo Sur Servicios trae Node; en la otra app no se usa).
 final BotEnCelular botDelCelular = BotEnCelular(acceso: accesoBotDelCelular);
 
 /// Al abrir Nodo Sur Servicios en Android: el bot encendido pasa a la versión que trae la app (`BotEnCelular.ponerAlDia`).
 Future<void> ponerAlDiaElBotDelCelular() async {
-  if (!esEdicionServicios || !Platform.isAndroid) return;
+  if (!esEdicionServicios || !esAndroid) return;
   await botDelCelular.ponerAlDia();
 }
 
@@ -56,8 +53,7 @@ RegistroPush? _push;
 /// también en "PC y celular", donde la sync la sube la PC. Nunca tira.
 Future<void> registrarPushDelCelular() async {
   try {
-    final soporte = await getApplicationSupportDirectory();
-    final cuenta = await AlmacenCuentaEnArchivo(soporte.path).leer();
+    final cuenta = await (await almacenCuentaDelEquipo()).leer();
     if (cuenta == null) return;
     await (_push ??= RegistroPush(cliente: _clienteNubeBot)).registrarSiHaceFalta(cuenta.token);
   } catch (_) {

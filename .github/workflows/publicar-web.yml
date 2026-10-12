@@ -1,0 +1,77 @@
+# Compila Nodo Sur Servicios para el navegador y la publica en horsepos.com/app/ (`docs/PLAN-WEB-SERVICIOS.md`). La app compilada
+# va a R2 (bucket nodosur-releases, carpeta app/) con el script del sitio `scripts/publicar-web.mjs`; el sitio la sirve desde ahí.
+# Se dispara:
+#   * al mergear con un título que empieza con "release:" (como Windows y los APK). Con "beta:" NO: la web es una sola para todos,
+#     no tiene canal beta, y una versión de prueba le llegaría a todos los clientes;
+#   * o a mano: Actions → publicar-web → Run workflow (con "solo_compilar" para probar una rama sin publicar).
+# Secretos: CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID (los mismos de publicar-beta); SITE_REPO_TOKEN solo si el sitio es privado.
+name: publicar-web
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      solo_compilar:
+        description: "Solo compilar y dejar la carpeta como artefacto del run, sin publicar (para probar una rama)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: publicar-web
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: neaserisgod/NodoSurPage
+          path: sitio
+          token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: flutter pub get
+      # SQLite en WebAssembly y el worker de drift, de la misma versión que pubspec.lock.
+      - run: bash tool/preparar_web.sh
+      # Sin el CDN de Google: el motor gráfico y las fuentes salen de horsepos.com (la política de contenido de /app/ solo deja 'self').
+      # Sin service worker de Flutter: la versión nueva llega al recargar, sin quedar atrapada en una caché vieja.
+      - name: Compilar
+        run: flutter build web --release -t lib/main_web.dart --base-href /app/ --no-web-resources-cdn --pwa-strategy=none
+      - name: Guardar la compilación (solo compilar)
+        if: inputs.solo_compilar
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: build/web
+          retention-days: 7
+      - name: Publicar en horsepos.com/app/
+        if: ${{ !inputs.solo_compilar }}
+        run: |
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            [ -n "${!v}" ] || { echo "::error::Falta el secreto $v"; exit 1; }
+          done
+          npm install -g wrangler
+          version="$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')-w${GITHUB_RUN_NUMBER}"
+          node sitio/scripts/publicar-web.mjs --dir build/web --version "$version"

@@ -47,6 +47,17 @@ Future<bool> esNegocioNuevoTrasSincronizar({
   required AppDatabase db,
   Duration limite = const Duration(seconds: 25),
 }) async {
+  if (!await sincronizarUnaVez(sync, limite: limite)) return false;
+  try {
+    return await baseSinNegocio(db);
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Una vuelta completa de la sync, esperando la que ya esté corriendo. true si terminó bien dentro de [limite]; sin red o con
+/// error, false (nunca tira).
+Future<bool> sincronizarUnaVez(ServicioSyncNube sync, {Duration limite = const Duration(seconds: 25)}) async {
   try {
     final hasta = DateTime.now().add(limite);
     // Si ya hay una vuelta corriendo (la que arranca sola al vincular), se espera a que termine: pedir otra encima
@@ -54,9 +65,7 @@ Future<bool> esNegocioNuevoTrasSincronizar({
     while (sync.enCurso && DateTime.now().isBefore(hasta)) {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
-    final r = await sync.sincronizar().timeout(hasta.difference(DateTime.now()));
-    if (r is! SyncNubeOk) return false;
-    return await baseSinNegocio(db);
+    return await sync.sincronizar().timeout(hasta.difference(DateTime.now())) is SyncNubeOk;
   } catch (_) {
     return false;
   }
