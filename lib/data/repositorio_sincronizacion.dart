@@ -432,12 +432,17 @@ Future<List<Map<String, dynamic>>> aplicarCambios(
 
   for (final fila in filas) {
     try {
-      await _aplicarUnaFila(
-        db,
-        tabla: tabla,
-        fila: fila,
-        comparaActualizado: comparaActualizado,
-        ordenDeLlegada: ordenDeLlegada,
+      // En una transacción por fila: un movimiento de stock se graba y mueve el stock juntos. Antes eran dos escrituras sueltas, y
+      // si la app se cortaba entre las dos el movimiento quedaba grabado sin haber movido el stock, y no se aplicaba nunca más (al
+      // volver a llegar ya existía). Una fila que falla tampoco deja nada a medias (revisión 2026-10-12).
+      await db.transaction(
+        () => _aplicarUnaFila(
+          db,
+          tabla: tabla,
+          fila: fila,
+          comparaActualizado: comparaActualizado,
+          ordenDeLlegada: ordenDeLlegada,
+        ),
       );
       // Aunque la fila no haya ganado (ya estaba igual o más nueva): si un reintento llega después de que la promo se grabó pero
       // antes de que estuvieran sus artículos, recién acá se pueden armar.

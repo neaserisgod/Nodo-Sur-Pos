@@ -129,7 +129,10 @@ de venta esté operativa.
   sin migraciones es perder datos.
 - `pdf` + `printing` para tickets
 - `csv` para importar productos
-- Sin backend, sin red, sin autenticación. Todo local.
+- Anda sin red: cada equipo tiene su base local y vende sin internet. La nube de Nodo Sur (horsepos.com, repo
+  `NodoSurPage`) es aparte y opcional: cuenta con Google, sync entre PC y celular, copias, actualizaciones y Mercado
+  Pago del negocio (`CONTEXTO.md` §3). La caja nunca depende de ella para cobrar en efectivo. (Corregido 2026-10-12: decía
+  "sin backend, sin red, sin autenticación", de antes de la nube.)
 
 ## Arquitectura
 
@@ -295,7 +298,7 @@ arqueo", o "Sin novedades por ahora" si no hay nada. Único lugar de avisos
 que no son parte del flujo de vender.
 
 La campanita también trae **los avisos de Mercado Pago** (etapa D, El dueño,
-2026-10-04), solo en la PC: un cobro que entró a la cuenta y no tiene venta
+2026-10-04), en la PC; en el celular, solo en modo "Solo celular" (2026-10-09: con PC los muestra la PC): un cobro que entró a la cuenta y no tiene venta
 en la app, un contracargo, un reclamo — estos dos con la venta cruzada
 cuando se puede. **Solo avisan**: no tocan la caja ni el stock. Cada uno
 tiene "Visto" y desaparece; un contracargo que cambia de estado vuelve. Un
@@ -424,8 +427,7 @@ El recargo de cigarrillos **no tiene tecla**: se calcula solo según el medio de
 ## Qué es configurable y qué no
 
 **Configurable:** los tres montos del recargo de cigarrillos · ganancia de referencia (sobre el precio)
-por categoría · fondo fijo de caja · reserva diaria de fijos · día del retiro
-semanal · desde cuánto faltante el cierre pregunta a dónde fue la plata · paso de redondeo en efectivo
+por categoría · fondo fijo de caja (dato operativo, no entra en ninguna cuenta: `REGLAS-NEGOCIO.md` §13) · desde cuánto faltante el cierre pregunta a dónde fue la plata · paso de redondeo en efectivo
 (default 100) · producto del botón de vuelto · rutas de respaldo y de PDF · qué
 secciones se ven y en qué orden · productos, precios, costos, proveedores,
 categorías, medios de pago, gastos fijos.

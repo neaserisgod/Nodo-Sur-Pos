@@ -10,7 +10,12 @@ y el detalle en `DECISIONES.md`.
 
 ---
 
-## Publicado (2026-10-03)
+## Publicado (al 2026-10-12)
+
+- **Windows**: estable 1.0.0.2160 (10/10); betas hasta la 1.0.0+2163 (11/10). Los APK (almacén y Nodo Sur Servicios)
+  salen con el mismo merge `release:`/`beta:`. El número exacto de cada plataforma, en `/admin/` → Versiones.
+
+Lo de abajo es del 03/10 y queda como historia del incidente de la 2129:
 
 - **Windows**: estable 1.0.0.2129 (03/10, al 100 %).
 - **Android**: estable 1.0.0+2130 (03/10, al 100 %). **La 1.0.0+2129 de Android quedó rota**: una segunda
@@ -18,7 +23,7 @@ y el detalle en `DECISIONES.md`.
   (los celulares toman la más nueva). La 2129 quedó **bloqueada** en el sitio (03/10).
 - **Sitio** (`NodoSurPage`): en producción al mezclar a `main`.
 
-## Rediseño de la PC v3 — mock hecho, sin aplicar al código (05/10/2026)
+## Rediseño de la PC v3/v4 — mocks (05–06/10/2026) y aplicación al código (desde el 06/10)
 
 El dueño rechazó el aspecto de la app de escritorio y pidió **rehacerla desde cero** (disposición incluida) con el lenguaje de
 horsepos.com y antigravity.google. Se hicieron **dos versiones**:
@@ -31,12 +36,12 @@ horsepos.com y antigravity.google. Se hicieron **dos versiones**:
 - **Sobria** (la de la PC): cada pantalla entra en 1920×1080 sin scroll de página, títulos chicos, sin partículas/3D/cinta/títulos tipeados.
   Especificación para aplicarla: [`docs/archivo/ESPECIFICACION-PC-V3.md`](./docs/archivo/ESPECIFICACION-PC-V3.md) y `docs/mock-pc/NodoSurPC-v3.html` (vivo: https://claude.ai/artifact/Kq4qCixuDtGpRKS1sjKxxj).
 
-**Ronda 3 (05/10, la última):** el dueño pidió rapidez inmediata y cero fricción, IA siempre a mano (no escondida en Configuración),
+**Ronda 3 (05/10):** el dueño pidió rapidez inmediata y cero fricción, IA siempre a mano (no escondida en Configuración),
 **Pagar proveedor** como acción principal de caja (gasto/ingreso secundario), navbar sin logo/nombre/lupa, tuerca para Configuración y
 mucha información legible. Está en la especificación (secciones 4.2, 4.5, 7.x, 8 y **15**) y en el mock sobrio; funciones nuevas a confirmar
 en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "Venta cobrada" que se cierra sola).
 
-**Ronda 4 (05/10, la última):** el dueño pidió **eliminar redundancias** (dejar lo más práctico a mano), sacar las tarjetas de IA del medio de Inicio,
+**Ronda 4 (05/10):** el dueño pidió **eliminar redundancias** (dejar lo más práctico a mano), sacar las tarjetas de IA del medio de Inicio,
 **todo simétrico** y **avisos (toast) arriba**; y pidió un mock **aparte** porque la v3 le gusta de base. Quedó en
 [`docs/ESPECIFICACION-PC-V4.md`](./docs/ESPECIFICACION-PC-V4.md) (delta sobre la v3: gana la v4) y `docs/mock-pc/NodoSurPC-v4.html`
 (vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
@@ -55,7 +60,8 @@ períodos y filtros, devolución por Mercado Pago, editor y carga histórica com
 **Auditoría del mock v4 (05/10):** se comparó contra la app real y **no tiene todas las funciones**: faltan ~35 (unas 15 de prioridad alta) y hay 7 cosas
 inventadas que no existen en la real. Detalle y orden para cerrar en [`docs/archivo/AUDITORIA-MOCK-V4.md`](./docs/archivo/AUDITORIA-MOCK-V4.md). **Antes de aplicar el diseño al código hay que cerrar esa lista.**
 
-**No se tocó código de Flutter.** Reemplaza al mock y a la comparación de la sección siguiente.
+(Al momento de esa auditoría todavía no se había tocado código de Flutter; la aplicación empezó el 06/10, ver arriba.) Reemplaza
+al mock y a la comparación de la sección siguiente.
 
 ## PC rehecha según el mock del celular + horsepos (05/10/2026) — etapa 2 aplicada a medias
 
@@ -101,17 +107,17 @@ Distinto del mock a propósito:
 Pendiente / ideas (sin hacer):
 - **Nodo Sur para servicios: barbería, uñas y belleza** (El dueño, 2026-10-09): una sola app; el rubro elegido en el
   onboarding decide qué pantallas se ven, y todo es un módulo opcional. Agenda con turnos por WhatsApp, servicios con receta
-  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapa 1 hecha** (forma de trabajar
-  deducida del rubro y rubros Barbería, Uñas y belleza y Otro servicio; rama `ccr-1a8287aa-6i8nq2`, sin mezclar); el resto, plan
-  en [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md).
+  de insumos y calculador de costo, descuento de insumos al cobrar, seña configurable. **Etapas 1 a 5 hechas y mezcladas**
+  (rubros, servicios con insumos, cobrar servicios, Agenda, turnos del bot; ver "Últimos cambios" del 09 y el 10/10); plan en
+  [`docs/PLAN-SERVICIOS.md`](./docs/PLAN-SERVICIOS.md). Solo en el celular: la PC no tiene lo de servicios.
 - **Bot de WhatsApp configurable desde Nodo Sur, todo desde el celular** (El dueño, 2026-10-09): primero la cuenta del
   almacén. Plan en [`docs/PLAN-BOT.md`](./docs/PLAN-BOT.md). Etapas 1 a 4 hechas y mezcladas (esta app en
   el release #94; `NodoSurPage` #55; `botdemo`): rubro guardado (v63), `/api/bot/*` en el sitio, el
   bot en Termux y, en el celular, **pedidos por confirmar en Encargues** (Aceptar los aparta, sin stock dice qué falta y no
   acepta; Rechazar no toca nada) y la pantalla **Más › Bot de WhatsApp** (estado, configuración para dueño/encargado,
   instalar). La PC también publica el catálogo: **hace falta un release nuevo de Windows** además del APK. Probado con
-  tests; **nada probado en un celular real ni con WhatsApp real**. Falta: APK beta y notificaciones con la app cerrada
-  (etapa 5).
+  tests; **nada probado en un celular real ni con WhatsApp real**. La etapa 5 (notificaciones con la app
+  cerrada) también está hecha (10/10).
 - **Abrir la caja desde el celular sin la PC** (El dueño, 2026-10-07/09, independencia del celular, etapa 1, opción A):
   con el modo **"Solo celular"** el celular abre la caja sobre su propia base (antes daba "No se puede abrir una nueva
   desde acá" y el modo solo celular no podía arrancar el día). En "PC y celular" sigue bloqueado, para no tener dos cajas
@@ -130,9 +136,25 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (12/10/2026)
+
+- **Revisión de los tres repos** (código, documentos y tests). Arreglado:
+  - Sitio: **devolver la seña** por Mercado Pago pide el permiso `devolver` (dueño o encargado), como devolver una venta; antes
+    lo podía hacer un empleado. El **token del bot de WhatsApp** solo sirve para `/api/bot/*`, escuchar avisos y `device/me`/`ping`
+    (antes podía cobrar, devolver o bajar la sync de la sucursal). **Turnos y pedidos del bot**: una página ya no corta un grupo
+    de cambios con la misma hora (con más de 200 turnos de la app publicados juntos, el bot dejaba de ver los que pasaban de
+    200). **Vincular un equipo** con el id de otro que sigue en uso da `device_ajeno` en vez de pisarlo.
+  - App: aplicar un movimiento de stock de la sync (grabarlo y moverle el stock al producto) va en una transacción por fila.
+    El test `escucha_pc_test.dart` esperaba un tiempo fijo y fallaba a veces en máquinas lentas.
+  - Documentos: `CLAUDE.md` (la nube, lo configurable, avisos de MP en el celular), `CONTEXTO.md` y este archivo.
+- **Sitio: página de Nodo Sur Servicios** (`horsepos.com/servicios/`, repo `NodoSurPage`): agenda, bot, señas, cobro con QR,
+  costo por servicio, precio del plan Emprendedor y preguntas frecuentes, con capturas reales de la app; "Servicios" en el
+  menú de todo el sitio. **La PC no tiene lo de servicios** (es solo del celular).
+- Vistos y **sin tocar** (ver "Pendientes técnicos"): el stock contado dos veces en un equipo nuevo, y la publicación.
+
 ## Últimos cambios (10/10/2026)
 
-- **Nodo Sur Servicios** (rama `ccr-d9ff719e-qd8uv7`, **sin mezclar todavía**; plan en `docs/PLAN-APP-SERVICIOS.md`): segunda edición
+- **Nodo Sur Servicios** (mezclado y publicado en beta, PR #104 a #107; plan en `docs/PLAN-APP-SERVICIOS.md`): segunda edición
   del celular (flavor `servicios`, `com.laplazoleta.servicios`) que se instala al lado de la de almacén. Solo lo de servicios y caja
   simple; **el bot de WhatsApp corre adentro** (Node de Termux empaquetado, `ServicioBot.kt`), sin Termux, vinculado sin navegador
   (`POST /api/bot/token`). Seña con **link de Mercado Pago** (media hora, se confirma sola, recibo por WhatsApp, devolución con un
@@ -153,8 +175,9 @@ Pendiente / ideas (sin hacer):
   (mover, cancelar, cobrar, anotar la seña) y publica lo que ocupa la Agenda sin datos de clientes. Los servicios, el horario y
   la seña del negocio le llegan solos al bot (sin configuración aparte). **Hace falta publicar los tres repos juntos.**
 - **Notificaciones con la app cerrada** (etapa 5 de `docs/PLAN-BOT.md`): el celular registra su token de Firebase y el sitio
-  le manda los pedidos y turnos nuevos del bot. **Falta el proyecto de Firebase**: los datos de `google-services.json` en
-  `lib/servicios/push.dart` (`opcionesFirebase`) y el secreto `FCM_SERVICE_ACCOUNT` en Cloudflare. Sin eso no hace nada.
+  le manda los pedidos y turnos nuevos del bot. El proyecto de Firebase ya está cargado en
+  `lib/servicios/push.dart` (`opcionesFirebase`, release #102); del lado del sitio hace falta el secreto `FCM_SERVICE_ACCOUNT`
+  en Cloudflare (no se puede ver desde una sesión: confirmarlo con el dueño).
 
 - **Cobrar servicios** (etapa 3 de `docs/PLAN-SERVICIOS.md`, reglas en `REGLAS-NEGOCIO.md` §20): en un negocio de
   servicios, Vender es una grilla de servicios; cobrar descuenta los insumos, la línea guarda lo que costaron ese día (sin
@@ -172,7 +195,7 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (09/10/2026)
 
-- **Servicios, etapas 1 y 2** (`docs/PLAN-SERVICIOS.md`; rama `ccr-a0284350-02fhfg`, sin mezclar): rubros **Barbería**, **Uñas
+- **Servicios, etapas 1 y 2** (`docs/PLAN-SERVICIOS.md`; mezclado, release #96): rubros **Barbería**, **Uñas
   y belleza**, **Peluquería**, **Estética** y **Otro servicio** en el alta y en Configuración › Tu negocio del celular (en dos
   grupos); la forma de trabajar sale del rubro y esconde a un negocio de servicios lo que es de un comercio con stock. En "Solo
   celular", la pestaña Productos pasa a **Servicios**: servicios con costo, ganancia y para cuántos alcanza; insumos con compra
@@ -306,17 +329,16 @@ Pendiente / ideas (sin hacer):
 - Pagar proveedor del celular contra la PC real; sync por la nube con dos dispositivos reales (WebSocket/Durable Object).
 - Una actualización real de una PC instalada contra el feed real, y que WinSparkle rechace una firma inválida.
 - Impresión física de prueba en la Point (consume un ticket; la corre o autoriza el dueño).
-- Ganancia real en vez de markup (migración v46) y asistente contable (primera parte): se escribieron sin Flutter en la
-  sesión; correr `flutter analyze` y `flutter test` antes de darlos por cerrados.
+- Ganancia real en vez de markup (migración v46) y asistente contable (primera parte): pasan `flutter analyze` y los tests
+  (verificado el 2026-10-12); falta verlos con datos reales.
 - **Validación real del dominio**: correr una semana en paralelo con el sistema anterior y comparar cierres. Los tests
   prueban que el código hace lo pedido, no que el modelo de negocio sea correcto.
 
 ## Pendiente
 
 **Pedido por el dueño / a confirmar antes de arrancar** (lista completa y orden de interés en `CONTEXTO.md` §7):
-integración con Mercado Pago: **solo queda el QR en pantalla sin terminal** (el dueño, 2026-10-04: "de momento no"; Orders API
-`type: "qr"`, `config.qr.mode: "dynamic"`, hace falta crear una sucursal y una caja en MP) y el saldo real en el cierre del
-celular; pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder token/terminal locales como avanzado); motivo
+integración con Mercado Pago: **el QR en pantalla sin terminal en la caja de almacén** (ya está en Nodo Sur Servicios,
+10/10; en almacén el dueño dijo "de momento no", 2026-10-04) — el saldo real en el cierre del celular ya está (09/10); pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder token/terminal locales como avanzado); motivo
 obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
@@ -326,6 +348,14 @@ obligatorio en cada gasto.
   que deja 7, y un equipo nuevo que baja las dos tablas desde 0 queda en 4. Vale para `stock`, `stock_gramos` y
   `stock_milesimas` (`_aplicarDeltaDeMovimientoStock`, `repositorio_sincronizacion.dart`). Ver si en la práctica un equipo
   nuevo arranca de una copia de la base (y no pasa) antes de tocarlo: es el núcleo del stock.
+
+- **Publicación** (revisión 2026-10-12, sin tocar, a decidir): (1) un merge `release:`/`beta:` publica aunque los tests de
+  ese mismo merge fallen (`publicar-beta.yml` y `publicar-apk.yml` no esperan a `tests.yml`); (2) el APK de Nodo Sur Servicios
+  lleva el bot de `botdemo` tal como esté en su `main` en ese momento, y `botdemo` no tiene CI; (3) los APK se firman con el
+  `debug.keystore` de una PC: si se pierde, no hay forma de actualizar los celulares sin desinstalar; (4) el commit que deja
+  el número de una estable dice "Publicada la beta".
+- La copia local a la carpeta de respaldo (Drive/OneDrive) lleva el token de Mercado Pago y la llave del celular tal cual; la
+  copia en la nube los saca (`copias_nube.dart`).
 
 - (Resuelto el 2026-10-04: cobrar un fiado ahora es atómico e idempotente, y separar/pagar proveedor van en transacción; ver
   `TRAMPAS.md`.) Las búsquedas tipo "7 up" ya se arreglaron (`docs/PLAN.md`, 0.8).

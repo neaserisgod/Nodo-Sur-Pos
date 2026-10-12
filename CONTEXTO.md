@@ -2,7 +2,7 @@
 
 Puerta de entrada para una sesión nueva (otra cuenta de Claude, otra persona) que no estuvo en las conversaciones de
 desarrollo. Resume **qué es el sistema, cómo está armado, qué se hizo hasta hoy, qué quiere el dueño y cómo trabaja**, y
-apunta al documento que es dueño de cada tema. Actualizado al **2026-10-03**.
+apunta al documento que es dueño de cada tema. Actualizado al **2026-10-12** (lo de cada día, en `ESTADO.md`).
 
 Orden de lectura sugerido: este archivo → `CLAUDE.md` (cómo está armado el código y sus convenciones) → `ESTADO.md`
 (lo último, arriba de todo) → `REGLAS-NEGOCIO.md` antes de tocar dominio → `DECISIONES.md`/`TRAMPAS.md` antes de cambiar
@@ -22,7 +22,9 @@ almacén de barrio en Bariloche, cuyo dueño es quien pide y prueba todo. Tres p
 | **Celular** (Android, "companion") | este repo, `lib/companion/` | Vender y cobrar, productos y precios, conteo de stock, gastos/ingresos, arqueo y cierre, historial y cierres, configuración. Base propia sincronizada. |
 | **Sitio** (horsepos.com) | repo `neaserisgod/NodoSurPage` | Web pública, cuentas con Google, negocios/sucursales/miembros, suscripciones, sync en la nube, copias, actualizaciones, y Mercado Pago por negocio. Cloudflare Worker + D1 + R2. |
 
-Hay un tercer repo (`horsepospronative`) que no se tocó en estas sesiones.
+El tercer repo es **`neaserisgod/botdemo`**: el bot de WhatsApp (Node + Baileys). Corre en un celular con Termux o adentro de
+la app **Nodo Sur Servicios** (edición Android para negocios con turnos, flavor `servicios` de este repo), y habla con el
+sitio por `/api/bot/*`. (`horsepospronative` existe pero no se tocó en estas sesiones.)
 
 ## 2. Cómo trabaja el dueño (importante)
 
@@ -69,7 +71,7 @@ Hay un tercer repo (`horsepospronative`) que no se tocó en estas sesiones.
 
 ```
 lib/domain/     funciones puras (dinero, caja, recargo, redondeo, separación, conciliación MP...). Tests exhaustivos.
-lib/data/       esquema drift (schemaVersion 63), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
+lib/data/       esquema drift (schemaVersion 66), migraciones, repositorios (ventas, cierre, gastos, sync, PDFs...).
 lib/ui/         pantallas de la PC (venta, cierre, proveedores, separaciones, historial, configuración...).
 lib/companion/  la app del celular entera.
 lib/servicios/  cuenta y sync de Nodo Sur, Mercado Pago por el servidor, actualizaciones, módulos activos.
@@ -89,10 +91,12 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 `lib/ui/tema/`). Mocks de referencia en `Lenguaje de diseño/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
 (`docs/anotaciones-mocks.md` lista lo que está en los mocks pero no en la app).
 
-- **PC** (2026-10-03): Venta es la pantalla principal (la tecla Inicio vuelve ahí). Arriba, las secciones como
-  pastillas centradas (sin la marca), el **engranaje de Configuración** a la derecha y la búsqueda como lupa (Ctrl+F);
-  en Venta, la campanita y "Cambiar de turno"/"Cerrar caja", y la búsqueda es el campo único siempre a la vista. Configuración en **5 grupos** (Negocio, Caja y cobros, Productos,
-  Equipos y cuenta, Apariencia) con pastillas por sección.
+- **PC** (rediseño v4, 2026-10-06; detalle en `CLAUDE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla
+  Inicio vuelve ahí). Arriba, **Caja ▾** a la izquierda, las secciones como pastillas al centro (sin la marca ni lupa) y a
+  la derecha el Asistente (Ctrl+K), la campanita y el engranaje de Configuración. En Venta, el buscador grande con
+  **Pagar proveedor (Alt+P)** al lado. Configuración es una sola lista de secciones con el nombre del grupo arriba.
+- **La PC no tiene lo de servicios** (turnos, agenda, servicios con insumos): eso es solo del celular, en modo "Solo
+  celular" o en Nodo Sur Servicios (`docs/PLAN-SERVICIOS.md`, `docs/PLAN-APP-SERVICIOS.md`).
 - **Celular**: barra inferior con 5 pestañas (Inicio, Productos, Vender al centro, Caja, Más), calcada del mock del celular;
   pantallas secundarias con título grande y "Volver" en pastilla arriba a la derecha.
 - Para revisar a ojo: `flutter test test/ui/capturas_escritorio_test.dart` y `test/companion/capturas_companion_test.dart`
@@ -112,12 +116,17 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
   misma versión de la misma plataforma a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
   `flutter pub get`, `flutter analyze` (tiene que dar "No issues found!", CI lo exige) y
-  `flutter test --exclude-tags bench` (~2.550 tests, ~5 minutos; las capturas en versión corta, ver `test/helpers/capturas.dart`).
+  `flutter test --exclude-tags bench` (~2.930 tests al 2026-10-12, 5 a 12 minutos según la máquina; las capturas en versión corta, ver `test/helpers/capturas.dart`).
 
-## 6. Estado al 2026-10-03
+## 6. Estado
 
-- **Publicado**: Windows estable **1.0.0.2129** y Android estable **1.0.0+2130** (03/10, noche). Incluyen todo lo de la
-  lista de abajo, el plan v2 (`docs/PLAN.md`) y los arreglos de la revisión (`ESTADO.md`).
+- **Publicado**: las versiones se ven en `/admin/` → Versiones (acá quedan viejas). Al 2026-10-12: Windows estable
+  **1.0.0.2160** (10/10) y betas hasta la **1.0.0+2163** (11/10); los dos APK (almacén y Nodo Sur Servicios) salen con el
+  mismo merge.
+- Del 04 al 11/10 (detalle en `ESTADO.md`): rediseño v4 de la PC, posnet etapas A a E, facturas de compra con IA, clave de
+  IA por negocio, celular independiente de la PC (abrir caja, pagar proveedores, cuenta corriente, promos, separaciones,
+  gastos fijos), bot de WhatsApp vinculado a Nodo Sur, rubros de servicios con agenda, turnos del bot, seña por link y
+  QR en pantalla, notificaciones con Firebase y la app Nodo Sur Servicios.
 - Lo hecho entre el 02 y el 03/10 (detalle en `ESTADO.md` y en cada PR):
   - Mercado Pago por negocio: cobro QR/débito por el servidor (PC sin token y celular sin PC), interruptor para usarlo
     aunque haya token local, imprimir en la terminal por el servidor, registro de actividad en `/negocio`.

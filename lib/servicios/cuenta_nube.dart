@@ -212,6 +212,7 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'ya_resuelto' => 'Ese pedido ya lo resolvió otro equipo.',
   'no_existe' => 'Ese pedido ya no existe.',
   'forbidden' => 'No tenés permiso para hacer eso.',
+  'device_ajeno' => 'Este equipo sigue vinculado a otra cuenta. Que lo desvincule esa cuenta (horsepos.com › Mi negocio) y probá de nuevo.',
   _ => 'El servicio respondió con un error ($codigo).',
 };
 

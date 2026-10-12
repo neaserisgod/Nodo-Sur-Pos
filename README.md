@@ -62,7 +62,7 @@ dart run build_runner build
 # Análisis estático — tiene que dar "No issues found!" (CI lo exige)
 flutter analyze
 
-# Toda la suite de tests (~2.550 al 2026-10-06, ~5 min), sin los benchmarks de 60.000 ventas.
+# Toda la suite de tests (~2.930 al 2026-10-12, 5 a 12 min según la máquina), sin los benchmarks de 60.000 ventas.
 # Las capturas van en versión corta (claro, 1366); todas: --dart-define=CAPTURAS=todas
 flutter test --exclude-tags bench
 # Los benchmarks, aparte
