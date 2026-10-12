@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'companion/companion_app.dart';
+import 'companion/demo/demo.dart';
 import 'companion/emparejamiento.dart';
 import 'companion/modo_uso.dart';
 import 'edicion.dart';
@@ -18,6 +19,8 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
     instalarRegistroDeErrores();
     edicionActual = Edicion.servicios;
+    // horsepos.com/demo/: la misma app, sin cuenta y con todo en memoria (`companion/demo/demo.dart`).
+    if (esDireccionDeDemo(Uri.base)) await prepararDemo();
     // En el navegador no hay PC con la que emparejarse por wifi: siempre "Solo celular", sin preguntar.
     if (await leerModoUso() == null) await guardarModoUso(ModoUso.soloCelular);
     runApp(const CompanionApp());

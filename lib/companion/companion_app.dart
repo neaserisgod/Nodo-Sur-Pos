@@ -15,6 +15,9 @@ import '../data/identidad_sync.dart';
 import 'emparejamiento.dart';
 import 'app_ns.dart';
 import 'bienvenida/marca_nodo_sur.dart';
+import 'demo/demo.dart';
+import 'demo/franja_demo.dart';
+import 'demo/pantalla_elegir_demo.dart';
 import 'kit/kit_ns.dart';
 import 'flujo_modo_uso.dart';
 import 'modo_uso.dart';
@@ -47,7 +50,7 @@ class CompanionApp extends StatelessWidget {
         // Íconos de la barra de estado claros u oscuros según el tema, y el cartel
         // "Sin conexión con la PC" arriba de todas las pantallas (docs/01 §6.15):
         // mientras se ve, todo baja 34 px.
-        builder: (context, navegador) => _AnchoDelNavegador(child: AnnotatedRegion<SystemUiOverlayStyle>(
+        builder: (context, navegador) => _AnchoDelNavegador(child: ConFranjaDemo(child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
           child: ValueListenableBuilder<bool>(
             valueListenable: sinConexionGlobalNs,
@@ -67,7 +70,7 @@ class CompanionApp extends StatelessWidget {
               );
             },
           ),
-        )),
+        ))),
         home: const _PantallaInicial(),
       ),
     );
@@ -122,6 +125,11 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // sincronización, sin `PuertoLocal` en producción), pero cuando la haya
     // (fase 3) tiene que estar listo desde el primer frame.
     establecerIdDispositivo(await idDispositivoEstable());
+    // La demo (horsepos.com/demo/) no tiene cuenta ni nada guardado: arranca siempre eligiendo el negocio de ejemplo.
+    if (modoDemo) {
+      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => const PantallaElegirDemo()));
+      return;
+    }
     // La clave de la IA es del negocio: se pregunta a la cuenta vinculada si la tiene, sin esperar (no frena el arranque). Con el
     // mismo archivo de cuenta que la sync, pero sin levantarla.
     unawaited(ClaveGemini.conectarCuenta(AccesoIaNube(() async => (almacen: await almacenCuentaDelEquipo(), cliente: _clienteNubeIa))));

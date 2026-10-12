@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
+import '../demo/demo.dart';
 import '../modo_uso.dart';
 import '../pantalla_bot_whatsapp.dart';
 import '../pantalla_carga_historica.dart';
@@ -78,7 +79,8 @@ class PantallaMasNs extends StatelessWidget {
                           ],
                         ),
                       ),
-                      BotonNs(texto: 'Cambiar', onTap: app.cambiarUsuario, alto: 44, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18),
+                      // En la demo no hay cuentas: cambiar de persona es entrar con Google.
+                      if (!modoDemo) BotonNs(texto: 'Cambiar', onTap: app.cambiarUsuario, alto: 44, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 18),
                     ],
                   ),
                 ),
@@ -162,6 +164,15 @@ class PantallaMasNs extends StatelessWidget {
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(
                   filas: [
+                    // La demo no tiene cuenta (horsepos.com/demo/): en su lugar, crear la propia.
+                    if (modoDemo)
+                      _Fila(
+                        icono: IconoNs.enchufe,
+                        titulo: 'Crear tu cuenta',
+                        detalle: 'Probala 7 días gratis con tu negocio',
+                        onTap: () => launchUrl(Uri.base.resolve(rutaProbarGratis), webOnlyWindowName: '_blank'),
+                      )
+                    else
                     _Fila(
                       icono: IconoNs.enchufe,
                       titulo: 'Cuenta',
