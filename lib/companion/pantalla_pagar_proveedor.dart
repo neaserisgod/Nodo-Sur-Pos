@@ -1,4 +1,4 @@
-// Pagar proveedor — acceso directo del Inicio. Es el ÚNICO camino del celular
+// Pagar proveedor — botón de la pestaña Caja (y desde Proveedores). Es el ÚNICO camino del celular
 // para pagarle a un proveedor (El dueño, 2026-10-02: "pagar proveedor es el
 // único que quiero que quede"): el pago pasa por la cuenta corriente, así el
 // gasto queda documentado con el proveedor y, si no había deuda cargada, se
