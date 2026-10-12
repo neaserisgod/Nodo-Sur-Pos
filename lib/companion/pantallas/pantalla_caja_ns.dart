@@ -22,6 +22,7 @@ import '../../edicion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../pantalla_cierres.dart';
+import '../pantalla_gastos_fijos.dart';
 import '../pantalla_movimiento_caja.dart';
 import '../pantalla_pagar_proveedor.dart';
 import '../puerto_local.dart';
@@ -194,6 +195,36 @@ class _ResumenState extends State<_Resumen> {
                     detalle: !abierta ? 'Caja cerrada' : (pend.arqueoVencido ? 'Hace ${duracionTextoNs(pend.minutosDesdeConteo)}' : 'Sin cerrar el día'),
                     ambar: abierta && pend.arqueoVencido,
                     onTap: () => _contar(context, app),
+                  ),
+                ),
+              ],
+            ),
+            // Pagar proveedor y gastos fijos, como en la PC (El dueño, 2026-10-12: "no lo estoy encontrando"): antes
+            // pagar proveedor solo estaba adentro de Proveedores y los fijos solo se cargaban, no se pagaban.
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _Accion(
+                    icono: IconoNs.camion,
+                    titulo: 'Pagar proveedor',
+                    detalle: 'Anota el pago y baja la deuda',
+                    onTap: () async {
+                      await app.irA((_) => PantallaPagarProveedor(servicio: PuertoLocal(baseLocalCompanion())));
+                      await app.refrescar();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _Accion(
+                    icono: IconoNs.calendario,
+                    titulo: 'Gastos fijos',
+                    detalle: 'Alquiler, luz… pagar o cargar',
+                    onTap: () async {
+                      await app.irA((_) => const PantallaGastosFijos());
+                      await app.refrescar();
+                    },
                   ),
                 ),
               ],
