@@ -5,6 +5,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
@@ -46,7 +47,7 @@ class CompanionApp extends StatelessWidget {
         // Íconos de la barra de estado claros u oscuros según el tema, y el cartel
         // "Sin conexión con la PC" arriba de todas las pantallas (docs/01 §6.15):
         // mientras se ve, todo baja 34 px.
-        builder: (context, navegador) => AnnotatedRegion<SystemUiOverlayStyle>(
+        builder: (context, navegador) => _AnchoDelNavegador(child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: Theme.of(context).brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
           child: ValueListenableBuilder<bool>(
             valueListenable: sinConexionGlobalNs,
@@ -66,8 +67,32 @@ class CompanionApp extends StatelessWidget {
               );
             },
           ),
-        ),
+        )),
         home: const _PantallaInicial(),
+      ),
+    );
+  }
+}
+
+/// En el navegador de una compu (Nodo Sur Servicios web, `docs/PLAN-WEB-SERVICIOS.md`) la app es la del celular: estirada a todo el
+/// ancho de una pantalla grande quedaba con filas de un metro. Se muestra centrada, del ancho de un celular grande. En el celular
+/// (y en un navegador angosto) no cambia nada.
+class _AnchoDelNavegador extends StatelessWidget {
+  const _AnchoDelNavegador({required this.child});
+  final Widget child;
+  static const anchoMaximo = 560.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    if (!kIsWeb || mq.size.width <= anchoMaximo) return child;
+    return ColoredBox(
+      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0C0F) : const Color(0xFFF3F4F7),
+      child: Center(
+        child: SizedBox(
+          width: anchoMaximo,
+          child: MediaQuery(data: mq.copyWith(size: Size(anchoMaximo, mq.size.height)), child: ClipRect(child: child)),
+        ),
       ),
     );
   }
