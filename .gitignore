@@ -82,3 +82,7 @@ signing/
 # Prueba del bot adentro del APK: lo arma tool/preparar_bot_android.sh al compilar (~110 MB, no va al repo).
 android/app/src/servicios/jniLibs/arm64-v8a/libns_*.so
 assets/bot/bot.zip
+
+# Base de datos en el navegador: los baja tool/preparar_web.sh con la versión de pubspec.lock.
+/web/sqlite3.wasm
+/web/drift_worker.js

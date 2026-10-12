@@ -8,10 +8,9 @@
 import '../servicios/catalogo_bot_nube.dart';
 import '../servicios/turnos_bot_nube.dart';
 import 'dart:async';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/database.dart';
@@ -23,6 +22,10 @@ import 'base_local.dart';
 import 'cambios_companion.dart';
 import 'conmutador_sync.dart';
 import 'identidad_dispositivo.dart';
+import '../servicios/almacenes_del_equipo.dart';
+import '../servicios/registro_errores.dart';
+import '../servicios/vincular_web.dart';
+import '../plataforma.dart';
 
 class SyncNubeCompanion {
   SyncNubeCompanion({
@@ -46,6 +49,8 @@ class SyncNubeCompanion {
   /// Vincula este celular a la cuenta de Google (abre el navegador, como en la PC). Lanza [ErrorNube] si no se
   /// completa. Al terminar, el conmutador vuelve a decidir: sin PC, la nube arranca sola.
   Future<CuentaVinculada> vincular({required String nombre}) async {
+    // En el navegador no hay servidor local: se va a la página del sitio y vuelve con el código (`vincular_web.dart`).
+    if (kIsWeb) await empezarVinculacionWeb(idDispositivo: await idDispositivoEstable(), nombre: nombre);
     final cuenta = await vincularEstaPc(
       cliente: cliente,
       almacen: almacen,
@@ -125,11 +130,25 @@ Stream<void> _escriturasLocales(AppDatabase db) => db
 Future<SyncNubeCompanion> syncNubeDelCelular() async {
   final existente = syncNubeCompanion;
   if (existente != null) return existente;
-  final soporte = await getApplicationSupportDirectory();
-  return syncNubeCompanion ??= armarSyncNubeCompanion(
-    almacen: AlmacenCuentaEnArchivo(soporte.path),
-    almacenEstado: AlmacenEstadoSyncEnArchivo(soporte.path),
-    cliente: ClienteNube(http: http.Client()),
+  final almacen = await almacenCuentaDelEquipo();
+  final almacenEstado = await almacenEstadoSyncDelEquipo();
+  final cliente = ClienteNube(http: http.Client());
+  if (kIsWeb) {
+    // Volviendo de entrar con Google (Nodo Sur Servicios web): se termina acá, antes de que nadie pregunte si hay cuenta. Si el
+    // código ya no sirve, la pantalla de entrar ofrece entrar de nuevo.
+    try {
+      if (await terminarVinculacionWeb(url: Uri.base, cliente: cliente, almacen: almacen, nombre: nombreDelCelular()) != null) {
+        await almacenEstado.borrar();
+      }
+    } catch (e, st) {
+      unawaited(registrarSiNoEsDeRed('Terminar de entrar desde el navegador', e, st));
+    }
+  }
+  if (syncNubeCompanion != null) return syncNubeCompanion!;
+  return syncNubeCompanion = armarSyncNubeCompanion(
+    almacen: almacen,
+    almacenEstado: almacenEstado,
+    cliente: cliente,
     abrirNavegador: (url) async {
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         throw const ErrorNube('sin_navegador', 'No se pudo abrir el navegador.');
@@ -140,7 +159,7 @@ Future<SyncNubeCompanion> syncNubeDelCelular() async {
 }
 
 /// Nombre con el que este celular aparece en "Mis dispositivos" del sitio.
-String nombreDelCelular() => 'Celular (${Platform.operatingSystem})';
+String nombreDelCelular() => kIsWeb ? 'Navegador' : 'Celular ($nombreDelSistema)';
 
 /// Avisos de Mercado Pago del celular (El dueño, 2026-10-09: independizar el celular): el mismo servicio de la PC, sobre la base
 /// del celular y con su cuenta vinculada. Se arma una sola vez.

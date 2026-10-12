@@ -65,6 +65,8 @@ dependencies:
   auto_updater: ^1.0.0
   sqlite3: ^3.5.2
   image_picker: ^1.2.4
+  # El navegador (Nodo Sur Servicios web): el WebSocket de los avisos en vivo (`servicios/socket_de_avisos_web.dart`).
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

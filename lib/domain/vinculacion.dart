@@ -52,6 +52,30 @@ Uri urlVincular({
   },
 );
 
+/// La misma página de vinculación, abierta desde Nodo Sur Servicios en el navegador (horsepos.com/app/): sin puerto, porque no hay
+/// servidor local; el sitio devuelve el código a `/app/?code=…&state=…` de este mismo sitio. [base] es de dónde se cargó la app.
+Uri urlVincularWeb({
+  required Uri base,
+  required String state,
+  required String desafio,
+  required String idDispositivo,
+  required String nombre,
+}) => Uri(
+  scheme: base.scheme,
+  host: base.host,
+  port: base.hasPort ? base.port : null,
+  path: '/vincular/',
+  queryParameters: {'web': '1', 'state': state, 'challenge': desafio, 'device': idDispositivo, 'name': nombre},
+);
+
+/// El código que trae la vuelta a la app web (`/app/?code=…&state=…`). Null si no es de la vinculación que se empezó.
+String? codigoDeVueltaWeb(Uri url, {required String stateEsperado}) {
+  final state = url.queryParameters['state'];
+  final code = url.queryParameters['code'];
+  if (state == null || state != stateEsperado || code == null || code.isEmpty) return null;
+  return code;
+}
+
 /// Lo que llega al servidor local: `/callback?code=…&state=…`. Null si no es una respuesta válida de esta
 /// vinculación (otro `state`, sin código o sin la ruta esperada).
 String? codigoDeCallback(Uri pedido, {required String stateEsperado}) {

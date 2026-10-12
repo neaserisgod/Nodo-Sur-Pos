@@ -10,7 +10,6 @@
 // migración sabe describir.
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -41,6 +40,7 @@ import 'tables/promos.dart';
 import 'tables/ventas_abiertas.dart';
 import 'tables/facturas_compra.dart';
 import 'tables/vinculos_factura.dart';
+import '../plataforma.dart';
 
 part 'database.g.dart';
 
@@ -154,7 +154,11 @@ class AppDatabase extends _$AppDatabase {
   final Future<void> Function(AppDatabase db)? _alCrear;
 
   static QueryExecutor _abrirConexion() {
-    return driftDatabase(name: 'la_plazoleta');
+    // En el navegador (Nodo Sur Servicios web) la base es SQLite compilado a WebAssembly, guardada en el navegador.
+    return driftDatabase(
+      name: 'la_plazoleta',
+      web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
+    );
   }
 
   @override
@@ -770,7 +774,7 @@ class AppDatabase extends _$AppDatabase {
         // la suya propia con otro `global_id` terminaría con dos filas
         // cuando llegue la real por sync, y cualquier `.getSingle()` de acá
         // en más explota en medio de una venta).
-        if (!Platform.isAndroid) {
+        if (!esEquipoCelular) {
           final actual = await select(configuracionTabla).getSingle();
           await into(configuracionNegocioTabla).insert(
             ConfiguracionNegocioTablaCompanion.insert(
@@ -1045,7 +1049,7 @@ class AppDatabase extends _$AppDatabase {
       // propósito (sus artículos no viajaban); desde la v62 viajan con sus
       // artículos y la v62 les da identidad. Solo en la PC: una base de celular
       // vieja puede tener filas sembradas de antes, que no deben subir.
-      if (from < 49 && !Platform.isAndroid) {
+      if (from < 49 && !esEquipoCelular) {
         Future<void> completar(String tabla, String idFijo, String filtro) async {
           await customStatement(
             "UPDATE $tabla SET global_id = '$idFijo', origen_dispositivo = 'desktop', "
@@ -1196,7 +1200,7 @@ class AppDatabase extends _$AppDatabase {
       if (from < 66) {
         await _sumarAgenda(this, m);
       }
-      if (from < 37 && !Platform.isAndroid) {
+      if (from < 37 && !esEquipoCelular) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
           'UPDATE lineas_de_venta SET '
@@ -1388,7 +1392,7 @@ Future<void> _crearIndicesUnicosDeSincronizacion(
 /// queda igual que siempre: ahí SÍ hace falta el seed, es la fuente de
 /// verdad que después empuja todo a Firestore.
 Future<void> _seedDatosFijos(AppDatabase db) async {
-  final esCompanion = Platform.isAndroid;
+  final esCompanion = esEquipoCelular;
   if (!esCompanion) {
     // Un único usuario inicial con nombre neutro: hace falta al menos uno (la
     // sesión de caja y las ventas se atan a un usuario). El comercio lo
@@ -1622,7 +1626,7 @@ Future<void> _sumarComponentesDePromoALaSync(AppDatabase db, Migrator m) async {
   // En el celular solo las que ya tienen identidad (mismo cuidado que v48→v49: una base de celular vieja puede tener filas sembradas
   // de antes, que no deben subir; el celular recién crea promos desde la v62, y nacen con identidad).
   final promos = await db
-      .customSelect('SELECT id FROM productos WHERE es_promo = 1${Platform.isAndroid ? ' AND global_id IS NOT NULL' : ''}')
+      .customSelect('SELECT id FROM productos WHERE es_promo = 1${esEquipoCelular ? ' AND global_id IS NOT NULL' : ''}')
       .get();
   for (final promo in promos) {
     final promoId = promo.data['id'] as int;

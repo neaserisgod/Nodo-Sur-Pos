@@ -14,6 +14,8 @@ import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
 import 'package:la_plazoleta/companion/configurar/negocio_nuevo.dart';
 import 'package:la_plazoleta/companion/configurar/pendientes_en_inicio.dart';
 import 'package:la_plazoleta/companion/pantalla_entrar_con_cuenta.dart';
+import 'package:la_plazoleta/companion/emparejamiento.dart';
+import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/sync_nube_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -450,6 +452,62 @@ void main() {
       }
       await t.pumpAndSettle();
       expect(find.text('Contanos de tu negocio'), findsOneWidget);
+    });
+
+    testWidgets('desde un equipo nuevo en "Solo celular" no se crea otra persona con el mismo nombre: baja la nube antes de buscar', (t) async {
+      // Revisión 2026-10-12 (Nodo Sur Servicios web): la misma cuenta en un segundo equipo creaba un "Pepe" nuevo, porque buscaba el
+      // perfil por nombre con la base todavía vacía; cuando llegaba el de la nube, quedaban dos.
+      await guardarModoUso(ModoUso.soloCelular);
+      final servidor = ServidorSyncFalso();
+      final otro = (await t.runAsync(() async => _baseDeCelularNuevo()))!;
+      final nuevo = (await t.runAsync(() async => _baseDeCelularNuevo()))!;
+      usarBaseLocalDeTest(nuevo);
+      CuentaVinculada cuenta(String token) => CuentaVinculada(token: token, email: 'pepe@x.com', idDispositivo: token, nombreDispositivo: 'Celular', vence: 99);
+      SyncNubeCompanion armar(AppDatabase db, String token, http.Client cliente) {
+        final almacen = AlmacenCuentaEnMemoria()..guardar(cuenta(token));
+        return armarSyncNubeCompanion(almacen: almacen, almacenEstado: AlmacenEstadoSyncEnMemoria(),
+            cliente: ClienteNube(http: cliente, abrirEscucha: servidor.abrir), abrirNavegador: (_) async {}, db: db);
+      }
+      final syncOtro = armar(otro, 'cel-otro', servidor.http_);
+      final syncNuevo = armar(nuevo, 'web-nuevo', MockClient((r) async => r.url.path == '/api/device/me'
+          ? http.Response('{"email":"pepe@x.com","name":"Pepe","role":"owner","orgId":1,"branchId":1}', 200, headers: {'content-type': 'application/json'})
+          : servidor.http_
+              .send(http.Request(r.method, r.url)
+                ..headers.addAll(r.headers)
+                ..bodyBytes = r.bodyBytes)
+              .then(http.Response.fromStream)));
+      addTearDown(() async {
+        for (final s in [syncOtro, syncNuevo]) {
+          s.servicio.detener();
+          s.conmutador.cerrar();
+        }
+        await t.runAsync(() async {
+          await otro.close();
+          await nuevo.close();
+        });
+      });
+      await t.runAsync(() async {
+        await PuertoLocal(otro).crearUsuarioNuevo('Pepe');
+        await syncOtro.servicio.sincronizar();
+      });
+      t.view.physicalSize = const Size(390 * 2, 844 * 2);
+      t.view.devicePixelRatio = 2;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(MaterialApp(
+        theme: TemaCompanion.claro,
+        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+        home: PantallaEntrarConCuenta(sync: syncNuevo, servicio: () async => PuertoLocal(nuevo), esNegocioNuevo: (_) async => false),
+      ));
+      for (var i = 0; i < 10; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+      }
+      await t.pumpAndSettle();
+      expect(find.text('Listo, Pepe.'), findsOneWidget);
+      // Lo que tarde o temprano pasa igual: la sync baja el "Pepe" del otro equipo.
+      await t.runAsync(() => syncNuevo.servicio.sincronizar());
+      final pepes = (await t.runAsync(() => nuevo.select(nuevo.usuarios).get()))!.where((u) => u.nombre == 'Pepe');
+      expect(pepes, hasLength(1));
     });
 
     testWidgets('si no es un negocio nuevo, de "Listo" va directo al inicio', (t) async {

@@ -36,9 +36,11 @@ void main() {
     final token = await regenerarTokenCompanion(pc);
     server = await iniciarServidorCompanion(pc, puerto: 0);
     escucha = EscuchaPc(DatosConexion(ip: '127.0.0.1', puerto: server.port, token: token), celular)..iniciar();
-    // Que termine la conexión y la sincronización inicial.
+    // Que termine la conexión y la sincronización inicial. Con una espera fija de medio segundo, en una máquina lenta la
+    // sincronización inicial seguía andando cuando arrancaba la prueba y su aviso se contaba como uno de la prueba (fallaba
+    // una de cada dos veces, revisión 2026-10-12): se espera a que los dos lados estén quietos un rato.
     await _esperarHasta(() async => escucha.conectada);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await _esperarQuietud();
   });
 
   tearDown(() async {
@@ -118,6 +120,22 @@ void main() {
       return cats.any((c) => c.nombre == 'Cargada en el celular');
     });
   });
+}
+
+/// Espera a que ni el celular ni la PC avisen cambios durante [quieto] (hasta [limite]): la sincronización inicial terminó.
+Future<void> _esperarQuietud({Duration quieto = const Duration(milliseconds: 800), Duration limite = const Duration(seconds: 10)}) async {
+  var ultimo = DateTime.now();
+  final subCel = avisosCambiosCompanion.listen((_) => ultimo = DateTime.now());
+  final subPc = notificadorCambios!.cambiosDelCelular.listen((_) => ultimo = DateTime.now());
+  final fin = DateTime.now().add(limite);
+  try {
+    while (DateTime.now().isBefore(fin) && DateTime.now().difference(ultimo) < quieto) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  } finally {
+    await subCel.cancel();
+    await subPc.cancel();
+  }
 }
 
 /// Espera hasta [limite] a que [condicion] se cumpla; falla si no.

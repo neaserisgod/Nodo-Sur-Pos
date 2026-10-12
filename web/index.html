@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <!-- Nodo Sur Servicios en el navegador (`docs/PLAN-WEB-SERVICIOS.md`). Se publica en horsepos.com/app/: `flutter build web`
+       con `--base-href /app/` reemplaza la línea de abajo. -->
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nodo Sur Servicios: agenda, turnos, señas, caja y servicios de tu negocio, en el navegador.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nodo Sur">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <title>Nodo Sur Servicios</title>
+  <style>
+    /* Mientras carga (la primera vez baja unos MB): el logo y un texto, sin pantalla en blanco. */
+    html, body { margin: 0; height: 100%; background: #fff; }
+    #cargando { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; font: 500 16px system-ui, -apple-system, sans-serif; color: #5f6368; }
+    #cargando img { width: 64px; height: 64px; border-radius: 16px; }
+  </style>
+</head>
+<body>
+  <div id="cargando"><img src="icons/Icon-192.png" alt=""><span>Abriendo Nodo Sur…</span></div>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

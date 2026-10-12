@@ -114,6 +114,10 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (mounted) setState(() => _trabajando = true);
     try {
       final perfil = await _sync!.cliente.yo(cuenta.token);
+      // Un equipo nuevo en "Solo celular" (otro celular, o el navegador) baja primero lo que ya está en la nube: el perfil se busca
+      // por nombre, y con la base todavía vacía se creaba otra persona con el mismo nombre (revisión 2026-10-12, "Caro" tres veces
+      // en la Agenda). Sin red sigue igual que antes.
+      if (await leerModoUso() == ModoUso.soloCelular) await sincronizarUnaVez(_sync!.servicio);
       final servicio = await (widget.servicio ?? servicioParaPerfil)();
       await resolverPerfilDeCuenta(perfil: perfil, servicio: servicio);
       if (!mounted) return;

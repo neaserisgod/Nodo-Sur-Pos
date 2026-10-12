@@ -13,8 +13,10 @@
 // vuelve a subir.
 
 import 'dart:convert';
-import 'dart:io' show gzip;
 
+// gzip de `archive` y no el de dart:io: en la PC y el celular usa el mismo zlib (mismos bytes), y además anda en el navegador
+// (Nodo Sur Servicios web), donde dart:io no existe.
+import 'package:archive/archive.dart' show GZipDecoder, GZipEncoder;
 import 'package:crypto/crypto.dart';
 
 import 'database.dart';
@@ -180,7 +182,7 @@ List<int> _plano(List<EntradaLote> entradas) {
 LoteParaSubir _armarLote(List<EntradaLote> entradas) {
   final plano = _plano(entradas);
   final id = 'l${_hex(plano).substring(0, 31)}';
-  final comprimido = gzip.encode(plano);
+  final comprimido = const GZipEncoder().encodeBytes(plano);
   return LoteParaSubir(id: id, bytes: comprimido, sha256: _hex(comprimido), entradas: entradas);
 }
 
@@ -284,7 +286,7 @@ Future<int> aplicarLotesBajados(AppDatabase db, EstadoSyncNube estado, List<Lote
   for (final lote in lotes) {
     Map<String, dynamic> tablas;
     try {
-      final j = jsonDecode(utf8.decode(gzip.decode(lote.bytes))) as Map<String, dynamic>;
+      final j = jsonDecode(utf8.decode(const GZipDecoder().decodeBytes(lote.bytes))) as Map<String, dynamic>;
       tablas = (j['tablas'] as Map).cast<String, dynamic>();
     } catch (_) {
       continue; // un lote ilegible no puede trabar a los siguientes

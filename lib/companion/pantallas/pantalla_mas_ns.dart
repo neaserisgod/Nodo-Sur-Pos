@@ -1,7 +1,7 @@
 // Más, tal cual el mock (docs/03 B5): la tarjeta del usuario, la apariencia (claro,
 // oscuro o automático), NEGOCIO, ESTA APLICACIÓN y "Modo: … · Cambiar".
 
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,6 +23,7 @@ import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
 import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../../plataforma.dart';
 
 class PantallaMasNs extends StatelessWidget {
   const PantallaMasNs({super.key, this.alAbrirEncargues});
@@ -92,7 +93,7 @@ class PantallaMasNs extends StatelessWidget {
                 const SizedBox(height: 12),
                 // Un negocio de servicios en la app de almacén: se le ofrece pasarse a Nodo Sur Servicios (El dueño, 2026-10-10,
                 // `docs/PLAN-APP-SERVICIOS.md`), que trae el bot adentro. Misma cuenta: los datos llegan solos por la sincronización.
-                if (!esEdicionServicios && servicios && Platform.isAndroid) ...[
+                if (!esEdicionServicios && servicios && esAndroid) ...[
                   Container(
                     key: const Key('mas_pasarse_a_servicios'),
                     padding: const EdgeInsets.all(16),
@@ -139,7 +140,7 @@ class PantallaMasNs extends StatelessWidget {
                         ),
                       ),
                     // Nodo Sur Servicios trae el bot adentro: la misma pantalla, con el bot de este celular en vez de Termux.
-                    if (esEdicionServicios && Platform.isAndroid && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    if (esEdicionServicios && esAndroid && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',
@@ -161,8 +162,15 @@ class PantallaMasNs extends StatelessWidget {
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(
                   filas: [
-                    _Fila(icono: IconoNs.enchufe, titulo: 'Cuenta', detalle: 'Sincronización: ${soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}', onTap: () => app.irA((_) => const PantallaCuentaDelCelular())),
                     _Fila(
+                      icono: IconoNs.enchufe,
+                      titulo: 'Cuenta',
+                      // En el navegador todo va y viene por internet (no hay PC por wifi): se dice eso y no "solo en este celular".
+                      detalle: 'Sincronización: ${kIsWeb ? 'por internet' : soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}',
+                      onTap: () => app.irA((_) => const PantallaCuentaDelCelular()),
+                    ),
+                    // En el navegador la versión nueva llega sola al recargar la página: no hay nada que instalar.
+                    if (!kIsWeb) _Fila(
                       icono: IconoNs.descarga,
                       titulo: 'Actualización',
                       detalle: pend.hayActualizacion ? 'Hay una versión nueva · se baja sola' : 'Estás al día',

@@ -1,6 +1,7 @@
 // El cierre del primer recorrido (mock 02k/02l): la cuenta ya entró y el perfil quedó guardado. "Listo, Ana." con la tarjeta
 // oscura de la cuenta de Google antes de abrir el menú (o "Configurar mi negocio", si es el dueño de un negocio nuevo).
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../emparejamiento.dart';
@@ -65,7 +66,7 @@ class _PantallaListoState extends State<PantallaListo> {
     return PaginaArranqueNs(
       titulo: nombre.isEmpty ? 'Listo.' : 'Listo, $nombre.',
       claveTitulo: const Key('listo-titulo'),
-      bajada: 'Este celular ya está listo para vender.',
+      bajada: kIsWeb ? 'Ya podés usar Nodo Sur desde este navegador.' : 'Este celular ya está listo para vender.',
       cuerpo: [HeroHojaNs(rotulo: 'Cuenta de Google', cifra: nombre, apoyo: _email ?? '')],
       botones: [KeyedSubtree(key: const Key('listo-seguir'), child: BotonNs.primario(context, widget.textoBoton, _seguir))],
     );

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as h;
 
 import 'package:path/path.dart' as p;
@@ -18,6 +19,7 @@ import '../domain/saldo_mp.dart';
 import '../domain/vinculacion.dart';
 import 'avisos_bot.dart';
 import 'avisos_cobro_mp.dart';
+import 'socket_de_avisos.dart';
 import 'registro_errores.dart';
 
 /// Lo que guarda la PC después de vincularse.
@@ -212,6 +214,7 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'ya_resuelto' => 'Ese pedido ya lo resolvió otro equipo.',
   'no_existe' => 'Ese pedido ya no existe.',
   'forbidden' => 'No tenés permiso para hacer eso.',
+  'device_ajeno' => 'Este equipo sigue vinculado a otra cuenta. Que lo desvincule esa cuenta (horsepos.com › Mi negocio) y probá de nuevo.',
   _ => 'El servicio respondió con un error ($codigo).',
 };
 
@@ -314,17 +317,14 @@ class RespuestaBajada {
 /// Abre la conexión de avisos. Se inyecta para probar sin red: devuelve lo que llega por el socket.
 typedef AbrirEscucha = Future<Stream<dynamic>> Function(Uri uri, Map<String, String> cabeceras);
 
-Future<Stream<dynamic>> _abrirWebSocket(Uri uri, Map<String, String> cabeceras) async {
-  final socket = await WebSocket.connect(uri.toString(), headers: cabeceras).timeout(const Duration(seconds: 20));
-  // Ping del protocolo (no se cobra y lo contesta el borde de Cloudflare): si la red se cae sin avisar, el socket
-  // se cierra solo en vez de quedar "conectado" sin recibir nunca nada.
-  socket.pingInterval = const Duration(seconds: 45);
-  return socket;
-}
-
 class ClienteNube {
-  ClienteNube({required this.http, this.host = hostNodoSur, this.esquema = 'https', this.puerto, AbrirEscucha? abrirEscucha})
-      : _abrirEscucha = abrirEscucha ?? _abrirWebSocket;
+  /// En el navegador (Nodo Sur Servicios web) la app se sirve desde el mismo sitio (horsepos.com/app/), así que habla con el
+  /// lugar de donde se cargó: en producción es horsepos.com, y probando en local, el sitio local.
+  ClienteNube({required this.http, String? host, String? esquema, int? puerto, AbrirEscucha? abrirEscucha})
+      : host = host ?? (kIsWeb ? Uri.base.host : hostNodoSur),
+        esquema = esquema ?? (kIsWeb ? Uri.base.scheme : 'https'),
+        puerto = puerto ?? (kIsWeb && Uri.base.hasPort ? Uri.base.port : null),
+        _abrirEscucha = abrirEscucha ?? abrirSocketDeAvisos;
 
   final AbrirEscucha _abrirEscucha;
   final h.Client http;

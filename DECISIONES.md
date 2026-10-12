@@ -2467,3 +2467,24 @@ El dueño quería "reutilizar el APK de Flutter sacando lo que literalmente no v
   dinámico. La caja de Mercado Pago que pide el QR se crea sola en el primer local de la cuenta; crear un local pide la ubicación exacta,
   así que si no hay ninguno se le pide a la dueña que lo cree una vez en Mercado Pago, en vez de inventar coordenadas. La comisión la paga
   la emprendedora. Una seña pagada después de que se liberó el horario no revive el turno: queda para que la dueña decida.
+
+## Nodo Sur Servicios en el navegador: la misma app, compilada para web (El dueño, 2026-10-12)
+
+Pedido: *"la quería funcional desde la web igual que la móvil"*; todo lo del celular, incluido en el plan Emprendedor, con el
+bot en un Android. Detalle en `docs/PLAN-WEB-SERVICIOS.md`.
+
+- **La misma app, no otra**: `lib/main_web.dart` arranca la companion en edición servicios. Escribir una web aparte (en el sitio,
+  con JavaScript) era repetir cada regla del negocio en otro idioma, y el sitio no puede leer los datos (los lotes de la sync van
+  cifrados): tendría que ser un cliente completo igual.
+- **Base en el navegador con OPFS, y por eso COOP/COEP en `/app/`**: sin aislamiento entre orígenes la base cae a IndexedDB, y en
+  las pruebas perdía lo último escrito al cerrar la pestaña. Con OPFS cerrar y volver a abrir mantiene todo.
+- **La app compilada en R2, no en el repo del sitio**: pesa ~37 MB y cambia con cada versión; en git cada publicación quedaba
+  para siempre en el historial. El worker la sirve desde `app/<versión>/` según `app/actual.json` (cambio atómico).
+- **Entrar reutiliza `/vincular/`** (con `web=1`, vuelve a `/app/` con el código y PKCE): misma elección de negocio y sucursal,
+  mismos permisos que un celular; nada de una sesión web con más alcance que un equipo.
+- **El token de los avisos en vivo va como subprotocolo** del WebSocket: un navegador no deja mandar la cabecera
+  `Authorization` en un WebSocket. Se acepta solo en `/api/sync/escuchar` y solo junto al protocolo `nodosur`.
+- **Solo se publica con `release:`**: la web es una sola para todos (no hay canal beta); una beta le llegaría a todos los clientes.
+- Arreglo encontrado al probarla, que valía también para un segundo celular: entrar desde un equipo nuevo creaba otra persona con
+  el mismo nombre (el perfil se busca por nombre y la base todavía estaba vacía). Ahora, en "Solo celular", primero se baja la
+  nube (`sincronizarUnaVez`).
