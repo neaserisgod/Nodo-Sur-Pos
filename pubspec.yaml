@@ -52,6 +52,8 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
   shared_preferences: ^2.5.5
+  # La demo (horsepos.com/demo/) guarda las preferencias en memoria: `companion/demo/demo.dart`.
+  shared_preferences_platform_interface: ^2.4.2
   package_info_plus: ^10.2.1
   open_filex: ^4.7.0
   animations: ^2.0.11

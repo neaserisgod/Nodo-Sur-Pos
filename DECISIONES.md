@@ -2488,3 +2488,17 @@ bot en un Android. Detalle en `docs/PLAN-WEB-SERVICIOS.md`.
 - Arreglo encontrado al probarla, que valía también para un segundo celular: entrar desde un equipo nuevo creaba otra persona con
   el mismo nombre (el perfil se busca por nombre y la base todavía estaba vacía). Ahora, en "Solo celular", primero se baja la
   nube (`sincronizarUnaVez`).
+
+## La demo: la misma app web, en memoria y sin cuenta (El dueño, 2026-10-12)
+
+Pedido: que la gente entre y vea el sistema, sin entrar con Google y con datos cargados. Eligió solo Servicios, siempre de cero y
+varios rubros. Detalle en `docs/PLAN-DEMO-SERVICIOS.md`.
+
+- **La misma compilación que `/app/`**, no otra: `/demo/` sirve la misma página y la app decide por la dirección. No hay nada que
+  publicar aparte, y la demo nunca se atrasa respecto de la app.
+- **Todo en memoria** (base y preferencias): `/demo/` y `/app/` son el mismo sitio y comparten lo que el navegador guarda. Con
+  algo guardado, abrir la demo en la compu de un cliente podía pisarle la sesión o la base de verdad. En memoria, además, cada
+  visita arranca limpia, que es lo que se pidió.
+- **Los datos se siembran con los repositorios de la app**, no con filas armadas a mano: las ganancias, la caja y las señas que
+  se ven salen de las mismas cuentas que en un negocio real.
+- **Mercado Pago simulado** (aprueba solo): un cobro por QR que termina en "conectá tu cuenta" deja la demo en un error.

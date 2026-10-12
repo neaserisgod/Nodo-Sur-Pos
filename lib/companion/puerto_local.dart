@@ -14,6 +14,8 @@
 // `crearProducto(db, ...)` adentro de `PuertoLocal.crearProducto` se
 // llamaría a sí mismo en vez de al repositorio.
 
+import 'demo/demo.dart' show modoDemo;
+import 'demo/pasarela_demo.dart';
 import '../data/repositorio_turnos.dart' show ingresarSenasPendientes;
 import '../data/busqueda_productos.dart' as busqueda;
 import '../data/database.dart';
@@ -1270,6 +1272,8 @@ class PuertoLocal implements ServicioCompanion {
   Future<PasarelaPoint> _pasarela() async {
     final inyectada = pasarelaDePrueba;
     if (inyectada != null) return inyectada();
+    // La demo (horsepos.com/demo/) no tiene cuenta: Mercado Pago se simula y aprueba solo.
+    if (modoDemo) return pasarelaPointDemo;
     final sync = await syncNubeDelCelular();
     return elegirPasarelaPoint(
       almacen: sync.almacen,

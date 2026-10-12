@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (12/10/2026)
 
+- **Demo de Nodo Sur Servicios** (`horsepos.com/demo/`; `docs/PLAN-DEMO-SERVICIOS.md`): la app web sin entrar con Google, con un
+  negocio de ejemplo a elegir (barbería, peluquería, uñas, estética) con turnos, cobros y caja; todo en memoria, se borra al
+  cerrar. Mercado Pago simulado. Franja con "Probar gratis". Sale con la app web. Probada en Chromium; falta un iPhone real.
 - **Nodo Sur Servicios en el navegador** (`horsepos.com/app/`; `docs/PLAN-WEB-SERVICIOS.md`, motivos en `DECISIONES.md`): la misma
   app del celular, compilada para web, con todo (agenda, turnos, cobrar, servicios, caja, configuración); el bot sigue en un
   Android. Entrar con Google, sync por la nube con avisos en vivo, base guardada en el navegador. Se publica con `release:`

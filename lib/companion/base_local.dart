@@ -24,6 +24,9 @@ AppDatabase? _instancia;
 /// companion del escritorio).
 AppDatabase baseLocalCompanion() => _instancia ??= AppDatabase();
 
+/// La demo del navegador (`demo/demo.dart`) trabaja sobre una base en memoria, armada antes de que nada la pida.
+void usarBaseLocal(AppDatabase db) => _instancia = db;
+
 /// Solo para tests y capturas: reemplaza la base local por una en memoria.
 @visibleForTesting
 void usarBaseLocalDeTest(AppDatabase db) => _instancia = db;

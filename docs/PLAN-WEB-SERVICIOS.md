@@ -61,3 +61,7 @@ turno, Cobrar, Caja y Más; cerrar el navegador y volver a abrir mantiene la ses
 - Sin internet: los datos quedan en el navegador, pero abrir la app sin conexión no anda (no hay service worker, a propósito).
 - La pantalla del bot en la web (ver su estado y su configuración): hoy no aparece; el bot se maneja desde el Android.
 - Exportar el PDF del día en el navegador (usa una carpeta temporal del celular).
+
+## La demo
+
+`horsepos.com/demo/` es esta misma app, sin cuenta y con un negocio de ejemplo en memoria: `docs/PLAN-DEMO-SERVICIOS.md`.
