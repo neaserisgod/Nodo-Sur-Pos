@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./**/*.g.dart)",
+      "Read(./build/**)",
+      "Read(./android/build/**)",
+      "Read(./android/app/build/**)",
+      "Read(./capturas/**)",
+      "Read(./docs/archivo/**)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

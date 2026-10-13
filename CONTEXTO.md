@@ -4,9 +4,10 @@ Puerta de entrada para una sesión nueva (otra cuenta de Claude, otra persona) q
 desarrollo. Resume **qué es el sistema, cómo está armado, qué se hizo hasta hoy, qué quiere el dueño y cómo trabaja**, y
 apunta al documento que es dueño de cada tema. Actualizado al **2026-10-12** (lo de cada día, en `ESTADO.md`).
 
-Orden de lectura sugerido: este archivo → `CLAUDE.md` (cómo está armado el código y sus convenciones) → `ESTADO.md`
-(lo último, arriba de todo) → `REGLAS-NEGOCIO.md` antes de tocar dominio → `DECISIONES.md`/`TRAMPAS.md` antes de cambiar
-algo que ya funciona → `DISENO.md` antes de tocar pantallas. El sitio tiene su propio `CONTEXTO.md` en
+Orden de lectura sugerido: este archivo → `CLAUDE.md` (corto: convenciones y mapa) → lo último de `ESTADO.md`. Del
+resto (`REGLAS-NEGOCIO.md`, `DECISIONES.md`, `TRAMPAS.md`, `DISENO.md`, `docs/CLAUDE-DETALLE.md`) se lee **solo la
+sección del tema que se toca**, buscando el título con `grep -n '^## '`: son cientos de KB y leerlos enteros gasta
+contexto sin sumar. El sitio tiene su propio `CONTEXTO.md` en
 `neaserisgod/NodoSurPage`.
 
 ---
@@ -92,7 +93,7 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 `lib/ui/tema/`). Mocks de referencia en `Lenguaje de diseño/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
 (`docs/anotaciones-mocks.md` lista lo que está en los mocks pero no en la app).
 
-- **PC** (rediseño v4, 2026-10-06; detalle en `CLAUDE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla
+- **PC** (rediseño v4, 2026-10-06; detalle en `docs/CLAUDE-DETALLE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla
   Inicio vuelve ahí). Arriba, **Caja ▾** a la izquierda, las secciones como pastillas al centro (sin la marca ni lupa) y a
   la derecha el Asistente (Ctrl+K), la campanita y el engranaje de Configuración. En Venta, el buscador grande con
   **Pagar proveedor (Alt+P)** al lado. Configuración es una sola lista de secciones con el nombre del grupo arriba.
@@ -115,12 +116,10 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 - Windows y Android van en **filas de publicación separadas** (`publicar` y `publicar-apk`): en el sitio cada plataforma es
   un registro aparte y su archivo va a otra ruta de R2. Dentro de cada fila van de a uno. **Nunca publicar dos veces la
   misma versión de la misma plataforma a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
-- Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
-  `flutter pub get`, `flutter analyze` (tiene que dar "No issues found!", CI lo exige) y
-  `flutter test --exclude-tags bench` (~2.930 tests al 2026-10-12, 5 a 12 minutos según la máquina; las capturas en versión corta, ver `test/helpers/capturas.dart`).
-
-## 6. Estado
-
+- Probar en una sesión en la nube: Flutter lo instala solo `.claude/hooks/session-start.sh`. `flutter analyze` (tiene que
+  dar "No issues found!", CI lo exige) y **solo los tests afectados**: `dart run tool/tests_afectados.dart --correr -- --reporter
+  failures-only` (sigue los imports desde lo cambiado). La suite entera (~2.930 tests, 5 a 12 minutos) la corre CI en `main`;
+  en un PR, CI corre solo los afectados.
 - **Publicado**: las versiones se ven en `/admin/` → Versiones (acá quedan viejas). Al 2026-10-12: Windows estable
   **1.0.0.2160** (10/10) y betas hasta la **1.0.0+2163** (11/10); los dos APK (almacén y Nodo Sur Servicios) salen con el
   mismo merge.
