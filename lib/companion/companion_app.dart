@@ -12,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/identidad_sync.dart';
+import '../edicion.dart';
+import 'cuentas_del_celular.dart';
 import 'emparejamiento.dart';
 import 'app_ns.dart';
 import 'bienvenida/marca_nodo_sur.dart';
@@ -28,6 +30,7 @@ import 'tema/tema_companion.dart';
 import '../servicios/marca_actual.dart';
 import '../servicios/cuenta_nube.dart' show ClienteNube;
 import '../servicios/gemini.dart' show ClaveGemini;
+import '../servicios/registro_errores.dart';
 import '../servicios/ia_nube.dart';
 import '../servicios/almacenes_del_equipo.dart';
 
@@ -124,6 +127,17 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // no hay ninguna escritura local todavía (fase 1 del rediseño de
     // sincronización, sin `PuertoLocal` en producción), pero cuando la haya
     // (fase 3) tiene que estar listo desde el primer frame.
+    // Un cambio de cuenta cortado (se apagó el celular a la mitad) se termina antes de leer nada de la cuenta: si no, la app
+    // arrancaría con media cuenta en su lugar (`cuentas_del_celular.dart`).
+    var hayOtrasCuentas = false;
+    if (!kIsWeb) {
+      try {
+        await terminarCambioPendiente();
+        hayOtrasCuentas = (await leerIndiceCuentas()).guardadas.isNotEmpty;
+      } catch (e, st) {
+        unawaited(registrarError('Terminar el cambio de cuenta', e, st));
+      }
+    }
     establecerIdDispositivo(await idDispositivoEstable());
     // La demo (horsepos.com/demo/) no tiene cuenta ni nada guardado: arranca siempre eligiendo el negocio de ejemplo.
     if (modoDemo) {
@@ -155,7 +169,8 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => modo == null
-            ? pantallaDeBienvenidaInicial()
+            // Agregando otra cuenta (ya hay una guardada en el celular) la bienvenida ya se vio: directo a elegir el modo.
+            ? (hayOtrasCuentas && !esEdicionServicios ? pantallaDeElegirModoInicial() : pantallaDeBienvenidaInicial())
             : usuario == null
             ? const PantallaEntrarConCuenta()
             : const PantallaMenuCompanion(),

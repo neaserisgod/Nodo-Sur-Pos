@@ -21,6 +21,7 @@ import '../servicios/avisos_mp_servicio.dart';
 import 'base_local.dart';
 import 'cambios_companion.dart';
 import 'conmutador_sync.dart';
+import 'elegir_sucursal.dart';
 import 'google_en_celular.dart';
 import 'identidad_dispositivo.dart';
 import '../servicios/almacenes_del_equipo.dart';
@@ -68,31 +69,34 @@ class SyncNubeCompanion {
     return cuenta;
   }
 
-  /// Entra con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona trabaja en más de una sucursal,
-  /// [elegir] le pregunta en cuál. Null si cerró el selector o no eligió. Lanza [GoogleNoDisponible] si el teléfono o el sitio
-  /// no lo permiten (la pantalla ofrece el navegador) y [ErrorNube] si el sitio dice que no.
+  /// Entra con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona puede entrar en más de un negocio o
+  /// sucursal (o [elegirSiempre], agregando otro negocio al celular), [elegir] le pregunta en cuál, o el nombre de uno nuevo.
+  /// Null si cerró el selector o no eligió. Lanza [GoogleNoDisponible] si el teléfono o el sitio no lo permiten (la pantalla
+  /// ofrece el navegador) y [ErrorNube] si el sitio dice que no.
   Future<CuentaVinculada?> entrarConGoogle({
     required String nombre,
-    required Future<SucursalParaElegir?> Function(List<SucursalParaElegir> opciones) elegir,
+    required Future<EleccionDeNegocio?> Function(List<SucursalParaElegir> opciones) elegir,
+    bool elegirSiempre = false,
   }) async {
     final clientId = await cliente.clienteGoogle();
     if (clientId == null) throw const GoogleNoDisponible('el sitio todavía no lo ofrece');
     final idToken = await pedirCuentaGoogle(clientId);
     if (idToken == null) return null;
     final idDispositivo = await idDispositivoEstable();
-    var r = await cliente.entrarConGoogle(idToken: idToken, idDispositivo: idDispositivo, nombre: nombre);
+    var r = await cliente.entrarConGoogle(idToken: idToken, idDispositivo: idDispositivo, nombre: nombre, elegirSiempre: elegirSiempre);
     if (r is HayQueElegirSucursal) {
-      final elegida = await elegir(r.opciones);
-      if (elegida == null) return null;
+      final eleccion = await elegir(r.opciones);
+      if (eleccion == null) return null;
       r = await cliente.entrarConGoogle(
         idToken: idToken,
         idDispositivo: idDispositivo,
         nombre: nombre,
-        negocio: elegida.negocio,
-        sucursal: elegida.sucursal,
+        negocio: eleccion is EligioSucursal ? eleccion.opcion.negocio : null,
+        sucursal: eleccion is EligioSucursal ? eleccion.opcion.sucursal : null,
+        nuevoNegocio: eleccion is CrearNegocio ? eleccion.nombre : null,
       );
     }
-    if (r is! EntroConGoogle) throw const ErrorNube('google_invalido', 'No se pudo entrar en esa sucursal. Probá de nuevo.');
+    if (r is! EntroConGoogle) throw const ErrorNube('google_invalido', 'No se pudo entrar en ese negocio. Probá de nuevo.');
     await almacen.guardar(r.cuenta);
     // Un registro de otra vinculación no vale para esta cuenta (igual que [vincular]).
     await almacenEstado.borrar();

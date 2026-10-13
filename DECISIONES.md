@@ -71,6 +71,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Sync PC / celular / nube: sin callejones sin salida (2026-10-02)](#sync-pc--celular--nube-sin-callejones-sin-salida-2026-10-02)
 - [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
 - [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
+- [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
@@ -1783,6 +1784,18 @@ El dueño: "la vinculación por el sitio es un paso medio innecesario". Se eligi
 - **Siempre muestra la lista de cuentas** (se cierra la sesión de Google de la app antes): en un teléfono con varias cuentas se elige cada vez. Sirve también para "varias cuentas en un celular".
 - **El navegador queda de salida**: si el teléfono no tiene servicios de Google, la app no está registrada en Google Cloud, el sitio es viejo, o se cierra el selector (una mala configuración también se ve como "cancelado"), aparece "Entrar con el navegador". La web y la PC siguen por el navegador.
 - **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
+
+## Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)
+
+El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra sesión pero tampoco mezclando cosas"; "una cuenta de Google puede estar asociada a más de un negocio: un almacén, mi emprendimiento de belleza, mi barbería… quiero tenerlos". Cobro: **cada negocio paga su plan** (eligió A frente a "un plan por mail" o "descuento por negocio").
+- **En el celular** (`cuentas_del_celular.dart`, solo Android): una sola cuenta ACTIVA vive donde vivió siempre (base, carpeta de datos, preferencias), así nada del resto de la app cambia. Las demás quedan en `cuentas_guardadas/<id>/`. Cambiar es mover la activa a su carpeta y traer la elegida (renombrar archivos: instantáneo). Nunca hay dos a la vez en el mismo lugar: no hay forma de mezclar. Después la app se cierra (`exit`), porque en memoria quedan la base, la sync y la clave de la IA de la anterior. El bot de WhatsApp se apaga al cambiar.
+- **Corte a la mitad**: el índice anota el paso (`guardando`/`trayendo`) antes de mover; al abrir, `terminarCambioPendiente` lo termina. Cada paso "mueve lo que quede", así repetirlo no rompe nada.
+- **Qué es una cuenta del celular**: mail + negocio + sucursal (la sync es por sucursal). El mismo Gmail en otro negocio es otra entrada; solo se ofrece "ir al que ya está" si coinciden los tres. Cada cuenta guarda en sus preferencias el nombre de su negocio (`companion_negocio_de_la_cuenta`, de `/api/device/me`) para mostrarse en la lista sin internet.
+- **Lo del aparato no se mueve**: el tema y el id de actualizaciones (`preferenciasDelAparato`) y los registros de errores.
+- **Agregar otro negocio**: el lugar queda vacío y la app arranca en elegir modo (sin la bienvenida) → entrar con Google, que pide siempre la lista (`elegirSiempre`) con "Crear un negocio nuevo". "Volver a …" deshace sin entrar.
+- **Cerrar sesión y borrar** borra solo la activa y trae la última usada; sin otras, queda como recién instalado.
+- **Sitio**: un Gmail puede crear más negocios (`POST /api/org/crear`, "Crear otro negocio" en Mi negocio, o `nuevoNegocio` desde el celular; tope 20). Mercado Pago no dice a qué negocio va cada suscripción: **un mail con N planes vigentes cubre a sus N negocios más viejos** (`plan_por_negocio.js`); el bot, a los primeros cubiertos por un plan con bot. Lo usan sync, copias, bot y facturación (`sin_plan_propio`). "Usar mi suscripción" exige un plan libre.
+- **Almacén y servicios son dos apps** (`com.laplazoleta.companion` y `.servicios`): cada una tiene su propia lista de negocios.
 
 ## Versión propia del APK (2026-10-02)
 

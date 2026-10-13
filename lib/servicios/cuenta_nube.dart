@@ -26,10 +26,25 @@ import 'registro_errores.dart';
 /// La persona detrás de una cuenta vinculada: `rol` es 'owner' | 'manager' | 'employee' (null si el dispositivo es de antes
 /// del modelo de negocios).
 class PerfilDeCuenta {
-  const PerfilDeCuenta({required this.email, required this.nombre, this.rol});
+  const PerfilDeCuenta({
+    required this.email,
+    required this.nombre,
+    this.rol,
+    this.negocio,
+    this.sucursal,
+    this.nombreNegocio,
+    this.nombreSucursal,
+  });
   final String email;
   final String nombre;
   final String? rol;
+
+  /// En qué negocio y sucursal quedó este dispositivo (ids y nombres). Null en un sitio más viejo o un dispositivo sin negocio.
+  /// Una cuenta puede tener varios negocios en el mismo celular (2026-10-13): con esto se distinguen.
+  final int? negocio;
+  final int? sucursal;
+  final String? nombreNegocio;
+  final String? nombreSucursal;
 }
 
 /// Lo que contesta el sitio al entrar con Google desde el celular.
@@ -227,6 +242,8 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'mp_sin_terminal' => 'Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.',
   'mp_no_configurado' => 'La conexión con Mercado Pago todavía no está lista en el servidor. Probá más tarde.',
   'google_invalido' => 'Google no confirmó la cuenta. Probá de nuevo.',
+  'nombre_invalido' => 'Poné un nombre de entre 2 y 80 letras.',
+  'demasiados_negocios' => 'Llegaste al máximo de negocios por cuenta.',
   'sin_sucursal' => 'Ese mail todavía no tiene una sucursal donde trabajar. Pedile al dueño que te la asigne en Mi negocio.',
   'sin_negocio' => 'Este dispositivo no pertenece a ningún negocio: volvé a vincularlo con tu cuenta.',
   'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
@@ -424,12 +441,16 @@ class ClienteNube {
 
   /// Entrar en el celular con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona trabaja en más de una
   /// sucursal y no se dijo cuál, el sitio pide elegir: se vuelve a llamar con [negocio] y [sucursal] y el mismo [idToken].
+  /// [elegirSiempre] pide la lista aunque haya un solo negocio (agregando otro negocio al celular), y [nuevoNegocio] crea
+  /// uno con ese nombre y entra ahí.
   Future<ResultadoEntrarConGoogle> entrarConGoogle({
     required String idToken,
     required String idDispositivo,
     required String nombre,
     int? negocio,
     int? sucursal,
+    String? nuevoNegocio,
+    bool elegirSiempre = false,
   }) => _conRed(() async {
     final r = await http.post(
       _uri('/api/device/google'),
@@ -440,6 +461,8 @@ class ClienteNube {
         'name': nombre,
         'orgId': ?negocio,
         'branchId': ?sucursal,
+        'nuevoNegocio': ?nuevoNegocio,
+        if (elegirSiempre) 'elegirSiempre': true,
       }),
     ).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
@@ -471,7 +494,15 @@ class ClienteNube {
     final r = await http.get(_uri('/api/device/me'), headers: _auth(token)).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
     final j = jsonDecode(r.body) as Map<String, dynamic>;
-    return PerfilDeCuenta(email: j['email'] as String, nombre: (j['name'] as String).trim(), rol: j['role'] as String?);
+    return PerfilDeCuenta(
+      email: j['email'] as String,
+      nombre: (j['name'] as String).trim(),
+      rol: j['role'] as String?,
+      negocio: (j['orgId'] as num?)?.toInt(),
+      sucursal: (j['branchId'] as num?)?.toInt(),
+      nombreNegocio: j['orgName'] as String?,
+      nombreSucursal: j['branchName'] as String?,
+    );
   });
 
   /// El equipo del negocio de esta PC, o null si el servidor todavía no lo ofrece (una versión anterior del sitio) o no contesta bien:

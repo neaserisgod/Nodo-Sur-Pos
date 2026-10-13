@@ -8,18 +8,24 @@
 // anda (un teléfono sin servicios de Google, la app sin registrar en Google Cloud, o la persona cierra el selector), aparece
 // "Entrar con el navegador", el camino de antes. En la versión web se entra siempre por el sitio, en la misma pestaña.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../servicios/cuenta_nube.dart';
+import '../domain/cuentas_del_celular.dart';
 import 'base_local.dart';
 import 'bienvenida/pantalla_listo.dart';
 import 'bienvenida/vista_entrar_con_google.dart';
+import 'borrar_celular.dart';
 import 'configurar/asistente_negocio.dart';
 import 'configurar/flujo_negocio.dart';
 import 'configurar/negocio_nuevo.dart';
+import 'cuentas_del_celular.dart';
 import 'elegir_sucursal.dart';
 import 'google_en_celular.dart';
+import 'kit/kit_ns.dart';
 import 'modo_uso.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
@@ -46,6 +52,7 @@ Future<void> reconciliarPerfilDeCuenta({SyncNubeCompanion? sync, Future<Servicio
     final cuenta = await s.cuenta();
     if (cuenta == null) return;
     final perfil = await s.cliente.yo(cuenta.token).timeout(const Duration(seconds: 6));
+    await guardarNegocioDeEstaCuenta(perfil);
     await resolverPerfilDeCuenta(perfil: perfil, servicio: await (servicio ?? servicioParaPerfil)());
   } catch (_) {
     // silencioso a propósito
@@ -53,7 +60,15 @@ Future<void> reconciliarPerfilDeCuenta({SyncNubeCompanion? sync, Future<Servicio
 }
 
 class PantallaEntrarConCuenta extends StatefulWidget {
-  const PantallaEntrarConCuenta({super.key, this.sync, this.servicio, this.alEntrar, this.esNegocioNuevo});
+  const PantallaEntrarConCuenta({
+    super.key,
+    this.sync,
+    this.servicio,
+    this.alEntrar,
+    this.esNegocioNuevo,
+    this.leerCuentas,
+    this.irACuentaGuardada,
+  });
 
   /// Solo para tests: la sync del celular y el servicio. En la app real salen de `syncNubeDelCelular()` y de la conexión.
   final SyncNubeCompanion? sync;
@@ -65,6 +80,11 @@ class PantallaEntrarConCuenta extends StatefulWidget {
 
   /// Solo para tests: si quien entró es el dueño de un negocio nuevo. En la app real, [_esNegocioNuevo].
   final Future<bool> Function(PerfilDeCuenta perfil)? esNegocioNuevo;
+
+  /// Solo para tests: las cuentas del celular (`cuentas_del_celular.dart`) y qué hacer para ir a una guardada (en la app real,
+  /// se descarta lo de este lugar, se trae esa y se cierra la app).
+  final Future<IndiceCuentas> Function()? leerCuentas;
+  final Future<void> Function(String id)? irACuentaGuardada;
 
   @override
   State<PantallaEntrarConCuenta> createState() => _PantallaEntrarConCuentaState();
@@ -81,6 +101,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   /// Entrar con Google desde la app no anduvo (o se cerró el selector): se ofrece el navegador.
   bool _ofrecerNavegador = false;
 
+  /// Las cuentas guardadas en el celular (null en la web, que no tiene varias).
+  IndiceCuentas? _cuentas;
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +112,10 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
 
   Future<void> _iniciar() async {
     try {
+      // Las otras cuentas se leen aparte, sin frenar el arranque.
+      unawaited(_leerCuentasDelCelular().then((c) {
+        if (mounted) setState(() => _cuentas = c);
+      }));
       _sync = widget.sync ?? await syncNubeDelCelular();
       final cuenta = await _sync!.cuenta();
       if (cuenta != null) {
@@ -101,6 +128,58 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (mounted) setState(() => _trabajando = false);
   }
 
+  Future<IndiceCuentas?> _leerCuentasDelCelular() async {
+    if (widget.leerCuentas != null) return widget.leerCuentas!();
+    if (kIsWeb) return null;
+    try {
+      return await leerIndiceCuentas();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Se tocó "Agregar otra cuenta" (no hay activa) y hay otra guardada: la salida para volver a ella.
+  CuentaDelCelular? get _paraVolver => _cuentas?.activa == null ? _cuentas?.guardadas.firstOrNull : null;
+
+  /// Descarta lo de este lugar (todavía no hay cuenta, o es una repetida) y trae la guardada [id].
+  Future<void> _irACuentaGuardada(String id) async {
+    setState(() => _trabajando = true);
+    if (widget.irACuentaGuardada != null) return widget.irACuentaGuardada!(id);
+    await borrarTodoDelCelular(null, id);
+    await cerrarLaApp();
+  }
+
+  /// Agregando otro negocio al celular: no hay cuenta activa y hay alguna guardada.
+  bool get _agregando => _cuentas?.activa == null && (_cuentas?.guardadas.isNotEmpty ?? false);
+
+  /// Entró en un negocio y sucursal que ya están guardados en este celular con el mismo mail: tenerlos dos veces sería tener
+  /// dos copias de lo mismo. Se ofrece ir al guardado (con todo lo suyo) o elegir otro. Devuelve si se encargó (no hay que
+  /// seguir). El mismo mail en otro negocio no es repetido: es justamente para eso (2026-10-13).
+  Future<bool> _yaEstaGuardada(PerfilDeCuenta perfil) async {
+    final id = _cuentas == null ? null : cuentaRepetida(_cuentas!, email: perfil.email, negocio: perfil.negocio, sucursal: perfil.sucursal);
+    if (id == null || !mounted) return false;
+    final guardada = _cuentas!.guardadas.firstWhere((c) => c.id == id);
+    final ir = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '${guardada.titulo} ya está en este celular',
+        texto: 'Ya está guardado acá con ${perfil.email}, con todo lo suyo. Para no tenerlo dos veces, se usa ese. '
+            'La app se cierra: abrila de nuevo para seguir ahí.',
+        botones: [
+          BotonNs.primario(ctx, 'Ir a ${guardada.titulo}', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Entrar en otro negocio', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (ir == true) {
+      await _irACuentaGuardada(id);
+    } else {
+      await _sync!.desvincular();
+      if (mounted) setState(() => _trabajando = false);
+    }
+    return true;
+  }
+
   Future<void> _entrar() async {
     if (kIsWeb) return _entrarConNavegador();
     setState(() {
@@ -111,7 +190,8 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     try {
       final cuenta = await _sync!.entrarConGoogle(
         nombre: nombreDelCelular(),
-        elegir: (opciones) async => mounted ? elegirSucursal(context, opciones) : null,
+        elegir: (opciones) async => mounted ? elegirNegocio(context, opciones) : null,
+        elegirSiempre: _agregando,
       );
       if (cuenta == null) {
         // Cerró el selector sin elegir. Con la app mal registrada en Google, el selector también "se cancela" solo: por eso
@@ -167,6 +247,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (mounted) setState(() => _trabajando = true);
     try {
       final perfil = await _sync!.cliente.yo(cuenta.token);
+      if (await _yaEstaGuardada(perfil)) return;
+      // Cómo se llama este negocio, para la lista de cuentas del celular (`cuentas_del_celular.dart`).
+      await guardarNegocioDeEstaCuenta(perfil);
       // Un equipo nuevo en "Solo celular" (otro celular, o el navegador) baja primero lo que ya está en la nube: el perfil se busca
       // por nombre, y con la base todavía vacía se creaba otra persona con el mismo nombre (revisión 2026-10-12, "Caro" tres veces
       // en la Agenda). Sin red sigue igual que antes.
@@ -241,5 +324,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
         // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
         alReintentar: _error != null && !_hayQueEntrarDeNuevo && _sync != null ? _reintentar : null,
         alEntrarConNavegador: _ofrecerNavegador && _sync != null ? _entrarConNavegador : null,
+        volverACuenta: switch (_paraVolver) {
+          final c? => (titulo: c.titulo, alTocar: () => _irACuentaGuardada(c.id)),
+          null => null,
+        },
       );
 }

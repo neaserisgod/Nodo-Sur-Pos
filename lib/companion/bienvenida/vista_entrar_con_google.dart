@@ -17,6 +17,7 @@ class VistaEntrarConGoogle extends StatelessWidget {
     this.error,
     this.alReintentar,
     this.alEntrarConNavegador,
+    this.volverACuenta,
   });
 
   final VoidCallback alEntrar;
@@ -35,6 +36,9 @@ class VistaEntrarConGoogle extends StatelessWidget {
   /// servicios de Google, o la app todavía sin registrar en Google Cloud.
   final VoidCallback? alEntrarConNavegador;
 
+  /// Se tocó "Agregar otra cuenta" y hay otra guardada en el celular: la salida para volver a ella sin entrar con ninguna.
+  final ({String titulo, VoidCallback alTocar})? volverACuenta;
+
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
@@ -50,6 +54,11 @@ class VistaEntrarConGoogle extends StatelessWidget {
           KeyedSubtree(
             key: const Key('entrar_con_navegador'),
             child: BotonNs.secundario(context, 'Entrar con el navegador', trabajando ? null : alEntrarConNavegador),
+          ),
+        if (volverACuenta != null)
+          KeyedSubtree(
+            key: const Key('volver_a_cuenta'),
+            child: BotonNs.secundario(context, 'Volver a ${volverACuenta!.titulo}', trabajando ? null : volverACuenta!.alTocar),
           ),
         const InfoNs('¿Primera vez? Tu cuenta se crea sola al entrar con Google. Es la misma de horsepos.com.'),
         const InfoNs('¿Te invitaron a un negocio? Entrá con el mismo mail al que te llegó la invitación.'),

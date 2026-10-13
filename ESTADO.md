@@ -142,7 +142,9 @@ Pendiente / ideas (sin hacer):
   selector de cuentas de Android + `POST /api/device/google` del sitio; si no anda, "Entrar con el navegador". **Falta, del dueño**:
   crear en Google Cloud los clientes OAuth tipo Android (las dos apps, con la SHA-1 de la clave de firma) y desplegar el sitio.
   Sin probar en un teléfono real. Detalle en `DECISIONES.md`.
-- **Varias cuentas en un mismo celular, sin mezclar**: en curso (solo el índice de cuentas, `domain/cuentas_del_celular.dart`, sin uso todavía).
+- **Varios negocios en un mismo celular, sin mezclar ni cerrar sesión**, y una cuenta de Google con varios negocios, cada uno
+  con su plan (un mail con N planes cubre sus N negocios más viejos). "Agregar otro negocio" en Cuenta y sincronización.
+  Sin probar en un teléfono real. Detalle en `DECISIONES.md`.
 - **Publicar los APK tardaba ~22 min** (El dueño: "me molesta la lentitud"): el APK de almacén compilaba Android de cero (~19 min,
   casi todo Gradle) y el de Servicios, con eso ya hecho, ~2 min. `publicar-apk` ahora guarda Gradle entre corridas
   (`gradle/actions/setup-gradle` + build cache). La primera corrida después del cambio llena el caché; se mide en la segunda.

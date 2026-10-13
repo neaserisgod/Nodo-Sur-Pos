@@ -14,6 +14,7 @@ import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/sync_nube_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/domain/cuentas_del_celular.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/sync_nube.dart';
 import 'package:http/http.dart' as http;
@@ -115,14 +116,20 @@ void main() {
       return sync;
     }
 
-    Future<void> abrir(WidgetTester t, SyncNubeCompanion sync) async {
+    Future<void> abrir(WidgetTester t, SyncNubeCompanion sync, {IndiceCuentas? cuentas, Future<void> Function(String id)? irA}) async {
       t.view.physicalSize = const Size(400, 1000);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.resetPhysicalSize);
       addTearDown(t.view.resetDevicePixelRatio);
       await t.pumpWidget(MaterialApp(
         theme: TemaCompanion.claro,
-        home: PantallaEntrarConCuenta(sync: sync, servicio: () async => puerto, alEntrar: (_) => entro = true),
+        home: PantallaEntrarConCuenta(
+          sync: sync,
+          servicio: () async => puerto,
+          alEntrar: (_) => entro = true,
+          leerCuentas: cuentas == null ? null : () async => cuentas,
+          irACuentaGuardada: irA,
+        ),
       ));
       await _asentar(t);
     }
@@ -215,9 +222,9 @@ void main() {
         await abrir(t, sync);
         await t.tap(find.byKey(const Key('entrar_con_cuenta')));
         await _asentar(t);
-        expect(find.text('¿En qué sucursal trabajás con este celular?'), findsOneWidget);
+        expect(find.text('¿En qué negocio entrás?'), findsOneWidget);
         expect(entro, isFalse);
-        await t.tap(find.text('Centro'));
+        await t.tap(find.text('La Plazoleta · Centro'));
         await _asentar(t);
         expect(entro, isTrue);
         final ultimo = jsonDecode(pedidos.lastWhere((r) => r.url.path == '/api/device/google' && r.method == 'POST').body);
@@ -254,6 +261,102 @@ void main() {
         await t.tap(find.byKey(const Key('entrar_con_cuenta')));
         await _asentar(t);
         expect(find.byKey(const Key('entrar_con_navegador')), findsOneWidget);
+      });
+    });
+
+    group('varias cuentas en el celular', () {
+      // El mismo negocio y sucursal que devuelve yoOk (orgId 1, branchId 2).
+      const marta = CuentaDelCelular(id: 'm', email: 'marta@x.com', nombre: 'Marta Gómez', negocio: 1, sucursal: 2, nombreNegocio: 'La Plazoleta');
+      http.Response jsonOk(Object o) => http.Response(jsonEncode(o), 200, headers: {'content-type': 'application/json'});
+      Future<http.Response> sitio(http.Request r) async {
+        if (r.url.path == '/api/device/google' && r.method == 'GET') return jsonOk({'clientId': 'web'});
+        if (r.url.path == '/api/device/google') return jsonOk({'token': 't', 'email': 'marta@x.com', 'deviceId': 'd', 'expiresAt': 9});
+        if (r.url.path == '/api/device/me') return yoOk();
+        return fail('pedido inesperado: ${r.url}');
+      }
+
+      testWidgets('agregando un negocio pide siempre la lista y deja crear uno nuevo con su nombre', (t) async {
+        final posts = <Map<String, dynamic>>[];
+        final sync = await armar(t, vinculada: false, google: (_) async => 'x', servidor: (r) async {
+          if (r.url.path == '/api/device/google' && r.method == 'GET') return jsonOk({'clientId': 'web'});
+          if (r.url.path == '/api/device/google') {
+            final b = jsonDecode(r.body) as Map<String, dynamic>;
+            posts.add(b);
+            if (b['nuevoNegocio'] == null) {
+              return jsonOk({
+                'elegir': true,
+                'orgs': [
+                  {'id': 1, 'name': 'Almacén', 'branches': [{'id': 2, 'name': 'Sucursal principal'}]},
+                ],
+              });
+            }
+            return jsonOk({'token': 't', 'email': 'marta@x.com', 'deviceId': 'd', 'expiresAt': 9});
+          }
+          if (r.url.path == '/api/device/me') {
+            return jsonOk({'email': 'marta@x.com', 'name': 'Marta Gómez', 'role': 'owner', 'orgId': 7, 'branchId': 8, 'orgName': 'Barbería', 'branchName': 'Sucursal principal'});
+          }
+          return fail('pedido inesperado: ${r.url}');
+        });
+        await abrir(t, sync, cuentas: const IndiceCuentas(guardadas: [marta]));
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(posts.single['elegirSiempre'], isTrue, reason: 'agregando, aunque tenga un solo negocio');
+        expect(find.text('Almacén'), findsOneWidget);
+        await t.tap(find.byKey(const Key('crear_negocio')));
+        await _asentar(t);
+        await t.enterText(find.byKey(const Key('nombre_negocio')), 'Barbería');
+        await t.pump();
+        await t.tap(find.text('Crear'));
+        await _asentar(t);
+        expect(posts.last['nuevoNegocio'], 'Barbería');
+        expect(entro, isTrue);
+        final prefs = (await t.runAsync(SharedPreferences.getInstance))!;
+        expect(prefs.getString('companion_negocio_de_la_cuenta'), contains('Barbería'), reason: 'para mostrarlo en la lista de negocios');
+        sync.servicio.detener();
+        await t.pump(const Duration(seconds: 30));
+      });
+
+      testWidgets('agregando otra cuenta se puede volver a la guardada sin entrar', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: (r) async => fail('no tenía que llamar a nada'));
+        final idas = <String>[];
+        await abrir(t, sync, cuentas: const IndiceCuentas(guardadas: [marta]), irA: (id) async => idas.add(id));
+        await t.tap(find.byKey(const Key('volver_a_cuenta')));
+        await _asentar(t);
+        expect(idas, ['m']);
+      });
+
+      testWidgets('sin otra cuenta guardada (o con la cuenta activa) no hay "volver"', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: (r) async => fail('no tenía que llamar a nada'));
+        await abrir(t, sync, cuentas: const IndiceCuentas(activa: marta));
+        expect(find.byKey(const Key('volver_a_cuenta')), findsNothing);
+      });
+
+      testWidgets('entrar en un negocio que ya está guardado con el mismo mail ofrece ir a ese en vez de tenerlo dos veces', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => 'x');
+        final idas = <String>[];
+        await abrir(t, sync, cuentas: const IndiceCuentas(guardadas: [marta]), irA: (id) async => idas.add(id));
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(find.text('La Plazoleta ya está en este celular'), findsOneWidget);
+        await t.tap(find.text('Ir a La Plazoleta'));
+        await _asentar(t);
+        expect(idas, ['m']);
+        expect(entro, isFalse);
+        sync.servicio.detener();
+        await t.pump(const Duration(seconds: 30));
+      });
+
+      testWidgets('si prefiere otro negocio, se cierra la sesión repetida y sigue en la pantalla de entrar', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => 'x');
+        await abrir(t, sync, cuentas: const IndiceCuentas(guardadas: [marta]), irA: (_) async => fail('no tenía que irse'));
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        await t.tap(find.text('Entrar en otro negocio'));
+        await _asentar(t);
+        expect(await t.runAsync(() => sync.cuenta()), isNull);
+        expect(entro, isFalse);
+        expect(find.byKey(const Key('entrar_con_cuenta')), findsOneWidget);
+        await t.pump(const Duration(seconds: 30));
       });
     });
   });

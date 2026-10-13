@@ -6,13 +6,14 @@
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../servicios/cuenta_nube.dart';
 import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
+import '../domain/cuentas_del_celular.dart';
 import 'borrar_celular.dart';
+import 'cuentas_del_celular.dart';
 import '../servicios/recargar_pagina.dart';
 import 'conmutador_sync.dart';
 import 'elegir_sucursal.dart';
@@ -21,7 +22,7 @@ import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
-  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo});
+  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta});
 
   /// La sync del celular (en la app real, `syncNubeDelCelular()`).
   final SyncNubeCompanion sync;
@@ -32,6 +33,12 @@ class PantallaCuentaCompanion extends StatefulWidget {
 
   /// Borra todo lo del celular y cierra la app (`borrar_celular.dart`). Para tests.
   final Future<void> Function()? borrarTodo;
+
+  /// Las cuentas de este celular (`cuentas_del_celular.dart`). Para tests.
+  final Future<IndiceCuentas> Function()? leerCuentas;
+
+  /// Pasa a otra cuenta guardada (o deja el lugar para una nueva, con null) y cierra la app. Para tests.
+  final Future<void> Function(String? destino)? pasarACuenta;
 
   @override
   State<PantallaCuentaCompanion> createState() => _PantallaCuentaCompanionState();
@@ -45,6 +52,12 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
 
   /// Vincular con Google desde la app no anduvo (o se cerró el selector): se ofrece el navegador.
   bool _ofrecerNavegador = false;
+
+  /// Las otras cuentas de este celular. Null mientras se leen (o en la web, que no tiene varias).
+  IndiceCuentas? _cuentas;
+
+  /// En qué negocio está esta cuenta (lo dijo el sitio al entrar).
+  NegocioDeLaCuenta? _negocio;
 
   SyncNubeCompanion get _sync => widget.sync;
 
@@ -61,6 +74,54 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       _cuenta = cuenta;
       _cargando = false;
     });
+    // Las otras cuentas se leen aparte: la pantalla no las espera para mostrarse.
+    final cuentas = await _leerCuentasDelCelular();
+    final negocio = cuenta == null || widget.leerCuentas != null ? null : await leerNegocioDeEstaCuenta();
+    if (mounted) {
+      setState(() {
+        _cuentas = cuentas;
+        _negocio = negocio;
+      });
+    }
+  }
+
+  Future<IndiceCuentas?> _leerCuentasDelCelular() async {
+    if (widget.leerCuentas != null) return widget.leerCuentas!();
+    if (kIsWeb) return null;
+    try {
+      return await leerIndiceCuentas();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Pasar a otra cuenta de este celular ([destino]) o agregar una nueva (null). La de ahora queda guardada tal cual, con sus
+  /// ventas, su sync y su PC; nada pasa de una a la otra.
+  Future<void> _pasarACuenta(String? destino, String titulo) async {
+    final nueva = destino == null;
+    final seguir = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: nueva ? '¿Agregar otro negocio?' : '¿Pasar a $titulo?',
+        texto:
+            'El negocio de ahora queda guardado en este celular con todo lo suyo, sin mezclarse con el otro. '
+            'La app se cierra: abrila de nuevo para '
+            '${nueva ? 'entrar en el otro, con esta misma cuenta de Google o con otra' : 'seguir en $titulo'}. '
+            'Si el bot de WhatsApp está prendido, se apaga.',
+        botones: [
+          BotonNs.primario(ctx, nueva ? 'Agregar otro negocio' : 'Pasar a $titulo', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (seguir != true || !mounted) return;
+    setState(() => _ocupado = true);
+    if (widget.pasarACuenta != null) {
+      await widget.pasarACuenta!(destino);
+      return;
+    }
+    await pasarACuenta(destino);
+    await cerrarLaApp();
   }
 
   /// En el celular, con la cuenta de Google del teléfono (sin navegador); en la web, por el sitio. Mismo criterio que
@@ -76,7 +137,7 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       } else {
         final cuenta = await _sync.entrarConGoogle(
           nombre: nombreDelCelular(),
-          elegir: (opciones) async => mounted ? elegirSucursal(context, opciones) : null,
+          elegir: (opciones) async => mounted ? elegirNegocio(context, opciones) : null,
         );
         if (cuenta == null && mounted) setState(() => _ofrecerNavegador = true);
       }
@@ -84,14 +145,14 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     } on GoogleNoDisponible {
       if (mounted) {
         setState(() {
-          _mensaje = 'No se pudo vincular con Google desde la app. Probá con el navegador.';
+          _mensaje = 'No se pudo entrar con Google desde la app. Probá con el navegador.';
           _ofrecerNavegador = true;
         });
       }
     } on ErrorNube catch (e) {
       if (mounted) setState(() => _mensaje = e.mensaje);
     } catch (e) {
-      if (mounted) setState(() => _mensaje = 'No se pudo vincular: $e');
+      if (mounted) setState(() => _mensaje = 'No se pudo entrar: $e');
     } finally {
       if (mounted) setState(() => _ocupado = false);
     }
@@ -101,10 +162,10 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     final confirmar = await mostrarHojaNs<bool>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: '¿Desvincular este celular?',
-        texto: 'Sin la cuenta no podrá sincronizar por internet. Lo que ya tiene guardado en el celular no se borra.',
+        titulo: '¿Cerrar sesión?',
+        texto: 'Sin la cuenta no se sincroniza por internet. Lo que ya está guardado en el celular no se borra.',
         botones: [
-          BotonNs.peligroSolido(ctx, 'Desvincular', () => Navigator.of(ctx).pop(true)),
+          BotonNs.peligroSolido(ctx, 'Cerrar sesión', () => Navigator.of(ctx).pop(true)),
           BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
         ],
       ),
@@ -135,10 +196,13 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       context,
       builder: (ctx) => HojaNs(
         titulo: '¿Cerrar sesión y borrar este celular?',
-        texto: cuenta != null
-            ? 'Primero se manda a tu cuenta lo que falte subir. Después se borra todo lo de este celular y la app se cierra. '
-                  'Entrando de nuevo con tu cuenta, vuelve a bajar.'
-            : 'Este celular no está vinculado a una cuenta: todo lo que cargaste acá se pierde. La app se cierra y arranca de cero.',
+        texto: (cuenta != null
+                ? 'Primero se manda a tu cuenta lo que falte subir. Después se borra todo lo de esta cuenta en el celular y la app se cierra. '
+                      'Entrando de nuevo con tu cuenta, vuelve a bajar.'
+                : 'No entraste con una cuenta: todo lo que cargaste acá se pierde. La app se cierra y arranca de cero.') +
+            (_cuentas?.guardadas.isNotEmpty ?? false
+                ? ' Las otras cuentas de este celular no se tocan: al abrir, seguís en ${_cuentas!.guardadas.first.titulo}.'
+                : ''),
         botones: [
           BotonNs.peligroSolido(ctx, 'Cerrar sesión y borrar', () => Navigator.of(ctx).pop(true)),
           BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
@@ -183,7 +247,7 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     await borrarTodoDelCelular();
     // En el navegador no se puede cerrar la app: se recarga la página, que arranca de cero.
     if (kIsWeb) return recargarPagina();
-    await SystemNavigator.pop();
+    await cerrarLaApp();
   }
 
   Future<void> _volverABajarTodo() async {
@@ -231,11 +295,16 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
           if (_mensaje != null) Padding(padding: const EdgeInsets.only(top: 12), child: InfoNs(_mensaje!)),
           const SizedBox(height: 8),
           FilaClaveValorNs(
-            clave: 'Cuenta de Nodo Sur',
-            valor: cuenta?.email ?? 'Sin vincular',
+            clave: 'Tu cuenta',
+            valor: cuenta?.email ?? 'Sin entrar',
             tamanioValor: 19,
             colorValor: cuenta == null ? ns.b : null,
           ),
+          if (cuenta != null && _negocio?.nombreNegocio != null)
+            FilaClaveValorNs(
+              clave: 'Negocio',
+              valor: CuentaDelCelular(id: '', email: null, nombreNegocio: _negocio!.nombreNegocio, nombreSucursal: _negocio!.nombreSucursal).titulo,
+            ),
           if (cuenta != null) FilaClaveValorNs(clave: 'Este celular', valor: cuenta.nombreDispositivo),
           if (cuenta == null) ...[
             const SizedBox(height: 12),
@@ -251,22 +320,69 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
               'Con la PC prendida, el celular sincroniza con ella. Si la PC se apaga o queda fuera del wifi, pasa solo a internet; cuando la PC vuelve, vuelve a ella.',
             ),
           ],
+          if (_cuentas != null && widget.alContinuar == null) ...[
+            const SizedBox(height: 20),
+            _SeccionCuentas(cuentas: _cuentas!, ocupado: _ocupado, alPasar: _pasarACuenta),
+          ],
         ],
       ),
       botones: [
         if (cuenta == null) ...[
-          BotonNs.primario(context, _ocupado ? 'Vinculando…' : 'Vincular con Nodo Sur', _ocupado ? null : _vincular, habilitado: !_ocupado),
+          BotonNs.primario(context, _ocupado ? 'Entrando…' : 'Entrar con Google', _ocupado ? null : _vincular, habilitado: !_ocupado),
           if (_ofrecerNavegador)
-            BotonNs.secundario(context, 'Vincular con el navegador', _ocupado ? null : () => _vincular(conNavegador: true)),
+            BotonNs.secundario(context, 'Entrar con el navegador', _ocupado ? null : () => _vincular(conNavegador: true)),
         ]
         else ...[
           BotonNs.primario(context, 'Sincronizar ahora', _ocupado ? null : _sincronizarAhora, habilitado: !_ocupado),
-          BotonNs.peligroSuave(context, 'Desvincular', _ocupado ? null : _desvincular),
+          BotonNs.peligroSuave(context, 'Cerrar sesión', _ocupado ? null : _desvincular),
         ],
         if (widget.alContinuar != null)
-          BotonNs.secundario(context, cuenta == null ? 'Vincular más tarde' : 'Continuar', _ocupado ? null : () => widget.alContinuar!(context))
+          BotonNs.secundario(context, cuenta == null ? 'Entrar más tarde' : 'Continuar', _ocupado ? null : () => widget.alContinuar!(context))
         else
           BotonNs.peligroSuave(context, 'Cerrar sesión y borrar este celular', _ocupado ? null : _cerrarSesion),
+      ],
+    );
+  }
+}
+
+/// Las otras cuentas de este celular (El dueño, 2026-10-13: "múltiples cuentas sin cerrar la otra sesión pero tampoco
+/// mezclando cosas"): pasar a una, o agregar otra.
+class _SeccionCuentas extends StatelessWidget {
+  const _SeccionCuentas({required this.cuentas, required this.ocupado, required this.alPasar});
+
+  final IndiceCuentas cuentas;
+  final bool ocupado;
+  final void Function(String? destino, String titulo) alPasar;
+
+  /// El nombre del negocio; si dos se llaman igual (el mismo negocio con dos personas), con el mail para distinguirlos.
+  String _texto(CuentaDelCelular c) {
+    final repetido = cuentas.guardadas.where((o) => o.titulo == c.titulo).length > 1;
+    return repetido && c.detalle != null ? '${c.titulo} (${c.detalle})' : c.titulo;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('cuentas_del_celular'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SeccionNs('Otros negocios en este celular'),
+        for (final c in cuentas.guardadas) ...[
+          KeyedSubtree(
+            key: Key('pasar_a_${c.id}'),
+            child: BotonNs.secundario(context, 'Pasar a ${_texto(c)}', ocupado ? null : () => alPasar(c.id, c.titulo)),
+          ),
+          const SizedBox(height: 8),
+        ],
+        KeyedSubtree(
+          key: const Key('agregar_cuenta'),
+          child: BotonNs.secundario(context, 'Agregar otro negocio', ocupado ? null : () => alPasar(null, '')),
+        ),
+        const SizedBox(height: 12),
+        const InfoNs(
+          'Cada negocio guarda sus propias ventas, productos y caja en este celular, aunque entres con la misma cuenta de Google. '
+          'Cambiar no cierra la sesión ni mezcla nada.',
+        ),
       ],
     );
   }
@@ -276,7 +392,7 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
 String textoDeResultado(ResultadoSyncNube r) => switch (r) {
   SyncNubeOk(:final bajadas, :final subidas) =>
     bajadas == 0 && subidas == 0 ? 'Todo al día.' : 'Listo: recibió $bajadas y mandó $subidas cambios.',
-  SyncNubeSinCuenta() => 'Primero vinculá el celular a tu cuenta.',
+  SyncNubeSinCuenta() => 'Primero entrá con tu cuenta.',
   SyncNubeExpirada() => vistaDeSync(r).detalle,
   SyncNubeFallida(:final mensaje, :final sinRed) => sinRed ? 'Sin conexión a internet.' : mensaje,
 };
@@ -380,7 +496,7 @@ class _TarjetaModo extends StatelessWidget {
     final (titulo, detalle) = switch (modo) {
       ModoSync.pc => ('Con la PC', 'Sincronizando por wifi.'),
       ModoSync.nube => ('Por internet', 'La PC no contesta: sincronizando con la nube.'),
-      ModoSync.local => ('Solo en este celular', hayCuenta ? 'Esperando para sincronizar.' : 'Vinculá tu cuenta para sincronizar por internet.'),
+      ModoSync.local => ('Solo en este celular', hayCuenta ? 'Esperando para sincronizar.' : 'Entrá con tu cuenta para sincronizar por internet.'),
     };
     // El bloque negro: lo más importante de la pantalla (con quién se sincroniza ahora).
     return HeroNs(

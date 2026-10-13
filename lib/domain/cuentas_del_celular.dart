@@ -14,9 +14,19 @@ const preferenciasDelAparato = {'companion_tema', 'actualizaciones_cid'};
 
 bool esPreferenciaDeLaCuenta(String clave) => !preferenciasDelAparato.contains(clave);
 
-/// Una cuenta del celular, para mostrarla en la lista. [id] es el nombre de su carpeta (no cambia nunca).
+/// Una cuenta del celular: una persona (su mail) en un negocio y una sucursal. La misma cuenta de Google puede estar varias
+/// veces, una por negocio (El dueño, 2026-10-13: "si tengo un almacén, y mi emprendimiento de belleza, y mi barbería, quiero
+/// tenerlos"); por sucursal también, porque la sync es por sucursal. [id] es el nombre de su carpeta (no cambia nunca).
 class CuentaDelCelular {
-  const CuentaDelCelular({required this.id, required this.email, this.nombre});
+  const CuentaDelCelular({
+    required this.id,
+    required this.email,
+    this.nombre,
+    this.negocio,
+    this.sucursal,
+    this.nombreNegocio,
+    this.nombreSucursal,
+  });
 
   final String id;
 
@@ -26,14 +36,47 @@ class CuentaDelCelular {
   /// El perfil con que se entró (el nombre de la persona en el POS).
   final String? nombre;
 
-  /// Lo que se lee en la lista.
-  String get titulo => email ?? nombre ?? 'Sin cuenta';
+  /// El negocio y la sucursal (ids del sitio y nombres para mostrar). Null en una cuenta de antes de esto o sin negocio.
+  final int? negocio;
+  final int? sucursal;
+  final String? nombreNegocio;
+  final String? nombreSucursal;
 
-  Map<String, dynamic> toJson() => {'id': id, if (email != null) 'email': email, if (nombre != null) 'nombre': nombre};
+  /// Lo que se lee en la lista: el negocio (y la sucursal, si no es la única de siempre); sin negocio, el mail.
+  String get titulo {
+    final n = nombreNegocio;
+    if (n == null || n.isEmpty) return email ?? nombre ?? 'Sin cuenta';
+    final s = nombreSucursal;
+    return s == null || s.isEmpty || s == sucursalPrincipal ? n : '$n · $s';
+  }
 
-  static CuentaDelCelular desdeJson(Map<String, dynamic> j) =>
-      CuentaDelCelular(id: j['id'] as String, email: j['email'] as String?, nombre: j['nombre'] as String?);
+  /// Debajo del título: con qué mail se entra (si el título ya no lo dice).
+  String? get detalle => titulo == email ? null : email;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    if (email != null) 'email': email,
+    if (nombre != null) 'nombre': nombre,
+    if (negocio != null) 'negocio': negocio,
+    if (sucursal != null) 'sucursal': sucursal,
+    if (nombreNegocio != null) 'nombreNegocio': nombreNegocio,
+    if (nombreSucursal != null) 'nombreSucursal': nombreSucursal,
+  };
+
+  static CuentaDelCelular desdeJson(Map<String, dynamic> j) => CuentaDelCelular(
+    id: j['id'] as String,
+    email: j['email'] as String?,
+    nombre: j['nombre'] as String?,
+    negocio: (j['negocio'] as num?)?.toInt(),
+    sucursal: (j['sucursal'] as num?)?.toInt(),
+    nombreNegocio: j['nombreNegocio'] as String?,
+    nombreSucursal: j['nombreSucursal'] as String?,
+  );
 }
+
+/// El nombre que el sitio le pone a la primera sucursal de cada negocio (`SUCURSAL_PRINCIPAL` en NodoSurPage): no se muestra,
+/// porque casi todos tienen una sola.
+const sucursalPrincipal = 'Sucursal principal';
 
 /// En qué paso quedó un cambio de cuenta. Se anota ANTES de mover nada: si el celular se apaga a la mitad, al abrir se
 /// termina (cada paso se puede repetir sin romper nada).
@@ -106,13 +149,15 @@ IndiceCuentas empezarCambio(IndiceCuentas indice, {required CuentaDelCelular act
   );
 }
 
-/// La activa se borró ("Cerrar sesión y borrar") y hay otras guardadas: se trae la última usada, sin guardar nada.
-IndiceCuentas empezarTraerTrasBorrar(IndiceCuentas indice) => IndiceCuentas(
-  guardadas: indice.guardadas,
-  cambio: indice.guardadas.isEmpty
-      ? null
-      : CambioPendiente(guardarComo: null, traer: indice.guardadas.first.id, paso: PasoCambio.trayendo),
-);
+/// La activa se borró ("Cerrar sesión y borrar") y hay otras guardadas: se trae [preferida] si está guardada, si no la última
+/// usada, sin guardar nada.
+IndiceCuentas empezarTraerTrasBorrar(IndiceCuentas indice, {String? preferida}) {
+  final traer = indice.guardadas.where((c) => c.id == preferida).firstOrNull ?? indice.guardadas.firstOrNull;
+  return IndiceCuentas(
+    guardadas: indice.guardadas,
+    cambio: traer == null ? null : CambioPendiente(guardarComo: null, traer: traer.id, paso: PasoCambio.trayendo),
+  );
+}
 
 /// Cómo queda el índice con el cambio ya hecho: la que se guardó pasa primera en la lista (la última usada) y la que se
 /// trajo pasa a activa.
@@ -131,10 +176,14 @@ IndiceCuentas terminarCambio(IndiceCuentas indice) {
   );
 }
 
-/// Si la activa (con [email]) ya está guardada con el mismo mail, la guardada sobra: es la misma cuenta dos veces. Devuelve
-/// el id de esa repetida, o null.
-String? cuentaRepetida(IndiceCuentas indice, String? email) {
-  if (email == null) return null;
+/// Si ya hay guardada una cuenta con el mismo mail, negocio y sucursal que la que acaba de entrar, es la misma dos veces:
+/// devuelve el id de la guardada, o null. El mismo mail en OTRO negocio o sucursal no es repetida. Una guardada de antes de
+/// esto (sin negocio) no se da por repetida: no se sabe dónde está.
+String? cuentaRepetida(IndiceCuentas indice, {required String? email, required int? negocio, required int? sucursal}) {
+  if (email == null || negocio == null) return null;
   final e = email.trim().toLowerCase();
-  return indice.guardadas.where((c) => c.email?.trim().toLowerCase() == e).firstOrNull?.id;
+  return indice.guardadas
+      .where((c) => c.email?.trim().toLowerCase() == e && c.negocio == negocio && c.sucursal == sucursal)
+      .firstOrNull
+      ?.id;
 }
