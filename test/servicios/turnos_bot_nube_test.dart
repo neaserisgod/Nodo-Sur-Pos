@@ -94,11 +94,32 @@ void main() {
     });
   });
   tearDown(() {
+    turnosBotSinCargar.value = const [];
     sinc.cerrar();
     return db.close();
   });
 
   Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))..orderBy([(t) => OrderingTerm.asc(t.id)])..limit(1)).getSingle();
+
+  test('el servicio se encuentra aunque el bot lo escriba con otras mayúsculas, acentos o espacios', () async {
+    remotos.first['servicio'] = {'nombre': '  SEMIPERMANENTÉ '};
+    await sinc.vuelta('tok');
+    expect((await elDelBot()).servicioId, semi);
+  });
+
+  test('un turno con un servicio que no está en la app no se pierde: se avisa por qué y entra al cargar el servicio', () async {
+    remotos.first['servicio'] = {'nombre': 'Kapping'};
+    remotos.first['actualizado'] = 1;
+    await sinc.vuelta('tok');
+    expect(await db.select(db.turnos).get(), isEmpty);
+    expect(turnosBotSinCargar.value.single, contains('«Kapping» no está en Servicios'));
+
+    // La dueña carga el servicio. El sitio ya no vuelve a mandar ese turno (el cursor pasó), pero quedó guardado y se reintenta.
+    await crearServicio(db, nombre: 'Kapping', precioCentavos: 2500000, duracionMinutos: 60, usuarioId: usuario);
+    await sinc.vuelta('tok');
+    expect(await db.select(db.turnos).get(), hasLength(1));
+    expect(turnosBotSinCargar.value, isEmpty);
+  });
 
   test('cuando baja un turno, las pantallas se enteran al toque (una vez); sin nada nuevo, no', () async {
     await sinc.vuelta('tok');

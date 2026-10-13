@@ -138,6 +138,13 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Un turno del bot ya no se pierde** (El dueño, probando de punta a punta: "se confirma el turno, se confirma la seña, pero en
+  la aplicación no aparece"): si un turno del bot no se podía cargar (el servicio no estaba en la app con ese nombre, un error al
+  crearlo, sin usuario), se salteaba callado y el cursor seguía: no se reintentaba nunca. Ahora queda guardado, se reintenta en
+  cada vuelta y la Agenda muestra por qué no entró ("el servicio «X» no está en Servicios…"). El servicio se busca sin importar
+  mayúsculas, acentos ni espacios. `servicios/turnos_bot_nube.dart`. Probado con tests; **falta confirmar en el celular** que
+  esa era la causa (si no aparece ni el turno ni el aviso, es otra).
+
 - **Prueba de Point Tap** (cobrar con tarjeta acercándola al celular, con la app de Mercado Pago): Configuración › Cobro ›
   "Probar cobro con tarjeta en el celular", solo en Android. Le pide el cobro a la app de Mercado Pago con la integración por
   Intent del ejemplo oficial (`com.mercadopago.PAYMENT_ACTION`, pensada para los lectores Point) y muestra la respuesta cruda.

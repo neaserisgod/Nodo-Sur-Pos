@@ -18,6 +18,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database.dart';
@@ -25,6 +26,7 @@ import '../data/repositorio_configuracion.dart' show modulosNegocioActuales;
 import '../data/repositorio_turnos.dart';
 import '../domain/bot_whatsapp.dart';
 import '../domain/forma_de_trabajo.dart';
+import '../domain/normalizacion_texto.dart';
 import '../domain/turnos.dart';
 import 'avisos_bot.dart';
 import '../edicion.dart';
@@ -32,6 +34,18 @@ import 'cuenta_nube.dart';
 
 const _claveCursor = 'turnosBot.cursor';
 const _claveHuellas = 'turnosBot.huellas';
+const _claveSinCargar = 'turnosBot.sinCargar';
+
+/// Los turnos del bot que bajaron pero no se pudieron poner en la Agenda, con el motivo (El dueño, 2026-10-13: "se confirma el
+/// turno, se confirma la seña, pero en la aplicación no aparece"). Antes se salteaban callados y el cursor seguía de largo: no se
+/// volvían a intentar nunca. Ahora se guardan, se reintentan en cada vuelta y la Agenda los muestra en "Para atender".
+final ValueNotifier<List<String>> turnosBotSinCargar = ValueNotifier(const []);
+
+/// Un turno del bot que no se pudo cargar acá, y por qué (para mostrarlo tal cual).
+class _NoSeCarga implements Exception {
+  const _NoSeCarga(this.motivo);
+  final String motivo;
+}
 
 /// El estado de un turno como lo dice el sitio.
 String estadoEnSitio(EstadoTurno e) => switch (e) {
@@ -122,28 +136,56 @@ class SincronizadorTurnosBot {
   Future<void> _bajar(String token, SharedPreferences prefs, Map<String, String> huellas) async {
     var desde = prefs.getInt(_claveCursor) ?? 0;
     var bajoAlgo = false;
-    for (var i = 0; i < 20; i++) {
-      final r = await cliente.turnosBot(token, desde: desde);
-      for (final x in r.turnos) {
-        if (x['origen'] != 'bot') continue; // lo de la app ya está acá
-        int? id;
-        try {
-          id = await _aplicar(x);
-        } catch (_) {
-          continue; // uno que no se puede aplicar no frena a los demás
-        }
-        final local = id;
+    // Los que quedaron sin cargar en otra vuelta (por id del sitio: si vuelve a bajar uno más nuevo, gana ese).
+    final pendientes = <String, ({Map<String, dynamic> turno, String motivo})>{};
+    try {
+      for (final p in (jsonDecode(prefs.getString(_claveSinCargar) ?? '[]') as List).cast<Map>()) {
+        final t = (p['turno'] as Map).cast<String, dynamic>();
+        pendientes['${t['id']}'] = (turno: t, motivo: '${p['motivo']}');
+      }
+    } catch (_) {
+      // guardado roto: se arranca de cero
+    }
+
+    Future<void> cargar(Map<String, dynamic> x) async {
+      try {
+        final local = await _aplicar(x);
+        pendientes.remove('${x['id']}');
         if (local != null) {
           huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
           bajoAlgo = true;
         }
+      } on _NoSeCarga catch (e) {
+        pendientes['${x['id']}'] = (turno: x, motivo: e.motivo);
+      } catch (e) {
+        // Uno que no se puede aplicar no frena a los demás, pero tampoco se pierde: se reintenta en la próxima vuelta.
+        pendientes['${x['id']}'] = (turno: x, motivo: e is ArgumentError ? '${e.message}' : '$e');
+      }
+    }
+
+    for (final x in [for (final p in pendientes.values) p.turno]) {
+      await cargar(x);
+    }
+    for (var i = 0; i < 20; i++) {
+      final r = await cliente.turnosBot(token, desde: desde);
+      for (final x in r.turnos) {
+        if (x['origen'] != 'bot') continue; // lo de la app ya está acá
+        await cargar(x);
       }
       desde = r.hasta;
       await prefs.setInt(_claveCursor, desde);
       if (!r.mas) break;
     }
+    // Un turno que ya pasó hace más de un día no se va a cargar nunca: no se arrastra para siempre.
+    final limite = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
+    pendientes.removeWhere((_, p) => p.turno['fin'] is int && (p.turno['fin'] as int) < limite);
+    await prefs.setString(_claveSinCargar, jsonEncode([for (final p in pendientes.values) {'turno': p.turno, 'motivo': p.motivo}]));
+    final motivos = [for (final p in pendientes.values) p.motivo];
+    if (!_mismaLista(motivos, turnosBotSinCargar.value)) turnosBotSinCargar.value = motivos;
     if (bajoAlgo) alBajar?.call();
   }
+
+  static bool _mismaLista(List<String> a, List<String> b) => a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
 
   /// Pone en la Agenda (o actualiza) un turno del bot. Devuelve su id local, o null si no se pudo (el servicio no existe acá).
   Future<int?> _aplicar(Map<String, dynamic> x) async {
@@ -161,10 +203,14 @@ class SincronizadorTurnosBot {
     if (existente == null) {
       if (!estado.abierto) return null; // uno que el bot ya canceló antes de llegar acá no hace falta
       final servicio = await _servicioDe(x['servicio']);
-      if (servicio == null) return null;
       final cliente = x['cliente'] is Map ? (x['cliente'] as Map) : const {};
+      final quien = '${cliente['nombre'] ?? 'Un cliente'}';
+      if (servicio == null) {
+        final nombre = x['servicio'] is Map ? '${(x['servicio'] as Map)['nombre'] ?? ''}' : '';
+        throw _NoSeCarga('Turno de $quien: el servicio «$nombre» no está en Servicios. Cargalo con ese nombre y el turno aparece solo.');
+      }
       final usuario = await (db.select(db.usuarios)..limit(1)).getSingleOrNull();
-      if (usuario == null) return null;
+      if (usuario == null) throw _NoSeCarga('Turno de $quien: falta elegir usuario en este equipo.');
       final vence = x['senaVence'];
       final nuevo = await crearTurno(
         db,
@@ -225,9 +271,13 @@ class SincronizadorTurnosBot {
       final porGid = await (db.select(db.productos)..where((p) => p.globalId.equals(gid) & p.esServicio.equals(true))).getSingleOrNull();
       if (porGid != null) return porGid;
     }
-    final nombre = '${s['nombre'] ?? ''}'.trim().toLowerCase();
+    // Por nombre, sin importar mayúsculas, acentos ni espacios de más ("Corte y Barba" = "corte y barba").
+    String comparable(String t) => normalizarTexto(t).trim().replaceAll(RegExp(r'\s+'), ' ');
+    final nombre = comparable('${s['nombre'] ?? ''}');
+    if (nombre.isEmpty) return null;
+    // También uno dado de baja: el turno ya se dio y tiene que verse igual.
     final servicios = await (db.select(db.productos)..where((p) => p.esServicio.equals(true))).get();
-    return servicios.where((p) => p.nombre.trim().toLowerCase() == nombre).firstOrNull;
+    return servicios.where((p) => comparable(p.nombre) == nombre).firstOrNull;
   }
 
   Future<void> _avisarCambios(String token, Map<String, String> huellas) async {
