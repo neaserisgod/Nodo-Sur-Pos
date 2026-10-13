@@ -237,7 +237,9 @@ Future<UsuarioCompanion> sembrarNegocioDemo(AppDatabase db, NegocioDemo n, {Date
     );
   }
 
-  final sesionId = await repo_ventas.abrirSesion(db, usuarioId: duenioId, fondoInicialCentavos: fondoDemoCentavos);
+  // En una cuenta de prueba que ya tiene la caja abierta se usa esa (`sembrar_ejemplo.dart`); en la demo siempre se abre una.
+  final sesionId = (await repo_ventas.sesionAbierta(db))?.id ??
+      await repo_ventas.abrirSesion(db, usuarioId: duenioId, fondoInicialCentavos: fondoDemoCentavos);
 
   // La semana: hoy y los seis días que siguen. Cada persona llena su día con turnos y algún hueco libre, para que la agenda
   // se vea ocupada pero con lugar para dar uno más.

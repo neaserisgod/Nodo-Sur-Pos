@@ -35,16 +35,34 @@ void main() {
     expect((await db.select(db.ventas).get()).every((v) => v.globalId != null), isTrue);
   });
 
-  test('con una caja abierta, una venta o un turno no toca nada', () async {
+  test('con datos (una caja abierta) no carga sin confirmar; con "Cargar igual" carga y usa esa caja', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final yo = await repo_usuarios.crearUsuario(db, 'Bruno');
     await guardarNegocio(db, nombre: 'Mi barbería', rubro: PlantillaRubro.barberia);
-    await repo_ventas.abrirSesion(db, usuarioId: yo, fondoInicialCentavos: 0);
+    final caja = await repo_ventas.abrirSesion(db, usuarioId: yo, fondoInicialCentavos: 0);
 
-    expect(await baseVaciaParaEjemplo(db), isFalse);
+    expect(await estadoParaEjemplo(db), EstadoParaEjemplo.conDatos);
     expect(await sembrarEjemploEnCuenta(db, ahora: ahora), isFalse);
     expect((await configuracionNegocioActual(db)).nombreComercio, 'Mi barbería');
     expect(await db.select(db.turnos).get(), isEmpty);
+
+    expect(await sembrarEjemploEnCuenta(db, aunqueTengaDatos: true, ahora: ahora), isTrue);
+    expect(await db.select(db.turnos).get(), isNotEmpty);
+    final cajas = await db.select(db.sesionesDeCaja).get();
+    expect(cajas.map((c) => c.id), [caja], reason: 'usa la caja que ya estaba abierta, no abre otra');
+  });
+
+  test('nunca se carga dos veces', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await repo_usuarios.crearUsuario(db, 'Bruno');
+    await guardarNegocio(db, nombre: 'Mi barbería', rubro: PlantillaRubro.barberia);
+    expect(await sembrarEjemploEnCuenta(db, ahora: ahora), isTrue);
+    final servicios = (await db.select(db.productos).get()).where((p) => p.esServicio).length;
+
+    expect(await estadoParaEjemplo(db), EstadoParaEjemplo.yaCargado);
+    expect(await sembrarEjemploEnCuenta(db, aunqueTengaDatos: true, ahora: ahora), isFalse);
+    expect((await db.select(db.productos).get()).where((p) => p.esServicio).length, servicios);
   });
 }
