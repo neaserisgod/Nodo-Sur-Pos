@@ -3,7 +3,12 @@
 // la cuenta (`perfil_por_cuenta.dart`). Cambiar de perfil queda solo en el POS de escritorio.
 //
 // Pide internet una sola vez, al entrar; después el celular sigue andando sin conexión con el perfil ya guardado.
+//
+// En el celular se entra con el selector de cuentas de Google del teléfono, sin navegador (El dueño, 2026-10-13). Si eso no
+// anda (un teléfono sin servicios de Google, la app sin registrar en Google Cloud, o la persona cierra el selector), aparece
+// "Entrar con el navegador", el camino de antes. En la versión web se entra siempre por el sitio, en la misma pestaña.
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../servicios/cuenta_nube.dart';
@@ -13,6 +18,8 @@ import 'bienvenida/vista_entrar_con_google.dart';
 import 'configurar/asistente_negocio.dart';
 import 'configurar/flujo_negocio.dart';
 import 'configurar/negocio_nuevo.dart';
+import 'elegir_sucursal.dart';
+import 'google_en_celular.dart';
 import 'modo_uso.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
@@ -71,6 +78,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   /// El token ya no vale (sacaron a la persona del negocio o revocaron el celular): hay que entrar de nuevo.
   bool _hayQueEntrarDeNuevo = false;
 
+  /// Entrar con Google desde la app no anduvo (o se cerró el selector): se ofrece el navegador.
+  bool _ofrecerNavegador = false;
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +102,49 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   }
 
   Future<void> _entrar() async {
+    if (kIsWeb) return _entrarConNavegador();
+    setState(() {
+      _trabajando = true;
+      _error = null;
+      _hayQueEntrarDeNuevo = false;
+    });
+    try {
+      final cuenta = await _sync!.entrarConGoogle(
+        nombre: nombreDelCelular(),
+        elegir: (opciones) async => mounted ? elegirSucursal(context, opciones) : null,
+      );
+      if (cuenta == null) {
+        // Cerró el selector sin elegir. Con la app mal registrada en Google, el selector también "se cancela" solo: por eso
+        // queda a mano el navegador.
+        if (mounted) {
+          setState(() {
+            _trabajando = false;
+            _ofrecerNavegador = true;
+          });
+        }
+        return;
+      }
+      await _resolver(cuenta);
+    } on GoogleNoDisponible {
+      if (mounted) {
+        setState(() {
+          _error = 'No se pudo entrar con Google desde la app. Probá con el navegador.';
+          _trabajando = false;
+          _ofrecerNavegador = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e is ErrorNube ? e.mensaje : mensajeDeError(e);
+          _trabajando = false;
+        });
+      }
+    }
+  }
+
+  /// El camino de antes: se abre la página /vincular/ del sitio y vuelve con el código.
+  Future<void> _entrarConNavegador() async {
     setState(() {
       _trabajando = true;
       _error = null;
@@ -187,5 +240,6 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
         error: _error,
         // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
         alReintentar: _error != null && !_hayQueEntrarDeNuevo && _sync != null ? _reintentar : null,
+        alEntrarConNavegador: _ofrecerNavegador && _sync != null ? _entrarConNavegador : null,
       );
 }

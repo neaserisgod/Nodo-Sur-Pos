@@ -32,6 +32,30 @@ class PerfilDeCuenta {
   final String? rol;
 }
 
+/// Lo que contesta el sitio al entrar con Google desde el celular.
+sealed class ResultadoEntrarConGoogle {
+  const ResultadoEntrarConGoogle();
+}
+
+class EntroConGoogle extends ResultadoEntrarConGoogle {
+  const EntroConGoogle(this.cuenta);
+  final CuentaVinculada cuenta;
+}
+
+/// La persona trabaja en más de una sucursal (o negocio): elige en cuál entra este celular.
+class HayQueElegirSucursal extends ResultadoEntrarConGoogle {
+  const HayQueElegirSucursal(this.opciones);
+  final List<SucursalParaElegir> opciones;
+}
+
+class SucursalParaElegir {
+  const SucursalParaElegir({required this.negocio, required this.nombreNegocio, required this.sucursal, required this.nombreSucursal});
+  final int negocio;
+  final String nombreNegocio;
+  final int sucursal;
+  final String nombreSucursal;
+}
+
 /// Una persona del equipo del negocio, tal como la ve la PC (solo informativo).
 class MiembroDeEquipo {
   const MiembroDeEquipo({required this.nombre, required this.email, required this.rol, required this.todasLasSucursales, required this.sucursales});
@@ -202,6 +226,8 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'mp_no_conectado' => 'Mercado Pago todavía no está conectado: el dueño lo conecta en horsepos.com/negocio.',
   'mp_sin_terminal' => 'Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.',
   'mp_no_configurado' => 'La conexión con Mercado Pago todavía no está lista en el servidor. Probá más tarde.',
+  'google_invalido' => 'Google no confirmó la cuenta. Probá de nuevo.',
+  'sin_sucursal' => 'Ese mail todavía no tiene una sucursal donde trabajar. Pedile al dueño que te la asigne en Mi negocio.',
   'sin_negocio' => 'Este dispositivo no pertenece a ningún negocio: volvé a vincularlo con tu cuenta.',
   'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
   'sin_permiso_devolver' => 'Devolver por Mercado Pago lo pueden hacer el dueño o el encargado.',
@@ -385,6 +411,58 @@ class ClienteNube {
       nombreDispositivo: nombre,
       vence: (j['expiresAt'] as num?)?.toInt() ?? 0,
     );
+  });
+
+  /// El client ID Web que va como `serverClientId` al selector de Google del celular. Null si el sitio todavía no ofrece entrar
+  /// con Google desde la app (una versión anterior, o sin configurar): se entra por el navegador.
+  Future<String?> clienteGoogle() => _conRed(() async {
+    final r = await http.get(_uri('/api/device/google')).timeout(_limite);
+    if (r.statusCode != 200) return null;
+    final id = (jsonDecode(r.body) as Map<String, dynamic>)['clientId'];
+    return id is String && id.isNotEmpty ? id : null;
+  });
+
+  /// Entrar en el celular con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona trabaja en más de una
+  /// sucursal y no se dijo cuál, el sitio pide elegir: se vuelve a llamar con [negocio] y [sucursal] y el mismo [idToken].
+  Future<ResultadoEntrarConGoogle> entrarConGoogle({
+    required String idToken,
+    required String idDispositivo,
+    required String nombre,
+    int? negocio,
+    int? sucursal,
+  }) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/device/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'idToken': idToken,
+        'deviceId': idDispositivo,
+        'name': nombre,
+        'orgId': ?negocio,
+        'branchId': ?sucursal,
+      }),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    if (j['elegir'] == true) {
+      return HayQueElegirSucursal([
+        for (final o in (j['orgs'] as List).cast<Map<String, dynamic>>())
+          for (final b in (o['branches'] as List).cast<Map<String, dynamic>>())
+            SucursalParaElegir(
+              negocio: (o['id'] as num).toInt(),
+              nombreNegocio: o['name'] as String? ?? '',
+              sucursal: (b['id'] as num).toInt(),
+              nombreSucursal: b['name'] as String? ?? '',
+            ),
+      ]);
+    }
+    return EntroConGoogle(CuentaVinculada(
+      token: j['token'] as String,
+      email: j['email'] as String,
+      idDispositivo: j['deviceId'] as String,
+      nombreDispositivo: nombre,
+      vence: (j['expiresAt'] as num?)?.toInt() ?? 0,
+    ));
   });
 
   /// Quién es la persona que vinculó este dispositivo (nombre de su cuenta, rol y sucursal). El celular lo usa para tomar su

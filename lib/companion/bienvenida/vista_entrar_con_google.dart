@@ -1,5 +1,5 @@
 // Entrar (o crear la cuenta) con Google: lo que se ve en "Entrá con tu cuenta" (mock 02g–02j). Solo la vista; el ingreso de
-// verdad (abrir el navegador, vincular el celular, tomar el perfil) lo sigue haciendo `pantalla_entrar_con_cuenta.dart`.
+// verdad (elegir la cuenta, vincular el celular, tomar el perfil) lo sigue haciendo `pantalla_entrar_con_cuenta.dart`.
 //
 // Con Google no hay dos caminos: la primera vez que alguien entra, horsepos.com le crea la cuenta sola. Por eso es un
 // solo botón y la pantalla lo dice, en vez de un "registrarse" aparte que haría lo mismo.
@@ -16,6 +16,7 @@ class VistaEntrarConGoogle extends StatelessWidget {
     this.trabajando = false,
     this.error,
     this.alReintentar,
+    this.alEntrarConNavegador,
   });
 
   final VoidCallback alEntrar;
@@ -30,6 +31,10 @@ class VistaEntrarConGoogle extends StatelessWidget {
   /// Reintentar sin volver a abrir el navegador (cuando la cuenta ya quedó vinculada y falló otra cosa).
   final VoidCallback? alReintentar;
 
+  /// La salida de siempre (abrir el navegador para entrar), cuando entrar con Google desde la app no anduvo: un teléfono sin
+  /// servicios de Google, o la app todavía sin registrar en Google Cloud.
+  final VoidCallback? alEntrarConNavegador;
+
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
@@ -41,12 +46,17 @@ class VistaEntrarConGoogle extends StatelessWidget {
         if (error != null && alReintentar != null)
           KeyedSubtree(key: const Key('entrar_reintentar'), child: BotonNs(texto: 'Reintentar', onTap: trabajando ? null : alReintentar, alto: 48, tamanio: 15, fondo: ns.s, color: ns.ink, rellenar: false, paddingH: 22)),
         _BotonGoogle(trabajando: trabajando, onTap: trabajando ? null : alEntrar),
+        if (alEntrarConNavegador != null)
+          KeyedSubtree(
+            key: const Key('entrar_con_navegador'),
+            child: BotonNs.secundario(context, 'Entrar con el navegador', trabajando ? null : alEntrarConNavegador),
+          ),
         const InfoNs('¿Primera vez? Tu cuenta se crea sola al entrar con Google. Es la misma de horsepos.com.'),
         const InfoNs('¿Te invitaron a un negocio? Entrá con el mismo mail al que te llegó la invitación.'),
         // En el navegador se entra en la misma pestaña y la app trabaja con internet (lo que carga queda guardado en el navegador).
         InfoNs(kIsWeb
             ? 'Entrás con tu cuenta de Google en esta misma pestaña. Lo que cargues queda guardado y llega solo a los otros equipos del negocio.'
-            : 'Internet, una sola vez: se abre el navegador para entrar. Después el celular sigue andando sin conexión.'),
+            : 'Internet, una sola vez, para entrar. Después el celular sigue andando sin conexión.'),
       ],
     );
   }

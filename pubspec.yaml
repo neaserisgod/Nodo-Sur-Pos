@@ -69,6 +69,7 @@ dependencies:
   image_picker: ^1.2.4
   # El navegador (Nodo Sur Servicios web): el WebSocket de los avisos en vivo (`servicios/socket_de_avisos_web.dart`).
   web: ^1.1.1
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:

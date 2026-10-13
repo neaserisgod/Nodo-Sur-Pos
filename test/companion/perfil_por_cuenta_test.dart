@@ -1,10 +1,13 @@
 // El perfil del celular sale de la cuenta (2026-10-02): se reutiliza el del mismo nombre, o se crea; nunca se elige de una lista.
 
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/emparejamiento.dart';
+import 'package:la_plazoleta/companion/google_en_celular.dart';
 import 'package:la_plazoleta/companion/pantalla_entrar_con_cuenta.dart';
 import 'package:la_plazoleta/companion/perfil_por_cuenta.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
@@ -83,7 +86,12 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    Future<SyncNubeCompanion> armar(WidgetTester t, {required bool vinculada, required Future<http.Response> Function(http.Request) servidor}) async {
+    Future<SyncNubeCompanion> armar(
+      WidgetTester t, {
+      required bool vinculada,
+      required Future<http.Response> Function(http.Request) servidor,
+      PedirCuentaGoogle? google,
+    }) async {
       db = (await t.runAsync(() async => baseDeTest()))!;
       usarBaseLocalDeTest(db);
       puerto = PuertoLocal(db);
@@ -97,6 +105,7 @@ void main() {
         cliente: ClienteNube(http: MockClient(servidor)),
         abrirNavegador: (_) async {},
         db: db,
+        pedirCuentaGoogle: google ?? (_) async => fail('no tenía que pedir una cuenta de Google'),
       );
       addTearDown(() {
         sync.servicio.detener();
@@ -152,6 +161,100 @@ void main() {
       await abrir(t, sync);
       expect(entro, isFalse);
       expect(find.textContaining('desactivado'), findsOneWidget);
+    });
+
+    group('entrar con la cuenta de Google del teléfono (sin navegador)', () {
+      final pedidos = <http.Request>[];
+      http.Response jsonOk(Object o) => http.Response(jsonEncode(o), 200, headers: {'content-type': 'application/json'});
+      Future<http.Response> sitio(http.Request r, {bool elegir = false}) async {
+        pedidos.add(r);
+        if (r.url.path == '/api/device/google' && r.method == 'GET') return jsonOk({'clientId': 'web.apps.googleusercontent.com'});
+        if (r.url.path == '/api/device/google') {
+          final b = jsonDecode(r.body) as Map<String, dynamic>;
+          if (b['idToken'] != 'id-token-de-marta') return http.Response('{"error":"google_invalido"}', 401);
+          if (elegir && b['branchId'] == null) {
+            return jsonOk({
+              'elegir': true,
+              'orgs': [
+                {'id': 1, 'name': 'La Plazoleta', 'branches': [{'id': 2, 'name': 'Sucursal principal'}, {'id': 3, 'name': 'Centro'}]},
+              ],
+            });
+          }
+          return jsonOk({'token': 'tok-nuevo', 'email': 'marta@x.com', 'deviceId': b['deviceId'], 'expiresAt': 99});
+        }
+        if (r.url.path == '/api/device/me') return yoOk();
+        return fail('pedido inesperado: ${r.method} ${r.url}');
+      }
+
+      setUp(pedidos.clear);
+
+      // Al quedar vinculado arranca la sync por internet, con sus esperas: se frena y se dejan vencer antes de terminar.
+      Future<void> frenarSync(WidgetTester t, SyncNubeCompanion sync) async {
+        sync.servicio.detener();
+        await t.pump(const Duration(seconds: 30));
+      }
+
+      testWidgets('elige la cuenta, el sitio la confirma y entra con su perfil', (t) async {
+        String? pedidoCon;
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (clientId) async {
+          pedidoCon = clientId;
+          return 'id-token-de-marta';
+        });
+        await abrir(t, sync);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(pedidoCon, 'web.apps.googleusercontent.com', reason: 'el client ID lo da el sitio');
+        expect(entro, isTrue);
+        expect((await t.runAsync(() => sync.cuenta()))!.token, 'tok-nuevo');
+        expect((await t.runAsync(() => leerUsuario()))!.nombre, 'Marta Gómez');
+        await frenarSync(t, sync);
+      });
+
+      testWidgets('si trabaja en dos sucursales pregunta en cuál, y entra en la elegida', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: (r) => sitio(r, elegir: true), google: (_) async => 'id-token-de-marta');
+        await abrir(t, sync);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(find.text('¿En qué sucursal trabajás con este celular?'), findsOneWidget);
+        expect(entro, isFalse);
+        await t.tap(find.text('Centro'));
+        await _asentar(t);
+        expect(entro, isTrue);
+        final ultimo = jsonDecode(pedidos.lastWhere((r) => r.url.path == '/api/device/google' && r.method == 'POST').body);
+        expect(ultimo['branchId'], 3);
+        expect(ultimo['orgId'], 1);
+        await frenarSync(t, sync);
+      });
+
+      testWidgets('si Google no anda en este teléfono lo dice y ofrece el navegador', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => throw const GoogleNoDisponible('sin servicios'));
+        await abrir(t, sync);
+        expect(find.byKey(const Key('entrar_con_navegador')), findsNothing);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(find.byKey(const Key('entrar_error')), findsOneWidget);
+        expect(find.byKey(const Key('entrar_con_navegador')), findsOneWidget);
+        expect(entro, isFalse);
+      });
+
+      testWidgets('cerrar el selector sin elegir no entra ni muestra error, pero deja el navegador a mano', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => null);
+        await abrir(t, sync);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(entro, isFalse);
+        expect(find.byKey(const Key('entrar_error')), findsNothing);
+        expect(find.byKey(const Key('entrar_con_navegador')), findsOneWidget);
+        expect(pedidos.where((r) => r.method == 'POST'), isEmpty);
+      });
+
+      testWidgets('el sitio sin entrar con Google (versión vieja): ofrece el navegador sin abrir el selector', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: (r) async => http.Response('', 404));
+        await abrir(t, sync);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(find.byKey(const Key('entrar_con_navegador')), findsOneWidget);
+      });
     });
   });
 }

@@ -15,6 +15,8 @@ import '../ui/comun/estado_mercado_pago.dart';
 import 'borrar_celular.dart';
 import '../servicios/recargar_pagina.dart';
 import 'conmutador_sync.dart';
+import 'elegir_sucursal.dart';
+import 'google_en_celular.dart';
 import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
 
@@ -41,6 +43,9 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
   bool _ocupado = false;
   String? _mensaje;
 
+  /// Vincular con Google desde la app no anduvo (o se cerró el selector): se ofrece el navegador.
+  bool _ofrecerNavegador = false;
+
   SyncNubeCompanion get _sync => widget.sync;
 
   @override
@@ -58,14 +63,31 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     });
   }
 
-  Future<void> _vincular() async {
+  /// En el celular, con la cuenta de Google del teléfono (sin navegador); en la web, por el sitio. Mismo criterio que
+  /// `pantalla_entrar_con_cuenta.dart`.
+  Future<void> _vincular({bool conNavegador = false}) async {
     setState(() {
       _ocupado = true;
       _mensaje = null;
     });
     try {
-      await _sync.vincular(nombre: nombreDelCelular());
+      if (kIsWeb || conNavegador) {
+        await _sync.vincular(nombre: nombreDelCelular());
+      } else {
+        final cuenta = await _sync.entrarConGoogle(
+          nombre: nombreDelCelular(),
+          elegir: (opciones) async => mounted ? elegirSucursal(context, opciones) : null,
+        );
+        if (cuenta == null && mounted) setState(() => _ofrecerNavegador = true);
+      }
       await _leerCuenta();
+    } on GoogleNoDisponible {
+      if (mounted) {
+        setState(() {
+          _mensaje = 'No se pudo vincular con Google desde la app. Probá con el navegador.';
+          _ofrecerNavegador = true;
+        });
+      }
     } on ErrorNube catch (e) {
       if (mounted) setState(() => _mensaje = e.mensaje);
     } catch (e) {
@@ -232,8 +254,11 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
         ],
       ),
       botones: [
-        if (cuenta == null)
-          BotonNs.primario(context, _ocupado ? 'Vinculando…' : 'Vincular con Nodo Sur', _ocupado ? null : _vincular, habilitado: !_ocupado)
+        if (cuenta == null) ...[
+          BotonNs.primario(context, _ocupado ? 'Vinculando…' : 'Vincular con Nodo Sur', _ocupado ? null : _vincular, habilitado: !_ocupado),
+          if (_ofrecerNavegador)
+            BotonNs.secundario(context, 'Vincular con el navegador', _ocupado ? null : () => _vincular(conNavegador: true)),
+        ]
         else ...[
           BotonNs.primario(context, 'Sincronizar ahora', _ocupado ? null : _sincronizarAhora, habilitado: !_ocupado),
           BotonNs.peligroSuave(context, 'Desvincular', _ocupado ? null : _desvincular),

@@ -21,6 +21,7 @@ import '../servicios/avisos_mp_servicio.dart';
 import 'base_local.dart';
 import 'cambios_companion.dart';
 import 'conmutador_sync.dart';
+import 'google_en_celular.dart';
 import 'identidad_dispositivo.dart';
 import '../servicios/almacenes_del_equipo.dart';
 import '../servicios/registro_errores.dart';
@@ -35,6 +36,7 @@ class SyncNubeCompanion {
     required this.almacenEstado,
     required this.conmutador,
     required this.abrirNavegador,
+    this.pedirCuentaGoogle = pedirCuentaGoogleDelTelefono,
   });
 
   final AlmacenCuenta almacen;
@@ -43,6 +45,7 @@ class SyncNubeCompanion {
   final AlmacenEstadoSync almacenEstado;
   final ConmutadorSync conmutador;
   final Future<void> Function(Uri) abrirNavegador;
+  final PedirCuentaGoogle pedirCuentaGoogle;
 
   Future<CuentaVinculada?> cuenta() => almacen.leer();
 
@@ -65,6 +68,38 @@ class SyncNubeCompanion {
     return cuenta;
   }
 
+  /// Entra con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona trabaja en más de una sucursal,
+  /// [elegir] le pregunta en cuál. Null si cerró el selector o no eligió. Lanza [GoogleNoDisponible] si el teléfono o el sitio
+  /// no lo permiten (la pantalla ofrece el navegador) y [ErrorNube] si el sitio dice que no.
+  Future<CuentaVinculada?> entrarConGoogle({
+    required String nombre,
+    required Future<SucursalParaElegir?> Function(List<SucursalParaElegir> opciones) elegir,
+  }) async {
+    final clientId = await cliente.clienteGoogle();
+    if (clientId == null) throw const GoogleNoDisponible('el sitio todavía no lo ofrece');
+    final idToken = await pedirCuentaGoogle(clientId);
+    if (idToken == null) return null;
+    final idDispositivo = await idDispositivoEstable();
+    var r = await cliente.entrarConGoogle(idToken: idToken, idDispositivo: idDispositivo, nombre: nombre);
+    if (r is HayQueElegirSucursal) {
+      final elegida = await elegir(r.opciones);
+      if (elegida == null) return null;
+      r = await cliente.entrarConGoogle(
+        idToken: idToken,
+        idDispositivo: idDispositivo,
+        nombre: nombre,
+        negocio: elegida.negocio,
+        sucursal: elegida.sucursal,
+      );
+    }
+    if (r is! EntroConGoogle) throw const ErrorNube('google_invalido', 'No se pudo entrar en esa sucursal. Probá de nuevo.');
+    await almacen.guardar(r.cuenta);
+    // Un registro de otra vinculación no vale para esta cuenta (igual que [vincular]).
+    await almacenEstado.borrar();
+    conmutador.reevaluar();
+    return r.cuenta;
+  }
+
   Future<void> desvincular() async {
     servicio.detener();
     await almacen.borrar();
@@ -83,6 +118,7 @@ SyncNubeCompanion armarSyncNubeCompanion({
   required Future<void> Function(Uri) abrirNavegador,
   required AppDatabase db,
   Duration esperaTraspaso = const Duration(seconds: 10),
+  PedirCuentaGoogle pedirCuentaGoogle = pedirCuentaGoogleDelTelefono,
 }) {
   final servicio = ServicioSyncNube(
     db: db,
@@ -106,6 +142,7 @@ SyncNubeCompanion armarSyncNubeCompanion({
     almacenEstado: almacenEstado,
     conmutador: conmutador,
     abrirNavegador: abrirNavegador,
+    pedirCuentaGoogle: pedirCuentaGoogle,
   );
 }
 

@@ -70,6 +70,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Companion: mock completo del celular (2026-10-02)](#companion-mock-completo-del-celular-2026-10-02)
 - [Sync PC / celular / nube: sin callejones sin salida (2026-10-02)](#sync-pc--celular--nube-sin-callejones-sin-salida-2026-10-02)
 - [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
+- [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
@@ -1774,6 +1775,15 @@ El dueño: "que los empleados directamente logueen con su perfil en lugar de sel
 - **El sitio** (`NodoSurPage`): hasta hoy solo el dueño podía vincular un dispositivo. Ahora un empleado o encargado puede vincular su **celular** (`vincular_celular`, `tipo: 'celular'`), solo a una sucursal donde trabaja; la PC sigue siendo del dueño. Si lo sacan del negocio, su token deja de valer y el celular le pide entrar de nuevo.
 - **Celulares que ya estaban en uso** con un perfil elegido de la lista: no se les corta el trabajo. Si tienen la cuenta vinculada, el perfil se corrige solo por detrás (sin bloquear el arranque) con el de la cuenta; sin cuenta ni internet siguen con el que tenían, y ya no pueden cambiarlo.
 - **Esto reemplaza a "lista de miembros cacheada + PIN"** que la entrada de "Negocio, sucursales y miembros" daba por pendiente: para el celular se eligió la cuenta, no el PIN. En el POS de escritorio el selector sigue igual.
+## El celular entra con Google desde la app, sin navegador (2026-10-13)
+
+El dueño: "la vinculación por el sitio es un paso medio innecesario". Se eligió el selector de cuentas de Google del teléfono (opción recomendada) frente a un código del dueño (perdía "cada uno con su cuenta") o dejar el navegador.
+- **Cómo**: la app pide al sitio el client ID Web (`GET /api/device/google`), abre el selector de Android (`google_en_celular.dart`, paquete `google_sign_in`) y manda el id_token a `POST /api/device/google`. El sitio lo comprueba con Google (tokeninfo: firma, `aud`, mail verificado) y devuelve el token del celular, con las mismas reglas de negocio y sucursal que /vincular/ (`NodoSurPage/functions/_lib/vincular.js`, una sola regla para los dos caminos).
+- **Varias sucursales**: si la persona puede entrar en más de una, el sitio contesta `elegir` y la app pregunta en una hoja (`elegir_sucursal.dart`); antes se elegía en /vincular/.
+- **Siempre muestra la lista de cuentas** (se cierra la sesión de Google de la app antes): en un teléfono con varias cuentas se elige cada vez. Sirve también para "varias cuentas en un celular".
+- **El navegador queda de salida**: si el teléfono no tiene servicios de Google, la app no está registrada en Google Cloud, el sitio es viejo, o se cierra el selector (una mala configuración también se ve como "cancelado"), aparece "Entrar con el navegador". La web y la PC siguen por el navegador.
+- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
+
 ## Versión propia del APK (2026-10-02)
 
 El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de Windows: no se podía relanzar un APK sin esperar una beta, y publicar el mismo número daba "ya estaba publicada". Ahora `publicar-apk` acepta un dato opcional **`build`**: el APK se compila con `--build-number` y se publica con esa versión (`1.0.0+<build>`), sin tocar `pubspec.yaml` ni depender de Windows. Vacío = el de siempre.
