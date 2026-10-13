@@ -65,9 +65,14 @@ Un **código** que se vende y después se **canjea** por un turno o una compra.
 
 Cada etapa con sus tests y publicada junta en los tres repos (como los turnos del bot).
 
-## 6. Preguntas abiertas (gift card)
+## 6. Decisiones de la gift card (El dueño, 2026-10-13)
 
-1. ¿Por **monto libre** ($ 20.000) o por **servicio** ("un semipermanente")?
-2. ¿**Vence**? ¿A los cuántos meses?
-3. ¿Se puede **usar en partes** (queda saldo) o es de una sola vez?
-4. Si vence sin usarse, ¿la plata **queda para el negocio**?
+- **De las dos clases**:
+  - **Por monto** ($ 20.000): sirve para cualquier cosa y **se usa en partes**; lo que sobra queda de saldo.
+  - **Por servicio** ("un semipermanente"): cubre ese servicio **aunque haya subido el precio**. Se usa una vez; si se
+    elige otro servicio, vale lo que costaba el original cuando se vendió.
+- **Vence a los 6 meses** por defecto, configurable por negocio.
+- **Si vence sin usarse**, **cada negocio elige** en Configuración: queda para el negocio (entra como ingreso ese día) o
+  se devuelve (queda en una lista "para devolver").
+
+Cuando se implemente, todo esto pasa a `REGLAS-NEGOCIO.md` como regla nueva (§22), junto con la contabilidad de la sección 4.
