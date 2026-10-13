@@ -168,7 +168,7 @@ class PuertoLocal implements ServicioCompanion {
 
   @override
   Future<List<UsuarioCompanion>> usuarios() async {
-    final filas = await db.select(db.usuarios).get();
+    final filas = await repo_usuarios.listarUsuarios(db); // sin repetidos (mismo nombre = misma persona)
     return [
       for (final u in filas) UsuarioCompanion(id: u.id, nombre: u.nombre, activo: u.activo),
     ];

@@ -28,7 +28,9 @@ import 'package:drift/drift.dart';
 
 import '../domain/stock.dart';
 import 'database.dart';
+import 'identidad_sync.dart' show idDispositivoActual;
 import 'repositorio_promos.dart' show reconstruirComponentesDePromo;
+import 'repositorio_usuarios.dart' show unificarUsuariosRepetidos;
 
 /// Las tablas que participan de la sincronización y si comparan
 /// `actualizado_en` para decidir quién gana un conflicto (`true`) o son un
@@ -71,6 +73,10 @@ const Map<String, bool> tablasSincronizables = {
   'productos_factura_compra': false,
   'vinculos_factura': true,
   'cuits_proveedor': false,
+  // v67 (El dueño, 2026-10-13: "el stock subió y yo no lo subí"): la base de stock de cada producto, AL FINAL: después de los
+  // productos (a los que apunta) y de los movimientos, así al recibirla el stock se recalcula con todos los movimientos de la
+  // misma bajada ([_recalcularStockDesdeBase]).
+  'bases_de_stock': true,
 };
 
 /// Las tablas que un equipo con una versión anterior a la v61 no conoce: si la PC todavía no se actualizó, le contesta error al
@@ -86,6 +92,8 @@ const tablasSincronizablesV61 = {
   'gastos_fijos_montos',
   // La de la v66: una PC anterior no la conoce.
   'turnos',
+  // La de la v67.
+  'bases_de_stock',
 };
 
 bool _tablaValida(String tabla) {
@@ -142,6 +150,7 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
   'arqueos_intermedios': {'sesion_caja_id': 'sesiones_de_caja', 'usuario_id': 'usuarios'},
   'historial_de_precios': {'producto_id': 'productos', 'usuario_id': 'usuarios'},
   'pendientes': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
+  'bases_de_stock': {'producto_id': 'productos'},
   'turnos': {
     'servicio_id': 'productos',
     'cliente_id': 'clientes',
@@ -208,6 +217,8 @@ Future<List<Map<String, dynamic>>> cambiosDesde(
   required int desde,
 }) async {
   _tablaValida(tabla);
+  // Antes de mandar las bases, este equipo completa las de los productos que nacieron acá: así sale siempre con lo último.
+  if (tabla == 'bases_de_stock') await asegurarBasesDeStock(db);
   final columnaCursor = _columnaCursor(tabla);
   final referencias = _referenciasCruzadas[tabla];
   final columnasExtra = referencias == null
@@ -454,6 +465,11 @@ Future<List<Map<String, dynamic>>> aplicarCambios(
       noAplicadas.add(fila);
     }
   }
+  // Mismo nombre = misma persona (El dueño, 2026-10-13): un perfil repetido que llegó de otro equipo, o algo cargado a su
+  // nombre, pasa al que queda. Cada equipo llega solo al mismo resultado.
+  if (tabla == 'usuarios' || (_referenciasCruzadas[tabla]?.containsValue('usuarios') ?? false)) {
+    await unificarUsuariosRepetidos(db);
+  }
   return noAplicadas;
 }
 
@@ -578,6 +594,7 @@ Future<void> _aplicarUnaFila(
     if (tabla == 'movimientos_de_stock') {
       await _aplicarDeltaDeMovimientoStock(db, fila);
     }
+    if (tabla == 'bases_de_stock') await _recalcularStockDesdeBase(db, (fila['producto_id'] as num).toInt());
     return;
   }
 
@@ -628,6 +645,80 @@ Future<void> _aplicarUnaFila(
     variables: [
       for (final c in columnas) _variableDesde(fila[c]),
       Variable.withInt((existente.data['id'] as num).toInt()),
+    ],
+  );
+  if (tabla == 'bases_de_stock') await _recalcularStockDesdeBase(db, (existente.data['producto_id'] as num).toInt());
+}
+
+/// La suma de los movimientos de un producto, por cada tipo de stock (unidades, gramos, milésimas). Un movimiento que no trae
+/// el antes y el después de un tipo no cuenta para ese tipo (mismo criterio que [_aplicarDeltaDeMovimientoStock]).
+const _sumaDeMovimientos = '''
+  SELECT
+    COALESCE(SUM(CASE WHEN stock_anterior IS NOT NULL AND stock_posterior IS NOT NULL THEN stock_posterior - stock_anterior END), 0) AS u,
+    COALESCE(SUM(CASE WHEN gramos_anterior IS NOT NULL AND gramos_posterior IS NOT NULL THEN gramos_posterior - gramos_anterior END), 0) AS g,
+    COALESCE(SUM(CASE WHEN milesimas_anterior IS NOT NULL AND milesimas_posterior IS NOT NULL THEN milesimas_posterior - milesimas_anterior END), 0) AS m
+  FROM movimientos_de_stock WHERE producto_id = ?''';
+
+/// Llegó la base de un producto: su stock pasa a ser `base + todos los movimientos que este equipo tiene`. Es la cuenta que
+/// vale en cualquier equipo, así que arregla también a uno que ya se había desfasado (el que sumó dos veces al bajar todo).
+Future<void> _recalcularStockDesdeBase(AppDatabase db, int productoId) async {
+  final base = await db
+      .customSelect('SELECT stock_base, gramos_base, milesimas_base FROM bases_de_stock WHERE producto_id = ?', variables: [Variable.withInt(productoId)])
+      .getSingleOrNull();
+  if (base == null) return;
+  final suma = (await db.customSelect(_sumaDeMovimientos, variables: [Variable.withInt(productoId)]).getSingle()).data;
+  int? valor(String columna, String clave) {
+    final b = (base.data[columna] as num?)?.toInt();
+    return b == null ? null : b + (suma[clave] as num).toInt();
+  }
+
+  final unidades = valor('stock_base', 'u');
+  final gramos = valor('gramos_base', 'g');
+  final milesimas = valor('milesimas_base', 'm');
+  await db.customUpdate(
+    'UPDATE productos SET stock = COALESCE(?, stock), stock_gramos = COALESCE(?, stock_gramos), '
+    'stock_milesimas = COALESCE(?, stock_milesimas) WHERE id = ?',
+    variables: [
+      unidades == null ? const Variable<int>(null) : Variable.withInt(unidades),
+      gramos == null ? const Variable<int>(null) : Variable.withInt(gramos),
+      milesimas == null ? const Variable<int>(null) : Variable.withInt(milesimas),
+      Variable.withInt(productoId),
+    ],
+  );
+}
+
+/// Escribe la base de stock de los productos que nacieron en ESTE equipo y todavía no la tienen: `stock - suma de movimientos`
+/// (ver `BasesDeStock` en `tables/stock.dart`). Solo el equipo de origen: nunca recibió el producto por la sync, así que su
+/// cuenta es la buena; uno que lo recibió puede haberlo sumado dos veces y no tiene que esparcir ese número. Los productos de
+/// antes de la sync (sin origen) los escribe la PC. Una vez escrita, no se cambia más.
+Future<void> asegurarBasesDeStock(AppDatabase db) async {
+  final yo = idDispositivoActual;
+  await db.customInsert(
+    '''
+    INSERT INTO bases_de_stock (producto_id, stock_base, gramos_base, milesimas_base, global_id, origen_dispositivo, actualizado_en)
+    SELECT p.id,
+      p.stock - s.u,
+      CASE WHEN p.stock_gramos IS NULL THEN NULL ELSE p.stock_gramos - s.g END,
+      CASE WHEN p.stock_milesimas IS NULL THEN NULL ELSE p.stock_milesimas - s.m END,
+      p.global_id, ?, ?
+    FROM productos p
+    JOIN (
+      SELECT pp.id AS pid,
+        COALESCE(SUM(CASE WHEN m.stock_anterior IS NOT NULL AND m.stock_posterior IS NOT NULL THEN m.stock_posterior - m.stock_anterior END), 0) AS u,
+        COALESCE(SUM(CASE WHEN m.gramos_anterior IS NOT NULL AND m.gramos_posterior IS NOT NULL THEN m.gramos_posterior - m.gramos_anterior END), 0) AS g,
+        COALESCE(SUM(CASE WHEN m.milesimas_anterior IS NOT NULL AND m.milesimas_posterior IS NOT NULL THEN m.milesimas_posterior - m.milesimas_anterior END), 0) AS m
+      FROM productos pp LEFT JOIN movimientos_de_stock m ON m.producto_id = pp.id
+      GROUP BY pp.id
+    ) s ON s.pid = p.id
+    WHERE p.global_id IS NOT NULL
+      AND (p.origen_dispositivo = ? OR (p.origen_dispositivo IS NULL AND ? = 'desktop'))
+      AND NOT EXISTS (SELECT 1 FROM bases_de_stock b WHERE b.producto_id = p.id OR b.global_id = p.global_id)
+    ''',
+    variables: [
+      Variable.withString(yo),
+      Variable.withInt(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      Variable.withString(yo),
+      Variable.withString(yo),
     ],
   );
 }

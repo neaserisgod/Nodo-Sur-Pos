@@ -426,4 +426,27 @@ void main() {
     expect(leido.vistas['productos']!['g1']!.huella, 'h');
     expect(EstadoSyncNube.desdeJson('basura').cursorBajada, 0);
   });
+
+  test('base de stock: un celular desfasado con la versión vieja se arregla al actualizarse (vuelve a pasar una vez por todo)', () async {
+    final id = await nuevoProducto(dbPc, usuarioPc, 'Yerba', stock: 0);
+    await ajustarStockRapido(dbPc, productoId: id, usuarioId: usuarioPc, stock: 10);
+    await pc.servicio.sincronizar();
+
+    // Como lo dejaba la versión vieja: bajó todo salteando la base (sumó dos veces) y su cursor ya pasó esos lotes.
+    for (final t in tablasSincronizables.keys) {
+      if (t == 'bases_de_stock') continue;
+      await aplicarCambios(dbCel, tabla: t, filas: await cambiosDesde(dbPc, tabla: t, desde: 0));
+    }
+    expect((await producto(dbCel, 'Yerba')).stock, 20);
+    final viejo = EstadoSyncNube(cursorBajada: servidor.lotes.length, versionBajada: 0);
+    await cel.estado.guardar(viejo);
+
+    await cel.servicio.sincronizar();
+    expect((await producto(dbCel, 'Yerba')).stock, 10);
+    expect((await cel.estado.leer()).versionBajada, versionBajadaActual);
+    // Y no lo vuelve a hacer.
+    final consultas = servidor.consultas;
+    await cel.servicio.sincronizar();
+    expect(servidor.consultas - consultas, 1);
+  });
 }

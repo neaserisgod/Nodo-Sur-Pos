@@ -14,6 +14,10 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../data/database.dart';
 
+/// Nombre de la base del celular (`AppDatabase._abrirConexion`, `driftDatabase(name: 'la_plazoleta')`): el archivo es
+/// `la_plazoleta.sqlite` en la carpeta de documentos.
+const nombreBaseCelular = 'la_plazoleta';
+
 AppDatabase? _instancia;
 
 /// La base local de este celular. Se abre una sola vez, recién la primera

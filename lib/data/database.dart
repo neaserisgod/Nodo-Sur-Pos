@@ -34,6 +34,7 @@ import 'tables/secciones_menu.dart';
 import 'tables/stock.dart';
 import 'tables/turnos.dart';
 import 'tables/usuarios.dart';
+import 'repositorio_usuarios.dart' show unificarUsuariosRepetidos;
 import 'tables/ventas.dart';
 import 'tables/deuda_proveedores.dart';
 import 'tables/promos.dart';
@@ -139,6 +140,7 @@ const seccionesMenuIniciales = [
     FacturasCompra,
     ProductosFacturaCompra,
     Turnos,
+    BasesDeStock,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -162,7 +164,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 66;
+  int get schemaVersion => 67;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1200,6 +1202,15 @@ class AppDatabase extends _$AppDatabase {
       if (from < 66) {
         await _sumarAgenda(this, m);
       }
+      // v66 → v67 (El dueño, 2026-10-13: "el stock subió y yo no lo subí"): la base de stock de cada producto, para que un
+      // equipo que baja todo no sume dos veces los movimientos (`tables/stock.dart`, `BasesDeStock`). Nace vacía: la llena el
+      // equipo donde nació cada producto antes de su próxima subida (`asegurarBasesDeStock`).
+      if (from < 67) {
+        if ((await customSelect("SELECT name FROM pragma_table_info('bases_de_stock')").get()).isEmpty) {
+          await m.createTable(basesDeStock);
+        }
+        await _crearIndicesUnicosDeSincronizacion(this, tablas: tablasDeSyncV67);
+      }
       if (from < 37 && !esEquipoCelular) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1223,6 +1234,11 @@ class AppDatabase extends _$AppDatabase {
       // Índices que se agregaron después de la migración v22→v23. `IF NOT EXISTS`: en una base que ya los tiene no hace nada, y
       // en una existente se crean una sola vez sin tocar la versión del esquema.
       await _crearIndicesAdicionales(this);
+      // Perfiles repetidos (mismo nombre = misma persona, El dueño 2026-10-13): se juntan al abrir, aunque no llegue nada por la
+      // sync. Barato si no hay repetidos (una sola consulta), y nunca frena la apertura.
+      try {
+        await unificarUsuariosRepetidos(this);
+      } catch (_) {}
     },
   );
 }
@@ -1353,6 +1369,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   ...tablasDeSyncV61,
   ...tablasDeSyncV64,
   ...tablasDeSyncV66,
+  ...tablasDeSyncV67,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1564,6 +1581,7 @@ Future<void> _sumarIdentidadDeSyncAFacturas(AppDatabase db, Migrator m) async {
 const tablasDeSyncV64 = ['gastos_fijos', 'gastos_fijos_montos'];
 
 const tablasDeSyncV66 = ['turnos'];
+const tablasDeSyncV67 = ['bases_de_stock'];
 
 /// v65 → v66: la Agenda. La tabla nace vacía (con su índice único de `global_id`); las columnas nuevas nacen con su valor de
 /// arranque. Con chequeo de columna, como v59→v60.

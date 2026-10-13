@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_servicios.dart' show listarServicios, ServicioListado;
 import '../../data/repositorio_tablero_agenda.dart';
+import '../../data/repositorio_usuarios.dart' show listarUsuariosActivos;
 import '../../data/repositorio_turnos.dart';
 import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
@@ -114,7 +115,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     final turnos = await turnosDelDia(_db, dia);
     final semana = await turnosEntre(_db, desde: lunes, hasta: DateTime(lunes.year, lunes.month, lunes.day + 7), incluirLiberados: false);
     final config = await configAgendaActual(_db);
-    final profesionales = await (_db.select(_db.usuarios)..where((u) => u.activo.equals(true))).get();
+    final profesionales = await listarUsuariosActivos(_db); // sin repetidos (mismo nombre = misma persona)
     final esHoy = dia == _soloDia(widget.hoy ?? DateTime.now());
     TableroAgenda? tablero;
     try {

@@ -70,6 +70,10 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Companion: mock completo del celular (2026-10-02)](#companion-mock-completo-del-celular-2026-10-02)
 - [Sync PC / celular / nube: sin callejones sin salida (2026-10-02)](#sync-pc--celular--nube-sin-callejones-sin-salida-2026-10-02)
 - [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
+- [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
+- [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
+- [Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)](#base-de-stock-el-stock-es-base--movimientos-en-cualquier-equipo-2026-10-13)
+- [Perfiles: mismo nombre = misma persona (2026-10-13)](#perfiles-mismo-nombre--misma-persona-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
@@ -1774,6 +1778,51 @@ El dueño: "que los empleados directamente logueen con su perfil en lugar de sel
 - **El sitio** (`NodoSurPage`): hasta hoy solo el dueño podía vincular un dispositivo. Ahora un empleado o encargado puede vincular su **celular** (`vincular_celular`, `tipo: 'celular'`), solo a una sucursal donde trabaja; la PC sigue siendo del dueño. Si lo sacan del negocio, su token deja de valer y el celular le pide entrar de nuevo.
 - **Celulares que ya estaban en uso** con un perfil elegido de la lista: no se les corta el trabajo. Si tienen la cuenta vinculada, el perfil se corrige solo por detrás (sin bloquear el arranque) con el de la cuenta; sin cuenta ni internet siguen con el que tenían, y ya no pueden cambiarlo.
 - **Esto reemplaza a "lista de miembros cacheada + PIN"** que la entrada de "Negocio, sucursales y miembros" daba por pendiente: para el celular se eligió la cuenta, no el PIN. En el POS de escritorio el selector sigue igual.
+## El celular entra con Google desde la app, sin navegador (2026-10-13)
+
+El dueño: "la vinculación por el sitio es un paso medio innecesario". Se eligió el selector de cuentas de Google del teléfono (opción recomendada) frente a un código del dueño (perdía "cada uno con su cuenta") o dejar el navegador.
+- **Cómo**: la app pide al sitio el client ID Web (`GET /api/device/google`), abre el selector de Android (`google_en_celular.dart`, paquete `google_sign_in`) y manda el id_token a `POST /api/device/google`. El sitio lo comprueba con Google (tokeninfo: firma, `aud`, mail verificado) y devuelve el token del celular, con las mismas reglas de negocio y sucursal que /vincular/ (`NodoSurPage/functions/_lib/vincular.js`, una sola regla para los dos caminos).
+- **Varias sucursales**: si la persona puede entrar en más de una, el sitio contesta `elegir` y la app pregunta en una hoja (`elegir_sucursal.dart`); antes se elegía en /vincular/.
+- **Siempre muestra la lista de cuentas** (se cierra la sesión de Google de la app antes): en un teléfono con varias cuentas se elige cada vez. Sirve también para "varias cuentas en un celular".
+- **El navegador queda de salida**: si el teléfono no tiene servicios de Google, la app no está registrada en Google Cloud, el sitio es viejo, o se cierra el selector (una mala configuración también se ve como "cancelado"), aparece "Entrar con el navegador". La web y la PC siguen por el navegador.
+- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
+
+## Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)
+
+El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra sesión pero tampoco mezclando cosas"; "una cuenta de Google puede estar asociada a más de un negocio: un almacén, mi emprendimiento de belleza, mi barbería… quiero tenerlos". Cobro: **cada negocio paga su plan** (eligió A frente a "un plan por mail" o "descuento por negocio").
+- **En el celular** (`cuentas_del_celular.dart`, solo Android): una sola cuenta ACTIVA vive donde vivió siempre (base, carpeta de datos, preferencias), así nada del resto de la app cambia. Las demás quedan en `cuentas_guardadas/<id>/`. Cambiar es mover la activa a su carpeta y traer la elegida (renombrar archivos: instantáneo). Nunca hay dos a la vez en el mismo lugar: no hay forma de mezclar. Después la app se cierra (`exit`), porque en memoria quedan la base, la sync y la clave de la IA de la anterior. El bot de WhatsApp se apaga al cambiar.
+- **Corte a la mitad**: el índice anota el paso (`guardando`/`trayendo`) antes de mover; al abrir, `terminarCambioPendiente` lo termina. Cada paso "mueve lo que quede", así repetirlo no rompe nada.
+- **Qué es una cuenta del celular**: mail + negocio + sucursal (la sync es por sucursal). El mismo Gmail en otro negocio es otra entrada; solo se ofrece "ir al que ya está" si coinciden los tres. Cada cuenta guarda en sus preferencias el nombre de su negocio (`companion_negocio_de_la_cuenta`, de `/api/device/me`) para mostrarse en la lista sin internet.
+- **Lo del aparato no se mueve**: el tema y el id de actualizaciones (`preferenciasDelAparato`) y los registros de errores.
+- **Agregar otro negocio**: el lugar queda vacío y la app arranca en elegir modo (sin la bienvenida) → entrar con Google, que pide siempre la lista (`elegirSiempre`) con "Crear un negocio nuevo". "Volver a …" deshace sin entrar.
+- **Cerrar sesión y borrar** borra solo la activa y trae la última usada; sin otras, queda como recién instalado.
+- **Sitio**: un Gmail puede crear más negocios (`POST /api/org/crear`, "Crear otro negocio" en Mi negocio, o `nuevoNegocio` desde el celular; tope 20). Mercado Pago no dice a qué negocio va cada suscripción: **un mail con N planes vigentes cubre a sus N negocios más viejos** (`plan_por_negocio.js`); el bot, a los primeros cubiertos por un plan con bot. Lo usan sync, copias, bot y facturación (`sin_plan_propio`). "Usar mi suscripción" exige un plan libre.
+- **Almacén y servicios son dos apps** (`com.laplazoleta.companion` y `.servicios`): cada una tiene su propia lista de negocios.
+- **Blindaje** (El dueño: "blindalo lo más que puedas"):
+  - **Dos tiempos**: con la app abierta solo se guarda la activa y se cierra; lo elegido se trae al abrir, en `main`, antes de leer nada (ni la clave de la IA). Al abrir se vuelve a barrer el lugar hacia la cuenta vieja: lo que algo escribió tarde (una vuelta de la sync, una preferencia) queda en la suya, nunca en la nueva.
+  - **Nunca se pisa ni se borra** al mover: lo que choca se aparta (`conflictos/` de cada cuenta, `_huerfanos/` al traer).
+  - **El índice** se escribe aparte y se renombra, con respaldo del anterior; si no se puede leer, se rearma con el `cuenta.json` de cada carpeta.
+  - **Si al abrir no se puede terminar**, la app no sigue: `PantallaCambioTrabado` con "Reintentar".
+  - **"Volver a…" y "ya está en este celular" descartan el lugar actual**: solo aparecen agregando (sin cuenta anotada), y se vuelve a leer el índice justo antes de descartar. Al entrar, la cuenta queda anotada como activa (`anotarCuentaActiva`).
+  - Un negocio cuya carpeta ya no está se detecta antes de frenar nada y se saca de la lista. Google con cualquier error, o un sitio sin la ruta, cae al navegador.
+  - Sitio: el mail de cobro se compara sin mayúsculas; un negocio que no figura entre los de su mail cuenta como el último (nunca gratis); nombres sin caracteres de control; id_token sin forma de JWT se rechaza sin ir a Google.
+
+## Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)
+
+El dueño: "el stock subió y yo no lo subí". Bug reproducido: un equipo que bajaba todo de cero (celular nuevo, negocio agregado, navegador, reinstalación) recibía cada producto con el stock que ya tenía el otro equipo **y además** todos sus movimientos, y los volvía a sumar (PC con 10 → celular con 20; con ventas, puede bajar en vez de subir). Ver `TRAMPAS.md`.
+- **Arreglo** (v67, `BasesDeStock` en `tables/stock.dart`): cada producto tiene una base = la parte del stock que no sale de sus movimientos (stock inicial al darlo de alta, importación, o de antes de los movimientos). En cualquier equipo, `stock = base + suma de movimientos`. Al recibir la base se recalcula así, lo que arregla también a los equipos que ya se habían desfasado.
+- **Solo la escribe el equipo donde nació el producto** (`origen_dispositivo`; los de antes de la sync, la PC), una vez, antes de subir (`asegurarBasesDeStock`, desde `cambiosDesde`): ese equipo nunca recibió el producto por la sync, su cuenta es la buena. Uno desfasado nunca esparce su número.
+- Viaja **al final** de la sync (después de productos y movimientos). Un equipo con versión vieja ignora la tabla sin trabarse; al actualizarse, la sync por la nube vuelve a pasar **una vez** por todo lo bajado (`versionBajadaActual`) para ver las bases que había salteado; si el servidor ya purgó lo viejo, sigue desde donde estaba.
+- **Límite**: si el equipo donde nació un producto se borró o reinstaló (perdió su id), nadie escribe la base de ese producto. Con dos PC en la misma sucursal (las dos son "desktop"), la base la escribe la primera que suba.
+
+## Perfiles: mismo nombre = misma persona (2026-10-13)
+
+El dueño: "hay usuarios duplicados, aparezco tres veces". Pasaba cuando dos equipos creaban el mismo perfil a la vez (cada uno entrando con la cuenta antes de bajar el del otro): dos filas con distinta identidad de sync. Decidió: **mismo nombre (sin mayúsculas ni acentos) = misma persona**.
+- **Listas sin repetidos** (`listarUsuarios`, que usan la PC, el servidor del celular, el celular sin PC y la Agenda): se muestra uno, el de `global_id` menor (la misma elección en todos los equipos), activo si alguno lo está.
+- **Lo cargado a nombre de un repetido pasa al que queda** (`unificarUsuariosRepetidos`): todas las columnas que apuntan a `usuarios`, leídas del esquema. Corre al abrir la base y después de aplicar lo que llega por la sync. Las filas repetidas NO se borran (algo todavía puede apuntarles) y no se manda nada: cada equipo llega solo al mismo resultado.
+- **Dar de alta un nombre que ya existe** devuelve ese perfil (y lo reactiva si estaba desactivado).
+- Consecuencia: dos empleados con exactamente el mismo nombre se juntan. Hay que diferenciarlos (ej. "Juan P." y "Juan M.").
+
 ## Versión propia del APK (2026-10-02)
 
 El APK usaba el número de compilación de `pubspec.yaml`, que sube la beta de Windows: no se podía relanzar un APK sin esperar una beta, y publicar el mismo número daba "ya estaba publicada". Ahora `publicar-apk` acepta un dato opcional **`build`**: el APK se compila con `--build-number` y se publica con esa versión (`1.0.0+<build>`), sin tocar `pubspec.yaml` ni depender de Windows. Vacío = el de siempre.
