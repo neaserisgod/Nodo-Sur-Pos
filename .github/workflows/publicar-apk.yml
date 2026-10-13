@@ -57,6 +57,9 @@ on:
         type: boolean
         default: false
 
+# Una publicación a la vez (el número de compilación sale del último APK publicado). No se cancela la que está corriendo: una
+# "beta:" nueva cortaría un "release:" a medias y el estable no saldría nunca. Las que esperan sí se pisan solas (GitHub deja
+# en espera solo la última), así que dos betas seguidas no se compilan las dos.
 concurrency:
   group: publicar-apk
   cancel-in-progress: false
@@ -112,6 +115,14 @@ jobs:
           flutter-version: 3.47.5
           channel: stable
           cache: true
+      # Gradle guardado entre corridas (2026-10-13): sin esto el primer APK tardaba ~19 min bajando y compilando todo de cero;
+      # el segundo, con lo del primero ya en la máquina, ~2 min. Solo las corridas de main escriben el caché (las de una rama
+      # lo leen), y el build cache de Gradle reusa lo compilado de Kotlin/Java que no cambió.
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build cache de Gradle
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
       - uses: actions/setup-node@v4
         with:
           node-version: 22
