@@ -60,6 +60,11 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- Prueba de Point Tap: ver si está la app de Mercado Pago y si acepta el pedido de cobro (Android 11+ lo exige). -->
+        <package android:name="com.mercadopago.wallet"/>
+        <intent>
+            <action android:name="com.mercadopago.PAYMENT_ACTION"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

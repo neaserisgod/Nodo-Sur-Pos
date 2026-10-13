@@ -138,6 +138,12 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Prueba de Point Tap** (cobrar con tarjeta acercándola al celular, con la app de Mercado Pago): Configuración › Cobro ›
+  "Probar cobro con tarjeta en el celular", solo en Android. Le pide el cobro a la app de Mercado Pago con la integración por
+  Intent del ejemplo oficial (`com.mercadopago.PAYMENT_ACTION`, pensada para los lectores Point) y muestra la respuesta cruda.
+  **No es parte del cobro todavía**: sirve para saber si Mercado Pago lo acepta. Cobra de verdad (se devuelve desde MP). Kotlin
+  sin compilar en la sesión (lo compila el workflow del APK).
+
 - **QR de Mercado Pago en la pantalla, en cualquier negocio** (El dueño: "que la app cree un QR y lo muestre en la pantalla…
   que se pueda configurar"): en el celular de almacén y en la web, además de Nodo Sur Servicios. Se elige en cada equipo
   (Configuración › Cobro: automático, en la pantalla, en la terminal Point o preguntar cada vez); arranca en automático: a la
