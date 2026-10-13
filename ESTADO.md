@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Barbería de ejemplo en una cuenta de verdad** (para grabar los reels con la app real): 7 toques en el título de Más ofrecen
+  cargar la misma barbería de la demo (`companion/demo/sembrar_ejemplo.dart`), solo con la base sin turnos, ventas ni cajas.
+  Viaja por la sync como cualquier dato. Probado con tests; **falta verlo en un celular real** (necesita un APK nuevo).
+
 - **Plan para muchos rubros** (`docs/PLAN-RUBROS.md`, sin código): tercera forma de trabajar, "pedidos", empezando por quien
   emprende con comidas por encargo (reutiliza recetas e insumos de servicios, Encargues y el bot); antes, ordenar la base para
   que un rubro nuevo sea solo datos. Preguntas de negocio abiertas al final del plan.
