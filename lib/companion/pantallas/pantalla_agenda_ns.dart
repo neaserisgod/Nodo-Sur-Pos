@@ -24,6 +24,7 @@ import '../../domain/turnos.dart';
 import '../../edicion.dart';
 import '../../servicios/calendario.dart';
 import '../../servicios/sena_mp_nube.dart';
+import '../../servicios/turnos_bot_nube.dart' show turnosBotSinCargar;
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
@@ -90,11 +91,17 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
       });
     }
     _sub = avisosCambiosCompanion.listen((_) => _recargar());
+    turnosBotSinCargar.addListener(_alCambiarSinCargar);
     _recargar();
+  }
+
+  void _alCambiarSinCargar() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    turnosBotSinCargar.removeListener(_alCambiarSinCargar);
     _sub?.cancel();
     super.dispose();
   }
@@ -368,6 +375,11 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
               if (_dia == hoy) ...[
                 const SizedBox(height: 16),
                 _TableroHoy(tablero: _tablero, app: app, onCompartir: _compartirHuecos),
+              ],
+              // Turnos que dio el bot y no se pudieron poner acá: se dice por qué y se reintentan solos (`turnos_bot_nube.dart`).
+              for (final motivo in turnosBotSinCargar.value.take(3)) ...[
+                const SizedBox(height: 10),
+                InfoNs(motivo, tono: TonoNs.warn, icono: IconoNs.calendario),
               ],
               if (_profesionales.length > 1) ...[
                 const SizedBox(height: 14),
