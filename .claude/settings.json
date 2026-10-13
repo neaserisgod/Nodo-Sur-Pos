@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./**/*.g.dart)",
+      "Read(./build/**)",
+      "Read(./android/build/**)",
+      "Read(./android/app/build/**)",
+      "Read(./capturas/**)",
+      "Read(./docs/archivo/**)"
+    ]
+  }
+}
