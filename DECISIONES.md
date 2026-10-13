@@ -2502,3 +2502,19 @@ varios rubros. Detalle en `docs/PLAN-DEMO-SERVICIOS.md`.
 - **Los datos se siembran con los repositorios de la app**, no con filas armadas a mano: las ganancias, la caja y las señas que
   se ven salen de las mismas cuentas que en un negocio real.
 - **Mercado Pago simulado** (aprueba solo): un cobro por QR que termina en "conectá tu cuenta" deja la demo en un error.
+
+## QR en la pantalla en cualquier negocio, elegido por equipo (El dueño, 2026-10-13)
+
+El dueño: *"necesito que la app cree un QR y lo muestre en la pantalla. Nada de terminal… que se pueda configurar"*. Eligió:
+**por equipo** (no por negocio: un celular muestra el QR y la PC usa la Point), en el **celular de almacén y la web** (la PC no),
+y que arranque en **"pantalla si no hay terminal"**. Sin terminal, débito y crédito no se ofrecen: una tarjeta no se cobra con un
+QR. Preguntó si se puede cobrar con tarjeta por NFC con la app de Mercado Pago (Point Tap): no hay una integración documentada
+y vigente para otra app; queda como prueba aparte, en un celular real.
+
+- Es la misma orden QR dinámica del sitio que ya usaba Nodo Sur Servicios (`mp_servicios.js`): en la app solo cambió quién decide
+  si el QR va a la pantalla (`domain/cobro_qr.dart`, `elegirPasarelaPoint(permiteQrEnPantalla:, dondeQr:)`). La PC y el servidor
+  de la PC no la permiten: no dibujan el QR.
+- "Preguntar cada vez" se resuelve en la pantalla de cobro y viaja en `qrEnPantallaElegidoParaElCobro` (una sola vez) en vez de
+  sumar un parámetro a todas las capas del cobro, que son las mismas con y sin la PC.
+- Nodo Sur Servicios con una terminal elegida ahora la usa en "automático" (antes el QR iba siempre a la pantalla); con "En la
+  pantalla" vuelve a lo de antes.

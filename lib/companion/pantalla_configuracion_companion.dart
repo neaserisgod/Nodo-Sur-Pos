@@ -48,6 +48,9 @@ import 'servicio_companion_offline.dart';
 import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/error_en_linea.dart';
+import 'terminal_mp.dart' show olvidarTerminalEnLaSucursal;
+import '../domain/cobro_qr.dart';
+import '../servicios/preferencia_qr.dart';
 
 class PantallaConfiguracionCompanion extends StatefulWidget {
   const PantallaConfiguracionCompanion({super.key});
@@ -88,9 +91,22 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   final _sueltoCtrl = TextEditingController();
   final _nombreComercioCtrl = TextEditingController();
 
+  /// Dónde sale el QR en este equipo (`domain/cobro_qr.dart`). Se guarda al tocar: es de este equipo, no del negocio.
+  DondeQr _dondeQr = DondeQr.automatico;
+
+  Future<void> _elegirDondeQr(DondeQr d) async {
+    setState(() => _dondeQr = d);
+    await guardarDondeQr(d);
+    olvidarTerminalEnLaSucursal(); // la próxima venta vuelve a mirar la terminal
+    if (mounted) mostrarAvisoNs(context, 'QR: ${d.nombre.toLowerCase()} en este equipo');
+  }
+
   @override
   void initState() {
     super.initState();
+    leerDondeQr().then((d) {
+      if (mounted) setState(() => _dondeQr = d);
+    }, onError: (_) {});
     // La clave de la IA del negocio pudo cambiar desde otro equipo.
     ClaveGemini.refrescarCuenta().then((_) {
       if (mounted) setState(() {});
@@ -382,6 +398,20 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
                     ChipNs(texto: 'Otro…', activo: false, onTap: _otroRedondeo),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Text('Dónde sale el QR de Mercado Pago', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final d in DondeQr.values)
+                      ChipNs(key: ValueKey('donde-qr-${d.clave}'), texto: d.nombre, activo: _dondeQr == d, onTap: () => _elegirDondeQr(d)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text('${_dondeQr.descripcion} Vale para este equipo. Débito y crédito necesitan la terminal.',
+                    style: estiloNs(14, altura: 1.35, color: ns.mute)),
               ],
             ),
           ),

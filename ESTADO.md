@@ -138,6 +138,14 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **QR de Mercado Pago en la pantalla, en cualquier negocio** (El dueño: "que la app cree un QR y lo muestre en la pantalla…
+  que se pueda configurar"): en el celular de almacén y en la web, además de Nodo Sur Servicios. Se elige en cada equipo
+  (Configuración › Cobro: automático, en la pantalla, en la terminal Point o preguntar cada vez); arranca en automático: a la
+  terminal si la sucursal tiene una, a la pantalla si no. Sin terminal no se ofrecen débito ni crédito. La PC no muestra el QR
+  (sigue con la terminal) y el celular conectado a la PC cobra como la PC. `domain/cobro_qr.dart`. Probado con tests; **falta
+  probarlo con la cuenta real** (la orden QR la crea el sitio, como en Servicios). Cobrar con tarjeta por NFC (Point Tap) desde la
+  app: sin confirmar que Mercado Pago lo permita, se investiga aparte.
+
 - **Tablero arriba de la Agenda** (servicios; El dueño eligió las tres tarjetas y "Compartir huecos"): **Ahora** (el turno en
   curso o el que sigue, cuántos turnos y huecos quedan), **Plata de hoy** (cobrado en efectivo y Mercado Pago, y lo que falta
   cobrar con la seña descontada) y **Para atender** (señas que no llegaron, quien viene y ya faltó, insumos por acabarse).
@@ -376,7 +384,7 @@ Pendiente / ideas (sin hacer):
 ## Pendiente
 
 **Pedido por el dueño / a confirmar antes de arrancar** (lista completa y orden de interés en `CONTEXTO.md` §7):
-integración con Mercado Pago: **el QR en pantalla sin terminal en la caja de almacén** (ya está en Nodo Sur Servicios,
+integración con Mercado Pago: el QR en pantalla sin terminal ya está en el celular y la web (13/10; en la PC no) (antes: ya estaba en Nodo Sur Servicios,
 10/10; en almacén el dueño dijo "de momento no", 2026-10-04) — el saldo real en el cierre del celular ya está (09/10); pagar a un proveedor con MP desde el celular; "etapa 3" de MP (esconder token/terminal locales como avanzado); motivo
 obligatorio en cada gasto.
 

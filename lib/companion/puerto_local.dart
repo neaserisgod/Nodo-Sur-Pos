@@ -54,6 +54,7 @@ import '../data/cobro_posnet.dart' show PasarelaPoint;
 import '../servicios/impresion_posnet_nube.dart' show imprimirTicketPosnet;
 import '../servicios/marca_actual.dart' show marcaDeBase;
 import '../servicios/pasarela_point_nube.dart';
+import '../servicios/preferencia_qr.dart';
 import 'cliente_companion.dart';
 import 'servicio_companion.dart';
 import 'sync_nube_companion.dart';
@@ -1275,9 +1276,15 @@ class PuertoLocal implements ServicioCompanion {
     // La demo (horsepos.com/demo/) no tiene cuenta: Mercado Pago se simula y aprueba solo.
     if (modoDemo) return pasarelaPointDemo;
     final sync = await syncNubeDelCelular();
+    final elegido = qrEnPantallaElegidoParaElCobro;
+    qrEnPantallaElegidoParaElCobro = null; // vale para un solo cobro
     return elegirPasarelaPoint(
       almacen: sync.almacen,
       cliente: sync.cliente,
+      // El celular y la web muestran el QR en su pantalla (`domain/cobro_qr.dart`), según lo elegido en este equipo.
+      permiteQrEnPantalla: true,
+      dondeQr: await leerDondeQr(),
+      qrEnPantallaElegido: elegido,
       mensajeSinCuenta: 'Para cobrar con la terminal sin la PC, entrá con tu cuenta y pedile al dueño que conecte Mercado Pago '
           'en horsepos.com/negocio. Mientras tanto, conectate al wifi del local o cobrá a mano.',
     );

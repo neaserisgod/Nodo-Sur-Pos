@@ -14,6 +14,8 @@
 // una línea, entregar un encargue, el caramelo cuando el vuelto es de $100 y
 // "Cobrar a mano (sin terminal)".
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
@@ -21,6 +23,7 @@ import '../data/identidad_sync.dart' show generarGlobalId;
 import '../data/repositorio_servicios.dart' show ServicioListado;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
 import '../domain/cobro_posnet.dart' show canalCredito, canalDebito, canalQr;
+import '../domain/cobro_qr.dart';
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/pesables.dart' show subtotalPesable;
@@ -41,6 +44,9 @@ import 'puerto_local.dart';
 import 'servicio_companion.dart';
 import '../edicion.dart';
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../servicios/preferencia_qr.dart';
+import 'modo_uso.dart';
+import 'terminal_mp.dart';
 
 /// Mixto (El dueño, 2026-10-09): una parte en efectivo y el resto por Mercado Pago, como en la PC. El canal del resto
 /// (QR, débito o crédito) se elige adentro del mixto.
@@ -90,6 +96,45 @@ class PantallaCarritoVenta extends StatefulWidget {
 
 class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   _MedioVenta _medio = _MedioVenta.efectivo;
+
+  /// Si la sucursal tiene terminal Point (null: no se sabe, o el cobro va por la PC) y dónde sale el QR en este equipo
+  /// (`domain/cobro_qr.dart`). Solo cuentan cuando el celular cobra solo: con la PC, cobra la PC con lo suyo.
+  bool? _hayTerminal;
+  DondeQr _dondeQr = DondeQr.automatico;
+
+  bool get _cobraSolo {
+    final app = AppNs.maybeOf(context);
+    return app == null || app.modoUso == ModoUso.soloCelular || !app.pcEmparejada;
+  }
+
+  bool get _ofrecerTarjeta => ofrecerTarjeta(hayTerminal: _cobraSolo ? _hayTerminal : null);
+
+  /// El QR sale en la pantalla de este equipo (null: se pregunta al cobrar).
+  bool? get _qrEnPantalla {
+    if (!_cobraSolo) return false; // con la PC, el QR va a su terminal
+    final hay = _hayTerminal;
+    // Sin saber si hay terminal (sin internet todavía), el texto supone la de siempre salvo que se eligió la pantalla.
+    if (hay == null) return _dondeQr == DondeQr.pantalla;
+    return qrEnPantalla(_dondeQr, hayTerminal: hay);
+  }
+
+  Future<void> _cargarDondeQr() async {
+    // Nunca frena la venta: sin poder leerlo, queda como siempre (automático, sin saber si hay terminal).
+    var donde = DondeQr.automatico;
+    bool? hay;
+    try {
+      donde = await leerDondeQr();
+      hay = _cobraSolo ? await hayTerminalEnLaSucursal() : null;
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _dondeQr = donde;
+      _hayTerminal = hay;
+      // Sin terminal, una tarjeta elegida antes no se puede cobrar.
+      if (!_ofrecerTarjeta && (_medio == _MedioVenta.debito || _medio == _MedioVenta.credito)) _medio = _MedioVenta.efectivo;
+      if (!_ofrecerTarjeta && _canalMixto != canalQr) _canalMixto = canalQr;
+    });
+  }
   ResultadoTotalVenta? _resultado;
   bool _calculando = false;
   bool _cobrando = false;
@@ -680,6 +725,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       _medio = _MedioVenta.efectivo;
     });
     _ocultarBarra(true);
+    unawaited(_cargarDondeQr());
     await _elegirMedio(_MedioVenta.efectivo);
   }
 
@@ -796,6 +842,22 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Future<void> _cobrarPosnet(String canal, {int? efectivoMixto}) async {
     final sesionId = AppNs.of(context).sesion?.id;
     if (sesionId == null) return;
+    // "Preguntar cada vez" con terminal: se elige acá, antes de crear la orden (`preferencia_qr.dart`).
+    qrEnPantallaElegidoParaElCobro = null;
+    if (canal == canalQr && _cobraSolo && _hayTerminal == true && _dondeQr == DondeQr.preguntar) {
+      final enPantalla = await mostrarHojaNs<bool>(
+        context,
+        builder: (ctx) => HojaNs(
+          titulo: '¿Dónde mostrás el QR?',
+          botones: [
+            BotonNs.primario(ctx, 'En la pantalla', () => Navigator.of(ctx).pop(true)),
+            BotonNs.secundario(ctx, 'En la terminal Point', () => Navigator.of(ctx).pop(false)),
+          ],
+        ),
+      );
+      if (enPantalla == null || !mounted) return;
+      qrEnPantallaElegidoParaElCobro = enPantalla;
+    }
     // Sin este try/finally, una excepción antes de que se abra la terminal dejaba `_cobrando` en `true` para siempre.
     setState(() {
       _cobrando = true;
@@ -1310,9 +1372,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 const SizedBox(height: 14),
                 Text('¿Cómo paga?', style: estiloNs(17, peso: FontWeight.w600, track: -0.02, color: ns.ink)),
                 const SizedBox(height: 12),
-                for (final m in _MedioVenta.values) ...[
+                // Débito y crédito necesitan la terminal: sin una elegida no se ofrecen (`domain/cobro_qr.dart`).
+                for (final m in [for (final m in _MedioVenta.values) if (_ofrecerTarjeta || (m != _MedioVenta.debito && m != _MedioVenta.credito)) m]) ...[
                   _FilaMedio(nombre: _nombres[m]!, icono: _iconos[m]!, color: _colores[m]!, activo: _medio == m, onTap: _cobrando ? null : () => _elegirMedio(m)),
-                  if (m != _MedioVenta.values.last) const SizedBox(height: 8),
+                  if (m != _MedioVenta.mixto) const SizedBox(height: 8),
                 ],
                 const SizedBox(height: 12),
                 if (efectivo && total != null) _panelEfectivo(context, total),
@@ -1320,7 +1383,18 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                   if (_medio == _MedioVenta.mixto)
                     if (total != null) _panelMixto(context, total) else const SizedBox.shrink()
                   else
-                    InfoNs(_textoTerminal[_medio]!, tono: TonoNs.info, radio: 24, tamanio: 15, peso: FontWeight.w500, vertical: 16),
+                    InfoNs(
+                      _medio == _MedioVenta.qr && _qrEnPantalla != false
+                          ? (_qrEnPantalla == true
+                              ? 'Al cobrar, el QR aparece acá en la pantalla: el cliente lo escanea con su billetera o su banco.'
+                              : 'Al cobrar elegís si el QR sale en la pantalla o en la terminal.')
+                          : _textoTerminal[_medio]!,
+                      tono: TonoNs.info,
+                      radio: 24,
+                      tamanio: 15,
+                      peso: FontWeight.w500,
+                      vertical: 16,
+                    ),
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -1494,7 +1568,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final (canal, texto) in const [(canalQr, 'QR'), (canalDebito, 'Débito'), (canalCredito, 'Crédito 1 pago')])
+                for (final (canal, texto) in [(canalQr, 'QR'), if (_ofrecerTarjeta) ...[(canalDebito, 'Débito'), (canalCredito, 'Crédito 1 pago')]])
                   _ChipPago(texto: texto, activo: _canalMixto == canal, onTap: () => setState(() => _canalMixto = canal)),
               ],
             ),

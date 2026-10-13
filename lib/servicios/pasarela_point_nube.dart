@@ -5,13 +5,16 @@
 
 import '../data/cobro_posnet.dart';
 import '../domain/cobro_posnet.dart' show canalQr;
-import '../edicion.dart';
+import '../domain/cobro_qr.dart';
 import 'cuenta_nube.dart';
 
 class PasarelaPointNube implements PasarelaPoint {
-  const PasarelaPointNube({required this.cliente, required this.token});
+  const PasarelaPointNube({required this.cliente, required this.token, this.qrEnPantalla = false});
   final ClienteNube cliente;
   final String token;
+
+  /// El QR de este cobro se muestra en la pantalla del equipo, no en la Point (`domain/cobro_qr.dart`).
+  final bool qrEnPantalla;
 
   /// Los errores del servidor se vuelven `CobroPosnetException` (lo único que entienden los diálogos de cobro).
   Future<T> _traducir<T>(Future<T> Function() f) async {
@@ -36,8 +39,8 @@ class PasarelaPointNube implements PasarelaPoint {
     required int montoCentavos,
     required String canal,
   }) => _traducir(() async {
-    // Nodo Sur Servicios no tiene terminal: el QR lo muestra el mismo celular (lo lee cualquier billetera).
-    final enPantalla = esEdicionServicios && canal == canalQr;
+    // El QR en la pantalla del mismo equipo (lo lee cualquier billetera). Débito y crédito van siempre a la terminal.
+    final enPantalla = qrEnPantalla && canal == canalQr;
     final r = await cliente.crearOrdenPoint(token, externalReference: externalReference, idempotencyKey: idempotencyKey, montoCentavos: montoCentavos, canal: enPantalla ? 'qr_pantalla' : canal);
     if (r.qrData != null) recordarQrEnPantalla(r.id, r.qrData!);
     return OrdenCobroCreada(ordenIdMp: r.id, estado: r.estado);
@@ -85,6 +88,11 @@ Future<PasarelaPoint> elegirPasarelaPoint({
   bool soloToken = false,
   // Interruptor de prueba: ignora el access token local y cobra siempre por el servidor.
   bool forzarNube = false,
+  // El equipo sabe dibujar el QR en su pantalla (el celular y la web; la PC todavía no). Con [dondeQr] decide si lo usa.
+  bool permiteQrEnPantalla = false,
+  DondeQr dondeQr = DondeQr.automatico,
+  // Lo que se eligió con "Preguntar cada vez" para este cobro (null: lo decide [dondeQr]).
+  bool? qrEnPantallaElegido,
   String mensajeSinCuenta =
       'Configurá el access token y la terminal de cobro en Configuración → Impresión antes de cobrar por acá, '
       'o vinculá este dispositivo a tu cuenta y conectá Mercado Pago en horsepos.com/negocio.',
@@ -107,9 +115,11 @@ Future<PasarelaPoint> elegirPasarelaPoint({
   if (!estado.conectado) {
     throw const CobroPosnetException('Mercado Pago todavía no está conectado: el dueño lo conecta en horsepos.com/negocio.');
   }
-  // Nodo Sur Servicios cobra con el QR en la pantalla: no necesita terminal (el débito y el crédito sí, y lo avisa el sitio).
-  if (!estado.terminalElegida && !esEdicionServicios) {
+  // Con el QR en la pantalla no hace falta terminal (débito y crédito sí: sin terminal no se ofrecen, y si igual llegan, avisa el
+  // sitio). Una pregunta sin contestar va a la terminal, como antes.
+  final pantalla = permiteQrEnPantalla && (qrEnPantallaElegido ?? qrEnPantalla(dondeQr, hayTerminal: estado.terminalElegida) ?? false);
+  if (!estado.terminalElegida && !pantalla) {
     throw const CobroPosnetException('Esta sucursal no tiene una terminal elegida: el dueño la elige en horsepos.com/negocio.');
   }
-  return PasarelaPointNube(cliente: cliente, token: cuenta.token);
+  return PasarelaPointNube(cliente: cliente, token: cuenta.token, qrEnPantalla: pantalla);
 }
