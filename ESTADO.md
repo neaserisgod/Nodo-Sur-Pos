@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Plan para muchos rubros** (`docs/PLAN-RUBROS.md`, sin código): tercera forma de trabajar, "pedidos", empezando por quien
+  emprende con comidas por encargo (reutiliza recetas e insumos de servicios, Encargues y el bot); antes, ordenar la base para
+  que un rubro nuevo sea solo datos. Preguntas de negocio abiertas al final del plan.
+
 - **Menos contexto por sesión de Claude**: `CLAUDE.md` pasó de ~24 KB a ~4 KB (se carga en cada turno); lo largo (pantalla de
   venta, hardware, fases) se movió tal cual a `docs/CLAUDE-DETALLE.md`. `CONTEXTO.md` pide leer solo la sección que toca, y
   `.claude/settings.json` no deja leer código generado, builds ni `docs/archivo/`.
