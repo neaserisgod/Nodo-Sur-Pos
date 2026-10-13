@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../servicios/cuenta_nube.dart';
+import '../servicios/registro_errores.dart';
 import '../domain/cuentas_del_celular.dart';
 import 'base_local.dart';
 import 'bienvenida/pantalla_listo.dart';
@@ -53,6 +54,7 @@ Future<void> reconciliarPerfilDeCuenta({SyncNubeCompanion? sync, Future<Servicio
     if (cuenta == null) return;
     final perfil = await s.cliente.yo(cuenta.token).timeout(const Duration(seconds: 6));
     await guardarNegocioDeEstaCuenta(perfil);
+    if (!kIsWeb) await anotarCuentaActiva(perfil: perfil);
     await resolverPerfilDeCuenta(perfil: perfil, servicio: await (servicio ?? servicioParaPerfil)());
   } catch (_) {
     // silencioso a propósito
@@ -139,12 +141,25 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   }
 
   /// Se tocó "Agregar otra cuenta" (no hay activa) y hay otra guardada: la salida para volver a ella.
-  CuentaDelCelular? get _paraVolver => _cuentas?.activa == null ? _cuentas?.guardadas.firstOrNull : null;
+  CuentaDelCelular? get _paraVolver => _agregando ? _cuentas!.guardadas.first : null;
 
   /// Descarta lo de este lugar (todavía no hay cuenta, o es una repetida) y trae la guardada [id].
   Future<void> _irACuentaGuardada(String id) async {
     setState(() => _trabajando = true);
     if (widget.irACuentaGuardada != null) return widget.irACuentaGuardada!(id);
+    // Esto DESCARTA lo de este lugar: se vuelve a leer el índice justo antes y solo se sigue si de verdad es un lugar recién
+    // agregado (sin cuenta anotada). Una cuenta que ya entró y trabajó nunca pasa por acá.
+    final indice = await leerIndiceCuentas();
+    if (indice.activa != null || !indice.guardadas.any((g) => g.id == id)) {
+      if (mounted) {
+        setState(() {
+          _cuentas = indice;
+          _trabajando = false;
+          _error = 'No se puede volver a ese negocio desde acá. Entrá con tu cuenta y cambiá desde Cuenta y sincronización.';
+        });
+      }
+      return;
+    }
     await borrarTodoDelCelular(null, id);
     await cerrarLaApp();
   }
@@ -156,7 +171,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   /// dos copias de lo mismo. Se ofrece ir al guardado (con todo lo suyo) o elegir otro. Devuelve si se encargó (no hay que
   /// seguir). El mismo mail en otro negocio no es repetido: es justamente para eso (2026-10-13).
   Future<bool> _yaEstaGuardada(PerfilDeCuenta perfil) async {
-    final id = _cuentas == null ? null : cuentaRepetida(_cuentas!, email: perfil.email, negocio: perfil.negocio, sucursal: perfil.sucursal);
+    // Solo agregando: una cuenta que ya vivía acá (por ejemplo, entrando de nuevo porque venció la sesión) nunca se descarta.
+    if (!_agregando) return false;
+    final id = cuentaRepetida(_cuentas!, email: perfil.email, negocio: perfil.negocio, sucursal: perfil.sucursal);
     if (id == null || !mounted) return false;
     final guardada = _cuentas!.guardadas.firstWhere((c) => c.id == id);
     final ir = await mostrarHojaNs<bool>(
@@ -248,8 +265,16 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     try {
       final perfil = await _sync!.cliente.yo(cuenta.token);
       if (await _yaEstaGuardada(perfil)) return;
-      // Cómo se llama este negocio, para la lista de cuentas del celular (`cuentas_del_celular.dart`).
+      // Cómo se llama este negocio, para la lista de cuentas del celular (`cuentas_del_celular.dart`), y que quede anotado
+      // como el activo (así "Volver a…" ya no aparece para él). Si falla, no frena la entrada.
       await guardarNegocioDeEstaCuenta(perfil);
+      if (!kIsWeb && widget.leerCuentas == null) {
+        try {
+          await anotarCuentaActiva(perfil: perfil);
+        } catch (e, st) {
+          unawaited(registrarError('Anotar el negocio activo', e, st));
+        }
+      }
       // Un equipo nuevo en "Solo celular" (otro celular, o el navegador) baja primero lo que ya está en la nube: el perfil se busca
       // por nombre, y con la base todavía vacía se creaba otra persona con el mismo nombre (revisión 2026-10-12, "Caro" tres veces
       // en la Agenda). Sin red sigue igual que antes.

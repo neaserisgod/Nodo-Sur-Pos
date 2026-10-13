@@ -12,28 +12,41 @@
 // sync, la escucha de la PC, la clave de la IA). Cerrar y volver a abrir arranca todo de cero sin depender de acordarse
 // de cada una.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show SystemNavigator;
-import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/cuentas_del_celular.dart';
 import 'base_local.dart';
 import 'borrar_base_navegador.dart';
 import 'bot_celular.dart';
+import '../servicios/registro_errores.dart';
 import 'cuentas_del_celular.dart';
 import 'escucha_pc.dart';
 import 'sync_nube_companion.dart';
 
 /// Frena todo lo que escribe en la base o en la carpeta de datos, para poder borrarlas o moverlas: si la sync baja algo
 /// mientras tanto, la base vuelve a aparecer a medias.
+///
+/// Cada pieza se frena por separado: que una falle no deja a las otras andando.
 Future<void> frenarLoQueEscribe() async {
-  syncNubeCompanion?.servicio.detener();
-  escuchaPcCompanion?.detener();
-  escuchaPcCompanion = null;
-  await cerrarBaseLocalCompanion();
+  Future<void> frenar(String que, FutureOr<void> Function() f) async {
+    try {
+      await f();
+    } catch (e, st) {
+      await registrarError('Frenar $que para cambiar de cuenta', e, st);
+    }
+  }
+
+  await frenar('la sync', () => syncNubeCompanion?.servicio.detener());
+  await frenar('la escucha de la PC', () {
+    escuchaPcCompanion?.detener();
+    escuchaPcCompanion = null;
+  });
+  await frenar('la base', cerrarBaseLocalCompanion);
   // El bot de WhatsApp es de la cuenta (su sesión de WhatsApp vive en la carpeta de datos): se apaga, y se vuelve a prender
   // desde esa cuenta.
   if (!kIsWeb) {
@@ -45,8 +58,9 @@ Future<void> frenarLoQueEscribe() async {
   }
 }
 
-/// Borra la cuenta activa. Devuelve la cuenta guardada que quedó activa en su lugar ([traer] si está guardada, si no la última
-/// usada), o null si el celular quedó vacío.
+/// Borra la cuenta activa. Si hay otras guardadas, deja anotado traer [traer] (si está guardada; si no, la última usada) al
+/// abrir de nuevo y la devuelve; sin otras, el celular queda como recién instalado y devuelve null. Después hay que cerrar la
+/// app (`cerrarLaApp`).
 Future<CuentaDelCelular?> borrarTodoDelCelular([CarpetasDelCelular? carpetas, String? traer]) async {
   await frenarLoQueEscribe();
 
@@ -58,27 +72,11 @@ Future<CuentaDelCelular?> borrarTodoDelCelular([CarpetasDelCelular? carpetas, St
     return null;
   }
   final c = carpetas ?? await CarpetasDelCelular.delSistema();
-  for (final sufijo in ['', '-wal', '-shm', '-journal']) {
-    await _borrar(File(p.join(c.documentos.path, '$nombreBaseCelular.sqlite$sufijo')));
-  }
-  // La cuenta vinculada, el estado de la sync, el bot y los registros viven acá. Las otras cuentas, no.
-  if (await c.soporte.exists()) {
-    await for (final e in c.soporte.list()) {
-      if (e.path == c.guardadas.path) continue;
-      await _borrar(e);
-    }
-  }
-  // Perfil, modo de uso, PC emparejada, id del equipo y el resto de las preferencias de la cuenta.
-  final prefs = await SharedPreferences.getInstance();
-  final otras = (await leerIndiceCuentas(c)).guardadas.isNotEmpty;
-  if (otras) {
-    for (final k in [...prefs.getKeys()]) {
-      if (esPreferenciaDeLaCuenta(k)) await prefs.remove(k);
-    }
-  } else {
-    await prefs.clear();
-  }
-  return traerOtraTrasBorrar(c, traer);
+  await descartarActiva(c);
+  final otra = await traerOtraTrasBorrar(c, traer);
+  // Sin otras cuentas, como antes: también se van las preferencias del aparato (tema), como recién instalado.
+  if (otra == null) await (await SharedPreferences.getInstance()).clear();
+  return otra;
 }
 
 /// Cierra la app del todo, para que al abrirla arranque de cero con la cuenta que quedó en su lugar. Cerrar la pantalla no
@@ -89,10 +87,3 @@ Future<void> cerrarLaApp() async {
   exit(0);
 }
 
-Future<void> _borrar(FileSystemEntity e) async {
-  try {
-    if (await e.exists()) await e.delete(recursive: true);
-  } on FileSystemException {
-    // Un archivo que no se deja borrar no frena el resto: lo importante (cuenta, preferencias) igual se borra.
-  }
-}

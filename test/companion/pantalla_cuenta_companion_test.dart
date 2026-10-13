@@ -1,7 +1,10 @@
+import 'dart:io' show FileSystemException;
+
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/conmutador_sync.dart';
+import 'package:la_plazoleta/companion/cuentas_del_celular.dart' show CuentaNoEstaEnElCelular;
 import 'package:la_plazoleta/companion/pantalla_cuenta_companion.dart';
 import 'package:la_plazoleta/companion/sync_nube_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -44,6 +47,7 @@ void main() {
     Future<void> Function()? borrarTodo,
     IndiceCuentas? cuentas,
     Future<void> Function(String? destino)? pasarACuenta,
+    Future<void> Function()? cerrarApp,
   }) async {
     await tester.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
@@ -54,6 +58,7 @@ void main() {
         borrarTodo: borrarTodo,
         leerCuentas: cuentas == null ? null : () async => cuentas,
         pasarACuenta: pasarACuenta,
+        cerrarApp: cerrarApp ?? () async {},
       ),
     ));
     await tester.pumpAndSettle();
@@ -187,6 +192,56 @@ void main() {
       await tester.tap(find.text('Pasar a Barbería').last);
       await tester.pumpAndSettle();
       expect(pedidos, ['b']);
+    });
+
+    Future<void> pasarABarberia(WidgetTester tester) async {
+      await tester.scrollUntilVisible(find.byKey(const Key('pasar_a_b')), 200, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pasar a Barbería'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pasar a Barbería').last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('si sale bien, se cierra la app (lo elegido se trae al abrir)', (tester) async {
+      final sync = await armar(vinculada: true);
+      var cerro = 0;
+      await abrir(tester, sync, cuentas: const IndiceCuentas(guardadas: [beto]), pasarACuenta: (_) async {}, cerrarApp: () async => cerro++);
+      await pasarABarberia(tester);
+      expect(cerro, 1);
+    });
+
+    testWidgets('un negocio que ya no está: lo dice, no cierra la app y lo saca de la lista', (tester) async {
+      final sync = await armar(vinculada: true);
+      var cerro = 0;
+      await abrir(
+        tester,
+        sync,
+        cuentas: const IndiceCuentas(guardadas: [beto]),
+        pasarACuenta: (_) async => throw const CuentaNoEstaEnElCelular(),
+        cerrarApp: () async => cerro++,
+      );
+      await pasarABarberia(tester);
+      expect(cerro, 0);
+      expect(find.text('Ese negocio ya no está guardado en este celular.'), findsOneWidget);
+    });
+
+    testWidgets('cualquier otra falla a mitad: avisa que no se perdió nada y cierra para terminar al abrir', (tester) async {
+      final sync = await armar(vinculada: true);
+      var cerro = 0;
+      await abrir(
+        tester,
+        sync,
+        cuentas: const IndiceCuentas(guardadas: [beto]),
+        pasarACuenta: (_) async => throw const FileSystemException('sin lugar'),
+        cerrarApp: () async => cerro++,
+      );
+      await pasarABarberia(tester);
+      expect(find.text('No se pudo terminar el cambio'), findsOneWidget);
+      expect(cerro, 0, reason: 'primero lo explica');
+      await tester.tap(find.text('Cerrar la app'));
+      await tester.pumpAndSettle();
+      expect(cerro, 1);
     });
 
     testWidgets('agregar otro negocio deja el lugar vacío (destino null)', (tester) async {

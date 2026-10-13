@@ -466,7 +466,15 @@ class ClienteNube {
       }),
     ).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
-    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    try {
+      return _resultadoEntrarConGoogle(jsonDecode(r.body) as Map<String, dynamic>, nombre);
+    } catch (_) {
+      // Una respuesta que no se entiende (un proxy, un sitio a medio publicar) es un error claro, no un crash.
+      throw const ErrorNube('respuesta_invalida', 'El sitio contestó algo que la app no entiende. Probá de nuevo en un rato.');
+    }
+  });
+
+  ResultadoEntrarConGoogle _resultadoEntrarConGoogle(Map<String, dynamic> j, String nombre) {
     if (j['elegir'] == true) {
       return HayQueElegirSucursal([
         for (final o in (j['orgs'] as List).cast<Map<String, dynamic>>())
@@ -486,7 +494,7 @@ class ClienteNube {
       nombreDispositivo: nombre,
       vence: (j['expiresAt'] as num?)?.toInt() ?? 0,
     ));
-  });
+  }
 
   /// Quién es la persona que vinculó este dispositivo (nombre de su cuenta, rol y sucursal). El celular lo usa para tomar su
   /// perfil de la cuenta en vez de elegirlo de una lista.

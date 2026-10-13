@@ -346,6 +346,23 @@ void main() {
         await t.pump(const Duration(seconds: 30));
       });
 
+      testWidgets('si NO está agregando (la cuenta ya vivía acá, p. ej. venció la sesión), nunca ofrece descartarla', (t) async {
+        final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => 'x');
+        await abrir(
+          t,
+          sync,
+          cuentas: const IndiceCuentas(activa: CuentaDelCelular(id: 'yo', email: 'marta@x.com'), guardadas: [marta]),
+          irA: (_) async => fail('no tenía que descartar nada'),
+        );
+        expect(find.byKey(const Key('volver_a_cuenta')), findsNothing);
+        await t.tap(find.byKey(const Key('entrar_con_cuenta')));
+        await _asentar(t);
+        expect(find.textContaining('ya está en este celular'), findsNothing);
+        expect(entro, isTrue);
+        sync.servicio.detener();
+        await t.pump(const Duration(seconds: 30));
+      });
+
       testWidgets('si prefiere otro negocio, se cierra la sesión repetida y sigue en la pantalla de entrar', (t) async {
         final sync = await armar(t, vinculada: false, servidor: sitio, google: (_) async => 'x');
         await abrir(t, sync, cuentas: const IndiceCuentas(guardadas: [marta]), irA: (_) async => fail('no tenía que irse'));

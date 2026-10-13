@@ -4,11 +4,14 @@
 // Es lo único que hay que tocar para trabajar sin la PC: vincular la cuenta una vez. Después el celular pasa solo
 // a internet si la PC no contesta (`conmutador_sync.dart`) y vuelve a la PC cuando contesta.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../servicios/cuenta_nube.dart';
+import '../servicios/registro_errores.dart';
 import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
 import '../domain/cuentas_del_celular.dart';
@@ -22,7 +25,7 @@ import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
-  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta});
+  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta, this.cerrarApp});
 
   /// La sync del celular (en la app real, `syncNubeDelCelular()`).
   final SyncNubeCompanion sync;
@@ -37,8 +40,9 @@ class PantallaCuentaCompanion extends StatefulWidget {
   /// Las cuentas de este celular (`cuentas_del_celular.dart`). Para tests.
   final Future<IndiceCuentas> Function()? leerCuentas;
 
-  /// Pasa a otra cuenta guardada (o deja el lugar para una nueva, con null) y cierra la app. Para tests.
+  /// Pasa a otra cuenta guardada (o deja el lugar para una nueva, con null), y cierra la app. Para tests.
   final Future<void> Function(String? destino)? pasarACuenta;
+  final Future<void> Function()? cerrarApp;
 
   @override
   State<PantallaCuentaCompanion> createState() => _PantallaCuentaCompanionState();
@@ -116,12 +120,41 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     );
     if (seguir != true || !mounted) return;
     setState(() => _ocupado = true);
-    if (widget.pasarACuenta != null) {
-      await widget.pasarACuenta!(destino);
+    try {
+      await (widget.pasarACuenta ?? pasarACuenta)(destino);
+    } on CuentaNoEstaEnElCelular catch (e) {
+      // Se comprobó antes de frenar nada: la app sigue como estaba, sin ese negocio en la lista. En una hoja: quien tocó el
+      // botón está abajo de todo y un mensaje arriba no lo vería.
+      if (!mounted) return;
+      setState(() => _ocupado = false);
+      final cuentas = await _leerCuentasDelCelular();
+      if (mounted) setState(() => _cuentas = cuentas);
+      if (!mounted) return;
+      await mostrarHojaNs<void>(
+        context,
+        builder: (ctx) => HojaNs(
+          titulo: e.toString(),
+          texto: 'Se sacó de la lista. Para volver a tenerlo, agregalo de nuevo entrando con tu cuenta.',
+          botones: [BotonNs.primario(ctx, 'Entendido', () => Navigator.of(ctx).pop())],
+        ),
+      );
       return;
+    } catch (e, st) {
+      // Ya se había frenado la sync y cerrado la base: seguir así no sirve. Lo que quedó a medias lo termina el próximo
+      // arranque (o lo muestra, si tampoco puede).
+      unawaited(registrarError('Cambiar de negocio', e, st));
+      if (!mounted) return;
+      await mostrarHojaNs<void>(
+        context,
+        descartable: false,
+        builder: (ctx) => HojaNs(
+          titulo: 'No se pudo terminar el cambio',
+          texto: 'No se perdió nada. La app se cierra: al abrirla de nuevo, termina el cambio.',
+          botones: [BotonNs.primario(ctx, 'Cerrar la app', () => Navigator.of(ctx).pop())],
+        ),
+      );
     }
-    await pasarACuenta(destino);
-    await cerrarLaApp();
+    await (widget.cerrarApp ?? cerrarLaApp)();
   }
 
   /// En el celular, con la cuenta de Google del teléfono (sin navegador); en la web, por el sitio. Mismo criterio que

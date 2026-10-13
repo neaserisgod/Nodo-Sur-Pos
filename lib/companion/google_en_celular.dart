@@ -24,22 +24,34 @@ Future<void>? _inicializado;
 
 Future<String?> pedirCuentaGoogleDelTelefono(String serverClientId) async {
   final google = GoogleSignIn.instance;
-  _inicializado ??= google.initialize(serverClientId: serverClientId);
   try {
-    await _inicializado;
+    await (_inicializado ??= google.initialize(serverClientId: serverClientId));
+  } catch (e) {
+    // Que una falla al inicializar no quede guardada: el próximo toque vuelve a intentar.
+    _inicializado = null;
+    throw GoogleNoDisponible(e is GoogleSignInException ? (e.description ?? e.code.name) : '$e');
+  }
+  try {
     if (!google.supportsAuthenticate()) throw const GoogleNoDisponible('el teléfono no lo permite');
     // Siempre la lista de cuentas: en un teléfono con varias se elige cada vez, nunca se entra solo con la última usada.
-    await google.signOut();
+    // Si cerrar la sesión anterior falla, igual se pide la cuenta.
+    try {
+      await google.signOut();
+    } catch (_) {}
     final cuenta = await google.authenticate();
     final idToken = cuenta.authentication.idToken;
-    if (idToken == null) throw const GoogleNoDisponible('Google no devolvió la cuenta');
+    if (idToken == null || idToken.isEmpty) throw const GoogleNoDisponible('Google no devolvió la cuenta');
     return idToken;
   } on GoogleSignInException catch (e) {
     if (e.code == GoogleSignInExceptionCode.canceled) return null;
-    // Un error de inicialización queda guardado: se vuelve a intentar la próxima vez.
     if (e.code == GoogleSignInExceptionCode.clientConfigurationError || e.code == GoogleSignInExceptionCode.providerConfigurationError) {
       _inicializado = null;
     }
     throw GoogleNoDisponible(e.description ?? e.code.name);
+  } on GoogleNoDisponible {
+    rethrow;
+  } catch (e) {
+    // Cualquier otra cosa del lado de Android (un PlatformException, por ejemplo): se ofrece el navegador, nunca queda trabado.
+    throw GoogleNoDisponible('$e');
   }
 }

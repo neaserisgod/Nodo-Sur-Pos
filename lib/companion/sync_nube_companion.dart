@@ -83,7 +83,9 @@ class SyncNubeCompanion {
     final idToken = await pedirCuentaGoogle(clientId);
     if (idToken == null) return null;
     final idDispositivo = await idDispositivoEstable();
-    var r = await cliente.entrarConGoogle(idToken: idToken, idDispositivo: idDispositivo, nombre: nombre, elegirSiempre: elegirSiempre);
+    var r = await _sinRutaEsNoDisponible(
+      () => cliente.entrarConGoogle(idToken: idToken, idDispositivo: idDispositivo, nombre: nombre, elegirSiempre: elegirSiempre),
+    );
     if (r is HayQueElegirSucursal) {
       final eleccion = await elegir(r.opciones);
       if (eleccion == null) return null;
@@ -102,6 +104,17 @@ class SyncNubeCompanion {
     await almacenEstado.borrar();
     conmutador.reevaluar();
     return r.cuenta;
+  }
+
+  /// Un sitio que todavía no tiene la entrada con Google (404/405): para la pantalla es lo mismo que un teléfono sin Google,
+  /// se ofrece el navegador.
+  Future<T> _sinRutaEsNoDisponible<T>(Future<T> Function() f) async {
+    try {
+      return await f();
+    } on ErrorNube catch (e) {
+      if (e.estado == 404 || e.estado == 405) throw GoogleNoDisponible('el sitio todavía no lo ofrece (${e.estado})');
+      rethrow;
+    }
   }
 
   Future<void> desvincular() async {

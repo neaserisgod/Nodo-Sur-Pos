@@ -1796,6 +1796,14 @@ El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra
 - **Cerrar sesión y borrar** borra solo la activa y trae la última usada; sin otras, queda como recién instalado.
 - **Sitio**: un Gmail puede crear más negocios (`POST /api/org/crear`, "Crear otro negocio" en Mi negocio, o `nuevoNegocio` desde el celular; tope 20). Mercado Pago no dice a qué negocio va cada suscripción: **un mail con N planes vigentes cubre a sus N negocios más viejos** (`plan_por_negocio.js`); el bot, a los primeros cubiertos por un plan con bot. Lo usan sync, copias, bot y facturación (`sin_plan_propio`). "Usar mi suscripción" exige un plan libre.
 - **Almacén y servicios son dos apps** (`com.laplazoleta.companion` y `.servicios`): cada una tiene su propia lista de negocios.
+- **Blindaje** (El dueño: "blindalo lo más que puedas"):
+  - **Dos tiempos**: con la app abierta solo se guarda la activa y se cierra; lo elegido se trae al abrir, en `main`, antes de leer nada (ni la clave de la IA). Al abrir se vuelve a barrer el lugar hacia la cuenta vieja: lo que algo escribió tarde (una vuelta de la sync, una preferencia) queda en la suya, nunca en la nueva.
+  - **Nunca se pisa ni se borra** al mover: lo que choca se aparta (`conflictos/` de cada cuenta, `_huerfanos/` al traer).
+  - **El índice** se escribe aparte y se renombra, con respaldo del anterior; si no se puede leer, se rearma con el `cuenta.json` de cada carpeta.
+  - **Si al abrir no se puede terminar**, la app no sigue: `PantallaCambioTrabado` con "Reintentar".
+  - **"Volver a…" y "ya está en este celular" descartan el lugar actual**: solo aparecen agregando (sin cuenta anotada), y se vuelve a leer el índice justo antes de descartar. Al entrar, la cuenta queda anotada como activa (`anotarCuentaActiva`).
+  - Un negocio cuya carpeta ya no está se detecta antes de frenar nada y se saca de la lista. Google con cualquier error, o un sitio sin la ruta, cae al navegador.
+  - Sitio: el mail de cobro se compara sin mayúsculas; un negocio que no figura entre los de su mail cuenta como el último (nunca gratis); nombres sin caracteres de control; id_token sin forma de JWT se rechaza sin ir a Google.
 
 ## Versión propia del APK (2026-10-02)
 

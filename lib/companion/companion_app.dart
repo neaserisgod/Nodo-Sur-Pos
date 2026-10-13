@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 
 import '../data/identidad_sync.dart';
 import '../edicion.dart';
+import 'borrar_celular.dart' show cerrarLaApp;
 import 'cuentas_del_celular.dart';
 import 'emparejamiento.dart';
 import 'app_ns.dart';
@@ -35,7 +36,11 @@ import '../servicios/ia_nube.dart';
 import '../servicios/almacenes_del_equipo.dart';
 
 class CompanionApp extends StatelessWidget {
-  const CompanionApp({super.key});
+  const CompanionApp({super.key, this.cambioTrabado});
+
+  /// El error, si al arrancar no se pudo terminar un cambio de negocio (`cuentas_del_celular.dart`): en vez de seguir con
+  /// media cuenta puesta, se muestra y se deja reintentar.
+  final Object? cambioTrabado;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +79,7 @@ class CompanionApp extends StatelessWidget {
             },
           ),
         ))),
-        home: const _PantallaInicial(),
+        home: cambioTrabado == null ? const _PantallaInicial() : PantallaCambioTrabado(error: cambioTrabado!),
       ),
     );
   }
@@ -129,13 +134,13 @@ class _PantallaInicialState extends State<_PantallaInicial> {
     // (fase 3) tiene que estar listo desde el primer frame.
     // Un cambio de cuenta cortado (se apagó el celular a la mitad) se termina antes de leer nada de la cuenta: si no, la app
     // arrancaría con media cuenta en su lugar (`cuentas_del_celular.dart`).
+    // El cambio de negocio pendiente ya lo terminó `main` (`terminarCambioAlArrancar`), antes de todo.
     var hayOtrasCuentas = false;
     if (!kIsWeb) {
       try {
-        await terminarCambioPendiente();
         hayOtrasCuentas = (await leerIndiceCuentas()).guardadas.isNotEmpty;
       } catch (e, st) {
-        unawaited(registrarError('Terminar el cambio de cuenta', e, st));
+        unawaited(registrarError('Leer los negocios del celular', e, st));
       }
     }
     establecerIdDispositivo(await idDispositivoEstable());
@@ -181,4 +186,69 @@ class _PantallaInicialState extends State<_PantallaInicial> {
   // Leer lo guardado tarda un instante: se ve el logo, que es con lo que arranca la bienvenida.
   @override
   Widget build(BuildContext context) => const Scaffold(body: Center(child: MarcaNodoSur(tamanio: 64)));
+}
+
+/// Al abrir, un cambio de negocio no se pudo terminar (`cuentas_del_celular.dart`). La app no sigue con media cuenta puesta
+/// (podría mezclar o pisar datos): dice qué pasó y deja reintentar. Nada se perdió: lo de cada negocio está en su carpeta o
+/// en su lugar, y el próximo intento sigue desde donde quedó.
+class PantallaCambioTrabado extends StatefulWidget {
+  const PantallaCambioTrabado({super.key, required this.error, this.reintentar, this.alTerminar});
+
+  final Object error;
+
+  /// Para tests: qué hace "Reintentar" y a dónde va si sale bien.
+  final Future<void> Function()? reintentar;
+  final void Function(BuildContext context)? alTerminar;
+
+  @override
+  State<PantallaCambioTrabado> createState() => _PantallaCambioTrabadoState();
+}
+
+class _PantallaCambioTrabadoState extends State<PantallaCambioTrabado> {
+  late Object _error = widget.error;
+  bool _probando = false;
+
+  Future<void> _reintentar() async {
+    setState(() => _probando = true);
+    try {
+      await (widget.reintentar ?? terminarCambioPendiente)();
+      if (!mounted) return;
+      if (widget.alTerminar != null) return widget.alTerminar!(context);
+      // Listo: se cierra para arrancar de cero con el negocio ya en su lugar (en memoria quedó lo leído antes del cambio).
+      await cerrarLaApp();
+    } catch (e, st) {
+      unawaited(registrarError('Reintentar el cambio de cuenta', e, st));
+      if (mounted) {
+        setState(() {
+          _error = e;
+          _probando = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PaginaNs(
+    titulo: 'No se pudo terminar de cambiar de negocio',
+    sinVolver: true,
+    cuerpo: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const InfoNs(
+          'Ningún dato se perdió: cada negocio sigue guardado en este celular. Para no mezclar nada, la app no sigue hasta '
+          'terminar el cambio. Probá de nuevo; si sigue fallando, reiniciá el celular y abrí la app.',
+          tono: TonoNs.bad,
+        ),
+        const SizedBox(height: 12),
+        KeyedSubtree(key: const Key('error_cambio'), child: InfoNs('Detalle: $_error')),
+      ],
+    ),
+    botones: [
+      KeyedSubtree(
+        key: const Key('reintentar_cambio'),
+        child: BotonNs.primario(context, _probando ? 'Probando…' : 'Reintentar', _probando ? null : _reintentar, habilitado: !_probando),
+      ),
+      BotonNs.secundario(context, 'Cerrar la app', _probando ? null : cerrarLaApp),
+    ],
+  );
 }

@@ -47,7 +47,8 @@ void main() {
     expect(wal.existsSync(), isFalse);
     expect(otro.existsSync(), isTrue, reason: 'solo la base, no cualquier archivo de documentos');
     expect(cuenta.existsSync(), isFalse);
-    expect(soporte.listSync(), isEmpty);
+    // Solo quedan los registros de errores: son del aparato, no de la cuenta (sirven para soporte).
+    expect(soporte.listSync().map((e) => e.path.split('/').last), ['logs']);
     expect((await SharedPreferences.getInstance()).getKeys(), isEmpty);
   });
 }
