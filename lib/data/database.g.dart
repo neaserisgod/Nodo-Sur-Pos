@@ -28181,6 +28181,548 @@ class TurnosCompanion extends UpdateCompanion<Turno> {
   }
 }
 
+class $BasesDeStockTable extends BasesDeStock
+    with TableInfo<$BasesDeStockTable, BaseDeStock> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BasesDeStockTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _productoIdMeta = const VerificationMeta(
+    'productoId',
+  );
+  @override
+  late final GeneratedColumn<int> productoId = GeneratedColumn<int>(
+    'producto_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES productos (id)',
+    ),
+  );
+  static const VerificationMeta _stockBaseMeta = const VerificationMeta(
+    'stockBase',
+  );
+  @override
+  late final GeneratedColumn<int> stockBase = GeneratedColumn<int>(
+    'stock_base',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _gramosBaseMeta = const VerificationMeta(
+    'gramosBase',
+  );
+  @override
+  late final GeneratedColumn<int> gramosBase = GeneratedColumn<int>(
+    'gramos_base',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _milesimasBaseMeta = const VerificationMeta(
+    'milesimasBase',
+  );
+  @override
+  late final GeneratedColumn<int> milesimasBase = GeneratedColumn<int>(
+    'milesimas_base',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _origenDispositivoMeta = const VerificationMeta(
+    'origenDispositivo',
+  );
+  @override
+  late final GeneratedColumn<String> origenDispositivo =
+      GeneratedColumn<String>(
+        'origen_dispositivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _actualizadoEnMeta = const VerificationMeta(
+    'actualizadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualizadoEn =
+      GeneratedColumn<DateTime>(
+        'actualizado_en',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    productoId,
+    stockBase,
+    gramosBase,
+    milesimasBase,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bases_de_stock';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BaseDeStock> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('producto_id')) {
+      context.handle(
+        _productoIdMeta,
+        productoId.isAcceptableOrUnknown(data['producto_id']!, _productoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productoIdMeta);
+    }
+    if (data.containsKey('stock_base')) {
+      context.handle(
+        _stockBaseMeta,
+        stockBase.isAcceptableOrUnknown(data['stock_base']!, _stockBaseMeta),
+      );
+    }
+    if (data.containsKey('gramos_base')) {
+      context.handle(
+        _gramosBaseMeta,
+        gramosBase.isAcceptableOrUnknown(data['gramos_base']!, _gramosBaseMeta),
+      );
+    }
+    if (data.containsKey('milesimas_base')) {
+      context.handle(
+        _milesimasBaseMeta,
+        milesimasBase.isAcceptableOrUnknown(
+          data['milesimas_base']!,
+          _milesimasBaseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('origen_dispositivo')) {
+      context.handle(
+        _origenDispositivoMeta,
+        origenDispositivo.isAcceptableOrUnknown(
+          data['origen_dispositivo']!,
+          _origenDispositivoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actualizado_en')) {
+      context.handle(
+        _actualizadoEnMeta,
+        actualizadoEn.isAcceptableOrUnknown(
+          data['actualizado_en']!,
+          _actualizadoEnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BaseDeStock map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BaseDeStock(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      productoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}producto_id'],
+      )!,
+      stockBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stock_base'],
+      ),
+      gramosBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}gramos_base'],
+      ),
+      milesimasBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}milesimas_base'],
+      ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      origenDispositivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origen_dispositivo'],
+      ),
+      actualizadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actualizado_en'],
+      ),
+    );
+  }
+
+  @override
+  $BasesDeStockTable createAlias(String alias) {
+    return $BasesDeStockTable(attachedDatabase, alias);
+  }
+}
+
+class BaseDeStock extends DataClass implements Insertable<BaseDeStock> {
+  final int id;
+  final int productoId;
+  final int? stockBase;
+  final int? gramosBase;
+  final int? milesimasBase;
+
+  /// El mismo `global_id` que el producto: una base por producto, aunque dos equipos la escriban.
+  final String? globalId;
+  final String? origenDispositivo;
+  final DateTime? actualizadoEn;
+  const BaseDeStock({
+    required this.id,
+    required this.productoId,
+    this.stockBase,
+    this.gramosBase,
+    this.milesimasBase,
+    this.globalId,
+    this.origenDispositivo,
+    this.actualizadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['producto_id'] = Variable<int>(productoId);
+    if (!nullToAbsent || stockBase != null) {
+      map['stock_base'] = Variable<int>(stockBase);
+    }
+    if (!nullToAbsent || gramosBase != null) {
+      map['gramos_base'] = Variable<int>(gramosBase);
+    }
+    if (!nullToAbsent || milesimasBase != null) {
+      map['milesimas_base'] = Variable<int>(milesimasBase);
+    }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || origenDispositivo != null) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo);
+    }
+    if (!nullToAbsent || actualizadoEn != null) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn);
+    }
+    return map;
+  }
+
+  BasesDeStockCompanion toCompanion(bool nullToAbsent) {
+    return BasesDeStockCompanion(
+      id: Value(id),
+      productoId: Value(productoId),
+      stockBase: stockBase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stockBase),
+      gramosBase: gramosBase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gramosBase),
+      milesimasBase: milesimasBase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(milesimasBase),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      origenDispositivo: origenDispositivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origenDispositivo),
+      actualizadoEn: actualizadoEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualizadoEn),
+    );
+  }
+
+  factory BaseDeStock.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BaseDeStock(
+      id: serializer.fromJson<int>(json['id']),
+      productoId: serializer.fromJson<int>(json['productoId']),
+      stockBase: serializer.fromJson<int?>(json['stockBase']),
+      gramosBase: serializer.fromJson<int?>(json['gramosBase']),
+      milesimasBase: serializer.fromJson<int?>(json['milesimasBase']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      origenDispositivo: serializer.fromJson<String?>(
+        json['origenDispositivo'],
+      ),
+      actualizadoEn: serializer.fromJson<DateTime?>(json['actualizadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'productoId': serializer.toJson<int>(productoId),
+      'stockBase': serializer.toJson<int?>(stockBase),
+      'gramosBase': serializer.toJson<int?>(gramosBase),
+      'milesimasBase': serializer.toJson<int?>(milesimasBase),
+      'globalId': serializer.toJson<String?>(globalId),
+      'origenDispositivo': serializer.toJson<String?>(origenDispositivo),
+      'actualizadoEn': serializer.toJson<DateTime?>(actualizadoEn),
+    };
+  }
+
+  BaseDeStock copyWith({
+    int? id,
+    int? productoId,
+    Value<int?> stockBase = const Value.absent(),
+    Value<int?> gramosBase = const Value.absent(),
+    Value<int?> milesimasBase = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<String?> origenDispositivo = const Value.absent(),
+    Value<DateTime?> actualizadoEn = const Value.absent(),
+  }) => BaseDeStock(
+    id: id ?? this.id,
+    productoId: productoId ?? this.productoId,
+    stockBase: stockBase.present ? stockBase.value : this.stockBase,
+    gramosBase: gramosBase.present ? gramosBase.value : this.gramosBase,
+    milesimasBase: milesimasBase.present
+        ? milesimasBase.value
+        : this.milesimasBase,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    origenDispositivo: origenDispositivo.present
+        ? origenDispositivo.value
+        : this.origenDispositivo,
+    actualizadoEn: actualizadoEn.present
+        ? actualizadoEn.value
+        : this.actualizadoEn,
+  );
+  BaseDeStock copyWithCompanion(BasesDeStockCompanion data) {
+    return BaseDeStock(
+      id: data.id.present ? data.id.value : this.id,
+      productoId: data.productoId.present
+          ? data.productoId.value
+          : this.productoId,
+      stockBase: data.stockBase.present ? data.stockBase.value : this.stockBase,
+      gramosBase: data.gramosBase.present
+          ? data.gramosBase.value
+          : this.gramosBase,
+      milesimasBase: data.milesimasBase.present
+          ? data.milesimasBase.value
+          : this.milesimasBase,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      origenDispositivo: data.origenDispositivo.present
+          ? data.origenDispositivo.value
+          : this.origenDispositivo,
+      actualizadoEn: data.actualizadoEn.present
+          ? data.actualizadoEn.value
+          : this.actualizadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BaseDeStock(')
+          ..write('id: $id, ')
+          ..write('productoId: $productoId, ')
+          ..write('stockBase: $stockBase, ')
+          ..write('gramosBase: $gramosBase, ')
+          ..write('milesimasBase: $milesimasBase, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    productoId,
+    stockBase,
+    gramosBase,
+    milesimasBase,
+    globalId,
+    origenDispositivo,
+    actualizadoEn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BaseDeStock &&
+          other.id == this.id &&
+          other.productoId == this.productoId &&
+          other.stockBase == this.stockBase &&
+          other.gramosBase == this.gramosBase &&
+          other.milesimasBase == this.milesimasBase &&
+          other.globalId == this.globalId &&
+          other.origenDispositivo == this.origenDispositivo &&
+          other.actualizadoEn == this.actualizadoEn);
+}
+
+class BasesDeStockCompanion extends UpdateCompanion<BaseDeStock> {
+  final Value<int> id;
+  final Value<int> productoId;
+  final Value<int?> stockBase;
+  final Value<int?> gramosBase;
+  final Value<int?> milesimasBase;
+  final Value<String?> globalId;
+  final Value<String?> origenDispositivo;
+  final Value<DateTime?> actualizadoEn;
+  const BasesDeStockCompanion({
+    this.id = const Value.absent(),
+    this.productoId = const Value.absent(),
+    this.stockBase = const Value.absent(),
+    this.gramosBase = const Value.absent(),
+    this.milesimasBase = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  });
+  BasesDeStockCompanion.insert({
+    this.id = const Value.absent(),
+    required int productoId,
+    this.stockBase = const Value.absent(),
+    this.gramosBase = const Value.absent(),
+    this.milesimasBase = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.origenDispositivo = const Value.absent(),
+    this.actualizadoEn = const Value.absent(),
+  }) : productoId = Value(productoId);
+  static Insertable<BaseDeStock> custom({
+    Expression<int>? id,
+    Expression<int>? productoId,
+    Expression<int>? stockBase,
+    Expression<int>? gramosBase,
+    Expression<int>? milesimasBase,
+    Expression<String>? globalId,
+    Expression<String>? origenDispositivo,
+    Expression<DateTime>? actualizadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (productoId != null) 'producto_id': productoId,
+      if (stockBase != null) 'stock_base': stockBase,
+      if (gramosBase != null) 'gramos_base': gramosBase,
+      if (milesimasBase != null) 'milesimas_base': milesimasBase,
+      if (globalId != null) 'global_id': globalId,
+      if (origenDispositivo != null) 'origen_dispositivo': origenDispositivo,
+      if (actualizadoEn != null) 'actualizado_en': actualizadoEn,
+    });
+  }
+
+  BasesDeStockCompanion copyWith({
+    Value<int>? id,
+    Value<int>? productoId,
+    Value<int?>? stockBase,
+    Value<int?>? gramosBase,
+    Value<int?>? milesimasBase,
+    Value<String?>? globalId,
+    Value<String?>? origenDispositivo,
+    Value<DateTime?>? actualizadoEn,
+  }) {
+    return BasesDeStockCompanion(
+      id: id ?? this.id,
+      productoId: productoId ?? this.productoId,
+      stockBase: stockBase ?? this.stockBase,
+      gramosBase: gramosBase ?? this.gramosBase,
+      milesimasBase: milesimasBase ?? this.milesimasBase,
+      globalId: globalId ?? this.globalId,
+      origenDispositivo: origenDispositivo ?? this.origenDispositivo,
+      actualizadoEn: actualizadoEn ?? this.actualizadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (productoId.present) {
+      map['producto_id'] = Variable<int>(productoId.value);
+    }
+    if (stockBase.present) {
+      map['stock_base'] = Variable<int>(stockBase.value);
+    }
+    if (gramosBase.present) {
+      map['gramos_base'] = Variable<int>(gramosBase.value);
+    }
+    if (milesimasBase.present) {
+      map['milesimas_base'] = Variable<int>(milesimasBase.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (origenDispositivo.present) {
+      map['origen_dispositivo'] = Variable<String>(origenDispositivo.value);
+    }
+    if (actualizadoEn.present) {
+      map['actualizado_en'] = Variable<DateTime>(actualizadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BasesDeStockCompanion(')
+          ..write('id: $id, ')
+          ..write('productoId: $productoId, ')
+          ..write('stockBase: $stockBase, ')
+          ..write('gramosBase: $gramosBase, ')
+          ..write('milesimasBase: $milesimasBase, ')
+          ..write('globalId: $globalId, ')
+          ..write('origenDispositivo: $origenDispositivo, ')
+          ..write('actualizadoEn: $actualizadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -28238,6 +28780,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProductosFacturaCompraTable productosFacturaCompra =
       $ProductosFacturaCompraTable(this);
   late final $TurnosTable turnos = $TurnosTable(this);
+  late final $BasesDeStockTable basesDeStock = $BasesDeStockTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -28277,6 +28820,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     facturasCompra,
     productosFacturaCompra,
     turnos,
+    basesDeStock,
   ];
 }
 
@@ -32945,6 +33489,24 @@ final class $$ProductosTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BasesDeStockTable, List<BaseDeStock>>
+  _basesDeStockRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.basesDeStock,
+    aliasName: 'productos__id__bases_de_stock__producto_id',
+  );
+
+  $$BasesDeStockTableProcessedTableManager get basesDeStockRefs {
+    final manager = $$BasesDeStockTableTableManager(
+      $_db,
+      $_db.basesDeStock,
+    ).filter((f) => f.productoId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_basesDeStockRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ProductosTableFilterComposer
@@ -33427,6 +33989,31 @@ class $$ProductosTableFilterComposer
           }) => $$TurnosTableFilterComposer(
             $db: $db,
             $table: $db.turnos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> basesDeStockRefs(
+    Expression<bool> Function($$BasesDeStockTableFilterComposer f) f,
+  ) {
+    final $$BasesDeStockTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.basesDeStock,
+      getReferencedColumn: (t) => t.productoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BasesDeStockTableFilterComposer(
+            $db: $db,
+            $table: $db.basesDeStock,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -34142,6 +34729,31 @@ class $$ProductosTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> basesDeStockRefs<T extends Object>(
+    Expression<T> Function($$BasesDeStockTableAnnotationComposer a) f,
+  ) {
+    final $$BasesDeStockTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.basesDeStock,
+      getReferencedColumn: (t) => t.productoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BasesDeStockTableAnnotationComposer(
+            $db: $db,
+            $table: $db.basesDeStock,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProductosTableTableManager
@@ -34170,6 +34782,7 @@ class $$ProductosTableTableManager
             bool vinculosFacturaRefs,
             bool productosFacturaCompraRefs,
             bool turnosRefs,
+            bool basesDeStockRefs,
           })
         > {
   $$ProductosTableTableManager(_$AppDatabase db, $ProductosTable table)
@@ -34369,6 +34982,7 @@ class $$ProductosTableTableManager
                 vinculosFacturaRefs = false,
                 productosFacturaCompraRefs = false,
                 turnosRefs = false,
+                basesDeStockRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -34384,6 +34998,7 @@ class $$ProductosTableTableManager
                     if (vinculosFacturaRefs) db.vinculosFactura,
                     if (productosFacturaCompraRefs) db.productosFacturaCompra,
                     if (turnosRefs) db.turnos,
+                    if (basesDeStockRefs) db.basesDeStock,
                   ],
                   addJoins:
                       <
@@ -34642,6 +35257,27 @@ class $$ProductosTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (basesDeStockRefs)
+                        await $_getPrefetchedData<
+                          Producto,
+                          $ProductosTable,
+                          BaseDeStock
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProductosTableReferences
+                              ._basesDeStockRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProductosTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).basesDeStockRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -34675,6 +35311,7 @@ typedef $$ProductosTableProcessedTableManager =
         bool vinculosFacturaRefs,
         bool productosFacturaCompraRefs,
         bool turnosRefs,
+        bool basesDeStockRefs,
       })
     >;
 typedef $$GastosFijosTableCreateCompanionBuilder =
@@ -52183,6 +52820,382 @@ typedef $$TurnosTableProcessedTableManager =
         bool usuarioId,
       })
     >;
+typedef $$BasesDeStockTableCreateCompanionBuilder =
+    BasesDeStockCompanion Function({
+      Value<int> id,
+      required int productoId,
+      Value<int?> stockBase,
+      Value<int?> gramosBase,
+      Value<int?> milesimasBase,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+typedef $$BasesDeStockTableUpdateCompanionBuilder =
+    BasesDeStockCompanion Function({
+      Value<int> id,
+      Value<int> productoId,
+      Value<int?> stockBase,
+      Value<int?> gramosBase,
+      Value<int?> milesimasBase,
+      Value<String?> globalId,
+      Value<String?> origenDispositivo,
+      Value<DateTime?> actualizadoEn,
+    });
+
+final class $$BasesDeStockTableReferences
+    extends BaseReferences<_$AppDatabase, $BasesDeStockTable, BaseDeStock> {
+  $$BasesDeStockTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProductosTable _productoIdTable(_$AppDatabase db) =>
+      db.productos.createAlias('bases_de_stock__producto_id__productos__id');
+
+  $$ProductosTableProcessedTableManager get productoId {
+    final $_column = $_itemColumn<int>('producto_id')!;
+
+    final manager = $$ProductosTableTableManager(
+      $_db,
+      $_db.productos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BasesDeStockTableFilterComposer
+    extends Composer<_$AppDatabase, $BasesDeStockTable> {
+  $$BasesDeStockTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stockBase => $composableBuilder(
+    column: $table.stockBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gramosBase => $composableBuilder(
+    column: $table.gramosBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get milesimasBase => $composableBuilder(
+    column: $table.milesimasBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProductosTableFilterComposer get productoId {
+    final $$ProductosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableFilterComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BasesDeStockTableOrderingComposer
+    extends Composer<_$AppDatabase, $BasesDeStockTable> {
+  $$BasesDeStockTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stockBase => $composableBuilder(
+    column: $table.stockBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get gramosBase => $composableBuilder(
+    column: $table.gramosBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get milesimasBase => $composableBuilder(
+    column: $table.milesimasBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProductosTableOrderingComposer get productoId {
+    final $$ProductosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableOrderingComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BasesDeStockTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BasesDeStockTable> {
+  $$BasesDeStockTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get stockBase =>
+      $composableBuilder(column: $table.stockBase, builder: (column) => column);
+
+  GeneratedColumn<int> get gramosBase => $composableBuilder(
+    column: $table.gramosBase,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get milesimasBase => $composableBuilder(
+    column: $table.milesimasBase,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<String> get origenDispositivo => $composableBuilder(
+    column: $table.origenDispositivo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualizadoEn => $composableBuilder(
+    column: $table.actualizadoEn,
+    builder: (column) => column,
+  );
+
+  $$ProductosTableAnnotationComposer get productoId {
+    final $$ProductosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productoId,
+      referencedTable: $db.productos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BasesDeStockTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BasesDeStockTable,
+          BaseDeStock,
+          $$BasesDeStockTableFilterComposer,
+          $$BasesDeStockTableOrderingComposer,
+          $$BasesDeStockTableAnnotationComposer,
+          $$BasesDeStockTableCreateCompanionBuilder,
+          $$BasesDeStockTableUpdateCompanionBuilder,
+          (BaseDeStock, $$BasesDeStockTableReferences),
+          BaseDeStock,
+          PrefetchHooks Function({bool productoId})
+        > {
+  $$BasesDeStockTableTableManager(_$AppDatabase db, $BasesDeStockTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BasesDeStockTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BasesDeStockTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BasesDeStockTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> productoId = const Value.absent(),
+                Value<int?> stockBase = const Value.absent(),
+                Value<int?> gramosBase = const Value.absent(),
+                Value<int?> milesimasBase = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => BasesDeStockCompanion(
+                id: id,
+                productoId: productoId,
+                stockBase: stockBase,
+                gramosBase: gramosBase,
+                milesimasBase: milesimasBase,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int productoId,
+                Value<int?> stockBase = const Value.absent(),
+                Value<int?> gramosBase = const Value.absent(),
+                Value<int?> milesimasBase = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<String?> origenDispositivo = const Value.absent(),
+                Value<DateTime?> actualizadoEn = const Value.absent(),
+              }) => BasesDeStockCompanion.insert(
+                id: id,
+                productoId: productoId,
+                stockBase: stockBase,
+                gramosBase: gramosBase,
+                milesimasBase: milesimasBase,
+                globalId: globalId,
+                origenDispositivo: origenDispositivo,
+                actualizadoEn: actualizadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BasesDeStockTable, BaseDeStock>(table),
+                  $$BasesDeStockTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({productoId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (productoId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.productoId,
+                                referencedTable: $$BasesDeStockTableReferences
+                                    ._productoIdTable(db),
+                                referencedColumn: $$BasesDeStockTableReferences
+                                    ._productoIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BasesDeStockTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BasesDeStockTable,
+      BaseDeStock,
+      $$BasesDeStockTableFilterComposer,
+      $$BasesDeStockTableOrderingComposer,
+      $$BasesDeStockTableAnnotationComposer,
+      $$BasesDeStockTableCreateCompanionBuilder,
+      $$BasesDeStockTableUpdateCompanionBuilder,
+      (BaseDeStock, $$BasesDeStockTableReferences),
+      BaseDeStock,
+      PrefetchHooks Function({bool productoId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -52267,4 +53280,6 @@ class $AppDatabaseManager {
       );
   $$TurnosTableTableManager get turnos =>
       $$TurnosTableTableManager(_db, _db.turnos);
+  $$BasesDeStockTableTableManager get basesDeStock =>
+      $$BasesDeStockTableTableManager(_db, _db.basesDeStock);
 }

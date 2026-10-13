@@ -72,6 +72,8 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
 - [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
 - [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
+- [Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)](#base-de-stock-el-stock-es-base--movimientos-en-cualquier-equipo-2026-10-13)
+- [Perfiles: mismo nombre = misma persona (2026-10-13)](#perfiles-mismo-nombre--misma-persona-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
 - [Bienvenida del celular al primer arranque (2026-10-03)](#bienvenida-del-celular-al-primer-arranque-2026-10-03)
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
@@ -1804,6 +1806,22 @@ El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra
   - **"Volver a…" y "ya está en este celular" descartan el lugar actual**: solo aparecen agregando (sin cuenta anotada), y se vuelve a leer el índice justo antes de descartar. Al entrar, la cuenta queda anotada como activa (`anotarCuentaActiva`).
   - Un negocio cuya carpeta ya no está se detecta antes de frenar nada y se saca de la lista. Google con cualquier error, o un sitio sin la ruta, cae al navegador.
   - Sitio: el mail de cobro se compara sin mayúsculas; un negocio que no figura entre los de su mail cuenta como el último (nunca gratis); nombres sin caracteres de control; id_token sin forma de JWT se rechaza sin ir a Google.
+
+## Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)
+
+El dueño: "el stock subió y yo no lo subí". Bug reproducido: un equipo que bajaba todo de cero (celular nuevo, negocio agregado, navegador, reinstalación) recibía cada producto con el stock que ya tenía el otro equipo **y además** todos sus movimientos, y los volvía a sumar (PC con 10 → celular con 20; con ventas, puede bajar en vez de subir). Ver `TRAMPAS.md`.
+- **Arreglo** (v67, `BasesDeStock` en `tables/stock.dart`): cada producto tiene una base = la parte del stock que no sale de sus movimientos (stock inicial al darlo de alta, importación, o de antes de los movimientos). En cualquier equipo, `stock = base + suma de movimientos`. Al recibir la base se recalcula así, lo que arregla también a los equipos que ya se habían desfasado.
+- **Solo la escribe el equipo donde nació el producto** (`origen_dispositivo`; los de antes de la sync, la PC), una vez, antes de subir (`asegurarBasesDeStock`, desde `cambiosDesde`): ese equipo nunca recibió el producto por la sync, su cuenta es la buena. Uno desfasado nunca esparce su número.
+- Viaja **al final** de la sync (después de productos y movimientos). Un equipo con versión vieja ignora la tabla sin trabarse; al actualizarse, la sync por la nube vuelve a pasar **una vez** por todo lo bajado (`versionBajadaActual`) para ver las bases que había salteado; si el servidor ya purgó lo viejo, sigue desde donde estaba.
+- **Límite**: si el equipo donde nació un producto se borró o reinstaló (perdió su id), nadie escribe la base de ese producto. Con dos PC en la misma sucursal (las dos son "desktop"), la base la escribe la primera que suba.
+
+## Perfiles: mismo nombre = misma persona (2026-10-13)
+
+El dueño: "hay usuarios duplicados, aparezco tres veces". Pasaba cuando dos equipos creaban el mismo perfil a la vez (cada uno entrando con la cuenta antes de bajar el del otro): dos filas con distinta identidad de sync. Decidió: **mismo nombre (sin mayúsculas ni acentos) = misma persona**.
+- **Listas sin repetidos** (`listarUsuarios`, que usan la PC, el servidor del celular, el celular sin PC y la Agenda): se muestra uno, el de `global_id` menor (la misma elección en todos los equipos), activo si alguno lo está.
+- **Lo cargado a nombre de un repetido pasa al que queda** (`unificarUsuariosRepetidos`): todas las columnas que apuntan a `usuarios`, leídas del esquema. Corre al abrir la base y después de aplicar lo que llega por la sync. Las filas repetidas NO se borran (algo todavía puede apuntarles) y no se manda nada: cada equipo llega solo al mismo resultado.
+- **Dar de alta un nombre que ya existe** devuelve ese perfil (y lo reactiva si estaba desactivado).
+- Consecuencia: dos empleados con exactamente el mismo nombre se juntan. Hay que diferenciarlos (ej. "Juan P." y "Juan M.").
 
 ## Versión propia del APK (2026-10-02)
 

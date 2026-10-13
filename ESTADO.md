@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **El stock se duplicaba en un equipo que bajaba todo de cero** (El dueño: "el stock subió y yo no lo subí"): arreglado con la
+  base de stock (v67). Los equipos ya desfasados se corrigen solos cuando el equipo donde nació cada producto sube su base.
+- **Perfiles repetidos** ("aparezco tres veces"): mismo nombre = misma persona; se muestran una vez y lo cargado pasa al que queda.
+
 - **El celular entra con Google sin abrir el navegador** (El dueño: "la vinculación por el sitio es un paso medio innecesario"):
   selector de cuentas de Android + `POST /api/device/google` del sitio; si no anda, "Entrar con el navegador". **Falta, del dueño**:
   crear en Google Cloud los clientes OAuth tipo Android (las dos apps, con la SHA-1 de la clave de firma) y desplegar el sitio.

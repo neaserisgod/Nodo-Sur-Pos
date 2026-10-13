@@ -46,3 +46,26 @@ class MovimientosDeStock extends Table {
   TextColumn get globalId => text().nullable()();
   TextColumn get origenDispositivo => text().nullable()();
 }
+
+/// La parte del stock de cada producto que NO sale de sus movimientos (v67, El dueño 2026-10-13: "el stock subió y yo no lo
+/// subí"): lo que tenía al crearse (un alta con stock inicial, una importación) o de antes de que existieran los movimientos.
+/// En cualquier equipo, el stock de un producto es siempre `base + suma de sus movimientos`.
+///
+/// Por qué existe: un equipo que bajaba todo de cero (un celular nuevo, un negocio agregado, el navegador) recibía cada producto
+/// con el stock que ya tenía en el otro equipo Y además todos sus movimientos, y los volvía a sumar: el stock se duplicaba. Con la
+/// base, al recibirla se recalcula `base + movimientos` y queda bien, también en los equipos que ya se habían desfasado.
+///
+/// La escribe SOLO el equipo donde nació el producto (`productos.origen_dispositivo`; los de antes de la sync, la PC): ese
+/// equipo nunca recibió el producto por la sync, así que su cuenta es siempre la buena. Una por producto; no cambia nunca.
+@DataClassName('BaseDeStock')
+class BasesDeStock extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get productoId => integer().references(Productos, #id)();
+  IntColumn get stockBase => integer().nullable()();
+  IntColumn get gramosBase => integer().nullable()();
+  IntColumn get milesimasBase => integer().nullable()();
+  /// El mismo `global_id` que el producto: una base por producto, aunque dos equipos la escriban.
+  TextColumn get globalId => text().nullable()();
+  TextColumn get origenDispositivo => text().nullable()();
+  DateTimeColumn get actualizadoEn => dateTime().nullable()();
+}

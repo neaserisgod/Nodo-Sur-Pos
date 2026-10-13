@@ -137,11 +137,11 @@ void main() {
     expect(tokenMalo.statusCode, 401);
   });
 
-  test('/usuarios lista los usuarios de la base', () async {
+  test('/usuarios lista los usuarios de la base, sin repetidos', () async {
     final respuesta = await http.get(url('/usuarios'), headers: headers());
     final lista = jsonDecode(respuesta.body) as List;
-    final bruno = lista.cast<Map<String, dynamic>>().firstWhere((u) => u['id'] == usuarioId);
-    expect(bruno['nombre'], 'Dueño');
+    // La base de test ya trae un "Dueño" sembrado y acá se agrega otro: mismo nombre = misma persona (2026-10-13), sale una vez.
+    expect(lista.cast<Map<String, dynamic>>().where((u) => u['nombre'] == 'Dueño'), hasLength(1));
   });
 
   test('/proveedores lista el catálogo real de proveedores', () async {

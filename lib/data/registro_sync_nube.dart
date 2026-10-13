@@ -43,6 +43,11 @@ String huellaSyncNube(String tabla, Map<String, dynamic> fila) {
 /// `valorCursorDe`) y la huella de su contenido.
 typedef VistaFila = ({int valor, String huella});
 
+/// Sube cuando una versión de la app empieza a entender algo que antes se salteaba al bajar, y hace falta volver a pasar por
+/// lo ya bajado una vez. 1 = la base de stock (v67, 2026-10-13): un equipo con la versión anterior bajaba los lotes pero
+/// ignoraba `bases_de_stock`, y al actualizarse no las volvía a ver nunca (`ServicioSyncNube._bajar`).
+const versionBajadaActual = 1;
+
 class EstadoSyncNube {
   EstadoSyncNube({
     this.cursorBajada = 0,
@@ -50,6 +55,7 @@ class EstadoSyncNube {
     Map<String, Map<String, VistaFila>>? vistas,
     Map<String, List<Map<String, dynamic>>>? sinAplicar,
     this.necesitaCopia = false,
+    this.versionBajada = versionBajadaActual,
   })  : cursoresSubida = cursoresSubida ?? {},
         vistas = vistas ?? {},
         sinAplicar = sinAplicar ?? {};
@@ -73,6 +79,9 @@ class EstadoSyncNube {
   /// copia de seguridad.
   bool necesitaCopia;
 
+  /// Con qué versión de la app se bajó lo que hay (ver [versionBajadaActual]). Un registro de antes la tiene en 0.
+  int versionBajada;
+
   int cursorDe(String tabla) => cursoresSubida[tabla] ?? 0;
 
   void _recordar(String tabla, String globalId, int valor, String huella) {
@@ -88,6 +97,7 @@ class EstadoSyncNube {
   Map<String, dynamic> toJson() => {
         'cursorBajada': cursorBajada,
         'necesitaCopia': necesitaCopia,
+        'versionBajada': versionBajada,
         'cursoresSubida': cursoresSubida,
         'vistas': {
           for (final t in vistas.entries)
@@ -106,6 +116,7 @@ class EstadoSyncNube {
       return EstadoSyncNube(
         cursorBajada: (j['cursorBajada'] as num?)?.toInt() ?? 0,
         necesitaCopia: j['necesitaCopia'] == true,
+        versionBajada: (j['versionBajada'] as num?)?.toInt() ?? 0,
         cursoresSubida: {
           for (final e in (j['cursoresSubida'] as Map? ?? const {}).entries) e.key as String: (e.value as num).toInt(),
         },

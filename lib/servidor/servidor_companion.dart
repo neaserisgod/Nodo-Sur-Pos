@@ -581,7 +581,7 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
   });
 
   router.get('/usuarios', (Request request) async {
-    final usuarios = await db.select(db.usuarios).get();
+    final usuarios = await listarUsuarios(db); // sin repetidos (mismo nombre = misma persona)
     return _json([
       for (final u in usuarios) {'id': u.id, 'nombre': u.nombre, 'activo': u.activo},
     ]);

@@ -647,4 +647,83 @@ void main() {
     expect(fila.nombre, 'Categoría rara');
     expect(await celular.select(celular.usuarios).get(), isNotEmpty);
   });
+
+  group('base de stock (El dueño, 2026-10-13: "el stock subió y yo no lo subí")', () {
+    /// Baja de [origen] a [destino] todas las tablas, en orden, como una instalación nueva. [sin] simula una versión vieja
+    /// que no conocía alguna tabla.
+    Future<void> bajarTodo(AppDatabase origen, AppDatabase destino, {Set<String> sin = const {}}) async {
+      for (final t in tablasSincronizables.keys) {
+        if (sin.contains(t)) continue;
+        await aplicarCambios(destino, tabla: t, filas: await cambiosDesde(origen, tabla: t, desde: 0));
+      }
+    }
+
+    Future<Producto> enPorGid(AppDatabase db, String gid) =>
+        (db.select(db.productos)..where((p) => p.globalId.equals(gid))).getSingle();
+
+    test('un equipo nuevo que baja todo no suma dos veces: queda con el mismo stock (unidades y gramos)', () async {
+      final yerba = await crearProducto(pc, nombre: 'Yerba', precioCentavos: 1000, stock: 4, usuarioId: usuarioId);
+      await ajustarStockRapido(pc, productoId: yerba, usuarioId: usuarioId, stock: 10);
+      final queso = await crearProducto(pc, nombre: 'Queso', esPesable: true, precioPorKiloCentavos: 900000, stockGramos: 500, usuarioId: usuarioId);
+      final q = await (pc.select(pc.productos)..where((p) => p.id.equals(queso))).getSingle();
+      await ajustarStockRapido(pc, productoId: queso, usuarioId: usuarioId, stock: q.stock, stockGramos: 2000);
+
+      await bajarTodo(pc, celular);
+      for (final id in [yerba, queso]) {
+        final enPc = await (pc.select(pc.productos)..where((p) => p.id.equals(id))).getSingle();
+        final enCel = await enPorGid(celular, enPc.globalId!);
+        expect(enCel.stock, enPc.stock, reason: enPc.nombre);
+        expect(enCel.stockGramos, enPc.stockGramos, reason: enPc.nombre);
+      }
+    });
+
+    test('un equipo que ya se había desfasado (versión vieja) se arregla solo al recibir la base', () async {
+      final id = await crearProducto(pc, nombre: 'Yerba', precioCentavos: 1000, stock: 0, usuarioId: usuarioId);
+      await ajustarStockRapido(pc, productoId: id, usuarioId: usuarioId, stock: 10);
+      final gid = (await (pc.select(pc.productos)..where((p) => p.id.equals(id))).getSingle()).globalId!;
+
+      await bajarTodo(pc, celular, sin: {'bases_de_stock'});
+      expect((await enPorGid(celular, gid)).stock, 20, reason: 'el bug de antes: sumado dos veces');
+
+      // El celular vende 3 mientras tanto (un movimiento suyo, que la PC todavía no tiene).
+      final enCel = await enPorGid(celular, gid);
+      await ajustarStockRapido(celular, productoId: enCel.id, usuarioId: (await celular.select(celular.usuarios).get()).first.id, stock: enCel.stock - 3);
+
+      await aplicarCambios(celular, tabla: 'bases_de_stock', filas: await cambiosDesde(pc, tabla: 'bases_de_stock', desde: 0));
+      expect((await enPorGid(celular, gid)).stock, 7, reason: '10 de la PC menos los 3 que vendió el celular');
+    });
+
+    test('la base la escribe solo el equipo donde nació el producto; el que lo recibió nunca esparce la suya', () async {
+      final id = await crearProducto(pc, nombre: 'Yerba', precioCentavos: 1000, stock: 0, usuarioId: usuarioId);
+      await ajustarStockRapido(pc, productoId: id, usuarioId: usuarioId, stock: 10);
+      await bajarTodo(pc, celular, sin: {'bases_de_stock'}); // el celular queda con 20 (desfasado)
+
+      establecerIdDispositivo('android-celular');
+      expect(await cambiosDesde(celular, tabla: 'bases_de_stock', desde: 0), isEmpty, reason: 'no nació acá');
+      // Y un producto que sí nació en el celular: ese sí.
+      await crearProducto(celular, nombre: 'Del celular', precioCentavos: 500, stock: 6, usuarioId: (await celular.select(celular.usuarios).get()).first.id);
+      final bases = await cambiosDesde(celular, tabla: 'bases_de_stock', desde: 0);
+      expect(bases.single['stock_base'], 6);
+      establecerIdDispositivo('desktop');
+    });
+
+    test('la base no cambia una vez escrita, y dos ventas en paralelo después de bajar se siguen sumando', () async {
+      final id = await crearProducto(pc, nombre: 'Yerba', precioCentavos: 1000, stock: 10, usuarioId: usuarioId);
+      await bajarTodo(pc, celular);
+      final gid = (await (pc.select(pc.productos)..where((p) => p.id.equals(id))).getSingle()).globalId!;
+      expect((await enPorGid(celular, gid)).stock, 10);
+
+      await ajustarStockRapido(pc, productoId: id, usuarioId: usuarioId, stock: 8); // la PC vende 2
+      final enCel = await enPorGid(celular, gid);
+      await ajustarStockRapido(celular, productoId: enCel.id, usuarioId: (await celular.select(celular.usuarios).get()).first.id, stock: 9); // el celular vende 1
+      final basesAntes = await cambiosDesde(pc, tabla: 'bases_de_stock', desde: 0);
+
+      await aplicarCambios(celular, tabla: 'movimientos_de_stock', filas: await cambiosDesde(pc, tabla: 'movimientos_de_stock', desde: 0));
+      await aplicarCambios(pc, tabla: 'movimientos_de_stock', filas: await cambiosDesde(celular, tabla: 'movimientos_de_stock', desde: 0));
+      await aplicarCambios(celular, tabla: 'bases_de_stock', filas: await cambiosDesde(pc, tabla: 'bases_de_stock', desde: 0));
+      expect((await enPorGid(celular, gid)).stock, 7);
+      expect((await (pc.select(pc.productos)..where((p) => p.id.equals(id))).getSingle()).stock, 7);
+      expect(await cambiosDesde(pc, tabla: 'bases_de_stock', desde: 0), basesAntes, reason: 'la base no se movió');
+    });
+  });
 }

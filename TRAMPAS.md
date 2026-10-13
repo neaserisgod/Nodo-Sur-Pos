@@ -815,3 +815,12 @@ Con `flutter: default-flavor: almacen` (para las dos ediciones de Android), `flu
 `.exe` en `build/windows/x64/almacen/runner/Release/`. `tool/crear_instalador.ps1` lo busca en `build/windows/x64/runner/Release/` y la
 beta de Windows falló. Se sacó `default-flavor`: Android se compila siempre con `--flavor almacen` o `--flavor servicios` (workflow y
 `tool/publicar_actualizacion_companion.sh` ya lo hacen); Windows y las pruebas no tienen flavor.
+
+## Un equipo que baja todo de cero sumaba el stock dos veces (2026-10-13)
+
+`aplicarCambios` insertaba un producto nuevo con el `stock` que traía la fila (el número final del otro equipo, que YA incluye
+todos sus movimientos) y después aplicaba esos mismos movimientos como deltas. Un celular nuevo, un negocio agregado o el
+navegador terminaban con el doble (o con menos, si eran ventas). El test viejo no lo veía porque usaba `registrarAjusteDeStock`,
+que anota el movimiento pero no cambia `productos.stock`: la fila viajaba con el stock de antes y la cuenta daba. **Moraleja**:
+un test de sync tiene que mover el stock como la app de verdad (`ajustarStockRapido`, una venta), no solo anotar el movimiento.
+Arreglo: la base de stock (`DECISIONES.md`, "Base de stock").

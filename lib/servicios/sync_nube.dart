@@ -250,9 +250,26 @@ class ServicioSyncNube {
   Future<int> _bajar(String token, EstadoSyncNube estado) async {
     var aplicadas = 0;
     var mas = true;
+    // Una versión nueva que entiende algo que la anterior salteaba (la base de stock): se vuelve a pasar una vez por todo lo
+    // bajado. Es seguro (aplicar es un upsert por `global_id`, y los movimientos ya vistos no se repiten). Si el servidor ya no
+    // guarda lo viejo, se sigue desde donde estaba en vez de pedir una copia.
+    int? volverA;
+    if (estado.versionBajada < versionBajadaActual) {
+      if (estado.cursorBajada > 0) volverA = estado.cursorBajada;
+      estado.cursorBajada = 0;
+      estado.versionBajada = versionBajadaActual;
+      await almacenEstado.guardar(estado);
+    }
     while (mas) {
       final antes = estado.cursorBajada;
       final r = await cliente.bajarLotes(token, desde: antes);
+      if (r.expirada && volverA != null) {
+        estado.cursorBajada = volverA;
+        volverA = null;
+        await almacenEstado.guardar(estado);
+        continue;
+      }
+      volverA = null;
       if (r.expirada) {
         estado.necesitaCopia = true;
         await almacenEstado.guardar(estado);
