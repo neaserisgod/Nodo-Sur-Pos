@@ -116,12 +116,10 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 - Windows y Android van en **filas de publicación separadas** (`publicar` y `publicar-apk`): en el sitio cada plataforma es
   un registro aparte y su archivo va a otra ruta de R2. Dentro de cada fila van de a uno. **Nunca publicar dos veces la
   misma versión de la misma plataforma a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
-- Probar en una sesión en la nube: el contenedor no trae Flutter. Bajar Flutter 3.47.5 (la versión de los workflows),
-  `flutter pub get`, `flutter analyze` (tiene que dar "No issues found!", CI lo exige) y
-  `flutter test --exclude-tags bench` (~2.930 tests al 2026-10-12, 5 a 12 minutos según la máquina; las capturas en versión corta, ver `test/helpers/capturas.dart`).
-
-## 6. Estado
-
+- Probar en una sesión en la nube: Flutter lo instala solo `.claude/hooks/session-start.sh`. `flutter analyze` (tiene que
+  dar "No issues found!", CI lo exige) y **solo los tests afectados**: `dart run tool/tests_afectados.dart --correr -- --reporter
+  failures-only` (sigue los imports desde lo cambiado). La suite entera (~2.930 tests, 5 a 12 minutos) la corre CI en `main`;
+  en un PR, CI corre solo los afectados.
 - **Publicado**: las versiones se ven en `/admin/` → Versiones (acá quedan viejas). Al 2026-10-12: Windows estable
   **1.0.0.2160** (10/10) y betas hasta la **1.0.0+2163** (11/10); los dos APK (almacén y Nodo Sur Servicios) salen con el
   mismo merge.

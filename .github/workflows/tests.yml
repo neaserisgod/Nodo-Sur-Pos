@@ -11,12 +11,19 @@ on:
 permissions:
   contents: read
 
+# Un push nuevo al mismo PR cancela la corrida vieja: nadie mira el resultado de un commit que ya quedó atrás.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # para comparar contra la rama base del PR
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.5
@@ -29,8 +36,14 @@ jobs:
         run: flutter analyze
       # Sin el benchmark de 60.000 ventas (`@Tags(['bench'])`): mide rendimiento, no correctitud, y se corre aparte con
       # `flutter test --tags bench`. Las capturas van en su versión corta (claro, 1366; `test/helpers/capturas.dart`).
-      - name: Tests
-        run: flutter test --exclude-tags bench
+      # En un PR, solo los tests que pueden cambiar por lo tocado (`tool/tests_afectados.dart`, sigue los imports); en main,
+      # la suite entera, que es la red de seguridad de lo que el grafo no ve.
+      - name: Tests afectados (PR)
+        if: github.event_name == 'pull_request'
+        run: dart run tool/tests_afectados.dart --base origin/${{ github.base_ref }} --correr -- --reporter failures-only
+      - name: Tests (suite entera)
+        if: github.event_name != 'pull_request'
+        run: flutter test --exclude-tags bench --reporter failures-only
 
   # Nodo Sur Servicios en el navegador (`docs/PLAN-WEB-SERVICIOS.md`): que siga compilando para web. El análisis no lo ve: una
   # pantalla del celular que importe algo nativo (sqlite3, dart:ffi) anda en Android y rompe solo la compilación web.
@@ -39,12 +52,26 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Un PR que no toca código (documentos, workflows de otra cosa) no puede romper la compilación web: se saltea.
+      - name: ¿Cambió algo que compila?
+        id: cambios
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || \
+             git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE '^(lib/|web/|pubspec\.|tool/preparar_web\.sh)'; then
+            echo "compilar=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: subosito/flutter-action@v2
+        if: steps.cambios.outputs.compilar == 'true'
         with:
           flutter-version: 3.47.5
           channel: stable
           cache: true
-      - run: flutter pub get
-      - run: bash tool/preparar_web.sh
+      - if: steps.cambios.outputs.compilar == 'true'
+        run: flutter pub get
+      - if: steps.cambios.outputs.compilar == 'true'
+        run: bash tool/preparar_web.sh
       - name: Compila para web
+        if: steps.cambios.outputs.compilar == 'true'
         run: flutter build web --release -t lib/main_web.dart --base-href /app/ --no-web-resources-cdn --pwa-strategy=none

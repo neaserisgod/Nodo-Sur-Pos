@@ -36,13 +36,13 @@ mismo cambio.
 ## Comandos
 
 ```bash
-flutter analyze                                   # tiene que dar "No issues found!"
-flutter test --exclude-tags bench --reporter failures-only   # solo muestra lo que falla
-flutter test test/ruta/al_test.dart               # preferir correr solo lo que se tocó
-dart run build_runner build                       # después de tocar lib/data/tables/* o database.dart
+flutter analyze                                        # tiene que dar "No issues found!"
+dart run tool/tests_afectados.dart --correr -- --reporter failures-only   # SOLO los tests afectados (sigue los imports)
+dart run build_runner build                            # después de tocar lib/data/tables/* o database.dart
 ```
 
-Flutter 3.47.5 (la de los workflows). No leer `*.g.dart` (generado) ni `build/`.
+**No correr la suite entera** (5 a 12 min): la corre CI al mezclar a `main`. En un PR, CI corre solo los afectados.
+En la nube, Flutter lo instala `.claude/hooks/session-start.sh` (la versión sale de `tests.yml`). No leer `*.g.dart` ni `build/`.
 
 ## Arquitectura
 

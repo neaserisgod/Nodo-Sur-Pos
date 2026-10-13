@@ -141,6 +141,10 @@ Pendiente / ideas (sin hacer):
 - **Menos contexto por sesión de Claude**: `CLAUDE.md` pasó de ~24 KB a ~4 KB (se carga en cada turno); lo largo (pantalla de
   venta, hardware, fases) se movió tal cual a `docs/CLAUDE-DETALLE.md`. `CONTEXTO.md` pide leer solo la sección que toca, y
   `.claude/settings.json` no deja leer código generado, builds ni `docs/archivo/`.
+- **Tests solo de lo afectado** (`tool/tests_afectados.dart`): sigue los imports desde lo cambiado; un cambio en la Agenda corre
+  189 tests en 1,5 min en vez de la suite entera. CI: en un PR corre solo los afectados y saltea la compilación web si no se
+  tocó código; en `main`, la suite entera. Flutter se instala solo en las sesiones en la nube (`.claude/hooks/session-start.sh`).
+  `botdemo` tiene CI por primera vez.
 
 ## Últimos cambios (12/10/2026)
 
