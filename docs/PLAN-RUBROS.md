@@ -67,7 +67,20 @@ Orden recomendado: **0 → 1 → 3 → 2 → 4**; la 5 solo si hay demanda. La 0
 es más barato; la 1 porque es casi gratis y amplía a quién se le puede vender ya; la 3 porque es lo que pidió el dueño
 y reutiliza más.
 
-## 5. Preguntas de negocio (contestar antes de la etapa que las usa)
+## 5. Decisiones del dueño (2026-10-13)
+
+- **App**: dentro de Nodo Sur Servicios (mismo APK y plan Emprendedor).
+- **Stock de lo elaborado**: las dos cosas. Por defecto se cocina por encargo; quien tiene hecho prende el stock.
+- **Seña en pedidos de comida**: arranca sin seña; cada negocio la configura.
+- **Envíos en la etapa 3**: retiro, y envío con un costo fijo opcional. Las zonas quedan para la etapa 4.
+
+## 6. Preguntas que siguen abiertas
+
+5. **Precio**: ¿el plan Emprendedor ($ 18.000) cubre también a quien vende comida?
+
+(Historia de las preguntas ya contestadas, arriba en "Decisiones".)
+
+## Preguntas originales (contestadas)
 
 1. **¿En qué app va lo de comidas?** (a) dentro de Nodo Sur Servicios, mismo APK y plan Emprendedor; (b) una edición
    aparte (otro nombre en el celular, por ejemplo "Nodo Sur Emprende"). Recomendado: (a), y cambiar el nombre visible si
