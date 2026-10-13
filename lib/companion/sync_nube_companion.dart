@@ -113,7 +113,7 @@ SyncNubeCompanion armarSyncNubeCompanion({
 /// Agenda (servicios). Los dos se fijan solos si les toca.
 Future<void> Function(String token) _alTerminarVuelta(AppDatabase db, ClienteNube cliente) {
   final catalogo = PublicadorCatalogoBot(db: db, cliente: cliente);
-  final turnos = SincronizadorTurnosBot(db: db, cliente: cliente);
+  final turnos = SincronizadorTurnosBot(db: db, cliente: cliente, alBajar: avisarCambiosCompanion);
   return (token) async {
     await catalogo.publicarSiHaceFalta(token);
     await turnos.vuelta(token);

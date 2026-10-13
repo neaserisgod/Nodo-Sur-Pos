@@ -138,6 +138,12 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **El bot no ofrecía turnos para hoy** (Nodo Sur Servicios): el Node que corre adentro de la app arrancaba sin zona horaria, en
+  UTC; con la anticipación mínima de 2 horas, hoy quedaba siempre "en el pasado". La app le pasa la zona del celular
+  (`ServicioBot.kt`, `TZ`) y el bot, sin zona, usa la de Argentina (`botdemo/src/zona.js`). **Publicar el APK y `botdemo` juntos.**
+- **Un turno del bot aparece en la Agenda al toque** (y la seña pagada también): el sincronizador de turnos del bot avisa a las
+  pantallas cuando baja algo (`alBajar`); antes la Agenda se enteraba recién al cambiar de pantalla.
+
 - **Barbería de ejemplo en una cuenta de verdad** (para grabar los reels con la app real): 7 toques en el título de Más ofrecen
   cargar la misma barbería de la demo (`companion/demo/sembrar_ejemplo.dart`), solo con la base sin turnos, ventas ni cajas.
   Viaja por la sync como cualquier dato. Probado con tests; **falta verlo en un celular real** (necesita un APK nuevo).

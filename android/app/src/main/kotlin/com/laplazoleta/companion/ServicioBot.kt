@@ -106,6 +106,8 @@ class ServicioBot : Service() {
                 put("BOT_EN_APP", "1")
                 put("PAREO", "1")
                 put("NUMERO_BOT", prefs.getString("numero", "") ?: "")
+                // La zona del celular: Node no la ve solo y arrancaba en UTC (el bot no ofrecía turnos para hoy, 2026-10-13).
+                put("TZ", java.util.TimeZone.getDefault().id)
             }
             val p = pb.start()
             proceso = p

@@ -52,7 +52,8 @@ EstadoTurno? estadoDesdeSitio(Object? s) => switch (s) {
     };
 
 class SincronizadorTurnosBot {
-  SincronizadorTurnosBot({required this.db, required this.cliente, DateTime Function()? ahora}) : _ahora = ahora ?? DateTime.now {
+  SincronizadorTurnosBot({required this.db, required this.cliente, DateTime Function()? ahora, this.alBajar})
+      : _ahora = ahora ?? DateTime.now {
     _aviso = avisosTurnoBot.listen((_) {
       final token = _ultimoToken;
       if (token != null) unawaited(vuelta(token));
@@ -61,6 +62,11 @@ class SincronizadorTurnosBot {
 
   final AppDatabase db;
   final ClienteNube cliente;
+
+  /// Se llama cuando bajó al menos un turno nuevo o cambiado (uno que dio el bot, una seña que se pagó): las pantallas abiertas
+  /// se redibujan al toque. Sin esto la Agenda se enteraba recién al cambiar de pantalla (El dueño, 2026-10-13: "quiero que
+  /// aparezca enseguida, apenas se confirme el turno").
+  final void Function()? alBajar;
   final DateTime Function() _ahora;
   StreamSubscription<String>? _aviso;
 
@@ -115,6 +121,7 @@ class SincronizadorTurnosBot {
 
   Future<void> _bajar(String token, SharedPreferences prefs, Map<String, String> huellas) async {
     var desde = prefs.getInt(_claveCursor) ?? 0;
+    var bajoAlgo = false;
     for (var i = 0; i < 20; i++) {
       final r = await cliente.turnosBot(token, desde: desde);
       for (final x in r.turnos) {
@@ -126,12 +133,16 @@ class SincronizadorTurnosBot {
           continue; // uno que no se puede aplicar no frena a los demás
         }
         final local = id;
-        if (local != null) huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
+        if (local != null) {
+          huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
+          bajoAlgo = true;
+        }
       }
       desde = r.hasta;
       await prefs.setInt(_claveCursor, desde);
       if (!r.mas) break;
     }
+    if (bajoAlgo) alBajar?.call();
   }
 
   /// Pone en la Agenda (o actualiza) un turno del bot. Devuelve su id local, o null si no se pudo (el servicio no existe acá).
