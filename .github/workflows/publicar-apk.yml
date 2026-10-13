@@ -133,6 +133,24 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
 
+      # La huella de la clave que firma los APK (2026-10-13): Google Cloud la pide para los clientes OAuth tipo Android con que
+      # el celular entra con Google sin navegador (`lib/companion/google_en_celular.dart`). Es pública, no un secreto. Sale en
+      # el resumen del run; para verla sin publicar, correrlo a mano con "solo_compilar".
+      - name: Huella de la clave de firma (SHA-1 y SHA-256)
+        run: |
+          huellas=$(keytool -list -v -keystore "$ANDROID_KEYSTORE_PATH" \
+            -alias "${ANDROID_KEY_ALIAS:-androiddebugkey}" \
+            -storepass "${ANDROID_KEYSTORE_PASSWORD:-android}" | grep -E '^\s*SHA(1|256):' | sed -E 's/^\s+//')
+          [ -n "$huellas" ] || { echo "::error::No se pudo leer la huella del keystore"; exit 1; }
+          echo "$huellas"
+          {
+            echo "### Huella de la clave de firma"
+            echo "Para Google Cloud → Credenciales → ID de cliente OAuth tipo Android (\`com.laplazoleta.companion\` y \`com.laplazoleta.servicios\`, la misma huella para las dos)."
+            echo '```'
+            echo "$huellas"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - run: flutter pub get
 
       - name: Número de compilación
