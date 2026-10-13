@@ -36,6 +36,7 @@ void main() {
   late List<Map<String, dynamic>> configs;
   late Map<String, dynamic>? configSitio;
   late SincronizadorTurnosBot sinc;
+  var avisosDePantalla = 0;
   final manana10 = () {
     final h = DateTime.now();
     return DateTime(h.year, h.month, h.day + 1, 10);
@@ -78,7 +79,8 @@ void main() {
       }
       return http.Response('{}', 404);
     }));
-    sinc = SincronizadorTurnosBot(db: db, cliente: cliente);
+    avisosDePantalla = 0;
+    sinc = SincronizadorTurnosBot(db: db, cliente: cliente, alBajar: () => avisosDePantalla++);
     remotos.add({
       'id': 'turno-bot-000001',
       'origen': 'bot',
@@ -97,6 +99,13 @@ void main() {
   });
 
   Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))..orderBy([(t) => OrderingTerm.asc(t.id)])..limit(1)).getSingle();
+
+  test('cuando baja un turno, las pantallas se enteran al toque (una vez); sin nada nuevo, no', () async {
+    await sinc.vuelta('tok');
+    expect(avisosDePantalla, 1);
+    await sinc.vuelta('tok');
+    expect(avisosDePantalla, 1, reason: 'sin turnos nuevos no se redibuja nada');
+  });
 
   test('un turno del bot entra a la Agenda una sola vez, esperando la seña y ocupando el horario', () async {
     await sinc.vuelta('tok');

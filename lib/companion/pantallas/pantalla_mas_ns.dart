@@ -7,7 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
+import '../base_local.dart';
 import '../demo/demo.dart';
+import '../demo/sembrar_ejemplo.dart';
 import '../modo_uso.dart';
 import '../pantalla_bot_whatsapp.dart';
 import '../pantalla_carga_historica.dart';
@@ -56,7 +58,7 @@ class PantallaMasNs extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text('Más', style: tituloNs(42, color: ns.ink))),
+                    const Expanded(child: _TituloMas()),
                     BotonCircularNs(icono: IconoNs.lupa, onTap: () => app.irA((_) => const PantallaBuscadorNs(origen: PestaniaNs.mas)), etiqueta: 'Buscar una función o ajuste', tamanioIcono: 20),
                     const SizedBox(width: 8),
                     BotonCircularNs(icono: IconoNs.campana, onTap: () => app.irA((_) => const PantallaNotificacionesNs()), etiqueta: pend.cantidad == 0 ? 'Notificaciones' : '${pend.cantidad} notificaciones', globo: pend.cantidad),
@@ -208,6 +210,60 @@ class PantallaMasNs extends StatelessWidget {
       ),
     );
   }
+}
+
+/// El título "Más". Siete toques seguidos ofrecen cargar la barbería de ejemplo (`sembrar_ejemplo.dart`): está escondido a
+/// propósito, es para armar una cuenta de prueba (grabar videos, mostrar la app), no algo que un negocio tenga que ver.
+class _TituloMas extends StatefulWidget {
+  const _TituloMas();
+
+  @override
+  State<_TituloMas> createState() => _TituloMasState();
+}
+
+class _TituloMasState extends State<_TituloMas> {
+  var _toques = 0;
+  DateTime? _ultimo;
+
+  Future<void> _tocar() async {
+    final ahora = DateTime.now();
+    // Seguidos: si pasa más de un segundo entre toques, se vuelve a contar.
+    _toques = _ultimo != null && ahora.difference(_ultimo!) < const Duration(seconds: 1) ? _toques + 1 : 1;
+    _ultimo = ahora;
+    if (_toques < 7) return;
+    _toques = 0;
+    final db = baseLocalCompanion();
+    if (!await baseVaciaParaEjemplo(db)) {
+      if (mounted) mostrarAvisoNs(context, 'Solo se puede en una cuenta nueva, sin turnos, ventas ni cajas.', largo: true);
+      return;
+    }
+    if (!mounted) return;
+    final cargar = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '¿Cargar la barbería de ejemplo?',
+        texto: 'Carga servicios, insumos, dos barberos, turnos de la semana y la caja de hoy, con datos inventados. Es para '
+            'probar o grabar la app: no lo uses en el negocio de verdad.',
+        botones: [
+          BotonNs.primario(ctx, 'Cargar', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (cargar != true) return;
+    final hecho = await sembrarEjemploEnCuenta(db);
+    if (!mounted) return;
+    mostrarAvisoNs(context, hecho ? 'Listo: cerrá la app y volvé a abrirla para ver la barbería.' : 'No se cargó: la base ya tiene datos.', largo: true);
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    // Escondido también para el lector de pantalla: no es un botón de la app.
+    excludeFromSemantics: true,
+    onTap: _tocar,
+    child: Text('Más', style: tituloNs(42, color: context.ns.ink)),
+  );
 }
 
 class _Fila extends StatelessWidget {

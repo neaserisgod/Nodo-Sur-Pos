@@ -138,6 +138,27 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Tablero arriba de la Agenda** (servicios; El dueño eligió las tres tarjetas y "Compartir huecos"): **Ahora** (el turno en
+  curso o el que sigue, cuántos turnos y huecos quedan), **Plata de hoy** (cobrado en efectivo y Mercado Pago, y lo que falta
+  cobrar con la seña descontada) y **Para atender** (señas que no llegaron, quien viene y ya faltó, insumos por acabarse).
+  **Compartir huecos** arma el texto con los horarios libres de los próximos 3 días con lugar, para mandar por WhatsApp o copiar
+  a una historia. Cuentas en `domain/tablero_agenda.dart`, datos en `data/repositorio_tablero_agenda.dart`. Probado con tests y
+  una captura; falta verlo en un celular real.
+
+- **El bot no ofrecía turnos para hoy** (Nodo Sur Servicios): el Node que corre adentro de la app arrancaba sin zona horaria, en
+  UTC; con la anticipación mínima de 2 horas, hoy quedaba siempre "en el pasado". La app le pasa la zona del celular
+  (`ServicioBot.kt`, `TZ`) y el bot, sin zona, usa la de Argentina (`botdemo/src/zona.js`). **Publicar el APK y `botdemo` juntos.**
+- **Un turno del bot aparece en la Agenda al toque** (y la seña pagada también): el sincronizador de turnos del bot avisa a las
+  pantallas cuando baja algo (`alBajar`); antes la Agenda se enteraba recién al cambiar de pantalla.
+
+- **Barbería de ejemplo en una cuenta de verdad** (para grabar los reels con la app real): 7 toques en el título de Más ofrecen
+  cargar la misma barbería de la demo (`companion/demo/sembrar_ejemplo.dart`), solo con la base sin turnos, ventas ni cajas.
+  Viaja por la sync como cualquier dato. Probado con tests; **falta verlo en un celular real** (necesita un APK nuevo).
+
+- **Plan para muchos rubros** (`docs/PLAN-RUBROS.md`, sin código): tercera forma de trabajar, "pedidos", empezando por quien
+  emprende con comidas por encargo (reutiliza recetas e insumos de servicios, Encargues y el bot); antes, ordenar la base para
+  que un rubro nuevo sea solo datos. Preguntas de negocio abiertas al final del plan.
+
 - **Menos contexto por sesión de Claude**: `CLAUDE.md` pasó de ~24 KB a ~4 KB (se carga en cada turno); lo largo (pantalla de
   venta, hardware, fases) se movió tal cual a `docs/CLAUDE-DETALLE.md`. `CONTEXTO.md` pide leer solo la sección que toca, y
   `.claude/settings.json` no deja leer código generado, builds ni `docs/archivo/`.

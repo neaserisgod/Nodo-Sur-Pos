@@ -9,14 +9,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_servicios.dart' show listarServicios, ServicioListado;
+import '../../data/repositorio_tablero_agenda.dart';
 import '../../data/repositorio_turnos.dart';
 import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/medio_pago.dart';
+import '../../domain/tablero_agenda.dart';
 import '../../domain/turnos.dart';
 import '../../edicion.dart';
 import '../../servicios/calendario.dart';
@@ -64,6 +67,9 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
   late DateTime _dia = _soloDia(widget.hoy ?? DateTime.now());
   List<TurnoAgenda>? _turnos;
 
+  /// El tablero de arriba (solo hoy). Null mientras carga o mirando otro día.
+  TableroAgenda? _tablero;
+
   /// Turnos que ocupan, por día, en la semana que se ve (los puntitos de la tira).
   Map<DateTime, int> _porDia = const {};
   HorarioAtencion _horario = HorarioAtencion.porDefecto;
@@ -102,6 +108,13 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     final semana = await turnosEntre(_db, desde: lunes, hasta: DateTime(lunes.year, lunes.month, lunes.day + 7), incluirLiberados: false);
     final config = await configAgendaActual(_db);
     final profesionales = await (_db.select(_db.usuarios)..where((u) => u.activo.equals(true))).get();
+    final esHoy = dia == _soloDia(widget.hoy ?? DateTime.now());
+    TableroAgenda? tablero;
+    try {
+      tablero = esHoy ? await tableroAgenda(_db, ahora: widget.hoy) : null;
+    } catch (_) {
+      tablero = null; // el tablero nunca frena la Agenda
+    }
     if (!mounted || dia != _dia) return;
     final porDia = <DateTime, int>{};
     for (final t in semana) {
@@ -111,10 +124,43 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     }
     setState(() {
       _turnos = turnos;
+      _tablero = tablero;
       _porDia = porDia;
       _horario = config.horario;
       _profesionales = profesionales;
     });
+  }
+
+  /// "Compartir huecos": el texto con los horarios libres de los próximos días, para un estado de WhatsApp o una historia.
+  Future<void> _compartirHuecos() async {
+    final texto = _tablero?.textoHuecos;
+    if (texto == null) return;
+    final accion = await mostrarHojaNs<String>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Compartir huecos',
+        texto: 'Mandalo a tus estados de WhatsApp o pegalo en una historia de Instagram.',
+        bloques: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: ctx.ns.s, borderRadius: BorderRadius.circular(20)),
+            child: Text(texto, style: estiloNs(16, altura: 1.4, color: ctx.ns.ink)),
+          ),
+        ],
+        botones: [
+          BotonNs.primario(ctx, 'Mandar por WhatsApp', () => Navigator.of(ctx).pop('whatsapp')),
+          BotonNs.secundario(ctx, 'Copiar el texto', () => Navigator.of(ctx).pop('copiar')),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (accion == 'whatsapp') {
+      await _abrir(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texto)}'));
+    } else if (accion == 'copiar') {
+      await Clipboard.setData(ClipboardData(text: texto));
+      if (mounted) mostrarAvisoNs(context, 'Copiado: pegalo en tu historia o donde quieras');
+    }
   }
 
   void _irADia(DateTime d) {
@@ -321,7 +367,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
               ),
               if (_dia == hoy) ...[
                 const SizedBox(height: 16),
-                _ResumenHoy(turnos: _turnos ?? const [], app: app),
+                _TableroHoy(tablero: _tablero, app: app, onCompartir: _compartirHuecos),
               ],
               if (_profesionales.length > 1) ...[
                 const SizedBox(height: 14),
@@ -548,51 +594,120 @@ class _Dia extends StatelessWidget {
   }
 }
 
-/// Las tres cifras de hoy: turnos, cuánto entró y cuántos esperan la seña.
-class _ResumenHoy extends StatelessWidget {
-  const _ResumenHoy({required this.turnos, required this.app});
-  final List<TurnoAgenda> turnos;
+/// El tablero de hoy (El dueño, 2026-10-13): "Ahora" (el próximo turno, cuántos quedan y "Compartir huecos"), "Plata de hoy" y
+/// "Para atender". Las cuentas son de `domain/tablero_agenda.dart`.
+class _TableroHoy extends StatelessWidget {
+  const _TableroHoy({required this.tablero, required this.app, required this.onCompartir});
+  final TableroAgenda? tablero;
   final ControladorAppNs? app;
+  final VoidCallback onCompartir;
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    final cuantos = turnos.where((t) => t.estado != EstadoTurno.cancelado && t.estado != EstadoTurno.noVino).length;
-    final esperan = turnos.where((t) => t.estado == EstadoTurno.esperandoSena).length;
-    Widget mini(String n, String etiqueta, {Color? fondo, Color? color, double tamanio = 28}) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            decoration: BoxDecoration(color: fondo ?? ns.s, borderRadius: BorderRadius.circular(24)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 28,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FittedBox(child: Text(n, style: tituloNs(tamanio, track: -0.05, color: color ?? ns.ink))),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(etiqueta, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(13, peso: FontWeight.w500, color: color ?? ns.mute)),
-              ],
-            ),
+    final t = tablero;
+    // Mientras carga, un bloque liso del alto de la tarjeta de arriba (sin saltos al aparecer).
+    if (t == null) return Container(height: 112, decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(24)));
+    final ahora = DateTime.now();
+    final proximo = proximoTurno(t.turnos, ahora);
+    final faltan = turnosQueFaltan(t.turnos);
+    final porCobrar = porCobrarCentavos(t.turnos);
+    final avisos = <String>[
+      if (t.esperanSena > 0) t.esperanSena == 1 ? '1 espera la seña' : '${t.esperanSena} esperan la seña',
+      for (final x in conFaltasPrevias(t.turnos, ahora).take(2)) '${x.cliente} ${textoFaltas(x.faltas)}',
+      if (t.insumosBajos.isNotEmpty) t.insumosBajos.length == 1 ? 'Queda poco: ${t.insumosBajos.first}' : 'Quedan poco ${t.insumosBajos.length} insumos',
+    ];
+
+    Widget tarjeta({required String titulo, required List<Widget> hijos, Color? fondo, Key? key}) => Container(
+          key: key,
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(color: fondo ?? ns.s, borderRadius: BorderRadius.circular(24)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(titulo, style: estiloNs(13, peso: FontWeight.w600, color: ns.mute)),
+              const SizedBox(height: 6),
+              ...hijos,
+            ],
           ),
         );
-    final datos = app?.datosDia;
-    return Row(
+
+    final huecos = t.huecosHoy == 1 ? '1 hueco libre' : '${t.huecosHoy} huecos libres';
+    final quedan = faltan == 1 ? '1 turno' : '$faltan turnos';
+    return Column(
       children: [
-        mini('$cuantos', cuantos == 1 ? 'turno' : 'turnos'),
-        const SizedBox(width: 8),
-        if (datos == null)
-          mini(plataNs(0), 'cobrado', tamanio: 22)
-        else
-          ValueListenableBuilder<DatosDiaNs>(
-            valueListenable: datos,
-            builder: (_, d, _) => mini(plataNs(d.vendidoCentavos), 'cobrado', tamanio: 22),
+        tarjeta(
+          key: const Key('tablero_ahora'),
+          titulo: proximo == null ? 'Hoy' : (proximo.enCurso ? 'Ahora' : 'Sigue'),
+          hijos: [
+            if (proximo == null)
+              Text('No quedan turnos por hoy', style: tituloNs(22, track: -0.04, color: ns.ink))
+            else ...[
+              Text('${horaNs(proximo.turno.inicio)} · ${proximo.turno.cliente}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: tituloNs(24, track: -0.04, color: ns.ink)),
+              const SizedBox(height: 2),
+              Text('${proximo.turno.servicio} · ${proximo.enCurso ? 'hasta las ${horaNs(proximo.turno.fin)}' : textoFaltaPara(proximo.turno.inicio, ahora)}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(15, color: ns.mute)),
+            ],
+            const SizedBox(height: 10),
+            Text('Quedan $quedan · $huecos', style: estiloNs(14, peso: FontWeight.w500, color: ns.ink)),
+            if (t.textoHuecos != null) ...[
+              const SizedBox(height: 10),
+              ChipNs(key: const Key('tablero_compartir'), texto: 'Compartir huecos', activo: true, onTap: onCompartir),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: tarjeta(
+                  key: const Key('tablero_plata'),
+                  titulo: 'Plata de hoy',
+                  hijos: [
+                    if (app == null)
+                      Text(plataNs(0), style: tituloNs(24, track: -0.05, color: ns.ink))
+                    else
+                      ValueListenableBuilder<DatosDiaNs>(
+                        valueListenable: app!.datosDia,
+                        builder: (_, d, _) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(child: Text(plataNs(d.vendidoCentavos), style: tituloNs(24, track: -0.05, color: ns.ink))),
+                            Text('Efectivo ${plataNs(d.efectivoCentavos)}', style: estiloNs(13, color: ns.mute)),
+                            Text('Mercado Pago ${plataNs(d.mpCentavos)}', style: estiloNs(13, color: ns.mute)),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    Text('Por cobrar ${plataNs(porCobrar)}', style: estiloNs(13, peso: FontWeight.w600, color: ns.ink)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: tarjeta(
+                  key: const Key('tablero_atender'),
+                  titulo: 'Para atender',
+                  fondo: avisos.isEmpty ? null : ns.wbg,
+                  hijos: [
+                    if (avisos.isEmpty)
+                      Text('Todo en orden', style: estiloNs(15, peso: FontWeight.w500, color: ns.ink))
+                    else
+                      for (final a in avisos.take(3))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(a, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(14, peso: FontWeight.w500, color: ns.w)),
+                        ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        const SizedBox(width: 8),
-        mini('$esperan', esperan == 1 ? 'espera seña' : 'esperan seña', fondo: esperan > 0 ? ns.wbg : null, color: esperan > 0 ? ns.w : null),
+        ),
       ],
     );
   }
