@@ -6,6 +6,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/domain/cobro_qr.dart';
+import 'package:la_plazoleta/servicios/preferencia_qr.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/pantalla_configuracion_companion.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
@@ -163,11 +165,25 @@ void main() {
     expect(despues.markupDefaultBp ~/ 100, (partida + 5).clamp(0, 99));
   });
 
+  testWidgets('dónde sale el QR se guarda al tocarlo, en este equipo (sin Guardar)', (t) async {
+    await _preparar(t);
+    await _abrir(t);
+    final chip = find.byKey(const ValueKey('donde-qr-pantalla'));
+    await t.scrollUntilVisible(chip, 300, scrollable: find.byType(Scrollable).first);
+    await t.tap(chip);
+    await t.pump();
+    expect(await t.runAsync(leerDondeQr), DondeQr.pantalla);
+    expect(find.textContaining('QR: en la pantalla'), findsOneWidget);
+    await t.pump(const Duration(seconds: 6)); // que el aviso de arriba termine su tiempo
+  });
+
   testWidgets('desactivar un usuario se guarda con Guardar; el otro queda como estaba', (t) async {
     final puerto = await _preparar(t);
     final ana = (await t.runAsync(() => puerto.crearUsuarioNuevo('Ana')))!;
     await _abrir(t);
 
+    // La lista es larga (2026-10-13 sumó "Dónde sale el QR"): se baja hasta la fila antes de tocarla.
+    await t.scrollUntilVisible(find.widgetWithText(InterruptorNs, 'Ana'), 300, scrollable: find.byType(Scrollable).first);
     await t.tap(find.widgetWithText(InterruptorNs, 'Ana'));
     await t.pump();
     expect((await t.runAsync(() => puerto.usuarios()))!.firstWhere((u) => u.id == ana).activo, isTrue, reason: 'sin Guardar sigue activo');

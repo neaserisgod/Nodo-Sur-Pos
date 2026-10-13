@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:la_plazoleta/data/cobro_posnet.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
-import 'package:la_plazoleta/edicion.dart';
+import 'package:la_plazoleta/domain/cobro_qr.dart';
 import 'package:la_plazoleta/servicios/pasarela_point_nube.dart';
 
 http.Response _json(Object o, [int s = 200]) => http.Response(jsonEncode(o), s, headers: {'content-type': 'application/json'});
@@ -140,19 +140,38 @@ void main() {
     });
   });
 
-  group('Nodo Sur Servicios: QR en la pantalla', () {
-    setUp(() => edicionActual = Edicion.servicios);
-    tearDown(() => edicionActual = Edicion.almacen);
+  group('QR en la pantalla (celular y web; `domain/cobro_qr.dart`)', () {
+    Future<PasarelaPointNube> elegir({required bool terminal, bool permite = true, DondeQr donde = DondeQr.automatico, bool? elegido}) async =>
+        await elegirPasarelaPoint(
+          almacen: await _conCuenta(),
+          cliente: _cliente((r) async => _json(_estado(terminal: terminal))),
+          permiteQrEnPantalla: permite,
+          dondeQr: donde,
+          qrEnPantallaElegido: elegido,
+        ) as PasarelaPointNube;
 
-    test('sin terminal elegida igual cobra por el servidor (el QR no la necesita)', () async {
-      final p = await elegirPasarelaPoint(almacen: await _conCuenta(), cliente: _cliente((r) async => _json(_estado(terminal: false))));
-      expect(p, isA<PasarelaPointNube>());
+    test('sin terminal elegida, el celular cobra igual con el QR en la pantalla', () async {
+      expect((await elegir(terminal: false)).qrEnPantalla, isTrue);
+      expect((await elegir(terminal: false, donde: DondeQr.terminal)).qrEnPantalla, isTrue, reason: 'no hay otra');
+    });
+
+    test('la PC no muestra el QR: sin terminal sigue pidiéndola', () async {
+      await expectLater(elegir(terminal: false, permite: false), throwsA(isA<CobroPosnetException>()));
+    });
+
+    test('con terminal: automático va a la Point, "en la pantalla" a la pantalla, "preguntar" usa lo que se eligió', () async {
+      expect((await elegir(terminal: true)).qrEnPantalla, isFalse);
+      expect((await elegir(terminal: true, donde: DondeQr.pantalla)).qrEnPantalla, isTrue);
+      expect((await elegir(terminal: true, donde: DondeQr.preguntar, elegido: true)).qrEnPantalla, isTrue);
+      expect((await elegir(terminal: true, donde: DondeQr.preguntar, elegido: false)).qrEnPantalla, isFalse);
+      expect((await elegir(terminal: true, donde: DondeQr.preguntar)).qrEnPantalla, isFalse, reason: 'sin contestar, a la terminal');
     });
 
     test('el QR pide la orden "qr_pantalla" y deja la trama para el diálogo; débito va a la terminal como siempre', () async {
       final canales = <String>[];
       final p = PasarelaPointNube(
         token: 'tok',
+        qrEnPantalla: true,
         cliente: _cliente((r) async {
           final canal = (jsonDecode(r.body) as Map)['canal'] as String;
           canales.add(canal);
