@@ -94,10 +94,30 @@ class SincronizadorTurnosBot {
 
   void cerrar() => _aviso?.cancel();
 
-  /// Una vuelta entera. Si ya hay una corriendo (un aviso en vivo en el medio de la vuelta de la sync), espera a esa.
+  /// Una vuelta entera. Si ya hay una corriendo, al terminar esa se hace otra: un aviso en vivo que llega en el medio (el bot dio
+  /// un turno, se pagó una seña) puede ser de algo que la vuelta en curso ya no va a ver, porque pidió la lista antes. Sumarse a la
+  /// que corre lo perdía hasta la próxima vuelta de la sync (El dueño, 2026-10-13: "tardó en aparecer, pero apareció").
   Future<void> vuelta(String token) {
     _ultimoToken = token;
-    return _enCurso ??= _vuelta(token).whenComplete(() => _enCurso = null);
+    final enCurso = _enCurso;
+    if (enCurso != null) {
+      _repetir = true;
+      return enCurso;
+    }
+    return _enCurso = _correr();
+  }
+
+  var _repetir = false;
+
+  Future<void> _correr() async {
+    try {
+      do {
+        _repetir = false;
+        await _vuelta(_ultimoToken!);
+      } while (_repetir);
+    } finally {
+      _enCurso = null;
+    }
   }
 
   Future<void> _vuelta(String token) async {

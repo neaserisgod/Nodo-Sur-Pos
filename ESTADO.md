@@ -138,6 +138,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Turnos y señas del bot tardaban en aparecer** (El dueño: "tardó en aparecer, pero apareció", con la beta que ya redibujaba la
+  Agenda): un aviso en vivo que llegaba mientras la app ya estaba bajando turnos se sumaba a esa bajada, que había pedido la lista
+  antes; el turno o la seña entraban recién en la próxima vuelta de la sync. Ahora, si llega un aviso en el medio, al terminar se
+  hace otra vuelta (`SincronizadorTurnosBot.vuelta`). Test que lo reproduce (falla sin el arreglo).
+
 - **Un turno del bot ya no se pierde** (El dueño, probando de punta a punta: "se confirma el turno, se confirma la seña, pero en
   la aplicación no aparece"): si un turno del bot no se podía cargar (el servicio no estaba en la app con ese nombre, un error al
   crearlo, sin usuario), se salteaba callado y el cursor seguía: no se reintentaba nunca. Ahora queda guardado, se reintenta en
