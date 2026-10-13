@@ -233,27 +233,34 @@ class _TituloMasState extends State<_TituloMas> {
     if (_toques < 7) return;
     _toques = 0;
     final db = baseLocalCompanion();
-    if (!await baseVaciaParaEjemplo(db)) {
-      if (mounted) mostrarAvisoNs(context, 'Solo se puede en una cuenta nueva, sin turnos, ventas ni cajas.', largo: true);
+    final estado = await estadoParaEjemplo(db);
+    if (!mounted) return;
+    if (estado == EstadoParaEjemplo.yaCargado) {
+      mostrarAvisoNs(context, 'La barbería de ejemplo ya está cargada en esta cuenta.', largo: true);
       return;
     }
-    if (!mounted) return;
+    final conDatos = estado == EstadoParaEjemplo.conDatos;
     final cargar = await mostrarHojaNs<bool>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: '¿Cargar la barbería de ejemplo?',
-        texto: 'Carga servicios, insumos, dos barberos, turnos de la semana y la caja de hoy, con datos inventados. Es para '
-            'probar o grabar la app: no lo uses en el negocio de verdad.',
+        titulo: conDatos ? 'Esta cuenta ya tiene datos' : '¿Cargar la barbería de ejemplo?',
+        texto: conDatos
+            ? 'Ya hay turnos, ventas o una caja. La barbería de ejemplo se suma encima, con datos inventados, y el negocio pasa a '
+                'llamarse Barbería El Faro. Hacelo solo en una cuenta de prueba: no en un negocio de verdad.'
+            : 'Carga servicios, insumos, dos barberos, turnos de la semana y la caja de hoy, con datos inventados. Es para '
+                'probar o grabar la app: no lo uses en el negocio de verdad.',
         botones: [
-          BotonNs.primario(ctx, 'Cargar', () => Navigator.of(ctx).pop(true)),
+          conDatos
+              ? BotonNs.peligroSolido(ctx, 'Cargar igual', () => Navigator.of(ctx).pop(true))
+              : BotonNs.primario(ctx, 'Cargar', () => Navigator.of(ctx).pop(true)),
           BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
         ],
       ),
     );
     if (cargar != true) return;
-    final hecho = await sembrarEjemploEnCuenta(db);
+    final hecho = await sembrarEjemploEnCuenta(db, aunqueTengaDatos: conDatos);
     if (!mounted) return;
-    mostrarAvisoNs(context, hecho ? 'Listo: cerrá la app y volvé a abrirla para ver la barbería.' : 'No se cargó: la base ya tiene datos.', largo: true);
+    mostrarAvisoNs(context, hecho ? 'Listo: cerrá la app y volvé a abrirla para ver la barbería.' : 'No se cargó: ya estaba cargada.', largo: true);
   }
 
   @override
