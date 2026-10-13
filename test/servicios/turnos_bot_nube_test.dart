@@ -37,6 +37,8 @@ void main() {
   late Map<String, dynamic>? configSitio;
   late SincronizadorTurnosBot sinc;
   var avisosDePantalla = 0;
+  // Corre justo después de que el sitio contesta la lista de turnos: para simular algo que llega en el medio de una vuelta.
+  void Function()? alContestarTurnos;
   final manana10 = () {
     final h = DateTime.now();
     return DateTime(h.year, h.month, h.day + 1, 10);
@@ -69,7 +71,11 @@ void main() {
         case '/api/bot/turnos':
           final desde = int.parse(r.url.queryParameters['desde']!);
           final lista = [for (final t in remotos) if ((t['actualizado'] as int) > desde) t];
-          return http.Response(jsonEncode({'turnos': lista, 'hasta': lista.isEmpty ? desde : lista.last['actualizado'], 'mas': false}), 200);
+          final respuesta = http.Response(jsonEncode({'turnos': lista, 'hasta': lista.isEmpty ? desde : lista.last['actualizado'], 'mas': false}), 200);
+          final hook = alContestarTurnos;
+          alContestarTurnos = null;
+          hook?.call();
+          return respuesta;
         case '/api/bot/turno/cambio':
           cambios.add(jsonDecode(r.body) as Map<String, dynamic>);
           return http.Response(jsonEncode({'ok': true}), 200);
@@ -80,6 +86,7 @@ void main() {
       return http.Response('{}', 404);
     }));
     avisosDePantalla = 0;
+    alContestarTurnos = null;
     sinc = SincronizadorTurnosBot(db: db, cliente: cliente, alBajar: () => avisosDePantalla++);
     remotos.add({
       'id': 'turno-bot-000001',
@@ -100,6 +107,40 @@ void main() {
   });
 
   Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))..orderBy([(t) => OrderingTerm.asc(t.id)])..limit(1)).getSingle();
+
+  test('reagendado en la app: si el turno vuelve a bajar antes de avisarle al bot, no vuelve a la hora vieja y el aviso sale', () async {
+    await sinc.vuelta('tok');
+    final t = await elDelBot();
+    final nueva = manana10.add(const Duration(hours: 5));
+    await moverTurno(db, t.id, nueva);
+    // Antes de que la app le avise al bot, el sitio vuelve a mandar el turno con la hora vieja (el bot tocó otra cosa).
+    remotos.first['actualizado'] = 50;
+    await sinc.vuelta('tok');
+    expect((await elDelBot()).inicio, nueva, reason: 'lo que hizo la dueña no se pisa');
+    expect(cambios.where((c) => c['inicio'] == ms(nueva)), isNotEmpty, reason: 'y el bot se entera para avisarle al cliente');
+  });
+
+  test('un aviso que llega en el medio de una vuelta no se pierde: al terminar se hace otra', () async {
+    Future<void>? segunda;
+    // Mientras la vuelta ya pidió la lista, el bot da otro turno y llega su aviso en vivo.
+    alContestarTurnos = () {
+      remotos.add({
+        'id': 'turno-bot-000002',
+        'origen': 'bot',
+        'estado': 'confirmado',
+        'inicio': ms(manana10.add(const Duration(hours: 3))),
+        'fin': ms(manana10.add(const Duration(hours: 4))),
+        'cliente': {'nombre': 'Bea'},
+        'servicio': {'nombre': 'Semipermanente'},
+        'actualizado': 99,
+      });
+      segunda = sinc.vuelta('tok');
+    };
+    await sinc.vuelta('tok');
+    await segunda;
+    final turnos = await db.select(db.turnos).get();
+    expect(turnos.map((t) => t.nombreCliente).toSet(), {'Ana', 'Bea'}, reason: 'Bea entra sin esperar a la próxima vuelta de la sync');
+  });
 
   test('el servicio se encuentra aunque el bot lo escriba con otras mayúsculas, acentos o espacios', () async {
     remotos.first['servicio'] = {'nombre': '  SEMIPERMANENTÉ '};

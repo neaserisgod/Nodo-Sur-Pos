@@ -94,10 +94,30 @@ class SincronizadorTurnosBot {
 
   void cerrar() => _aviso?.cancel();
 
-  /// Una vuelta entera. Si ya hay una corriendo (un aviso en vivo en el medio de la vuelta de la sync), espera a esa.
+  /// Una vuelta entera. Si ya hay una corriendo, al terminar esa se hace otra: un aviso en vivo que llega en el medio (el bot dio
+  /// un turno, se pagó una seña) puede ser de algo que la vuelta en curso ya no va a ver, porque pidió la lista antes. Sumarse a la
+  /// que corre lo perdía hasta la próxima vuelta de la sync (El dueño, 2026-10-13: "tardó en aparecer, pero apareció").
   Future<void> vuelta(String token) {
     _ultimoToken = token;
-    return _enCurso ??= _vuelta(token).whenComplete(() => _enCurso = null);
+    final enCurso = _enCurso;
+    if (enCurso != null) {
+      _repetir = true;
+      return enCurso;
+    }
+    return _enCurso = _correr();
+  }
+
+  var _repetir = false;
+
+  Future<void> _correr() async {
+    try {
+      do {
+        _repetir = false;
+        await _vuelta(_ultimoToken!);
+      } while (_repetir);
+    } finally {
+      _enCurso = null;
+    }
   }
 
   Future<void> _vuelta(String token) async {
@@ -149,7 +169,7 @@ class SincronizadorTurnosBot {
 
     Future<void> cargar(Map<String, dynamic> x) async {
       try {
-        final local = await _aplicar(x);
+        final local = await _aplicar(x, huellas);
         pendientes.remove('${x['id']}');
         if (local != null) {
           huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
@@ -188,7 +208,7 @@ class SincronizadorTurnosBot {
   static bool _mismaLista(List<String> a, List<String> b) => a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
 
   /// Pone en la Agenda (o actualiza) un turno del bot. Devuelve su id local, o null si no se pudo (el servicio no existe acá).
-  Future<int?> _aplicar(Map<String, dynamic> x) async {
+  Future<int?> _aplicar(Map<String, dynamic> x, Map<String, String> huellas) async {
     final idRemoto = x['id'];
     final estado = estadoDesdeSitio(x['estado']);
     final inicioMs = x['inicio'], finMs = x['fin'];
@@ -234,6 +254,15 @@ class SincronizadorTurnosBot {
     // (cobrado, no vino, cancelado) no se reabre.
     final local = EstadoTurno.desdeClave(existente.estado);
     if (!local.abierto) return existente.id;
+    // La dueña lo cambió acá (lo movió, lo canceló) y todavía no se le avisó al bot: gana lo de acá hasta que salga en
+    // `_avisarCambios`. Si no, una bajada del mismo turno en el medio (el bot tocó algo) lo volvía a la hora vieja y el aviso
+    // al cliente no salía nunca (El dueño, 2026-10-13: "al reagendar un turno no notifica a la persona"). La seña sí se anota.
+    // Una cancelación del cliente sí entra: el turno ya no va a pasar, haya hecho lo que haya hecho la dueña.
+    final previa = huellas[idRemoto];
+    if (previa != null && previa != huellaDe(existente) && estado != EstadoTurno.cancelado) {
+      if (estado.abierto) await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada']);
+      return null; // sin tocar su huella: así `_avisarCambios` todavía ve el cambio y lo manda
+    }
     if (estado == EstadoTurno.cancelado) {
       try {
         await cancelarTurno(db, existente.id, usuarioId: existente.usuarioId, sesionCajaId: await sesionAbiertaId(db));
