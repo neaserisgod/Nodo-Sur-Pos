@@ -138,6 +138,14 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+**Para retomar (13/10/2026, noche):**
+- Esperando la prueba del dueño con la beta del #117: reagendar en la app un turno del bot y ver si al cliente le llega
+  "🔁 Cambiamos tu turno". Si no llega: Más › Bot de WhatsApp › "Ver el registro del bot" dice por qué.
+- Esperando el resultado de la prueba de Point Tap (captura de la respuesta cruda).
+- Publicar APK con Gradle guardado (#118): medir cuánto tarda el **segundo** `beta:` después del cambio.
+- Aviso a clientes de turnos cargados en la app: planeado y **descartado por ahora** (El dueño: "solo que funcione lo que ya está").
+- Abierto en `docs/PLAN-RUBROS.md`: ¿el plan Emprendedor cubre a los que venden comida?
+
 - **Publicar los APK tardaba ~22 min** (El dueño: "me molesta la lentitud"): el APK de almacén compilaba Android de cero (~19 min,
   casi todo Gradle) y el de Servicios, con eso ya hecho, ~2 min. `publicar-apk` ahora guarda Gradle entre corridas
   (`gradle/actions/setup-gradle` + build cache). La primera corrida después del cambio llena el caché; se mide en la segunda.
