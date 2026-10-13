@@ -102,6 +102,26 @@ void main() {
     expect(find.byKey(const ValueKey('libre-10:00')), findsNothing);
   });
 
+  testWidgets('hoy arriba va el tablero: ahora, plata de hoy, para atender y compartir los huecos', (tester) async {
+    await abrir(tester);
+    expect(find.byKey(const Key('tablero_ahora')), findsOneWidget);
+    expect(find.text('Plata de hoy'), findsOneWidget);
+    expect(find.text('Para atender'), findsOneWidget);
+    expect(find.text('Todo en orden'), findsOneWidget);
+    // Abierto todos los días: siempre hay huecos en los próximos días para compartir.
+    await tester.tap(find.byKey(const Key('tablero_compartir')));
+    await esperar(tester);
+    expect(find.text('Mandar por WhatsApp'), findsOneWidget);
+    expect(find.text('Copiar el texto'), findsOneWidget);
+    expect(find.textContaining('¡Me quedan lugares'), findsOneWidget);
+  });
+
+  testWidgets('otro día no muestra el tablero', (tester) async {
+    await abrir(tester);
+    await irAManana(tester);
+    expect(find.byKey(const Key('tablero_ahora')), findsNothing);
+  });
+
   testWidgets('dar un turno: elige servicio, día y un horario libre, con la seña pedida a la vista', (tester) async {
     await abrir(tester);
     await tester.tap(find.byKey(const Key('agenda_nuevo')));

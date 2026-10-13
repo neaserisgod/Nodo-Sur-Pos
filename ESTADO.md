@@ -138,6 +138,13 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Tablero arriba de la Agenda** (servicios; El dueño eligió las tres tarjetas y "Compartir huecos"): **Ahora** (el turno en
+  curso o el que sigue, cuántos turnos y huecos quedan), **Plata de hoy** (cobrado en efectivo y Mercado Pago, y lo que falta
+  cobrar con la seña descontada) y **Para atender** (señas que no llegaron, quien viene y ya faltó, insumos por acabarse).
+  **Compartir huecos** arma el texto con los horarios libres de los próximos 3 días con lugar, para mandar por WhatsApp o copiar
+  a una historia. Cuentas en `domain/tablero_agenda.dart`, datos en `data/repositorio_tablero_agenda.dart`. Probado con tests y
+  una captura; falta verlo en un celular real.
+
 - **El bot no ofrecía turnos para hoy** (Nodo Sur Servicios): el Node que corre adentro de la app arrancaba sin zona horaria, en
   UTC; con la anticipación mínima de 2 horas, hoy quedaba siempre "en el pasado". La app le pasa la zona del celular
   (`ServicioBot.kt`, `TZ`) y el bot, sin zona, usa la de Argentina (`botdemo/src/zona.js`). **Publicar el APK y `botdemo` juntos.**
