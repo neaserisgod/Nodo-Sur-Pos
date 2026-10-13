@@ -4,9 +4,10 @@ Puerta de entrada para una sesión nueva (otra cuenta de Claude, otra persona) q
 desarrollo. Resume **qué es el sistema, cómo está armado, qué se hizo hasta hoy, qué quiere el dueño y cómo trabaja**, y
 apunta al documento que es dueño de cada tema. Actualizado al **2026-10-12** (lo de cada día, en `ESTADO.md`).
 
-Orden de lectura sugerido: este archivo → `CLAUDE.md` (cómo está armado el código y sus convenciones) → `ESTADO.md`
-(lo último, arriba de todo) → `REGLAS-NEGOCIO.md` antes de tocar dominio → `DECISIONES.md`/`TRAMPAS.md` antes de cambiar
-algo que ya funciona → `DISENO.md` antes de tocar pantallas. El sitio tiene su propio `CONTEXTO.md` en
+Orden de lectura sugerido: este archivo → `CLAUDE.md` (corto: convenciones y mapa) → lo último de `ESTADO.md`. Del
+resto (`REGLAS-NEGOCIO.md`, `DECISIONES.md`, `TRAMPAS.md`, `DISENO.md`, `docs/CLAUDE-DETALLE.md`) se lee **solo la
+sección del tema que se toca**, buscando el título con `grep -n '^## '`: son cientos de KB y leerlos enteros gasta
+contexto sin sumar. El sitio tiene su propio `CONTEXTO.md` en
 `neaserisgod/NodoSurPage`.
 
 ---
@@ -92,7 +93,7 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 `lib/ui/tema/`). Mocks de referencia en `Lenguaje de diseño/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
 (`docs/anotaciones-mocks.md` lista lo que está en los mocks pero no en la app).
 
-- **PC** (rediseño v4, 2026-10-06; detalle en `CLAUDE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla
+- **PC** (rediseño v4, 2026-10-06; detalle en `docs/CLAUDE-DETALLE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla
   Inicio vuelve ahí). Arriba, **Caja ▾** a la izquierda, las secciones como pastillas al centro (sin la marca ni lupa) y a
   la derecha el Asistente (Ctrl+K), la campanita y el engranaje de Configuración. En Venta, el buscador grande con
   **Pagar proveedor (Alt+P)** al lado. Configuración es una sola lista de secciones con el nombre del grupo arriba.

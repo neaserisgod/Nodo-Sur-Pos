@@ -136,6 +136,12 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (13/10/2026)
+
+- **Menos contexto por sesión de Claude**: `CLAUDE.md` pasó de ~24 KB a ~4 KB (se carga en cada turno); lo largo (pantalla de
+  venta, hardware, fases) se movió tal cual a `docs/CLAUDE-DETALLE.md`. `CONTEXTO.md` pide leer solo la sección que toca, y
+  `.claude/settings.json` no deja leer código generado, builds ni `docs/archivo/`.
+
 ## Últimos cambios (12/10/2026)
 
 - **Demo de Nodo Sur Servicios** (`horsepos.com/demo/`; `docs/PLAN-DEMO-SERVICIOS.md`): la app web sin entrar con Google, con un
