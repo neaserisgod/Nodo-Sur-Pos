@@ -169,7 +169,7 @@ class SincronizadorTurnosBot {
 
     Future<void> cargar(Map<String, dynamic> x) async {
       try {
-        final local = await _aplicar(x);
+        final local = await _aplicar(x, huellas);
         pendientes.remove('${x['id']}');
         if (local != null) {
           huellas['${x['id']}'] = huellaDe(await (db.select(db.turnos)..where((t) => t.id.equals(local))).getSingle());
@@ -208,7 +208,7 @@ class SincronizadorTurnosBot {
   static bool _mismaLista(List<String> a, List<String> b) => a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
 
   /// Pone en la Agenda (o actualiza) un turno del bot. Devuelve su id local, o null si no se pudo (el servicio no existe acá).
-  Future<int?> _aplicar(Map<String, dynamic> x) async {
+  Future<int?> _aplicar(Map<String, dynamic> x, Map<String, String> huellas) async {
     final idRemoto = x['id'];
     final estado = estadoDesdeSitio(x['estado']);
     final inicioMs = x['inicio'], finMs = x['fin'];
@@ -254,6 +254,15 @@ class SincronizadorTurnosBot {
     // (cobrado, no vino, cancelado) no se reabre.
     final local = EstadoTurno.desdeClave(existente.estado);
     if (!local.abierto) return existente.id;
+    // La dueña lo cambió acá (lo movió, lo canceló) y todavía no se le avisó al bot: gana lo de acá hasta que salga en
+    // `_avisarCambios`. Si no, una bajada del mismo turno en el medio (el bot tocó algo) lo volvía a la hora vieja y el aviso
+    // al cliente no salía nunca (El dueño, 2026-10-13: "al reagendar un turno no notifica a la persona"). La seña sí se anota.
+    // Una cancelación del cliente sí entra: el turno ya no va a pasar, haya hecho lo que haya hecho la dueña.
+    final previa = huellas[idRemoto];
+    if (previa != null && previa != huellaDe(existente) && estado != EstadoTurno.cancelado) {
+      if (estado.abierto) await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada']);
+      return null; // sin tocar su huella: así `_avisarCambios` todavía ve el cambio y lo manda
+    }
     if (estado == EstadoTurno.cancelado) {
       try {
         await cancelarTurno(db, existente.id, usuarioId: existente.usuarioId, sesionCajaId: await sesionAbiertaId(db));

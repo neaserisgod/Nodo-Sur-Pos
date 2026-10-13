@@ -108,6 +108,18 @@ void main() {
 
   Future<Turno> elDelBot() => (db.select(db.turnos)..where((t) => t.idRemoto.equals('turno-bot-000001'))..orderBy([(t) => OrderingTerm.asc(t.id)])..limit(1)).getSingle();
 
+  test('reagendado en la app: si el turno vuelve a bajar antes de avisarle al bot, no vuelve a la hora vieja y el aviso sale', () async {
+    await sinc.vuelta('tok');
+    final t = await elDelBot();
+    final nueva = manana10.add(const Duration(hours: 5));
+    await moverTurno(db, t.id, nueva);
+    // Antes de que la app le avise al bot, el sitio vuelve a mandar el turno con la hora vieja (el bot tocó otra cosa).
+    remotos.first['actualizado'] = 50;
+    await sinc.vuelta('tok');
+    expect((await elDelBot()).inicio, nueva, reason: 'lo que hizo la dueña no se pisa');
+    expect(cambios.where((c) => c['inicio'] == ms(nueva)), isNotEmpty, reason: 'y el bot se entera para avisarle al cliente');
+  });
+
   test('un aviso que llega en el medio de una vuelta no se pierde: al terminar se hace otra', () async {
     Future<void>? segunda;
     // Mientras la vuelta ya pidió la lista, el bot da otro turno y llega su aviso en vivo.
