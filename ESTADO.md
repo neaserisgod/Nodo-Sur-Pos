@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (13/10/2026)
 
+- **Publicar los APK tardaba ~22 min** (El dueño: "me molesta la lentitud"): el APK de almacén compilaba Android de cero (~19 min,
+  casi todo Gradle) y el de Servicios, con eso ya hecho, ~2 min. `publicar-apk` ahora guarda Gradle entre corridas
+  (`gradle/actions/setup-gradle` + build cache). La primera corrida después del cambio llena el caché; se mide en la segunda.
+  Separar Servicios en otro repo no lo arreglaba (seguiría compilando de cero) y duplicaba base, sync y cobro.
 - **Turnos y señas del bot tardaban en aparecer** (El dueño: "tardó en aparecer, pero apareció", con la beta que ya redibujaba la
   Agenda): un aviso en vivo que llegaba mientras la app ya estaba bajando turnos se sumaba a esa bajada, que había pedido la lista
   antes; el turno o la seña entraban recién en la próxima vuelta de la sync. Ahora, si llega un aviso en el medio, al terminar se
