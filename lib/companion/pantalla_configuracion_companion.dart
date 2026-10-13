@@ -18,6 +18,7 @@
 // (migración v32→v33), así que `ServicioCompanionOffline` no necesita
 // ninguna política especial acá, a diferencia de abrir/cerrar caja.
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../data/repositorio_configuracion.dart' show configurarValorHora;
@@ -49,6 +50,7 @@ import 'tema/hoja_vidrio.dart';
 import 'tema/presionable.dart';
 import 'tema/error_en_linea.dart';
 import 'terminal_mp.dart' show olvidarTerminalEnLaSucursal;
+import 'pantalla_prueba_point_tap.dart';
 import '../domain/cobro_qr.dart';
 import '../servicios/preferencia_qr.dart';
 
@@ -412,6 +414,12 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
                 const SizedBox(height: 6),
                 Text('${_dondeQr.descripcion} Vale para este equipo. Débito y crédito necesitan la terminal.',
                     style: estiloNs(14, altura: 1.35, color: ns.mute)),
+                // Prueba de cobro con tarjeta en el celular (Point Tap), solo en Android: ver `pantalla_prueba_point_tap.dart`.
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
+                  const SizedBox(height: 10),
+                  BotonNs.texto(context, 'Probar cobro con tarjeta en el celular (Point Tap)',
+                      () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaPruebaPointTap()))),
+                ],
               ],
             ),
           ),
