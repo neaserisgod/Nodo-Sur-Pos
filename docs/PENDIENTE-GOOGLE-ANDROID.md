@@ -35,7 +35,11 @@ dos apps están registradas ahí (`appId` `1:831126263942:android:909951cf…` e
 la configuración de Firebase de la app del almacén, Firebase creó solo un cliente OAuth Android ("auto created by Google
 Service") con esa pareja.
 
-No se sabe todavía **en qué proyecto está el cliente Web del sitio**. Ahí está la clave:
+**Confirmado (2026-10-14)**: el cliente Web del sitio es `433741777622-tpf55b90v345tdfv15o0r059f3oigknn.apps.googleusercontent.com`,
+o sea el proyecto número **`433741777622`**, distinto de Firebase (`831126263942`). Vale el segundo camino de abajo: los dos
+clientes Android tienen que vivir en `433741777622`.
+
+Los dos caminos posibles:
 
 - **Si el cliente Web está en `nodo-sur-eb45a`**: no hay que crear nada. El cliente Android ya existe en el mismo proyecto que
   el Web; solo hay que confirmar en Credenciales que está y que tiene esa SHA-1. Ojo: entonces el cliente de **servicios** que
