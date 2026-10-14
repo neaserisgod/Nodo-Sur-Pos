@@ -2595,3 +2595,14 @@ la prueba (pantalla, canal `nodosur/point_tap` y las consultas del manifiesto).
   sumar un parámetro a todas las capas del cobro, que son las mismas con y sin la PC.
 - Nodo Sur Servicios con una terminal elegida ahora la usa en "automático" (antes el QR iba siempre a la pantalla); con "En la
   pantalla" vuelve a lo de antes.
+
+## Ícono de Nodo Sur Servicios: "turnos" en ciruela (El dueño, 2026-10-14)
+
+- Antes las dos ediciones usaban el mismo "pos" negro: con las dos instaladas en un celular no se distinguían. La web
+  (`/app/`, `/demo/`, que es solo Servicios) usaba el "ns" de la marca.
+- Misma familia que "pos" (Figtree 600, punto abajo) para que se vea de la misma casa; la palabra es "turnos" porque es lo
+  que compra el cliente. El dueño descartó el azul de marca ("muy genérico"); eligió ciruela `#5B1F45` con letras `#F6E7EF`
+  entre seis colores: cálido, de salón de belleza, y no se confunde con el negro de "pos".
+- Fuente: `assets/icon/logo_servicios.png` (1024 px, no se empaqueta). Android: `android/app/src/servicios/res/mipmap-*`
+  pisa el `ic_launcher` de `main` solo en ese flavor; `flutter_launcher_icons` no lo toca (regenera solo `main` y Windows).
+  Web: `web/icons/*` y `web/favicon.png`; el maskable es fondo lleno con el contenido al 80 % (zona segura).
