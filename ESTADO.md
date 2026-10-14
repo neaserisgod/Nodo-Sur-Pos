@@ -138,6 +138,12 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (14/10/2026)
 
+- **Revisión de Nodo Sur Servicios** (El dueño: "la configuración no guarda"): la causa era guardar sobre una fila de
+  configuración que en ese celular no existía (ver `TRAMPAS.md`). Además: doble toque que anotaba turnos, señas y compras dos
+  veces; errores que no se mostraban; la Agenda o su configuración colgadas si fallaba la lectura; WhatsApp sin código de país;
+  la misma clienta duplicada por el teléfono escrito distinto; títulos en "Nuevo turno". Capturas en
+  `test/companion/capturas_servicios_test.dart`. **Falta probarlo en el celular.**
+
 - **Beta o Estable en el celular** (las dos apps), solo para cuentas de prueba: Más › Actualización. Hasta ahora el celular nunca
   veía las betas. Necesita el sitio desplegado (`solo=1`). Probado con tests; falta verlo en un celular.
 - **Point Tap descartado**: Mercado Pago no deja pedir el cobro desde otra app (probado en un celular). Se sacó la prueba.
