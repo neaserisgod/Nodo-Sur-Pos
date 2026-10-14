@@ -20,17 +20,21 @@ import '../../data/repositorio_turnos.dart';
 import '../../data/repositorio_ventas.dart' show registrarVentaSegunMedio;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/medio_pago.dart';
+import '../../domain/pedido_whatsapp.dart' show normalizarWhatsapp;
 import '../../domain/tablero_agenda.dart';
 import '../../domain/turnos.dart';
 import '../../edicion.dart';
 import '../../servicios/calendario.dart';
+import '../../servicios/registro_errores.dart' show registrarSiNoEsDeRed;
 import '../../servicios/sena_mp_nube.dart';
 import '../../servicios/turnos_bot_nube.dart' show turnosBotSinCargar;
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
+import '../configurar/pendientes_en_inicio.dart';
 import '../emparejamiento.dart';
 import '../kit/kit_ns.dart';
+import '../mensaje_error.dart';
 import '../modo_uso.dart';
 import 'hoja_abrir_caja_ns.dart';
 
@@ -108,6 +112,18 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
   }
 
   Future<void> _recargar() async {
+    try {
+      await _leerDia();
+    } catch (e, st) {
+      // Sin esto, un error al leer dejaba la Agenda en el esqueleto para siempre.
+      unawaited(registrarSiNoEsDeRed('Leer la Agenda', e, st));
+      if (!mounted) return;
+      setState(() => _turnos ??= const []);
+      mostrarAvisoNs(context, 'No se pudo leer la agenda: ${mensajeDeError(e)}', largo: true);
+    }
+  }
+
+  Future<void> _leerDia() async {
     // Los turnos del bot que no pagaron la seña a tiempo liberan su horario solos (§21).
     await liberarSenasVencidas(_db);
     final lunes = _lunesDe(_dia);
@@ -235,7 +251,9 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                 builder: (_) => HojaTurnoNs(db: _db, usuarioId: u, dia: _soloDia(t.inicio), existente: t, sesionCajaId: sesion),
               );
             case 'whatsapp':
-              await _abrir(Uri.parse('https://wa.me/${t.turno.telefono!.replaceAll(RegExp(r'\D'), '')}'));
+              // Con código de país: un número cargado a mano (2944 123456) abría un chat que no existe.
+              final numero = normalizarWhatsapp(t.turno.telefono!) ?? t.turno.telefono!.replaceAll(RegExp(r'\D'), '');
+              await _abrir(Uri.parse('https://wa.me/$numero'));
             case 'calendar':
               if (!await agendarEnCalendario(
                 titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}',
@@ -258,6 +276,10 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
           }
         } on ArgumentError catch (e) {
           if (mounted) mostrarAvisoNs(context, '${e.message}', largo: true);
+        } catch (e, st) {
+          // Cualquier otra falla (la base, la caja, la red) también se dice: antes se perdía sin aviso.
+          unawaited(registrarSiNoEsDeRed('Acción sobre un turno', e, st));
+          if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
         }
       });
 
@@ -363,6 +385,9 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                   ),
               ],
             ),
+            // Un negocio de servicios arranca acá, no en Inicio: sin esto, los pasos de "Configurá tu negocio" dejados para
+            // después no se recordaban nunca.
+            const PendientesEnInicio(margenLateral: 0),
             const SizedBox(height: 18),
             if (conPc)
               const InfoNs('Con la PC, la agenda todavía se usa solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
@@ -1005,7 +1030,8 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
       for (final s in await listarServicios(widget.db, conManoDeObra: false))
         if ((s.producto.duracionMinutos ?? 0) > 0) s,
     ];
-    final usuarios = await (widget.db.select(widget.db.usuarios)..where((u) => u.activo.equals(true))).get();
+    // Sin repetidos (mismo nombre = misma persona), igual que la Agenda: si no, un perfil duplicado aparecía dos veces.
+    final usuarios = await listarUsuariosActivos(widget.db);
     if (!mounted) return;
     setState(() {
       _servicios = servicios;
@@ -1070,11 +1096,29 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
   }
 
   Future<void> _guardar() async {
+    if (_guardando) return;
     final servicio = _servicio;
     final hora = _horaFinal();
     if (!_moviendo && servicio == null) return setState(() => _error = 'Elegí el servicio');
     if (hora == null) return setState(() => _error = _otraHora.text.trim().isEmpty ? 'Elegí la hora' : 'La hora va como 10:30');
     if (!_moviendo && _nombre.text.trim().isEmpty) return setState(() => _error = 'Poné el nombre de quien viene');
+    // Se apaga el botón ANTES de las consultas de abajo: un doble toque anotaba el turno dos veces.
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    try {
+      await _guardarYa(servicio, hora);
+    } on ArgumentError catch (e) {
+      if (mounted) setState(() => _error = '${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo guardar: ${mensajeDeError(e)}');
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  Future<void> _guardarYa(ServicioListado? servicio, DateTime hora) async {
     final tramo = (inicio: hora, duracionMin: _duracion);
     final profesional = _profesionales.length > 1 ? _profesionalId : null;
     final pisa = await turnosQueSePisan(widget.db, tramo, profesionalId: profesional, salvoTurnoId: widget.existente?.turno.id);
@@ -1098,11 +1142,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
       );
       if (seguir != true) return;
     }
-    setState(() {
-      _guardando = true;
-      _error = null;
-    });
-    try {
+    {
       final e = widget.existente;
       if (e != null) {
         await moverTurno(widget.db, e.turno.id, hora, profesionalId: profesional, cambiarProfesional: _profesionales.length > 1);
@@ -1129,10 +1169,6 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
           'Turno anotado: ${textoDiaNs(hora).toLowerCase()} ${horaNs(hora)}${sinCaja ? '. La seña entra a la caja ${_cuandoAbra()}' : ''}',
         );
       }
-    } on ArgumentError catch (e) {
-      if (mounted) setState(() => _error = '${e.message}');
-    } finally {
-      if (mounted) setState(() => _guardando = false);
     }
   }
 
@@ -1146,6 +1182,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
       titulo: _moviendo ? 'Mover el turno' : 'Nuevo turno',
       bloques: [
         if (!_moviendo) ...[
+          const SeccionNs('Servicio'),
           if (_servicios.isEmpty)
             const InfoNs('Primero cargá un servicio con su duración en la pestaña Servicios.')
           else
@@ -1170,6 +1207,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
             ),
         ] else
           Text('${widget.existente!.turno.servicioNombre} · ${widget.existente!.turno.nombreCliente}', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink)),
+        const SeccionNs('Día'),
         SizedBox(
           height: 44,
           child: ListView.separated(
@@ -1192,6 +1230,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
             },
           ),
         ),
+        if (_profesionales.length > 1) const SeccionNs('Quién atiende'),
         if (_profesionales.length > 1)
           Wrap(
             spacing: 8,
@@ -1201,6 +1240,8 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
               for (final p in _profesionales) ChipNs(texto: p.nombre, activo: _profesionalId == p.id, onTap: () => _elegirProfesional(p.id)),
             ],
           ),
+        // Sin servicio no hay duración ni horarios: se dice en vez de dejar el hueco.
+        if (_duracion <= 0 && !_moviendo && _servicios.isNotEmpty) const InfoNs('Elegí el servicio para ver los horarios libres.'),
         if (_duracion > 0) ...[
           SeccionNs('Horarios libres · ${duracionTextoNs(_duracion)}'),
           if (libres == null)
@@ -1266,6 +1307,7 @@ class _HojaSena extends StatefulWidget {
 class _HojaSenaState extends State<_HojaSena> {
   late final _monto = TextEditingController(text: '${widget.turno.turno.senaPedidaCentavos ~/ 100}');
   bool _efectivo = false;
+  bool _guardando = false;
   String? _error;
 
   @override
@@ -1275,15 +1317,25 @@ class _HojaSenaState extends State<_HojaSena> {
   }
 
   Future<void> _guardar() async {
+    // Un doble toque anotaba la seña dos veces: dos ingresos en la caja.
+    if (_guardando) return;
     final monto = _plata(_monto.text);
     if (monto == null || monto <= 0) return setState(() => _error = 'Poné cuánto dejó');
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
     try {
       await registrarSenaDeTurno(widget.db, widget.turno.turno.id, montoCentavos: monto, esEfectivo: _efectivo, usuarioId: widget.usuarioId, sesionCajaId: widget.sesionCajaId);
       if (mounted) {
         Navigator.of(context).pop(widget.sesionCajaId == null ? 'Seña anotada: entra a la caja ${_cuandoAbra()}' : 'Seña anotada. El turno queda confirmado');
       }
     } on ArgumentError catch (e) {
-      setState(() => _error = '${e.message}');
+      if (mounted) setState(() => _error = '${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo anotar: ${mensajeDeError(e)}');
+    } finally {
+      if (mounted) setState(() => _guardando = false);
     }
   }
 
@@ -1297,7 +1349,7 @@ class _HojaSenaState extends State<_HojaSena> {
         SegmentoNs(opciones: const ['Efectivo', 'Mercado Pago'], indice: _efectivo ? 0 : 1, onCambio: (i) => setState(() => _efectivo = i == 0)),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
-      botones: [BotonNs.primario(context, 'Anotar seña', _guardar, icono: IconoNs.tilde)],
+      botones: [BotonNs.primario(context, _guardando ? 'Anotando…' : 'Anotar seña', _guardando ? null : _guardar, habilitado: !_guardando, icono: IconoNs.tilde)],
     );
   }
 }
@@ -1338,6 +1390,8 @@ class _HojaCobrarTurnoState extends State<_HojaCobrarTurno> {
           ));
     } on ArgumentError catch (e) {
       if (mounted) setState(() => _error = '${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo calcular el cobro: ${mensajeDeError(e)}');
     }
   }
 
@@ -1372,6 +1426,8 @@ class _HojaCobrarTurnoState extends State<_HojaCobrarTurno> {
       if (mounted) Navigator.of(context).pop('Cobrado: ${plataNs(r.totalCentavos - sena)}${sena > 0 ? ' (más ${plataNs(sena)} de seña)' : ''}');
     } on ArgumentError catch (e) {
       if (mounted) setState(() => _error = '${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo cobrar: ${mensajeDeError(e)}');
     } finally {
       if (mounted) setState(() => _cobrando = false);
     }

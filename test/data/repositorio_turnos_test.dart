@@ -49,6 +49,11 @@ void main() {
     // El mismo teléfono otra vez es la misma clienta.
     final otro = await crearTurno(db, servicioId: retiro, inicio: a(15), nombreCliente: 'Anita', telefono: '5492944111111', usuarioId: usuarioId);
     expect((await turno(otro)).clienteId, t.clienteId);
+    // Y escrito distinto (a mano, sin código de país; o con +54 9 como lo trae el bot) también.
+    final aMano = await crearTurno(db, servicioId: retiro, inicio: a(16), nombreCliente: 'Ana', telefono: '2944 11-1111', usuarioId: usuarioId);
+    expect((await turno(aMano)).clienteId, t.clienteId);
+    final conMas = await crearTurno(db, servicioId: retiro, inicio: a(17), nombreCliente: 'Ana', telefono: '+54 9 2944 111111', usuarioId: usuarioId);
+    expect((await turno(conMas)).clienteId, t.clienteId);
   });
 
   test('los horarios libres no ofrecen lo ocupado; un cancelado libera su lugar', () async {

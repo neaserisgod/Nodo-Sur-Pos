@@ -18,6 +18,8 @@
 // (migración v32→v33), así que `ServicioCompanionOffline` no necesita
 // ninguna política especial acá, a diferencia de abrir/cerrar caja.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/repositorio_configuracion.dart' show configurarValorHora;
@@ -39,6 +41,7 @@ import 'debounce.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
+import 'pantalla_entrar_con_cuenta.dart' show avisarNombreDelNegocio;
 import 'pantalla_gastos_fijos.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
@@ -257,7 +260,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       if (nombre.isEmpty) {
         errores.add('Nombre del comercio: no puede quedar vacío');
       } else {
-        await intentar('Nombre del comercio', () => servicio.actualizarNombreComercio(nombre), () {});
+        await intentar('Nombre del comercio', () => servicio.actualizarNombreComercio(nombre), () => unawaited(avisarNombreDelNegocio(nombre)));
       }
     }
     if (_rubroCambio) {

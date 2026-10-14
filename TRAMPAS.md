@@ -11,6 +11,16 @@ elección deliberada), ver `DECISIONES.md`.
 
 ---
 
+## Un `update` sobre la fila única de configuración no guarda nada si la fila no está
+
+`configuracion_negocio_tabla` es una fila única que en el celular no se siembra (llega por la sync, o la crea "Configurá tu
+negocio"). Un celular sin esa fila mostraba los valores de fábrica (`configuracionNegocioActual`) y cada "Guardar" hacía un
+`update` sobre cero filas: no guardaba nada, no tiraba error y la pantalla decía "guardado" (El dueño, 2026-10-14, Nodo Sur
+Servicios: "el bug de las configuraciones se volvió a repetir, no guarda").
+- **Toda escritura de esa tabla pasa por `escribirConfiguracionNegocio`** (`repositorio_configuracion.dart`): si falta la fila, la
+  crea con lo que se venía mostrando y el `global_id` fijo (`globalIdConfiguracionNegocio`), así la de otro equipo la reemplaza
+  sin duplicarla. Nunca un `db.update(db.configuracionNegocioTabla)` suelto.
+
 ## Cambiar de negocio sin cerrar la app: lo que vive en memoria es de la cuenta vieja
 
 Desde el 2026-10-14 el celular cambia de negocio sin cerrar la app (`reinicio_companion.dart`). Antes, cerrar el proceso

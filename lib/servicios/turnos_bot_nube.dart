@@ -31,6 +31,7 @@ import '../domain/turnos.dart';
 import 'avisos_bot.dart';
 import '../edicion.dart';
 import 'cuenta_nube.dart';
+import 'registro_errores.dart' show registrarSiNoEsDeRed;
 
 const _claveCursor = 'turnosBot.cursor';
 const _claveHuellas = 'turnosBot.huellas';
@@ -136,8 +137,9 @@ class SincronizadorTurnosBot {
       await prefs.setString(_claveHuellas, jsonEncode(huellas));
       await _publicarOcupados(token);
       if (_estado!.puedeConfigurar) await _publicarConfig(token);
-    } catch (_) {
-      // Sin red, sin plan o el sitio caído: en la próxima vuelta.
+    } catch (e, st) {
+      // Sin red, sin plan o el sitio caído: en la próxima vuelta. Lo que no es de red queda anotado (antes se perdía callado).
+      unawaited(registrarSiNoEsDeRed('Turnos del bot', e, st));
     }
   }
 
