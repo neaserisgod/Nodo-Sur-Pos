@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (14/10/2026)
 
+- **Ícono propio de Nodo Sur Servicios** (El dueño, 14/10): misma familia que "pos" (Figtree, punto abajo) pero dice
+  "turnos", fondo ciruela `#5B1F45` y letras `#F6E7EF`. Distingue las dos apps en el mismo celular. Detalle en `DECISIONES.md`.
+
 - **"Configurá tu negocio" en Servicios pregunta el horario de atención** (paso 3 de 4: días y franja, la misma para todos;
   un día distinto se ajusta en Configuración › Agenda y seña). Antes el bot ofrecía turnos en el horario de fábrica. En
   almacén siguen siendo tres pasos. "Conectar" e "Invitar" del último paso ahora se ven como botones.

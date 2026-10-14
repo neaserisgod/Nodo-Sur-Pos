@@ -147,6 +147,8 @@ flutter:
 # Ícono de la app (escritorio y companion) — "pos" con un punto, tinta y Figtree (opción 4 elegida por el dueño,
 # 2026-10-03; reemplaza al "P41" azul). `dart run flutter_launcher_icons` regenera
 # windows/runner/resources/app_icon.ico y los mipmaps de android/ a partir de esta única imagen fuente.
+# Nodo Sur Servicios tiene su propio ícono ("turnos" en ciruela, `assets/icon/logo_servicios.png`): vive en
+# android/app/src/servicios/res/ y web/icons/, fuera de este generador (DECISIONES.md, 2026-10-14).
 flutter_launcher_icons:
   image_path: "assets/icon/logo_pos.png"
   windows:
