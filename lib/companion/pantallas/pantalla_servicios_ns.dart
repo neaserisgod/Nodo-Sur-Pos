@@ -23,6 +23,7 @@ import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../emparejamiento.dart';
+import '../guardar_una_vez.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
 
@@ -333,7 +334,7 @@ class _HojaInsumo extends StatefulWidget {
   State<_HojaInsumo> createState() => _HojaInsumoState();
 }
 
-class _HojaInsumoState extends State<_HojaInsumo> {
+class _HojaInsumoState extends State<_HojaInsumo> with GuardarUnaVezNs {
   late final _nombre = TextEditingController(text: widget.existente?.producto.nombre ?? '');
   late final _contenido = TextEditingController(
     text: widget.existente?.producto.contenidoEnvaseMilesimas == null ? '' : textoDeMilesimas(widget.existente!.producto.contenidoEnvaseMilesimas!),
@@ -369,7 +370,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
       setState(() => _error = 'Lo que tenés va en ${_unidad.abreviatura}, como 30 o 7,5');
       return;
     }
-    try {
+    await unaVez(() async {
       final e = widget.existente;
       if (e == null) {
         await crearInsumo(
@@ -397,9 +398,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
         );
       }
       if (mounted) Navigator.of(context).pop(e == null && tengo == 0 ? 'Insumo cargado. Sumá lo que tenés con "Cargar compra".' : e == null ? 'Insumo cargado' : 'Insumo guardado');
-    } on ArgumentError catch (e) {
-      setState(() => _error = '${e.message}');
-    }
+    }, alFallar: (m) => setState(() => _error = m));
   }
 
   @override
@@ -435,7 +434,7 @@ class _HojaInsumoState extends State<_HojaInsumo> {
         CampoNs(etiqueta: 'Avisar con menos de (${_unidad.abreviatura}, opcional)', controller: _minimo, teclado: const TextInputType.numberWithOptions(decimal: true), formatos: decimales),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
-      botones: [BotonNs.primario(context, 'Guardar insumo', _guardar, icono: IconoNs.tilde)],
+      botones: [BotonNs.primario(context, 'Guardar insumo', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],
     );
   }
 }
@@ -453,7 +452,7 @@ class _HojaCompra extends StatefulWidget {
   State<_HojaCompra> createState() => _HojaCompraState();
 }
 
-class _HojaCompraState extends State<_HojaCompra> {
+class _HojaCompraState extends State<_HojaCompra> with GuardarUnaVezNs {
   late InsumoListado _insumo = widget.elegido;
   final _envases = TextEditingController(text: '1');
   late final _precio = TextEditingController(text: _plataEnCampo(widget.elegido.producto.costoCentavos));
@@ -482,12 +481,10 @@ class _HojaCompraState extends State<_HojaCompra> {
 
   Future<void> _guardar() async {
     final envases = int.tryParse(_envases.text) ?? 0;
-    try {
+    await unaVez(() async {
       await cargarCompraDeInsumo(widget.db, insumoId: _insumo.producto.id, envases: envases, costoEnvaseCentavos: _plata(_precio.text), usuarioId: widget.usuarioId);
       if (mounted) Navigator.of(context).pop('Compra sumada al stock');
-    } on ArgumentError catch (e) {
-      setState(() => _error = '${e.message}');
-    }
+    }, alFallar: (m) => setState(() => _error = m));
   }
 
   @override
@@ -524,7 +521,7 @@ class _HojaCompraState extends State<_HojaCompra> {
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
         Text('Trae ${textoDeMilesimas(_insumo.producto.contenidoEnvaseMilesimas ?? 0)} ${_insumo.unidad.abreviatura} por envase (se cambia en Editar).', style: estiloNs(13, color: ns.mute)),
       ],
-      botones: [BotonNs.primario(context, 'Sumar al stock', _guardar, icono: IconoNs.tilde)],
+      botones: [BotonNs.primario(context, 'Sumar al stock', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],
     );
   }
 }
@@ -539,7 +536,7 @@ class _HojaContar extends StatefulWidget {
   State<_HojaContar> createState() => _HojaContarState();
 }
 
-class _HojaContarState extends State<_HojaContar> {
+class _HojaContarState extends State<_HojaContar> with GuardarUnaVezNs {
   late final _cantidad = TextEditingController(text: textoDeMilesimas(widget.insumo.stockMilesimas));
   String? _error;
 
@@ -555,8 +552,10 @@ class _HojaContarState extends State<_HojaContar> {
       setState(() => _error = 'Escribí cuánto hay');
       return;
     }
-    await contarInsumo(widget.db, insumoId: widget.insumo.producto.id, stockMilesimas: milesimas, usuarioId: widget.usuarioId);
-    if (mounted) Navigator.of(context).pop('Stock corregido');
+    await unaVez(() async {
+      await contarInsumo(widget.db, insumoId: widget.insumo.producto.id, stockMilesimas: milesimas, usuarioId: widget.usuarioId);
+      if (mounted) Navigator.of(context).pop('Stock corregido');
+    }, alFallar: (m) => setState(() => _error = m));
   }
 
   @override
@@ -576,7 +575,7 @@ class _HojaContarState extends State<_HojaContar> {
         ),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
-      botones: [BotonNs.primario(context, 'Guardar conteo', _guardar, icono: IconoNs.tilde)],
+      botones: [BotonNs.primario(context, 'Guardar conteo', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],
     );
   }
 }
@@ -599,7 +598,7 @@ class PantallaEditorServicioNs extends StatefulWidget {
   State<PantallaEditorServicioNs> createState() => _PantallaEditorServicioNsState();
 }
 
-class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
+class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> with GuardarUnaVezNs {
   late final _nombre = TextEditingController(text: widget.existente?.producto.nombre ?? '');
   late final _duracion = TextEditingController(text: '${widget.existente?.producto.duracionMinutos ?? 30}');
   late final _precio = TextEditingController(text: _plataEnCampo(widget.existente?.producto.precioCentavos));
@@ -720,7 +719,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
       return;
     }
     final receta = [for (final l in _receta) (insumoId: l.insumo.producto.id, milesimas: l.milesimas)];
-    try {
+    await unaVez(() async {
       final e = widget.existente;
       if (e == null) {
         await crearServicio(widget.db, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
@@ -730,15 +729,13 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
             sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
       }
       if (mounted) Navigator.of(context).pop(e == null ? 'Servicio creado' : 'Servicio guardado');
-    } on ArgumentError catch (e) {
-      setState(() => _error = '${e.message}');
-    }
+    }, alFallar: (m) => setState(() => _error = m));
   }
 
-  Future<void> _dejarDeOfrecer() async {
-    await cambiarActivo(widget.db, id: widget.existente!.producto.id, activo: false);
-    if (mounted) Navigator.of(context).pop('Ya no se ofrece');
-  }
+  Future<void> _dejarDeOfrecer() => unaVez(() async {
+        await cambiarActivo(widget.db, id: widget.existente!.producto.id, activo: false);
+        if (mounted) Navigator.of(context).pop('Ya no se ofrece');
+      }, alFallar: (m) => setState(() => _error = m));
 
   @override
   Widget build(BuildContext context) {
@@ -851,8 +848,8 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> {
       ),
       botones: [
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
-        BotonNs.primario(context, 'Guardar servicio', _guardar, icono: IconoNs.tilde),
-        if (widget.existente != null) BotonNs.secundario(context, 'Dejar de ofrecerlo', _dejarDeOfrecer),
+        BotonNs.primario(context, 'Guardar servicio', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
+        if (widget.existente != null) BotonNs.secundario(context, 'Dejar de ofrecerlo', guardando ? null : _dejarDeOfrecer),
       ],
     );
   }

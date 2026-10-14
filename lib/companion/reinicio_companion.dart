@@ -19,7 +19,10 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/marca.dart';
 import '../servicios/gemini.dart' show ClaveGemini;
+import '../domain/modulos.dart' show ModulosNegocio;
+import '../edicion.dart' show esEdicionServicios;
 import '../servicios/marca_actual.dart';
+import '../servicios/modulos_activos.dart' show modulosActuales;
 import '../servicios/registro_errores.dart';
 import '../servicios/turnos_bot_nube.dart' show turnosBotSinCargar;
 import 'actualizacion.dart' show celularDePruebas;
@@ -83,4 +86,6 @@ void olvidarLoDeLaCuenta() {
   pasosPendientesNegocio.value = const {};
   turnosBotSinCargar.value = const [];
   celularDePruebas.value = false;
+  // Los módulos del negocio anterior: hasta que el nuevo lea su base, como al arrancar.
+  modulosActuales.value = esEdicionServicios ? ModulosNegocio.todosActivos.paraEdicionServicios() : ModulosNegocio.todosActivos;
 }
