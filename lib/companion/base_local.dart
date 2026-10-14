@@ -19,6 +19,15 @@ import '../data/database.dart';
 const nombreBaseCelular = 'la_plazoleta';
 
 AppDatabase? _instancia;
+bool _bloqueada = false;
+
+/// Se pidió la base en medio de un cambio de negocio (`reinicio_companion.dart`). Es lo que llega tarde de la cuenta anterior:
+/// falla en vez de abrir una base vacía en el lugar de la activa, que el cambio movería encima de la verdadera.
+class BaseLocalBloqueada implements Exception {
+  const BaseLocalBloqueada();
+  @override
+  String toString() => 'La base del celular está cerrada mientras se cambia de negocio.';
+}
 
 /// La base local de este celular. Se abre una sola vez, recién la primera
 /// vez que algo la pide (el primer pull tras emparejar, o un sync
@@ -26,19 +35,32 @@ AppDatabase? _instancia;
 /// al arrancar la app, para no demorar ni un frame la pantalla que sea que
 /// esté mostrando (mismo criterio de arranque que ya sigue el servidor
 /// companion del escritorio).
-AppDatabase baseLocalCompanion() => _instancia ??= AppDatabase();
+AppDatabase baseLocalCompanion() {
+  if (_bloqueada) throw const BaseLocalBloqueada();
+  return _instancia ??= AppDatabase();
+}
 
 /// La demo del navegador (`demo/demo.dart`) trabaja sobre una base en memoria, armada antes de que nada la pida.
-void usarBaseLocal(AppDatabase db) => _instancia = db;
+void usarBaseLocal(AppDatabase db) {
+  _bloqueada = false;
+  _instancia = db;
+}
 
 /// Solo para tests y capturas: reemplaza la base local por una en memoria.
 @visibleForTesting
-void usarBaseLocalDeTest(AppDatabase db) => _instancia = db;
+void usarBaseLocalDeTest(AppDatabase db) {
+  _bloqueada = false;
+  _instancia = db;
+}
 
-/// Cierra la base local si está abierta, para poder borrar su archivo (`borrar_celular.dart`). La próxima vez que algo la
-/// pida se abre de nuevo.
-Future<void> cerrarBaseLocalCompanion() async {
+/// Cierra la base local si está abierta, para poder moverla o borrar su archivo (`borrar_celular.dart`). Con [bloquear], nadie
+/// la puede volver a abrir hasta [desbloquearBaseLocal]; sin él, la próxima vez que algo la pida se abre de nuevo.
+Future<void> cerrarBaseLocalCompanion({bool bloquear = false}) async {
+  if (bloquear) _bloqueada = true;
   final db = _instancia;
   _instancia = null;
   await db?.close();
 }
+
+/// Terminado el cambio de negocio, la base (ya la del negocio nuevo) se puede abrir otra vez.
+void desbloquearBaseLocal() => _bloqueada = false;

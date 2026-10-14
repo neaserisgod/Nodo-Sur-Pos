@@ -136,6 +136,13 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (14/10/2026)
+
+- **Cambiar de negocio en el celular ya no cierra la app** (El dueño: "necesito que funcione íntegramente sin cerrarse"):
+  se frena y se olvida todo lo de la cuenta y la app se arma de cero. Probado con `flutter analyze` y tests; **falta probarlo en
+  un celular**. Detalle en `DECISIONES.md`.
+- **Entrar con Google sin navegador anda en el celular** (14/10): los dos clientes Android quedaron en el proyecto del Web.
+
 ## Últimos cambios (13/10/2026)
 
 - **El stock se duplicaba en un equipo que bajaba todo de cero** (El dueño: "el stock subió y yo no lo subí"): arreglado con la

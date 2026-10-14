@@ -11,6 +11,17 @@ elección deliberada), ver `DECISIONES.md`.
 
 ---
 
+## Cambiar de negocio sin cerrar la app: lo que vive en memoria es de la cuenta vieja
+
+Desde el 2026-10-14 el celular cambia de negocio sin cerrar la app (`reinicio_companion.dart`). Antes, cerrar el proceso
+borraba la memoria. Ahora, cualquier variable global o `static` con algo de la cuenta (un cliente, un caché, un "ya se
+preguntó") **sobrevive al cambio** y lo usa el negocio nuevo.
+- **Al sumar una pieza así**, olvidarla en `olvidarLoDeLaCuenta`. Si escribe en la base o en la carpeta de datos, frenarla en
+  `frenarLoQueEscribe` y dejar la global en null para que el negocio nuevo arme la suya (como `syncNubeCompanion`).
+- **La base se pide con `baseLocalCompanion()` en el momento**, no se guarda en un global: durante el cambio está bloqueada y
+  falla; si la hubiera abierto de nuevo, sería una base vacía en el lugar de la activa.
+- **Una respuesta de red que llega tarde** no se anota si mientras tanto se cambió de cuenta (ver `ClaveGemini.refrescarCuenta`).
+
 ## Google Cloud: "el nombre del paquete y la huella digital ya están en uso" (cliente OAuth Android)
 
 Google deja registrar cada pareja **paquete + SHA-1 una sola vez en todo Google Cloud**, sumando todos los proyectos. Si en

@@ -120,11 +120,22 @@ abstract final class ClaveGemini {
     await refrescarCuenta();
   }
 
+  /// Al cambiar de negocio en el celular: lo de la cuenta anterior se suelta. Lo del nuevo se lee con [cargar] y
+  /// [conectarCuenta].
+  static void olvidarCuenta() {
+    _cuenta = null;
+    _enCuenta = false;
+    _modeloCuenta = null;
+    _puedeCambiarCuenta = false;
+  }
+
   static Future<void> refrescarCuenta() async {
     final acceso = _cuenta;
     if (acceso == null) return;
     try {
       final e = await acceso.estado();
+      // Mientras se preguntaba se cambió de negocio: la respuesta es del anterior y no se anota en el nuevo.
+      if (!identical(acceso, _cuenta)) return;
       await _recordarCuenta(configurada: e?.configurada ?? false, modelo: e?.modelo, puedeCambiar: e?.puedeCambiar ?? false);
     } catch (_) {
       // Sin red o el sitio no contestó: queda lo último que se supo.

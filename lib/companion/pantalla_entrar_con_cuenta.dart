@@ -20,6 +20,7 @@ import 'base_local.dart';
 import 'bienvenida/pantalla_listo.dart';
 import 'bienvenida/vista_entrar_con_google.dart';
 import 'borrar_celular.dart';
+import 'reinicio_companion.dart';
 import 'configurar/asistente_negocio.dart';
 import 'configurar/flujo_negocio.dart';
 import 'configurar/negocio_nuevo.dart';
@@ -161,7 +162,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       return;
     }
     await borrarTodoDelCelular(null, id);
-    await cerrarLaApp();
+    await volverAEmpezar();
   }
 
   /// Agregando otro negocio al celular: no hay cuenta activa y hay alguna guardada.

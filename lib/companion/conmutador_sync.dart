@@ -113,9 +113,16 @@ class ConmutadorSync {
     }
   }
 
-  void cerrar() {
+  /// Deja de decidir: la nube se apaga y una espera pendiente ya no la prende. Sin soltar [modo] (alguna pantalla puede
+  /// seguir escuchándolo hasta cerrarse).
+  void apagar() {
     _espera?.cancel();
+    _espera = null;
     _parar();
+  }
+
+  void cerrar() {
+    apagar();
     modo.dispose();
   }
 }

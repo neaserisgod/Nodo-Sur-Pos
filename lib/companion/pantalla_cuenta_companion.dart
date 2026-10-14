@@ -16,6 +16,7 @@ import '../servicios/sync_nube.dart';
 import '../ui/comun/estado_mercado_pago.dart';
 import '../domain/cuentas_del_celular.dart';
 import 'borrar_celular.dart';
+import 'reinicio_companion.dart';
 import 'cuentas_del_celular.dart';
 import '../servicios/recargar_pagina.dart';
 import 'conmutador_sync.dart';
@@ -25,7 +26,7 @@ import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
-  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta, this.cerrarApp});
+  const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta, this.volverAEmpezar});
 
   /// La sync del celular (en la app real, `syncNubeDelCelular()`).
   final SyncNubeCompanion sync;
@@ -34,15 +35,17 @@ class PantallaCuentaCompanion extends StatefulWidget {
   /// con esto aparece el botón para seguir.
   final void Function(BuildContext context)? alContinuar;
 
-  /// Borra todo lo del celular y cierra la app (`borrar_celular.dart`). Para tests.
+  /// Borra todo lo del celular (`borrar_celular.dart`). Para tests.
   final Future<void> Function()? borrarTodo;
 
   /// Las cuentas de este celular (`cuentas_del_celular.dart`). Para tests.
   final Future<IndiceCuentas> Function()? leerCuentas;
 
-  /// Pasa a otra cuenta guardada (o deja el lugar para una nueva, con null), y cierra la app. Para tests.
+  /// Pasa a otra cuenta guardada (o deja el lugar para una nueva, con null). Para tests.
   final Future<void> Function(String? destino)? pasarACuenta;
-  final Future<void> Function()? cerrarApp;
+
+  /// Arma la app de cero después de cambiar (`volverAEmpezar`). Para tests.
+  final Future<void> Function()? volverAEmpezar;
 
   @override
   State<PantallaCuentaCompanion> createState() => _PantallaCuentaCompanionState();
@@ -109,8 +112,7 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
         titulo: nueva ? '¿Agregar otro negocio?' : '¿Pasar a $titulo?',
         texto:
             'El negocio de ahora queda guardado en este celular con todo lo suyo, sin mezclarse con el otro. '
-            'La app se cierra: abrila de nuevo para '
-            '${nueva ? 'entrar en el otro, con esta misma cuenta de Google o con otra' : 'seguir en $titulo'}. '
+            '${nueva ? 'Después entrás en el otro, con esta misma cuenta de Google o con otra' : 'Pasás a $titulo sin cerrar la app'}. '
             'Si el bot de WhatsApp está prendido, se apaga.',
         botones: [
           BotonNs.primario(ctx, nueva ? 'Agregar otro negocio' : 'Pasar a $titulo', () => Navigator.of(ctx).pop(true)),
@@ -149,12 +151,12 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
         descartable: false,
         builder: (ctx) => HojaNs(
           titulo: 'No se pudo terminar el cambio',
-          texto: 'No se perdió nada. La app se cierra: al abrirla de nuevo, termina el cambio.',
-          botones: [BotonNs.primario(ctx, 'Cerrar la app', () => Navigator.of(ctx).pop())],
+          texto: 'No se perdió nada. Se vuelve a intentar terminar el cambio.',
+          botones: [BotonNs.primario(ctx, 'Seguir', () => Navigator.of(ctx).pop())],
         ),
       );
     }
-    await (widget.cerrarApp ?? cerrarLaApp)();
+    await (widget.volverAEmpezar ?? volverAEmpezar)();
   }
 
   /// En el celular, con la cuenta de Google del teléfono (sin navegador); en la web, por el sitio. Mismo criterio que
@@ -230,9 +232,9 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       builder: (ctx) => HojaNs(
         titulo: '¿Cerrar sesión y borrar este celular?',
         texto: (cuenta != null
-                ? 'Primero se manda a tu cuenta lo que falte subir. Después se borra todo lo de esta cuenta en el celular y la app se cierra. '
+                ? 'Primero se manda a tu cuenta lo que falte subir. Después se borra todo lo de esta cuenta en el celular. '
                       'Entrando de nuevo con tu cuenta, vuelve a bajar.'
-                : 'No entraste con una cuenta: todo lo que cargaste acá se pierde. La app se cierra y arranca de cero.') +
+                : 'No entraste con una cuenta: todo lo que cargaste acá se pierde. La app arranca de cero.') +
             (_cuentas?.guardadas.isNotEmpty ?? false
                 ? ' Las otras cuentas de este celular no se tocan: al abrir, seguís en ${_cuentas!.guardadas.first.titulo}.'
                 : ''),
@@ -278,9 +280,9 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
       return;
     }
     await borrarTodoDelCelular();
-    // En el navegador no se puede cerrar la app: se recarga la página, que arranca de cero.
+    // En el navegador se recarga la página, que arranca de cero.
     if (kIsWeb) return recargarPagina();
-    await cerrarLaApp();
+    await (widget.volverAEmpezar ?? volverAEmpezar)();
   }
 
   Future<void> _volverABajarTodo() async {
