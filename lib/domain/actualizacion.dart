@@ -114,3 +114,24 @@ AvisoActualizacion decidirAviso({
   }
   return AvisoActualizacion.mostrar;
 }
+
+/// Qué le pregunta un celular al sitio (`/api/update/latest.json`). Elige Beta o Estable cada celular, pero las betas son solo
+/// para las cuentas de prueba ([dePruebas], lo dice el sitio): sin serlo se pide siempre la estable, así una elección vieja (de
+/// otra cuenta del celular) no lo deja sin actualizaciones. Con Estable se pide SOLO la estable (`solo=1`): sin eso el sitio le
+/// suma las betas a una cuenta de pruebas, como a su PC.
+Map<String, String> consultaDelCelular({
+  required String plataforma,
+  required String version,
+  required String? idCliente,
+  required bool dePruebas,
+  required bool eligeBeta,
+}) {
+  final beta = dePruebas && eligeBeta;
+  return {
+    'platform': plataforma,
+    'channel': beta ? 'beta' : 'stable',
+    'version': version,
+    'cid': ?idCliente,
+    if (!beta) 'solo': '1',
+  };
+}

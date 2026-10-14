@@ -171,4 +171,30 @@ ${versiones.map((v) => '<item><enclosure url="https://x/y.exe" sparkle:version="
       );
     });
   });
+
+  group('consultaDelCelular (Beta o Estable en el celular)', () {
+    Map<String, String> c({bool dePruebas = false, bool eligeBeta = false, String? cid = 'cid-1'}) => consultaDelCelular(
+      plataforma: 'android',
+      version: '1.0.0+2180',
+      idCliente: cid,
+      dePruebas: dePruebas,
+      eligeBeta: eligeBeta,
+    );
+
+    test('una cuenta de pruebas que elige Beta pide la beta (el sitio le suma las estables)', () {
+      expect(c(dePruebas: true, eligeBeta: true), {'platform': 'android', 'channel': 'beta', 'version': '1.0.0+2180', 'cid': 'cid-1'});
+    });
+
+    test('Estable pide solo la estable, aunque sea de pruebas', () {
+      expect(c(dePruebas: true), {'platform': 'android', 'channel': 'stable', 'version': '1.0.0+2180', 'cid': 'cid-1', 'solo': '1'});
+    });
+
+    test('sin ser de pruebas, Beta elegida (de otra cuenta del celular) igual pide la estable', () {
+      expect(c(eligeBeta: true)['channel'], 'stable');
+    });
+
+    test('sin id de instalación no se manda cid', () {
+      expect(c(cid: null).containsKey('cid'), isFalse);
+    });
+  });
 }

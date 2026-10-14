@@ -10,7 +10,7 @@
 
 /// Las preferencias que son del APARATO y no de una cuenta: no se mueven al cambiar. Todo lo demás (perfil, modo de uso, PC
 /// emparejada, id del equipo para la sync, cachés) es de la cuenta.
-const preferenciasDelAparato = {'companion_tema', 'actualizaciones_cid'};
+const preferenciasDelAparato = {'companion_tema', 'actualizaciones_cid', 'actualizaciones_beta'};
 
 bool esPreferenciaDeLaCuenta(String clave) => !preferenciasDelAparato.contains(clave);
 

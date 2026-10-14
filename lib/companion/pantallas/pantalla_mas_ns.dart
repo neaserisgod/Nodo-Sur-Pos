@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../actualizacion.dart' show celularDePruebas, celularEligeBeta, elegirBetaEnElCelular;
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
 import '../base_local.dart';
@@ -191,6 +192,8 @@ class PantallaMasNs extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Beta o Estable: solo para las cuentas de prueba (las betas no les llegan a los clientes). Es de este celular.
+                if (!kIsWeb) const _CanalDeVersiones(),
                 // Nodo Sur Servicios no tiene PC: es siempre solo celular.
                 if (!esEdicionServicios) ...[
                   const SizedBox(height: 8),
@@ -311,4 +314,41 @@ class _Fila extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Versiones: Estable / Beta" debajo de Actualización. En Android no se instala una versión más vieja encima de una más nueva:
+/// pasar a Estable desde una beta espera a la próxima estable (El dueño eligió eso frente a reinstalar).
+class _CanalDeVersiones extends StatelessWidget {
+  const _CanalDeVersiones();
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: celularDePruebas,
+    builder: (context, dePruebas, _) => !dePruebas
+        ? const SizedBox.shrink()
+        : ValueListenableBuilder<bool>(
+            valueListenable: celularEligeBeta,
+            builder: (context, beta, _) => Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SegmentoNs(
+                    key: const Key('mas_canal_versiones'),
+                    opciones: const ['Estable', 'Beta'],
+                    indice: beta ? 1 : 0,
+                    onCambio: (i) => elegirBetaEnElCelular(i == 1),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    beta
+                        ? 'Recibís las versiones de prueba apenas salen, y también las estables.'
+                        : 'Solo versiones estables. Si tenés una beta más nueva, la próxima estable llega cuando la supere.',
+                    style: estiloNs(14, altura: 1.35, color: context.ns.mute),
+                  ),
+                ],
+              ),
+            ),
+          ),
+  );
 }

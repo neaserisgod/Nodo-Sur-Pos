@@ -73,6 +73,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
 - [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
 - [Cambiar de negocio sin cerrar la app (2026-10-14)](#cambiar-de-negocio-sin-cerrar-la-app-2026-10-14)
+- [El celular elige Beta o Estable (2026-10-14)](#el-celular-elige-beta-o-estable-2026-10-14)
 - [Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)](#base-de-stock-el-stock-es-base--movimientos-en-cualquier-equipo-2026-10-13)
 - [Perfiles: mismo nombre = misma persona (2026-10-13)](#perfiles-mismo-nombre--misma-persona-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
@@ -1816,6 +1817,22 @@ El dueño, al probarlo: "para ciertas cosas cierra la app, arreglalo"; "necesito
 - **Regla para lo nuevo**: algo de la cuenta guardado en memoria fuera de una pantalla (variable global, `static`) tiene que olvidarse en `olvidarLoDeLaCuenta`. Ver `TRAMPAS.md`.
 - **Límite**: una tarea de la cuenta vieja que no usa la base y escribe una preferencia o un archivo mucho después (por ejemplo, tras esperar la red más de lo que dura el cambio) puede caer en la nueva. Las conocidas se cubren: la sync se espera, la IA descarta la respuesta vieja (`ClaveGemini.refrescarCuenta`).
 
+## El celular elige Beta o Estable (2026-10-14)
+
+El dueño: "que todas las apps móvil puedan descargar beta o release… beta directamente no detecta beta". Pasaba porque el celular
+preguntaba siempre por la estable y sin id de instalación, y el sitio solo da betas a las instalaciones que reconoce como de una
+cuenta de pruebas (por su `cid`). Eligió: **solo las cuentas de prueba** (administrador y eximidas) pueden elegir Beta; los
+clientes siguen solo con estables.
+- **Cómo**: al revisar actualizaciones el celular avisa al sitio con su id de instalación (`avisarAlSitio`, `/api/device/ping`, como
+  la PC) y el sitio contesta si la cuenta es de pruebas. Solo entonces aparece en Más, debajo de Actualización, "Estable / Beta"
+  (`celularEligeBeta`, del aparato). La consulta la arma `consultaDelCelular` (`domain/actualizacion.dart`).
+- **En el sitio** (`latestForUpdate`): `channel=beta` le da a una cuenta de pruebas la más nueva entre betas y estables; `solo=1` le
+  da solo la estable. La PC no cambia (pide `stable` sin `solo` y recibe las dos).
+- **Volver a Estable desde una beta** espera a la próxima estable más nueva (Android no instala una más vieja encima): el dueño lo
+  eligió frente a ofrecer reinstalar.
+- **Límite**: el id de instalación es del aparato. Con dos cuentas en el mismo celular, el sitio puede reconocerlo por la fila de la
+  otra cuenta.
+
 ## Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)
 
 El dueño: "el stock subió y yo no lo subí". Bug reproducido: un equipo que bajaba todo de cero (celular nuevo, negocio agregado, navegador, reinstalación) recibía cada producto con el stock que ya tenía el otro equipo **y además** todos sus movimientos, y los volvía a sumar (PC con 10 → celular con 20; con ventas, puede bajar en vez de subir). Ver `TRAMPAS.md`.
@@ -2567,7 +2584,9 @@ El dueño: *"necesito que la app cree un QR y lo muestre en la pantalla. Nada de
 **por equipo** (no por negocio: un celular muestra el QR y la PC usa la Point), en el **celular de almacén y la web** (la PC no),
 y que arranque en **"pantalla si no hay terminal"**. Sin terminal, débito y crédito no se ofrecen: una tarjeta no se cobra con un
 QR. Preguntó si se puede cobrar con tarjeta por NFC con la app de Mercado Pago (Point Tap): no hay una integración documentada
-y vigente para otra app; queda como prueba aparte, en un celular real.
+y vigente para otra app. **Probado el 2026-10-14 en un celular real**: Android contesta "No Activity found to handle Intent"
+(`com.mercadopago.PAYMENT_ACTION` es la integración pensada para las terminales Point Smart). El dueño: "no se puede, eliminá la función"; se sacó
+la prueba (pantalla, canal `nodosur/point_tap` y las consultas del manifiesto).
 
 - Es la misma orden QR dinámica del sitio que ya usaba Nodo Sur Servicios (`mp_servicios.js`): en la app solo cambió quién decide
   si el QR va a la pantalla (`domain/cobro_qr.dart`, `elegirPasarelaPoint(permiteQrEnPantalla:, dondeQr:)`). La PC y el servidor
