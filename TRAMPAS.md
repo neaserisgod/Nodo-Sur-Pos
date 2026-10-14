@@ -11,6 +11,28 @@ elección deliberada), ver `DECISIONES.md`.
 
 ---
 
+## Cambiar de negocio sin cerrar la app: lo que vive en memoria es de la cuenta vieja
+
+Desde el 2026-10-14 el celular cambia de negocio sin cerrar la app (`reinicio_companion.dart`). Antes, cerrar el proceso
+borraba la memoria. Ahora, cualquier variable global o `static` con algo de la cuenta (un cliente, un caché, un "ya se
+preguntó") **sobrevive al cambio** y lo usa el negocio nuevo.
+- **Al sumar una pieza así**, olvidarla en `olvidarLoDeLaCuenta`. Si escribe en la base o en la carpeta de datos, frenarla en
+  `frenarLoQueEscribe` y dejar la global en null para que el negocio nuevo arme la suya (como `syncNubeCompanion`).
+- **La base se pide con `baseLocalCompanion()` en el momento**, no se guarda en un global: durante el cambio está bloqueada y
+  falla; si la hubiera abierto de nuevo, sería una base vacía en el lugar de la activa.
+- **Una respuesta de red que llega tarde** no se anota si mientras tanto se cambió de cuenta (ver `ClaveGemini.refrescarCuenta`).
+
+## Google Cloud: "el nombre del paquete y la huella digital ya están en uso" (cliente OAuth Android)
+
+Google deja registrar cada pareja **paquete + SHA-1 una sola vez en todo Google Cloud**, sumando todos los proyectos. Si en
+Firebase se carga la SHA-1 de una app, Firebase crea por su cuenta un cliente OAuth Android ("auto created by Google Service")
+en **su** proyecto (`nodo-sur-eb45a`). Así la pareja queda tomada y no se puede crear en el proyecto del cliente Web del sitio
+(`433741777622`), que es donde Credential Manager la necesita. Pasó con `com.laplazoleta.companion` (2026-10-14).
+- **Arreglo**: borrar ese cliente en Credenciales de `nodo-sur-eb45a`, borrar la SHA-1 de la app en Firebase (a FCM no le hace
+  falta, y así no lo vuelve a crear) y recién ahí crear el cliente en el proyecto del Web.
+- **Para saber el proyecto del Web**: `GET https://horsepos.com/api/device/google`; el número antes del guion del `clientId`.
+- **No volver a cargar SHA-1 en Firebase** para estas apps.
+
 ## `sesionCerradaAnterior` ordena por ID de inserción, no por fecha — es correcto, no un bug
 
 `repositorio_cierre.dart` — la sesión cerrada de la que sale el pendiente

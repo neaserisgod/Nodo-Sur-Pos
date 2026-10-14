@@ -72,6 +72,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El celular entra con la cuenta de cada persona, sin selector de perfil (2026-10-02)](#el-celular-entra-con-la-cuenta-de-cada-persona-sin-selector-de-perfil-2026-10-02)
 - [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
 - [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
+- [Cambiar de negocio sin cerrar la app (2026-10-14)](#cambiar-de-negocio-sin-cerrar-la-app-2026-10-14)
 - [Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)](#base-de-stock-el-stock-es-base--movimientos-en-cualquier-equipo-2026-10-13)
 - [Perfiles: mismo nombre = misma persona (2026-10-13)](#perfiles-mismo-nombre--misma-persona-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
@@ -1785,12 +1786,12 @@ El dueño: "la vinculación por el sitio es un paso medio innecesario". Se eligi
 - **Varias sucursales**: si la persona puede entrar en más de una, el sitio contesta `elegir` y la app pregunta en una hoja (`elegir_sucursal.dart`); antes se elegía en /vincular/.
 - **Siempre muestra la lista de cuentas** (se cierra la sesión de Google de la app antes): en un teléfono con varias cuentas se elige cada vez. Sirve también para "varias cuentas en un celular".
 - **El navegador queda de salida**: si el teléfono no tiene servicios de Google, la app no está registrada en Google Cloud, el sitio es viejo, o se cierra el selector (una mala configuración también se ve como "cancelado"), aparece "Entrar con el navegador". La web y la PC siguen por el navegador.
-- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
+- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`, el número `433741777622`; **no** el de Firebase `nodo-sur-eb45a`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
 
 ## Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)
 
 El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra sesión pero tampoco mezclando cosas"; "una cuenta de Google puede estar asociada a más de un negocio: un almacén, mi emprendimiento de belleza, mi barbería… quiero tenerlos". Cobro: **cada negocio paga su plan** (eligió A frente a "un plan por mail" o "descuento por negocio").
-- **En el celular** (`cuentas_del_celular.dart`, solo Android): una sola cuenta ACTIVA vive donde vivió siempre (base, carpeta de datos, preferencias), así nada del resto de la app cambia. Las demás quedan en `cuentas_guardadas/<id>/`. Cambiar es mover la activa a su carpeta y traer la elegida (renombrar archivos: instantáneo). Nunca hay dos a la vez en el mismo lugar: no hay forma de mezclar. Después la app se cierra (`exit`), porque en memoria quedan la base, la sync y la clave de la IA de la anterior. El bot de WhatsApp se apaga al cambiar.
+- **En el celular** (`cuentas_del_celular.dart`, solo Android): una sola cuenta ACTIVA vive donde vivió siempre (base, carpeta de datos, preferencias), así nada del resto de la app cambia. Las demás quedan en `cuentas_guardadas/<id>/`. Cambiar es mover la activa a su carpeta y traer la elegida (renombrar archivos: instantáneo). Nunca hay dos a la vez en el mismo lugar: no hay forma de mezclar. Después la app se arma de cero sin cerrarse (desde el 2026-10-14: ver "Cambiar de negocio sin cerrar la app"). El bot de WhatsApp se apaga al cambiar.
 - **Corte a la mitad**: el índice anota el paso (`guardando`/`trayendo`) antes de mover; al abrir, `terminarCambioPendiente` lo termina. Cada paso "mueve lo que quede", así repetirlo no rompe nada.
 - **Qué es una cuenta del celular**: mail + negocio + sucursal (la sync es por sucursal). El mismo Gmail en otro negocio es otra entrada; solo se ofrece "ir al que ya está" si coinciden los tres. Cada cuenta guarda en sus preferencias el nombre de su negocio (`companion_negocio_de_la_cuenta`, de `/api/device/me`) para mostrarse en la lista sin internet.
 - **Lo del aparato no se mueve**: el tema y el id de actualizaciones (`preferenciasDelAparato`) y los registros de errores.
@@ -1799,13 +1800,21 @@ El dueño: "que un dispositivo pueda tener múltiples cuentas sin cerrar la otra
 - **Sitio**: un Gmail puede crear más negocios (`POST /api/org/crear`, "Crear otro negocio" en Mi negocio, o `nuevoNegocio` desde el celular; tope 20). Mercado Pago no dice a qué negocio va cada suscripción: **un mail con N planes vigentes cubre a sus N negocios más viejos** (`plan_por_negocio.js`); el bot, a los primeros cubiertos por un plan con bot. Lo usan sync, copias, bot y facturación (`sin_plan_propio`). "Usar mi suscripción" exige un plan libre.
 - **Almacén y servicios son dos apps** (`com.laplazoleta.companion` y `.servicios`): cada una tiene su propia lista de negocios.
 - **Blindaje** (El dueño: "blindalo lo más que puedas"):
-  - **Dos tiempos**: con la app abierta solo se guarda la activa y se cierra; lo elegido se trae al abrir, en `main`, antes de leer nada (ni la clave de la IA). Al abrir se vuelve a barrer el lugar hacia la cuenta vieja: lo que algo escribió tarde (una vuelta de la sync, una preferencia) queda en la suya, nunca en la nueva.
+  - **Dos tiempos**: primero solo se guarda la activa; lo elegido se trae con todo frenado y la app desarmada (antes del 2026-10-14, al volver a abrirla), antes de leer nada (ni la clave de la IA). Al abrir se vuelve a barrer el lugar hacia la cuenta vieja: lo que algo escribió tarde (una vuelta de la sync, una preferencia) queda en la suya, nunca en la nueva.
   - **Nunca se pisa ni se borra** al mover: lo que choca se aparta (`conflictos/` de cada cuenta, `_huerfanos/` al traer).
   - **El índice** se escribe aparte y se renombra, con respaldo del anterior; si no se puede leer, se rearma con el `cuenta.json` de cada carpeta.
   - **Si al abrir no se puede terminar**, la app no sigue: `PantallaCambioTrabado` con "Reintentar".
   - **"Volver a…" y "ya está en este celular" descartan el lugar actual**: solo aparecen agregando (sin cuenta anotada), y se vuelve a leer el índice justo antes de descartar. Al entrar, la cuenta queda anotada como activa (`anotarCuentaActiva`).
   - Un negocio cuya carpeta ya no está se detecta antes de frenar nada y se saca de la lista. Google con cualquier error, o un sitio sin la ruta, cae al navegador.
   - Sitio: el mail de cobro se compara sin mayúsculas; un negocio que no figura entre los de su mail cuenta como el último (nunca gratis); nombres sin caracteres de control; id_token sin forma de JWT se rechaza sin ir a Google.
+
+## Cambiar de negocio sin cerrar la app (2026-10-14)
+
+El dueño, al probarlo: "para ciertas cosas cierra la app, arreglalo"; "necesito que funcione íntegramente sin cerrarse". Eligió esto frente a que la app se cerrara y se volviera a abrir sola (más simple y sin riesgo nuevo, pero igual se cerraba).
+- **Qué cambia**: pasar a otro negocio, "Agregar otro negocio", "Volver a…" y "Cerrar sesión y borrar" ya no cierran la app (`volverAEmpezar`, `reinicio_companion.dart`). Se ve "Cambiando de negocio…" un instante y la app arranca como recién abierta. Solo cierra el botón "Cerrar la app" de la pantalla del cambio trabado, porque la persona lo pide.
+- **Cómo se evita mezclar sin matar el proceso**, en orden: (1) se desarma todo el árbol de pantallas (`RaizCompanion` le cambia la `Key` a la app); (2) se frena todo lo que escribe y se suelta: la sync (esperando la vuelta en curso, tope 15 s), los avisos de Mercado Pago, la escucha de la PC y el bot; (3) la base queda **bloqueada** (`BaseLocalBloqueada`): lo que llegue tarde y la pida falla, en vez de abrir una base vacía que el barrido movería encima de la verdadera; (4) se olvida lo que vive fuera de las pantallas (`olvidarLoDeLaCuenta`: IA, bot, marca, avisos); (5) se trae el negocio como al arrancar (`terminarCambioAlArrancar`, con el barrido de siempre) y se desbloquea la base.
+- **Regla para lo nuevo**: algo de la cuenta guardado en memoria fuera de una pantalla (variable global, `static`) tiene que olvidarse en `olvidarLoDeLaCuenta`. Ver `TRAMPAS.md`.
+- **Límite**: una tarea de la cuenta vieja que no usa la base y escribe una preferencia o un archivo mucho después (por ejemplo, tras esperar la red más de lo que dura el cambio) puede caer en la nueva. Las conocidas se cubren: la sync se espera, la IA descarta la respuesta vieja (`ClaveGemini.refrescarCuenta`).
 
 ## Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)
 

@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import '../data/identidad_sync.dart';
 import '../edicion.dart';
 import 'borrar_celular.dart' show cerrarLaApp;
+import 'reinicio_companion.dart';
 import 'cuentas_del_celular.dart';
 import 'emparejamiento.dart';
 import 'app_ns.dart';
@@ -35,12 +36,48 @@ import '../servicios/registro_errores.dart';
 import '../servicios/ia_nube.dart';
 import '../servicios/almacenes_del_equipo.dart';
 
+/// La raíz de verdad en el celular: arma [CompanionApp] de cero en cada cambio de negocio (`reinicio_companion.dart`), sin
+/// cerrar la app. Cada armado lleva otra `Key`: no sobrevive ni una pantalla ni un estado del negocio anterior.
+class RaizCompanion extends StatefulWidget {
+  const RaizCompanion({super.key, this.cambioTrabado});
+
+  /// El error, si al abrir no se pudo terminar un cambio de negocio.
+  final Object? cambioTrabado;
+
+  @override
+  State<RaizCompanion> createState() => _RaizCompanionState();
+}
+
+class _RaizCompanionState extends State<RaizCompanion> {
+  @override
+  void initState() {
+    super.initState();
+    final r = raizCompanion.value;
+    if (widget.cambioTrabado != null) {
+      raizCompanion.value = EstadoRaizCompanion(generacion: r.generacion, cambioTrabado: widget.cambioTrabado);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<EstadoRaizCompanion>(
+    valueListenable: raizCompanion,
+    builder: (context, r, _) => CompanionApp(
+      key: ValueKey('${r.generacion}-${r.cambiando}'),
+      cambioTrabado: r.cambioTrabado,
+      cambiando: r.cambiando,
+    ),
+  );
+}
+
 class CompanionApp extends StatelessWidget {
-  const CompanionApp({super.key, this.cambioTrabado});
+  const CompanionApp({super.key, this.cambioTrabado, this.cambiando = false});
 
   /// El error, si al arrancar no se pudo terminar un cambio de negocio (`cuentas_del_celular.dart`): en vez de seguir con
   /// media cuenta puesta, se muestra y se deja reintentar.
   final Object? cambioTrabado;
+
+  /// Se está cambiando de negocio (`volverAEmpezar`): solo el logo, sin ninguna pantalla que lea la cuenta.
+  final bool cambiando;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +116,11 @@ class CompanionApp extends StatelessWidget {
             },
           ),
         ))),
-        home: cambioTrabado == null ? const _PantallaInicial() : PantallaCambioTrabado(error: cambioTrabado!),
+        home: cambiando
+            ? const _PantallaCambiando()
+            : cambioTrabado == null
+            ? const _PantallaInicial()
+            : PantallaCambioTrabado(error: cambioTrabado!),
       ),
     );
   }
@@ -188,6 +229,25 @@ class _PantallaInicialState extends State<_PantallaInicial> {
   Widget build(BuildContext context) => const Scaffold(body: Center(child: MarcaNodoSur(tamanio: 64)));
 }
 
+/// Mientras se cambia de negocio: un instante (mover es renombrar), salvo que haya que esperar una vuelta de la sync.
+class _PantallaCambiando extends StatelessWidget {
+  const _PantallaCambiando();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MarcaNodoSur(tamanio: 64),
+          const SizedBox(height: 20),
+          Text('Cambiando de negocio…', style: estiloNs(15, color: context.ns.mute)),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Al abrir, un cambio de negocio no se pudo terminar (`cuentas_del_celular.dart`). La app no sigue con media cuenta puesta
 /// (podría mezclar o pisar datos): dice qué pasó y deja reintentar. Nada se perdió: lo de cada negocio está en su carpeta o
 /// en su lugar, y el próximo intento sigue desde donde quedó.
@@ -214,8 +274,8 @@ class _PantallaCambioTrabadoState extends State<PantallaCambioTrabado> {
       await (widget.reintentar ?? terminarCambioPendiente)();
       if (!mounted) return;
       if (widget.alTerminar != null) return widget.alTerminar!(context);
-      // Listo: se cierra para arrancar de cero con el negocio ya en su lugar (en memoria quedó lo leído antes del cambio).
-      await cerrarLaApp();
+      // Listo: se arma la app de cero con el negocio ya en su lugar (en memoria quedó lo leído antes del cambio).
+      await volverAEmpezar();
     } catch (e, st) {
       unawaited(registrarError('Reintentar el cambio de cuenta', e, st));
       if (mounted) {

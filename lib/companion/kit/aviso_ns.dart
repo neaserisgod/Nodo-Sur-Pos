@@ -12,6 +12,15 @@ import 'tokens_ns.dart';
 OverlayEntry? _avisoActual;
 Timer? _temporizador;
 
+/// Saca el aviso que esté a la vista. Antes de desarmar la app entera (cambio de negocio): el aviso vive en el overlay que se
+/// va, y su temporizador lo querría sacar de un overlay que ya no existe.
+void quitarAvisoNs() {
+  _temporizador?.cancel();
+  _temporizador = null;
+  _avisoActual?.remove();
+  _avisoActual = null;
+}
+
 /// Aviso flotante (docs/01 §6.14): `left/right 24`, `bottom 100`, padding
 /// 16/22, radio 26, fondo `toast`, texto blanco 15/600 centrado. Se va solo a
 /// los 2,6 s (3,4 s si es largo).

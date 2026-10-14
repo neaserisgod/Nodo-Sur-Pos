@@ -47,7 +47,7 @@ void main() {
     Future<void> Function()? borrarTodo,
     IndiceCuentas? cuentas,
     Future<void> Function(String? destino)? pasarACuenta,
-    Future<void> Function()? cerrarApp,
+    Future<void> Function()? volverAEmpezar,
   }) async {
     await tester.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
@@ -58,7 +58,7 @@ void main() {
         borrarTodo: borrarTodo,
         leerCuentas: cuentas == null ? null : () async => cuentas,
         pasarACuenta: pasarACuenta,
-        cerrarApp: cerrarApp ?? () async {},
+        volverAEmpezar: volverAEmpezar ?? () async {},
       ),
     ));
     await tester.pumpAndSettle();
@@ -203,45 +203,45 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('si sale bien, se cierra la app (lo elegido se trae al abrir)', (tester) async {
+    testWidgets('si sale bien, la app vuelve a empezar con lo elegido, sin cerrarse', (tester) async {
       final sync = await armar(vinculada: true);
-      var cerro = 0;
-      await abrir(tester, sync, cuentas: const IndiceCuentas(guardadas: [beto]), pasarACuenta: (_) async {}, cerrarApp: () async => cerro++);
+      var empezo = 0;
+      await abrir(tester, sync, cuentas: const IndiceCuentas(guardadas: [beto]), pasarACuenta: (_) async {}, volverAEmpezar: () async => empezo++);
       await pasarABarberia(tester);
-      expect(cerro, 1);
+      expect(empezo, 1);
     });
 
-    testWidgets('un negocio que ya no está: lo dice, no cierra la app y lo saca de la lista', (tester) async {
+    testWidgets('un negocio que ya no está: lo dice, sigue como estaba y lo saca de la lista', (tester) async {
       final sync = await armar(vinculada: true);
-      var cerro = 0;
+      var empezo = 0;
       await abrir(
         tester,
         sync,
         cuentas: const IndiceCuentas(guardadas: [beto]),
         pasarACuenta: (_) async => throw const CuentaNoEstaEnElCelular(),
-        cerrarApp: () async => cerro++,
+        volverAEmpezar: () async => empezo++,
       );
       await pasarABarberia(tester);
-      expect(cerro, 0);
+      expect(empezo, 0);
       expect(find.text('Ese negocio ya no está guardado en este celular.'), findsOneWidget);
     });
 
-    testWidgets('cualquier otra falla a mitad: avisa que no se perdió nada y cierra para terminar al abrir', (tester) async {
+    testWidgets('cualquier otra falla a mitad: avisa que no se perdió nada y vuelve a empezar para terminar el cambio', (tester) async {
       final sync = await armar(vinculada: true);
-      var cerro = 0;
+      var empezo = 0;
       await abrir(
         tester,
         sync,
         cuentas: const IndiceCuentas(guardadas: [beto]),
         pasarACuenta: (_) async => throw const FileSystemException('sin lugar'),
-        cerrarApp: () async => cerro++,
+        volverAEmpezar: () async => empezo++,
       );
       await pasarABarberia(tester);
       expect(find.text('No se pudo terminar el cambio'), findsOneWidget);
-      expect(cerro, 0, reason: 'primero lo explica');
-      await tester.tap(find.text('Cerrar la app'));
+      expect(empezo, 0, reason: 'primero lo explica');
+      await tester.tap(find.text('Seguir'));
       await tester.pumpAndSettle();
-      expect(cerro, 1);
+      expect(empezo, 1);
     });
 
     testWidgets('agregar otro negocio deja el lugar vacío (destino null)', (tester) async {

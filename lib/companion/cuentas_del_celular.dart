@@ -8,10 +8,10 @@
 // almacenamiento es renombrar: instantáneo, no se copia la base.
 //
 // Blindaje (El dueño, 2026-10-13: "blindalo lo más que puedas"):
-//  * Se cambia en DOS tiempos. Con la app abierta solo se GUARDA la activa y la app se cierra; lo elegido se TRAE al abrir de
-//    nuevo, antes de que arranque nada (`terminarCambioAlArrancar`, desde `main`). Así lo que todavía escribía algo en segundo
-//    plano antes de cerrarse (una vuelta de la sync, una preferencia) cae en la cuenta vieja y no en la nueva: al abrir, se
-//    vuelve a barrer el lugar de la activa hacia la carpeta de la vieja, y recién después se trae la otra.
+//  * Se cambia en DOS tiempos. Primero solo se GUARDA la activa; lo elegido se TRAE recién con todo frenado y la app desarmada
+//    (`volverAEmpezar`, que corre `terminarCambioAlArrancar`, lo mismo que `main` al abrir). Así lo que todavía escribía algo
+//    en segundo plano (una vuelta de la sync, una preferencia) cae en la cuenta vieja y no en la nueva: antes de traer se
+//    vuelve a barrer el lugar de la activa hacia la carpeta de la vieja. La app ya no se cierra (2026-10-14).
 //  * Cada paso se anota en el índice ANTES de hacerse, y cada paso "mueve lo que quede": si el celular se apaga a la mitad,
 //    al abrir se repite y termina. Repetir nunca rompe nada.
 //  * Nunca se borra nada de una cuenta que se guarda o se trae. Si en el destino ya hay algo con el mismo nombre (lo dejó un
@@ -516,7 +516,7 @@ Future<Map<String, dynamic>> _leerPreferencias(File archivo) async {
 
 /// Lo que hacen los botones de cambiar de cuenta: frena todo lo que escribe y guarda la activa (con su mail, su perfil y su
 /// negocio, para mostrarla en la lista). Lo elegido ([destino]; null deja el lugar vacío para entrar con otra cuenta o en otro
-/// negocio) se trae al abrir de nuevo. Después hay que cerrar la app (`cerrarLaApp`).
+/// negocio) se trae después, al armar la app de cero (`volverAEmpezar`).
 ///
 /// Lanza [CuentaNoEstaEnElCelular] ANTES de frenar nada si el destino ya no está: la app puede seguir como si nada.
 Future<void> pasarACuenta(String? destino) async {

@@ -61,7 +61,7 @@ Future<void> _main() async {
   // cualquier otra cosa: ni `window_manager` (plugin de escritorio) ni
   // `AppDatabase()` tienen sentido acá.
   if (Platform.isAndroid) {
-    runApp(CompanionApp(cambioTrabado: cambioTrabado));
+    runApp(RaizCompanion(cambioTrabado: cambioTrabado));
     return;
   }
 

@@ -49,6 +49,13 @@ Future<void> refrescarEstadoBot({AccesoBot? acceso, bool forzar = false}) async 
 
 RegistroPush? _push;
 
+/// Al cambiar de negocio: lo que se sabía del bot y de las notificaciones era del anterior.
+void olvidarBotDelCelular() {
+  _preguntado = null;
+  _push = null;
+  estadoBotCelular.value = null;
+}
+
 /// Registra el token de notificaciones de este celular en el sitio (una vez por sesión, `push.dart`), con la cuenta vinculada:
 /// también en "PC y celular", donde la sync la sube la PC. Nunca tira.
 Future<void> registrarPushDelCelular() async {
