@@ -1178,6 +1178,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
       titulo: _moviendo ? 'Mover el turno' : 'Nuevo turno',
       bloques: [
         if (!_moviendo) ...[
+          const SeccionNs('Servicio'),
           if (_servicios.isEmpty)
             const InfoNs('Primero cargá un servicio con su duración en la pestaña Servicios.')
           else
@@ -1202,6 +1203,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
             ),
         ] else
           Text('${widget.existente!.turno.servicioNombre} · ${widget.existente!.turno.nombreCliente}', style: estiloNs(16, peso: FontWeight.w600, color: ns.ink)),
+        const SeccionNs('Día'),
         SizedBox(
           height: 44,
           child: ListView.separated(
@@ -1224,6 +1226,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
             },
           ),
         ),
+        if (_profesionales.length > 1) const SeccionNs('Quién atiende'),
         if (_profesionales.length > 1)
           Wrap(
             spacing: 8,
@@ -1233,6 +1236,8 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
               for (final p in _profesionales) ChipNs(texto: p.nombre, activo: _profesionalId == p.id, onTap: () => _elegirProfesional(p.id)),
             ],
           ),
+        // Sin servicio no hay duración ni horarios: se dice en vez de dejar el hueco.
+        if (_duracion <= 0 && !_moviendo && _servicios.isNotEmpty) const InfoNs('Elegí el servicio para ver los horarios libres.'),
         if (_duracion > 0) ...[
           SeccionNs('Horarios libres · ${duracionTextoNs(_duracion)}'),
           if (libres == null)

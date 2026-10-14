@@ -9,6 +9,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../domain/pedido_whatsapp.dart' show normalizarWhatsapp;
 import '../domain/sena.dart';
 import '../domain/turnos.dart';
 import '../domain/venta.dart';
@@ -198,8 +199,13 @@ Future<int> senaParaServicio(AppDatabase db, Producto servicio) async {
 Future<int> _clienteDe(AppDatabase db, {required String nombre, String? telefono}) async {
   final tel = telefono?.trim();
   if (tel != null && tel.isNotEmpty) {
-    final porTel = await (db.select(db.clientes)..where((c) => c.telefono.equals(tel))..limit(1)).getSingleOrNull();
-    if (porTel != null) return porTel.id;
+    // El mismo número escrito distinto (el bot lo trae como +54 9 …, a mano se escribe 2944 …) es la misma persona: antes
+    // quedaban dos clientes, con las faltas y el historial partidos.
+    final buscado = normalizarWhatsapp(tel) ?? tel.replaceAll(RegExp(r'\D'), '');
+    final conTelefono = await (db.select(db.clientes)..where((c) => c.telefono.isNotNull())).get();
+    for (final c in conTelefono) {
+      if ((normalizarWhatsapp(c.telefono!) ?? c.telefono!.replaceAll(RegExp(r'\D'), '')) == buscado) return c.id;
+    }
   } else {
     final porNombre = await (db.select(db.clientes)
           ..where((c) => c.nombre.equals(nombre) & c.telefono.isNull())
