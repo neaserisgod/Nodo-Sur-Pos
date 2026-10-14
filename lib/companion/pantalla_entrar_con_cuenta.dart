@@ -347,7 +347,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     final db = baseLocalCompanion();
     if (!await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db)) return false;
     await prepararNegocioNuevo(db);
-    await guardarPasosPendientes(PasoNegocio.values.toSet());
+    await guardarPasosPendientes(pasosDelNegocio().toSet());
     return true;
   }
 
