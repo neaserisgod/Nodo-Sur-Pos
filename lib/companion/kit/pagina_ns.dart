@@ -146,12 +146,16 @@ class PuntosAvanceNs extends StatelessWidget {
 
 /// Fila de opción grande con título y detalle (modo de uso, rubro): `s`, radio 28; "marcada" pasa a fondo oscuro.
 class OpcionNs extends StatelessWidget {
-  const OpcionNs({super.key, required this.titulo, required this.detalle, required this.onTap, this.marcada = false, this.derecha});
+  const OpcionNs({super.key, required this.titulo, required this.detalle, required this.onTap, this.marcada = false, this.derecha, this.derechaComoBoton = false});
   final String titulo;
   final String detalle;
   final VoidCallback onTap;
   final bool marcada;
   final String? derecha;
+
+  /// [derecha] es una acción ("Conectar", "Invitar"): va en una píldora, que se note que se toca (El dueño, 2026-10-14). Sin
+  /// esto es un estado ("Elegido").
+  final bool derechaComoBoton;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +182,14 @@ class OpcionNs extends StatelessWidget {
                   ],
                 ),
               ),
-              if (derecha != null) ...[const SizedBox(width: 10), Text(derecha!, style: estiloNs(18, peso: FontWeight.w500, color: texto))],
+              if (derecha != null && derechaComoBoton) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(color: ns.prim, borderRadius: BorderRadius.circular(999)),
+                  child: Text(derecha!, style: estiloNs(15, peso: FontWeight.w600, color: TokensNs.blanco)),
+                ),
+              ] else if (derecha != null) ...[const SizedBox(width: 10), Text(derecha!, style: estiloNs(18, peso: FontWeight.w500, color: texto))],
             ],
           ),
         ),

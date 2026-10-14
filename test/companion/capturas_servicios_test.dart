@@ -146,6 +146,8 @@ void main() {
       await _cargarFigtree();
       edicionActual = Edicion.servicios;
       addTearDown(() => edicionActual = Edicion.almacen);
+      modulosActuales.value = const ModulosNegocio({}, forma: FormaDeTrabajo.servicios);
+      addTearDown(() => modulosActuales.value = ModulosNegocio.todosActivos);
       Widget asistente(PasoNegocio paso) => AsistenteNegocio(
             key: ValueKey(paso),
             pasoInicial: paso,

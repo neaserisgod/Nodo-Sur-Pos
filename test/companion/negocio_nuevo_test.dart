@@ -24,6 +24,7 @@ import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
+import 'package:la_plazoleta/domain/turnos.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/sync_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -176,8 +177,8 @@ void main() {
   group('pasos pendientes', () {
     test('se guardan, se leen y se van marcando; sin pendientes no queda nada guardado', () async {
       expect(await leerPasosPendientes(), isEmpty);
-      await guardarPasosPendientes(PasoNegocio.values.toSet());
-      expect(await leerPasosPendientes(), PasoNegocio.values.toSet());
+      await guardarPasosPendientes(pasosDelNegocio().toSet());
+      expect(await leerPasosPendientes(), pasosDelNegocio().toSet());
       await marcarPasoHecho(PasoNegocio.negocio);
       expect(pasosPendientesNegocio.value, {PasoNegocio.producto, PasoNegocio.cobros});
       await marcarPasoHecho(PasoNegocio.producto);
@@ -245,7 +246,7 @@ void main() {
       await t.pumpAndSettle();
 
       await t.tap(find.byKey(const Key('asistente-terminar')));
-      expect(hechos, PasoNegocio.values);
+      expect(hechos, pasosDelNegocio(), reason: 'en un almacén no hay paso de horario');
       expect(alFinal, isEmpty);
     });
 
@@ -318,6 +319,32 @@ void main() {
       expect(find.textContaining('Servicios › Insumos'), findsOneWidget);
     });
 
+    testWidgets('un negocio de servicios suma el horario: guarda los días y la franja elegidos y sigue a cobros', (t) async {
+      await tamanio(t);
+      HorarioAtencion? guardado;
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.horario,
+        rubroInicial: PlantillaRubro.deForma(FormaDeTrabajo.servicios).first,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alGuardarHorario: (h) async => guardado = h,
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.text('Paso 3 de 4'), findsOneWidget);
+      // Arranca con lunes a sábado (el horario de fábrica): se suma el domingo y se cambia la franja.
+      await t.tap(find.byKey(const ValueKey('horario-dia-7')));
+      await t.enterText(find.descendant(of: find.byKey(const Key('horario-abre')), matching: find.byType(EditableText)), '10:00');
+      await t.enterText(find.descendant(of: find.byKey(const Key('horario-cierra')), matching: find.byType(EditableText)), '18:30');
+      await t.tap(find.byKey(const Key('asistente-guardar-horario')));
+      await t.pumpAndSettle();
+      expect(guardado!.dias.values.where((f) => f != null), hasLength(7));
+      expect(guardado!.dias[7], (desdeMin: 600, hastaMin: 1110));
+      expect(find.byKey(const Key('asistente-terminar')), findsOneWidget, reason: 'sigue a cobros');
+    });
+
     testWidgets('"Después" deja el paso pendiente y no lo da por hecho', (t) async {
       await tamanio(t);
       final hechos = <PasoNegocio>[];
@@ -336,7 +363,7 @@ void main() {
         await t.pumpAndSettle();
       }
       expect(hechos, isEmpty);
-      expect(alFinal, PasoNegocio.values.toSet());
+      expect(alFinal, pasosDelNegocio().toSet());
     });
 
     testWidgets('retomado en el producto sin rubro elegido, ofrece las categorías que ya tiene la base', (t) async {

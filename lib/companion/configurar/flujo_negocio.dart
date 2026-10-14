@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositorio_productos.dart' as repo_productos;
 import '../../data/repositorio_servicios.dart' as repo_servicios;
+import '../../data/repositorio_turnos.dart' show ConfigAgenda, configAgendaActual, guardarConfigAgenda;
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
 import '../base_local.dart';
@@ -28,6 +29,7 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
   final categorias = [for (final c in await repo_productos.listarCategorias(db)) c.nombre];
   if (!context.mounted) return;
   final nombreInicial = await _nombreParaElAsistente(db);
+  final agenda = await configAgendaActual(db);
   if (!context.mounted) return;
   final ruta = MaterialPageRoute<void>(
     builder: (_) => AsistenteNegocio(
@@ -42,6 +44,15 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
       alEscanear: escanearCodigo,
       alGuardarProducto: (p) => _guardarProducto(p),
       alGuardarServicio: (s) => _guardarServicio(s),
+      horarioInicial: agenda.horario,
+      // Solo cambia el horario: el paso de turnos y la seña quedan como estaban (se ajustan en Configuración › Agenda y seña).
+      alGuardarHorario: (horario) async {
+        final c = await configAgendaActual(db);
+        await guardarConfigAgenda(
+          db,
+          ConfigAgenda(horario: horario, pasoMinutos: c.pasoMinutos, sena: c.sena, aliasSena: c.aliasSena, titularSena: c.titularSena),
+        );
+      },
       alAbrirWeb: (_) => launchUrl(urlPaginaNegocio, mode: LaunchMode.externalApplication),
       alTerminar: (context, _) {
         final navigator = Navigator.of(context);

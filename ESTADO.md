@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (14/10/2026)
 
+- **"Configurá tu negocio" en Servicios pregunta el horario de atención** (paso 3 de 4: días y franja, la misma para todos;
+  un día distinto se ajusta en Configuración › Agenda y seña). Antes el bot ofrecía turnos en el horario de fábrica. En
+  almacén siguen siendo tres pasos. "Conectar" e "Invitar" del último paso ahora se ven como botones.
+
 - **Revisión de Nodo Sur Servicios** (El dueño: "la configuración no guarda"): la causa era guardar sobre una fila de
   configuración que en ese celular no existía (ver `TRAMPAS.md`). Además: doble toque que anotaba turnos, señas y compras dos
   veces; errores que no se mostraban; la Agenda o su configuración colgadas si fallaba la lectura; WhatsApp sin código de país;

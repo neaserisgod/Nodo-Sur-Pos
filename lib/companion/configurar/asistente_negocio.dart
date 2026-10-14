@@ -1,7 +1,8 @@
 // "Configurá tu negocio": lo que ve el dueño de un negocio nuevo después de entrar, para dejar el celular listo para
 // vender. Tres pasos (El dueño, 2026-10-03): nombre y rubro, un primer producto escaneado que sirve de práctica de
-// cómo se carga cualquier producto, y los atajos a horsepos.com/negocio para Mercado Pago y el equipo. Cada paso se
-// puede dejar para después: lo que falte queda como recordatorio en Inicio.
+// cómo se carga cualquier producto, y los atajos a horsepos.com/negocio para Mercado Pago y el equipo. Un negocio de
+// servicios suma un cuarto, el horario de atención (El dueño, 2026-10-14: sin él, el bot ofrecía turnos en el horario de
+// fábrica). Cada paso se puede dejar para después: lo que falte queda como recordatorio en Inicio (o en la Agenda).
 //
 // Solo la vista y el orden de los pasos. Guardar (nombre del comercio, plantilla del rubro, el producto) lo hace quien
 // la abre, por los callbacks.
@@ -12,12 +13,23 @@ import 'package:flutter/services.dart';
 
 import '../../domain/forma_de_trabajo.dart';
 import '../../domain/plantillas_rubro.dart';
+import '../../domain/turnos.dart';
 import '../../edicion.dart';
 import '../../servicios/modulos_activos.dart' show modulosActuales;
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 
-enum PasoNegocio { negocio, producto, cobros }
+enum PasoNegocio { negocio, producto, horario, cobros }
+
+/// Los pasos de esa forma de trabajar, en orden: el horario de atención es solo de un negocio de servicios (lo usan la
+/// Agenda y el bot).
+List<PasoNegocio> pasosDeLaForma(FormaDeTrabajo forma) => [
+      for (final p in PasoNegocio.values)
+        if (p != PasoNegocio.horario || forma == FormaDeTrabajo.servicios) p,
+    ];
+
+/// Los pasos del negocio de este equipo.
+List<PasoNegocio> pasosDelNegocio() => pasosDeLaForma(modulosActuales.value.forma);
 
 /// El producto que se cargó en la práctica.
 class ProductoDePrueba {
@@ -45,6 +57,8 @@ class AsistenteNegocio extends StatefulWidget {
     required this.alEscanear,
     required this.alGuardarProducto,
     this.alGuardarServicio,
+    this.alGuardarHorario,
+    this.horarioInicial = HorarioAtencion.porDefecto,
     required this.alAbrirWeb,
     required this.alTerminar,
     this.alCompletarPaso,
@@ -72,6 +86,12 @@ class AsistenteNegocio extends StatefulWidget {
 
   /// El primer servicio, si el rubro es de servicios. Sin esto, ese paso no guarda nada (solo se ve).
   final Future<void> Function(ServicioDePrueba servicio)? alGuardarServicio;
+
+  /// El horario de atención (negocios de servicios). Sin esto, ese paso no guarda nada (solo se ve).
+  final Future<void> Function(HorarioAtencion horario)? alGuardarHorario;
+
+  /// Lo que ya está guardado, para arrancar el paso del horario.
+  final HorarioAtencion horarioInicial;
 
   /// Abre horsepos.com/negocio en el navegador (Mercado Pago o el equipo).
   final void Function(String seccion) alAbrirWeb;
@@ -108,16 +128,19 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
       _pendientes.remove(_paso);
       widget.alCompletarPaso?.call(_paso);
     }
-    final i = _paso.index;
-    if (i == PasoNegocio.values.length - 1) {
+    // El siguiente de los pasos de esta forma de trabajar (el rubro elegido puede sumar o sacar el del horario).
+    final siguiente = _pasos.where((p) => p.index > _paso.index).firstOrNull;
+    if (siguiente == null) {
       widget.alTerminar(context, _pendientes);
       return;
     }
     setState(() {
       _adelante = true;
-      _paso = PasoNegocio.values[i + 1];
+      _paso = siguiente;
     });
   }
+
+  List<PasoNegocio> get _pasos => pasosDeLaForma(_rubro?.forma ?? modulosActuales.value.forma);
 
   Future<void> _guardarNegocio() async {
     setState(() => _guardando = true);
@@ -138,7 +161,12 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
 
   @override
   Widget build(BuildContext context) {
-    final cabecera = _CabeceraPaso(paso: _paso.index, total: PasoNegocio.values.length, alDespues: _guardando ? null : () => _seguir(hecho: false));
+    final pasos = _pasos;
+    final cabecera = _CabeceraPaso(
+      paso: pasos.indexOf(_paso).clamp(0, pasos.length - 1),
+      total: pasos.length,
+      alDespues: _guardando ? null : () => _seguir(hecho: false),
+    );
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 450),
       switchInCurve: const Cubic(0.05, 0.7, 0.1, 1),
@@ -179,6 +207,12 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
               categorias: _rubro != null ? [for (final c in _rubro!.categorias) c.nombre] : widget.categoriasExistentes,
               alEscanear: widget.alEscanear,
               alGuardar: widget.alGuardarProducto,
+              alSeguir: () => _seguir(hecho: true),
+            ),
+          PasoNegocio.horario => _PasoHorario(
+              cabecera: cabecera,
+              inicial: widget.horarioInicial,
+              alGuardar: widget.alGuardarHorario ?? (_) async {},
               alSeguir: () => _seguir(hecho: true),
             ),
           PasoNegocio.cobros => _PasoCobros(cabecera: cabecera, alAbrirWeb: widget.alAbrirWeb, alTerminar: () => _seguir(hecho: true)),
@@ -611,6 +645,99 @@ class _PasoServicioState extends State<_PasoServicio> {
 // ---------------------------------------------------------------------------------------------------------------------
 // Paso 3 · Mercado Pago y el equipo (se hacen en horsepos.com/negocio)
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Paso 3 (servicios) · El horario de atención
+
+class _PasoHorario extends StatefulWidget {
+  const _PasoHorario({required this.cabecera, required this.inicial, required this.alGuardar, required this.alSeguir});
+  final Widget cabecera;
+  final HorarioAtencion inicial;
+  final Future<void> Function(HorarioAtencion horario) alGuardar;
+  final VoidCallback alSeguir;
+
+  @override
+  State<_PasoHorario> createState() => _PasoHorarioState();
+}
+
+class _PasoHorarioState extends State<_PasoHorario> {
+  static const _dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  // Un mismo horario para los días elegidos: lo común en un local chico. Un día distinto se ajusta en Configuración.
+  late final Set<int> _abiertos = {for (var d = 1; d <= 7; d++) if (widget.inicial.dias[d] != null) d};
+  late final FranjaAtencion _primera = widget.inicial.dias.values.whereType<FranjaAtencion>().firstOrNull ?? (desdeMin: 540, hastaMin: 1200);
+  late final _abre = TextEditingController(text: horaDeMinutos(_primera.desdeMin));
+  late final _cierra = TextEditingController(text: horaDeMinutos(_primera.hastaMin));
+  bool _guardando = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _abre.dispose();
+    _cierra.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final desde = minutosDeHora(_abre.text), hasta = minutosDeHora(_cierra.text);
+    if (_abiertos.isEmpty) return setState(() => _error = 'Elegí al menos un día');
+    if (desde == null || hasta == null) return setState(() => _error = 'El horario va como 09:00');
+    if (desde >= hasta) return setState(() => _error = 'Cierra antes de abrir');
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    try {
+      await widget.alGuardar(HorarioAtencion({for (var d = 1; d <= 7; d++) d: _abiertos.contains(d) ? (desdeMin: desde, hastaMin: hasta) : null}));
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo guardar: ${_textoDeError(e)}');
+      return;
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+    widget.alSeguir();
+  }
+
+  @override
+  Widget build(BuildContext context) => PaginaArranqueNs(
+        cabecera: widget.cabecera,
+        titulo: '¿Cuándo atendés?',
+        tituloChico: true,
+        bajada: 'La Agenda y el bot de WhatsApp solo ofrecen turnos en este horario. Si algún día es distinto, lo cambiás en '
+            'Configuración › Agenda y seña.',
+        cuerpo: [
+          const SeccionNs('Días'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var d = 1; d <= 7; d++)
+                ChipNs(
+                  key: ValueKey('horario-dia-$d'),
+                  texto: _dias[d - 1],
+                  activo: _abiertos.contains(d),
+                  onTap: () => setState(() => _abiertos.contains(d) ? _abiertos.remove(d) : _abiertos.add(d)),
+                ),
+            ],
+          ),
+          const SeccionNs('Horario'),
+          Row(
+            children: [
+              Expanded(child: CampoNs(key: const Key('horario-abre'), etiqueta: 'Abre', controller: _abre, placeholder: '09:00', teclado: TextInputType.datetime)),
+              const SizedBox(width: 10),
+              Expanded(child: CampoNs(key: const Key('horario-cierra'), etiqueta: 'Cierra', controller: _cierra, placeholder: '20:00', teclado: TextInputType.datetime)),
+            ],
+          ),
+          if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+        ],
+        botones: [
+          KeyedSubtree(
+            key: const Key('asistente-guardar-horario'),
+            child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Guardar horario', _guardando ? null : _guardar, habilitado: !_guardando),
+          ),
+        ],
+      );
+}
+
 class _PasoCobros extends StatelessWidget {
   const _PasoCobros({required this.cabecera, required this.alAbrirWeb, required this.alTerminar});
   final Widget cabecera;
@@ -634,6 +761,7 @@ class _PasoCobros extends StatelessWidget {
                   ? 'Las señas se cobran solas con un link que manda el bot, y en el local cobrás con un QR en la pantalla del celular.'
                   : 'Cobrá con QR y débito en tu terminal Point. Lo cobrado entra en la caja como Mercado Pago.',
               derecha: 'Conectar',
+              derechaComoBoton: true,
               onTap: () => alAbrirWeb('mercado-pago'),
             ),
           ),
@@ -644,6 +772,7 @@ class _PasoCobros extends StatelessWidget {
               titulo: 'Sumá a tu equipo',
               detalle: 'Invitá a tus empleados por mail. Cada uno entra con su cuenta y lo que hace queda a su nombre.',
               derecha: 'Invitar',
+              derechaComoBoton: true,
               onTap: () => alAbrirWeb('equipo'),
             ),
           ),
@@ -664,12 +793,14 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
   static Map<PasoNegocio, String> get _nombres => {
         PasoNegocio.negocio: 'Nombre y rubro',
         PasoNegocio.producto: modulosActuales.value.forma == FormaDeTrabajo.servicios ? 'Tu primer servicio' : 'Tu primer producto',
+        PasoNegocio.horario: 'Horario de atención',
         PasoNegocio.cobros: esEdicionServicios ? 'Mercado Pago' : 'Mercado Pago y equipo',
       };
 
   @override
   Widget build(BuildContext context) {
-    final hechos = PasoNegocio.values.length - pendientes.length;
+    final pasos = pasosDelNegocio();
+    final hechos = pasos.length - pendientes.where(pasos.contains).length;
     const blanco = TokensNs.blanco;
     return HeroNs(
       radio: 34,
@@ -678,7 +809,7 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$hechos de ${PasoNegocio.values.length} listos', style: estiloNs(14, peso: FontWeight.w500, color: const Color(0xC7FFFFFF))),
+          Text('$hechos de ${pasos.length} listos', style: estiloNs(14, peso: FontWeight.w500, color: const Color(0xC7FFFFFF))),
           const SizedBox(height: 4),
           Text(
             pendientes.length == 1 ? 'Te falta un paso' : 'Te faltan ${pendientes.length} pasos',
