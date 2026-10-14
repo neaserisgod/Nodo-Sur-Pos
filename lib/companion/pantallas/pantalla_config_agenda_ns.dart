@@ -10,6 +10,7 @@ import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/turnos.dart';
 import '../base_local.dart';
 import '../kit/kit_ns.dart';
+import '../mensaje_error.dart';
 
 const _nombresDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -60,6 +61,13 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
         _montoFijo.text = _fijo ? '${c.sena.montoFijoCentavos! ~/ 100}' : '';
         _alias.text = c.aliasSena;
         _titular.text = c.titularSena;
+      });
+    }, onError: (Object e) {
+      // Sin esto la pantalla quedaba en el esqueleto: se muestra con lo de fábrica y el motivo.
+      if (!mounted) return;
+      setState(() {
+        _dias = [for (var d = 1; d <= 7; d++) _DiaEditable(HorarioAtencion.porDefecto.dias[d])];
+        _error = 'No se pudo leer la configuración: ${mensajeDeError(e)}';
       });
     });
   }
@@ -121,6 +129,8 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
       }
     } on ArgumentError catch (e) {
       setState(() => _error = '${e.message}');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo guardar: ${mensajeDeError(e)}');
     }
   }
 
