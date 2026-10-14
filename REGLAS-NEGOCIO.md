@@ -673,7 +673,12 @@ se apaga para ese rubro** (no se ve ni entra en las cuentas), y todo arranca con
   queda anotada para quien atendió.
 - **Para reponer insumos:** lo que costaron los insumos usados en el día se separa para la próxima compra. Reemplaza a
   "Separar para proveedores" en la Caja.
-- **Vender productos además de servicios** (reventa) arranca apagado; se prende en Más › Módulos.
+- **Vender productos además de servicios** (shampoo, ceras, cremas; El dueño, 2026-10-14: "la agenda también debe vender
+  productos"; reemplaza el "arranca apagado" del 10/10): siempre a mano en la app de servicios e incluido en el plan
+  Emprendedor. Se cargan simple (nombre, precio, costo opcional y lo que hay), con stock por unidades y rastro (Regla 6),
+  sin códigos de barras, pesables ni proveedores. **Sin stock se vende igual, con aviso**, como los insumos. Un producto que
+  además se usa en los servicios se carga dos veces: como insumo y como producto, para no mezclar el costo del servicio con
+  lo que está a la venta. El bot de WhatsApp no vende productos (por ahora).
 - Descuento y redondeo del efectivo, igual que en un comercio (Reglas 9 y 17).
 
 ## 21. Turnos y seña (El dueño, 2026-10-10)

@@ -81,6 +81,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Configurá tu negocio: el celular arma un negocio nuevo (2026-10-03)](#configurá-tu-negocio-el-celular-arma-un-negocio-nuevo-2026-10-03)
 - [La forma de trabajar sale del rubro, no es una columna (2026-10-09)](#la-forma-de-trabajar-sale-del-rubro-no-es-una-columna-2026-10-09)
 - [Servicios e insumos son productos; el costo del servicio no se guarda (2026-10-09)](#servicios-e-insumos-son-productos-el-costo-del-servicio-no-se-guarda-2026-10-09)
+- [La app de servicios vende productos: venta simple, sin stock con aviso (2026-10-14)](#la-app-de-servicios-vende-productos-venta-simple-sin-stock-con-aviso-2026-10-14)
 - [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
 - [Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)](#cobrar-servicios-sin-tabla-de-consumos-y-la-propina-después-de-cobrar-2026-10-10)
 
@@ -2606,3 +2607,28 @@ la prueba (pantalla, canal `nodosur/point_tap` y las consultas del manifiesto).
 - Fuente: `assets/icon/logo_servicios.png` (1024 px, no se empaqueta). Android: `android/app/src/servicios/res/mipmap-*`
   pisa el `ic_launcher` de `main` solo en ese flavor; `flutter_launcher_icons` no lo toca (regenera solo `main` y Windows).
   Web: `web/icons/*` y `web/favicon.png`; el maskable es fondo lleno con el contenido al 80 % (zona segura).
+
+## La app de servicios vende productos: venta simple, sin stock con aviso (2026-10-14)
+
+El dueño: "la agenda también debe vender productos". Lo disparó la IA de Google, que comparando apps de turnos decía que el
+plan Emprendedor no sirve si la estética o la barbería vende shampoo o ceras. El 10/10 (`docs/PLAN-APP-SERVICIOS.md`, etapa 2)
+se habían sacado los productos con stock de la app de servicios para que fuera simple.
+
+- **Alcance elegido por el dueño: venta simple.** Nombre, precio, costo opcional y lo que hay; compra y conteo por unidades.
+  Nada de proveedores, códigos de barras, pesables, promos ni conteo de stock masivo: eso sigue siendo del almacén.
+- **Es la misma fila de `productos` del almacén** (ni insumo ni servicio): hereda la sync, la venta (`registrarVenta` baja el
+  stock y guarda el costo-foto), el historial de precios y los movimientos. Lo nuevo son cuatro funciones en
+  `data/repositorio_servicios.dart` (`crearProductoDeVenta`, `editarProductoDeVenta`, `cargarCompraDeProducto`,
+  `contarProducto`) que pasan por `crearProducto`, `actualizarProducto`, `ajustarStockRapido` y `cargarCostoProducto`: no hay
+  un segundo camino para tocar stock o precios.
+- **Sin stock se vende igual, con aviso** (`avisoDeStockAlVender`, `domain/servicios.dart`): cobrar nunca se frena por el
+  stock, como con los insumos. El aviso dice si no había o cuántos quedaban.
+- **Incluido en el plan Emprendedor, sin módulo para prenderlo**: la solapa Productos está siempre y el cobro tiene
+  "+ Producto". Se descartó un módulo apagado por defecto (lo que decía la Regla 20) porque la queja era justamente que no
+  estaba.
+- **Insumo y producto separados**: el mismo shampoo que se usa y se vende se carga dos veces, así el costo del servicio no
+  depende de lo que está a la venta.
+- **En el cobro no entran pesables ni productos sin precio**: un negocio que viene del almacén puede tener pesables, y
+  `lineaDesdeProducto` necesita gramos para ellos.
+- El bot de WhatsApp no ofrece productos (por ahora); el reporte de más vendidos queda para después.
+

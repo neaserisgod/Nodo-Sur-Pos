@@ -99,6 +99,8 @@ void main() {
           stockMinimoMilesimas: 5000, stockInicialMilesimas: 3000, usuarioId: usuario);
       await crearInsumo(db, nombre: 'Guantes de nitrilo talle M (caja x 100)', unidad: UnidadInsumo.u, contenidoEnvaseMilesimas: 100000,
           costoEnvaseCentavos: 900000, stockInicialMilesimas: 64000, usuarioId: usuario);
+      await crearProductoDeVenta(db, nombre: 'Shampoo reparador 500 ml', precioCentavos: 1200000, costoCentavos: 700000, stockInicial: 4, usuarioId: usuario);
+      await crearProductoDeVenta(db, nombre: 'Aceite para cutículas', precioCentavos: 650000, costoCentavos: 300000, usuarioId: usuario);
       final semi = await crearServicio(db, nombre: 'Esmaltado semipermanente con diseño', precioCentavos: 1800000, duracionMinutos: 90,
           pideSena: true, receta: [(insumoId: top, milesimas: 500)], usuarioId: usuario);
       final corte = await crearServicio(db, nombre: 'Corte', precioCentavos: 850000, duracionMinutos: 30, usuarioId: usuario);
@@ -129,6 +131,12 @@ void main() {
       await sembrar(tester);
       await _abrir(tester, Scaffold(body: PantallaServiciosNs(db: db, usuarioId: usuario)), oscuro: oscuro);
       await _guardar(tester, 'servicios', oscuro: oscuro);
+      await tester.tap(find.text('Productos'));
+      await _esperar(tester);
+      await _guardar(tester, 'servicios-productos', oscuro: oscuro);
+      await tester.tap(find.text('+ Producto'));
+      await _esperar(tester);
+      await _guardar(tester, 'servicios-nuevo-producto', oscuro: oscuro);
     });
     testWidgets('editor de servicio$s', (tester) async {
       await sembrar(tester);

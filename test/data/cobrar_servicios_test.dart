@@ -145,4 +145,23 @@ void main() {
     final linea = await (db.select(db.lineasDeVenta)..where((l) => l.ventaId.equals(ventaId))).getSingle();
     expect(linea.precioUnitarioCentavos - linea.costoUnitarioCentavos!, 3000000 - 418000);
   });
+
+  test('un producto se cobra junto al servicio: baja su stock y guarda su costo de ese día (El dueño, 2026-10-14)', () async {
+    final shampooId = await crearProductoDeVenta(db, nombre: 'Shampoo', precioCentavos: 1200000, costoCentavos: 700000, stockInicial: 3, usuarioId: usuarioId);
+    final shampoo = await (db.select(db.productos)..where((p) => p.id.equals(shampooId))).getSingle();
+    final venta = Venta(lineas: [lineaDesdeProducto(color), lineaDesdeProducto(shampoo, cantidad: 2)]);
+    final r = totalDe(venta);
+    final (ventaId, _) = await registrarVenta(
+      db,
+      venta: venta,
+      resultado: r,
+      sesionCajaId: sesionId,
+      usuarioId: usuarioId,
+      pagos: [PagoARegistrar(medioPagoId: medioEfectivoId, montoCentavos: r.totalCentavos, esEfectivo: true)],
+    );
+    expect((await (db.select(db.productos)..where((p) => p.id.equals(shampooId))).getSingle()).stock, 1);
+    expect(await stockDe(tintura), 80000, reason: 'el servicio sigue descontando sus insumos');
+    final linea = await (db.select(db.lineasDeVenta)..where((l) => l.ventaId.equals(ventaId))..where((l) => l.productoId.equals(shampooId))).getSingle();
+    expect(linea.costoUnitarioCentavos, 700000);
+  });
 }

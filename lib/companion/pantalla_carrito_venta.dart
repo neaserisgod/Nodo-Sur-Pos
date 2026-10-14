@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
+import '../data/database.dart' show Producto;
 import '../data/identidad_sync.dart' show generarGlobalId;
 import '../data/repositorio_servicios.dart' show ServicioListado;
 import '../data/repositorio_tablero.dart' show tableroDelDia;
@@ -27,6 +28,7 @@ import '../domain/cobro_qr.dart';
 import '../domain/descuento.dart';
 import '../domain/dinero.dart';
 import '../domain/pesables.dart' show subtotalPesable;
+import '../domain/servicios.dart' show avisoDeStockAlVender;
 import '../domain/venta.dart';
 import '../domain/vuelto.dart';
 import 'app_ns.dart';
@@ -323,6 +325,25 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   void _agregarServicio(ServicioListado servicio) {
     _sumarAlCarrito(lineaDeServicio(servicio));
     if (avisoDeInsumos(servicio) case final aviso?) mostrarAvisoNs(context, '$aviso: se cobra igual');
+  }
+
+  /// Suma un producto que el negocio vende aparte (El dueño, 2026-10-14). Sin stock se vende igual, con aviso.
+  void _agregarProducto(Producto producto) {
+    _sumarAlCarrito(lineaDeProducto(producto));
+    final linea = widget.carrito.firstWhere((l) => l.productoId == '${producto.id}');
+    final enCarrito = linea is LineaVentaPorUnidad ? linea.cantidad : 1;
+    if (avisoDeStockAlVender(stock: producto.stock, enCarrito: enCarrito) case final aviso?) mostrarAvisoNs(context, '$aviso: se vende igual');
+  }
+
+  Future<void> _elegirProducto() async {
+    final elegido = await mostrarHojaNs<Producto>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: 'Producto',
+        bloques: [ListaProductosParaCobrarNs(onElegir: (p) => Navigator.of(ctx).pop(p))],
+      ),
+    );
+    if (elegido != null && mounted) _agregarProducto(elegido);
   }
 
   Future<void> _elegirOtroServicio() async {
@@ -1082,7 +1103,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                     Expanded(child: Text(servicios ? 'Cobrar' : 'Venta', style: tituloNs(40, color: ns.ink))),
                     if (n > 0)
                       Text(
-                        servicios ? (n == 1 ? '1 servicio' : '$n servicios') : (n == 1 ? '1 producto' : '$n productos'),
+                        servicios ? (n == 1 ? '1 ítem' : '$n ítems') : (n == 1 ? '1 producto' : '$n productos'),
                         style: estiloNs(15, peso: FontWeight.w600, color: ns.mute),
                       ),
                   ],
@@ -1142,6 +1163,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         children: [
           if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
           GrillaServiciosNs(onElegir: _agregarServicio),
+          const SizedBox(height: 12),
+          BotonNs(key: const Key('cobrar_mas_producto'), texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: ns.s, color: ns.i),
         ],
       );
     }
@@ -1225,7 +1248,13 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       itemBuilder: (context, i) {
         if (i == n) {
           if (esNegocioDeServicios()) {
-            return BotonNs(texto: '+ Otro servicio', onTap: _elegirOtroServicio, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i);
+            return Row(
+              children: [
+                Expanded(child: BotonNs(texto: '+ Otro servicio', onTap: _elegirOtroServicio, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i)),
+                const SizedBox(width: 10),
+                Expanded(child: BotonNs(texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i)),
+              ],
+            );
           }
           return EntradaNs(
             child: Padding(

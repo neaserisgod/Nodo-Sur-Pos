@@ -584,3 +584,120 @@ Future<int> paraReponerInsumosCentavos(AppDatabase db, {required int sesionCajaI
   }
   return total;
 }
+
+// --- Productos que vende un negocio de servicios ------------------------------------------------------------------------
+//
+// El dueño, 2026-10-14: "la agenda también debe vender productos" (shampoo, ceras, cremas). Son productos comunes, como los
+// del almacén (no insumos ni servicios): misma fila, misma venta, mismo stock por unidades y mismo rastro. Lo que cambia es
+// que se cargan simple (nombre, precio, costo y lo que hay), sin códigos de barras, pesables ni proveedores.
+
+Future<Producto> _productoDeVenta(AppDatabase db, int id) async {
+  final p = await _producto(db, id);
+  if (p.esInsumo || p.esServicio || p.esVarios || p.esPromo) throw ArgumentError('"${p.nombre}" no es un producto para vender');
+  return p;
+}
+
+/// Los productos para vender, por nombre. Sin insumos, servicios, promos ni "Varios" (`listarProductos`).
+Future<List<Producto>> listarProductosDeVenta(AppDatabase db) async =>
+    (await listarProductos(db))..sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
+
+/// Alta de un producto para vender. Con [stockInicial], arranca con lo que ya hay como movimiento "Stock inicial", igual
+/// que un insumo (convención 6).
+Future<int> crearProductoDeVenta(
+  AppDatabase db, {
+  required String nombre,
+  required int precioCentavos,
+  int? costoCentavos,
+  int stockInicial = 0,
+  int? stockMinimo,
+  required int usuarioId,
+}) {
+  _validarNombre(nombre);
+  if (precioCentavos <= 0) throw ArgumentError('Falta el precio');
+  if (costoCentavos != null && costoCentavos < 0) throw ArgumentError('El costo no puede ser negativo');
+  if (stockInicial < 0) throw ArgumentError('Lo que tenés no puede ser negativo');
+  return db.transaction(() async {
+    final id = await crearProducto(
+      db,
+      nombre: nombre.trim(),
+      precioCentavos: precioCentavos,
+      costoCentavos: costoCentavos,
+      stockMinimo: stockMinimo,
+      usuarioId: usuarioId,
+    );
+    if (stockInicial > 0) {
+      await ajustarStockRapido(db, productoId: id, usuarioId: usuarioId, stock: stockInicial, motivo: 'Stock inicial');
+    }
+    return id;
+  });
+}
+
+/// Edición de nombre, precio y costo (el stock va por [cargarCompraDeProducto] o [contarProducto]). Pasa por
+/// `actualizarProducto`, así deja el historial de precios y completa ventas que quedaron sin costo.
+Future<void> editarProductoDeVenta(
+  AppDatabase db, {
+  required int id,
+  required String nombre,
+  required int precioCentavos,
+  int? costoCentavos,
+  required int usuarioId,
+}) async {
+  _validarNombre(nombre);
+  if (precioCentavos <= 0) throw ArgumentError('Falta el precio');
+  if (costoCentavos != null && costoCentavos < 0) throw ArgumentError('El costo no puede ser negativo');
+  final p = await _productoDeVenta(db, id);
+  await actualizarProducto(
+    db,
+    id: id,
+    nombre: nombre.trim(),
+    codigoBarras: p.codigoBarras,
+    categoriaId: p.categoriaId,
+    proveedorId: p.proveedorId,
+    esPesable: p.esPesable,
+    precioCentavos: precioCentavos,
+    costoCentavos: costoCentavos,
+    precioPorKiloCentavos: p.precioPorKiloCentavos,
+    costoPorKiloCentavos: p.costoPorKiloCentavos,
+    stock: p.stock,
+    stockGramos: p.stockGramos,
+    stockMinimo: p.stockMinimo,
+    activo: p.activo,
+    usuarioId: usuarioId,
+  );
+}
+
+/// Una compra de [unidades]: suma al stock con su movimiento. Con [costoCentavos] distinto al de hoy, el costo pasa a ser
+/// ese (lo que vale reponerlo es lo último que se pagó, como en el almacén); el precio no se toca.
+Future<void> cargarCompraDeProducto(
+  AppDatabase db, {
+  required int productoId,
+  required int unidades,
+  int? costoCentavos,
+  required int usuarioId,
+}) {
+  if (unidades <= 0) throw ArgumentError('Hay que comprar al menos una unidad');
+  if (costoCentavos != null && costoCentavos < 0) throw ArgumentError('El costo no puede ser negativo');
+  return db.transaction(() async {
+    final p = await _productoDeVenta(db, productoId);
+    await ajustarStockRapido(
+      db,
+      productoId: productoId,
+      usuarioId: usuarioId,
+      stock: p.stock + unidades,
+      motivo: unidades == 1 ? 'Compra de 1 unidad' : 'Compra de $unidades unidades',
+    );
+    if (costoCentavos != null && costoCentavos != p.costoCentavos) {
+      await cargarCostoProducto(db, productoId: productoId, costoCentavos: costoCentavos, usuarioId: usuarioId);
+    }
+  });
+}
+
+/// Conteo físico: el stock pasa a ser [stock]. Sin cambio no deja movimiento.
+Future<void> contarProducto(AppDatabase db, {required int productoId, required int stock, required int usuarioId}) {
+  if (stock < 0) throw ArgumentError('Lo contado no puede ser negativo');
+  return db.transaction(() async {
+    final p = await _productoDeVenta(db, productoId);
+    if (p.stock == stock) return;
+    await ajustarStockRapido(db, productoId: productoId, usuarioId: usuarioId, stock: stock, motivo: 'Conteo físico');
+  });
+}

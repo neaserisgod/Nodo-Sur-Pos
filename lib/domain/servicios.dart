@@ -217,3 +217,12 @@ String textoDeMilesimas(int milesimas) {
   final decimales = resto == 0 ? '' : ',${resto.toString().padLeft(3, '0').replaceFirst(RegExp(r'0+$'), '')}';
   return '${negativo ? '-' : ''}$enteros$decimales';
 }
+
+/// El aviso al sumar al cobro un producto que vende un negocio de servicios (shampoo, cera, cremas), o null si alcanza.
+/// [enCarrito] cuenta el que se acaba de sumar. Se vende igual aunque no alcance (El dueño, 2026-10-14): cobrar nunca se
+/// frena por el stock, como con los insumos; el aviso es para que se sepa que hay que reponer o contar.
+String? avisoDeStockAlVender({required int stock, required int enCarrito}) {
+  if (enCarrito <= stock) return null;
+  if (stock <= 0) return 'Sin stock';
+  return stock == 1 ? 'Quedaba 1' : 'Quedaban $stock';
+}

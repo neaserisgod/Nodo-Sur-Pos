@@ -4,6 +4,9 @@
 // alcanza un insumo, se avisa y se cobra igual (por defecto solo avisa).
 //
 // Lee la base del celular, como la pestaña Servicios: cobrar servicios es solo para "Solo celular" (etapa 3).
+//
+// Los productos que el negocio vende aparte (El dueño, 2026-10-14) se eligen de una lista con buscador
+// ([ListaProductosParaCobrarNs]) y se venden igual sin stock, con aviso (`avisoDeStockAlVender`).
 
 import 'dart:async';
 
@@ -12,6 +15,8 @@ import 'package:flutter/material.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart' show listarCategorias;
 import '../../data/repositorio_servicios.dart';
+import '../../data/repositorio_ventas.dart' show lineaDesdeProducto;
+import '../../domain/normalizacion_texto.dart' show normalizarTexto;
 import '../../domain/modulos.dart';
 import '../../domain/venta.dart';
 import '../../servicios/modulos_activos.dart';
@@ -142,6 +147,80 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
               ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// La línea de venta de un producto: una unidad, con su precio y su costo de hoy (Regla 2, `lineaDesdeProducto`).
+LineaVenta lineaDeProducto(Producto p) => lineaDesdeProducto(p, cantidad: 1);
+
+/// Los productos para sumar al cobro, con buscador. Sin pesables ni productos sin precio: en un negocio de servicios se
+/// venden por unidad, y un pesable heredado del almacén pediría gramos.
+class ListaProductosParaCobrarNs extends StatefulWidget {
+  /// [db] es para tests.
+  const ListaProductosParaCobrarNs({super.key, required this.onElegir, this.db});
+
+  final ValueChanged<Producto> onElegir;
+  final AppDatabase? db;
+
+  @override
+  State<ListaProductosParaCobrarNs> createState() => _ListaProductosParaCobrarNsState();
+}
+
+class _ListaProductosParaCobrarNsState extends State<ListaProductosParaCobrarNs> {
+  late final AppDatabase _db = widget.db ?? baseLocalCompanion();
+  final _buscar = TextEditingController();
+  List<Producto>? _productos;
+
+  @override
+  void initState() {
+    super.initState();
+    listarProductosDeVenta(_db).then((r) {
+      if (mounted) setState(() => _productos = [for (final p in r) if (!p.esPesable && (p.precioCentavos ?? 0) > 0) p]);
+    });
+  }
+
+  @override
+  void dispose() {
+    _buscar.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final productos = _productos;
+    if (productos == null) return const EsqueletoListaNs();
+    if (productos.isEmpty) {
+      return const InfoNs('Todavía no hay productos para vender. Cargalos en la pestaña Servicios, solapa Productos.');
+    }
+    final texto = normalizarTexto(_buscar.text.trim());
+    final visibles = [for (final p in productos) if (texto.isEmpty || normalizarTexto(p.nombre).contains(texto)) p];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (productos.length > 6) ...[
+          CampoNs(etiqueta: 'Buscar', controller: _buscar, placeholder: 'Ej.: shampoo', onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+        ],
+        if (visibles.isEmpty)
+          const InfoNs('Sin coincidencias')
+        else
+          ListaAgrupadaNs(
+            filas: [
+              for (final p in visibles)
+                TarjetaFilaNs(
+                  key: ValueKey('cobrar-producto-${p.id}'),
+                  titulo: p.nombre,
+                  subtitulo: p.stock <= 0 ? 'Sin stock' : (p.stock == 1 ? 'Queda 1' : 'Quedan ${p.stock}'),
+                  chevron: false,
+                  radio: 0,
+                  onTap: () => widget.onElegir(p),
+                  derecha: Text(plataNs(p.precioCentavos ?? 0), style: estiloNs(16, peso: FontWeight.w600, color: ns.ink, tabular: true)),
+                ),
+            ],
+          ),
       ],
     );
   }
