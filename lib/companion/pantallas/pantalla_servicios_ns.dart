@@ -1,7 +1,7 @@
 // Servicios en el celular (`docs/PLAN-SERVICIOS.md`, etapa 2; mock `docs/mock-servicios`, "Servicios"): en un negocio de
-// servicios, la pestaña Productos pasa a ser esta. Dos solapas: Servicios (cada uno con lo que cuesta, cuánto gana y para
-// cuántos alcanza) e Insumos (por acabarse primero, cargar compra y contar). El creador de servicio calcula el costo en
-// vivo y sugiere el precio.
+// servicios, la pestaña Productos pasa a ser esta. Solapas: Servicios (cada uno con lo que cuesta, cuánto gana y para
+// cuántos alcanza), Productos (lo que se vende aparte: shampoo, ceras, cremas; El dueño, 2026-10-14) e Insumos (por
+// acabarse primero, cargar compra y contar). El creador de servicio calcula el costo en vivo y sugiere el precio.
 //
 // Trabaja sobre la base del celular, como Promos: la etapa 2 es solo para "Solo celular" (con la PC, las pantallas de
 // servicios de la PC llegan después). Las cuentas son las de `domain/servicios.dart`, por `data/repositorio_servicios.dart`.
@@ -43,11 +43,15 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
   int _solapa = 0;
   List<ServicioListado>? _servicios;
   List<InsumoListado> _insumos = const [];
+  List<Producto> _productos = const [];
   Map<int, String> _categorias = const {};
   int? _usuarioId;
   StreamSubscription<void>? _sub;
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
+
+  List<String> get _solapas => ['Servicios', 'Productos', if (_conInsumos) 'Insumos'];
+  String get _nombreSolapa => _solapas[_solapa.clamp(0, _solapas.length - 1)];
 
   @override
   void initState() {
@@ -75,13 +79,15 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       listarServicios(_db, conManoDeObra: moduloActivo(Modulo.manoDeObra)),
       listarInsumos(_db),
       listarCategorias(_db),
+      listarProductosDeVenta(_db),
     ]);
     if (!mounted) return;
     setState(() {
       _servicios = r[0] as List<ServicioListado>;
       _insumos = r[1] as List<InsumoListado>;
       _categorias = {for (final c in r[2] as List<Categoria>) c.id: c.nombre};
-      if (!_conInsumos) _solapa = 0;
+      _productos = r[3] as List<Producto>;
+      if (_solapa >= _solapas.length) _solapa = 0;
     });
   }
 
@@ -124,6 +130,28 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
 
+  Future<void> _hojaProducto({Producto? existente}) => _conUsuario((u) async {
+    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaProducto(db: _db, usuarioId: u, existente: existente));
+    await _recargar();
+    if (listo != null && mounted) mostrarAvisoNs(context, listo);
+  });
+
+  Future<void> _hojaCompraProducto({Producto? producto}) => _conUsuario((u) async {
+    if (_productos.isEmpty) {
+      mostrarAvisoNs(context, 'Primero cargá un producto');
+      return;
+    }
+    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaCompraProducto(db: _db, usuarioId: u, productos: _productos, elegido: producto ?? _productos.first));
+    await _recargar();
+    if (listo != null && mounted) mostrarAvisoNs(context, listo);
+  });
+
+  Future<void> _hojaContarProducto(Producto producto) => _conUsuario((u) async {
+    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaContarProducto(db: _db, usuarioId: u, producto: producto));
+    await _recargar();
+    if (listo != null && mounted) mostrarAvisoNs(context, listo);
+  });
+
   /// Lo que se acaba primero arriba: el que menos stock tiene contra su mínimo (sin mínimo, por stock).
   List<InsumoListado> get _porAcabarse {
     double clave(InsumoListado i) {
@@ -152,8 +180,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
                   Expanded(child: Text('Servicios', style: tituloNs(42, track: -0.055, color: ns.ink))),
                   if (!conPc)
                     BotonNs(
-                      texto: _solapa == 0 ? '+ Nuevo' : '+ Insumo',
-                      onTap: _solapa == 0 ? () => _abrirEditor() : () => _hojaInsumo(),
+                      texto: switch (_nombreSolapa) { 'Productos' => '+ Producto', 'Insumos' => '+ Insumo', _ => '+ Nuevo' },
+                      onTap: switch (_nombreSolapa) { 'Productos' => () => _hojaProducto(), 'Insumos' => () => _hojaInsumo(), _ => () => _abrirEditor() },
                       alto: 44,
                       tamanio: 15,
                       fondo: ns.prim,
@@ -167,16 +195,16 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               if (conPc)
                 const InfoNs('Con la PC, los servicios todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
               else ...[
-                if (_conInsumos) ...[
-                  SegmentoNs(opciones: const ['Servicios', 'Insumos'], indice: _solapa, onCambio: (i) => setState(() => _solapa = i)),
-                  const SizedBox(height: 14),
-                ],
+                SegmentoNs(opciones: _solapas, indice: _solapas.indexOf(_nombreSolapa), onCambio: (i) => setState(() => _solapa = i)),
+                const SizedBox(height: 14),
                 if (_servicios == null)
                   const EsqueletoListaNs()
-                else if (_solapa == 0)
-                  ..._listaServicios(context)
                 else
-                  ..._listaInsumos(context),
+                  ...switch (_nombreSolapa) {
+                    'Productos' => _listaProductos(context),
+                    'Insumos' => _listaInsumos(context),
+                    _ => _listaServicios(context),
+                  },
               ],
             ],
           ),
@@ -268,6 +296,69 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
         ),
       ],
     ];
+  }
+
+  List<Widget> _listaProductos(BuildContext context) {
+    final ns = context.ns;
+    return [
+      if (_productos.isNotEmpty) ...[
+        Row(children: [Expanded(child: BotonNs.primario(context, 'Cargar compra', () => _hojaCompraProducto(), icono: IconoNs.masMas, alto: 52, tamanio: 15))]),
+        const SizedBox(height: 16),
+      ],
+      if (_productos.isEmpty)
+        const InfoNs('Lo que vendés aparte de los servicios: un shampoo, una cera, una crema. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".')
+      else
+        ListaAgrupadaNs(
+          filas: [
+            for (final p in _productos)
+              TarjetaFilaNs(
+                key: ValueKey('producto-${p.id}'),
+                titulo: p.nombre,
+                subtitulo: [
+                  p.stock == 1 ? 'Queda 1' : 'Quedan ${p.stock}',
+                  if (p.costoCentavos != null) 'cuesta ${plataNs(p.costoCentavos!)}',
+                ].join(' · '),
+                chevron: false,
+                radio: 0,
+                onTap: () => _accionesProducto(p),
+                derecha: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(plataNs(p.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w600, color: ns.ink)),
+                    if (p.stock <= 0)
+                      Text('Sin stock', style: estiloNs(13, peso: FontWeight.w600, color: ns.w))
+                    else if (p.stock <= p.stockMinimo)
+                      Text('Poco stock', style: estiloNs(13, peso: FontWeight.w600, color: ns.w)),
+                  ],
+                ),
+              ),
+          ],
+        ),
+    ];
+  }
+
+  Future<void> _accionesProducto(Producto p) async {
+    final elegido = await mostrarHojaNs<String>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: p.nombre,
+        texto: p.stock == 1 ? 'Queda 1.' : 'Quedan ${p.stock}.',
+        botones: [
+          BotonNs.primario(ctx, 'Cargar compra', () => Navigator.of(ctx).pop('compra'), icono: IconoNs.masMas),
+          BotonNs.secundario(ctx, 'Contar lo que hay', () => Navigator.of(ctx).pop('contar'), icono: IconoNs.portapapeles),
+          BotonNs.secundario(ctx, 'Editar', () => Navigator.of(ctx).pop('editar'), icono: IconoNs.editar),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (elegido) {
+      case 'compra':
+        await _hojaCompraProducto(producto: p);
+      case 'contar':
+        await _hojaContarProducto(p);
+      case 'editar':
+        await _hojaProducto(existente: p);
+    }
   }
 
   Future<void> _accionesInsumo(InsumoListado i) async {
@@ -573,6 +664,205 @@ class _HojaContarState extends State<_HojaContar> with GuardarUnaVezNs {
           teclado: const TextInputType.numberWithOptions(decimal: true),
           formatos: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
         ),
+        if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+      ],
+      botones: [BotonNs.primario(context, 'Guardar conteo', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],
+    );
+  }
+}
+
+// ───────────────────────── Producto para vender: alta, compra y conteo ─────────────────────────
+
+class _HojaProducto extends StatefulWidget {
+  const _HojaProducto({required this.db, required this.usuarioId, this.existente});
+  final AppDatabase db;
+  final int usuarioId;
+  final Producto? existente;
+
+  @override
+  State<_HojaProducto> createState() => _HojaProductoState();
+}
+
+class _HojaProductoState extends State<_HojaProducto> with GuardarUnaVezNs {
+  late final _nombre = TextEditingController(text: widget.existente?.nombre ?? '');
+  late final _precio = TextEditingController(text: _plataEnCampo(widget.existente?.precioCentavos));
+  late final _costo = TextEditingController(text: _plataEnCampo(widget.existente?.costoCentavos));
+  final _tengo = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _nombre.dispose();
+    _precio.dispose();
+    _costo.dispose();
+    _tengo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final precio = _plata(_precio.text);
+    final costo = _plata(_costo.text);
+    final tengo = _tengo.text.trim().isEmpty ? 0 : int.tryParse(_tengo.text.trim());
+    if (_nombre.text.trim().isEmpty || precio == null || precio <= 0) {
+      setState(() => _error = 'Completá el nombre y el precio');
+      return;
+    }
+    if (tengo == null) {
+      setState(() => _error = 'Lo que tenés va en unidades, como 3');
+      return;
+    }
+    await unaVez(() async {
+      final e = widget.existente;
+      if (e == null) {
+        await crearProductoDeVenta(widget.db, nombre: _nombre.text, precioCentavos: precio, costoCentavos: costo, stockInicial: tengo, usuarioId: widget.usuarioId);
+      } else {
+        await editarProductoDeVenta(widget.db, id: e.id, nombre: _nombre.text, precioCentavos: precio, costoCentavos: costo, usuarioId: widget.usuarioId);
+      }
+      if (mounted) Navigator.of(context).pop(e == null ? 'Producto cargado' : 'Producto guardado');
+    }, alFallar: (m) => setState(() => _error = m));
+  }
+
+  Future<void> _darDeBaja() => unaVez(() async {
+        await cambiarActivo(widget.db, id: widget.existente!.id, activo: false);
+        if (mounted) Navigator.of(context).pop('Ya no se vende');
+      }, alFallar: (m) => setState(() => _error = m));
+
+  @override
+  Widget build(BuildContext context) {
+    final precio = _plata(_precio.text);
+    final costo = _plata(_costo.text);
+    return HojaNs(
+      titulo: widget.existente == null ? 'Nuevo producto' : 'Editar producto',
+      texto: 'Lo que vendés aparte de los servicios. Se suma al cobrar con "+ Producto".',
+      bloques: [
+        CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Shampoo 500 ml', autofoco: widget.existente == null),
+        Row(
+          children: [
+            Expanded(child: CampoNs(etiqueta: 'Precio', controller: _precio, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {}))),
+            const SizedBox(width: 10),
+            Expanded(child: CampoNs(etiqueta: 'Te cuesta (opcional)', controller: _costo, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {}))),
+          ],
+        ),
+        if (precio != null && precio > 0 && costo != null && costo > 0) _TextoGanancia(precio: precio, costo: costo, buscadaBp: 0),
+        if (widget.existente == null)
+          CampoNs(key: const Key('producto_tengo'), etiqueta: 'Lo que tenés ahora', controller: _tengo, placeholder: 'Ej.: 3', teclado: TextInputType.number, formatos: soloDigitosNs),
+        if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+      ],
+      botones: [
+        BotonNs.primario(context, 'Guardar producto', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
+        if (widget.existente != null) BotonNs.secundario(context, 'Ya no lo vendo', guardando ? null : _darDeBaja),
+      ],
+    );
+  }
+}
+
+class _HojaCompraProducto extends StatefulWidget {
+  const _HojaCompraProducto({required this.db, required this.usuarioId, required this.productos, required this.elegido});
+  final AppDatabase db;
+  final int usuarioId;
+  final List<Producto> productos;
+  final Producto elegido;
+
+  @override
+  State<_HojaCompraProducto> createState() => _HojaCompraProductoState();
+}
+
+class _HojaCompraProductoState extends State<_HojaCompraProducto> with GuardarUnaVezNs {
+  late Producto _producto = widget.elegido;
+  final _unidades = TextEditingController(text: '1');
+  late final _costo = TextEditingController(text: _plataEnCampo(widget.elegido.costoCentavos));
+  String? _error;
+
+  @override
+  void dispose() {
+    _unidades.dispose();
+    _costo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final unidades = int.tryParse(_unidades.text) ?? 0;
+    await unaVez(() async {
+      await cargarCompraDeProducto(widget.db, productoId: _producto.id, unidades: unidades, costoCentavos: _plata(_costo.text), usuarioId: widget.usuarioId);
+      if (mounted) Navigator.of(context).pop('Compra sumada al stock');
+    }, alFallar: (m) => setState(() => _error = m));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HojaNs(
+      titulo: 'Cargar compra',
+      texto: '${_producto.stock == 1 ? 'Queda 1' : 'Quedan ${_producto.stock}'} de ${_producto.nombre}.',
+      bloques: [
+        if (widget.productos.length > 1)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final p in widget.productos)
+                ChipNs(
+                  texto: p.nombre,
+                  activo: p.id == _producto.id,
+                  onTap: () => setState(() {
+                    _producto = p;
+                    _costo.text = _plataEnCampo(p.costoCentavos);
+                  }),
+                ),
+            ],
+          ),
+        Row(
+          children: [
+            Expanded(child: CampoNs(etiqueta: 'Unidades', controller: _unidades, teclado: TextInputType.number, formatos: soloDigitosNs, autofoco: true)),
+            const SizedBox(width: 10),
+            Expanded(child: CampoNs(etiqueta: 'Te costó cada una', controller: _costo, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs)),
+          ],
+        ),
+        if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+      ],
+      botones: [BotonNs.primario(context, 'Sumar al stock', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],
+    );
+  }
+}
+
+class _HojaContarProducto extends StatefulWidget {
+  const _HojaContarProducto({required this.db, required this.usuarioId, required this.producto});
+  final AppDatabase db;
+  final int usuarioId;
+  final Producto producto;
+
+  @override
+  State<_HojaContarProducto> createState() => _HojaContarProductoState();
+}
+
+class _HojaContarProductoState extends State<_HojaContarProducto> with GuardarUnaVezNs {
+  late final _cantidad = TextEditingController(text: '${widget.producto.stock < 0 ? 0 : widget.producto.stock}');
+  String? _error;
+
+  @override
+  void dispose() {
+    _cantidad.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final cantidad = int.tryParse(_cantidad.text.trim());
+    if (cantidad == null) {
+      setState(() => _error = 'Escribí cuántos hay');
+      return;
+    }
+    await unaVez(() async {
+      await contarProducto(widget.db, productoId: widget.producto.id, stock: cantidad, usuarioId: widget.usuarioId);
+      if (mounted) Navigator.of(context).pop('Stock corregido');
+    }, alFallar: (m) => setState(() => _error = m));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HojaNs(
+      titulo: 'Contar ${widget.producto.nombre}',
+      texto: 'Lo que hay de verdad. Queda anotado como conteo.',
+      bloques: [
+        CampoNs(etiqueta: 'Hay', controller: _cantidad, grande: true, autofoco: true, teclado: TextInputType.number, formatos: soloDigitosNs),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
       botones: [BotonNs.primario(context, 'Guardar conteo', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde)],

@@ -116,6 +116,40 @@ void main() {
     expect(s.producto.precioCentavos, s.precioSugeridoCentavos, reason: '"Usar" pone el sugerido');
   });
 
+  testWidgets('la solapa Productos lista lo que se vende aparte, con lo que queda, y avisa sin stock (El dueño, 2026-10-14)', (tester) async {
+    await tester.runAsync(() async {
+      await crearProductoDeVenta(db, nombre: 'Shampoo', precioCentavos: 1200000, costoCentavos: 700000, stockInicial: 3, usuarioId: usuario);
+      await crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 900000, usuarioId: usuario);
+    });
+    await abrir(tester);
+    await tester.tap(find.text('Productos'));
+    await tester.pumpAndSettle();
+    expect(find.text('+ Producto'), findsOneWidget);
+    expect(find.text('Shampoo'), findsOneWidget);
+    expect(find.textContaining('Quedan 3 · cuesta \$\u00A07.000'), findsOneWidget);
+    expect(find.text('Cera'), findsOneWidget);
+    expect(find.text('Sin stock'), findsOneWidget);
+  });
+
+  testWidgets('"+ Producto" da de alta con lo que ya hay', (tester) async {
+    await abrir(tester);
+    await tester.tap(find.text('Productos'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+ Producto'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), 'Crema');
+    await tester.enterText(find.byType(TextField).at(1), '8000');
+    await tester.enterText(find.byKey(const Key('producto_tengo')), '5');
+    await tester.tap(find.text('Guardar producto'));
+    await esperar(tester);
+    await tester.pump(const Duration(seconds: 6)); // el aviso se va solo
+
+    final p = (await tester.runAsync(() => listarProductosDeVenta(db)))!.single;
+    expect(p.nombre, 'Crema');
+    expect(p.precioCentavos, 800000);
+    expect(p.stock, 5);
+  });
+
   test('la barra dice Servicios en un negocio de servicios', () {
     expect(const BarraInferiorNs(activa: PestaniaNs.inicio, onSeleccionar: _nada, conServicios: true).conServicios, isTrue);
   });

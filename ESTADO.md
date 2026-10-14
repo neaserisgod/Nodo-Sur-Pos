@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (14/10/2026)
 
+- **Nodo Sur Servicios vende productos** (El dueño, 14/10): solapa Productos en Servicios (alta, compra, conteo, editar) y
+  "+ Producto" al cobrar, junto al servicio o suelto. Sin stock se vende con aviso. Detalle en `DECISIONES.md`. Falta: que el
+  sitio lo diga (`/servicios/` y las páginas por rubro) cuando salga.
+
 - **Ícono propio de Nodo Sur Servicios** (El dueño, 14/10): misma familia que "pos" (Figtree, punto abajo) pero dice
   "turnos", fondo ciruela `#5B1F45` y letras `#F6E7EF`. Distingue las dos apps en el mismo celular. Detalle en `DECISIONES.md`.
 

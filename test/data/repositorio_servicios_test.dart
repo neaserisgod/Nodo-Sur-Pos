@@ -265,4 +265,83 @@ void main() {
     expect((await producto(tc)).stockMilesimas, 27000);
     expect((await (celular.select(celular.productos)..where((p) => p.id.equals(tcCelular))).getSingle()).stockMilesimas, 27000);
   });
+
+  group('productos que vende un negocio de servicios (El dueño, 2026-10-14: "la agenda también debe vender productos")', () {
+    test('el alta es un producto común (no insumo ni servicio), con precio y costo, y aparece para vender', () async {
+      final id = await crearProductoDeVenta(db, nombre: ' Shampoo ', precioCentavos: 1200000, costoCentavos: 700000, usuarioId: usuarioId);
+      final p = await producto(id);
+      expect(p.nombre, 'Shampoo');
+      expect(p.esInsumo, isFalse);
+      expect(p.esServicio, isFalse);
+      expect(p.precioCentavos, 1200000);
+      expect(p.costoCentavos, 700000);
+      expect(p.stock, 0);
+      expect(esDeServicios(p), isFalse);
+      expect((await listarProductosDeVenta(db)).map((p) => p.id), [id]);
+    });
+
+    test('la lista de productos no trae insumos ni servicios', () async {
+      await crearInsumo(db, nombre: 'Tintura', unidad: UnidadInsumo.ml, contenidoEnvaseMilesimas: 60000, costoEnvaseCentavos: 600000, usuarioId: usuarioId);
+      await crearServicio(db, nombre: 'Corte', precioCentavos: 1000000, duracionMinutos: 30, receta: const [], sumaManoDeObra: false, usuarioId: usuarioId);
+      final cera = await crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 900000, usuarioId: usuarioId);
+      expect((await listarProductosDeVenta(db)).map((p) => p.id), [cera]);
+    });
+
+    test('lo que ya hay al darlo de alta queda como "Stock inicial", con rastro', () async {
+      final id = await crearProductoDeVenta(db, nombre: 'Crema', precioCentavos: 800000, stockInicial: 6, usuarioId: usuarioId);
+      expect((await producto(id)).stock, 6);
+      final movs = await (db.select(db.movimientosDeStock)..where((m) => m.productoId.equals(id))).get();
+      expect(movs.single.motivo, 'Stock inicial');
+      expect(movs.single.stockAnterior, 0);
+      expect(movs.single.stockPosterior, 6);
+    });
+
+    test('sin nombre o sin precio no se da de alta', () async {
+      expect(() => crearProductoDeVenta(db, nombre: '  ', precioCentavos: 100, usuarioId: usuarioId), throwsArgumentError);
+      expect(() => crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 0, usuarioId: usuarioId), throwsArgumentError);
+      expect(() => crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 100, stockInicial: -1, usuarioId: usuarioId), throwsArgumentError);
+    });
+
+    test('una compra suma las unidades con rastro; a otro costo, el costo cambia y queda en el historial', () async {
+      final id = await crearProductoDeVenta(db, nombre: 'Shampoo', precioCentavos: 1200000, costoCentavos: 700000, stockInicial: 2, usuarioId: usuarioId);
+      await cargarCompraDeProducto(db, productoId: id, unidades: 5, costoCentavos: 750000, usuarioId: usuarioId);
+      final p = await producto(id);
+      expect(p.stock, 7);
+      expect(p.costoCentavos, 750000);
+      expect(p.precioCentavos, 1200000, reason: 'el precio no se toca al comprar');
+      final movs = await (db.select(db.movimientosDeStock)..where((m) => m.productoId.equals(id))).get();
+      expect(movs.map((m) => m.motivo), ['Stock inicial', 'Compra de 5 unidades']);
+      expect((await historialDelProducto(db, id)).first.costoCentavos, 750000);
+    });
+
+    test('una compra de cero unidades no se carga', () async {
+      final id = await crearProductoDeVenta(db, nombre: 'Shampoo', precioCentavos: 1200000, usuarioId: usuarioId);
+      expect(() => cargarCompraDeProducto(db, productoId: id, unidades: 0, usuarioId: usuarioId), throwsArgumentError);
+    });
+
+    test('contar corrige el stock con rastro; contar lo mismo no deja movimiento', () async {
+      final id = await crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 900000, stockInicial: 4, usuarioId: usuarioId);
+      await contarProducto(db, productoId: id, stock: 3, usuarioId: usuarioId);
+      await contarProducto(db, productoId: id, stock: 3, usuarioId: usuarioId);
+      expect((await producto(id)).stock, 3);
+      final movs = await (db.select(db.movimientosDeStock)..where((m) => m.productoId.equals(id))).get();
+      expect(movs.map((m) => m.motivo), ['Stock inicial', 'Conteo físico']);
+    });
+
+    test('editar cambia nombre, precio y costo sin tocar el stock', () async {
+      final id = await crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 900000, costoCentavos: 400000, stockInicial: 4, usuarioId: usuarioId);
+      await editarProductoDeVenta(db, id: id, nombre: 'Cera mate', precioCentavos: 950000, costoCentavos: 450000, usuarioId: usuarioId);
+      final p = await producto(id);
+      expect(p.nombre, 'Cera mate');
+      expect(p.precioCentavos, 950000);
+      expect(p.costoCentavos, 450000);
+      expect(p.stock, 4);
+    });
+
+    test('un insumo o un servicio no se compran ni se cuentan como producto', () async {
+      final tintura = await crearInsumo(db, nombre: 'Tintura', unidad: UnidadInsumo.ml, contenidoEnvaseMilesimas: 60000, costoEnvaseCentavos: 600000, usuarioId: usuarioId);
+      expect(() => cargarCompraDeProducto(db, productoId: tintura, unidades: 1, usuarioId: usuarioId), throwsArgumentError);
+      expect(() => contarProducto(db, productoId: tintura, stock: 1, usuarioId: usuarioId), throwsArgumentError);
+    });
+  });
 }

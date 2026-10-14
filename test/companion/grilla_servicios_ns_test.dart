@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/pantallas/grilla_servicios_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_productos.dart' show crearProducto;
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
+import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/domain/servicios.dart';
@@ -65,5 +67,29 @@ void main() {
     await t.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: Scaffold(body: GrillaServiciosNs(db: db, onElegir: (_) {}))));
     await esperar(t);
     expect(find.textContaining('Falta'), findsNothing);
+  });
+
+  testWidgets('los productos para cobrar: con lo que queda, sin pesables ni sin precio, y la línea con su costo', (t) async {
+    late int shampoo;
+    await t.runAsync(() async {
+      shampoo = await crearProductoDeVenta(db, nombre: 'Shampoo', precioCentavos: 1200000, costoCentavos: 700000, stockInicial: 2, usuarioId: usuario);
+      await crearProductoDeVenta(db, nombre: 'Cera', precioCentavos: 900000, usuarioId: usuario);
+      await crearProducto(db, nombre: 'Queso', esPesable: true, precioPorKiloCentavos: 1000000, usuarioId: usuario);
+    });
+    Producto? elegido;
+    await t.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: Scaffold(body: ListaProductosParaCobrarNs(db: db, onElegir: (p) => elegido = p))));
+    await esperar(t);
+
+    expect(find.text('Shampoo'), findsOneWidget);
+    expect(find.text('Quedan 2'), findsOneWidget);
+    expect(find.text('Sin stock'), findsOneWidget, reason: 'la cera se puede vender igual');
+    expect(find.text('Queso'), findsNothing, reason: 'un pesable pediría gramos');
+
+    await t.tap(find.text('Shampoo'));
+    expect(elegido!.id, shampoo);
+    final linea = lineaDeProducto(elegido!) as LineaVentaPorUnidad;
+    expect(linea.precioUnitarioCentavos, 1200000);
+    expect(linea.costoUnitarioCentavos, 700000);
+    expect(linea.cantidad, 1);
   });
 }

@@ -38,7 +38,7 @@ rama `ccr-d9ff719e-qd8uv7` (pantalla "Probar el bot acá", `lib/servicios/bot_en
 1. **Dos ediciones del mismo código.** Flavor de Gradle `servicios` (`applicationId` propio, nombre e ícono) + `--dart-define`
    con la edición. Node y `bot.zip` solo en esa edición. El workflow de publicación arma las dos y el sitio manda a cada una su
    actualización (plataforma `android-servicios`).
-2. **Recortar la edición servicios**: fuera productos con stock, códigos de barras, proveedores y pagar proveedor, reposición,
+2. **Recortar la edición servicios**: fuera productos con stock (volvieron simples el 2026-10-14: ver `DECISIONES.md`, "La app de servicios vende productos"), códigos de barras, proveedores y pagar proveedor, reposición,
    cigarrillos, conteo de stock, facturas, promos, carga histórica, emparejar con la PC. Queda: Agenda, Servicios, Clientes,
    caja simple, Configuración del negocio, Bot, Notificaciones, Cuenta.
 3. **El bot de verdad adentro** (botdemo en `bot.zip`, con el SQLite de Node): la app le pide al sitio el acceso del bot con su

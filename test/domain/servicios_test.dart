@@ -127,4 +127,21 @@ void main() {
       expect(UnidadInsumo.desdeClave('litros'), isNull);
     });
   });
+
+  group('productos que vende un negocio de servicios: se venden igual sin stock, con aviso (El dueño, 2026-10-14)', () {
+    test('con stock de sobra no avisa', () {
+      expect(avisoDeStockAlVender(stock: 5, enCarrito: 1), isNull);
+      expect(avisoDeStockAlVender(stock: 2, enCarrito: 2), isNull, reason: 'se lleva justo lo que hay');
+    });
+
+    test('sin stock avisa "Sin stock"', () {
+      expect(avisoDeStockAlVender(stock: 0, enCarrito: 1), 'Sin stock');
+      expect(avisoDeStockAlVender(stock: -3, enCarrito: 1), 'Sin stock', reason: 'un stock ya en negativo también');
+    });
+
+    test('si se lleva más de lo que hay avisa cuántos quedaban', () {
+      expect(avisoDeStockAlVender(stock: 1, enCarrito: 2), 'Quedaba 1');
+      expect(avisoDeStockAlVender(stock: 3, enCarrito: 4), 'Quedaban 3');
+    });
+  });
 }
