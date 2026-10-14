@@ -13,6 +13,7 @@ import 'package:drift/drift.dart';
 import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
 import 'database.dart';
+import 'identidad_sync.dart';
 
 /// La fila única de `configuracion_negocio_tabla`, o los defaults de
 /// fábrica si todavía no existe — pasa en la companion antes de la primera
@@ -23,24 +24,48 @@ import 'database.dart';
 /// valores en vez de tirar.
 Future<ConfiguracionNegocio> configuracionNegocioActual(AppDatabase db) async {
   final fila = await db.select(db.configuracionNegocioTabla).getSingleOrNull();
-  return fila ??
-      const ConfiguracionNegocio(
-        id: 0,
-        recargoPrimerAtadoCentavos: 30000,
-        recargoAtadoAdicionalCentavos: 10000,
-        recargoSueltoCentavos: 5000,
-        pasoRedondeoCentavos: 10000,
-        nombreComercio: '',
-        encabezadoTicket: '',
-        modulosDesactivados: '',
-        rubro: '',
-        pasoTurnosMinutos: 15,
-        senaModo: 'ALGUNOS',
-        senaPorcentaje: 30,
-        senaDevolverAlCancelar: false,
-        aliasSena: '',
-        titularSena: '',
-      );
+  return fila ?? _configuracionDeFabrica;
+}
+
+const _configuracionDeFabrica = ConfiguracionNegocio(
+  id: 0,
+  recargoPrimerAtadoCentavos: 30000,
+  recargoAtadoAdicionalCentavos: 10000,
+  recargoSueltoCentavos: 5000,
+  pasoRedondeoCentavos: 10000,
+  nombreComercio: '',
+  encabezadoTicket: '',
+  modulosDesactivados: '',
+  rubro: '',
+  pasoTurnosMinutos: 15,
+  senaModo: 'ALGUNOS',
+  senaPorcentaje: 30,
+  senaDevolverAlCancelar: false,
+  aliasSena: '',
+  titularSena: '',
+);
+
+/// Guarda [cambios] en la fila única de reglas del negocio. Si la fila todavía no está (un celular al que no le llegó por la
+/// sync, o un negocio que no pasó por "Configurá tu negocio"), primero la crea con lo que la pantalla venía mostrando
+/// ([configuracionNegocioActual]) y el `global_id` fijo de la fila única: así no se duplica cuando llegue la de otro equipo,
+/// que la reemplaza. Antes un `update` sobre cero filas no guardaba nada y la pantalla decía "guardado" (El dueño,
+/// 2026-10-14: "no guarda"; ver `TRAMPAS.md`). Toda escritura de esta tabla pasa por acá.
+Future<void> escribirConfiguracionNegocio(AppDatabase db, ConfiguracionNegocioTablaCompanion cambios) async {
+  await db.transaction(() async {
+    final hay = await (db.select(db.configuracionNegocioTabla)..limit(1)).get();
+    if (hay.isEmpty) {
+      await db.into(db.configuracionNegocioTabla).insert(
+            _configuracionDeFabrica.toCompanion(false).copyWith(
+                  id: const Value.absent(),
+                  globalId: const Value(globalIdConfiguracionNegocio),
+                  origenDispositivo: Value(idDispositivoActual),
+                  // Época 0: la creó esta escritura, no es la configuración real de nadie.
+                  actualizadoEn: Value(DateTime.fromMillisecondsSinceEpoch(0)),
+                ),
+          );
+    }
+    await db.update(db.configuracionNegocioTabla).write(cambios.copyWith(actualizadoEn: Value(DateTime.now())));
+  });
 }
 
 /// El rubro del comercio, o null si todavía no se eligió (un negocio armado antes de la v63) o si la clave es de una
@@ -50,7 +75,7 @@ Future<PlantillaRubro?> rubroActual(AppDatabase db) async => PlantillaRubro.desd
 /// Guarda el rubro (v63). Elegirlo no siembra nada: las categorías de la plantilla se cargan solo al armar el negocio
 /// (`guardarNegocio`, `aplicarPlantillaRubro`), y un negocio que ya funciona no tiene por qué recibir categorías que no pidió.
 Future<void> configurarRubro(AppDatabase db, PlantillaRubro rubro) {
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           rubro: Value(rubro.clave),
           actualizadoEn: Value(DateTime.now()),
@@ -75,7 +100,7 @@ ModulosNegocio modulosDeConfiguracion(ConfiguracionNegocio? fila) => fila == nul
 /// como están.
 Future<void> configurarModulo(AppDatabase db, Modulo modulo, {required bool activo}) async {
   final actuales = await modulosNegocioActuales(db);
-  await db.update(db.configuracionNegocioTabla).write(
+  await escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           modulosDesactivados: Value(actuales.conModulo(modulo, activo: activo).aTexto()),
           actualizadoEn: Value(DateTime.now()),
@@ -84,7 +109,7 @@ Future<void> configurarModulo(AppDatabase db, Modulo modulo, {required bool acti
 }
 
 Future<void> configurarNombreComercio(AppDatabase db, String nombre) {
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           nombreComercio: Value(nombre.trim()),
           actualizadoEn: Value(DateTime.now()),
@@ -93,7 +118,7 @@ Future<void> configurarNombreComercio(AppDatabase db, String nombre) {
 }
 
 Future<void> configurarEncabezadoTicket(AppDatabase db, String encabezado) {
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           encabezadoTicket: Value(encabezado.trim()),
           actualizadoEn: Value(DateTime.now()),
@@ -110,7 +135,7 @@ Future<void> configurarRecargoCigarrillos(
   if (primerAtadoCentavos < 0 || atadoAdicionalCentavos < 0 || sueltoCentavos < 0) {
     throw const FormatException('Los recargos no pueden ser negativos');
   }
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           recargoPrimerAtadoCentavos: Value(primerAtadoCentavos),
           recargoAtadoAdicionalCentavos: Value(atadoAdicionalCentavos),
@@ -124,7 +149,7 @@ Future<void> configurarRecargoCigarrillos(
 /// Null lo borra: sin valor cargado, ningún servicio suma mano de obra.
 Future<void> configurarValorHora(AppDatabase db, int? montoCentavos) {
   if (montoCentavos != null && montoCentavos < 0) throw const FormatException('El valor de la hora no puede ser negativo');
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           valorHoraCentavos: Value(montoCentavos),
           actualizadoEn: Value(DateTime.now()),
@@ -145,7 +170,7 @@ Future<void> configurarFondoFijo(AppDatabase db, int montoCentavos) {
 Future<void> configurarPasoRedondeo(AppDatabase db, int montoCentavos) {
   // Un paso de 0 o negativo rompería el redondeo de cada cobro en efectivo.
   if (montoCentavos <= 0) throw const FormatException('El paso de redondeo tiene que ser mayor a 0');
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           pasoRedondeoCentavos: Value(montoCentavos),
           actualizadoEn: Value(DateTime.now()),
@@ -154,7 +179,7 @@ Future<void> configurarPasoRedondeo(AppDatabase db, int montoCentavos) {
 }
 
 Future<void> configurarProductoVuelto(AppDatabase db, int? productoId) {
-  return db.update(db.configuracionNegocioTabla).write(
+  return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(
           productoVueltoId: Value(productoId),
           actualizadoEn: Value(DateTime.now()),

@@ -64,7 +64,7 @@ Future<ConfigAgenda> configAgendaActual(AppDatabase db) async => configAgendaDe(
 Future<void> guardarConfigAgenda(AppDatabase db, ConfigAgenda c) {
   if (c.pasoMinutos <= 0) throw ArgumentError('Cada cuánto se ofrecen turnos tiene que ser más de 0 minutos');
   if (c.sena.porcentaje < 0 || c.sena.porcentaje > 100) throw ArgumentError('El porcentaje de la seña va de 0 a 100');
-  return db.update(db.configuracionNegocioTabla).write(ConfiguracionNegocioTablaCompanion(
+  return escribirConfiguracionNegocio(db, ConfiguracionNegocioTablaCompanion(
         horarioAtencion: Value(jsonEncode(c.horario.toJson())),
         pasoTurnosMinutos: Value(c.pasoMinutos),
         senaModo: Value(c.sena.modo.clave),

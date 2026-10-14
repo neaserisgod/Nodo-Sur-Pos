@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/faltantes_cierre.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
+import 'package:la_plazoleta/data/repositorio_turnos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import '../helpers/base_para_tests.dart';
 
@@ -13,6 +14,39 @@ void main() {
     db = baseDeTest();
   });
   tearDown(() => db.close());
+
+  group('sin la fila de reglas del negocio (un celular al que no le llegó por la sync)', () {
+    // El dueño, 2026-10-14: "no guarda". Un update sobre cero filas no hacía nada y la pantalla decía "guardado".
+    setUp(() => db.delete(db.configuracionNegocioTabla).go());
+
+    test('guardar la crea con el id fijo de la fila única y guarda lo pedido', () async {
+      await configurarNombreComercio(db, 'Barbería Lucho');
+      final filas = await db.select(db.configuracionNegocioTabla).get();
+      expect(filas, hasLength(1));
+      expect(filas.single.nombreComercio, 'Barbería Lucho');
+      expect(filas.single.globalId, globalIdConfiguracionNegocio);
+      expect(filas.single.actualizadoEn!.isAfter(DateTime.fromMillisecondsSinceEpoch(0)), isTrue, reason: 'sube por la sync');
+    });
+
+    test('lo que no se tocó queda como se venía mostrando', () async {
+      final antes = await configuracionNegocioActual(db);
+      await configurarPasoRedondeo(db, 5000);
+      final despues = await configuracionNegocioActual(db);
+      expect(despues.pasoRedondeoCentavos, 5000);
+      expect(despues.recargoPrimerAtadoCentavos, antes.recargoPrimerAtadoCentavos);
+      expect(despues.pasoTurnosMinutos, antes.pasoTurnosMinutos);
+    });
+
+    test('la Agenda también se guarda, y dos escrituras no duplican la fila', () async {
+      final c = await configAgendaActual(db);
+      await guardarConfigAgenda(db, ConfigAgenda(horario: c.horario, pasoMinutos: 30, sena: c.sena, aliasSena: c.aliasSena, titularSena: c.titularSena));
+      await configurarNombreComercio(db, 'Estética Ana');
+      final filas = await db.select(db.configuracionNegocioTabla).get();
+      expect(filas, hasLength(1));
+      expect(filas.single.pasoTurnosMinutos, 30);
+      expect(filas.single.nombreComercio, 'Estética Ana');
+    });
+  });
 
   test('configurarRecargoCigarrillos actualiza los tres montos', () async {
     await configurarRecargoCigarrillos(
