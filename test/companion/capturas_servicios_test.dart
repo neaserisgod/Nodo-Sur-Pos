@@ -8,7 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/bienvenida/vista_entrar_con_google.dart';
+import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_agenda_ns.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_config_agenda_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_servicios_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -131,6 +134,33 @@ void main() {
       await sembrar(tester);
       await _abrir(tester, PantallaEditorServicioNs(db: db, usuarioId: usuario), oscuro: oscuro);
       await _guardar(tester, 'editor-servicio', oscuro: oscuro);
+    });
+    testWidgets('entrar con google$s', (tester) async {
+      await _cargarFigtree();
+      edicionActual = Edicion.servicios;
+      addTearDown(() => edicionActual = Edicion.almacen);
+      await _abrir(tester, VistaEntrarConGoogle(alEntrar: () {}, trabajando: false, error: null), oscuro: oscuro);
+      await _guardar(tester, 'entrar-google', oscuro: oscuro);
+    });
+    testWidgets('configurá tu negocio$s', (tester) async {
+      await _cargarFigtree();
+      edicionActual = Edicion.servicios;
+      addTearDown(() => edicionActual = Edicion.almacen);
+      Widget asistente(PasoNegocio paso) => AsistenteNegocio(
+            key: ValueKey(paso),
+            pasoInicial: paso,
+            nombreInicial: 'Barbería Lucho',
+            alGuardarNegocio: (_, _) async {},
+            alEscanear: (_) async => null,
+            alGuardarProducto: (_) async {},
+            alGuardarServicio: (_) async {},
+            alAbrirWeb: (_) {},
+            alTerminar: (_, _) {},
+          );
+      for (final paso in PasoNegocio.values) {
+        await _abrir(tester, asistente(paso), oscuro: oscuro);
+        await _guardar(tester, 'asistente-${paso.name}', oscuro: oscuro);
+      }
     });
     testWidgets('configuración de la agenda$s', (tester) async {
       await sembrar(tester);

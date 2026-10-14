@@ -143,6 +143,10 @@ Pendiente / ideas (sin hacer):
   veces; errores que no se mostraban; la Agenda o su configuración colgadas si fallaba la lectura; WhatsApp sin código de país;
   la misma clienta duplicada por el teléfono escrito distinto; títulos en "Nuevo turno". Capturas en
   `test/companion/capturas_servicios_test.dart`. **Falta probarlo en el celular.**
+- **Registro y negocio nuevo** (misma revisión): el nombre que el dueño pone en "Configurá tu negocio" o en Configuración ahora
+  llega al sitio (`/api/device/negocio`): antes el negocio quedaba "Negocio de (nombre de Google)" para siempre en la lista de
+  negocios del celular y en horsepos.com. El asistente propone el nombre ya conocido (antes lo pedía en blanco), no se traba si
+  guardar falla, y en Servicios la Agenda muestra la tarjeta de pasos pendientes (antes solo estaba en el Inicio de almacén).
 
 - **Beta o Estable en el celular** (las dos apps), solo para cuentas de prueba: Más › Actualización. Hasta ahora el celular nunca
   veía las betas. Necesita el sitio desplegado (`solo=1`). Probado con tests; falta verlo en un celular.

@@ -31,6 +31,7 @@ import '../../servicios/turnos_bot_nube.dart' show turnosBotSinCargar;
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
+import '../configurar/pendientes_en_inicio.dart';
 import '../emparejamiento.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
@@ -384,6 +385,9 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                   ),
               ],
             ),
+            // Un negocio de servicios arranca acá, no en Inicio: sin esto, los pasos de "Configurá tu negocio" dejados para
+            // después no se recordaban nunca.
+            const PendientesEnInicio(margenLateral: 0),
             const SizedBox(height: 18),
             if (conPc)
               const InfoNs('Con la PC, la agenda todavía se usa solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)

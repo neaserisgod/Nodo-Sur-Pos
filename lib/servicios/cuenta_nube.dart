@@ -665,6 +665,15 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// El nombre del comercio para el negocio en el sitio (`/api/device/negocio`, solo el dueño): un negocio nuevo nace
+  /// "Negocio de (nombre de Google)" (2026-10-14).
+  Future<void> renombrarNegocio(String token, String nombre) => _conRed(() async {
+    final r = await http
+        .post(_uri('/api/device/negocio'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'name': nombre}))
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   // ─── Turnos del bot (negocios de servicios; en el sitio, `functions/_lib/bot_turnos.js`) ───
 
   /// Lo que ocupa la Agenda de esta app de hoy en adelante, sin nombres ni teléfonos: el bot no ofrece esos horarios. Reemplaza lo

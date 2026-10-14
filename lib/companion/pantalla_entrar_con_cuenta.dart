@@ -62,6 +62,25 @@ Future<void> reconciliarPerfilDeCuenta({SyncNubeCompanion? sync, Future<Servicio
   }
 }
 
+/// El nombre que el dueño le puso al comercio, también para su negocio en el sitio: uno nuevo nace "Negocio de (nombre de
+/// Google)", y ese nombre quedaba para siempre en la lista de negocios del celular, en horsepos.com/negocio y en el cobro
+/// (2026-10-14). Sin cuenta, sin red o sin ser el dueño (el sitio contesta 403), no pasa nada: el nombre ya quedó en la base.
+Future<void> avisarNombreDelNegocio(String nombre, {SyncNubeCompanion? sync}) async {
+  try {
+    final s = sync ?? await syncNubeDelCelular();
+    final cuenta = await s.cuenta();
+    if (cuenta == null || nombre.trim().isEmpty) return;
+    await s.cliente.renombrarNegocio(cuenta.token, nombre.trim());
+    // Que la lista de negocios del celular ya lo muestre con el nombre nuevo.
+    await reconciliarPerfilDeCuenta(sync: s);
+  } on ErrorNube catch (e) {
+    if (e.estado == 403) return; // un empleado o un encargado: el nombre lo decide el dueño
+    unawaited(registrarSiNoEsDeRed('Avisar el nombre del negocio', e));
+  } catch (e, st) {
+    unawaited(registrarSiNoEsDeRed('Avisar el nombre del negocio', e, st));
+  }
+}
+
 class PantallaEntrarConCuenta extends StatefulWidget {
   const PantallaEntrarConCuenta({
     super.key,
@@ -181,8 +200,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       context,
       builder: (ctx) => HojaNs(
         titulo: '${guardada.titulo} ya está en este celular',
-        texto: 'Ya está guardado acá con ${perfil.email}, con todo lo suyo. Para no tenerlo dos veces, se usa ese. '
-            'La app se cierra: abrila de nuevo para seguir ahí.',
+        texto: 'Ya está guardado acá con ${perfil.email}, con todo lo suyo. Para no tenerlo dos veces, se usa ese.',
         botones: [
           BotonNs.primario(ctx, 'Ir a ${guardada.titulo}', () => Navigator.of(ctx).pop(true)),
           BotonNs.secundario(ctx, 'Entrar en otro negocio', () => Navigator.of(ctx).pop(false)),

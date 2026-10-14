@@ -15,6 +15,7 @@ import '../../domain/plantillas_rubro.dart';
 import '../../edicion.dart';
 import '../../servicios/modulos_activos.dart' show modulosActuales;
 import '../kit/kit_ns.dart';
+import '../mensaje_error.dart';
 
 enum PasoNegocio { negocio, producto, cobros }
 
@@ -120,7 +121,16 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
 
   Future<void> _guardarNegocio() async {
     setState(() => _guardando = true);
-    await widget.alGuardarNegocio(_nombreCtrl.text.trim(), _rubro!);
+    try {
+      await widget.alGuardarNegocio(_nombreCtrl.text.trim(), _rubro!);
+    } catch (e) {
+      // Sin esto, una falla dejaba el paso trabado: el botón y "Después" apagados para siempre.
+      if (mounted) {
+        setState(() => _guardando = false);
+        mostrarAvisoNs(context, 'No se pudo guardar: ${_textoDeError(e)}', largo: true);
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() => _guardando = false);
     _seguir(hecho: true);
@@ -352,7 +362,15 @@ class _PasoProductoState extends State<_PasoProducto> {
   Future<void> _guardar() async {
     setState(() => _trabajando = true);
     final p = ProductoDePrueba(codigo: _codigo!, nombre: _nombre.text.trim(), precioCentavos: _precioCentavos, categoria: _categoria, stock: _stock);
-    await widget.alGuardar(p);
+    try {
+      await widget.alGuardar(p);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _trabajando = false);
+        mostrarAvisoNs(context, 'No se pudo guardar: ${_textoDeError(e)}', largo: true);
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _trabajando = false;
@@ -504,7 +522,15 @@ class _PasoServicioState extends State<_PasoServicio> {
   Future<void> _guardar() async {
     setState(() => _trabajando = true);
     final s = ServicioDePrueba(nombre: _nombre.text.trim(), duracionMinutos: _minutos, precioCentavos: _precioCentavos, categoria: _categoria);
-    await widget.alGuardar(s);
+    try {
+      await widget.alGuardar(s);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _trabajando = false);
+        mostrarAvisoNs(context, 'No se pudo guardar: ${_textoDeError(e)}', largo: true);
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _trabajando = false;
@@ -681,3 +707,6 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
     );
   }
 }
+
+/// Una validación (`ArgumentError`) trae su propio texto; lo demás, el de siempre.
+String _textoDeError(Object e) => e is ArgumentError ? '${e.message}' : mensajeDeError(e);

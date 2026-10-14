@@ -1,13 +1,17 @@
 // Abre "Configurá tu negocio" con lo real detrás: la base local del celular, la cámara, el alta de productos de
 // siempre (`ServicioCompanion.crearProducto`, con su rastro de stock) y horsepos.com/negocio en el navegador.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositorio_productos.dart' as repo_productos;
 import '../../data/repositorio_servicios.dart' as repo_servicios;
-import '../../servicios/marca_actual.dart';
+import '../../data/database.dart';
+import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
 import '../base_local.dart';
+import '../cuentas_del_celular.dart' show leerNegocioDeEstaCuenta;
 import '../emparejamiento.dart';
 import '../escanear_codigo.dart';
 import '../pantalla_entrar_con_cuenta.dart';
@@ -23,14 +27,18 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
   final db = baseLocalCompanion();
   final categorias = [for (final c in await repo_productos.listarCategorias(db)) c.nombre];
   if (!context.mounted) return;
-  final marca = marcaActual.value;
+  final nombreInicial = await _nombreParaElAsistente(db);
+  if (!context.mounted) return;
   final ruta = MaterialPageRoute<void>(
     builder: (_) => AsistenteNegocio(
       pasoInicial: paso,
-      nombreInicial: marca.configurada ? marca.nombreComercio : '',
+      nombreInicial: nombreInicial,
       categoriasExistentes: categorias,
       alCompletarPaso: (p) => marcarPasoHecho(p),
-      alGuardarNegocio: (nombre, rubro) => guardarNegocio(db, nombre: nombre, rubro: rubro),
+      alGuardarNegocio: (nombre, rubro) async {
+        await guardarNegocio(db, nombre: nombre, rubro: rubro);
+        unawaited(avisarNombreDelNegocio(nombre));
+      },
       alEscanear: escanearCodigo,
       alGuardarProducto: (p) => _guardarProducto(p),
       alGuardarServicio: (s) => _guardarServicio(s),
@@ -51,6 +59,16 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
   } else {
     await navigator.pushAndRemoveUntil(ruta, (r) => false);
   }
+}
+
+/// El nombre que ya se sabe del comercio: el de la base, o el que se le puso al crear el negocio ("Crear un negocio nuevo").
+/// Antes salía de `marcaActual`, que en el celular nunca se llena, y el asistente volvía a pedirlo en blanco. El que el sitio le
+/// pone solo a un negocio nuevo ("Negocio de …") no se propone.
+Future<String> _nombreParaElAsistente(AppDatabase db) async {
+  final local = (await configuracionNegocioActual(db)).nombreComercio.trim();
+  if (local.isNotEmpty) return local;
+  final delSitio = (await leerNegocioDeEstaCuenta())?.nombreNegocio?.trim() ?? '';
+  return delSitio.startsWith('Negocio de ') || delSitio == 'Mi negocio' ? '' : delSitio;
 }
 
 /// El producto de práctica entra por el mismo alta que cualquier otro. Si el código ya estaba cargado (alguien probó
