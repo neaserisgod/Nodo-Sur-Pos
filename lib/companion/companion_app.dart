@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 
 import '../data/identidad_sync.dart';
 import '../edicion.dart';
+import 'actualizacion.dart' show cargarCanalCelular;
 import 'borrar_celular.dart' show cerrarLaApp;
 import 'reinicio_companion.dart';
 import 'cuentas_del_celular.dart';
@@ -165,6 +166,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
   void initState() {
     super.initState();
     cargarModoTemaNs();
+    if (!kIsWeb) unawaited(cargarCanalCelular());
     _decidir();
   }
 

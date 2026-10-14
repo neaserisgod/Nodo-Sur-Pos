@@ -22,6 +22,7 @@ import '../servicios/gemini.dart' show ClaveGemini;
 import '../servicios/marca_actual.dart';
 import '../servicios/registro_errores.dart';
 import '../servicios/turnos_bot_nube.dart' show turnosBotSinCargar;
+import 'actualizacion.dart' show celularDePruebas;
 import 'app_ns.dart' show sinConexionGlobalNs;
 import 'base_local.dart';
 import 'borrar_celular.dart' show frenarLoQueEscribe;
@@ -81,4 +82,5 @@ void olvidarLoDeLaCuenta() {
   sinConexionGlobalNs.value = false;
   pasosPendientesNegocio.value = const {};
   turnosBotSinCargar.value = const [];
+  celularDePruebas.value = false;
 }

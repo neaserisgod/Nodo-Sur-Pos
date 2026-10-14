@@ -199,6 +199,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Cambiar entre Beta y Estable (Más) vuelve a mirar el sitio al toque.
+    celularEligeBeta.addListener(_revisarActualizacion);
     _publicar();
     // Si el negocio tiene el bot de WhatsApp, Más muestra su pantalla (no frena nada: sin red queda escondida).
     unawaited(refrescarEstadoBot());
@@ -461,6 +463,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
 
   @override
   void dispose() {
+    celularEligeBeta.removeListener(_revisarActualizacion);
     _modulosSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _tickArqueoIntermedio.cancel();

@@ -73,6 +73,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El celular entra con Google desde la app, sin navegador (2026-10-13)](#el-celular-entra-con-google-desde-la-app-sin-navegador-2026-10-13)
 - [Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)](#varios-negocios-en-un-mismo-celular-cada-uno-con-su-plan-2026-10-13)
 - [Cambiar de negocio sin cerrar la app (2026-10-14)](#cambiar-de-negocio-sin-cerrar-la-app-2026-10-14)
+- [El celular elige Beta o Estable (2026-10-14)](#el-celular-elige-beta-o-estable-2026-10-14)
 - [Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)](#base-de-stock-el-stock-es-base--movimientos-en-cualquier-equipo-2026-10-13)
 - [Perfiles: mismo nombre = misma persona (2026-10-13)](#perfiles-mismo-nombre--misma-persona-2026-10-13)
 - [Versión propia del APK (2026-10-02)](#versión-propia-del-apk-2026-10-02)
@@ -1815,6 +1816,22 @@ El dueño, al probarlo: "para ciertas cosas cierra la app, arreglalo"; "necesito
 - **Cómo se evita mezclar sin matar el proceso**, en orden: (1) se desarma todo el árbol de pantallas (`RaizCompanion` le cambia la `Key` a la app); (2) se frena todo lo que escribe y se suelta: la sync (esperando la vuelta en curso, tope 15 s), los avisos de Mercado Pago, la escucha de la PC y el bot; (3) la base queda **bloqueada** (`BaseLocalBloqueada`): lo que llegue tarde y la pida falla, en vez de abrir una base vacía que el barrido movería encima de la verdadera; (4) se olvida lo que vive fuera de las pantallas (`olvidarLoDeLaCuenta`: IA, bot, marca, avisos); (5) se trae el negocio como al arrancar (`terminarCambioAlArrancar`, con el barrido de siempre) y se desbloquea la base.
 - **Regla para lo nuevo**: algo de la cuenta guardado en memoria fuera de una pantalla (variable global, `static`) tiene que olvidarse en `olvidarLoDeLaCuenta`. Ver `TRAMPAS.md`.
 - **Límite**: una tarea de la cuenta vieja que no usa la base y escribe una preferencia o un archivo mucho después (por ejemplo, tras esperar la red más de lo que dura el cambio) puede caer en la nueva. Las conocidas se cubren: la sync se espera, la IA descarta la respuesta vieja (`ClaveGemini.refrescarCuenta`).
+
+## El celular elige Beta o Estable (2026-10-14)
+
+El dueño: "que todas las apps móvil puedan descargar beta o release… beta directamente no detecta beta". Pasaba porque el celular
+preguntaba siempre por la estable y sin id de instalación, y el sitio solo da betas a las instalaciones que reconoce como de una
+cuenta de pruebas (por su `cid`). Eligió: **solo las cuentas de prueba** (administrador y eximidas) pueden elegir Beta; los
+clientes siguen solo con estables.
+- **Cómo**: al revisar actualizaciones el celular avisa al sitio con su id de instalación (`avisarAlSitio`, `/api/device/ping`, como
+  la PC) y el sitio contesta si la cuenta es de pruebas. Solo entonces aparece en Más, debajo de Actualización, "Estable / Beta"
+  (`celularEligeBeta`, del aparato). La consulta la arma `consultaDelCelular` (`domain/actualizacion.dart`).
+- **En el sitio** (`latestForUpdate`): `channel=beta` le da a una cuenta de pruebas la más nueva entre betas y estables; `solo=1` le
+  da solo la estable. La PC no cambia (pide `stable` sin `solo` y recibe las dos).
+- **Volver a Estable desde una beta** espera a la próxima estable más nueva (Android no instala una más vieja encima): el dueño lo
+  eligió frente a ofrecer reinstalar.
+- **Límite**: el id de instalación es del aparato. Con dos cuentas en el mismo celular, el sitio puede reconocerlo por la fila de la
+  otra cuenta.
 
 ## Base de stock: el stock es base + movimientos en cualquier equipo (2026-10-13)
 

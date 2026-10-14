@@ -11,9 +11,15 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../domain/actualizacion.dart' show consultaDelCelular;
 import '../edicion.dart';
+import '../servicios/actualizaciones.dart' show idClienteActualizaciones;
+import '../servicios/almacenes_del_equipo.dart';
+import '../servicios/cuenta_nube.dart' show ClienteNube;
 import 'cliente_companion.dart';
 
 /// Servidor de actualizaciones (el mismo sitio que usa la app de escritorio).
@@ -32,26 +38,78 @@ class OfertaSitio {
   });
 }
 
+// --- Beta o Estable (El dueño, 2026-10-14: "que todas las apps móvil puedan descargar beta o release") -------------------
+
+/// La elección de ESTE celular (es del aparato: no cambia al pasar de negocio). Solo cuenta si [celularDePruebas].
+const claveCanalBetaCelular = 'actualizaciones_beta';
+
+/// Lo último que dijo el sitio: si la cuenta de este celular es de pruebas (administrador o eximida) y puede elegir Beta.
+/// Es de la cuenta: viaja con ella al cambiar de negocio.
+const _claveDePruebas = 'companion_cuenta_de_pruebas';
+
+final ValueNotifier<bool> celularEligeBeta = ValueNotifier(false);
+final ValueNotifier<bool> celularDePruebas = ValueNotifier(false);
+
+Future<void> cargarCanalCelular() async {
+  final prefs = await SharedPreferences.getInstance();
+  celularEligeBeta.value = prefs.getBool(claveCanalBetaCelular) ?? false;
+  celularDePruebas.value = prefs.getBool(_claveDePruebas) ?? false;
+}
+
+Future<void> elegirBetaEnElCelular(bool beta) async {
+  celularEligeBeta.value = beta;
+  await (await SharedPreferences.getInstance()).setBool(claveCanalBetaCelular, beta);
+}
+
+/// Le avisa al sitio que este celular existe, con su id de instalación: así el sitio lo reconoce en el feed y le contesta si
+/// la cuenta es de pruebas. Sin cuenta vinculada o sin red queda lo último que se supo. Si el sitio manda un token renovado,
+/// se guarda (como la PC).
+Future<void> avisarAlSitio(String version) async {
+  try {
+    final almacen = await almacenCuentaDelEquipo();
+    final cuenta = await almacen.leer();
+    if (cuenta == null) {
+      celularDePruebas.value = false;
+      return;
+    }
+    final r = await ClienteNube(http: http.Client())
+        .avisar(cuenta.token, cid: await idClienteActualizaciones(), version: version, sistema: 'android');
+    if (r.tokenNuevo != null) await almacen.guardar(cuenta.conToken(r.tokenNuevo!));
+    celularDePruebas.value = r.canal == 'beta';
+    await (await SharedPreferences.getInstance()).setBool(_claveDePruebas, celularDePruebas.value);
+  } catch (_) {
+    // Sin red: queda lo último que se supo.
+  }
+}
+
 /// Pregunta al sitio si hay un APK más nuevo que [versionPropia]
 /// ("1.0.0+2098"). Devuelve null si no hay. Tira si el sitio no responde:
 /// quien llama decide el plan B (la PC emparejada).
 ///
-/// Canal estable y sin `cid`: el celular no tiene identificador de
-/// instalación, así que solo ve versiones liberadas al 100 % — a propósito,
-/// el reparto gradual de una beta no se puede decidir sin identidad.
+/// Con el id de instalación ([idCliente]) el sitio reparte el despliegue gradual y reconoce un celular de pruebas; el canal
+/// sale de [consultaDelCelular].
 Future<OfertaSitio?> consultarSitio(
   String versionPropia, {
   http.Client? cliente,
+  String? idCliente,
+  bool dePruebas = false,
+  bool eligeBeta = false,
 }) async {
   final c = cliente ?? http.Client();
   try {
     final r = await c
         .get(
-          Uri.https(hostActualizaciones, '/api/update/latest.json', {
-            'platform': plataformaActualizacion,
-            'channel': 'stable',
-            'version': versionPropia,
-          }),
+          Uri.https(
+            hostActualizaciones,
+            '/api/update/latest.json',
+            consultaDelCelular(
+              plataforma: plataformaActualizacion,
+              version: versionPropia,
+              idCliente: idCliente,
+              dePruebas: dePruebas,
+              eligeBeta: eligeBeta,
+            ),
+          ),
         )
         .timeout(const Duration(seconds: 10));
     if (r.statusCode != 200) {
@@ -106,7 +164,13 @@ Future<EstadoActualizacion> revisarActualizacion(
   // Primero el sitio: no depende de que la PC esté prendida ni de que el
   // celular esté en su red. Sin internet, plan B: la PC emparejada.
   try {
-    final oferta = await consultarSitio(propiaTexto);
+    await avisarAlSitio(propiaTexto);
+    final oferta = await consultarSitio(
+      propiaTexto,
+      idCliente: await idClienteActualizaciones(),
+      dePruebas: celularDePruebas.value,
+      eligeBeta: celularEligeBeta.value,
+    );
     return EstadoActualizacion(
       hayActualizacion: oferta != null,
       oferta: oferta,

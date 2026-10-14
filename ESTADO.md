@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (14/10/2026)
 
+- **Beta o Estable en el celular** (las dos apps), solo para cuentas de prueba: Más › Actualización. Hasta ahora el celular nunca
+  veía las betas. Necesita el sitio desplegado (`solo=1`). Probado con tests; falta verlo en un celular.
+- **Point Tap descartado**: Mercado Pago no deja pedir el cobro desde otra app (probado en un celular). Se sacó la prueba.
+
 - **Cambiar de negocio en el celular ya no cierra la app** (El dueño: "necesito que funcione íntegramente sin cerrarse"):
   se frena y se olvida todo lo de la cuenta y la app se arma de cero. Probado con `flutter analyze` y tests; **falta probarlo en
   un celular**. Detalle en `DECISIONES.md`.
