@@ -2567,7 +2567,9 @@ El dueño: *"necesito que la app cree un QR y lo muestre en la pantalla. Nada de
 **por equipo** (no por negocio: un celular muestra el QR y la PC usa la Point), en el **celular de almacén y la web** (la PC no),
 y que arranque en **"pantalla si no hay terminal"**. Sin terminal, débito y crédito no se ofrecen: una tarjeta no se cobra con un
 QR. Preguntó si se puede cobrar con tarjeta por NFC con la app de Mercado Pago (Point Tap): no hay una integración documentada
-y vigente para otra app; queda como prueba aparte, en un celular real.
+y vigente para otra app. **Probado el 2026-10-14 en un celular real**: Android contesta "No Activity found to handle Intent"
+(`com.mercadopago.PAYMENT_ACTION` es la integración pensada para las terminales Point Smart). El dueño: "no se puede, eliminá la función"; se sacó
+la prueba (pantalla, canal `nodosur/point_tap` y las consultas del manifiesto).
 
 - Es la misma orden QR dinámica del sitio que ya usaba Nodo Sur Servicios (`mp_servicios.js`): en la app solo cambió quién decide
   si el QR va a la pantalla (`domain/cobro_qr.dart`, `elegirPasarelaPoint(permiteQrEnPantalla:, dondeQr:)`). La PC y el servidor

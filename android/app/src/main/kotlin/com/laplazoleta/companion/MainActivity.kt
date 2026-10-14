@@ -3,7 +3,6 @@ package com.laplazoleta.companion
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -44,9 +43,6 @@ class MainActivity : FlutterActivity() {
     companion object {
         // Tiene que coincidir con `channel_id` del sitio (`NodoSurPage/functions/_lib/push.js`) y el del AndroidManifest.
         const val CANAL_PEDIDOS = "pedidos_turnos"
-        const val PAQUETE_MP = "com.mercadopago.wallet"
-        const val ACCION_COBRO_MP = "com.mercadopago.PAYMENT_ACTION"
-        const val PEDIDO_POINT_TAP = 4242
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -99,41 +95,6 @@ class MainActivity : FlutterActivity() {
                 result.success(false)
             }
         }
-        // PRUEBA de Point Tap (El dueño, 2026-10-13: cobrar con tarjeta acercándola al celular, con la app de Mercado Pago). Usa la
-        // integración por Intent del ejemplo oficial (github.com/mercadopago/point-android_integration), pensado para los lectores
-        // Point: no se sabe si la app actual lo deriva a Point Tap. Por eso devuelve TODO lo que contesta Mercado Pago, sin
-        // interpretarlo, para leerlo en la pantalla de prueba (`lib/companion/pantalla_prueba_point_tap.dart`).
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/point_tap").setMethodCallHandler { call, result ->
-            when (call.method) {
-                "disponible" -> {
-                    val app = try {
-                        packageManager.getPackageInfo(PAQUETE_MP, 0); true
-                    } catch (e: Exception) {
-                        false
-                    }
-                    val accion = Intent(ACCION_COBRO_MP).resolveActivity(packageManager)
-                    result.success(mapOf("app" to app, "accion" to (accion != null), "actividad" to accion?.flattenToShortString()))
-                }
-                "cobrar" -> {
-                    if (cobroPointTap != null) return@setMethodCallHandler result.error("ocupado", "Ya hay un cobro de prueba abierto", null)
-                    val monto = call.argument<Number>("monto")?.toDouble() ?: 0.0
-                    val intent = Intent(ACCION_COBRO_MP).apply {
-                        // Las claves del ejemplo, en minúscula como las del resultado (`payment_id`, `result_status`).
-                        putExtra("amount", monto)
-                        putExtra("description", call.argument<String>("descripcion") ?: "Prueba")
-                        call.argument<String>("tipo")?.let { putExtra("card_type", it) }
-                    }
-                    try {
-                        cobroPointTap = result
-                        startActivityForResult(intent, PEDIDO_POINT_TAP)
-                    } catch (e: Exception) {
-                        cobroPointTap = null
-                        result.success(mapOf("error_app" to (e.message ?: e.javaClass.simpleName)))
-                    }
-                }
-                else -> result.notImplemented()
-            }
-        }
         // El bot adentro de Nodo Sur Servicios (`ServicioBot.kt`): lo enciende y lo apaga la app; después anda solo.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nodosur/bot").setMethodCallHandler { call, result ->
             when (call.method) {
@@ -171,28 +132,5 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
-    }
-
-    private var cobroPointTap: MethodChannel.Result? = null
-
-    // La API vieja (startActivityForResult) alcanza para la prueba y no suma dependencias de AndroidX.
-    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != PEDIDO_POINT_TAP) return
-        val r = cobroPointTap ?: return
-        cobroPointTap = null
-        val extras = mutableMapOf<String, Any?>()
-        extras["resultCode"] = when (resultCode) {
-            Activity.RESULT_OK -> "OK"
-            Activity.RESULT_CANCELED -> "CANCELED"
-            else -> resultCode.toString()
-        }
-        val b = data?.extras
-        if (b != null) {
-            for (k in b.keySet()) extras[k] = b.get(k)?.toString()
-        }
-        data?.data?.let { extras["uri"] = it.toString() }
-        r.success(extras)
     }
 }

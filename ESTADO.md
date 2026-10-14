@@ -172,11 +172,8 @@ Pendiente / ideas (sin hacer):
   mayúsculas, acentos ni espacios. `servicios/turnos_bot_nube.dart`. Probado con tests; **falta confirmar en el celular** que
   esa era la causa (si no aparece ni el turno ni el aviso, es otra).
 
-- **Prueba de Point Tap** (cobrar con tarjeta acercándola al celular, con la app de Mercado Pago): Configuración › Cobro ›
-  "Probar cobro con tarjeta en el celular", solo en Android. Le pide el cobro a la app de Mercado Pago con la integración por
-  Intent del ejemplo oficial (`com.mercadopago.PAYMENT_ACTION`, pensada para los lectores Point) y muestra la respuesta cruda.
-  **No es parte del cobro todavía**: sirve para saber si Mercado Pago lo acepta. Cobra de verdad (se devuelve desde MP). Kotlin
-  sin compilar en la sesión (lo compila el workflow del APK).
+- (Point Tap: la prueba se sacó el 2026-10-14. En el celular la app de Mercado Pago no atiende el pedido de cobro de otra app;
+  ver `DECISIONES.md`, "QR de Mercado Pago en la pantalla".)
 
 - **QR de Mercado Pago en la pantalla, en cualquier negocio** (El dueño: "que la app cree un QR y lo muestre en la pantalla…
   que se pueda configurar"): en el celular de almacén y en la web, además de Nodo Sur Servicios. Se elige en cada equipo
@@ -184,7 +181,7 @@ Pendiente / ideas (sin hacer):
   terminal si la sucursal tiene una, a la pantalla si no. Sin terminal no se ofrecen débito ni crédito. La PC no muestra el QR
   (sigue con la terminal) y el celular conectado a la PC cobra como la PC. `domain/cobro_qr.dart`. Probado con tests; **falta
   probarlo con la cuenta real** (la orden QR la crea el sitio, como en Servicios). Cobrar con tarjeta por NFC (Point Tap) desde la
-  app: sin confirmar que Mercado Pago lo permita, se investiga aparte.
+  app: no se puede (probado el 14/10), se descartó.
 
 - **Tablero arriba de la Agenda** (servicios; El dueño eligió las tres tarjetas y "Compartir huecos"): **Ahora** (el turno en
   curso o el que sigue, cuántos turnos y huecos quedan), **Plata de hoy** (cobrado en efectivo y Mercado Pago, y lo que falta
@@ -460,6 +457,8 @@ obligatorio en cada gasto.
 
 ## Descartado (decisión del dueño, no pendiente)
 
+- Cobrar con tarjeta por NFC en el celular (Point Tap) desde la app: Mercado Pago no lo deja pedir desde otra app (probado el
+  14/10). Se cobra con QR o con la terminal Point.
 - Descuento de Cliente Frecuente (Regla 17): no se hace. Las columnas `clientes.descuentoBp` y `ventas.descuentoCentavos`
   quedan sin usar a propósito (borrarlas es una migración sobre datos reales para no ganar nada).
 - Reportes y Equilibrio como pantallas aparte (hoy Equilibrio es la mitad "del mes" de Inicio), retiro semanal de ganancias.
