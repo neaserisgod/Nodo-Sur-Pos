@@ -423,11 +423,11 @@ obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
 
-- **Stock contado dos veces en un equipo que se sincroniza por primera vez** (encontrado el 2026-10-09, sin arreglar): la fila
-  del producto llega con el stock de hoy y después cada movimiento viejo le vuelve a sumar su delta. Ej.: alta con 10, venta
-  que deja 7, y un equipo nuevo que baja las dos tablas desde 0 queda en 4. Vale para `stock`, `stock_gramos` y
-  `stock_milesimas` (`_aplicarDeltaDeMovimientoStock`, `repositorio_sincronizacion.dart`). Ver si en la práctica un equipo
-  nuevo arranca de una copia de la base (y no pasa) antes de tocarlo: es el núcleo del stock.
+- **Entrar con Google sin navegador: Google Cloud no deja crear el cliente Android del almacén** (2026-10-14, a investigar).
+  El código está publicado (beta 1.0.0+2179) y, mientras esto no se resuelva, el almacén entra por el navegador como antes
+  (no está roto, solo sin la mejora). Detalle y pasos en `docs/PENDIENTE-GOOGLE-ANDROID.md`.
+
+- (Resuelto el 2026-10-13: el stock contado dos veces en un equipo que bajaba todo de cero. Ver `DECISIONES.md`, "Base de stock".)
 
 - **Publicación** (revisión 2026-10-12, sin tocar, a decidir): (1) un merge `release:`/`beta:` publica aunque los tests de
   ese mismo merge fallen (`publicar-beta.yml` y `publicar-apk.yml` no esperan a `tests.yml`); (2) el APK de Nodo Sur Servicios
