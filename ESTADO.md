@@ -143,9 +143,9 @@ Pendiente / ideas (sin hacer):
 - **Perfiles repetidos** ("aparezco tres veces"): mismo nombre = misma persona; se muestran una vez y lo cargado pasa al que queda.
 
 - **El celular entra con Google sin abrir el navegador** (El dueño: "la vinculación por el sitio es un paso medio innecesario"):
-  selector de cuentas de Android + `POST /api/device/google` del sitio; si no anda, "Entrar con el navegador". **Falta, del dueño**:
-  crear en Google Cloud los clientes OAuth tipo Android (las dos apps, con la SHA-1 de la clave de firma) y desplegar el sitio.
-  Sin probar en un teléfono real. Detalle en `DECISIONES.md`.
+  selector de cuentas de Android + `POST /api/device/google` del sitio; si no anda, "Entrar con el navegador". Los dos clientes
+  OAuth tipo Android quedaron en el proyecto del cliente Web (`433741777622`) y el dueño lo dio por andando el 14/10. Detalle en
+  `DECISIONES.md`.
 - **Varios negocios en un mismo celular, sin mezclar ni cerrar sesión**, y una cuenta de Google con varios negocios, cada uno
   con su plan (un mail con N planes cubre sus N negocios más viejos). "Agregar otro negocio" en Cuenta y sincronización.
   Sin probar en un teléfono real. Detalle en `DECISIONES.md`.
@@ -423,9 +423,8 @@ obligatorio en cada gasto.
 
 **Pendientes técnicos conocidos:**
 
-- **Entrar con Google sin navegador: Google Cloud no deja crear el cliente Android del almacén** (2026-10-14, a investigar).
-  El código está publicado (beta 1.0.0+2179) y, mientras esto no se resuelva, el almacén entra por el navegador como antes
-  (no está roto, solo sin la mejora). Detalle y pasos en `docs/PENDIENTE-GOOGLE-ANDROID.md`.
+- (Resuelto el 2026-10-14: Google Cloud no dejaba crear el cliente Android del almacén porque Firebase ya tenía la pareja
+  paquete + SHA-1. Ver `TRAMPAS.md` y `docs/PENDIENTE-GOOGLE-ANDROID.md`.)
 
 - (Resuelto el 2026-10-13: el stock contado dos veces en un equipo que bajaba todo de cero. Ver `DECISIONES.md`, "Base de stock".)
 

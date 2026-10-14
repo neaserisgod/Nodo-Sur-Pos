@@ -1785,7 +1785,7 @@ El dueño: "la vinculación por el sitio es un paso medio innecesario". Se eligi
 - **Varias sucursales**: si la persona puede entrar en más de una, el sitio contesta `elegir` y la app pregunta en una hoja (`elegir_sucursal.dart`); antes se elegía en /vincular/.
 - **Siempre muestra la lista de cuentas** (se cierra la sesión de Google de la app antes): en un teléfono con varias cuentas se elige cada vez. Sirve también para "varias cuentas en un celular".
 - **El navegador queda de salida**: si el teléfono no tiene servicios de Google, la app no está registrada en Google Cloud, el sitio es viejo, o se cierra el selector (una mala configuración también se ve como "cancelado"), aparece "Entrar con el navegador". La web y la PC siguen por el navegador.
-- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
+- **Hace falta en Google Cloud** (mismo proyecto que `GOOGLE_CLIENT_ID`, el número `433741777622`; **no** el de Firebase `nodo-sur-eb45a`): un cliente OAuth tipo Android por cada app (`com.laplazoleta.companion` y `com.laplazoleta.servicios`) con la huella SHA-1 de la clave que firma el APK. Sin eso, la app cae al navegador.
 
 ## Varios negocios en un mismo celular, cada uno con su plan (2026-10-13)
 

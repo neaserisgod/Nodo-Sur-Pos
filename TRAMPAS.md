@@ -11,6 +11,17 @@ elección deliberada), ver `DECISIONES.md`.
 
 ---
 
+## Google Cloud: "el nombre del paquete y la huella digital ya están en uso" (cliente OAuth Android)
+
+Google deja registrar cada pareja **paquete + SHA-1 una sola vez en todo Google Cloud**, sumando todos los proyectos. Si en
+Firebase se carga la SHA-1 de una app, Firebase crea por su cuenta un cliente OAuth Android ("auto created by Google Service")
+en **su** proyecto (`nodo-sur-eb45a`). Así la pareja queda tomada y no se puede crear en el proyecto del cliente Web del sitio
+(`433741777622`), que es donde Credential Manager la necesita. Pasó con `com.laplazoleta.companion` (2026-10-14).
+- **Arreglo**: borrar ese cliente en Credenciales de `nodo-sur-eb45a`, borrar la SHA-1 de la app en Firebase (a FCM no le hace
+  falta, y así no lo vuelve a crear) y recién ahí crear el cliente en el proyecto del Web.
+- **Para saber el proyecto del Web**: `GET https://horsepos.com/api/device/google`; el número antes del guion del `clientId`.
+- **No volver a cargar SHA-1 en Firebase** para estas apps.
+
 ## `sesionCerradaAnterior` ordena por ID de inserción, no por fecha — es correcto, no un bug
 
 `repositorio_cierre.dart` — la sesión cerrada de la que sale el pendiente
