@@ -43,7 +43,8 @@ button:focus-visible,input:focus-visible{outline:3px solid #3B6CFF;outline-offse
 .ctrls{display:flex;gap:10px;flex-wrap:wrap}
 
 /* ventana */
-.ven{max-width:1320px;margin:0 auto;background:var(--paper);border-radius:14px;overflow:hidden;
+.escena{max-width:1320px;margin:0 auto;overflow:hidden}
+.ven{width:1320px;transform-origin:top left;background:var(--paper);border-radius:14px;overflow:hidden;
   box-shadow:0 0 0 1px var(--fina),0 24px 60px rgba(18,19,23,.18)}
 .tit{height:38px;background:var(--barra);display:flex;align-items:center;gap:10px;padding:0 0 0 14px;font-size:13px;color:var(--mute)}
 .tit .logo{width:20px;height:20px;border-radius:6px;background:var(--ciruela);color:var(--ciruela-t);font-size:11px;font-weight:700;display:grid;place-items:center}
@@ -190,21 +191,15 @@ td.r,th.r{text-align:right}
 .nota b{color:var(--ink);display:block;margin-bottom:2px;font-weight:600}
 .toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--hero);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;z-index:9;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 
-@media (max-width:1100px){.ag,.cb,.sv{grid-template-columns:minmax(0,1fr)}.det{position:static}.app{height:auto;min-height:760px}.carr{height:auto}}
-@media (max-width:760px){
-  .app{grid-template-columns:minmax(0,1fr)}
-  .lat{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--fina);padding:10px}
-  .neg,.lat .esp,.bot,.it kbd,.it .gl{display:none}.it{flex:none}.it.cobrar{margin:0}
-  .cifras,.hero{grid-template-columns:repeat(2,minmax(0,1fr))}.dos,.nota{grid-template-columns:minmax(0,1fr)}
-  .nav .pest{display:none}.busca{min-width:0;flex:1}.cont{padding:18px 14px}
-}
+/* La ventana no se reacomoda nunca: se dibuja a tamaño de PC y se achica entera (ajustar() en el script). */
+@media (max-width:760px){.nota{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="cab">
   <div>
     <h1>Nodo Sur Servicios en la compu</h1>
-    <p>La misma app del celular con la ventana ancha: el menú pasa al costado y la agenda muestra el turno al lado. Probá las secciones; los datos son de ejemplo.</p>
+    <p>La misma app del celular con la ventana ancha: el menú pasa al costado y la agenda muestra el turno al lado. La ventana se ve siempre como en una PC, achicada si tu pantalla es chica. Probá las secciones; los datos son de ejemplo.</p>
   </div>
   <div class="ctrls">
     <div class="seg" role="group" aria-label="Dónde se abre">
@@ -218,13 +213,13 @@ td.r,th.r{text-align:right}
   </div>
 </div>
 
-<div class="ven">
+<div class="escena" id="escena"><div class="ven" id="ven">
   <div id="chrome"></div>
   <div class="app">
     <nav class="lat" id="lat" aria-label="Secciones"></nav>
     <main class="cont" id="cont"></main>
   </div>
-</div>
+</div></div>
 
 <div class="nota">
   <div><b>Mismo código que el celular</b>Cada pantalla es la del celular; con la ventana ancha se reacomoda. Lo que se arregle en una, se arregla en las tres.</div>
@@ -460,7 +455,16 @@ function render(){
     mas:()=>simple('Más','Configuración del negocio, horarios, Mercado Pago, notificaciones, cuenta y apariencia: las mismas secciones del celular, con la lista a la izquierda y el detalle a la derecha.')})[st.sec]();
   document.querySelectorAll('[data-ven]').forEach(b=>b.classList.toggle('on', b.dataset.ven===st.ven));
   document.querySelectorAll('[data-tema]').forEach(b=>b.classList.toggle('on', b.dataset.tema===tema));
+  ajustar();
 }
+
+function ajustar(){
+  const escena = document.getElementById('escena'), ven = document.getElementById('ven');
+  const k = Math.min(1, escena.clientWidth / 1320);
+  ven.style.transform = `scale(${k})`;
+  escena.style.height = (ven.offsetHeight * k) + 'px';
+}
+window.addEventListener('resize', ajustar);
 
 function toast(t){ const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
 
