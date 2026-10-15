@@ -158,6 +158,17 @@ jobs:
 
       # Nodo Sur Servicios para Windows (docs/PLAN-ESCRITORIO-SERVICIOS.md): el mismo número, su propio instalador y su feed
       # (windows-servicios). Va después de guardar el número a propósito: si esto falla, la de almacén ya quedó publicada.
+      # El bot de WhatsApp que va adentro (repo botdemo): el mismo del Android, con el Node de Windows.
+      - uses: actions/checkout@v4
+        with:
+          repository: neaserisgod/botdemo
+          path: botdemo
+      - name: Node y el bot (servicios)
+        shell: pwsh
+        env:
+          BOT_DIR: ${{ github.workspace }}\botdemo
+        run: .\tool\preparar_bot_windows.ps1
+
       - name: Compilar y publicar Nodo Sur Servicios para Windows
         shell: pwsh
         env:

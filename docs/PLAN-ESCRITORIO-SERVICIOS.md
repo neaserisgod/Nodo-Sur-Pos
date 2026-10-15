@@ -16,8 +16,7 @@ https://claude.ai/artifact/A6kFEry17u9gNCgDx4SfEG).
 1. **Diseño ancho** (web y Windows) — hecha (2026-10-15).
 2. **Edición Servicios en Windows** (arranque, datos aparte, instalador, publicación, sitio) — hecha (2026-10-15), **sin probar
    en una PC real** (ver "Sin probar").
-3. **El bot en la PC** — pendiente. Node y `bot.zip` junto a la app, que arranque con Windows y se vuelva a levantar si se cae;
-   mismo camino que el Android (`lib/servicios/bot_en_celular.dart`), con su pantalla de estado y el código de vinculación.
+3. **El bot en la PC** — hecho (2026-10-15), **sin probar en una PC real**. Ver "El bot en la PC" abajo.
 
 ## Cómo está armado
 
@@ -51,10 +50,34 @@ https://claude.ai/artifact/A6kFEry17u9gNCgDx4SfEG).
 | CI | `tests.yml`, job `windows-servicios`: compila en Windows y revisa nombre del `.exe` y `ProductName` cuando se toca lo que la arma |
 | Sitio | `windows-servicios` en `PLATFORMS`, appcast con `sparkle:os="windows"`, `/descargar/` la ofrece al lado de la de almacén en Windows (repo `NodoSurPage`) |
 
+### El bot en la PC
+
+Lo mismo que en Android (`BotEnCelular`: descomprimir por versión, la cuenta del bot, el estado, la misma pantalla "Bot de
+WhatsApp" con la sección "En esta compu"), con otro motor (`MotorBot`):
+
+| Pieza | Android | Windows |
+|---|---|---|
+| Node | Termux en el APK (`libns_node.so`) | Node oficial de Windows, versión fija y verificada (`tool/preparar_bot_windows.ps1`), en `<app>\bot\node.exe` |
+| El bot | `assets/bot/bot.zip` | el mismo zip (JavaScript puro, SQLite de Node), en `<app>\bot\bot.zip` |
+| Lo mantiene vivo | `ServicioBot.kt` | `windows/bot/supervisor.js`: lo levanta, lo reinicia si se cae (5 s, 10 s… hasta 5 min), corta al apagar o al pasar a otra versión, uno solo por carpeta (`supervisor.pid`) |
+| Encender / apagar | canal `nodosur/bot` | `bot-datos\arranque.json` (el supervisor lo mira cada 3 s) |
+| Al prender el equipo | `ArranqueBot` | clave `HKCU\…\Run\NodoSurServiciosBot` → `nodo_sur_servicios.exe --bot <node> <supervisor> <datos>`: la app lanza el supervisor **oculto** y termina sin abrir ventana (`main.cpp`) |
+
+- Node y el supervisor se **copian a la carpeta de cada versión del bot** (`%APPDATA%\…\bot\<huella>`), junto al código: nada
+  corre desde la carpeta de la app, así el instalador la puede pisar con el bot andando. La huella incluye tamaño y fecha de
+  Node, así que una app con otro Node pasa a otra carpeta y el bot viejo termina solo.
+- Desinstalar apaga el bot (escribe `arranque.json` apagado y borra la clave Run).
+- En la compu, el estado del bot queda a la vista al pie del menú lateral (como en el mock).
+- `publicar-beta.yml` baja el bot (repo botdemo) y Node antes de armar el instalador de Servicios; sin ellos
+  `crear_instalador.ps1 -Edicion servicios` no lo arma.
+
 ## Sin probar
 
 - **En una PC con Windows real**: compilar (lo va a hacer CI), instalar al lado de la de almacén, entrar con Google, que la
   base quede en `%APPDATA%` y no en Documentos, actualizar con WinSparkle. Nada de esto se pudo correr en la nube (Linux).
 - El navegador ancho de verdad (horsepos.com/app/ en una compu): solo capturas de test a 1440×900
   (`test/companion/capturas_escritorio_servicios_test.dart`).
-- Mezclar el sitio **antes** de publicar: sin `windows-servicios` en el sitio, el workflow no puede registrar el instalador.
+- El bot en Windows real: que arranque oculto al iniciar sesión, que siga con la app cerrada, que se reinicie si se cae y que
+  pase a la versión nueva al actualizar. El supervisor se probó en Linux con un bot de mentira (reinicio, apagado, cambio de
+  versión); la parte de la app, con pruebas (`test/servicios/bot_en_pc_test.dart`).
+- La compu tiene que quedar prendida y sin suspenderse para que el bot conteste: Windows no lo garantiza solo.

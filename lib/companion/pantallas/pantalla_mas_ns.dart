@@ -19,7 +19,7 @@ import '../pantalla_proveedores.dart';
 import '../pantalla_configuracion_companion.dart';
 import '../pantalla_cuenta_companion.dart';
 import '../pantalla_encargues_companion.dart';
-import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, estadoBotCelular;
+import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, botEnEsteEquipo, estadoBotCelular;
 import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
@@ -144,8 +144,9 @@ class PantallaMasNs extends StatelessWidget {
                           ),
                         ),
                       ),
-                    // Nodo Sur Servicios trae el bot adentro: la misma pantalla, con el bot de este celular en vez de Termux.
-                    if (esEdicionServicios && esAndroid && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    // Nodo Sur Servicios trae el bot adentro (Android y Windows): la misma pantalla, con el bot de este equipo en vez
+                    // de Termux.
+                    if (botEnEsteEquipo && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',

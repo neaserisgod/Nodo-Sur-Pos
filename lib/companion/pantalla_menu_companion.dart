@@ -77,7 +77,8 @@ import 'emparejamiento.dart';
 import 'navegacion.dart';
 import 'pantalla_carrito_venta.dart';
 import 'pantalla_encargues_companion.dart';
-import 'bot_celular.dart' show accesoBotDelCelular, ponerAlDiaElBotDelCelular, refrescarEstadoBot, registrarPushDelCelular;
+import 'bot_celular.dart' show accesoBotDelCelular, botDelCelular, botEnEsteEquipo, estadoBotCelular, ponerAlDiaElBotDelCelular, refrescarEstadoBot, registrarPushDelCelular;
+import 'pantallas/estado_bot_lateral_ns.dart';
 import 'pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_movimiento_caja.dart';
 import 'pantalla_carga_historica.dart';
@@ -921,7 +922,17 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MenuLateralNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+                MenuLateralNs(
+                  activa: _pestania,
+                  onSeleccionar: irAPestania,
+                  hayActualizacion: _hayActualizacion,
+                  // Donde el bot corre adentro de la app (la compu con Windows), su estado queda a la vista, como en el mock.
+                  abajo: ValueListenableBuilder(
+                    valueListenable: estadoBotCelular,
+                    builder: (context, estado, _) =>
+                        botEnEsteEquipo && estado?.tieneBot == true ? EstadoBotLateralNs(bot: botDelCelular) : const SizedBox.shrink(),
+                  ),
+                ),
                 Expanded(child: ConMenuLateralNs(child: pestanias)),
               ],
             ),

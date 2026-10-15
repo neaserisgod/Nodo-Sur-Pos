@@ -8,6 +8,8 @@
 //  * le pide a Android que lo encienda o lo apague (`ServicioBot.kt`, que lo mantiene vivo, lo levanta si se cae y lo enciende
 //    al prender el celular).
 // Los datos del bot (sesión de WhatsApp, su base, el estado) van aparte, en `bot-datos/`, y no se tocan al actualizar.
+//
+// En Windows (Nodo Sur Servicios de escritorio, 2026-10-15) es lo mismo con otro [MotorBot]: `bot_en_pc.dart`.
 
 import 'dart:convert';
 import 'dart:io';
@@ -37,20 +39,32 @@ Future<String?> carpetaLibrerias() async {
   return null;
 }
 
-class BotEnCelular {
-  BotEnCelular({required this.acceso, Future<Directory> Function()? soporte, MethodChannel? canal, Future<ByteData> Function()? zip})
-      : _soporte = soporte ?? getApplicationSupportDirectory,
-        _canalBot = canal ?? _canal,
-        _zip = zip ?? (() => rootBundle.load('assets/bot/bot.zip'));
+/// Quién mantiene a Node corriendo en este equipo: el servicio de Android ([MotorBotAndroid]) o el supervisor de Windows
+/// (`MotorBotWindows`, `bot_en_pc.dart`). El resto (descomprimir, la cuenta, el estado) es igual en los dos.
+abstract class MotorBot {
+  Future<bool> encendido();
+  Future<void> encender({required String codigo, required String datos, required String numero});
+  Future<void> apagar();
 
-  final AccesoBot acceso;
-  final Future<Directory> Function() _soporte;
+  /// Qué le falta a esta instalación para correr el bot (null si nada).
+  Future<String?> faltante();
+
+  /// Archivos que van al lado del bot en su carpeta (en Windows: Node y el supervisor), por nombre.
+  Future<Map<String, File>> extras() async => const {};
+
+  /// Cuánto esperar después de [apagar] para que Node termine de verdad.
+  Duration get esperaAlApagar => const Duration(seconds: 2);
+
+  Future<bool> sinRestriccionesDeBateria() async => true;
+  Future<void> pedirSinRestriccionesDeBateria() async {}
+}
+
+/// Android: `ServicioBot.kt` por el canal `nodosur/bot`. Node viene en el APK como `libns_node.so`.
+class MotorBotAndroid extends MotorBot {
+  MotorBotAndroid([MethodChannel? canal]) : _canalBot = canal ?? _canal;
   final MethodChannel _canalBot;
-  final Future<ByteData> Function() _zip;
 
-  Future<Directory> datos() async => Directory(p.join((await _soporte()).path, 'bot-datos'));
-
-  /// Si la dueña lo dejó encendido (Android lo sigue manteniendo aunque la app esté cerrada).
+  @override
   Future<bool> encendido() async {
     try {
       return await _canalBot.invokeMethod<bool>('encendido') ?? false;
@@ -58,6 +72,57 @@ class BotEnCelular {
       return false;
     }
   }
+
+  @override
+  Future<void> encender({required String codigo, required String datos, required String numero}) =>
+      _canalBot.invokeMethod('encender', {'codigo': codigo, 'datos': datos, 'numero': numero});
+
+  @override
+  Future<void> apagar() async {
+    try {
+      await _canalBot.invokeMethod('apagar');
+    } catch (_) {}
+  }
+
+  @override
+  Future<String?> faltante() async {
+    final libs = await carpetaLibrerias();
+    if (libs != null && !File(p.join(libs, 'libns_node.so')).existsSync()) return 'Esta versión de la app no trae el bot. Actualizala.';
+    return null;
+  }
+
+  @override
+  Future<bool> sinRestriccionesDeBateria() async {
+    try {
+      return await _canalBot.invokeMethod<bool>('sinRestricciones') ?? false;
+    } catch (_) {
+      return true; // si no se puede saber, no molestar
+    }
+  }
+
+  @override
+  Future<void> pedirSinRestriccionesDeBateria() async {
+    try {
+      await _canalBot.invokeMethod('pedirSinRestricciones');
+    } catch (_) {}
+  }
+}
+
+class BotEnCelular {
+  BotEnCelular({required this.acceso, Future<Directory> Function()? soporte, MethodChannel? canal, MotorBot? motor, Future<ByteData> Function()? zip})
+      : _soporte = soporte ?? getApplicationSupportDirectory,
+        _motor = motor ?? MotorBotAndroid(canal),
+        _zip = zip ?? (() => rootBundle.load('assets/bot/bot.zip'));
+
+  final AccesoBot acceso;
+  final Future<Directory> Function() _soporte;
+  final MotorBot _motor;
+  final Future<ByteData> Function() _zip;
+
+  Future<Directory> datos() async => Directory(p.join((await _soporte()).path, 'bot-datos'));
+
+  /// Si la dueña lo dejó encendido (Android, o el supervisor en Windows, lo siguen manteniendo aunque la app esté cerrada).
+  Future<bool> encendido() => _motor.encendido();
 
   /// Lo que el bot dice de sí mismo. Null si todavía no escribió nada.
   Future<EstadoBotLocal?> leerEstado() async {
@@ -89,10 +154,8 @@ class BotEnCelular {
 
   /// Enciende el bot para [numero] (el WhatsApp del local, `5492944…`). Devuelve null si quedó encendido, o qué falta.
   Future<String?> encender({required String numero}) async {
-    final libs = await carpetaLibrerias();
-    if (libs != null && !File(p.join(libs, 'libns_node.so')).existsSync()) {
-      return 'Esta versión de la app no trae el bot. Actualizala.';
-    }
+    final falta = await _motor.faltante();
+    if (falta != null) return falta;
     final Directory codigo;
     try {
       codigo = await preparar();
@@ -106,9 +169,9 @@ class BotEnCelular {
       return 'No se pudo vincular el bot a tu negocio (¿hay internet?): $e';
     }
     try {
-      await _canalBot.invokeMethod('encender', {'codigo': codigo.path, 'datos': dirDatos.path, 'numero': numero});
+      await _motor.encender(codigo: codigo.path, datos: dirDatos.path, numero: numero);
     } catch (e) {
-      return 'Android no dejó encender el bot: $e';
+      return 'No se pudo encender el bot: ${e is StateError ? e.message : e}';
     }
     // Para [ponerAlDia]: con qué número se encendió la última vez.
     try {
@@ -132,18 +195,14 @@ class BotEnCelular {
     } catch (_) {}
   }
 
-  Future<void> apagar() async {
-    try {
-      await _canalBot.invokeMethod('apagar');
-    } catch (_) {}
-  }
+  Future<void> apagar() => _motor.apagar();
 
   /// Borra la sesión de WhatsApp (la desvincularon, o se quiere usar otro número) y lo vuelve a encender: pide un código nuevo.
   Future<String?> vincularDeNuevo({required String numero}) async {
     await apagar();
     final d = await datos();
-    // Que Android termine de parar a Node antes de borrarle la sesión.
-    await Future<void>.delayed(const Duration(seconds: 2));
+    // Que Node termine de parar antes de borrarle la sesión.
+    await Future<void>.delayed(_motor.esperaAlApagar);
     for (final x in [Directory(p.join(d.path, 'sesion-baileys')), File(p.join(d.path, 'estado.json'))]) {
       try {
         if (x.existsSync()) x.deleteSync(recursive: true);
@@ -153,25 +212,18 @@ class BotEnCelular {
   }
 
   /// Si Android ya deja correr la app sin el ahorro de batería (que en muchas marcas congela las apps con la pantalla apagada).
-  Future<bool> sinRestriccionesDeBateria() async {
-    try {
-      return await _canalBot.invokeMethod<bool>('sinRestricciones') ?? false;
-    } catch (_) {
-      return true; // si no se puede saber, no molestar
-    }
-  }
+  Future<bool> sinRestriccionesDeBateria() => _motor.sinRestriccionesDeBateria();
 
-  Future<void> pedirSinRestriccionesDeBateria() async {
-    try {
-      await _canalBot.invokeMethod('pedirSinRestricciones');
-    } catch (_) {}
-  }
+  Future<void> pedirSinRestriccionesDeBateria() => _motor.pedirSinRestriccionesDeBateria();
 
   /// Descomprime el bot en `bot/<huella>` si no está. Devuelve la carpeta.
   Future<Directory> preparar() async {
     final datosZip = await _zip();
     final bytes = datosZip.buffer.asUint8List(datosZip.offsetInBytes, datosZip.lengthInBytes);
-    final huella = sha1.convert(bytes).toString().substring(0, 12);
+    final extras = await _motor.extras();
+    // Los extras (Node de Windows, ~80 MB) entran en la huella por tamaño y fecha: leerlos enteros en cada arranque no vale la pena.
+    final firmaExtras = [for (final e in extras.entries) '${e.key}:${e.value.lengthSync()}:${e.value.lastModifiedSync().millisecondsSinceEpoch}'].join('|');
+    final huella = sha1.convert([...bytes, ...utf8.encode(firmaExtras)]).toString().substring(0, 12);
     final dir = Directory(p.join((await _soporte()).path, 'bot', huella));
     final listo = File(p.join(dir.path, '.listo'));
     if (listo.existsSync()) return dir;
@@ -187,6 +239,9 @@ class BotEnCelular {
       } else {
         Directory(destino).createSync(recursive: true);
       }
+    }
+    for (final e in extras.entries) {
+      e.value.copySync(p.join(dir.path, e.key));
     }
     listo.writeAsStringSync(huella);
     return dir;

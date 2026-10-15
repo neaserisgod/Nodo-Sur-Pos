@@ -172,7 +172,10 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     return switch (saludDelBot(e, ahora)) {
       SaludBot.anda => InfoNs('Andando. Última señal: ${hora(ultima!)}.', key: const Key('bot_salud'), tono: TonoNs.good),
       SaludBot.sinSenal => InfoNs(
-        'Sin señal desde ${hora(ultima!)}. Revisá que el celular del bot esté prendido, con internet y con Termux abierto.',
+        // Con el bot adentro de la app (Nodo Sur Servicios en el celular o en la compu) no hay Termux que revisar.
+        widget.enEsteCelular != null
+            ? 'Sin señal desde ${hora(ultima!)}. Revisá que el equipo donde corre el bot esté prendido y con internet.'
+            : 'Sin señal desde ${hora(ultima!)}. Revisá que el celular del bot esté prendido, con internet y con Termux abierto.',
         key: const Key('bot_salud'),
         tono: TonoNs.warn,
       ),

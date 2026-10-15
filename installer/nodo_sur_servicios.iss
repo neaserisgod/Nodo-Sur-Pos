@@ -63,6 +63,7 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Type: filesandordirs; Name: "{app}\data"
 Type: files; Name: "{app}\*.dll"
 Type: files; Name: "{app}\*.exe"
+Type: filesandordirs; Name: "{app}\bot"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -76,7 +77,8 @@ Filename: "{app}\{#MyAppExe}"; Description: "Abrir {#MyAppName}"; Flags: nowait 
 ; Actualización silenciosa (WinSparkle): la reabre sola.
 Filename: "{app}\{#MyAppExe}"; Flags: nowait runasoriginaluser; Check: DebeReabrir
 
-; Sin [UninstallDelete] a propósito: desinstalar borra solo {app} y los accesos directos, nunca los datos.
+; Sin [UninstallDelete] a propósito: desinstalar borra solo {app} y los accesos directos, nunca los datos. El bot de WhatsApp sí
+; se apaga (CurUninstallStepChanged): si no, seguiría corriendo desde la carpeta de datos y arrancaría al iniciar sesión.
 
 [Code]
 var
@@ -139,6 +141,17 @@ begin
     Intentos := Intentos + 1;
   end;
   Log('Esperas por el cierre de la app: ' + IntToStr(Intentos));
+end;
+
+// Apaga el bot como lo hace la app (lib/servicios/bot_en_pc.dart): arranque.json con encendido=false (el supervisor lo ve
+// en 3 segundos y corta) y sin la clave Run que lo arranca al iniciar sesión.
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'NodoSurServiciosBot');
+    SaveStringToFile(ExpandConstant('{userappdata}\com.laplazoleta\Nodo Sur Servicios\bot-datos\arranque.json'), '{"encendido":false}', False);
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
