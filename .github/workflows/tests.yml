@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ] || \
-             git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE '^(windows/|installer/|lib/main\.dart|lib/edicion\.dart|lib/plataforma\.dart|lib/data/carpeta_base\.dart|pubspec\.)'; then
+             git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE '^(windows/|installer/|tool/preparar_bot_windows\.ps1|lib/main\.dart|lib/edicion\.dart|lib/plataforma\.dart|lib/data/carpeta_base\.dart|pubspec\.)'; then
             echo "compilar=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: subosito/flutter-action@v2
@@ -115,3 +115,21 @@ jobs:
           $info = (Get-Item $exe).VersionInfo
           if ($info.ProductName -ne "Nodo Sur Servicios") { throw "ProductName es '$($info.ProductName)': la carpeta de datos sería la de otra app" }
           Write-Host "OK: $exe ($($info.ProductName))"
+      # El bot que va adentro (repo botdemo) con el Node de Windows: que el script que lo arma siga andando.
+      - uses: actions/checkout@v4
+        if: steps.cambios.outputs.compilar == 'true'
+        with:
+          repository: neaserisgod/botdemo
+          path: botdemo
+      - uses: actions/setup-node@v4
+        if: steps.cambios.outputs.compilar == 'true'
+        with:
+          node-version: 22
+      - name: Arma Node y el bot para Windows
+        if: steps.cambios.outputs.compilar == 'true'
+        shell: pwsh
+        env:
+          BOT_DIR: ${{ github.workspace }}\botdemo
+        run: |
+          .\tool\preparar_bot_windows.ps1
+          foreach ($f in "node.exe", "bot.zip") { if (-not (Test-Path "build\bot-windows\$f")) { throw "Falta $f" } }

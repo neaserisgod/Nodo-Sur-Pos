@@ -141,8 +141,11 @@ Pendiente / ideas (sin hacer):
 - **Nodo Sur Servicios en la compu** (El dueño, 15/10; mock aprobado): con la ventana ancha (web y Windows) la app de servicios
   tiene menú lateral (Alt+1…5), la Agenda con el turno al costado y Cobrar con el cobro a la derecha. Y una **edición de
   Windows aparte** (otro `.exe`, ícono ciruela, su carpeta de datos y su base fuera de Documentos, instalador y feed
-  `windows-servicios`). **Sin probar en una PC real**; falta el bot corriendo en la PC. Todo en
+  `windows-servicios`). Publicada en beta (1.0.0+2176). **Sin probar en una PC real**. Todo en
   [`docs/PLAN-ESCRITORIO-SERVICIOS.md`](./docs/PLAN-ESCRITORIO-SERVICIOS.md).
+
+- **El bot de WhatsApp también corre en la compu** (Nodo Sur Servicios de Windows): el mismo bot del Android con el Node de
+  Windows, un supervisor que lo mantiene vivo y arranque oculto al iniciar sesión. Sin probar en Windows real.
 
 ## Últimos cambios (14/10/2026)
 

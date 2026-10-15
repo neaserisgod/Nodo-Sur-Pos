@@ -10,6 +10,7 @@ import '../domain/bot_whatsapp.dart';
 import '../edicion.dart';
 import '../servicios/acceso_bot.dart';
 import '../servicios/bot_en_celular.dart';
+import '../servicios/bot_en_pc.dart';
 import '../servicios/push.dart';
 import '../servicios/cuenta_nube.dart' show ClienteNube;
 import '../servicios/almacenes_del_equipo.dart';
@@ -20,12 +21,24 @@ final _clienteNubeBot = ClienteNube(http: http.Client());
 /// El acceso al bot con la cuenta vinculada de este celular (el mismo archivo de cuenta que la sync y la IA).
 final AccesoBot accesoBotDelCelular = AccesoBotNube(() async => (almacen: await almacenCuentaDelEquipo(), cliente: _clienteNubeBot));
 
-/// El bot que corre adentro de este celular (solo Nodo Sur Servicios trae Node; en la otra app no se usa).
-final BotEnCelular botDelCelular = BotEnCelular(acceso: accesoBotDelCelular);
+/// El bot que corre adentro de este equipo (solo Nodo Sur Servicios trae Node; en la otra app no se usa). En Windows lo mantiene
+/// el supervisor (`bot_en_pc.dart`) y el bot viene en la carpeta de la app, no en los assets.
+final BotEnCelular botDelCelular = _armarBot();
 
-/// Al abrir Nodo Sur Servicios en Android: el bot encendido pasa a la versión que trae la app (`BotEnCelular.ponerAlDia`).
+BotEnCelular _armarBot() {
+  if (!esEscritorioServicios) return BotEnCelular(acceso: accesoBotDelCelular);
+  late final BotEnCelular bot;
+  final motor = MotorBotWindows(datos: () => bot.datos());
+  bot = BotEnCelular(acceso: accesoBotDelCelular, motor: motor, zip: motor.leerZip);
+  return bot;
+}
+
+/// En qué equipos corre el bot adentro de la app: Nodo Sur Servicios en Android y en Windows (no en el navegador).
+bool get botEnEsteEquipo => esEdicionServicios && (esAndroid || esEscritorioServicios);
+
+/// Al abrir Nodo Sur Servicios: el bot encendido pasa a la versión que trae la app (`BotEnCelular.ponerAlDia`).
 Future<void> ponerAlDiaElBotDelCelular() async {
-  if (!esEdicionServicios || !esAndroid) return;
+  if (!botEnEsteEquipo) return;
   await botDelCelular.ponerAlDia();
 }
 

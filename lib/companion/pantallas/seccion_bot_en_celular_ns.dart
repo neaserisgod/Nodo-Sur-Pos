@@ -1,6 +1,7 @@
 // "En este celular" dentro de Bot de WhatsApp, en Nodo Sur Servicios (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`): el bot
 // corre adentro de la app, sin Termux. Acá se enciende y se apaga, se ve si está conectado y, la primera vez, el código para
-// vincularlo con el WhatsApp del local. Lo que pasa después ya no depende de esta pantalla: Android lo mantiene andando.
+// vincularlo con el WhatsApp del local. Lo que pasa después ya no depende de esta pantalla: Android lo mantiene andando. En
+// Windows (2026-10-15) es la misma sección, "En esta compu", y lo mantiene el supervisor (`bot_en_pc.dart`).
 
 import 'dart:async';
 
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/bot_en_celular.dart';
+import '../../edicion.dart';
 import '../../servicios/bot_en_celular.dart';
 import '../kit/kit_ns.dart';
 
@@ -120,14 +122,14 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     final fase = faseDelBot(encendido: _encendido, estado: _estado);
     final (tono, icono) = switch (fase) {
       FaseBot.conectado => (TonoNs.good, IconoNs.tilde),
-      FaseBot.apagado => (TonoNs.neutro, IconoNs.celular),
+      FaseBot.apagado => (TonoNs.neutro, esEscritorioServicios ? IconoNs.computadora : IconoNs.celular),
       FaseBot.conectando => (TonoNs.info, IconoNs.reloj),
       FaseBot.vincular || FaseBot.desvinculado => (TonoNs.warn, IconoNs.alertaCirculo),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs('En este celular')),
+        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(esEscritorioServicios ? 'En esta compu' : 'En este celular')),
         InfoNs(textoDelBot(fase, _estado, ahora), key: const Key('bot_celular_estado'), tono: tono, icono: icono),
         if (fase == FaseBot.vincular && _estado?.codigo != null) ...[
           const SizedBox(height: 12),

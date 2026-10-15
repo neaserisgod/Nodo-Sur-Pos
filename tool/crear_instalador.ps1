@@ -151,6 +151,18 @@ if (-not $SinBuild) {
 }
 if (-not (Test-Path $exeApp)) { throw "No existe $exeApp — compilá primero (sin -SinBuild)." }
 
+# Nodo Sur Servicios lleva el bot de WhatsApp adentro (<app>\bot): Node y el bot los arma tool\preparar_bot_windows.ps1, el
+# supervisor está en el repo. Sin ellos no se arma el instalador: saldría una versión sin bot.
+if ($servicios) {
+    $origenBot = Join-Path $raiz "build\bot-windows"
+    foreach ($f in "node.exe", "bot.zip") {
+        if (-not (Test-Path (Join-Path $origenBot $f))) { throw "Falta $f en $origenBot: corré antes .\tool\preparar_bot_windows.ps1" }
+    }
+    $destinoBot = Join-Path $carpetaBuild "bot"
+    New-Item -ItemType Directory -Force $destinoBot | Out-Null
+    Copy-Item (Join-Path $origenBot "node.exe"), (Join-Path $origenBot "bot.zip"), (Join-Path $raiz "windows\bot\supervisor.js") $destinoBot -Force
+}
+
 Invoke-Firma $exeApp
 
 Write-Output "Armando el instalador con Inno Setup..."
