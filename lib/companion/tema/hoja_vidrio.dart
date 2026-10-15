@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 
 import '../../ui/tema/tokens.dart';
+import '../kit/escritorio_ns.dart' show anchoLibreNs;
+import '../kit/hoja_ns.dart' show mostrarHojaNs;
 import '../kit/movimiento_ns.dart';
 import '../kit/tokens_ns.dart';
 
@@ -68,6 +70,19 @@ Future<T?> mostrarHojaVidrio<T>(
   required WidgetBuilder builder,
   bool esDescartable = true,
 }) {
+  // En la compu, con el menú lateral, como ventana al centro (igual que `mostrarHojaNs`).
+  if (anchoLibreNs.value) {
+    return mostrarHojaNs<T>(
+      context,
+      descartable: esDescartable,
+      builder: (ctx) => Container(
+        color: ctx.colores.fondo,
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.92),
+        padding: const EdgeInsets.fromLTRB(28, 26, 28, 24),
+        child: SingleChildScrollView(child: Builder(builder: builder)),
+      ),
+    );
+  }
   return showModalBottomSheet<T>(
     context: context,
     isDismissible: esDescartable,

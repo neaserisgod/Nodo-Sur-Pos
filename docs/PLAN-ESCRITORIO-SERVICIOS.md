@@ -28,10 +28,19 @@ https://claude.ai/artifact/A6kFEry17u9gNCgDx4SfEG).
 - **Agenda**: lista a la izquierda (hasta 820 px) y panel de 380 px con el turno elegido y sus botones (los mismos de la hoja del
   celular, `_botonesTurno`). **Cobrar**: grilla de servicios a la izquierda (más columnas) y el cobro a la derecha; el paso de
   elegir el medio también va en el panel. Servicios, Caja y Más se centran a 760 px.
-- Lo que se abre **encima** del menú (Configuración, Cuenta, Proveedores…) se sigue viendo del ancho de un celular, centrado:
-  `companion_app.dart` achica la app salvo mientras el menú está arriba (`anchoLibreNs`, que maneja el menú con
-  `observadorRutasNs`). Las hojas y diálogos no cambian la disposición de atrás. El envoltorio de ancho tiene **siempre los
-  mismos widgets**: si cambiara de estructura, Flutter rearmaría el navegador y se perderían las pantallas abiertas.
+- Lo que se abre desde una pestaña (Configuración, Cuenta, Bot, Proveedores…) **queda al lado del menú**, en un navegador
+  propio del contenido (`ContenidoConMenuNs`), a ancho de lectura. Escape vuelve atrás; cambiar de pestaña lo cierra
+  (El dueño, 2026-10-15: "se ven partes de móvil").
+- Las **hojas que suben de abajo** son, en la compu, **ventanas al centro** (`mostrarHojaNs` → diálogo de 560 px, sin asa).
+- Lo que va antes del menú (bienvenida, entrar) muestra la app a la derecha y un **panel de marca** a la izquierda
+  (`PanelMarcaEscritorioNs`). El envoltorio de ancho (`companion_app.dart`) tiene **siempre los mismos widgets**: si
+  cambiara de estructura, Flutter rearmaría el navegador y se perderían las pantallas abiertas.
+- **Entrar con QR** (como una tele): la compu muestra un QR al entrar; con el celular ya vinculado, Más › Cuenta › "Entrar
+  en una compu" lo escanea y confirma. La compu queda en el negocio y la sucursal del celular. Sitio:
+  `functions/api/device/qr.js` (pedido de 5 min, un solo uso, PKCE: el código sin el verificador de la compu no sirve).
+  El navegador queda como alternativa.
+- Al volver de entrar se hace **una sola vuelta de sincronización** con el texto "Bajando los datos de tu negocio…" (antes
+  podían ser hasta tres seguidas).
 - Clientas (que aparecía en el mock) no existe todavía en la app: no se agregó.
 
 ### Edición Servicios en Windows
@@ -72,6 +81,8 @@ WhatsApp" con la sección "En esta compu"), con otro motor (`MotorBot`):
   `crear_instalador.ps1 -Edicion servicios` no lo arma.
 
 ## Sin probar
+
+- El QR entre un celular y una compu reales (cámara, permisos, tiempos).
 
 - **En una PC con Windows real**: compilar (lo va a hacer CI), instalar al lado de la de almacén, entrar con Google, que la
   base quede en `%APPDATA%` y no en Documentos, actualizar con WinSparkle. Nada de esto se pudo correr en la nube (Linux).

@@ -5,7 +5,7 @@
 
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/services.dart' show appFlavor;
 
 enum Edicion { almacen, servicios }
@@ -18,7 +18,11 @@ Edicion edicionActual = appFlavor == 'servicios' || _edicionDefinida == 'servici
 bool get esEdicionServicios => edicionActual == Edicion.servicios;
 
 /// Nodo Sur Servicios instalado en una compu con Windows: la app del celular, con ventana de PC y su propio instalador.
-bool get esEscritorioServicios => esEdicionServicios && !kIsWeb && Platform.isWindows;
+bool get esEscritorioServicios => escritorioServiciosDePrueba ?? (esEdicionServicios && !kIsWeb && Platform.isWindows);
+
+/// Las pruebas (que corren en Linux) pueden hacer de cuenta que están en Windows.
+@visibleForTesting
+bool? escritorioServiciosDePrueba;
 
 /// Con qué nombre busca sus actualizaciones en el sitio: cada edición de cada sistema es un instalador distinto.
 String get plataformaActualizacion => esEscritorioServicios ? 'windows-servicios' : esEdicionServicios ? 'android-servicios' : 'android';

@@ -70,6 +70,25 @@ class SyncNubeCompanion {
     return cuenta;
   }
 
+  /// La compu entra escaneando un QR con el celular (`vincularConQr`). Al terminar, como [vincular].
+  Future<CuentaVinculada> vincularConQrDelCelular({
+    required String nombre,
+    required void Function(Uri url) alMostrar,
+    required bool Function() cancelado,
+  }) async {
+    final cuenta = await vincularConQr(
+      cliente: cliente,
+      almacen: almacen,
+      idDispositivo: await idDispositivoEstable(),
+      nombre: nombre,
+      alMostrar: alMostrar,
+      cancelado: cancelado,
+    );
+    await almacenEstado.borrar();
+    conmutador.reevaluar();
+    return cuenta;
+  }
+
   /// Entra con la cuenta de Google elegida en el teléfono, sin navegador. Si la persona puede entrar en más de un negocio o
   /// sucursal (o [elegirSiempre], agregando otro negocio al celular), [elegir] le pregunta en cuál, o el nombre de uno nuevo.
   /// Null si cerró el selector o no eligió. Lanza [GoogleNoDisponible] si el teléfono o el sitio no lo permiten (la pantalla

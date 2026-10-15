@@ -109,6 +109,11 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// Una pantalla entera está abierta encima del menú: la app vuelve a verse del ancho de un celular (`anchoLibreNs`).
   bool _tapadoPorPagina = false;
   final _llavePestanias = GlobalKey(debugLabel: 'pestanias');
+
+  /// Con el menú lateral, lo que se abre desde las pestañas (Configuración, Cuenta, el bot…) va en este navegador, al lado del
+  /// menú, y no tapa la ventana entera (El dueño, 2026-10-15: "se ven partes de móvil").
+  final _navContenido = GlobalKey<NavigatorState>(debugLabel: 'contenido');
+  bool _conMenuLateral = false;
   PageRoute<dynamic>? _rutaPropia;
 
   PestaniaNs _pestania = PestaniaNs.inicio;
@@ -208,6 +213,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Ya se entró: la compu deja de mostrar el panel de la marca de la bienvenida (`companion_app.dart`).
+    SchedulerBinding.instance.addPostFrameCallback((_) => menuMontadoNs.value = true);
     // Cambiar entre Beta y Estable (Más) vuelve a mirar el sitio al toque.
     celularEligeBeta.addListener(_revisarActualizacion);
     _publicar();
@@ -506,6 +513,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   @override
   void dispose() {
     observadorRutasNs.unsubscribe(this);
+    SchedulerBinding.instance.addPostFrameCallback((_) => menuMontadoNs.value = false);
     if (anchoLibreNs.value) {
       SchedulerBinding.instance.addPostFrameCallback((_) => anchoLibreNs.value = false);
     }
@@ -557,6 +565,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   @override
   void irAPestania(PestaniaNs p) {
     if (!mounted) return;
+    // Tocar una sección del menú cierra lo que estuviera abierto encima de las pestañas.
+    if (_conMenuLateral) _navContenido.currentState?.popUntil((r) => r.isFirst);
     setState(() {
       _pestania = p;
       if (p != PestaniaNs.vender) ocultarBarra.value = false;
@@ -568,7 +578,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     if (_navegando) return null;
     setState(() => _navegando = true);
     try {
-      return await pushSinTeclado<T>(context, builder);
+      final contenido = _navContenido.currentContext;
+      return await pushSinTeclado<T>(_conMenuLateral && contenido != null ? contenido : context, builder);
     } finally {
       if (mounted) setState(() => _navegando = false);
     }
@@ -881,6 +892,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   }
 
   Widget _armar(BuildContext context, TokensNs ns, {required bool ancho}) {
+    _conMenuLateral = ancho;
     // Con una llave global las pestañas pasan de una disposición a la otra (al agrandar o achicar la ventana) sin perder lo
     // que tenían: cada una sigue siendo el mismo widget, solo cambia de lugar.
     final pestanias = KeyedSubtree(key: _llavePestanias, child: CambioDePestanaNs(
@@ -919,6 +931,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           backgroundColor: ns.paper,
           body: AtajosMenuNs(
             onSeleccionar: irAPestania,
+            alEscape: () => _navContenido.currentState?.maybePop(),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -933,7 +946,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                         botEnEsteEquipo && estado?.tieneBot == true ? EstadoBotLateralNs(bot: botDelCelular) : const SizedBox.shrink(),
                   ),
                 ),
-                Expanded(child: ConMenuLateralNs(child: pestanias)),
+                Expanded(child: ContenidoConMenuNs(navegador: _navContenido, pestanias: pestanias)),
               ],
             ),
           ),

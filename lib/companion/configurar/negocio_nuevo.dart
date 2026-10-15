@@ -46,8 +46,10 @@ Future<bool> esNegocioNuevoTrasSincronizar({
   required ServicioSyncNube sync,
   required AppDatabase db,
   Duration limite = const Duration(seconds: 25),
+  // Ya se bajó lo de la nube recién (al entrar): no hace falta otra vuelta entera (El dueño, 2026-10-15: "tarda mucho").
+  bool yaSincronizado = false,
 }) async {
-  if (!await sincronizarUnaVez(sync, limite: limite)) return false;
+  if (!yaSincronizado && !await sincronizarUnaVez(sync, limite: limite)) return false;
   try {
     return await baseSinNegocio(db);
   } catch (_) {
@@ -61,10 +63,13 @@ Future<bool> sincronizarUnaVez(ServicioSyncNube sync, {Duration limite = const D
   try {
     final hasta = DateTime.now().add(limite);
     // Si ya hay una vuelta corriendo (la que arranca sola al vincular), se espera a que termine: pedir otra encima
-    // devuelve al instante el resultado viejo, sin haber bajado nada todavía.
+    // devuelve al instante el resultado viejo, sin haber bajado nada todavía. Y si esa terminó bien, alcanza: otra vuelta
+    // entera más era casi siempre tiempo perdido al entrar (El dueño, 2026-10-15: "después de volver tarda mucho").
+    final habiaUna = sync.enCurso;
     while (sync.enCurso && DateTime.now().isBefore(hasta)) {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
+    if (habiaUna && !sync.enCurso && sync.ultimo is SyncNubeOk) return true;
     return await sync.sincronizar().timeout(hasta.difference(DateTime.now())) is SyncNubeOk;
   } catch (_) {
     return false;

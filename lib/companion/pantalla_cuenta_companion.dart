@@ -24,6 +24,8 @@ import 'elegir_sucursal.dart';
 import 'google_en_celular.dart';
 import 'kit/kit_ns.dart';
 import 'sync_nube_companion.dart';
+import '../plataforma.dart';
+import 'entrar_en_compu.dart';
 
 class PantallaCuentaCompanion extends StatefulWidget {
   const PantallaCuentaCompanion({super.key, required this.sync, this.alContinuar, this.borrarTodo, this.leerCuentas, this.pasarACuenta, this.volverAEmpezar});
@@ -210,6 +212,11 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
     await _leerCuenta();
   }
 
+  Future<void> _entrarEnUnaCompu() async {
+    final aviso = await entrarEnUnaCompu(context, sync: _sync);
+    if (aviso != null && mounted) mostrarAvisoNs(context, aviso, largo: true);
+  }
+
   Future<void> _sincronizarAhora() async {
     setState(() {
       _ocupado = true;
@@ -341,6 +348,14 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
               valor: CuentaDelCelular(id: '', email: null, nombreNegocio: _negocio!.nombreNegocio, nombreSucursal: _negocio!.nombreSucursal).titulo,
             ),
           if (cuenta != null) FilaClaveValorNs(clave: 'Este celular', valor: cuenta.nombreDispositivo),
+          // Nodo Sur Servicios de Windows se entra escaneando su QR con un celular ya vinculado (`entrar_en_compu.dart`).
+          if (cuenta != null && esAndroid) ...[
+            const SizedBox(height: 12),
+            KeyedSubtree(
+              key: const Key('cuenta_entrar_en_compu'),
+              child: BotonNs.secundario(context, 'Entrar en una compu', _ocupado ? null : _entrarEnUnaCompu, icono: IconoNs.computadora),
+            ),
+          ],
           if (cuenta == null) ...[
             const SizedBox(height: 12),
             const InfoNs(

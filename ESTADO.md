@@ -144,6 +144,11 @@ Pendiente / ideas (sin hacer):
   `windows-servicios`). Publicada en beta (1.0.0+2176). **Sin probar en una PC real**. Todo en
   [`docs/PLAN-ESCRITORIO-SERVICIOS.md`](./docs/PLAN-ESCRITORIO-SERVICIOS.md).
 
+- **Servicios en la compu sin partes de celular** (El dueño, 15/10: "se ven partes de móvil, la vinculación sigue siendo por
+  navegador y tarda mucho"): lo que se abre desde una pestaña queda al lado del menú, las hojas son ventanas al centro, entrar
+  tiene panel de marca y **QR para entrar con el celular** (Más › Cuenta › "Entrar en una compu"; sitio: `/api/device/qr`).
+  Al volver de entrar, una sola vuelta de sincronización. Sin probar con equipos reales.
+
 - **El bot de WhatsApp también corre en la compu** (Nodo Sur Servicios de Windows): el mismo bot del Android con el Node de
   Windows, un supervisor que lo mantiene vivo y arranque oculto al iniciar sesión. Sin probar en Windows real.
 

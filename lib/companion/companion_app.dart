@@ -140,22 +140,38 @@ class _AnchoDelNavegador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(valueListenable: anchoLibreNs, builder: (context, libre, _) => _armar(context, libre));
+    return ValueListenableBuilder<bool>(
+      valueListenable: anchoLibreNs,
+      builder: (context, libre, _) => ValueListenableBuilder<bool>(
+        valueListenable: menuMontadoNs,
+        builder: (context, menu, _) => _armar(context, libre, menu),
+      ),
+    );
   }
 
-  Widget _armar(BuildContext context, bool libre) {
+  Widget _armar(BuildContext context, bool libre, bool menu) {
     final mq = MediaQuery.of(context);
     final achicar = (kIsWeb || esEscritorioServicios) && !libre && mq.size.width > anchoMaximo;
     final ancho = achicar ? anchoMaximo : mq.size.width;
+    // Antes de entrar (bienvenida, entrar, configurar el negocio), en una ventana de compu: la marca a la izquierda y la app a la
+    // derecha, en vez de una columna de celular sola en el medio de la pantalla.
+    final conMarca = achicar && !menu && esEdicionServicios && mq.size.width >= anchoEscritorioNs;
     // Siempre los mismos widgets alrededor del navegador, cambie o no el ancho: si cambiara la estructura, Flutter armaría el
     // navegador de nuevo y se perderían todas las pantallas abiertas (y achicar pasa cada vez que una pantalla tapa al menú).
     return ColoredBox(
       color: !achicar ? Colors.transparent : Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0C0F) : const Color(0xFFF3F4F7),
-      child: Center(
-        child: SizedBox(
-          width: ancho,
-          child: MediaQuery(data: mq.copyWith(size: Size(ancho, mq.size.height)), child: ClipRect(child: child)),
-        ),
+      child: Row(
+        children: [
+          Expanded(child: conMarca ? const PanelMarcaEscritorioNs() : const SizedBox.shrink()),
+          SizedBox(
+            width: conMarca ? (mq.size.width * 0.42).clamp(anchoMaximo, 640.0) : ancho,
+            child: MediaQuery(
+              data: mq.copyWith(size: Size(conMarca ? (mq.size.width * 0.42).clamp(anchoMaximo, 640.0) : ancho, mq.size.height)),
+              child: ClipRect(child: child),
+            ),
+          ),
+          Expanded(child: const SizedBox.shrink()),
+        ].sublist(0, conMarca ? 2 : 3),
       ),
     );
   }

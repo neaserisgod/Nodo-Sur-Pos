@@ -6,7 +6,9 @@
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../edicion.dart';
 import '../kit/kit_ns.dart';
 
 class VistaEntrarConGoogle extends StatelessWidget {
@@ -18,7 +20,19 @@ class VistaEntrarConGoogle extends StatelessWidget {
     this.alReintentar,
     this.alEntrarConNavegador,
     this.volverACuenta,
+    this.paso,
+    this.qr,
+    this.alOtroQr,
   });
+
+  /// Qué está haciendo mientras trabaja ("Bajando los datos de tu negocio…"): sin esto parecía trabado.
+  final String? paso;
+
+  /// En la compu: la dirección del QR para entrar escaneándolo con el celular (`vincularConQr`). Null mientras se pide.
+  final Uri? qr;
+
+  /// En la compu, si pedir el QR falló: pedir otro.
+  final VoidCallback? alOtroQr;
 
   final VoidCallback alEntrar;
 
@@ -44,11 +58,15 @@ class VistaEntrarConGoogle extends StatelessWidget {
     final ns = context.ns;
     return PaginaArranqueNs(
       titulo: 'Entrá con tu cuenta',
-      bajada: kIsWeb ? 'Lo que hagas desde acá queda a tu nombre.' : 'Lo que hagas desde este celular queda a tu nombre.',
+      bajada: kIsWeb || esEscritorioServicios ? 'Lo que hagas desde acá queda a tu nombre.' : 'Lo que hagas desde este celular queda a tu nombre.',
       cuerpo: [
+        if (trabajando && paso != null) KeyedSubtree(key: const Key('entrar_paso'), child: InfoNs(paso!, icono: IconoNs.reloj)),
+        // En la compu se entra escaneando el QR con el celular (El dueño, 2026-10-15): sin navegador. Google queda abajo.
+        if (esEscritorioServicios && !trabajando) _BloqueQr(url: qr, alOtro: alOtroQr),
         if (error != null) KeyedSubtree(key: const Key('entrar_error'), child: InfoNs(error!, tono: TonoNs.bad)),
         if (error != null && alReintentar != null)
           KeyedSubtree(key: const Key('entrar_reintentar'), child: BotonNs(texto: 'Reintentar', onTap: trabajando ? null : alReintentar, alto: 48, tamanio: 15, fondo: ns.s, color: ns.ink, rellenar: false, paddingH: 22)),
+        if (esEscritorioServicios && !trabajando) Text('O entrá con Google en el navegador:', style: estiloNs(14, color: ns.mute)),
         _BotonGoogle(trabajando: trabajando, onTap: trabajando ? null : alEntrar),
         if (alEntrarConNavegador != null)
           KeyedSubtree(
@@ -65,8 +83,60 @@ class VistaEntrarConGoogle extends StatelessWidget {
         // En el navegador se entra en la misma pestaña y la app trabaja con internet (lo que carga queda guardado en el navegador).
         InfoNs(kIsWeb
             ? 'Entrás con tu cuenta de Google en esta misma pestaña. Lo que cargues queda guardado y llega solo a los otros equipos del negocio.'
-            : 'Internet, una sola vez, para entrar. Después el celular sigue andando sin conexión.'),
+            : esEscritorioServicios
+                ? 'Lo que cargues en la compu llega solo al celular y a los otros equipos del negocio.'
+                : 'Internet, una sola vez, para entrar. Después el celular sigue andando sin conexión.'),
       ],
+    );
+  }
+}
+
+/// El QR para entrar en la compu con el celular, con cómo se usa.
+class _BloqueQr extends StatelessWidget {
+  const _BloqueQr({required this.url, required this.alOtro});
+  final Uri? url;
+  final VoidCallback? alOtro;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Container(
+      key: const Key('entrar_qr'),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(24)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 168,
+            height: 168,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: TokensNs.blanco, borderRadius: BorderRadius.circular(16)),
+            alignment: Alignment.center,
+            child: url == null
+                ? (alOtro == null ? const CircularProgressIndicator(strokeWidth: 2.4) : IconoNsWidget(IconoNs.alerta, tamanio: 28, color: ns.w))
+                : QrImageView(data: url.toString(), padding: EdgeInsets.zero, semanticsLabel: 'Código QR para entrar'),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Entrá con el celular', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
+                const SizedBox(height: 6),
+                Text(
+                  'En la app de Nodo Sur del celular: Más › Cuenta › Entrar en una compu, y apuntá al código. También anda con la cámara del celular.',
+                  style: estiloNs(14, altura: 1.4, color: ns.mute),
+                ),
+                if (alOtro != null) ...[
+                  const SizedBox(height: 10),
+                  BotonNs(texto: 'Mostrar otro código', onTap: alOtro, alto: 40, tamanio: 14, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 16),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
