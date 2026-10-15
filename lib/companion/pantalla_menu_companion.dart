@@ -47,6 +47,9 @@ import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart' show ModulosNegocio;
 import '../domain/venta.dart';
 import '../servicios/modulos_activos.dart';
+import '../domain/actualizacion.dart' show urlFeedActualizaciones;
+import '../servicios/actualizaciones.dart' show idClienteActualizaciones;
+import '../servicios/actualizador_nativo.dart';
 import 'cambios_companion.dart';
 import 'escucha_pc.dart';
 import 'flujo_modo_uso.dart';
@@ -100,8 +103,13 @@ class PantallaMenuCompanion extends StatefulWidget {
 }
 
 class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
-    with WidgetsBindingObserver
+    with WidgetsBindingObserver, RouteAware
     implements ControladorAppNs {
+  /// Una pantalla entera está abierta encima del menú: la app vuelve a verse del ancho de un celular (`anchoLibreNs`).
+  bool _tapadoPorPagina = false;
+  final _llavePestanias = GlobalKey(debugLabel: 'pestanias');
+  PageRoute<dynamic>? _rutaPropia;
+
   PestaniaNs _pestania = PestaniaNs.inicio;
   int _version = 0;
 
@@ -462,7 +470,44 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   StreamSubscription<ModulosNegocio>? _modulosSub;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ruta = ModalRoute.of(context);
+    if (ruta is PageRoute<dynamic> && ruta != _rutaPropia) {
+      if (_rutaPropia != null) observadorRutasNs.unsubscribe(this);
+      _rutaPropia = ruta;
+      observadorRutasNs.subscribe(this, ruta);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    _tapadoPorPagina = true;
+    anchoLibreNs.value = false;
+  }
+
+  @override
+  void didPopNext() {
+    if (mounted) setState(() => _tapadoPorPagina = false);
+  }
+
+  // La ventana de la compu cambió de tamaño: puede pasar de la disposición del celular a la del menú lateral, o al revés. Solo
+  // se redibuja si cruzó el límite: en el celular esto salta con cada apertura del teclado.
+  bool? _ventanaAncha;
+
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final ancha = anchoDeLaVentanaNs(context) >= anchoEscritorioNs;
+    if (ancha != _ventanaAncha) setState(() => _ventanaAncha = ancha);
+  }
+
+  @override
   void dispose() {
+    observadorRutasNs.unsubscribe(this);
+    if (anchoLibreNs.value) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => anchoLibreNs.value = false);
+    }
     celularEligeBeta.removeListener(_revisarActualizacion);
     _modulosSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
@@ -548,6 +593,16 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
 
   @override
   Future<void> abrirActualizacion() async {
+    // En la compu el instalador lo baja, verifica e instala WinSparkle, como en la PC del almacén (con su propio feed).
+    if (esEscritorioServicios) {
+      final feed = urlFeedActualizaciones(
+        idCliente: await idClienteActualizaciones(),
+        plataforma: plataformaActualizacion,
+        canal: celularEligeBeta.value ? 'beta' : 'stable',
+      );
+      await abrirActualizadorNativo(feed);
+      return;
+    }
     final conexion = await leerConexion();
     final oferta = _ofertaActualizacion;
     if (!mounted) return;
@@ -804,6 +859,76 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
+    return ValueListenableBuilder<ModulosNegocio>(
+      valueListenable: modulosActuales,
+      builder: (context, m, _) {
+        // Un negocio de servicios en una ventana ancha (la compu, `docs/PLAN-ESCRITORIO-SERVICIOS.md`): menú lateral en vez de
+        // barra inferior. Se mira el ancho real de la ventana: mientras otra pantalla tapa al menú, la app está achicada.
+        final ancho = m.forma == FormaDeTrabajo.servicios && !_tapadoPorPagina && anchoDeLaVentanaNs(context) >= anchoEscritorioNs;
+        if (anchoLibreNs.value != ancho) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_tapadoPorPagina) anchoLibreNs.value = ancho;
+          });
+        }
+        // Recién se arma a lo ancho cuando la app dejó de estar achicada (un cuadro después): antes no hay lugar.
+        return ValueListenableBuilder<bool>(
+          valueListenable: anchoLibreNs,
+          builder: (context, libre, _) => _armar(context, ns, ancho: ancho && libre),
+        );
+      },
+    );
+  }
+
+  Widget _armar(BuildContext context, TokensNs ns, {required bool ancho}) {
+    // Con una llave global las pestañas pasan de una disposición a la otra (al agrandar o achicar la ventana) sin perder lo
+    // que tenían: cada una sigue siendo el mismo widget, solo cambia de lugar.
+    final pestanias = KeyedSubtree(key: _llavePestanias, child: CambioDePestanaNs(
+      indice: _pestania.index,
+      child: IndexedStack(
+        index: _pestania.index,
+        children: [
+          // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
+          ValueListenableBuilder<ModulosNegocio>(
+            valueListenable: modulosActuales,
+            builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
+          ),
+          ValueListenableBuilder<ModulosNegocio>(
+            valueListenable: modulosActuales,
+            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs()),
+          ),
+          _servicio == null || _usuarioId == null
+              ? const SizedBox.shrink()
+              : PantallaCarritoVenta(
+                  cliente: _cliente,
+                  servicio: _servicio!,
+                  usuarioId: _usuarioId!,
+                  carrito: _carrito,
+                  encargue: _encargueEnVenta,
+                ),
+          _lectura(ancho, const PantallaCajaNs()),
+          _lectura(ancho, PantallaMasNs(alAbrirEncargues: _abrirEncargues)),
+        ],
+      ),
+    ));
+    if (ancho) {
+      return AppNs(
+        controlador: this,
+        version: _version,
+        child: Scaffold(
+          backgroundColor: ns.paper,
+          body: AtajosMenuNs(
+            onSeleccionar: irAPestania,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MenuLateralNs(activa: _pestania, onSeleccionar: irAPestania, hayActualizacion: _hayActualizacion),
+                Expanded(child: ConMenuLateralNs(child: pestanias)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return AppNs(
       controlador: this,
       version: _version,
@@ -822,34 +947,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           // El contenido pasa por debajo de la barra flotante: cada pestaña suma
           // `BarraInferiorNs.espacioReservado` de aire abajo.
           extendBody: true,
-          body: CambioDePestanaNs(
-            indice: _pestania.index,
-            child: IndexedStack(
-            index: _pestania.index,
-            children: [
-              // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
-              ValueListenableBuilder<ModulosNegocio>(
-                valueListenable: modulosActuales,
-                builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
-              ),
-              ValueListenableBuilder<ModulosNegocio>(
-                valueListenable: modulosActuales,
-                builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs(),
-              ),
-              _servicio == null || _usuarioId == null
-                  ? const SizedBox.shrink()
-                  : PantallaCarritoVenta(
-                      cliente: _cliente,
-                      servicio: _servicio!,
-                      usuarioId: _usuarioId!,
-                      carrito: _carrito,
-                      encargue: _encargueEnVenta,
-                    ),
-              const PantallaCajaNs(),
-              PantallaMasNs(alAbrirEncargues: _abrirEncargues),
-            ],
-          ),
-          ),
+          body: pestanias,
           bottomNavigationBar: ValueListenableBuilder<bool>(
             valueListenable: ocultarBarra,
             // Con el teclado abierto la barra no sirve y, como sube pegada al teclado, tapaba la lista (El dueño,
@@ -872,4 +970,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
       ),
     );
   }
+
+  /// Con el menú lateral, las pantallas del celular se centran a un ancho cómodo de leer. Siempre el mismo envoltorio (sin
+  /// límite en el celular), así cambiar de disposición no las arma de nuevo.
+  Widget _lectura(bool ancho, Widget pantalla) => AnchoLecturaNs(ancho: ancho ? anchoLecturaNs : double.infinity, child: pantalla);
 }

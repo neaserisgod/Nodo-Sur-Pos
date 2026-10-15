@@ -52,7 +52,11 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
+#ifdef EDICION_SERVICIOS
+IDI_APP_ICON            ICON                    "resources\\app_icon_servicios.ico"
+#else
 IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -110,12 +114,20 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.laplazoleta" "\0"
+#ifdef EDICION_SERVICIOS
+            // ProductName decide la carpeta de datos (path_provider): distinta de la de almacén, nunca la misma base.
+            VALUE "FileDescription", "Nodo Sur Servicios" "\0"
+            VALUE "InternalName", "nodo_sur_servicios" "\0"
+            VALUE "OriginalFilename", "nodo_sur_servicios.exe" "\0"
+            VALUE "ProductName", "Nodo Sur Servicios" "\0"
+#else
             VALUE "FileDescription", "Nodo Sur POS" "\0"
-            VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "la_plazoleta" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.laplazoleta. All rights reserved." "\0"
             VALUE "OriginalFilename", "la_plazoleta.exe" "\0"
             VALUE "ProductName", "Nodo Sur POS" "\0"
+#endif
+            VALUE "FileVersion", VERSION_AS_STRING "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.laplazoleta. All rights reserved." "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

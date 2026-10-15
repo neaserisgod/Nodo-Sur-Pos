@@ -5,6 +5,8 @@
 #   .\tool\publicar_release.ps1 -Notas "..." -Rollout 50
 #   .\tool\publicar_release.ps1 -Notas "..." -Canal beta -Rollout 100   # solo la ven las cuentas de administrador (tu PC)
 #   .\tool\publicar_release.ps1 -DryRun            # todo menos subir y subir el build
+#   .\tool\publicar_release.ps1 -Notas "..." -Edicion servicios -SinSubirBuild
+#                    # Nodo Sur Servicios para Windows (plataforma windows-servicios) con el mismo número que la de almacén
 #
 # Variables de entorno (NINGUNA se imprime ni se guarda):
 #   RELEASE_TOKEN        token del servidor de actualizaciones. Lo lee
@@ -28,7 +30,12 @@ param(
     [ValidateSet("stable", "beta")]
     [string]$Canal = "stable",
     [switch]$DryRun,
-    [switch]$CertificadoDePrueba
+    [switch]$CertificadoDePrueba,
+    [ValidateSet("almacen", "servicios")]
+    [string]$Edicion = "almacen",
+    # Publicar con el número que ya tiene pubspec.yaml: la segunda edición de una misma publicación (el workflow sube el
+    # número una sola vez, con la de almacén).
+    [switch]$SinSubirBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,9 +72,9 @@ if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) {
 }
 
 # --- 1. Build number ---
-if ($DryRun) {
+if ($DryRun -or $SinSubirBuild) {
     $version = Get-VersionPubspec
-    Write-Output "[DryRun] No se sube el build. Versión actual: $($version.Completa)"
+    Write-Output "No se sube el build. Versión actual: $($version.Completa)"
 } else {
     $version = Step-BuildPubspec
     Write-Output "Build subido: $($version.Completa)"
@@ -76,11 +83,12 @@ if ($DryRun) {
 # --- 2. Instalador (compila, firma el .exe y el instalador) ---
 # Hashtable, no array: con un array el switch se pasaría como argumento
 # posicional y crear_instalador.ps1 nunca lo vería.
-$argsInstalador = @{}
+$argsInstalador = @{ Edicion = $Edicion }
 if ($CertificadoDePrueba) { $argsInstalador["CertificadoDePrueba"] = $true }
 & "$PSScriptRoot\crear_instalador.ps1" @argsInstalador
 
-$archivo = Join-Path $raiz "dist\NodoSurPOS-Setup-$($version.Feed).exe"
+$servicios = $Edicion -eq "servicios"
+$archivo = Join-Path $raiz $(if ($servicios) { "dist\NodoSurServicios-Setup-$($version.Feed).exe" } else { "dist\NodoSurPOS-Setup-$($version.Feed).exe" })
 if (-not (Test-Path $archivo)) { throw "No encuentro el instalador $archivo" }
 
 # --- 3. Firma para el actualizador (sign_update del paquete auto_updater) ---
@@ -116,7 +124,7 @@ try {
 $argumentos = @(
     $scriptPublicar,
     "--file", $archivo,
-    "--platform", "windows",
+    "--platform", $(if ($servicios) { "windows-servicios" } else { "windows" }),
     "--channel", $Canal,
     "--version", $version.Feed,
     "--signature", $firma,

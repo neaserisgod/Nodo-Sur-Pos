@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'carpeta_base.dart';
 import 'identidad_sync.dart';
 import '../domain/modulos.dart';
 import 'repositorio_productos.dart' show recuperarMarcaDeCigarrillos;
@@ -159,6 +160,7 @@ class AppDatabase extends _$AppDatabase {
     // En el navegador (Nodo Sur Servicios web) la base es SQLite compilado a WebAssembly, guardada en el navegador.
     return driftDatabase(
       name: 'la_plazoleta',
+      native: const DriftNativeOptions(databaseDirectory: carpetaDeLaBase),
       web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
     );
   }

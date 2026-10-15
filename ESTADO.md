@@ -136,6 +136,14 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (15/10/2026)
+
+- **Nodo Sur Servicios en la compu** (El dueño, 15/10; mock aprobado): con la ventana ancha (web y Windows) la app de servicios
+  tiene menú lateral (Alt+1…5), la Agenda con el turno al costado y Cobrar con el cobro a la derecha. Y una **edición de
+  Windows aparte** (otro `.exe`, ícono ciruela, su carpeta de datos y su base fuera de Documentos, instalador y feed
+  `windows-servicios`). **Sin probar en una PC real**; falta el bot corriendo en la PC. Todo en
+  [`docs/PLAN-ESCRITORIO-SERVICIOS.md`](./docs/PLAN-ESCRITORIO-SERVICIOS.md).
+
 ## Últimos cambios (14/10/2026)
 
 - **Nodo Sur Servicios vende productos** (El dueño, 14/10): solapa Productos en Servicios (alta, compra, conteo, editar) y

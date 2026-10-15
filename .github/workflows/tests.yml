@@ -1,5 +1,5 @@
 # Corre el análisis y los tests en cada PR y en cada push a main. Linux alcanza: los tests no dependen de Windows
-# (lo específico de Windows —instalador, ventana— no se prueba acá). NO publica nada.
+# (lo específico de Windows —instalador, ventana— no se prueba acá, salvo que compile Nodo Sur Servicios para Windows). NO publica nada.
 name: tests
 
 on:
@@ -75,3 +75,43 @@ jobs:
       - name: Compila para web
         if: steps.cambios.outputs.compilar == 'true'
         run: flutter build web --release -t lib/main_web.dart --base-href /app/ --no-web-resources-cdn --pwa-strategy=none
+
+  # Nodo Sur Servicios para Windows (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): la otra edición del mismo proyecto de Windows (otro
+  # .exe, nombre, ícono y mutex por `NODOSUR_EDICION`). Que compile y que el .exe salga con su nombre: Linux no lo ve. Solo
+  # cuando se toca lo que la arma (corre en Windows, que es más lento y caro).
+  windows-servicios:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: ¿Cambió algo de la edición de Windows?
+        id: cambios
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || \
+             git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE '^(windows/|installer/|lib/main\.dart|lib/edicion\.dart|lib/plataforma\.dart|lib/data/carpeta_base\.dart|pubspec\.)'; then
+            echo "compilar=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: subosito/flutter-action@v2
+        if: steps.cambios.outputs.compilar == 'true'
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - if: steps.cambios.outputs.compilar == 'true'
+        run: flutter pub get
+      - name: Compila Nodo Sur Servicios para Windows
+        if: steps.cambios.outputs.compilar == 'true'
+        shell: pwsh
+        env:
+          NODOSUR_EDICION: servicios
+        run: |
+          flutter build windows --release --dart-define=EDICION=servicios
+          if ($LASTEXITCODE -ne 0) { throw "No compiló" }
+          $exe = "build\windows\x64\runner\Release\nodo_sur_servicios.exe"
+          if (-not (Test-Path $exe)) { throw "No salió $exe" }
+          $info = (Get-Item $exe).VersionInfo
+          if ($info.ProductName -ne "Nodo Sur Servicios") { throw "ProductName es '$($info.ProductName)': la carpeta de datos sería la de otra app" }
+          Write-Host "OK: $exe ($($info.ProductName))"

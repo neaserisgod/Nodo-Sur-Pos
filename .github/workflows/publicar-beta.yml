@@ -1,4 +1,4 @@
-# Compila el instalador de Windows, lo firma para el actualizador y lo publica en el canal BETA de horsepos.com:
+# Compila los instaladores de Windows (Nodo Sur POS y Nodo Sur Servicios), los firma para el actualizador y los publica en el canal BETA de horsepos.com:
 # desde ahí la bajan las cuentas de administrador en horsepos.com/descargar/ y la reciben por actualización automática.
 # Se publica SOLO cuando se pide (2026-10-03: "no quiero más despliegues por publicar una cosa chica"):
 #   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable);
@@ -155,6 +155,22 @@ jobs:
           git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
           if ($LASTEXITCODE -ne 0) { throw "No se pudo subir el cambio de pubspec.yaml (¿la rama está protegida?). La beta SÍ quedó publicada: pasá el número de compilación $v a mano antes de la próxima." }
+
+      # Nodo Sur Servicios para Windows (docs/PLAN-ESCRITORIO-SERVICIOS.md): el mismo número, su propio instalador y su feed
+      # (windows-servicios). Va después de guardar el número a propósito: si esto falla, la de almacén ya quedó publicada.
+      - name: Compilar y publicar Nodo Sur Servicios para Windows
+        shell: pwsh
+        env:
+          NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
+          SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
+        run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT) -Edicion servicios -SinSubirBuild
+
+      - name: Guardar el instalador de Nodo Sur Servicios como archivo de la corrida
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-servicios
+          path: dist/NodoSurServicios-Setup-*.exe
+          retention-days: 14
 
       - name: Borrar las claves
         if: always()

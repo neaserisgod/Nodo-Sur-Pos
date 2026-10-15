@@ -2632,3 +2632,16 @@ se habían sacado los productos con stock de la app de servicios para que fuera 
   `lineaDesdeProducto` necesita gramos para ellos.
 - El bot de WhatsApp no ofrece productos (por ahora); el reporte de más vendidos queda para después.
 
+## Nodo Sur Servicios en la compu: la misma app con menú lateral, y otra edición de Windows (El dueño, 2026-10-15)
+
+- El dueño eligió adaptar la app del celular en vez de hacer pantallas de escritorio nuevas como la PC de almacén: un solo
+  código, y cada arreglo vale para celular, web y PC. Pidió ver un mock antes ("si no me gusta, pantallas nuevas") y lo aprobó.
+  El mock se dibuja siempre a tamaño de PC y se achica entero: si se reacomodara al ancho, en el celular se veía la versión del
+  celular y no la de escritorio (lo marcó el dueño).
+- Windows no tiene flavors: la edición la elige `--dart-define=EDICION=servicios` para Dart y una variable de entorno para
+  CMake (nombre del `.exe`, ícono, `ProductName`, mutex). `ProductName` define la carpeta de datos de `path_provider`, así que
+  las dos apps no comparten preferencias ni cuenta. **La base no va en Documentos** (`lib/data/carpeta_base.dart`): ahí está
+  la de almacén con el mismo nombre de archivo.
+- Lo que se abre encima del menú se ve del ancho del celular (no se rehízo ninguna pantalla secundaria); el envoltorio de ancho
+  no cambia de estructura nunca, para no rearmar el navegador. Detalle en `docs/PLAN-ESCRITORIO-SERVICIOS.md`.
+

@@ -12,7 +12,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // termine antes de actualizar. Tiene que coincidir EXACTO con MyAppMutex
   // del .iss. El handle se deja
   // abierto a propósito hasta que termine el proceso.
+  // Nodo Sur Servicios tiene el suyo (installer/nodo_sur_servicios.iss): si fuera el mismo, actualizar una
+  // esperaría a que se cierre la otra.
+#ifdef EDICION_SERVICIOS
+  ::CreateMutexW(nullptr, FALSE, L"NodoSurServiciosAppMutex");
+#else
   ::CreateMutexW(nullptr, FALSE, L"LaPlazoletaAppMutex");
+#endif
 
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
@@ -37,7 +43,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // esa es la resolución de diseño ahora, no 1280×720 (piso de la PC de
   // 2008 que ya no corre esta app).
   Win32Window::Size size(1920, 1080);
-  if (!window.Create(L"Nodo Sur POS", origin, size)) {
+#ifdef EDICION_SERVICIOS
+  const wchar_t* titulo = L"Nodo Sur Servicios";
+#else
+  const wchar_t* titulo = L"Nodo Sur POS";
+#endif
+  if (!window.Create(titulo, origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

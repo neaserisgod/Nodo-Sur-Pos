@@ -6,6 +6,15 @@ project(la_plazoleta LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "la_plazoleta")
 
+# Nodo Sur Servicios (docs/PLAN-ESCRITORIO-SERVICIOS.md): el mismo proyecto compila la otra edición con
+# NODOSUR_EDICION=servicios en el entorno (lo pone tool/crear_instalador.ps1 -Edicion servicios, junto con
+# --dart-define=EDICION=servicios). Otro .exe, otro nombre de producto (y con él otra carpeta de datos), otro ícono y otro
+# mutex: convive con la de almacén en la misma PC. Va después del set de arriba a propósito: `flutter run` lee el primero.
+if("$ENV{NODOSUR_EDICION}" STREQUAL "servicios")
+  set(BINARY_NAME "nodo_sur_servicios")
+  set(EDICION_SERVICIOS ON)
+endif()
+
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)

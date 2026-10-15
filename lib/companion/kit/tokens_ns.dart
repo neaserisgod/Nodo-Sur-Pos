@@ -124,6 +124,11 @@ class TokensNs extends ThemeExtension<TokensNs> {
   /// "Vender" cuando es la pestaña activa.
   static const marcaOscura = Color(0xFF1F3FA8);
 
+  /// Ciruela del ícono de Nodo Sur Servicios (`DECISIONES.md`, 2026-10-14) y sus letras: la inicial del negocio en el menú
+  /// lateral de la compu.
+  static const ciruela = Color(0xFF5B1F45);
+  static const ciruelaTexto = Color(0xFFF6E7EF);
+
   static const medioEfectivo = Color(0xFF0B7A5E);
   static const medioMercadoPago = marca;
   static const medioDebito = Color(0xFF4B5563);
