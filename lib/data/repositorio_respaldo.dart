@@ -13,9 +13,9 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../domain/respaldo.dart';
+import 'carpeta_base.dart';
 import 'database.dart';
 
 class ArchivoRespaldo {
@@ -123,7 +123,7 @@ Future<String> hacerRespaldo(AppDatabase db) async {
 /// la resuelve por default (`$name.sqlite` en `getApplicationDocumentsDirectory()`)
 /// — hace falta conocerla aparte para poder restaurar sobre ella.
 Future<String> rutaArchivoBaseDeDatos() async {
-  final directorio = await getApplicationDocumentsDirectory();
+  final directorio = await carpetaDeLaBase();
   return p.join(directorio.path, 'la_plazoleta.sqlite');
 }
 

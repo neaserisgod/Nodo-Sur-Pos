@@ -28,6 +28,7 @@ import '../servicios/almacenes_del_equipo.dart';
 import '../servicios/registro_errores.dart';
 import '../servicios/vincular_web.dart';
 import '../plataforma.dart';
+import '../edicion.dart';
 
 class SyncNubeCompanion {
   SyncNubeCompanion({
@@ -213,7 +214,7 @@ Future<SyncNubeCompanion> syncNubeDelCelular() async {
 }
 
 /// Nombre con el que este celular aparece en "Mis dispositivos" del sitio.
-String nombreDelCelular() => kIsWeb ? 'Navegador' : 'Celular ($nombreDelSistema)';
+String nombreDelCelular() => kIsWeb ? 'Navegador' : esEscritorioServicios ? 'Compu ($nombreDelSistema)' : 'Celular ($nombreDelSistema)';
 
 /// Avisos de Mercado Pago del celular (El dueño, 2026-10-09: independizar el celular): el mismo servicio de la PC, sobre la base
 /// del celular y con su cuenta vinculada. Se arma una sola vez.

@@ -7,6 +7,10 @@ import 'package:http/http.dart' as http;
 
 import 'companion/companion_app.dart';
 import 'companion/cuentas_del_celular.dart' show terminarCambioAlArrancar;
+import 'companion/emparejamiento.dart' show guardarModoUso, leerModoUso;
+import 'companion/modo_uso.dart';
+import 'edicion.dart';
+import 'package:window_manager/window_manager.dart';
 import 'data/database.dart';
 import 'data/notificador_cambios.dart';
 import 'domain/actualizacion.dart';
@@ -53,7 +57,9 @@ Future<void> _main() async {
   instalarRegistroDeErrores();
   // Android: un cambio de negocio (`companion/cuentas_del_celular.dart`) se termina ANTES de leer nada de la cuenta, empezando por
   // la clave de la IA de la línea de abajo. Si no se puede, la app no sigue con media cuenta puesta: lo muestra y deja reintentar.
-  final cambioTrabado = Platform.isAndroid ? await terminarCambioAlArrancar() : null;
+  // Nodo Sur Servicios de Windows es la app del celular con ventana de PC (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): arranca igual.
+  final appDelCelular = Platform.isAndroid || esEscritorioServicios;
+  final cambioTrabado = appDelCelular ? await terminarCambioAlArrancar() : null;
   await ClaveGemini.cargar(); // clave de la IA de Google: la del negocio (en la cuenta) o, sin cuenta, la de este equipo
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
   // totalmente distinta — sin base de datos propia, sin servidor, solo un
@@ -61,6 +67,19 @@ Future<void> _main() async {
   // cualquier otra cosa: ni `window_manager` (plugin de escritorio) ni
   // `AppDatabase()` tienen sentido acá.
   if (Platform.isAndroid) {
+    runApp(RaizCompanion(cambioTrabado: cambioTrabado));
+    return;
+  }
+  if (esEscritorioServicios) {
+    // Ventana nativa de Windows (con su barra de título), de un tamaño cómodo y con un mínimo para que entre el menú lateral.
+    // `window_manager` hace falta igual: WinSparkle cierra la app con él para instalar una versión nueva.
+    await windowManager.ensureInitialized();
+    await windowManager.waitUntilReadyToShow(const WindowOptions(title: 'Nodo Sur Servicios', minimumSize: Size(1100, 700)), () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+    // Como en el navegador: no hay PC con la que emparejarse por wifi, la compu es "Solo celular" (se sincroniza por internet).
+    if (await leerModoUso() == null) await guardarModoUso(ModoUso.soloCelular);
     runApp(RaizCompanion(cambioTrabado: cambioTrabado));
     return;
   }

@@ -111,8 +111,9 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
           ),
           const SizedBox(height: 12),
         ],
-        GridView.count(
-          crossAxisCount: 2,
+        // Dos columnas en el celular; en la compu (Cobrar a lo ancho) entran más, del mismo tamaño que en el celular.
+        LayoutBuilder(builder: (context, caja) => GridView.count(
+          crossAxisCount: (caja.maxWidth / 200).floor().clamp(2, 6),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
           childAspectRatio: 165 / 96,
@@ -146,7 +147,7 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
                 ),
               ),
           ],
-        ),
+        )),
       ],
     );
   }

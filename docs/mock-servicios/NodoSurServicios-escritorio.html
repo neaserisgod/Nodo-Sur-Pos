@@ -1,0 +1,494 @@
+<title>Nodo Sur Servicios en la compu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Mock "Nodo Sur Servicios" de escritorio (Windows y navegador), 2026-10-15.
+   Es la misma app del celular adaptada a ventana ancha: la barra inferior pasa a ser un menú lateral y
+   la agenda muestra el turno elegido al costado. Tokens 1:1 de lib/companion/kit/tokens_ns.dart; ciruela del ícono. */
+:root{
+  --ink:#121317;--paper:#fff;--s:#F3F4F7;--s2:#E1E4EA;--mute:#566070;--line:#C4C9D4;
+  --prim:#121317;--hero:#121317;
+  --gbg:#E3F6EF;--g:#0B6A52;--bbg:#FBE0DE;--b:#A4231B;--wbg:#FDECD6;--w:#7D3B03;--ibg:#E0E9FF;--i:#1D3A9A;
+  --marca:#2F5BE8;--ciruela:#5B1F45;--ciruela-t:#F6E7EF;
+  --fondo:#E4E6EC;--fina:rgba(18,19,23,.08);--barra:#ECEEF2;
+  --font:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#EEF0F4;--paper:#0E0F13;--s:#1A1D24;--s2:#2A2E38;--mute:#A0A8B6;--line:#3B4150;
+  --prim:#2F5BE8;--hero:#1C2231;
+  --gbg:#10342A;--g:#63D9B0;--bbg:#3A1613;--b:#FF918A;--wbg:#392510;--w:#F5B56C;--ibg:#17254F;--i:#A3BCFF;
+  --ciruela:#7A2D5E;--fondo:#07080A;--fina:rgba(238,240,244,.08);--barra:#16181E;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#EEF0F4;--paper:#0E0F13;--s:#1A1D24;--s2:#2A2E38;--mute:#A0A8B6;--line:#3B4150;
+  --prim:#2F5BE8;--hero:#1C2231;
+  --gbg:#10342A;--g:#63D9B0;--bbg:#3A1613;--b:#FF918A;--wbg:#392510;--w:#F5B56C;--ibg:#17254F;--i:#A3BCFF;
+  --ciruela:#7A2D5E;--fondo:#07080A;--fina:rgba(238,240,244,.08);--barra:#16181E;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--fondo);color:var(--ink);font-family:var(--font);margin:0;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:3px solid #3B6CFF;outline-offset:2px}
+.tab{font-variant-numeric:tabular-nums}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* encabezado del mock */
+.cab{max-width:1320px;margin:0 auto 18px;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:end;justify-content:space-between}
+.cab h1{font-size:30px;font-weight:500;letter-spacing:-.045em;margin:0;text-wrap:balance}
+.cab p{margin:6px 0 0;color:var(--mute);font-size:14.5px;max-width:62ch;line-height:1.45}
+.seg{display:flex;gap:4px;background:var(--paper);padding:4px;border-radius:999px}
+.seg button{height:38px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap}
+.seg button.on{background:var(--prim);color:#fff}
+.ctrls{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ventana */
+.escena{max-width:1320px;margin:0 auto;overflow:hidden}
+.ven{width:1320px;transform-origin:top left;background:var(--paper);border-radius:14px;overflow:hidden;
+  box-shadow:0 0 0 1px var(--fina),0 24px 60px rgba(18,19,23,.18)}
+.tit{height:38px;background:var(--barra);display:flex;align-items:center;gap:10px;padding:0 0 0 14px;font-size:13px;color:var(--mute)}
+.tit .logo{width:20px;height:20px;border-radius:6px;background:var(--ciruela);color:var(--ciruela-t);font-size:11px;font-weight:700;display:grid;place-items:center}
+.tit .esp{flex:1}
+.tit .w{width:46px;height:38px;display:grid;place-items:center}
+.tit .w:hover{background:var(--s2)}.tit .w.x:hover{background:#C42B1C;color:#fff}
+.nav{height:46px;background:var(--barra);display:flex;align-items:center;gap:8px;padding:0 12px}
+.nav .pest{height:34px;padding:0 14px;border-radius:10px 10px 0 0;background:var(--paper);display:flex;align-items:center;gap:8px;font-size:13px;align-self:end}
+.nav .url{flex:1;height:32px;border-radius:999px;background:var(--paper);display:flex;align-items:center;padding:0 14px;gap:8px;font-size:13.5px;color:var(--mute);max-width:560px}
+.nav .url b{color:var(--ink);font-weight:500}
+
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);height:760px}
+/* menú lateral */
+.lat{border-right:1px solid var(--fina);padding:18px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.neg{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.neg .av{width:36px;height:36px;border-radius:11px;background:var(--ciruela);color:var(--ciruela-t);display:grid;place-items:center;font-weight:700;font-size:15px}
+.neg b{font-size:15px;font-weight:600;display:block}.neg small{font-size:12.5px;color:var(--mute)}
+.it{height:44px;border-radius:999px;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:15px;font-weight:600;color:var(--mute);position:relative}
+.it:hover{background:var(--s)}
+.it.on{background:var(--ibg);color:var(--marca)}
+:root[data-theme="dark"] .it.on{color:var(--i)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .it.on{color:var(--i)}}
+.it.cobrar{background:var(--marca);color:#fff;margin:8px 0}
+.it.cobrar.on{box-shadow:0 0 0 3px var(--ibg)}
+.it kbd{margin-left:auto;font:600 11px var(--font);opacity:.7}
+.it .gl{margin-left:auto;min-width:20px;height:20px;border-radius:999px;background:#D92D20;color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;padding:0 6px}
+.lat .esp{flex:1}
+.bot{border-radius:16px;background:var(--s);padding:12px 14px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.bot b{font-size:13.5px;display:flex;align-items:center;gap:8px}
+.pto{width:8px;height:8px;border-radius:50%;background:var(--g);flex:none}
+.bot span{color:var(--mute)}
+
+/* contenido */
+.cont{overflow:auto;padding:24px 28px;min-width:0}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.top h2{font-size:28px;font-weight:500;letter-spacing:-.045em;margin:0}
+.top .sub{color:var(--mute);font-size:14.5px}
+.top .esp{flex:1}
+.btn{height:42px;border-radius:999px;padding:0 18px;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn.p{background:var(--prim);color:#fff}.btn.o{box-shadow:inset 0 0 0 1.5px var(--line)}.btn.a{background:var(--marca);color:#fff}
+.btn.s{background:var(--s)}.btn.r{color:var(--b);box-shadow:inset 0 0 0 1.5px var(--line)}
+.circ{width:42px;height:42px;border-radius:50%;background:var(--s);display:grid;place-items:center;position:relative}
+.circ .gl{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:999px;background:#D92D20;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px var(--paper)}
+.busca{height:42px;border-radius:999px;background:var(--s);display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--mute);font-size:14px;min-width:240px}
+.busca kbd{margin-left:auto;font:600 11px var(--font);background:var(--paper);border-radius:6px;padding:2px 6px}
+
+/* agenda */
+.ag{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.cifras{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.cif{background:var(--s);border-radius:18px;padding:12px 14px}
+.cif small{font-size:12.5px;color:var(--mute);font-weight:600}.cif b{display:block;font-size:22px;font-weight:500;letter-spacing:-.03em;margin-top:2px}
+.dias{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.dia{border-radius:16px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;color:var(--mute);font-weight:600}
+.dia b{font-size:18px;color:var(--ink);font-weight:600}
+.dia.on{background:var(--prim);color:#fff}.dia.on b{color:#fff}
+.dia .pts{display:flex;gap:3px;height:5px}.dia .pts i{width:5px;height:5px;border-radius:50%;background:var(--marca)}
+.dia.on .pts i{background:#fff}
+.prof{display:grid;grid-template-columns:56px repeat(2,minmax(0,1fr));gap:0 10px}
+.prof .h{font-size:13px;font-weight:700;color:var(--mute);padding:4px 0 8px;letter-spacing:.03em;text-transform:uppercase}
+.linea{position:relative}
+.hr{height:56px;font-size:12.5px;color:var(--mute);border-top:1px solid var(--fina);padding-top:2px}
+.col{position:relative;border-left:1px solid var(--fina)}
+.col .rj{height:56px;border-top:1px solid var(--fina)}
+.tur{position:absolute;left:6px;right:6px;border-radius:12px;padding:6px 10px;font-size:13px;line-height:1.3;text-align:left;overflow:hidden;display:flex;flex-direction:column}
+.tur b{font-weight:600;font-size:13.5px}
+.tur.confirmado{background:var(--ibg);color:var(--i)}
+.tur.cobrado{background:var(--s);color:var(--mute)}
+.tur.llego{background:var(--gbg);color:var(--g)}
+.tur.pendiente{background:var(--wbg);color:var(--w);box-shadow:inset 0 0 0 1.5px currentColor}
+.tur.sel{box-shadow:0 0 0 3px var(--marca)}
+.libre{position:absolute;left:6px;right:6px;border-radius:12px;border:1.5px dashed var(--line);color:var(--mute);font-size:12.5px;display:flex;align-items:center;justify-content:center}
+.libre:hover{border-color:var(--marca);color:var(--marca)}
+.ahora{position:absolute;left:0;right:0;height:2px;background:#D92D20;z-index:2}
+.ahora::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#D92D20}
+
+.det{background:var(--paper);border-radius:24px;box-shadow:0 0 0 1px var(--fina);padding:20px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0}
+.det h3{font-size:22px;font-weight:500;letter-spacing:-.035em;margin:0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:700}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--fina);font-size:14px}
+.kv span:first-child{color:var(--mute)}
+.acc{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acc .btn{justify-content:center}
+.acc .ancho{grid-column:1/-1;height:52px;font-size:16px}
+.wa{background:var(--s);border-radius:16px;padding:12px;font-size:13.5px;line-height:1.4;color:var(--mute)}
+.wa b{color:var(--ink);font-weight:600}
+
+/* cobrar */
+.cb{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;align-items:start;height:100%}
+.cats{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.cats button{height:36px;padding:0 14px;border-radius:999px;background:var(--s);font-size:14px;font-weight:600}
+.cats button.on{background:var(--ink);color:var(--paper)}
+.grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.serv{background:var(--s);border-radius:20px;padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:104px}
+.serv:hover{box-shadow:inset 0 0 0 2px var(--marca)}
+.serv b{font-size:15px;font-weight:600;line-height:1.25}
+.serv small{color:var(--mute);font-size:13px}
+.serv .pr{margin-top:auto;font-size:18px;font-weight:600;letter-spacing:-.02em}
+.serv.prod{background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line)}
+.carr{background:var(--paper);border-radius:24px;box-shadow:0 0 0 1px var(--fina);padding:18px;display:flex;flex-direction:column;gap:10px;height:100%}
+.carr h3{margin:0;font-size:18px;font-weight:600}
+.lin{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--fina);font-size:14.5px}
+.lin .n{flex:1;min-width:0}.lin small{display:block;color:var(--mute);font-size:12.5px}
+.lin .q{width:28px;height:28px;border-radius:50%;background:var(--s);display:grid;place-items:center}
+.carr .esp{flex:1}
+.tot{display:flex;justify-content:space-between;align-items:baseline}
+.tot span{color:var(--mute);font-weight:600}.tot b{font-size:38px;font-weight:500;letter-spacing:-.055em}
+.medios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.medio{height:56px;border-radius:16px;background:var(--s);font-weight:600;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+.medio small{font-size:11.5px;color:var(--mute);font-weight:600}
+.medio.on{background:var(--marca);color:#fff}.medio.on small{color:rgba(255,255,255,.8)}
+
+/* caja */
+.hero{background:var(--hero);color:#fff;border-radius:28px;padding:22px 24px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.hero small{font-size:13px;font-weight:600;color:rgba(255,255,255,.75)}
+.hero b{display:block;font-size:30px;font-weight:500;letter-spacing:-.05em;margin-top:4px}
+.dos{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;margin-top:22px}
+.tarj{background:var(--paper);border-radius:24px;box-shadow:0 0 0 1px var(--fina);padding:18px 20px}
+.tarj h3{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:10px 6px;border-top:1px solid var(--fina);text-align:left}
+th{font-size:12.5px;color:var(--mute);font-weight:600;border-top:0}
+td.r,th.r{text-align:right}
+.barra{height:12px;border-radius:999px;background:var(--s);overflow:hidden;display:flex;margin:10px 0 14px}
+.barra i{display:block;height:100%}
+
+/* servicios */
+.sv{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start}
+.fs{display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:14px;font-size:14.5px;text-align:left;width:100%}
+.fs:hover{background:var(--s)}.fs.on{background:var(--ibg)}
+.fs .n{flex:1;min-width:0}.fs small{display:block;color:var(--mute);font-size:12.5px}
+.campo{display:flex;flex-direction:column;gap:4px;background:var(--s);border-radius:14px;padding:8px 14px}
+.campo small{font-size:12px;color:var(--mute);font-weight:600}
+.campo input{border:0;background:none;font:500 16px var(--font);color:var(--ink);padding:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* bot */
+.codigo{font-size:44px;font-weight:600;letter-spacing:.12em;text-align:center;padding:18px;border-radius:20px;background:var(--s)}
+.msg{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.msg div{max-width:80%;padding:9px 13px;border-radius:16px;line-height:1.35}
+.msg .c{background:var(--s);align-self:flex-start}.msg .b{background:var(--ibg);color:var(--i);align-self:flex-end}
+
+.nota{max-width:1320px;margin:18px auto 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.nota div{background:var(--paper);border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.45;color:var(--mute)}
+.nota b{color:var(--ink);display:block;margin-bottom:2px;font-weight:600}
+.toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--hero);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;z-index:9;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+
+/* La ventana no se reacomoda nunca: se dibuja a tamaño de PC y se achica entera (ajustar() en el script). */
+@media (max-width:760px){.nota{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="cab">
+  <div>
+    <h1>Nodo Sur Servicios en la compu</h1>
+    <p>La misma app del celular con la ventana ancha: el menú pasa al costado y la agenda muestra el turno al lado. La ventana se ve siempre como en una PC, achicada si tu pantalla es chica. Probá las secciones; los datos son de ejemplo.</p>
+  </div>
+  <div class="ctrls">
+    <div class="seg" role="group" aria-label="Dónde se abre">
+      <button id="vWin" class="on" data-ven="win">Programa de Windows</button>
+      <button id="vWeb" data-ven="web">Navegador</button>
+    </div>
+    <div class="seg" role="group" aria-label="Tema">
+      <button id="tClaro" data-tema="light">Claro</button>
+      <button id="tOscuro" data-tema="dark">Oscuro</button>
+    </div>
+  </div>
+</div>
+
+<div class="escena" id="escena"><div class="ven" id="ven">
+  <div id="chrome"></div>
+  <div class="app">
+    <nav class="lat" id="lat" aria-label="Secciones"></nav>
+    <main class="cont" id="cont"></main>
+  </div>
+</div></div>
+
+<div class="nota">
+  <div><b>Mismo código que el celular</b>Cada pantalla es la del celular; con la ventana ancha se reacomoda. Lo que se arregle en una, se arregla en las tres.</div>
+  <div><b>El bot también en la PC</b>En el programa de Windows el bot de WhatsApp corre adentro, como en el Android. En el navegador no: ahí se ve su estado.</div>
+  <div><b>Instalación aparte</b>Su propio instalador, ícono ciruela y actualizaciones. Convive con la de almacén en la misma PC.</div>
+</div>
+
+<script>
+const IC = {
+  agenda:'<rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/>',
+  servicios:'<path d="M6 3h12l-1 7H7z"/><path d="M9 10v11M15 10v11"/>',
+  cobrar:'<rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 11h20M6 15h4"/>',
+  caja:'<path d="M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7l12-4 2 4M17 14h.01"/>',
+  clientes:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a6 6 0 0 0-4-5.6"/>',
+  bot:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/><path d="M9 11h.01M15 11h.01"/>',
+  mas:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  campana:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4"/>',
+  lupa:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  mas2:'<path d="M12 5v14M5 12h14"/>', menos:'<path d="M5 12h14"/>',
+  cand:'<rect x="6" y="10" width="12" height="11" rx="2"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/>',
+};
+const ic = (n,s=20)=>`<svg class="ic" style="width:${s}px;height:${s}px" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+const plata = c => '$ ' + c.toLocaleString('es-AR');
+
+const profs = {caro:{n:'Caro'}, vale:{n:'Vale'}};
+const servicios = [
+  {id:'s1', n:'Semipermanente manos', cat:'Manos', min:60, precio:18000},
+  {id:'s2', n:'Esculpidas en polygel', cat:'Manos', min:120, precio:32000, sena:true},
+  {id:'s3', n:'Kapping rubber', cat:'Manos', min:75, precio:22000},
+  {id:'s4', n:'Retiro', cat:'Manos', min:20, precio:6000},
+  {id:'s5', n:'Semipermanente pies', cat:'Pies', min:60, precio:20000},
+  {id:'s6', n:'Perfilado + tinte de cejas', cat:'Cejas y pestañas', min:30, precio:9000},
+  {id:'s7', n:'Lifting de pestañas', cat:'Cejas y pestañas', min:60, precio:25000, sena:true},
+];
+const productos = [{id:'p1', n:'Aceite de cutículas 10 ml', precio:5500, stock:9}, {id:'p2', n:'Lima de vidrio', precio:4800, stock:4}];
+const S = id => servicios.find(s=>s.id===id);
+const turnos = [
+  {id:'t1', h:'09:00', s:'s4', p:'caro', cli:'Martina R.', tel:'294 154-21876', origen:'wa', estado:'cobrado'},
+  {id:'t2', h:'09:30', s:'s1', p:'vale', cli:'Sofía G.', tel:'294 155-03341', origen:'wa', estado:'cobrado'},
+  {id:'t3', h:'11:00', s:'s3', p:'vale', cli:'Lucía P.', tel:'294 152-77810', origen:'mano', estado:'llego'},
+  {id:'t4', h:'11:30', s:'s6', p:'caro', cli:'Agus M.', tel:'294 153-11902', origen:'wa', estado:'confirmado'},
+  {id:'t5', h:'13:30', s:'s2', p:'vale', cli:'Flor D.', tel:'294 154-66023', origen:'wa', estado:'confirmado', sena:8000},
+  {id:'t6', h:'15:00', s:'s5', p:'caro', cli:'Carla V.', tel:'294 156-40017', origen:'wa', estado:'pendiente'},
+  {id:'t7', h:'17:00', s:'s7', p:'vale', cli:'Juli S.', tel:'294 151-98450', origen:'mano', estado:'confirmado'},
+];
+const ESTADO = {
+  cobrado:['Cobrado','var(--s2)','var(--mute)'], llego:['Llegó','var(--gbg)','var(--g)'],
+  confirmado:['Confirmado','var(--ibg)','var(--i)'], pendiente:['Seña sin pagar · vence 14:52','var(--wbg)','var(--w)'],
+};
+
+const st = {sec:'agenda', ven:'win', turno:'t3', cat:'Todos', carrito:[{id:'s3', cli:'Lucía P.'}], medio:'mp', serv:'s2', dia:3};
+let tema = null;
+
+const secciones = [
+  ['agenda','Agenda','agenda','Alt+1'], ['cobrar','Cobrar','cobrar','Alt+2'], ['servicios','Servicios','servicios','Alt+3'],
+  ['caja','El día','caja','Alt+4'], ['clientes','Clientas','clientes','Alt+5'], ['bot','Bot de WhatsApp','bot','Alt+6'], ['mas','Más','mas',''],
+];
+
+function chrome(){
+  const el = document.getElementById('chrome');
+  if (st.ven === 'win') el.innerHTML = `<div class="tit"><span class="logo">T</span>Nodo Sur Servicios<span class="esp"></span>
+    <span class="w" aria-hidden="true">—</span><span class="w" aria-hidden="true">▢</span><span class="w x" aria-hidden="true">✕</span></div>`;
+  else el.innerHTML = `<div class="nav"><span class="pest"><span class="logo" style="width:16px;height:16px;border-radius:5px;background:var(--ciruela);color:var(--ciruela-t);font-size:9px;font-weight:700;display:grid;place-items:center">T</span>Nodo Sur Servicios</span>
+    <span class="url">${ic('cand',15)}<span><b>horsepos.com</b>/app/</span></span></div>`;
+}
+
+function lateral(){
+  const bot = st.ven === 'win'
+    ? `<div class="bot"><b><span class="pto"></span>Bot conectado</b><span>Corre en esta PC · último mensaje hace 4 min</span></div>`
+    : `<div class="bot"><b><span class="pto"></span>Bot conectado</b><span>Corre en el Android de Caro · hace 4 min</span></div>`;
+  document.getElementById('lat').innerHTML = `<div class="neg"><span class="av">L</span><span><b>Estudio Lú</b><small>Uñas · Bariloche</small></span></div>
+    ${secciones.map(([id,n,i,k]) => `<button class="it ${id==='cobrar'?'cobrar':''} ${st.sec===id?'on':''}" data-sec="${id}" ${st.sec===id?'aria-current="page"':''}>${ic(i)}${n}${id==='agenda'?'<span class="gl">1</span>':`<kbd>${k}</kbd>`}</button>`).join('')}
+    <span class="esp"></span>${bot}`;
+}
+
+function barraTop(titulo, sub, extra=''){
+  return `<div class="top"><h2>${titulo}</h2>${sub?`<span class="sub">${sub}</span>`:''}<span class="esp"></span>${extra}
+    <span class="busca">${ic('lupa',17)}Buscar clienta, servicio o función<kbd>Ctrl K</kbd></span>
+    <button class="circ" aria-label="Notificaciones, 2 sin ver">${ic('campana')}<span class="gl">2</span></button></div>`;
+}
+
+const minutos = h => { const [a,b]=h.split(':').map(Number); return a*60+b; };
+const INICIO = 9*60, PX = 56/60;
+
+function agenda(){
+  const dias = [['Lun',12,3],['Mar',13,5],['Mié',14,4],['Jue',15,7],['Vie',16,6],['Sáb',17,8],['Dom',18,0]];
+  const cobrado = turnos.filter(t=>t.estado==='cobrado').reduce((a,t)=>a+S(t.s).precio,0);
+  const porCobrar = turnos.filter(t=>t.estado!=='cobrado').reduce((a,t)=>a+S(t.s).precio,0);
+  const horas = Array.from({length:10},(_,k)=>`${String(9+k).padStart(2,'0')}:00`);
+  const col = p => {
+    const ts = turnos.filter(t=>t.p===p);
+    const libres = p==='caro' ? [['13:00',90],['16:00',60]] : [['15:00',120]];
+    return `<div class="col">${horas.map(()=>'<div class="rj"></div>').join('')}
+      ${ts.map(t=>{const s=S(t.s);const top=(minutos(t.h)-INICIO)*PX;const h=Math.max(s.min*PX-4,26);
+        return `<button class="tur ${t.estado} ${st.turno===t.id?'sel':''}" style="top:${top+2}px;height:${h}px" data-tur="${t.id}"><b>${t.h} · ${t.cli}</b>${h>40?`<span>${s.n}</span>`:''}</button>`}).join('')}
+      ${libres.map(([h,m])=>`<button class="libre" style="top:${(minutos(h)-INICIO)*PX+2}px;height:${m*PX-4}px" data-libre="${h}">+ Libre ${h}</button>`).join('')}
+    </div>`;
+  };
+  const t = turnos.find(x=>x.id===st.turno); const s = S(t.s); const [e,bg,fg] = ESTADO[t.estado];
+  const acciones = t.estado==='cobrado'
+    ? `<button class="btn o">Ver el cobro</button><button class="btn o">Dar otro turno</button>`
+    : t.estado==='pendiente'
+    ? `<button class="btn a ancho" data-toast="Link de seña reenviado a ${t.cli} por WhatsApp">Reenviar link de seña</button><button class="btn o">Mover</button><button class="btn r">Cancelar</button>`
+    : `<button class="btn a ancho" data-cobrar="${t.id}">Cobrar ${plata(s.precio-(t.sena||0))}</button>
+       ${t.estado==='confirmado'?`<button class="btn o" data-llego="${t.id}">Llegó</button>`:`<button class="btn o">Agregar algo</button>`}<button class="btn o">Mover</button>
+       <button class="btn o">Recordar</button><button class="btn r">Cancelar</button>`;
+  return barraTop('Agenda','Jueves 15 de octubre', `<button class="btn p">${ic('mas2',18)}Dar turno</button>`) + `
+  <div class="ag"><div>
+    <div class="cifras">
+      <div class="cif"><small>Turnos hoy</small><b class="tab">7</b></div>
+      <div class="cif"><small>Cobrado</small><b class="tab">${plata(cobrado)}</b></div>
+      <div class="cif"><small>Por cobrar</small><b class="tab">${plata(porCobrar)}</b></div>
+      <div class="cif"><small>Huecos libres</small><b class="tab">4 h 30 min</b></div>
+    </div>
+    <div class="dias">${dias.map(([d,n,c],k)=>`<button class="dia ${st.dia===k?'on':''}" data-dia="${k}">${d}<b class="tab">${n}</b><span class="pts">${'<i></i>'.repeat(Math.min(c,4))}</span></button>`).join('')}</div>
+    <div class="prof"><span></span><span class="h">Caro</span><span class="h">Vale</span>
+      <div>${horas.map(h=>`<div class="hr tab">${h}</div>`).join('')}</div>
+      <div class="linea">${col('caro')}<span class="ahora" style="top:${(11*60+42-INICIO)*PX}px"></span></div>
+      <div class="linea">${col('vale')}<span class="ahora" style="top:${(11*60+42-INICIO)*PX}px"></span></div>
+    </div>
+  </div>
+  <aside class="det" aria-label="Turno elegido">
+    <span class="chip" style="background:${bg};color:${fg};align-self:flex-start">${e}</span>
+    <div><h3>${t.cli}</h3><div style="color:var(--mute);font-size:14.5px;margin-top:4px">${s.n} · ${t.h} a ${fin(t.h,s.min)}</div></div>
+    <div>
+      <div class="kv"><span>Con</span><span>${profs[t.p].n}</span></div>
+      <div class="kv"><span>Precio</span><span class="tab">${plata(s.precio)}</span></div>
+      ${t.sena?`<div class="kv"><span>Seña pagada (Mercado Pago)</span><span class="tab">− ${plata(t.sena)}</span></div>`:''}
+      <div class="kv"><span>Teléfono</span><span class="tab">${t.tel}</span></div>
+      <div class="kv"><span>Lo pidió</span><span>${t.origen==='wa'?'Por WhatsApp (bot)':'A mano'}</span></div>
+    </div>
+    <div class="acc">${acciones}</div>
+    ${t.origen==='wa'?`<div class="wa"><b>Último mensaje</b><br>“Perfecto, nos vemos el jueves. ¿Puedo llevar el diseño en una foto?”</div>`:''}
+  </aside></div>`;
+}
+const fin = (h,m) => { const x=minutos(h)+m; return `${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`; };
+
+function cobrar(){
+  const cats = ['Todos','Manos','Pies','Cejas y pestañas','Productos'];
+  const items = st.cat==='Productos' ? productos.map(p=>({...p,prod:true}))
+    : servicios.filter(s=>st.cat==='Todos'||s.cat===st.cat);
+  const lineas = st.carrito.map((l,k)=>{const x=S(l.id)||productos.find(p=>p.id===l.id);return {...x,k,cli:l.cli};});
+  const total = lineas.reduce((a,l)=>a+l.precio,0);
+  const medios = [['ef','Efectivo',''],['mp','Mercado Pago','QR en pantalla'],['deb','Débito',''],['tr','Transferencia','']];
+  return barraTop('Cobrar','', '') + `<div class="cb"><div>
+    <div class="cats">${cats.map(c=>`<button class="${st.cat===c?'on':''}" data-cat="${c}">${c}</button>`).join('')}</div>
+    <div class="grilla">${items.map(x=>`<button class="serv ${x.prod?'prod':''}" data-add="${x.id}"><b>${x.n}</b><small>${x.prod?`Quedan ${x.stock}`:`${x.min} min${x.sena?' · pide seña':''}`}</small><span class="pr tab">${plata(x.precio)}</span></button>`).join('')}</div>
+  </div>
+  <aside class="carr" aria-label="Cobro"><h3>Cobro${lineas[0]?.cli?` · ${lineas[0].cli}`:''}</h3>
+    ${lineas.length?lineas.map(l=>`<div class="lin"><span class="n">${l.n}<small>${l.cli?'Turno de las 11:00 con Vale':'Producto'}</small></span><span class="tab">${plata(l.precio)}</span><button class="q" data-quitar="${l.k}" aria-label="Quitar">${ic('menos',15)}</button></div>`).join('')
+      :'<p style="color:var(--mute);font-size:14px;margin:8px 0">Tocá un servicio o un producto para sumarlo.</p>'}
+    <span class="esp"></span>
+    <div class="tot"><span>Total</span><b class="tab">${plata(total)}</b></div>
+    <div class="medios">${medios.map(([id,n,sub])=>`<button class="medio ${st.medio===id?'on':''}" data-medio="${id}">${n}${sub?`<small>${sub}</small>`:''}</button>`).join('')}</div>
+    <button class="btn a" style="height:56px;justify-content:center;font-size:17px" ${total?'':'disabled'} data-toast="Cobrado ${plata(total)} · recibo enviado por WhatsApp">Cobrar ${plata(total)}</button>
+  </aside></div>`;
+}
+
+function caja(){
+  const filas = [['09:20','Martina R.','Retiro','Efectivo',6000],['10:35','Sofía G.','Semipermanente manos','Mercado Pago',18000],['10:50','Seña · Flor D.','Esculpidas en polygel','Mercado Pago',8000],['11:05','Venta','Aceite de cutículas 10 ml','Efectivo',5500]];
+  const tot = filas.reduce((a,f)=>a+f[4],0);
+  return barraTop('El día','Empezó solo al primer cobro, 09:20', `<button class="btn o">Gasto</button><button class="btn p">Cerrar el día</button>`) + `
+  <div class="hero">
+    <div><small>Entró hoy</small><b class="tab">${plata(tot)}</b></div>
+    <div><small>Efectivo</small><b class="tab">${plata(11500)}</b></div>
+    <div><small>Mercado Pago</small><b class="tab">${plata(26000)}</b></div>
+    <div><small>Por cobrar hoy</small><b class="tab">${plata(108000)}</b></div>
+  </div>
+  <div class="dos">
+    <div class="tarj"><h3>Cobros de hoy</h3><table><thead><tr><th>Hora</th><th>Quién</th><th>Qué</th><th>Medio</th><th class="r">Monto</th></tr></thead>
+      <tbody>${filas.map(f=>`<tr><td class="tab">${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td><td>${f[3]}</td><td class="r tab">${plata(f[4])}</td></tr>`).join('')}</tbody></table></div>
+    <div class="tarj"><h3>Cómo te pagaron</h3>
+      <div class="barra"><i style="width:31%;background:var(--g)"></i><i style="width:69%;background:var(--marca)"></i></div>
+      <div class="kv"><span>Efectivo</span><span class="tab">${plata(11500)} · 31 %</span></div>
+      <div class="kv"><span>Mercado Pago</span><span class="tab">${plata(26000)} · 69 %</span></div>
+      <div class="kv"><span>Señas cobradas por el bot</span><span class="tab">${plata(8000)}</span></div>
+      <div class="kv"><span>Comisión de Mercado Pago</span><span class="tab">− ${plata(1586)}</span></div>
+    </div>
+  </div>`;
+}
+
+function serviciosP(){
+  const s = S(st.serv);
+  return barraTop('Servicios','7 servicios · 2 productos', `<button class="btn p">${ic('mas2',18)}Servicio</button>`) + `
+  <div class="sv"><div class="tarj" style="padding:10px">${['Manos','Pies','Cejas y pestañas'].map(c=>`
+    <div style="font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);padding:12px 10px 4px">${c}</div>
+    ${servicios.filter(x=>x.cat===c).map(x=>`<button class="fs ${st.serv===x.id?'on':''}" data-serv="${x.id}"><span class="n">${x.n}<small>${x.min} min${x.sena?' · pide seña':''}</small></span><span class="tab">${plata(x.precio)}</span></button>`).join('')}`).join('')}
+  </div>
+  <aside class="det"><h3>${s.n}</h3>
+    <label class="campo"><small>Nombre</small><input id="svNombre" value="${s.n}"></label>
+    <div class="grid2"><label class="campo"><small>Precio</small><input id="svPrecio" class="tab" value="${plata(s.precio)}"></label>
+      <label class="campo"><small>Dura</small><input id="svDura" class="tab" value="${s.min} min"></label></div>
+    <div><div class="kv"><span>Costo de lo que usa</span><span class="tab">${plata(Math.round(s.precio*.21/100)*100)}</span></div>
+      <div class="kv"><span>Ganancia por servicio</span><span class="tab" style="color:var(--g)">${plata(s.precio-Math.round(s.precio*.21/100)*100)} · 79 %</span></div>
+      <div class="kv"><span>Pide seña por el bot</span><span>${s.sena?'Sí, 25 %':'No'}</span></div></div>
+    <button class="btn p" style="justify-content:center" data-toast="Guardado">Guardar</button>
+  </aside></div>`;
+}
+
+function bot(){
+  const enPc = st.ven === 'win';
+  return barraTop('Bot de WhatsApp', enPc?'Corre en esta PC':'Corre en el Android de Caro', '') + `
+  <div class="dos" style="margin-top:0">
+    <div class="tarj"><h3>Estado</h3>
+      <div class="kv"><span>WhatsApp</span><span style="color:var(--g);font-weight:600">Conectado · 294 154-00921</span></div>
+      <div class="kv"><span>Último mensaje</span><span>hace 4 min</span></div>
+      <div class="kv"><span>Turnos que dio esta semana</span><span class="tab">23</span></div>
+      <div class="kv"><span>Señas cobradas esta semana</span><span class="tab">${plata(64000)}</span></div>
+      ${enPc?`<div class="kv"><span>Arranca con Windows</span><span>Sí · se vuelve a levantar solo si se cae</span></div>`
+        :`<div class="kv"><span>Desde el navegador</span><span>Se ve el estado; se maneja desde el Android o la PC</span></div>`}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${enPc?'<button class="btn o">Pausar el bot</button><button class="btn o">Vincular otro número</button>':''}<button class="btn o">Mensajes del bot</button></div>
+      ${enPc?`<h3 style="margin-top:22px">Código para vincular WhatsApp</h3><div class="codigo tab">K7QM-2XRA</div>
+      <p style="color:var(--mute);font-size:13.5px;margin:8px 0 0">En el celular del negocio: WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.</p>`:''}
+    </div>
+    <div class="tarj"><h3>Charla de ahora</h3><div class="msg">
+      <div class="c">Hola! Quería un turno para esculpidas el sábado</div>
+      <div class="b">¡Hola Flor! El sábado 17 tengo a las 10:00 o a las 14:30 con Vale. ¿Cuál te queda mejor?</div>
+      <div class="c">14:30</div>
+      <div class="b">Listo. Para reservarlo te pido una seña de $8.000: horsepos.com/s/9fK2 (vence en 30 min)</div>
+      <div class="c">Pagado 👍</div>
+      <div class="b">¡Recibido! Te espero el sábado 17 a las 14:30. Te recuerdo el día antes.</div>
+    </div></div>
+  </div>`;
+}
+
+function simple(t, txt){ return barraTop(t,'','') + `<div class="tarj" style="max-width:640px"><p style="margin:0;color:var(--mute);line-height:1.5">${txt}</p></div>`; }
+
+function render(){
+  chrome(); lateral();
+  const c = document.getElementById('cont');
+  c.innerHTML = ({agenda, cobrar, caja, servicios:serviciosP, bot,
+    clientes:()=>simple('Clientas','La lista de clientas del celular, con su historial de turnos y lo que gastó, a dos columnas: la lista a la izquierda y la ficha a la derecha.'),
+    mas:()=>simple('Más','Configuración del negocio, horarios, Mercado Pago, notificaciones, cuenta y apariencia: las mismas secciones del celular, con la lista a la izquierda y el detalle a la derecha.')})[st.sec]();
+  document.querySelectorAll('[data-ven]').forEach(b=>b.classList.toggle('on', b.dataset.ven===st.ven));
+  document.querySelectorAll('[data-tema]').forEach(b=>b.classList.toggle('on', b.dataset.tema===tema));
+  ajustar();
+}
+
+function ajustar(){
+  const escena = document.getElementById('escena'), ven = document.getElementById('ven');
+  const k = Math.min(1, escena.clientWidth / 1320);
+  ven.style.transform = `scale(${k})`;
+  escena.style.height = (ven.offsetHeight * k) + 'px';
+}
+window.addEventListener('resize', ajustar);
+
+function toast(t){ const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+
+document.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return; const d = b.dataset;
+  if (d.sec) st.sec = d.sec;
+  else if (d.ven) st.ven = d.ven;
+  else if (d.tema) { tema = tema===d.tema?null:d.tema; tema?document.documentElement.setAttribute('data-theme',tema):document.documentElement.removeAttribute('data-theme'); }
+  else if (d.tur) st.turno = d.tur;
+  else if (d.dia) st.dia = +d.dia;
+  else if (d.cat) st.cat = d.cat;
+  else if (d.add) st.carrito.push({id:d.add});
+  else if (d.quitar) st.carrito.splice(+d.quitar,1);
+  else if (d.medio) st.medio = d.medio;
+  else if (d.serv) st.serv = d.serv;
+  else if (d.llego) { turnos.find(t=>t.id===d.llego).estado='llego'; toast('Marcado: llegó'); }
+  else if (d.cobrar) { const t=turnos.find(x=>x.id===d.cobrar); st.carrito=[{id:t.s,cli:t.cli}]; st.sec='cobrar'; }
+  else if (d.libre) { toast('Dar turno a las '+d.libre); return; }
+  else if (d.toast) { toast(d.toast); return; }
+  else return;
+  render();
+});
+document.addEventListener('keydown', e=>{
+  if (e.altKey && /^[1-6]$/.test(e.key)) { st.sec = secciones[+e.key-1][0]; e.preventDefault(); render(); }
+});
+render();
+</script>

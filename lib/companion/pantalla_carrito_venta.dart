@@ -1061,6 +1061,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           child: PantallaEntradaNs(
             child: !abierta && _paso == _Paso.carrito
                 ? _CajaCerrada(onAbrir: () => mostrarHojaAbrirCaja(context, servicio: widget.servicio, usuarioId: widget.usuarioId).then((_) => app.refrescar()))
+                : ConMenuLateralNs.de(context) && esNegocioDeServicios()
+                ? _vistaAncha(context)
                 : switch (_paso) {
                     _Paso.carrito => _vistaCarrito(context),
                     _Paso.cobro => _vistaCobro(context),
@@ -1151,6 +1153,66 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           SizedBox(height: abajo),
         ],
       ),
+    );
+  }
+
+  /// En la compu (menú lateral, `docs/PLAN-ESCRITORIO-SERVICIOS.md`): los servicios a la izquierda y, a la derecha, lo que se
+  /// está cobrando o el paso de elegir el medio. La grilla sigue a la vista mientras se cobra.
+  Widget _vistaAncha(BuildContext context) {
+    final ns = context.ns;
+    final n = widget.carrito.length;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 28),
+            children: [
+              Text('Cobrar', style: tituloNs(40, color: ns.ink)),
+              const SizedBox(height: 14),
+              if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
+              GrillaServiciosNs(onElegir: _agregarServicio),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: 260,
+                  child: BotonNs(key: const Key('cobrar_mas_producto'), texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: ns.s, color: ns.i),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          width: 400,
+          decoration: BoxDecoration(border: Border(left: BorderSide(color: ns.s2))),
+          child: _paso == _Paso.cobro
+              ? _vistaCobro(context)
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Expanded(child: Text('Cobro', style: tituloNs(30, track: -0.05, color: ns.ink))),
+                          if (n > 0) Text(n == 1 ? '1 ítem' : '$n ítems', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Expanded(
+                        child: n == 0
+                            ? Text('Tocá un servicio o un producto para sumarlo.', style: estiloNs(15, color: ns.mute))
+                            : _lineas(context),
+                      ),
+                      if (n > 0) ...[_filaDescuento(context), const SizedBox(height: 14), _barraTotal(context)],
+                    ],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 

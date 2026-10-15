@@ -93,6 +93,8 @@ class CompanionApp extends StatelessWidget {
         theme: TemaCompanion.claro,
         darkTheme: TemaCompanion.oscuro,
         themeMode: modo,
+        // El menú se entera cuando otra pantalla lo tapa (y la app vuelve al ancho de un celular): `escritorio_ns.dart`.
+        navigatorObservers: [observadorRutasNs],
         // Íconos de la barra de estado claros u oscuros según el tema, y el cartel
         // "Sin conexión con la PC" arriba de todas las pantallas (docs/01 §6.15):
         // mientras se ve, todo baja 34 px.
@@ -127,9 +129,10 @@ class CompanionApp extends StatelessWidget {
   }
 }
 
-/// En el navegador de una compu (Nodo Sur Servicios web, `docs/PLAN-WEB-SERVICIOS.md`) la app es la del celular: estirada a todo el
-/// ancho de una pantalla grande quedaba con filas de un metro. Se muestra centrada, del ancho de un celular grande. En el celular
-/// (y en un navegador angosto) no cambia nada.
+/// En el navegador de una compu (Nodo Sur Servicios web, `docs/PLAN-WEB-SERVICIOS.md`) y en Windows la app es la del celular:
+/// estirada a todo el ancho de una pantalla grande quedaba con filas de un metro. Se muestra centrada, del ancho de un celular
+/// grande, salvo mientras se ve el menú de un negocio de servicios con la ventana ancha (`anchoLibreNs`, menú lateral: usa todo
+/// el ancho). En el celular (y en un navegador angosto) no cambia nada.
 class _AnchoDelNavegador extends StatelessWidget {
   const _AnchoDelNavegador({required this.child});
   final Widget child;
@@ -137,14 +140,21 @@ class _AnchoDelNavegador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(valueListenable: anchoLibreNs, builder: (context, libre, _) => _armar(context, libre));
+  }
+
+  Widget _armar(BuildContext context, bool libre) {
     final mq = MediaQuery.of(context);
-    if (!kIsWeb || mq.size.width <= anchoMaximo) return child;
+    final achicar = (kIsWeb || esEscritorioServicios) && !libre && mq.size.width > anchoMaximo;
+    final ancho = achicar ? anchoMaximo : mq.size.width;
+    // Siempre los mismos widgets alrededor del navegador, cambie o no el ancho: si cambiara la estructura, Flutter armaría el
+    // navegador de nuevo y se perderían todas las pantallas abiertas (y achicar pasa cada vez que una pantalla tapa al menú).
     return ColoredBox(
-      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0C0F) : const Color(0xFFF3F4F7),
+      color: !achicar ? Colors.transparent : Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0B0C0F) : const Color(0xFFF3F4F7),
       child: Center(
         child: SizedBox(
-          width: anchoMaximo,
-          child: MediaQuery(data: mq.copyWith(size: Size(anchoMaximo, mq.size.height)), child: ClipRect(child: child)),
+          width: ancho,
+          child: MediaQuery(data: mq.copyWith(size: Size(ancho, mq.size.height)), child: ClipRect(child: child)),
         ),
       ),
     );

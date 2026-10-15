@@ -21,6 +21,7 @@ import '../servicios/actualizaciones.dart' show idClienteActualizaciones;
 import '../servicios/almacenes_del_equipo.dart';
 import '../servicios/cuenta_nube.dart' show ClienteNube;
 import 'cliente_companion.dart';
+import '../plataforma.dart';
 
 /// Servidor de actualizaciones (el mismo sitio que usa la app de escritorio).
 const String hostActualizaciones = 'horsepos.com';
@@ -73,7 +74,7 @@ Future<void> avisarAlSitio(String version) async {
       return;
     }
     final r = await ClienteNube(http: http.Client())
-        .avisar(cuenta.token, cid: await idClienteActualizaciones(), version: version, sistema: 'android');
+        .avisar(cuenta.token, cid: await idClienteActualizaciones(), version: version, sistema: nombreDelSistema);
     if (r.tokenNuevo != null) await almacen.guardar(cuenta.conToken(r.tokenNuevo!));
     celularDePruebas.value = r.canal == 'beta';
     await (await SharedPreferences.getInstance()).setBool(_claveDePruebas, celularDePruebas.value);

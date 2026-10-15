@@ -62,6 +62,11 @@ turno, Cobrar, Caja y Más; cerrar el navegador y volver a abrir mantiene la ses
 - La pantalla del bot en la web (ver su estado y su configuración): hoy no aparece; el bot se maneja desde el Android.
 - Exportar el PDF del día en el navegador (usa una carpeta temporal del celular).
 
+## En una compu ancha
+
+Desde 2026-10-15, con la ventana de 1000 px o más, la app de servicios se arma con menú lateral y paneles (la misma para
+Windows): `docs/PLAN-ESCRITORIO-SERVICIOS.md`. Lo que se abre encima del menú se sigue viendo del ancho de un celular.
+
 ## La demo
 
 `horsepos.com/demo/` es esta misma app, sin cuenta y con un negocio de ejemplo en memoria: `docs/PLAN-DEMO-SERVICIOS.md`.

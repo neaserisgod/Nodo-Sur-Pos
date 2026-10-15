@@ -84,6 +84,9 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
   /// Agenda de quién se mira, con varios profesionales (null = todos).
   int? _profesionalId;
   int? _usuarioId;
+
+  /// En la compu (menú lateral): el turno elegido en la lista, cuyo detalle y botones se ven en el panel de la derecha.
+  int? _elegidoId;
   StreamSubscription<void>? _sub;
 
   @override
@@ -216,72 +219,83 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
         }
       });
 
+  /// Los botones de un turno, iguales en la hoja del celular y en el panel de la compu: [elegir] recibe la acción tocada.
+  List<Widget> _botonesTurno(BuildContext ctx, TurnoAgenda t, void Function(String accion) elegir) {
+    final abierto = t.estado.abierto;
+    final pideSena = t.turno.senaPedidaCentavos > 0 && t.turno.senaCentavos == 0;
+    return [
+      if (abierto) BotonNs.primario(ctx, 'Cobrar', () => elegir('cobrar'), icono: IconoNs.billetes),
+      if (abierto && pideSena) BotonNs.secundario(ctx, 'Anotar la seña', () => elegir('sena'), icono: IconoNs.tilde),
+      if (abierto) BotonNs.secundario(ctx, 'Mover', () => elegir('mover'), icono: IconoNs.reloj),
+      if (t.turno.telefono != null) BotonNs.secundario(ctx, 'Escribirle por WhatsApp', () => elegir('whatsapp'), icono: IconoNs.celular),
+      BotonNs.secundario(ctx, 'Agendar en el calendario', () => elegir('calendar'), icono: IconoNs.calendario),
+      if (abierto) BotonNs.secundario(ctx, 'No vino', () => elegir('novino'), icono: IconoNs.alertaCirculo),
+      if (abierto) BotonNs.peligroSuave(ctx, 'Cancelar el turno', () => elegir('cancelar')),
+    ];
+  }
+
   Future<void> _acciones(TurnoAgenda t) => _conUsuario((u) async {
-        final estado = t.estado;
-        final abierto = estado.abierto;
-        final pideSena = t.turno.senaPedidaCentavos > 0 && t.turno.senaCentavos == 0;
         final elegido = await mostrarHojaNs<String>(
           context,
           builder: (ctx) => HojaNs(
             titulo: '${horaNs(t.inicio)} · ${t.turno.nombreCliente}',
             texto: _detalle(t),
-            botones: [
-              if (abierto) BotonNs.primario(ctx, 'Cobrar', () => Navigator.of(ctx).pop('cobrar'), icono: IconoNs.billetes),
-              if (abierto && pideSena) BotonNs.secundario(ctx, 'Anotar la seña', () => Navigator.of(ctx).pop('sena'), icono: IconoNs.tilde),
-              if (abierto) BotonNs.secundario(ctx, 'Mover', () => Navigator.of(ctx).pop('mover'), icono: IconoNs.reloj),
-              if (t.turno.telefono != null) BotonNs.secundario(ctx, 'Escribirle por WhatsApp', () => Navigator.of(ctx).pop('whatsapp'), icono: IconoNs.celular),
-              BotonNs.secundario(ctx, 'Agendar en el calendario', () => Navigator.of(ctx).pop('calendar'), icono: IconoNs.calendario),
-              if (abierto) BotonNs.secundario(ctx, 'No vino', () => Navigator.of(ctx).pop('novino'), icono: IconoNs.alertaCirculo),
-              if (abierto) BotonNs.peligroSuave(ctx, 'Cancelar el turno', () => Navigator.of(ctx).pop('cancelar')),
-            ],
+            botones: _botonesTurno(ctx, t, (accion) => Navigator.of(ctx).pop(accion)),
           ),
         );
         if (!mounted || elegido == null) return;
-        final sesion = AppNs.maybeOf(context)?.sesion?.id;
-        try {
-          String? aviso;
-          switch (elegido) {
-            case 'cobrar':
-              aviso = await mostrarHojaNs<String>(context, builder: (_) => _HojaCobrarTurno(db: _db, usuarioId: u, turno: t, sesionCajaId: sesion));
-            case 'sena':
-              aviso = await mostrarHojaNs<String>(context, builder: (_) => _HojaSena(db: _db, usuarioId: u, turno: t, sesionCajaId: sesion));
-            case 'mover':
-              aviso = await mostrarHojaNs<String>(
-                context,
-                builder: (_) => HojaTurnoNs(db: _db, usuarioId: u, dia: _soloDia(t.inicio), existente: t, sesionCajaId: sesion),
-              );
-            case 'whatsapp':
-              // Con código de país: un número cargado a mano (2944 123456) abría un chat que no existe.
-              final numero = normalizarWhatsapp(t.turno.telefono!) ?? t.turno.telefono!.replaceAll(RegExp(r'\D'), '');
-              await _abrir(Uri.parse('https://wa.me/$numero'));
-            case 'calendar':
-              if (!await agendarEnCalendario(
-                titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}',
-                inicio: t.inicio,
-                fin: t.fin,
-                detalle: t.turno.telefono == null ? null : 'Tel: ${t.turno.telefono}',
-              )) {
-                aviso = 'No se pudo abrir el calendario';
-              }
-            case 'novino':
-              await marcarNoVino(_db, t.turno.id);
-              aviso = 'Anotado: ${t.turno.nombreCliente} no vino';
-            case 'cancelar':
-              aviso = await _cancelar(t, u, sesion);
-          }
-          await _recargar();
-          if (aviso != null && mounted) {
-            mostrarAvisoNs(context, aviso);
-            AppNs.maybeOf(context)?.refrescar();
-          }
-        } on ArgumentError catch (e) {
-          if (mounted) mostrarAvisoNs(context, '${e.message}', largo: true);
-        } catch (e, st) {
-          // Cualquier otra falla (la base, la caja, la red) también se dice: antes se perdía sin aviso.
-          unawaited(registrarSiNoEsDeRed('Acción sobre un turno', e, st));
-          if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
-        }
+        await _hacer(elegido, t, u);
       });
+
+  /// En la compu el turno se elige en la lista y sus botones quedan en el panel de al lado (sin hoja).
+  Future<void> _accionDesdePanel(String accion, TurnoAgenda t) => _conUsuario((u) => _hacer(accion, t, u));
+
+  Future<void> _hacer(String elegido, TurnoAgenda t, int u) async {
+    final sesion = AppNs.maybeOf(context)?.sesion?.id;
+    try {
+      String? aviso;
+      switch (elegido) {
+        case 'cobrar':
+          aviso = await mostrarHojaNs<String>(context, builder: (_) => _HojaCobrarTurno(db: _db, usuarioId: u, turno: t, sesionCajaId: sesion));
+        case 'sena':
+          aviso = await mostrarHojaNs<String>(context, builder: (_) => _HojaSena(db: _db, usuarioId: u, turno: t, sesionCajaId: sesion));
+        case 'mover':
+          aviso = await mostrarHojaNs<String>(
+            context,
+            builder: (_) => HojaTurnoNs(db: _db, usuarioId: u, dia: _soloDia(t.inicio), existente: t, sesionCajaId: sesion),
+          );
+        case 'whatsapp':
+          // Con código de país: un número cargado a mano (2944 123456) abría un chat que no existe.
+          final numero = normalizarWhatsapp(t.turno.telefono!) ?? t.turno.telefono!.replaceAll(RegExp(r'\D'), '');
+          await _abrir(Uri.parse('https://wa.me/$numero'));
+        case 'calendar':
+          if (!await agendarEnCalendario(
+            titulo: '${t.turno.servicioNombre} · ${t.turno.nombreCliente}',
+            inicio: t.inicio,
+            fin: t.fin,
+            detalle: t.turno.telefono == null ? null : 'Tel: ${t.turno.telefono}',
+          )) {
+            aviso = 'No se pudo abrir el calendario';
+          }
+        case 'novino':
+          await marcarNoVino(_db, t.turno.id);
+          aviso = 'Anotado: ${t.turno.nombreCliente} no vino';
+        case 'cancelar':
+          aviso = await _cancelar(t, u, sesion);
+      }
+      await _recargar();
+      if (aviso != null && mounted) {
+        mostrarAvisoNs(context, aviso);
+        AppNs.maybeOf(context)?.refrescar();
+      }
+    } on ArgumentError catch (e) {
+      if (mounted) mostrarAvisoNs(context, '${e.message}', largo: true);
+    } catch (e, st) {
+      // Cualquier otra falla (la base, la caja, la red) también se dice: antes se perdía sin aviso.
+      unawaited(registrarSiNoEsDeRed('Acción sobre un turno', e, st));
+      if (mounted) mostrarAvisoNs(context, mensajeDeError(e), largo: true);
+    }
+  }
 
   Future<String?> _cancelar(TurnoAgenda t, int usuarioId, int? sesion) async {
     final config = await configAgendaActual(_db);
@@ -355,11 +369,11 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     final conPc = app?.modoUso == ModoUso.pcYCelular;
     final hoy = _soloDia(widget.hoy ?? DateTime.now());
     final titulo = textoDiaNs(_dia, hoy: hoy);
-    return PantallaEntradaNs(
-      child: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, BarraInferiorNs.espacioReservado - 8),
+    // En la compu, con el menú lateral (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): la lista a la izquierda y el turno elegido a la
+    // derecha, con sus botones a la vista en vez de en una hoja.
+    final conPanel = ConMenuLateralNs.de(context) && !conPc;
+    final lista = ListView(
+          padding: EdgeInsets.fromLTRB(margenNs, 28, margenNs, conPanel ? 28 : BarraInferiorNs.espacioReservado - 8),
           children: [
             Row(
               children: [
@@ -418,11 +432,49 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                 ),
               ],
               const SizedBox(height: 16),
-              ..._lista(context, hoy),
+              ..._lista(context, hoy, conPanel: conPanel),
             ],
           ],
-        ),
+        );
+    if (!conPanel) return PantallaEntradaNs(child: SafeArea(bottom: false, child: lista));
+    return PantallaEntradaNs(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: AnchoLecturaNs(ancho: 820, child: lista)),
+          Container(
+            width: 380,
+            decoration: BoxDecoration(border: Border(left: BorderSide(color: ns.s2))),
+            child: _panelTurno(context),
+          ),
+        ],
       ),
+    );
+  }
+
+  /// El panel de la derecha en la compu: el turno elegido con lo mismo que muestra la hoja del celular.
+  Widget _panelTurno(BuildContext context) {
+    final ns = context.ns;
+    final t = _turnos?.where((x) => x.turno.id == _elegidoId).firstOrNull;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
+      children: t == null
+          ? [
+              Text('Turno', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+              const SizedBox(height: 10),
+              const InfoNs('Elegí un turno de la lista para ver el detalle y qué hacer con él.', icono: IconoNs.calendario),
+              const SizedBox(height: 16),
+              BotonNs.primario(context, 'Nuevo turno', () => _nuevoTurno(), icono: IconoNs.masMas),
+            ]
+          : [
+              Text(horaNs(t.inicio), style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
+              const SizedBox(height: 2),
+              Text(t.turno.nombreCliente, style: tituloNs(30, track: -0.045, color: ns.ink)),
+              const SizedBox(height: 12),
+              Text(_detalle(t), style: estiloNs(15, altura: 1.45, color: ns.ink)),
+              const SizedBox(height: 18),
+              for (final b in _botonesTurno(context, t, (accion) => _accionDesdePanel(accion, t))) ...[b, const SizedBox(height: 8)],
+            ],
     );
   }
 
@@ -435,7 +487,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
     return [TokensNs.marca, ns.g, ns.w, ns.i, ns.b][i % 5];
   }
 
-  List<Widget> _lista(BuildContext context, DateTime hoy) {
+  List<Widget> _lista(BuildContext context, DateTime hoy, {bool conPanel = false}) {
     final ns = context.ns;
     final turnos = _turnos;
     if (turnos == null) return const [EsqueletoListaNs()];
@@ -479,12 +531,24 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: switch (f) {
-              FilaTurno(:final turno) => _FilaTurno(
-                  key: ValueKey('turno-${turno.turno.id}'),
-                  t: turno,
-                  color: _colorDe(context, turno),
-                  profesional: _profesionales.length > 1 ? turno.profesional : null,
-                  onTap: () => _acciones(turno),
+              FilaTurno(:final turno) => DecoratedBox(
+                  // El elegido en la compu lleva el aro azul, como la última línea del carrito.
+                  position: DecorationPosition.foreground,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: conPanel && turno.turno.id == _elegidoId ? Border.all(color: TokensNs.marca, width: 2.5) : null,
+                  ),
+                  // Con aire adentro, así el aro no pisa la hora.
+                  child: Padding(
+                    padding: conPanel ? const EdgeInsets.fromLTRB(10, 4, 4, 4) : EdgeInsets.zero,
+                    child: _FilaTurno(
+                      key: ValueKey('turno-${turno.turno.id}'),
+                      t: turno,
+                      color: _colorDe(context, turno),
+                      profesional: _profesionales.length > 1 ? turno.profesional : null,
+                      onTap: conPanel ? () => setState(() => _elegidoId = turno.turno.id) : () => _acciones(turno),
+                    ),
+                  ),
                 ),
               FilaLibre(:final desdeMin, :final hastaMin) => _FilaLibre(
                   desdeMin: desdeMin,

@@ -37,6 +37,7 @@ import 'seleccion_servicio.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'sync_nube_companion.dart';
+import '../edicion.dart';
 
 /// El servicio contra el que se busca o crea el perfil: la PC si está emparejada y contesta, si no la base local (que se
 /// sincroniza). Mismo criterio que el resto de la companion.
@@ -217,7 +218,8 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   }
 
   Future<void> _entrar() async {
-    if (kIsWeb) return _entrarConNavegador();
+    // En la compu no hay cuenta de Google del teléfono: directo al navegador, como la PC.
+    if (kIsWeb || esEscritorioServicios) return _entrarConNavegador();
     setState(() {
       _trabajando = true;
       _error = null;

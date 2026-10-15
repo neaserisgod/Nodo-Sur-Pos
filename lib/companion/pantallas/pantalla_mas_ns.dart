@@ -179,8 +179,8 @@ class PantallaMasNs extends StatelessWidget {
                     _Fila(
                       icono: IconoNs.enchufe,
                       titulo: 'Cuenta',
-                      // En el navegador todo va y viene por internet (no hay PC por wifi): se dice eso y no "solo en este celular".
-                      detalle: 'Sincronización: ${kIsWeb ? 'por internet' : soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}',
+                      // En el navegador y en la compu todo va y viene por internet (no hay PC por wifi): se dice eso y no "solo en este celular".
+                      detalle: 'Sincronización: ${kIsWeb || esEscritorioServicios ? 'por internet' : soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}',
                       onTap: () => app.irA((_) => const PantallaCuentaDelCelular()),
                     ),
                     // En el navegador la versión nueva llega sola al recargar la página: no hay nada que instalar.

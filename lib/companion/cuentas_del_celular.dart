@@ -31,6 +31,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/carpeta_base.dart';
 import '../domain/cuentas_del_celular.dart';
 import '../servicios/almacenes_del_equipo.dart';
 import '../servicios/cuenta_nube.dart' show PerfilDeCuenta;
@@ -48,8 +49,9 @@ const _archivoCuenta = 'cuenta.json';
 /// Nunca se borra: queda apartado por si hiciera falta recuperarlo a mano.
 const _carpetaHuerfanos = '_huerfanos';
 
-/// Lo que hay en la carpeta de datos y NO es de una cuenta: las otras cuentas y los registros de errores del aparato.
-const _soporteDelAparato = {_carpetaGuardadas, 'logs'};
+/// Lo que hay en la carpeta de datos y NO es de una cuenta: las otras cuentas y los registros de errores del aparato. Y la
+/// carpeta de la base en Windows (`carpeta_base.dart`): la base se mueve sola, por `documentos`, no como parte de los datos.
+const _soporteDelAparato = {_carpetaGuardadas, 'logs', subcarpetaBaseEscritorio};
 
 /// Los archivos de la base (`AppDatabase._abrirConexion`, `driftDatabase(name: 'la_plazoleta')`).
 final _archivosBase = [for (final s in ['', '-wal', '-shm', '-journal']) '$nombreBaseCelular.sqlite$s'];
@@ -68,7 +70,7 @@ class CarpetasDelCelular {
   final Directory soporte;
 
   static Future<CarpetasDelCelular> delSistema() async =>
-      CarpetasDelCelular(documentos: await getApplicationDocumentsDirectory(), soporte: await getApplicationSupportDirectory());
+      CarpetasDelCelular(documentos: await carpetaDeLaBase(), soporte: await getApplicationSupportDirectory());
 
   Directory get guardadas => Directory(p.join(soporte.path, _carpetaGuardadas));
   Directory guardada(String id) => Directory(p.join(guardadas.path, id));

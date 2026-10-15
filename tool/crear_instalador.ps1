@@ -5,6 +5,7 @@
 #   .\tool\crear_instalador.ps1
 #   .\tool\crear_instalador.ps1 -CertificadoDePrueba   # firma autofirmada, solo para probar
 #   .\tool\crear_instalador.ps1 -SinBuild              # reusa build\...\Release ya compilado
+#   .\tool\crear_instalador.ps1 -Edicion servicios     # Nodo Sur Servicios: dist\NodoSurServicios-Setup-<version>.exe
 #
 # NO sube el build number (eso lo hace tool\publicar_release.ps1).
 #
@@ -26,7 +27,9 @@
 # advertir al instalarlo.
 param(
     [switch]$CertificadoDePrueba,
-    [switch]$SinBuild
+    [switch]$SinBuild,
+    [ValidateSet("almacen", "servicios")]
+    [string]$Edicion = "almacen"
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,8 +40,11 @@ Set-Location $raiz
 
 $version = Get-VersionPubspec
 $carpetaBuild = Join-Path $raiz "build\windows\x64\runner\Release"
-$exeApp = Join-Path $carpetaBuild "la_plazoleta.exe"
-$instalador = Join-Path $raiz "dist\NodoSurPOS-Setup-$($version.Feed).exe"
+# Nodo Sur Servicios (docs/PLAN-ESCRITORIO-SERVICIOS.md) sale del mismo proyecto: otro .exe, otro instalador.
+$servicios = $Edicion -eq "servicios"
+$exeApp = Join-Path $carpetaBuild $(if ($servicios) { "nodo_sur_servicios.exe" } else { "la_plazoleta.exe" })
+$issApp = Join-Path $raiz $(if ($servicios) { "installer\nodo_sur_servicios.iss" } else { "installer\la_plazoleta.iss" })
+$instalador = Join-Path $raiz $(if ($servicios) { "dist\NodoSurServicios-Setup-$($version.Feed).exe" } else { "dist\NodoSurPOS-Setup-$($version.Feed).exe" })
 $urlTimestamp = if ($env:SIGN_TIMESTAMP_URL) { $env:SIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }
 
 function Find-Signtool {
@@ -131,8 +137,16 @@ if (-not $script:modoFirma) {
 }
 
 if (-not $SinBuild) {
-    Write-Output "Compilando la versión $($version.Completa)..."
-    flutter build windows --release
+    Write-Output "Compilando la versión $($version.Completa) ($Edicion)..."
+    # La edición la lee CMake del entorno al configurar (windows/CMakeLists.txt), y CMake no se vuelve a configurar porque
+    # cambie una variable de entorno: sin borrar el build, la segunda edición saldría con el .exe de la primera.
+    Remove-Item -Recurse -Force (Join-Path $raiz "build\windows") -ErrorAction SilentlyContinue
+    if ($servicios) {
+        $env:NODOSUR_EDICION = "servicios"
+        try { flutter build windows --release --dart-define=EDICION=servicios } finally { Remove-Item env:NODOSUR_EDICION -ErrorAction SilentlyContinue }
+    } else {
+        flutter build windows --release
+    }
     if ($LASTEXITCODE -ne 0) { throw "flutter build windows --release falló" }
 }
 if (-not (Test-Path $exeApp)) { throw "No existe $exeApp — compilá primero (sin -SinBuild)." }
@@ -140,7 +154,7 @@ if (-not (Test-Path $exeApp)) { throw "No existe $exeApp — compilá primero (s
 Invoke-Firma $exeApp
 
 Write-Output "Armando el instalador con Inno Setup..."
-& $iscc "/DMyAppVersion=$($version.Feed)" "/DSourceDir=$carpetaBuild" (Join-Path $raiz "installer\la_plazoleta.iss")
+& $iscc "/DMyAppVersion=$($version.Feed)" "/DSourceDir=$carpetaBuild" $issApp
 if ($LASTEXITCODE -ne 0) { throw "ISCC falló (código $LASTEXITCODE)" }
 if (-not (Test-Path $instalador)) { throw "El instalador no quedó en $instalador" }
 

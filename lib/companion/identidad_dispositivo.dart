@@ -4,10 +4,10 @@
 // aunque se reinstale la companion. Mismo mecanismo de persistencia que ya
 // usa `emparejamiento.dart` para la conexión y el usuario elegido.
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/identidad_sync.dart';
+import '../plataforma.dart';
 
 const _claveIdDispositivo = 'companion_id_dispositivo';
 
@@ -19,7 +19,7 @@ Future<String> idDispositivoEstable() async {
   final existente = prefs.getString(_claveIdDispositivo);
   if (existente != null) return existente;
 
-  final nuevo = '${kIsWeb ? 'web' : 'android'}-${generarGlobalId()}';
+  final nuevo = '$nombreDelSistema-${generarGlobalId()}';
   await prefs.setString(_claveIdDispositivo, nuevo);
   return nuevo;
 }
