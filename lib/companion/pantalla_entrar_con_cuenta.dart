@@ -124,6 +124,44 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   /// Entrar con Google desde la app no anduvo (o se cerró el selector): se ofrece el navegador.
   bool _ofrecerNavegador = false;
 
+  /// Qué está haciendo mientras trabaja, para que no parezca trabado ("Bajando los datos de tu negocio…").
+  String? _paso;
+
+  /// La primera vuelta de la sync al entrar terminó bien: no se repite para saber si el negocio es nuevo.
+  bool _sincronizado = false;
+
+  /// En la compu: el QR para entrar con el celular (`vincularConQr`), mientras se espera que alguien lo apruebe.
+  Uri? _qr;
+  bool _qrActivo = false;
+
+  @override
+  void dispose() {
+    _qrActivo = false; // corta la espera del QR
+    super.dispose();
+  }
+
+  Future<void> _empezarQr() async {
+    if (_qrActivo || _sync == null || !esEscritorioServicios) return;
+    setState(() {
+      _qrActivo = true;
+      _qr = null;
+    });
+    try {
+      final cuenta = await _sync!.vincularConQrDelCelular(
+        nombre: nombreDelCelular(),
+        alMostrar: (url) {
+          if (mounted) setState(() => _qr = url);
+        },
+        cancelado: () => !mounted || !_qrActivo,
+      );
+      _qrActivo = false;
+      await _resolver(cuenta);
+    } catch (e) {
+      // Cancelado (se fue al navegador o se cerró la pantalla), o no se pudo pedir el código: se ofrece pedir otro.
+      if (mounted) setState(() => _qrActivo = false);
+    }
+  }
+
   /// Las cuentas guardadas en el celular (null en la web, que no tiene varias).
   IndiceCuentas? _cuentas;
 
@@ -149,6 +187,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       _error = mensajeDeError(e);
     }
     if (mounted) setState(() => _trabajando = false);
+    unawaited(_empezarQr());
   }
 
   Future<IndiceCuentas?> _leerCuentasDelCelular() async {
@@ -263,6 +302,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
 
   /// El camino de antes: se abre la página /vincular/ del sitio y vuelve con el código.
   Future<void> _entrarConNavegador() async {
+    _qrActivo = false; // si entra por el navegador, el QR ya no hace falta
     setState(() {
       _trabajando = true;
       _error = null;
@@ -299,7 +339,8 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       // Un equipo nuevo en "Solo celular" (otro celular, o el navegador) baja primero lo que ya está en la nube: el perfil se busca
       // por nombre, y con la base todavía vacía se creaba otra persona con el mismo nombre (revisión 2026-10-12, "Caro" tres veces
       // en la Agenda). Sin red sigue igual que antes.
-      if (await leerModoUso() == ModoUso.soloCelular) await sincronizarUnaVez(_sync!.servicio);
+      if (mounted) setState(() => _paso = 'Bajando los datos de tu negocio…');
+      _sincronizado = await leerModoUso() == ModoUso.soloCelular && await sincronizarUnaVez(_sync!.servicio);
       final servicio = await (widget.servicio ?? servicioParaPerfil)();
       await resolverPerfilDeCuenta(perfil: perfil, servicio: servicio);
       if (!mounted) return;
@@ -347,7 +388,8 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (perfil.rol != rolDuenio) return false;
     if (await leerModoUso() != ModoUso.soloCelular) return false;
     final db = baseLocalCompanion();
-    if (!await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db)) return false;
+    // Lo de la nube ya se bajó al entrar (`_resolver`): sin otra vuelta entera.
+    if (!await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db, yaSincronizado: _sincronizado)) return false;
     await prepararNegocioNuevo(db);
     await guardarPasosPendientes(pasosDelNegocio().toSet());
     return true;
@@ -370,6 +412,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
         // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
         alReintentar: _error != null && !_hayQueEntrarDeNuevo && _sync != null ? _reintentar : null,
         alEntrarConNavegador: _ofrecerNavegador && _sync != null ? _entrarConNavegador : null,
+        paso: _paso,
+        qr: _qrActivo ? _qr : null,
+        alOtroQr: !_qrActivo && _sync != null ? _empezarQr : null,
         volverACuenta: switch (_paraVolver) {
           final c? => (titulo: c.titulo, alTocar: () => _irACuentaGuardada(c.id)),
           null => null,

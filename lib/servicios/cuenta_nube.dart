@@ -430,6 +430,48 @@ class ClienteNube {
     );
   });
 
+  // --- Entrar en la compu con un QR desde el celular (Nodo Sur Servicios de Windows, 2026-10-15; sitio:
+  // `functions/api/device/qr.js`). La compu pide el pedido y pregunta; el celular ya vinculado lo ve y lo aprueba.
+
+  /// La compu: pide un pedido con su id y el desafío PKCE. Devuelve el número del pedido y la dirección del QR.
+  Future<({String id, Uri url})> pedirQr({required String idDispositivo, required String nombre, required String desafio}) => _conRed(() async {
+    final r = await http.post(
+      _uri('/api/device/qr'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'deviceId': idDispositivo, 'name': nombre, 'challenge': desafio}),
+    ).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (id: j['id'] as String, url: Uri.parse(j['url'] as String));
+  });
+
+  /// La compu pregunta: el código de un solo uso cuando alguien aprobó, null mientras espera. Lanza [ErrorNube] `qr_vencido`.
+  Future<String?> estadoQr(String id) => _conRed(() async {
+    final r = await http.post(_uri('/api/device/qr/estado'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'id': id})).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return switch (j['estado']) {
+      'listo' => j['code'] as String,
+      'esperando' => null,
+      _ => throw const ErrorNube('qr_vencido', 'El código venció.'),
+    };
+  });
+
+  /// El celular: qué equipo está por entrar con el QR escaneado. Lanza [ErrorNube] `qr_vencido` si ya no vale.
+  Future<String> verQr(String token, String id) => _conRed(() async {
+    final r = await http.post(_uri('/api/device/qr/ver'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'id': id})).timeout(_limite);
+    if (r.statusCode == 410) throw const ErrorNube('qr_vencido', 'Ese código venció. En la compu tocá «Mostrar otro código».', estado: 410);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['nombre'] as String? ?? 'la compu';
+  });
+
+  /// El celular: aprueba. La compu queda en el negocio y la sucursal de este celular.
+  Future<void> aprobarQr(String token, String id) => _conRed(() async {
+    final r = await http.post(_uri('/api/device/qr/aprobar'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'id': id})).timeout(_limite);
+    if (r.statusCode == 410) throw const ErrorNube('qr_vencido', 'Ese código venció. En la compu tocá «Mostrar otro código».', estado: 410);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   /// El client ID Web que va como `serverClientId` al selector de Google del celular. Null si el sitio todavía no ofrece entrar
   /// con Google desde la app (una versión anterior, o sin configurar): se entra por el navegador.
   Future<String?> clienteGoogle() => _conRed(() async {
@@ -1106,6 +1148,45 @@ Future<CuentaVinculada> vincularEstaPc({
     await escucha.cancel();
     await servidor.close(force: true);
   }
+}
+
+/// Vincular la compu con un QR que se escanea con el celular (Nodo Sur Servicios de Windows, 2026-10-15; sitio:
+/// `functions/api/device/qr.js`). Pide el pedido y le pasa a [alMostrar] la dirección del QR; pregunta cada [cada] hasta que
+/// alguien lo apruebe desde el celular y canjea el código con su verificador (PKCE, como [vincularEstaPc]). Si el pedido vence,
+/// pide otro solo y vuelve a llamar a [alMostrar]. Sin red sigue esperando. [cancelado] corta (lanza [ErrorNube]
+/// `vinculacion_cancelada`).
+Future<CuentaVinculada> vincularConQr({
+  required ClienteNube cliente,
+  required AlmacenCuenta almacen,
+  required String idDispositivo,
+  required String nombre,
+  required void Function(Uri url) alMostrar,
+  required bool Function() cancelado,
+  Duration cada = const Duration(seconds: 2),
+}) async {
+  var verificador = generarVerificador();
+  var pedido = await cliente.pedirQr(idDispositivo: idDispositivo, nombre: nombre, desafio: desafioDe(verificador));
+  alMostrar(pedido.url);
+  while (!cancelado()) {
+    await Future<void>.delayed(cada);
+    if (cancelado()) break;
+    String? code;
+    try {
+      code = await cliente.estadoQr(pedido.id);
+    } on ErrorNube catch (e) {
+      if (e.codigo == 'qr_vencido') {
+        verificador = generarVerificador();
+        pedido = await cliente.pedirQr(idDispositivo: idDispositivo, nombre: nombre, desafio: desafioDe(verificador));
+        alMostrar(pedido.url);
+      }
+      continue; // sin red o un error pasajero: se vuelve a preguntar
+    }
+    if (code == null) continue;
+    final cuenta = await cliente.canjear(code: code, verificador: verificador, nombre: nombre);
+    await almacen.guardar(cuenta);
+    return cuenta;
+  }
+  throw const ErrorNube('vinculacion_cancelada', 'Se canceló la vinculación.');
 }
 
 /// Un aviso del sitio (`/api/mp/avisos` o el aviso en vivo). null si no se entiende: un tipo nuevo de un sitio más nuevo no

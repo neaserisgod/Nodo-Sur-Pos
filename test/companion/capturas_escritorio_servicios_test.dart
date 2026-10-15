@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/base_local.dart';
+import 'package:la_plazoleta/companion/bienvenida/vista_entrar_con_google.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
@@ -133,6 +135,108 @@ void main() {
     ));
     await _esperar(tester);
   }
+
+  /// Como `abrir`, pero con el navegador del área de la derecha (`ContenidoConMenuNs`), como lo arma el menú de verdad.
+  Future<void> abrirConNavegador(WidgetTester tester, Widget pestania) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    anchoLibreNs.value = true;
+    addTearDown(() => anchoLibreNs.value = false);
+    final nav = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(RepaintBoundary(
+      key: _clave,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: TemaCompanion.claro,
+        home: AppNs(
+          controlador: _SoloCelular(),
+          version: 0,
+          child: Scaffold(
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MenuLateralNs(activa: PestaniaNs.mas, onSeleccionar: (_) {}),
+                Expanded(child: ContenidoConMenuNs(navegador: nav, pestanias: pestania)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
+    await _esperar(tester);
+  }
+
+  testWidgets('entrar en la compu: la marca a la izquierda y el QR para entrar con el celular', (tester) async {
+    await _cargarFigtree();
+    escritorioServiciosDePrueba = true;
+    edicionActual = Edicion.servicios;
+    addTearDown(() {
+      escritorioServiciosDePrueba = null;
+      edicionActual = Edicion.almacen;
+    });
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(RepaintBoundary(
+      key: _clave,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: TemaCompanion.claro,
+        home: Row(children: [
+          const Expanded(child: PanelMarcaEscritorioNs()),
+          SizedBox(
+            width: 600,
+            child: VistaEntrarConGoogle(alEntrar: () {}, qr: Uri.parse('https://horsepos.com/vincular/qr/?p=${'a' * 32}')),
+          ),
+        ]),
+      ),
+    ));
+    await _esperar(tester);
+    expect(find.byKey(const Key('entrar_qr')), findsOneWidget);
+    await _guardar(tester, 'entrar');
+  });
+
+  testWidgets('lo que se abre desde una pestaña queda al lado del menú, y las hojas son ventanas al centro', (tester) async {
+    await _cargarFigtree();
+    await abrirConNavegador(
+      tester,
+      Builder(
+        builder: (context) => Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Configuración')),
+                  body: ListView(children: [for (var i = 0; i < 8; i++) ListTile(title: Text('Opción $i'))]),
+                ),
+              )),
+              child: const Text('Abrir Configuración'),
+            ),
+            TextButton(
+              onPressed: () => mostrarHojaNs<void>(context, builder: (c) => HojaNs(titulo: 'Cobrar el turno', texto: 'Lucía P. · Semipermanente manos', botones: [BotonNs.primario(c, 'Cobrar \$ 18.000', () {})])),
+              child: const Text('Abrir hoja'),
+            ),
+          ]),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Abrir Configuración'));
+    await _esperar(tester);
+    // El menú sigue a la vista y la pantalla se centra a un ancho de lectura, sin achicar la app.
+    expect(find.byType(MenuLateralNs), findsOneWidget);
+    expect(tester.getSize(find.byType(AppBar)).width, lessThanOrEqualTo(anchoLecturaNs));
+    expect(tester.getTopLeft(find.byType(AppBar)).dx, greaterThan(anchoMenuLateralNs));
+    await _guardar(tester, 'pantalla-al-lado-del-menu');
+    await tester.pageBack();
+    await _esperar(tester);
+    await tester.tap(find.text('Abrir hoja'));
+    await _esperar(tester);
+    expect(find.byType(Dialog), findsNothing);
+    expect(find.byType(BottomSheet), findsNothing, reason: 'en la compu la hoja es una ventana, no sube desde abajo');
+    expect(find.byType(HojaComoVentanaNs), findsOneWidget);
+    await _guardar(tester, 'hoja-como-ventana');
+  });
 
   for (final oscuro in temasDeCaptura) {
     final s = oscuro ? ' (oscuro)' : '';

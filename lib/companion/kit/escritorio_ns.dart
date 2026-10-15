@@ -111,9 +111,12 @@ class MenuLateralNs extends StatelessWidget {
 
 /// Atajos Alt+1… del menú lateral, para toda la ventana. Envuelve el contenido de la pantalla del menú.
 class AtajosMenuNs extends StatelessWidget {
-  const AtajosMenuNs({super.key, required this.onSeleccionar, required this.child});
+  const AtajosMenuNs({super.key, required this.onSeleccionar, required this.child, this.alEscape});
   final ValueChanged<PestaniaNs> onSeleccionar;
   final Widget child;
+
+  /// Esc: cierra la pantalla abierta al lado del menú (en la compu no hay botón de volver del sistema).
+  final VoidCallback? alEscape;
 
   static const _digitos = [
     LogicalKeyboardKey.digit1,
@@ -128,6 +131,7 @@ class AtajosMenuNs extends StatelessWidget {
         bindings: {
           for (final (i, e) in entradasMenuServiciosNs.indexed)
             SingleActivator(_digitos[i], alt: true): () => onSeleccionar(e.pestania),
+          const SingleActivator(LogicalKeyboardKey.escape): ?alEscape,
         },
         child: Focus(autofocus: true, child: child),
       );
@@ -233,4 +237,137 @@ class ConMenuLateralNs extends InheritedWidget {
 double anchoDeLaVentanaNs(BuildContext context) {
   final vista = View.of(context);
   return vista.physicalSize.width / vista.devicePixelRatio;
+}
+
+/// El área de la derecha del menú lateral: las pestañas y, encima, lo que se abra desde ellas, en su propio navegador. Así una
+/// pantalla secundaria (Configuración, Cuenta, el bot…) se ve al lado del menú, centrada a un ancho cómodo de leer, en vez de
+/// tapar toda la ventana con el ancho de un celular.
+class ContenidoConMenuNs extends StatelessWidget {
+  const ContenidoConMenuNs({super.key, required this.navegador, required this.pestanias});
+
+  final GlobalKey<NavigatorState> navegador;
+  final Widget pestanias;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return _PestaniasActuales(
+      pestanias: pestanias,
+      child: Theme(
+        data: tema.copyWith(
+          pageTransitionsTheme: PageTransitionsTheme(builders: {for (final p in TargetPlatform.values) p: const _TransicionAlLadoDelMenu()}),
+        ),
+        child: Navigator(
+          key: navegador,
+          onGenerateInitialRoutes: (_, _) => [
+            PageRouteBuilder<void>(
+              transitionDuration: Duration.zero,
+              // Un widget propio que lee las pestañas: la ruta guarda la página armada y no la vuelve a pedir.
+              pageBuilder: (_, _, _) => const _PaginaPestanias(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Las pestañas que arma el menú en cada redibujo: la ruta de abajo del navegador las lee de acá (una ruta no se vuelve a armar
+/// sola cuando cambia quien la creó).
+class _PestaniasActuales extends InheritedWidget {
+  const _PestaniasActuales({required this.pestanias, required super.child});
+  final Widget pestanias;
+
+  static Widget de(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_PestaniasActuales>()!.pestanias;
+
+  @override
+  bool updateShouldNotify(_PestaniasActuales oldWidget) => !identical(pestanias, oldWidget.pestanias);
+}
+
+/// Las pantallas que se abren al lado del menú: con el fundido de la app y centradas a [anchoLecturaNs] (están pensadas para el
+/// celular: estiradas a todo el ancho quedaban renglones de un metro).
+class _TransicionAlLadoDelMenu extends PageTransitionsBuilder {
+  const _TransicionAlLadoDelMenu();
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    final contenido = route.isFirst ? child : ColoredBox(color: context.ns.paper, child: AnchoLecturaNs(child: child));
+    if (sinMovimiento(context)) return contenido;
+    return FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: contenido);
+  }
+}
+
+class _PaginaPestanias extends StatelessWidget {
+  const _PaginaPestanias();
+
+  @override
+  Widget build(BuildContext context) => ConMenuLateralNs(child: _PestaniasActuales.de(context));
+}
+
+/// Está armado el menú (ya se entró). Mientras no, la compu muestra la bienvenida y el entrar con [PanelMarcaEscritorioNs] al
+/// costado; lo pone y lo saca `PantallaMenuCompanion`.
+final ValueNotifier<bool> menuMontadoNs = ValueNotifier(false);
+
+/// La mitad izquierda de la bienvenida y del entrar en la compu (El dueño, 2026-10-15: "la bienvenida y entrar se ven de
+/// celular"): el color y la palabra del ícono, y qué es la app. El formulario va a la derecha, del ancho de siempre.
+class PanelMarcaEscritorioNs extends StatelessWidget {
+  const PanelMarcaEscritorioNs({super.key});
+
+  static const _puntos = [
+    'La agenda, los cobros y la caja, los mismos que en el celular.',
+    'El bot de WhatsApp contesta y cobra señas aunque cierres la app.',
+    'Todo se sincroniza solo con tus otros equipos.',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // Material (no ColoredBox): va arriba del navegador, fuera de toda pantalla, y sin él el texto sale con el subrayado amarillo
+    // de "falta el tema".
+    return Material(
+      color: TokensNs.ciruela,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(56, 56, 56, 48),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('turnos', style: estiloNs(30, peso: FontWeight.w600, track: -0.03, color: TokensNs.ciruelaTexto)),
+                const SizedBox(width: 6),
+                Container(width: 9, height: 9, margin: const EdgeInsets.only(top: 14), decoration: const BoxDecoration(color: TokensNs.ciruelaTexto, shape: BoxShape.circle)),
+              ],
+            ),
+            const Spacer(),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nodo Sur Servicios', style: estiloNs(16, peso: FontWeight.w600, color: TokensNs.ciruelaTexto.withValues(alpha: 0.75))),
+                  const SizedBox(height: 10),
+                  Text('Tus turnos, tus señas y tu WhatsApp, desde la compu.',
+                      style: tituloNs(44, track: -0.05, altura: 1.05, color: TokensNs.ciruelaTexto)),
+                  const SizedBox(height: 28),
+                  for (final p in _puntos)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(padding: const EdgeInsets.only(top: 2), child: IconoNsWidget(IconoNs.tilde, tamanio: 20, color: TokensNs.ciruelaTexto)),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(p, style: estiloNs(16, altura: 1.4, color: TokensNs.ciruelaTexto))),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            Text('horsepos.com', style: estiloNs(14, color: TokensNs.ciruelaTexto.withValues(alpha: 0.6))),
+          ],
+        ),
+      ),
+    );
+  }
 }
