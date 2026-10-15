@@ -45,4 +45,24 @@ try {
     } finally { Pop-Location }
 } finally { Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue }
 
+# Que el bot cargue con este Node antes de dar el paquete por bueno: la base (SQLite incorporado) y la librería de WhatsApp.
+Write-Output "Probando que el bot cargue con este Node..."
+$prueba = Join-Path ([IO.Path]::GetTempPath()) ("bot-prueba-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force $prueba | Out-Null
+try {
+    & (Join-Path $env:SystemRoot "System32\tar.exe") -x -f (Join-Path $salida "bot.zip") -C $prueba
+    $js = @'
+const path = require('path');
+const { pathToFileURL } = require('url');
+const dir = process.argv[2];
+const db = require(path.join(dir, 'src', 'db', 'motor.js')).abrirBase(':memory:');
+import(pathToFileURL(path.join(dir, 'node_modules', '@whiskeysockets', 'baileys', 'lib', 'index.js')).href)
+  .then(() => console.log('El bot carga con Node ' + process.version + ' (base: ' + db.motor + ')'))
+  .catch((e) => { console.error(e); process.exit(1); });
+'@
+    Set-Content -Path (Join-Path $prueba "probar.js") -Value $js -Encoding utf8
+    & $node (Join-Path $prueba "probar.js") $prueba
+    if ($LASTEXITCODE -ne 0) { throw "El bot no carga con el Node de Windows" }
+} finally { Remove-Item -Recurse -Force $prueba -ErrorAction SilentlyContinue }
+
 Get-ChildItem $salida | ForEach-Object { Write-Output ("{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB)) }
