@@ -34,6 +34,18 @@ jobs:
       # frena el PR en vez de acumularse.
       - name: Análisis (sin avisos)
         run: flutter analyze
+      # Los scripts de PowerShell (instalador, publicación) solo corren al publicar: un error de sintaxis aparecía recién ahí
+      # (2026-10-15, "$origenBot:" frenó una beta). El runner de Ubuntu trae pwsh.
+      - name: Scripts de PowerShell (sintaxis)
+        shell: pwsh
+        run: |
+          $mal = 0
+          foreach ($f in Get-ChildItem tool -Filter *.ps1) {
+            $e = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$e)
+            foreach ($x in $e) { Write-Host "::error file=tool/$($f.Name),line=$($x.Extent.StartLineNumber)::$($x.Message)"; $mal++ }
+          }
+          if ($mal) { exit 1 }
       # Sin el benchmark de 60.000 ventas (`@Tags(['bench'])`): mide rendimiento, no correctitud, y se corre aparte con
       # `flutter test --tags bench`. Las capturas van en su versión corta (claro, 1366; `test/helpers/capturas.dart`).
       # En un PR, solo los tests que pueden cambiar por lo tocado (`tool/tests_afectados.dart`, sigue los imports); en main,
