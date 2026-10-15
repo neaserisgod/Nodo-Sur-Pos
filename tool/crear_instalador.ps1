@@ -156,7 +156,7 @@ if (-not (Test-Path $exeApp)) { throw "No existe $exeApp — compilá primero (s
 if ($servicios) {
     $origenBot = Join-Path $raiz "build\bot-windows"
     foreach ($f in "node.exe", "bot.zip") {
-        if (-not (Test-Path (Join-Path $origenBot $f))) { throw "Falta $f en $origenBot: corré antes .\tool\preparar_bot_windows.ps1" }
+        if (-not (Test-Path (Join-Path $origenBot $f))) { throw "Falta $f en ${origenBot}: corré antes .\tool\preparar_bot_windows.ps1" }
     }
     $destinoBot = Join-Path $carpetaBuild "bot"
     New-Item -ItemType Directory -Force $destinoBot | Out-Null
