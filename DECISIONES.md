@@ -85,6 +85,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
 - [Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)](#cobrar-servicios-sin-tabla-de-consumos-y-la-propina-después-de-cobrar-2026-10-10)
 - [Asistente con IA de servicios: la IA propone, la app valida y la persona confirma (2026-10-16)](#asistente-con-ia-de-servicios-la-ia-propone-la-app-valida-y-la-persona-confirma-2026-10-16)
+- [Precios de todo: subir X % o igualar la ganancia, sin cigarrillos (2026-10-16)](#precios-de-todo-subir-x--o-igualar-la-ganancia-sin-cigarrillos-2026-10-16)
 
 **Diseño y pantallas**
 
@@ -2666,4 +2667,20 @@ el Ctrl+K de la PC ni el buscador de funciones).
 - **Solo servicios sin PC**: trabaja sobre la base del equipo, que en "PC y celular" no tiene la agenda.
 - Con varios profesionales, el horario se valida contra todos los turnos del día (sin profesional): puede decir "no está libre"
   cuando otra persona sí lo tiene. Para eso, la Agenda.
+
+## Precios de todo: subir X % o igualar la ganancia, sin cigarrillos (2026-10-16)
+
+Pedido del dueño: "subirle un porcentaje general a todos los precios y ver el porcentaje promedio sin tener en cuenta los
+cigarrillos, estandarizarlo todo". Eligió las dos acciones y solo en el celular.
+
+- **Ganancia promedio**: sobre el precio (Regla 14, nunca markup), promedio simple de los productos con costo y precio, sin
+  cigarrillos ni fiambres (`gananciaPromedio`, `domain/precios_generales.dart`).
+- **Subir todo X %**: la misma fórmula y el mismo camino que la edición en lote (`ajustarMontoEnLote`): redondeo al peso y los
+  precios quedan **fijos** (como cualquier ajuste en lote: dejan de seguir al % del proveedor).
+- **Igualar la ganancia a X %** ("estandarizar"): cada producto con costo queda en `precioConGananciaACentena(costo, X)`, **deja de
+  ser precio fijo** y **todos los proveedores pasan a X %** (`igualarGananciaGeneral`). Si no se cambiaran los proveedores, el
+  próximo cambio de costo volvería a poner el % viejo y se perdería lo igualado.
+- Cigarrillos y fiambres afuera siempre: del promedio y de las dos acciones (Regla 6; El dueño, mismo día: "sin contar los
+  fiambres también"). Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`). "Varios", promos, servicios e insumos no vienen en la lista de productos.
+- Con PC, el celular lo pide a la PC (`/productos/lote/igualar-ganancia`); en "Solo celular" se hace en su base.
 

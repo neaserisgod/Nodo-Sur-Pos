@@ -978,6 +978,14 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
     return _json({'ok': true});
   });
 
+  router.post('/productos/lote/igualar-ganancia', (Request request) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final gananciaBp = _intRequerido(body, 'gananciaBp');
+    if (gananciaBp <= 0 || gananciaBp >= 10000) return _error(400, 'La ganancia tiene que ser mayor a 0 y menor a 100 %.');
+    final cambiados = await igualarGananciaGeneral(db, gananciaBp: gananciaBp, usuarioId: _intRequerido(body, 'usuarioId'));
+    return _json({'cambiados': cambiados});
+  });
+
   router.post('/productos/lote/stock', (Request request) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     await ajustarStockEnLote(

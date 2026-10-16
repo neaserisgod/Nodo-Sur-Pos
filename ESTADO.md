@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (16/10/2026)
 
+- **Precios de todo desde el celular** (Productos, almacén): muestra la ganancia promedio sobre el precio sin cigarrillos ni fiambres y deja
+  **subir todos los precios X %** (quedan precio fijo) o **igualar la ganancia a X %** (todos los productos con costo y todos los
+  proveedores a ese %). Cigarrillos y fiambres (por peso o de la categoría Fiambres) no se tocan. Arreglado "Negocio" que salía en vertical en Cuenta. **Falta probarlo en un
+  celular real.**
 - **Exportar la base desde el celular** (app de almacén, "Solo celular"): Más › Configuración › Tu base › Exportar. Arma la copia
   sin tokens y comprimida y abre el selector para mandarla (WhatsApp, Drive, mail); la PC la importa en Respaldo. **Falta probarlo
   en un celular real.** Y al publicar a mano ahora se elige qué app sale (`edicion`).

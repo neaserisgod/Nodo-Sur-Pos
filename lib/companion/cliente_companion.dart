@@ -937,6 +937,17 @@ class ClienteCompanion implements ServicioCompanion {
   }
 
   @override
+  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) async {
+    final r = await _client.post(
+      conexion._url('/productos/lote/igualar-ganancia'),
+      headers: _headers,
+      body: jsonEncode({'gananciaBp': gananciaBp, 'usuarioId': usuarioId}),
+    );
+    _revisar(r);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['cambiados'] as int;
+  }
+
+  @override
   Future<void> ajustarStockEnLote({
     required List<int> productoIds,
     required TipoAjusteStock tipo,
