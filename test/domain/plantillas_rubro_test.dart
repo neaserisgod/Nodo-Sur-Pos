@@ -8,7 +8,7 @@ void main() {
       expect(
         PlantillaRubro.todas.map((p) => p.clave).toList(),
         // Las mismas claves que el bot de WhatsApp (`botdemo/src/plantillas.js`): no se renombran nunca.
-        ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas', 'peluqueria', 'estetica', 'servicio', 'otro'],
+        ['kiosco', 'almacen', 'fiambreria', 'barberia', 'unas', 'peluqueria', 'estetica', 'servicio', 'rotiseria', 'otro'],
       );
       final claves = PlantillaRubro.todas.map((p) => p.clave);
       expect(claves.toSet().length, claves.length);
@@ -45,6 +45,14 @@ void main() {
     test('deForma arma los dos grupos del alta, sin "otro", en el orden de todas', () {
       expect(PlantillaRubro.deForma(FormaDeTrabajo.productos).map((p) => p.clave), ['kiosco', 'almacen', 'fiambreria']);
       expect(PlantillaRubro.deForma(FormaDeTrabajo.servicios).map((p) => p.clave), ['barberia', 'unas', 'peluqueria', 'estetica', 'servicio']);
+      expect(PlantillaRubro.deForma(FormaDeTrabajo.gastronomia).map((p) => p.clave), ['rotiseria']);
+    });
+
+    test('rotisería es gastronomía y trae su carta de ejemplo y el gas en los fijos (§22)', () {
+      expect(PlantillaRubro.rotiseria.forma, FormaDeTrabajo.gastronomia);
+      expect(formaDeRubro('rotiseria'), FormaDeTrabajo.gastronomia);
+      expect(PlantillaRubro.rotiseria.categorias.map((c) => c.nombre), containsAll(['Minutas', 'Empanadas y tartas', 'Bebidas']));
+      expect(PlantillaRubro.rotiseria.gastosFijos, contains('Gas'));
     });
 
     test('formaDeRubro: sin rubro o con una clave desconocida es productos, la app de siempre', () {

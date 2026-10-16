@@ -159,6 +159,23 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
 
+  /// Local gastronómico (§22): la carta de ejemplo de una rotisería, y el gas, que en una cocina es un fijo más.
+  static const rotiseria = PlantillaRubro(
+    clave: 'rotiseria',
+    nombre: 'Rotisería',
+    descripcion: 'Comida para llevar o con envío: minutas, pastas, empanadas, tartas.',
+    forma: FormaDeTrabajo.gastronomia,
+    categorias: [
+      CategoriaDePlantilla('Minutas'),
+      CategoriaDePlantilla('Pastas'),
+      CategoriaDePlantilla('Empanadas y tartas'),
+      CategoriaDePlantilla('Guarniciones'),
+      CategoriaDePlantilla('Postres'),
+      CategoriaDePlantilla('Bebidas'),
+    ],
+    gastosFijos: ['Alquiler', 'Luz', 'Gas', 'Internet', 'Sueldos'],
+  );
+
   /// Sin ejemplos: el comercio arma todo a mano.
   static const otro = PlantillaRubro(
     clave: 'otro',
@@ -167,7 +184,7 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
 
-  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, barberia, unas, peluqueria, estetica, servicio, otro];
+  static const List<PlantillaRubro> todas = [kiosco, almacen, fiambreria, barberia, unas, peluqueria, estetica, servicio, rotiseria, otro];
 
   /// Las de una forma de trabajar, en el orden de [todas] (el alta los muestra en dos grupos). "Otro" es de productos.
   static List<PlantillaRubro> deForma(FormaDeTrabajo forma) => [for (final p in todas) if (p.forma == forma && p != otro) p];

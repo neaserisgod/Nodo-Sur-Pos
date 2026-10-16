@@ -58,7 +58,10 @@ enum Modulo {
   insumos('insumos'),
 
   /// Sumar la mano de obra (lo que vale la hora de trabajo) al costo de un servicio. Solo servicios.
-  manoDeObra('mano_de_obra');
+  manoDeObra('mano_de_obra'),
+
+  /// La lista de pedidos para retirar o enviar, con el estado de la cocina (§22). Solo gastronomía.
+  pedidos('pedidos');
 
   const Modulo(this.clave);
 
@@ -76,6 +79,7 @@ enum Modulo {
     cobroPoint => 'Cobro con Mercado Pago Point',
     insumos => 'Insumos',
     manoDeObra => 'Mano de obra en el costo',
+    pedidos => 'Pedidos',
   };
 
   String get descripcion => switch (this) {
@@ -91,6 +95,7 @@ enum Modulo {
     cobroPoint => 'Cobrar con la terminal de Mercado Pago Point.',
     insumos => 'Lo que usa cada servicio, su costo y para cuántos alcanza.',
     manoDeObra => 'Sumar lo que vale la hora de trabajo al costo de cada servicio.',
+    pedidos => 'Pedidos del mostrador y de WhatsApp en una sola lista, con el estado de la cocina.',
   };
 
   /// Identificador estable que se guarda en la base.
@@ -101,9 +106,14 @@ enum Modulo {
   /// el ticket como "Corte") y el comparador contra los supermercados. Un módulo nuevo de servicios va solo con
   /// [FormaDeTrabajo.servicios]: así no le aparece a un almacén al actualizar.
   Set<FormaDeTrabajo> get formas => switch (this) {
-    cajaAparte || pesables || promos || compararPrecios => const {FormaDeTrabajo.productos},
-    fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint => const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios},
-    insumos || manoDeObra => const {FormaDeTrabajo.servicios},
+    // Un local gastronómico pesa (ensalada por kilo) y arma combos, pero no tiene lata de cigarrillos ni compara con el
+    // supermercado. Sus platos llevan receta como un servicio: insumos y mano de obra también valen para él.
+    cajaAparte || compararPrecios => const {FormaDeTrabajo.productos},
+    pesables || promos => const {FormaDeTrabajo.productos, FormaDeTrabajo.gastronomia},
+    fiado || retiroGanancias || equilibrio || turnos || cargaHistorica || cobroPoint =>
+      const {FormaDeTrabajo.productos, FormaDeTrabajo.servicios, FormaDeTrabajo.gastronomia},
+    insumos || manoDeObra => const {FormaDeTrabajo.servicios, FormaDeTrabajo.gastronomia},
+    pedidos => const {FormaDeTrabajo.gastronomia},
   };
 
   bool valePara(FormaDeTrabajo forma) => formas.contains(forma);

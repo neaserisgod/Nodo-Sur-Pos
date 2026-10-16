@@ -75,6 +75,7 @@ void main() {
           'cobro_point',
           'insumos',
           'mano_de_obra',
+          'pedidos',
         },
       );
     });
@@ -119,6 +120,19 @@ void main() {
       final barberia = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios);
       expect(barberia.estaActivo(Modulo.insumos), isTrue);
       expect(barberia.estaActivo(Modulo.manoDeObra), isTrue);
+    });
+
+    test('un local gastronómico tiene sus pedidos y las recetas de la carta; un almacén y un servicio no ven los pedidos (§22)', () {
+      final rotiseria = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.gastronomia);
+      for (final m in [Modulo.pedidos, Modulo.insumos, Modulo.manoDeObra, Modulo.pesables, Modulo.promos, Modulo.cobroPoint, Modulo.equilibrio]) {
+        expect(rotiseria.estaActivo(m), isTrue, reason: m.clave);
+      }
+      for (final m in [Modulo.cajaAparte, Modulo.compararPrecios]) {
+        expect(rotiseria.estaActivo(m), isFalse, reason: m.clave);
+      }
+      expect(ModulosNegocio.desdeTexto('').estaActivo(Modulo.pedidos), isFalse);
+      expect(ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios).estaActivo(Modulo.pedidos), isFalse);
+      expect(Modulo.desdeClave('pedidos'), Modulo.pedidos);
     });
 
     test('en un negocio de servicios, lo que es de un comercio con stock no se ve ni cuenta aunque no esté apagado', () {

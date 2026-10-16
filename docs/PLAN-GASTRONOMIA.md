@@ -1,7 +1,7 @@
 # Plan · Nodo Sur para locales gastronómicos
 
-**Estado al 2026-10-16: etapa 1 hecha** (las reglas de los pedidos en `lib/domain/pedido_gastronomico.dart`, con sus
-pruebas). Lo demás, sin empezar.
+**Estado al 2026-10-16: etapas 1 y 2 hechas, y la base de la 3** (forma de trabajar `gastronomia`, rubro `rotiseria`, módulo
+`pedidos`). Falta la pantalla.
 
 ## Por qué
 
@@ -34,9 +34,12 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
 1. **Reglas de los pedidos** (`domain/pedido_gastronomico.dart`): canal, estados, cocina, entrega, zonas, pago, aviso al
    cliente. ✅
 2. **Datos:** tabla de pedidos sincronizada (canal, estado, entrega, zona, dirección, hora estimada, líneas, venta con
-   que se cobró) y la configuración de pedidos en la del negocio. Migración versionada.
+   que se cobró) y la configuración de pedidos en la del negocio. Migración versionada. ✅ (v68)
 3. **Edición gastronomía:** rubro "Rotisería / comida para llevar" con su forma de trabajar; la carta (platos con receta)
-   en vez del catálogo de almacén.
+   en vez del catálogo de almacén. Base hecha ✅: `FormaDeTrabajo.gastronomia`, rubro `rotiseria` (todavía no aparece en
+   ningún alta: no hay pantalla), módulo `pedidos`, y recetas, pesables y promos que valen para gastronomía. **Un plato es un
+   producto con `esServicio` (receta, sin stock, sin duración)**: reusa el costo por receta de `repositorio_servicios.dart`
+   en vez de duplicarlo.
 4. **Lista de pedidos** (por confirmar, por hacer, listo, en camino) con el botón de estado de la cocina; el pedido de
    mostrador se carga desde la caja; cobrar un pedido es una venta de siempre.
 5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
