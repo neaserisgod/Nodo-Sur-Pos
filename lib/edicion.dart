@@ -1,24 +1,53 @@
-// Qué edición de la app es (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`). Del mismo código salen dos: "almacen" (la de
-// siempre) y "servicios" (Nodo Sur Servicios: turnos, con el bot de WhatsApp adentro). En Android la elige el flavor de Gradle
-// (`--flavor`); en Windows, que no tiene flavors, `--dart-define=EDICION=servicios` (El dueño, 2026-10-15: "la versión de
-// escritorio de Nodo Sur Servicios", `docs/PLAN-ESCRITORIO-SERVICIOS.md`). Sin nada de eso (y en las pruebas) es la de almacén.
+// Qué edición de la app es (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`). Del mismo código salen tres: "almacen" (la de
+// siempre), "servicios" (Nodo Sur Servicios: turnos, con el bot de WhatsApp adentro) y "gastronomia" (rotisería y comida para
+// llevar, El dueño, 2026-10-16: "versión aparte, como Servicios", `docs/PLAN-GASTRONOMIA.md`). En Android la elige el flavor de
+// Gradle (`--flavor`); en Windows, que no tiene flavors, `--dart-define=EDICION=servicios` (o `gastronomia`) (El dueño, 2026-10-15:
+// "la versión de escritorio de Nodo Sur Servicios", `docs/PLAN-ESCRITORIO-SERVICIOS.md`). Sin nada de eso (y en las pruebas) es
+// la de almacén.
 
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show appFlavor;
 
-enum Edicion { almacen, servicios }
+enum Edicion { almacen, servicios, gastronomia }
 
 const _edicionDefinida = String.fromEnvironment('EDICION');
 
+Edicion _edicionCompilada() {
+  final clave = appFlavor ?? _edicionDefinida;
+  return switch (clave) {
+    'servicios' => Edicion.servicios,
+    'gastronomia' => Edicion.gastronomia,
+    _ => Edicion.almacen,
+  };
+}
+
 /// La edición con la que se compiló. Se puede pisar en las pruebas.
-Edicion edicionActual = appFlavor == 'servicios' || _edicionDefinida == 'servicios' ? Edicion.servicios : Edicion.almacen;
+Edicion edicionActual = _edicionCompilada();
 
 bool get esEdicionServicios => edicionActual == Edicion.servicios;
 
-/// Nodo Sur Servicios instalado en una compu con Windows: la app del celular, con ventana de PC y su propio instalador.
-bool get esEscritorioServicios => esEdicionServicios && !kIsWeb && Platform.isWindows;
+bool get esEdicionGastronomia => edicionActual == Edicion.gastronomia;
+
+/// Una app aparte de la del almacén, armada sobre la del celular: sin PC con la que emparejarse ("Solo celular", se sincroniza
+/// por internet), con el bot de WhatsApp adentro y sus propias actualizaciones. Lo que es solo de una (la caja simple y la
+/// persona sola de Servicios, sus textos, sus rubros) pregunta por [esEdicionServicios] o [esEdicionGastronomia].
+bool get esEdicionAparte => edicionActual != Edicion.almacen;
+
+/// Una edición aparte instalada en una compu con Windows: la app del celular, con ventana de PC y su propio instalador.
+bool get esEscritorioAparte => esEdicionAparte && !kIsWeb && Platform.isWindows;
+
+/// El nombre que se ve en la ventana y en la tienda.
+String get nombreDeEdicion => switch (edicionActual) {
+      Edicion.almacen => 'Nodo Sur POS',
+      Edicion.servicios => 'Nodo Sur Servicios',
+      Edicion.gastronomia => 'Nodo Sur Gastronomía',
+    };
 
 /// Con qué nombre busca sus actualizaciones en el sitio: cada edición de cada sistema es un instalador distinto.
-String get plataformaActualizacion => esEscritorioServicios ? 'windows-servicios' : esEdicionServicios ? 'android-servicios' : 'android';
+String get plataformaActualizacion => switch (edicionActual) {
+      Edicion.almacen => 'android',
+      Edicion.servicios => esEscritorioAparte ? 'windows-servicios' : 'android-servicios',
+      Edicion.gastronomia => esEscritorioAparte ? 'windows-gastronomia' : 'android-gastronomia',
+    };

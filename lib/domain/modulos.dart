@@ -138,6 +138,26 @@ class ModulosNegocio {
   /// [modulosEdicionServicios]. Lo apagado se conserva tal cual: la app de almacén lo encuentra como lo dejó.
   ModulosNegocio paraEdicionServicios() => ModulosNegocio(desactivados, forma: FormaDeTrabajo.servicios, soloEstos: modulosEdicionServicios);
 
+  /// Los que puede tener la app Nodo Sur Gastronomía (`docs/PLAN-GASTRONOMIA.md`, El dueño, 2026-10-16): los de un local que
+  /// cocina con receta, toma pedidos, pesa y arma combos, con su equipo y sus gastos fijos. Sin la lata de cigarrillos, el
+  /// comparador ni la carga histórica de planillas.
+  static const modulosEdicionGastronomia = {
+    Modulo.pedidos,
+    Modulo.insumos,
+    Modulo.manoDeObra,
+    Modulo.pesables,
+    Modulo.promos,
+    Modulo.fiado,
+    Modulo.retiroGanancias,
+    Modulo.equilibrio,
+    Modulo.turnos,
+    Modulo.cobroPoint,
+  };
+
+  /// Lo mismo, visto desde la app Nodo Sur Gastronomía: siempre de gastronomía y solo [modulosEdicionGastronomia].
+  ModulosNegocio paraEdicionGastronomia() =>
+      ModulosNegocio(desactivados, forma: FormaDeTrabajo.gastronomia, soloEstos: modulosEdicionGastronomia);
+
   /// Todo activo: cómo funciona la app hoy, y lo que se asume mientras la
   /// configuración no se pudo leer (vender nunca puede frenarse por esto).
   static const ModulosNegocio todosActivos = ModulosNegocio({});

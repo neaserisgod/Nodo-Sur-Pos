@@ -35,7 +35,8 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    cliente. ✅
 2. **Datos:** tabla de pedidos sincronizada (canal, estado, entrega, zona, dirección, hora estimada, líneas, venta con
    que se cobró) y la configuración de pedidos en la del negocio. Migración versionada. ✅ (v68)
-3. **Edición gastronomía:** rubro "Rotisería / comida para llevar" con su forma de trabajar; la carta (platos con receta)
+3. **Edición gastronomía:** ✅ app aparte (2026-10-16, `DECISIONES.md`): flavor `gastronomia`, `esEdicionAparte`, plataformas
+   del sitio, el alta ofrece solo "Rotisería". rubro "Rotisería / comida para llevar" con su forma de trabajar; la carta (platos con receta)
    en vez del catálogo de almacén. Base hecha ✅: `FormaDeTrabajo.gastronomia`, rubro `rotiseria` (todavía no aparece en
    ningún alta: no hay pantalla), módulo `pedidos`, y recetas, pesables y promos que valen para gastronomía. **Un plato es un
    producto con `esServicio` (receta, sin stock, sin duración)**: reusa el costo por receta de `repositorio_servicios.dart`

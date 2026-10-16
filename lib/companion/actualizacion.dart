@@ -183,7 +183,7 @@ Future<EstadoActualizacion> revisarActualizacion(
     // sigue con la PC
   }
   // Nodo Sur Servicios no tiene PC, y la PC ofrece el APK de la otra edición.
-  if (cliente == null || esEdicionServicios) throw const HttpException('Sin conexión al sitio ni a la PC');
+  if (cliente == null || esEdicionAparte) throw const HttpException('Sin conexión al sitio ni a la PC');
   final delServidor = await cliente.versionServidor();
   return EstadoActualizacion(
     hayActualizacion: propiaTexto != delServidor,

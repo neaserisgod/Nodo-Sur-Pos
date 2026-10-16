@@ -145,7 +145,7 @@ class _AnchoDelNavegador extends StatelessWidget {
 
   Widget _armar(BuildContext context, bool libre) {
     final mq = MediaQuery.of(context);
-    final achicar = (kIsWeb || esEscritorioServicios) && !libre && mq.size.width > anchoMaximo;
+    final achicar = (kIsWeb || esEscritorioAparte) && !libre && mq.size.width > anchoMaximo;
     final ancho = achicar ? anchoMaximo : mq.size.width;
     // Siempre los mismos widgets alrededor del navegador, cambie o no el ancho: si cambiara la estructura, Flutter armaría el
     // navegador de nuevo y se perderían todas las pantallas abiertas (y achicar pasa cada vez que una pantalla tapa al menú).
@@ -228,7 +228,7 @@ class _PantallaInicialState extends State<_PantallaInicial> {
       MaterialPageRoute(
         builder: (_) => modo == null
             // Agregando otra cuenta (ya hay una guardada en el celular) la bienvenida ya se vio: directo a elegir el modo.
-            ? (hayOtrasCuentas && !esEdicionServicios ? pantallaDeElegirModoInicial() : pantallaDeBienvenidaInicial())
+            ? (hayOtrasCuentas && !esEdicionAparte ? pantallaDeElegirModoInicial() : pantallaDeBienvenidaInicial())
             : usuario == null
             ? const PantallaEntrarConCuenta()
             : const PantallaMenuCompanion(),

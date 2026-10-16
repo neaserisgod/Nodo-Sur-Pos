@@ -8,8 +8,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'edicion.dart';
 
 /// La base y la app se comportan como las del celular (base propia que se sincroniza, sin sembrar lo de la PC): en Android, en
-/// el navegador y en Nodo Sur Servicios de Windows (que es la app del celular con ventana de PC, no la PC del almacén).
-bool get esEquipoCelular => kIsWeb || Platform.isAndroid || esEdicionServicios;
+/// el navegador y en una edición aparte de Windows (que es la app del celular con ventana de PC, no la PC del almacén).
+bool get esEquipoCelular => kIsWeb || Platform.isAndroid || esEdicionAparte;
 
 /// Android de verdad: lo que necesita el sistema del celular (el bot de WhatsApp con Node, las notificaciones). En el navegador no.
 bool get esAndroid => !kIsWeb && Platform.isAndroid;

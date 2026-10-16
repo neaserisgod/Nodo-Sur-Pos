@@ -58,7 +58,7 @@ Future<void> _main() async {
   // Android: un cambio de negocio (`companion/cuentas_del_celular.dart`) se termina ANTES de leer nada de la cuenta, empezando por
   // la clave de la IA de la línea de abajo. Si no se puede, la app no sigue con media cuenta puesta: lo muestra y deja reintentar.
   // Nodo Sur Servicios de Windows es la app del celular con ventana de PC (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): arranca igual.
-  final appDelCelular = Platform.isAndroid || esEscritorioServicios;
+  final appDelCelular = Platform.isAndroid || esEscritorioAparte;
   final cambioTrabado = appDelCelular ? await terminarCambioAlArrancar() : null;
   await ClaveGemini.cargar(); // clave de la IA de Google: la del negocio (en la cuenta) o, sin cuenta, la de este equipo
   // Android es la companion app (2026-09-07): mismo proyecto, entrada
@@ -70,11 +70,11 @@ Future<void> _main() async {
     runApp(RaizCompanion(cambioTrabado: cambioTrabado));
     return;
   }
-  if (esEscritorioServicios) {
+  if (esEscritorioAparte) {
     // Ventana nativa de Windows (con su barra de título), de un tamaño cómodo y con un mínimo para que entre el menú lateral.
     // `window_manager` hace falta igual: WinSparkle cierra la app con él para instalar una versión nueva.
     await windowManager.ensureInitialized();
-    await windowManager.waitUntilReadyToShow(const WindowOptions(title: 'Nodo Sur Servicios', minimumSize: Size(1100, 700)), () async {
+    await windowManager.waitUntilReadyToShow(WindowOptions(title: nombreDeEdicion, minimumSize: const Size(1100, 700)), () async {
       await windowManager.show();
       await windowManager.focus();
     });

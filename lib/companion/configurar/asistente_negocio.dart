@@ -310,7 +310,11 @@ class _PasoNegocio extends StatelessWidget {
           child: CampoNs(
             etiqueta: 'Nombre del comercio',
             controller: nombreCtrl,
-            placeholder: esEdicionServicios ? 'Ej.: Nails Sofi' : 'Ej.: Almacén Don Pepe',
+            placeholder: switch (edicionActual) {
+              Edicion.servicios => 'Ej.: Nails Sofi',
+              Edicion.gastronomia => 'Ej.: Rotisería Doña Ana',
+              Edicion.almacen => 'Ej.: Almacén Don Pepe',
+            },
             onChanged: (_) => alCambiarNombre(),
           ),
         ),
@@ -320,8 +324,10 @@ class _PasoNegocio extends StatelessWidget {
         // quedaba fuera de la pantalla.
         // Nodo Sur Servicios es solo para turnos: no ofrece los rubros de productos.
         for (final (titulo, rubros) in [
-          if (!esEdicionServicios) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
-          (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          // Nodo Sur Gastronomía, lo mismo: solo los de un local gastronómico.
+          if (!esEdicionAparte) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
+          if (!esEdicionGastronomia) (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          if (esEdicionGastronomia) ('Tu rubro', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
           ('¿Ninguno?', const [PlantillaRubro.otro]),
         ]) ...[
           SeccionNs(titulo),

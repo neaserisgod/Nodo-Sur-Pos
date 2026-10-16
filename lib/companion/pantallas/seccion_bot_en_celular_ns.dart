@@ -122,14 +122,14 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     final fase = faseDelBot(encendido: _encendido, estado: _estado);
     final (tono, icono) = switch (fase) {
       FaseBot.conectado => (TonoNs.good, IconoNs.tilde),
-      FaseBot.apagado => (TonoNs.neutro, esEscritorioServicios ? IconoNs.computadora : IconoNs.celular),
+      FaseBot.apagado => (TonoNs.neutro, esEscritorioAparte ? IconoNs.computadora : IconoNs.celular),
       FaseBot.conectando => (TonoNs.info, IconoNs.reloj),
       FaseBot.vincular || FaseBot.desvinculado => (TonoNs.warn, IconoNs.alertaCirculo),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(esEscritorioServicios ? 'En esta compu' : 'En este celular')),
+        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(esEscritorioAparte ? 'En esta compu' : 'En este celular')),
         InfoNs(textoDelBot(fase, _estado, ahora), key: const Key('bot_celular_estado'), tono: tono, icono: icono),
         if (fase == FaseBot.vincular && _estado?.codigo != null) ...[
           const SizedBox(height: 12),

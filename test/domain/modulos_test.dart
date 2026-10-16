@@ -172,5 +172,17 @@ void main() {
       expect(m.disponibles, [Modulo.cobroPoint, Modulo.insumos, Modulo.manoDeObra]);
       expect(ModulosNegocio.desdeTexto(m.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.insumos});
     });
+
+    test('la app Nodo Sur Gastronomía: siempre gastronomía, con pedidos, recetas, pesables, combos, equipo y fijos (§22)', () {
+      final rotiseria = ModulosNegocio.desdeTexto('promos').paraEdicionGastronomia();
+      expect(rotiseria.forma, FormaDeTrabajo.gastronomia);
+      for (final m in [Modulo.pedidos, Modulo.insumos, Modulo.pesables, Modulo.turnos, Modulo.equilibrio, Modulo.fiado, Modulo.cobroPoint]) {
+        expect(rotiseria.estaActivo(m), isTrue, reason: m.clave);
+      }
+      expect(rotiseria.estaActivo(Modulo.promos), isFalse, reason: 'lo apagado a propósito sigue apagado');
+      for (final m in [Modulo.cajaAparte, Modulo.compararPrecios, Modulo.cargaHistorica]) {
+        expect(rotiseria.estaActivo(m), isFalse, reason: m.clave);
+      }
+    });
   });
 }

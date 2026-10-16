@@ -546,8 +546,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           // Dos grupos, como en el alta (`asistente_negocio.dart`): el rubro decide si la app es de productos o de servicios.
           // Nodo Sur Servicios: solo los de servicios.
           for (final (titulo, rubros) in [
-            if (!esEdicionServicios) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
-            ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+            if (!esEdicionAparte) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
+            if (!esEdicionGastronomia) ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+            if (esEdicionGastronomia) ('Tu local', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
           ]) ...[
             Text(titulo, style: estiloNs(13, color: ns.mute)),
             const SizedBox(height: 6),

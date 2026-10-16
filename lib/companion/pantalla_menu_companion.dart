@@ -596,7 +596,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   @override
   Future<void> abrirActualizacion() async {
     // En la compu el instalador lo baja, verifica e instala WinSparkle, como en la PC del almacén (con su propio feed).
-    if (esEscritorioServicios) {
+    if (esEscritorioAparte) {
       final feed = urlFeedActualizaciones(
         idCliente: await idClienteActualizaciones(),
         plataforma: plataformaActualizacion,

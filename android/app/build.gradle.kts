@@ -42,7 +42,8 @@ android {
 
     // Dos ediciones del mismo código (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`): la de siempre (almacén) y Nodo Sur
     // Servicios, con el bot de WhatsApp adentro. Otro applicationId: se instalan una al lado de la otra (el dueño tiene su almacén
-    // y el negocio de servicios que atiende en el mismo celular). Node y el bot (`src/servicios/`) van solo en la de servicios.
+    // y el negocio de servicios que atiende en el mismo celular). Node y el bot (`src/servicios/`, `src/gastronomia/`) van solo en las
+    // ediciones aparte.
     flavorDimensions += "edicion"
     productFlavors {
         create("almacen") {
@@ -53,6 +54,13 @@ android {
             dimension = "edicion"
             applicationId = "com.laplazoleta.servicios"
             manifestPlaceholders["nombreApp"] = "Nodo Sur Servicios"
+        }
+        // Nodo Sur Gastronomía (El dueño, 2026-10-16, `docs/PLAN-GASTRONOMIA.md`): rotisería y comida para llevar, también con el
+        // bot adentro. Su manifiesto es el de servicios (el servicio del bot), en `src/gastronomia/`.
+        create("gastronomia") {
+            dimension = "edicion"
+            applicationId = "com.laplazoleta.gastronomia"
+            manifestPlaceholders["nombreApp"] = "Nodo Sur Gastronomía"
         }
     }
 
