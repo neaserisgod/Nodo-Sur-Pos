@@ -1,0 +1,44 @@
+# Plan · Nodo Sur para locales gastronómicos
+
+**Estado al 2026-10-16: etapa 1 hecha** (las reglas de los pedidos en `lib/domain/pedido_gastronomico.dart`, con sus
+pruebas). Lo demás, sin empezar.
+
+## Por qué
+
+El dueño, 2026-10-16: "hagamos una versión de servicios pero orientada a locales gastronómicos. En eso me defiendo más".
+Conoce rotiserías, take away y mesas. Las rotiserías que conoce **no tienen WhatsApp o contestan tarde**: pierden pedidos.
+La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido listo para cocinar."*
+
+## Lo que decidió el dueño
+
+1. **Primero rotisería y take away; las mesas después.**
+2. **Canales: arrancar por mostrador y WhatsApp.** Después teléfono (carga rápida) y el link propio. PedidosYa y Rappi
+   los revisa el dueño.
+3. **Tiene que andar en PC y en celular** ("depende del local"): se arma como Nodo Sur Servicios, la app del celular que
+   ya corre en Android, en el navegador y en Windows.
+4. **El local confirma** lo que llega de afuera, con la opción de que entre solo. Por eso, el **estado de la cocina**
+   (normal, con demora, pausada) que el bot respeta.
+5. **Entrega opcional:** retiro, cadete propio y **servicio de reparto** (no PedidosYa: una cadetería de afuera).
+6. **Pago, lo elige cada local:** al entregar, adelantado, o que elija el cliente.
+
+## Qué se reusa
+
+- **Un plato es un servicio:** algo con receta de insumos y sin stock propio (`domain/servicios.dart`, §20). El costo de
+  cada plato y para cuántos alcanza lo que hay ya salen solos.
+- **El bot de almacén ya toma pedidos para retirar** (`botdemo/src/core/comercio.js`, `docs/PLAN-BOT.md`): catálogo
+  publicado por la app, pedido "por confirmar" en el sitio, aviso al cliente al aceptar o rechazar.
+- Caja, cierre del día, Mercado Pago (QR, link de pago), notificaciones, sincronización.
+
+## Etapas (una por vez, cada una probada antes de la siguiente)
+
+1. **Reglas de los pedidos** (`domain/pedido_gastronomico.dart`): canal, estados, cocina, entrega, zonas, pago, aviso al
+   cliente. ✅
+2. **Datos:** tabla de pedidos sincronizada (canal, estado, entrega, zona, dirección, hora estimada, líneas, venta con
+   que se cobró) y la configuración de pedidos en la del negocio. Migración versionada.
+3. **Edición gastronomía:** rubro "Rotisería / comida para llevar" con su forma de trabajar; la carta (platos con receta)
+   en vez del catálogo de almacén.
+4. **Lista de pedidos** (por confirmar, por hacer, listo, en camino) con el botón de estado de la cocina; el pedido de
+   mostrador se carga desde la caja; cobrar un pedido es una venta de siempre.
+5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
+   la cocina pausada, pide el pago adelantado si el local lo quiere; el aviso "está listo" / "salió".
+6. **Después:** teléfono, link propio, mesas (comandas, cocina, mozos, propinas).

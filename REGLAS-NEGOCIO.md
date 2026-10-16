@@ -705,6 +705,27 @@ se apaga para ese rubro** (no se ve ni entra en las cuentas), y todo arranca con
   como módulo cuando Google verifique la app.
 - En servicios, **Encargues pasa a ser "Turnos con seña y deudas"** (sin apartados de productos).
 
+## 22. Pedidos de un local gastronómico (El dueño, 2026-10-16)
+
+Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-GASTRONOMIA.md`; las reglas viven en
+`lib/domain/pedido_gastronomico.dart`.
+
+- **Una sola lista de pedidos**, llegue por donde llegue: mostrador, teléfono, WhatsApp (el bot). Más adelante, el link
+  propio y la mesa.
+- **El local confirma** lo que llega de afuera, con la opción de que entre solo. Lo que carga el local (mostrador,
+  teléfono) entra directo a "por hacer".
+- **Estado de la cocina, con un toque:** normal, con demora (otro tiempo de preparación) o pausada (el bot no toma
+  pedidos). El bot le dice al cliente la hora según ese estado.
+- **Estados del pedido:** esperando el pago → por confirmar → por hacer → listo → (en camino) → entregado; o rechazado /
+  cancelado. Se puede cancelar hasta que sale del local.
+- **Entrega, toda opcional:** retiro en el local, cadete propio o servicio de reparto (una cadetería de afuera). Cada
+  local prende las que usa. Un envío pide dirección y zona; cada zona tiene su costo y su demora extra, las mismas para el
+  cadete propio y el servicio de reparto.
+- **Pago, lo elige cada local:** al entregar, adelantado por Mercado Pago (el pedido entra recién cuando pagan), o que
+  elija el cliente.
+- **Aviso al cliente por WhatsApp:** al confirmarse, al estar listo para retirar, al salir el envío, y si se rechaza o se
+  cancela.
+
 ---
 
 ## Anexo: lecciones del sistema anterior
