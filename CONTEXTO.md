@@ -152,6 +152,9 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 
 Por orden aproximado de interés (nada de esto está pedido para hacer ya; confirmar antes de arrancar):
 
+0. **Nodo Sur Servicios como "socio de negocio", no una agenda** (2026-10-16, anotado sin aprobar): la plata por hora, precios
+   al día con la inflación, meta del mes, agenda que se llena sola, recuperar clientas, monotributo. El dueño teme que suene a
+   dashboard corporativo: hablarle como una amiga que sabe de números. Detalle en `docs/IDEA-SOCIO-DE-NEGOCIO.md`.
 1. **Integración total con Mercado Pago** (le interesa mucho): avisos en vivo por webhooks (venta confirmada al
    instante y alerta de cobros que entraron sin venta), **devoluciones desde el POS** al anular una venta cobrada por
    MP, **saldo real automático** en el cierre (reporte de liquidaciones; hay que verificar que se pueda), cobrar con
