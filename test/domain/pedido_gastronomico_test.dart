@@ -3,6 +3,7 @@
 // y la entrega es retiro, cadete propio o un servicio de reparto, las tres opcionales.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
+import 'package:la_plazoleta/domain/turnos.dart' show HorarioAtencion;
 
 void main() {
   const zonaCentro = ZonaEnvio(nombre: 'Centro', costoCentavos: 150000, demoraExtraMin: 15);
@@ -195,4 +196,44 @@ void main() {
       }
     });
   });
+
+  group('fuera de hora se programa', () {
+    // Viernes 16 de octubre de 2026. Abre de 11 a 15 y de lunes a sábado; el domingo cerrado.
+    const horario = HorarioAtencion({
+      1: (desdeMin: 660, hastaMin: 900),
+      2: (desdeMin: 660, hastaMin: 900),
+      3: (desdeMin: 660, hastaMin: 900),
+      4: (desdeMin: 660, hastaMin: 900),
+      5: (desdeMin: 660, hastaMin: 900),
+      6: (desdeMin: 660, hastaMin: 900),
+      7: null,
+    });
+
+    test('abierto: sale a la hora de siempre', () {
+      final r = cuandoSale(ahora: DateTime(2026, 10, 16, 12), cocina: EstadoCocina.normal, config: todo, forma: FormaEntrega.retiro, horario: horario)!;
+      expect(r.hora, DateTime(2026, 10, 16, 12, 30));
+      expect(r.programado, isFalse);
+    });
+
+    test('antes de abrir: para cuando abre', () {
+      final r = cuandoSale(ahora: DateTime(2026, 10, 16, 9), cocina: EstadoCocina.normal, config: todo, forma: FormaEntrega.retiro, horario: horario)!;
+      expect(r.hora, DateTime(2026, 10, 16, 11, 30));
+      expect(r.programado, isTrue);
+    });
+
+    test('el sábado a la noche: para el lunes, porque el domingo está cerrado, con la demora de la zona', () {
+      final r = cuandoSale(
+          ahora: DateTime(2026, 10, 17, 22), cocina: EstadoCocina.normal, config: todo, forma: FormaEntrega.cadetePropio, zona: zonaCentro, horario: horario)!;
+      expect(r.hora, DateTime(2026, 10, 19, 11, 45));
+      expect(r.programado, isTrue);
+    });
+
+    test('pausada no sale, y un horario sin días abiertos no frena', () {
+      expect(cuandoSale(ahora: DateTime(2026, 10, 16, 12), cocina: EstadoCocina.pausada, config: todo, forma: FormaEntrega.retiro, horario: horario), isNull);
+      const cerrado = HorarioAtencion({1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null});
+      final r = cuandoSale(ahora: DateTime(2026, 10, 16, 3), cocina: EstadoCocina.normal, config: todo, forma: FormaEntrega.retiro, horario: cerrado)!;
+      expect(r.programado, isFalse);
+    });
+  });
 }
+

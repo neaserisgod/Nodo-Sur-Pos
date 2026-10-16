@@ -725,6 +725,13 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   elija el cliente.
 - **Aviso al cliente por WhatsApp:** al confirmarse, al estar listo para retirar, al salir el envío, y si se rechaza o se
   cancela.
+- **Fuera del horario de atención, el bot programa el pedido** para cuando abre ("te lo tengo a las 20:30"): entra a la lista
+  como programado, con esa hora. El horario es el mismo de la Agenda (uno solo por negocio).
+- **Pago adelantado, por las dos vías:** el link de Mercado Pago (el pedido entra recién cuando se acredita, como la seña de
+  Servicios) y la transferencia al alias del negocio (el mismo alias de la seña), con el comprobante que revisa alguien del
+  local.
+- **La carta, de las dos formas:** si el local tiene catálogo de WhatsApp Business, el bot manda el link; si no, la carta
+  escrita en el chat, con números para elegir. (El dueño, 2026-10-16.)
 
 ---
 

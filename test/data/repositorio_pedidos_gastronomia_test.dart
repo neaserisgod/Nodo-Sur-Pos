@@ -63,6 +63,19 @@ void main() {
     expect(EstadoPedido.desdeClave((await leer(id)).estado), EstadoPedido.porConfirmar);
   });
 
+  test('uno de WhatsApp fuera de hora queda programado para cuando abre; el mostrador no se programa', () async {
+    // Domingo: con el horario de arranque (lunes a sábado) abre el lunes a las 9.
+    final domingo = DateTime(2026, 10, 18, 12);
+    final id = await crearPedido(db,
+        canal: CanalPedido.whatsapp, nombreCliente: 'Caro', lineas: const [milanesa], usuarioId: usuarioId, ahora: domingo);
+    final p = await leer(id);
+    expect(p.programado, isTrue);
+    expect(p.horaEstimada, DateTime(2026, 10, 19, 9, 30));
+    final mostrador = await crearPedido(db,
+        canal: CanalPedido.mostrador, nombreCliente: 'Juan', lineas: const [milanesa], usuarioId: usuarioId, ahora: domingo);
+    expect((await leer(mostrador)).programado, isFalse);
+  });
+
   test('con la cocina pausada no entra nada de WhatsApp, pero el mostrador sí', () async {
     await cambiarEstadoCocina(db, EstadoCocina.pausada);
     expect(

@@ -11,6 +11,7 @@
 //  * Cómo se paga lo elige cada local: al entregar, adelantado, o que elija el cliente.
 
 import 'pesables.dart';
+import 'turnos.dart' show HorarioAtencion;
 
 /// Por dónde llegó el pedido. Las claves se guardan en la base y viajan por la sync: no se renombran nunca.
 enum CanalPedido {
@@ -290,6 +291,40 @@ DateTime? horaEstimada({
   if (minutos == null) return null;
   final extra = forma.esEnvio ? (zona?.demoraExtraMin ?? 0) : 0;
   return ahora.add(Duration(minutes: minutos + extra));
+}
+
+/// Cuándo sale un pedido que llega [ahora] por WhatsApp, y si queda programado: dentro del horario de atención, la hora de
+/// siempre ([horaEstimada]); fuera de hora, desde que abre (El dueño, 2026-10-16: "lo programa"). Null con la cocina pausada.
+/// Un horario sin ningún día abierto no frena nada: se toma como siempre abierto.
+({DateTime hora, bool programado})? cuandoSale({
+  required DateTime ahora,
+  required EstadoCocina cocina,
+  required ConfigPedidos config,
+  required FormaEntrega forma,
+  required HorarioAtencion horario,
+  ZonaEnvio? zona,
+}) {
+  DateTime? sale(DateTime desde) => horaEstimada(ahora: desde, cocina: cocina, config: config, forma: forma, zona: zona);
+  if (horario.dias.values.every((f) => f == null)) {
+    final h = sale(ahora);
+    return h == null ? null : (hora: h, programado: false);
+  }
+  for (var d = 0; d < 8; d++) {
+    final dia = DateTime(ahora.year, ahora.month, ahora.day + d);
+    final franja = horario.delDia(dia);
+    if (franja == null) continue;
+    final abre = dia.add(Duration(minutes: franja.desdeMin));
+    final cierra = dia.add(Duration(minutes: franja.hastaMin));
+    if (d == 0 && !ahora.isBefore(abre) && ahora.isBefore(cierra)) {
+      final h = sale(ahora);
+      return h == null ? null : (hora: h, programado: false);
+    }
+    if (abre.isAfter(ahora)) {
+      final h = sale(abre);
+      return h == null ? null : (hora: h, programado: true);
+    }
+  }
+  return null;
 }
 
 /// Lo que se le cobra al cliente por el envío. El retiro no cobra.

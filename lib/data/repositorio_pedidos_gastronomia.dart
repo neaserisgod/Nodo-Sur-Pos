@@ -11,6 +11,7 @@ import 'database.dart';
 import 'identidad_sync.dart';
 import 'numero_venta.dart';
 import 'repositorio_configuracion.dart';
+import 'repositorio_turnos.dart' show configAgendaActual;
 
 /// La cocina está pausada: el bot no toma pedidos (el mostrador sí, lo decide quien atiende).
 class CocinaPausada implements Exception {
@@ -97,6 +98,18 @@ Future<int> crearPedido(
     if (falta.isNotEmpty) throw PedidoIncompleto('Falta ${falta.join(' y ')}.');
 
     final momento = ahora ?? DateTime.now();
+    // Lo que carga el local sale cuando dice la cocina; lo que llega de afuera, además, respeta el horario: fuera de hora queda
+    // programado para cuando abre (§22).
+    final sale = canal.loCargaElLocal
+        ? (hora: horaEstimada(ahora: momento, cocina: cocina, config: config, forma: formaEntrega, zona: zona), programado: false)
+        : cuandoSale(
+            ahora: momento,
+            cocina: cocina,
+            config: config,
+            forma: formaEntrega,
+            zona: zona,
+            horario: (await configAgendaActual(db)).horario,
+          );
     return db.into(db.pedidosGastronomia).insert(
           PedidosGastronomiaCompanion.insert(
             numero: await siguienteNumeroDePedido(db),
@@ -111,7 +124,8 @@ Future<int> crearPedido(
             costoEnvioCentavos: Value(costoEnvioCentavos(formaEntrega, zona)),
             lineasJson: jsonEncode([for (final l in lineas) l.toJson()]),
             nota: Value(nota),
-            horaEstimada: Value(horaEstimada(ahora: momento, cocina: cocina, config: config, forma: formaEntrega, zona: zona)),
+            horaEstimada: Value(sale?.hora),
+            programado: Value(sale?.programado ?? false),
             pagaAdelantado: Value(pagaAdelantado),
             idRemoto: Value(idRemoto),
             fechaCreacion: Value(momento),

@@ -28991,6 +28991,21 @@ class $PedidosGastronomiaTable extends PedidosGastronomia
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _programadoMeta = const VerificationMeta(
+    'programado',
+  );
+  @override
+  late final GeneratedColumn<bool> programado = GeneratedColumn<bool>(
+    'programado',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("programado" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _pagaAdelantadoMeta = const VerificationMeta(
     'pagaAdelantado',
   );
@@ -29122,6 +29137,7 @@ class $PedidosGastronomiaTable extends PedidosGastronomia
     lineasJson,
     nota,
     horaEstimada,
+    programado,
     pagaAdelantado,
     pagado,
     ventaId,
@@ -29245,6 +29261,12 @@ class $PedidosGastronomiaTable extends PedidosGastronomia
           data['hora_estimada']!,
           _horaEstimadaMeta,
         ),
+      );
+    }
+    if (data.containsKey('programado')) {
+      context.handle(
+        _programadoMeta,
+        programado.isAcceptableOrUnknown(data['programado']!, _programadoMeta),
       );
     }
     if (data.containsKey('paga_adelantado')) {
@@ -29380,6 +29402,10 @@ class $PedidosGastronomiaTable extends PedidosGastronomia
         DriftSqlType.dateTime,
         data['${effectivePrefix}hora_estimada'],
       ),
+      programado: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}programado'],
+      )!,
       pagaAdelantado: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}paga_adelantado'],
@@ -29455,6 +29481,9 @@ class PedidoGastronomia extends DataClass
   /// Cuándo se le dijo al cliente que va a estar (o llegar), según la cocina al tomarlo.
   final DateTime? horaEstimada;
 
+  /// Llegó fuera del horario de atención y quedó para cuando abre (§22): [horaEstimada] es a esa hora.
+  final bool programado;
+
   /// Eligió pagar adelantado por Mercado Pago, y si ya llegó ese pago.
   final bool pagaAdelantado;
   final bool pagado;
@@ -29484,6 +29513,7 @@ class PedidoGastronomia extends DataClass
     required this.lineasJson,
     this.nota,
     this.horaEstimada,
+    required this.programado,
     required this.pagaAdelantado,
     required this.pagado,
     this.ventaId,
@@ -29523,6 +29553,7 @@ class PedidoGastronomia extends DataClass
     if (!nullToAbsent || horaEstimada != null) {
       map['hora_estimada'] = Variable<DateTime>(horaEstimada);
     }
+    map['programado'] = Variable<bool>(programado);
     map['paga_adelantado'] = Variable<bool>(pagaAdelantado);
     map['pagado'] = Variable<bool>(pagado);
     if (!nullToAbsent || ventaId != null) {
@@ -29569,6 +29600,7 @@ class PedidoGastronomia extends DataClass
       horaEstimada: horaEstimada == null && nullToAbsent
           ? const Value.absent()
           : Value(horaEstimada),
+      programado: Value(programado),
       pagaAdelantado: Value(pagaAdelantado),
       pagado: Value(pagado),
       ventaId: ventaId == null && nullToAbsent
@@ -29611,6 +29643,7 @@ class PedidoGastronomia extends DataClass
       lineasJson: serializer.fromJson<String>(json['lineasJson']),
       nota: serializer.fromJson<String?>(json['nota']),
       horaEstimada: serializer.fromJson<DateTime?>(json['horaEstimada']),
+      programado: serializer.fromJson<bool>(json['programado']),
       pagaAdelantado: serializer.fromJson<bool>(json['pagaAdelantado']),
       pagado: serializer.fromJson<bool>(json['pagado']),
       ventaId: serializer.fromJson<int?>(json['ventaId']),
@@ -29642,6 +29675,7 @@ class PedidoGastronomia extends DataClass
       'lineasJson': serializer.toJson<String>(lineasJson),
       'nota': serializer.toJson<String?>(nota),
       'horaEstimada': serializer.toJson<DateTime?>(horaEstimada),
+      'programado': serializer.toJson<bool>(programado),
       'pagaAdelantado': serializer.toJson<bool>(pagaAdelantado),
       'pagado': serializer.toJson<bool>(pagado),
       'ventaId': serializer.toJson<int?>(ventaId),
@@ -29669,6 +29703,7 @@ class PedidoGastronomia extends DataClass
     String? lineasJson,
     Value<String?> nota = const Value.absent(),
     Value<DateTime?> horaEstimada = const Value.absent(),
+    bool? programado,
     bool? pagaAdelantado,
     bool? pagado,
     Value<int?> ventaId = const Value.absent(),
@@ -29693,6 +29728,7 @@ class PedidoGastronomia extends DataClass
     lineasJson: lineasJson ?? this.lineasJson,
     nota: nota.present ? nota.value : this.nota,
     horaEstimada: horaEstimada.present ? horaEstimada.value : this.horaEstimada,
+    programado: programado ?? this.programado,
     pagaAdelantado: pagaAdelantado ?? this.pagaAdelantado,
     pagado: pagado ?? this.pagado,
     ventaId: ventaId.present ? ventaId.value : this.ventaId,
@@ -29733,6 +29769,9 @@ class PedidoGastronomia extends DataClass
       horaEstimada: data.horaEstimada.present
           ? data.horaEstimada.value
           : this.horaEstimada,
+      programado: data.programado.present
+          ? data.programado.value
+          : this.programado,
       pagaAdelantado: data.pagaAdelantado.present
           ? data.pagaAdelantado.value
           : this.pagaAdelantado,
@@ -29770,6 +29809,7 @@ class PedidoGastronomia extends DataClass
           ..write('lineasJson: $lineasJson, ')
           ..write('nota: $nota, ')
           ..write('horaEstimada: $horaEstimada, ')
+          ..write('programado: $programado, ')
           ..write('pagaAdelantado: $pagaAdelantado, ')
           ..write('pagado: $pagado, ')
           ..write('ventaId: $ventaId, ')
@@ -29799,6 +29839,7 @@ class PedidoGastronomia extends DataClass
     lineasJson,
     nota,
     horaEstimada,
+    programado,
     pagaAdelantado,
     pagado,
     ventaId,
@@ -29827,6 +29868,7 @@ class PedidoGastronomia extends DataClass
           other.lineasJson == this.lineasJson &&
           other.nota == this.nota &&
           other.horaEstimada == this.horaEstimada &&
+          other.programado == this.programado &&
           other.pagaAdelantado == this.pagaAdelantado &&
           other.pagado == this.pagado &&
           other.ventaId == this.ventaId &&
@@ -29853,6 +29895,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
   final Value<String> lineasJson;
   final Value<String?> nota;
   final Value<DateTime?> horaEstimada;
+  final Value<bool> programado;
   final Value<bool> pagaAdelantado;
   final Value<bool> pagado;
   final Value<int?> ventaId;
@@ -29877,6 +29920,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
     this.lineasJson = const Value.absent(),
     this.nota = const Value.absent(),
     this.horaEstimada = const Value.absent(),
+    this.programado = const Value.absent(),
     this.pagaAdelantado = const Value.absent(),
     this.pagado = const Value.absent(),
     this.ventaId = const Value.absent(),
@@ -29902,6 +29946,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
     required String lineasJson,
     this.nota = const Value.absent(),
     this.horaEstimada = const Value.absent(),
+    this.programado = const Value.absent(),
     this.pagaAdelantado = const Value.absent(),
     this.pagado = const Value.absent(),
     this.ventaId = const Value.absent(),
@@ -29932,6 +29977,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
     Expression<String>? lineasJson,
     Expression<String>? nota,
     Expression<DateTime>? horaEstimada,
+    Expression<bool>? programado,
     Expression<bool>? pagaAdelantado,
     Expression<bool>? pagado,
     Expression<int>? ventaId,
@@ -29958,6 +30004,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
       if (lineasJson != null) 'lineas_json': lineasJson,
       if (nota != null) 'nota': nota,
       if (horaEstimada != null) 'hora_estimada': horaEstimada,
+      if (programado != null) 'programado': programado,
       if (pagaAdelantado != null) 'paga_adelantado': pagaAdelantado,
       if (pagado != null) 'pagado': pagado,
       if (ventaId != null) 'venta_id': ventaId,
@@ -29985,6 +30032,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
     Value<String>? lineasJson,
     Value<String?>? nota,
     Value<DateTime?>? horaEstimada,
+    Value<bool>? programado,
     Value<bool>? pagaAdelantado,
     Value<bool>? pagado,
     Value<int?>? ventaId,
@@ -30010,6 +30058,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
       lineasJson: lineasJson ?? this.lineasJson,
       nota: nota ?? this.nota,
       horaEstimada: horaEstimada ?? this.horaEstimada,
+      programado: programado ?? this.programado,
       pagaAdelantado: pagaAdelantado ?? this.pagaAdelantado,
       pagado: pagado ?? this.pagado,
       ventaId: ventaId ?? this.ventaId,
@@ -30067,6 +30116,9 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
     if (horaEstimada.present) {
       map['hora_estimada'] = Variable<DateTime>(horaEstimada.value);
     }
+    if (programado.present) {
+      map['programado'] = Variable<bool>(programado.value);
+    }
     if (pagaAdelantado.present) {
       map['paga_adelantado'] = Variable<bool>(pagaAdelantado.value);
     }
@@ -30114,6 +30166,7 @@ class PedidosGastronomiaCompanion extends UpdateCompanion<PedidoGastronomia> {
           ..write('lineasJson: $lineasJson, ')
           ..write('nota: $nota, ')
           ..write('horaEstimada: $horaEstimada, ')
+          ..write('programado: $programado, ')
           ..write('pagaAdelantado: $pagaAdelantado, ')
           ..write('pagado: $pagado, ')
           ..write('ventaId: $ventaId, ')
@@ -54953,6 +55006,7 @@ typedef $$PedidosGastronomiaTableCreateCompanionBuilder =
       required String lineasJson,
       Value<String?> nota,
       Value<DateTime?> horaEstimada,
+      Value<bool> programado,
       Value<bool> pagaAdelantado,
       Value<bool> pagado,
       Value<int?> ventaId,
@@ -54979,6 +55033,7 @@ typedef $$PedidosGastronomiaTableUpdateCompanionBuilder =
       Value<String> lineasJson,
       Value<String?> nota,
       Value<DateTime?> horaEstimada,
+      Value<bool> programado,
       Value<bool> pagaAdelantado,
       Value<bool> pagado,
       Value<int?> ventaId,
@@ -55126,6 +55181,11 @@ class $$PedidosGastronomiaTableFilterComposer
 
   ColumnFilters<DateTime> get horaEstimada => $composableBuilder(
     column: $table.horaEstimada,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get programado => $composableBuilder(
+    column: $table.programado,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -55308,6 +55368,11 @@ class $$PedidosGastronomiaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get programado => $composableBuilder(
+    column: $table.programado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get pagaAdelantado => $composableBuilder(
     column: $table.pagaAdelantado,
     builder: (column) => ColumnOrderings(column),
@@ -55471,6 +55536,11 @@ class $$PedidosGastronomiaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get programado => $composableBuilder(
+    column: $table.programado,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get pagaAdelantado => $composableBuilder(
     column: $table.pagaAdelantado,
     builder: (column) => column,
@@ -55617,6 +55687,7 @@ class $$PedidosGastronomiaTableTableManager
                 Value<String> lineasJson = const Value.absent(),
                 Value<String?> nota = const Value.absent(),
                 Value<DateTime?> horaEstimada = const Value.absent(),
+                Value<bool> programado = const Value.absent(),
                 Value<bool> pagaAdelantado = const Value.absent(),
                 Value<bool> pagado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
@@ -55641,6 +55712,7 @@ class $$PedidosGastronomiaTableTableManager
                 lineasJson: lineasJson,
                 nota: nota,
                 horaEstimada: horaEstimada,
+                programado: programado,
                 pagaAdelantado: pagaAdelantado,
                 pagado: pagado,
                 ventaId: ventaId,
@@ -55667,6 +55739,7 @@ class $$PedidosGastronomiaTableTableManager
                 required String lineasJson,
                 Value<String?> nota = const Value.absent(),
                 Value<DateTime?> horaEstimada = const Value.absent(),
+                Value<bool> programado = const Value.absent(),
                 Value<bool> pagaAdelantado = const Value.absent(),
                 Value<bool> pagado = const Value.absent(),
                 Value<int?> ventaId = const Value.absent(),
@@ -55691,6 +55764,7 @@ class $$PedidosGastronomiaTableTableManager
                 lineasJson: lineasJson,
                 nota: nota,
                 horaEstimada: horaEstimada,
+                programado: programado,
                 pagaAdelantado: pagaAdelantado,
                 pagado: pagado,
                 ventaId: ventaId,

@@ -39,6 +39,9 @@ class PedidosGastronomia extends Table {
   /// Cuándo se le dijo al cliente que va a estar (o llegar), según la cocina al tomarlo.
   DateTimeColumn get horaEstimada => dateTime().nullable()();
 
+  /// Llegó fuera del horario de atención y quedó para cuando abre (§22): [horaEstimada] es a esa hora.
+  BoolColumn get programado => boolean().withDefault(const Constant(false))();
+
   /// Eligió pagar adelantado por Mercado Pago, y si ya llegó ese pago.
   BoolColumn get pagaAdelantado => boolean().withDefault(const Constant(false))();
   BoolColumn get pagado => boolean().withDefault(const Constant(false))();

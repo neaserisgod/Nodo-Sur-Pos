@@ -24,6 +24,15 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import 'pantalla_config_pedidos_ns.dart';
 
+const _diasCortos = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+
+/// "hoy", "mañana" o el día de la semana, para un pedido programado.
+String _diaCorto(DateTime d) {
+  final hoy = DateTime.now();
+  final dif = DateTime(d.year, d.month, d.day).difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
+  return dif == 0 ? 'hoy' : dif == 1 ? 'mañana' : _diasCortos[d.weekday - 1];
+}
+
 String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
 /// El texto del botón que lleva al pedido a [estado].
@@ -361,7 +370,7 @@ class _TarjetaPedido extends StatelessWidget {
               children: [
                 Expanded(child: Text(pedido.nombreCliente, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(18, peso: FontWeight.w600, color: ns.ink))),
                 if (pedido.horaEstimada != null)
-                  Text(_hora(pedido.horaEstimada!), style: estiloNs(18, peso: FontWeight.w600, color: ns.ink, tabular: true)),
+                  Text(_hora(pedido.horaEstimada!), style: estiloNs(18, peso: FontWeight.w600, color: pedido.programado ? ns.w : ns.ink, tabular: true)),
               ],
             ),
             const SizedBox(height: 2),
@@ -369,6 +378,11 @@ class _TarjetaPedido extends StatelessWidget {
               '${pedido.numero} · ${CanalPedido.desdeClave(pedido.canal).etiqueta} · ${forma.etiqueta}${pedido.zona == null ? '' : ' · ${pedido.zona}'}',
               style: estiloNs(13, peso: FontWeight.w500, color: ns.mute),
             ),
+            if (pedido.programado && pedido.horaEstimada != null) ...[
+              const SizedBox(height: 2),
+              Text('Programado para ${_diaCorto(pedido.horaEstimada!)} a las ${_hora(pedido.horaEstimada!)}',
+                  style: estiloNs(13, peso: FontWeight.w600, color: ns.w)),
+            ],
             const SizedBox(height: 8),
             Text(resumen, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, color: ns.ink)),
             const SizedBox(height: 4),
