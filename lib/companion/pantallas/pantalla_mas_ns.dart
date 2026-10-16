@@ -23,6 +23,7 @@ import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, botEnEsteE
 import '../pedidos_bot.dart' show RegistroPedidosBotPrefs;
 import 'pantalla_buscador_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
+import 'pantalla_asistente_ia_ns.dart';
 import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
@@ -124,6 +125,9 @@ class PantallaMasNs extends StatelessWidget {
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
+                    // El asistente con IA trabaja sobre la agenda: solo en un negocio de servicios sin PC (`pantalla_asistente_ia_ns.dart`).
+                    if (servicios && !app.pcEmparejada)
+                      _Fila(icono: IconoNs.chispa, titulo: 'Asistente', detalle: 'Preguntale por la agenda o lo cobrado; da y mueve turnos', onTap: () => app.irA((_) => const PantallaAsistenteIaNs())),
                     // Nodo Sur Servicios: sin encargues de productos, y proveedores solo si lleva insumos.
                     if (!esEdicionServicios) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de

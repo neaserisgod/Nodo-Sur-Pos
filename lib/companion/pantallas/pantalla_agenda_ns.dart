@@ -37,6 +37,7 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../modo_uso.dart';
 import 'hoja_abrir_caja_ns.dart';
+import 'pantalla_asistente_ia_ns.dart';
 
 const _dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const _meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -387,7 +388,15 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                     ],
                   ),
                 ),
-                if (!conPc)
+                if (!conPc) ...[
+                  BotonCircularNs(
+                    key: const Key('agenda_asistente_ia'),
+                    icono: IconoNs.chispa,
+                    etiqueta: 'Asistente',
+                    onTap: () => app?.irA((_) => const PantallaAsistenteIaNs()),
+                    tamanio: 52,
+                  ),
+                  const SizedBox(width: 10),
                   BotonCircularNs(
                     key: const Key('agenda_nuevo'),
                     icono: IconoNs.masMas,
@@ -397,6 +406,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                     fondo: ns.prim,
                     colorIcono: TokensNs.blanco,
                   ),
+                ],
               ],
             ),
             // Un negocio de servicios arranca acá, no en Inicio: sin esto, los pasos de "Configurá tu negocio" dejados para

@@ -84,6 +84,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [La app de servicios vende productos: venta simple, sin stock con aviso (2026-10-14)](#la-app-de-servicios-vende-productos-venta-simple-sin-stock-con-aviso-2026-10-14)
 - [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
 - [Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)](#cobrar-servicios-sin-tabla-de-consumos-y-la-propina-después-de-cobrar-2026-10-10)
+- [Asistente con IA de servicios: la IA propone, la app valida y la persona confirma (2026-10-16)](#asistente-con-ia-de-servicios-la-ia-propone-la-app-valida-y-la-persona-confirma-2026-10-16)
 
 **Diseño y pantallas**
 
@@ -2644,4 +2645,25 @@ se habían sacado los productos con stock de la app de servicios para que fuera 
   la de almacén con el mismo nombre de archivo.
 - Lo que se abre encima del menú se ve del ancho del celular (no se rehízo ninguna pantalla secundaria); el envoltorio de ancho
   no cambia de estructura nunca, para no rearmar el navegador. Detalle en `docs/PLAN-ESCRITORIO-SERVICIOS.md`.
+
+## Asistente con IA de servicios: la IA propone, la app valida y la persona confirma (2026-10-16)
+
+Pedido del dueño (16/10): asistente de IA en Nodo Sur Servicios, que "responde y actúa", con funciones hechas desde cero (no
+el Ctrl+K de la PC ni el buscador de funciones).
+
+- **La IA nunca escribe en la base.** Devuelve JSON con texto y acciones de una lista cerrada (`dar_turno`, `mover_turno`,
+  `cancelar_turno`, `gasto`, `ir_a`). `leerRespuestaIa` (`domain/asistente_ia.dart`) descarta lo que no cierra con los datos
+  que se le mandaron (ids inexistentes, horas pasadas, servicios sin duración, turnos ya atendidos, gasto con la caja cerrada)
+  y avisa cuántas descartó. La frase que se confirma la arma la app (`describirAccionIa`), no la IA.
+- **Se valida dos veces**: antes de mostrar y otra vez contra la base justo antes de escribir (`ejecutarAccionIa`), porque
+  entre la respuesta y el "Sí" puede entrar un turno del bot o cerrarse la caja. Un horario que ya no está libre no se fuerza
+  (sin sobreturno desde la IA: eso se hace en la Agenda, que lo avisa).
+- **Cancelar un turno con seña no lo hace la IA**: la devolución (y la del link de Mercado Pago) se resuelve en la Agenda.
+- **Datos que ven Google y la IA**: nombre del negocio, horario, servicios con precio y duración, turnos de una semana atrás a
+  dos semanas adelante **con el nombre de la clienta** (sin eso no se puede "mover el turno de Juana"), huecos de 7 días y lo
+  cobrado (hoy, este mes, el mes pasado, servicios del mes). **Nunca teléfonos.** Con la clave en el plan gratis Google puede
+  usar los pedidos: si el dueño no quiere mandar nombres, se sacan de `textoDatosIa` y mover/cancelar pasa a ser por hora.
+- **Solo servicios sin PC**: trabaja sobre la base del equipo, que en "PC y celular" no tiene la agenda.
+- Con varios profesionales, el horario se valida contra todos los turnos del día (sin profesional): puede decir "no está libre"
+  cuando otra persona sí lo tiene. Para eso, la Agenda.
 
