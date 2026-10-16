@@ -721,9 +721,19 @@ class FilaClaveValorNs extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(child: Text(clave, style: estiloNs(15, color: ns.mute))),
+          // La clave nunca se achica: con un valor largo ("Negocio de Bruno Fuentes · La Plazoleta") quedaba de una letra de ancho
+          // y se leía en vertical. El que se corta es el valor.
+          Text(clave, style: estiloNs(15, color: ns.mute)),
           const SizedBox(width: 14),
-          Text(valor, style: estiloNs(tamanioValor, peso: FontWeight.w600, color: colorValor ?? ns.ink, tabular: true)),
+          Flexible(
+            child: Text(
+              valor,
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: estiloNs(tamanioValor, peso: FontWeight.w600, color: colorValor ?? ns.ink, tabular: true),
+            ),
+          ),
         ],
       ),
     );

@@ -184,6 +184,10 @@ abstract class ServicioCompanion {
     required int usuarioId,
   });
 
+  /// "Igualar la ganancia" de todo el catálogo (`igualarGananciaGeneral`, El dueño, 2026-10-16). Devuelve cuántos precios
+  /// cambiaron.
+  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId});
+
   Future<void> ajustarStockEnLote({
     required List<int> productoIds,
     required TipoAjusteStock tipo,

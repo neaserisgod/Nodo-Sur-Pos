@@ -290,6 +290,10 @@ class ServicioCompanionOffline implements ServicioCompanion {
   );
 
   @override
+  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) =>
+      _local.igualarGananciaGeneral(gananciaBp: gananciaBp, usuarioId: usuarioId);
+
+  @override
   Future<void> ajustarMontoEnLote({
     required List<int> productoIds,
     required CampoMonto campo,

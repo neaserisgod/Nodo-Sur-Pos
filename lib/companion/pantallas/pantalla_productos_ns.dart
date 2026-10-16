@@ -19,7 +19,9 @@ import '../mensaje_error.dart';
 import '../pantalla_conteo_stock.dart';
 import '../pantalla_formulario_producto.dart';
 import '../servicio_companion.dart';
+import '../../domain/precios_generales.dart' show gananciaPromedio;
 import 'hoja_cambiar_precio_ns.dart';
+import 'hoja_precios_generales_ns.dart';
 import 'hoja_lote_ns.dart';
 import 'pantalla_notificaciones_ns.dart';
 
@@ -226,6 +228,15 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     }
   }
 
+  Future<void> _preciosGenerales() async {
+    final app = AppNs.of(context);
+    final s = app.servicio;
+    final u = app.usuarioId;
+    if (s == null || u == null) return;
+    final cambio = await mostrarHojaPreciosGenerales(context, servicio: s, usuarioId: u, productos: _todos);
+    if (cambio && mounted) await _cargar();
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppNs.of(context);
@@ -325,6 +336,23 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
           ),
         ),
         const SizedBox(height: 12),
+        // Precios de todo el catálogo (El dueño, 2026-10-16): la ganancia promedio a la vista, y subir o igualar desde acá.
+        if (!_cargando && _error == null && _todos.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: margenNs),
+            child: Builder(builder: (context) {
+              final promedio = gananciaPromedio(_todos.map(paraPreciosNs));
+              return TarjetaFilaNs(
+                key: const Key('productos_precios_generales'),
+                titulo: promedio == null ? 'Precios de todo' : 'Ganancia promedio: ${textoPorcentajeNs(promedio.gananciaBp)}',
+                subtitulo: 'Sin cigarrillos. Subí todos los precios o igualá la ganancia',
+                icono: IconoNs.porcentaje,
+                onTap: _preciosGenerales,
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (_filtro == _Filtro.proveedor)
           _EncabezadoProveedor(nombre: _nombreProveedor(_proveedorId) ?? '', onTodos: () => _elegirFiltro(_Filtro.todos))
         else

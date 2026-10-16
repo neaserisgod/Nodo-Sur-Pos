@@ -491,6 +491,10 @@ class PuertoLocal implements ServicioCompanion {
   // `repositorio_productos.dart` (Regla 3: mismo camino que `ClienteCompanion`
   // usa por HTTP, acá sin red de por medio).
   @override
+  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) =>
+      repo_productos.igualarGananciaGeneral(db, gananciaBp: gananciaBp, usuarioId: usuarioId);
+
+  @override
   Future<void> ajustarMontoEnLote({
     required List<int> productoIds,
     required CampoMonto campo,

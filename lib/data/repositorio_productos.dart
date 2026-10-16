@@ -5,6 +5,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../domain/precios_generales.dart';
 import '../domain/edicion_masiva_precios.dart';
 import '../domain/edicion_masiva_stock.dart';
 import '../domain/ganancia.dart' show precioConGananciaACentena;
@@ -1072,6 +1073,56 @@ Future<int> aplicarPorcentajeDeProveedor(
     return cambios.length;
   });
 }
+
+/// "Igualar la ganancia" de todo el catálogo (El dueño, 2026-10-16: "estandarizarlo todo"): todos los proveedores pasan a
+/// [gananciaBp] y cada producto con costo (sin cigarrillos) queda con ese precio y vuelve a seguir al porcentaje (deja de ser
+/// precio fijo), así un cambio de costo posterior respeta lo igualado. Pasa por [actualizarProducto] (Regla 3, historial de
+/// precios). Todo en una transacción. Devuelve cuántos precios cambiaron.
+Future<int> igualarGananciaGeneral(
+  AppDatabase db, {
+  required int gananciaBp,
+  required int usuarioId,
+}) {
+  return db.transaction(() async {
+    await (db.update(db.proveedores)).write(
+      ProveedoresCompanion(markupBp: Value(gananciaBp), actualizadoEn: Value(DateTime.now())),
+    );
+    var cambiados = 0;
+    for (final p in await listarProductos(db)) {
+      final nuevo = precioAlIgualarGanancia(_paraPrecios(p), gananciaBp);
+      if (nuevo == null) continue;
+      final actual = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
+      if (actual == nuevo && !p.precioFijo) continue;
+      if (actual != nuevo) cambiados++;
+      await actualizarProducto(
+        db,
+        id: p.id,
+        nombre: p.nombre,
+        codigoBarras: p.codigoBarras,
+        categoriaId: p.categoriaId,
+        proveedorId: p.proveedorId,
+        esPesable: p.esPesable,
+        tipoCigarrillo: p.tipoCigarrillo,
+        precioCentavos: p.esPesable ? p.precioCentavos : nuevo,
+        costoCentavos: p.costoCentavos,
+        precioPorKiloCentavos: p.esPesable ? nuevo : p.precioPorKiloCentavos,
+        costoPorKiloCentavos: p.costoPorKiloCentavos,
+        stock: p.stock,
+        stockGramos: p.stockGramos,
+        activo: p.activo,
+        usuarioId: usuarioId,
+        precioFijo: false,
+      );
+    }
+    return cambiados;
+  });
+}
+
+ProductoParaPrecios _paraPrecios(Producto p) => (
+      precioCentavos: p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos,
+      costoCentavos: p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos,
+      esCigarrillo: p.tipoCigarrillo != 'ninguno',
+    );
 
 /// El precio automático de un producto que todavía no está guardado (alta o
 /// edición en el diálogo): mismo cálculo que usa [actualizarProducto].
