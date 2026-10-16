@@ -22,6 +22,7 @@ import '../cambios_companion.dart';
 import '../emparejamiento.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
+import 'pantalla_config_pedidos_ns.dart';
 
 String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
@@ -210,6 +211,11 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     }
   }
 
+  Future<void> _configurar() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PantallaConfigPedidosNs(db: widget.db)));
+    await _recargar();
+  }
+
   Future<void> _nuevoPedido() async {
     final usuarioId = _usuarioId;
     if (usuarioId == null) return;
@@ -252,6 +258,14 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
                 ],
               ),
             ),
+            BotonCircularNs(
+              key: const Key('pedidos_configurar'),
+              icono: IconoNs.ajustes,
+              etiqueta: 'Configurar pedidos',
+              onTap: _configurar,
+              tamanio: 52,
+            ),
+            const SizedBox(width: 10),
             BotonCircularNs(
               key: const Key('pedidos_nuevo'),
               icono: IconoNs.masMas,
