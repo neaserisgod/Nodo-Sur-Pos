@@ -68,7 +68,8 @@ class _DialogoEdicionMasivaState extends State<_DialogoEdicionMasiva> {
       _accion == _AccionMasiva.precio || _accion == _AccionMasiva.costo;
   bool get _esPorcentaje =>
       _tipoMonto == TipoAjustePrecio.sumarPorcentaje ||
-      _tipoMonto == TipoAjustePrecio.restarPorcentaje;
+      _tipoMonto == TipoAjustePrecio.restarPorcentaje ||
+      _tipoMonto == TipoAjustePrecio.sumarPorcentajeDelCosto;
 
   String get _etiquetaValorMonto => switch (_tipoMonto) {
     TipoAjustePrecio.nuevoFijo => 'Valor nuevo',
@@ -76,6 +77,7 @@ class _DialogoEdicionMasivaState extends State<_DialogoEdicionMasiva> {
     TipoAjustePrecio.restarMonto => 'Monto a restar',
     TipoAjustePrecio.sumarPorcentaje => 'Porcentaje a sumar',
     TipoAjustePrecio.restarPorcentaje => 'Porcentaje a restar',
+    TipoAjustePrecio.sumarPorcentajeDelCosto => 'Porcentaje del costo a sumar',
   };
 
   /// Valida el input y pasa al paso de revisión — nunca escribe nada en la
@@ -166,6 +168,8 @@ class _DialogoEdicionMasivaState extends State<_DialogoEdicionMasiva> {
             'Sumar ${_formatearPorcentaje(valor)}% al $campo',
           TipoAjustePrecio.restarPorcentaje =>
             'Restar ${_formatearPorcentaje(valor)}% al $campo',
+          TipoAjustePrecio.sumarPorcentajeDelCosto =>
+            'Sumar al $campo el ${_formatearPorcentaje(valor)}% del costo',
         };
       case _AccionMasiva.categoria:
         final nombre = _categoriaElegida == null
@@ -463,6 +467,7 @@ class _SelectorTipoAjuste extends StatelessWidget {
   static const _etiquetas = {
     TipoAjustePrecio.sumarPorcentaje: 'Sumar %',
     TipoAjustePrecio.restarPorcentaje: 'Restar %',
+    TipoAjustePrecio.sumarPorcentajeDelCosto: 'Sumar % del costo',
     TipoAjustePrecio.sumarMonto: 'Sumar monto',
     TipoAjustePrecio.restarMonto: 'Restar monto',
     TipoAjustePrecio.nuevoFijo: 'Valor nuevo',
@@ -616,6 +621,7 @@ class _VistaPrevia extends StatelessWidget {
                   precioActualCentavos: antes,
                   tipo: tipo,
                   valor: valor,
+                  costoCentavos: p.costoCentavos,
                 );
                 final kg = p.esPesable ? '/kg' : '';
                 return Padding(

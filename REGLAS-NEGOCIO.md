@@ -467,7 +467,10 @@ siguiente reviso ese cierre"*.
   (sobre el precio, misma fórmula que el porcentaje del proveedor). Así se ve
   cuándo un aumento de costo se comió la ganancia, sin obligar a nada.
   **La app no habla de markup**: en ninguna pantalla aparece un porcentaje
-  sobre el costo.
+  sobre el costo. **Salvo "Precios de todo" del celular** (El dueño, 2026-10-16: "el cálculo de suba se hace sobre el precio
+  costo"; "si sale 100, le sumo un markup del 70"): ahí todo es markup sobre el costo. "Subir todo X %" suma al precio el X % del
+  costo; "Igualar a X %" deja precio = costo × (1 + X) (el % del proveedor se guarda igual que siempre, como ganancia sobre el
+  precio: X / (1 + X)). La suba se redondea para arriba a $1, $10, $50 o $100 (elige el dueño; $100 por defecto).
 - Cada cambio de precio o costo queda en historial con fecha.
 - (Reemplazado por el porcentaje por proveedor, arriba.) Markup de referencia por categoría (configurable, solo informativo). Categorías
   reales del catálogo: Almacén, Bebidas, Cervezas, Gaseosas, Vinos, Cigarrillos,

@@ -6,6 +6,7 @@
 import 'package:drift/drift.dart';
 
 import '../domain/precios_generales.dart';
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart';
 import '../domain/edicion_masiva_stock.dart';
 import '../domain/ganancia.dart' show precioConGananciaACentena;
@@ -442,6 +443,7 @@ Future<void> ajustarMontoEnLote(
   required TipoAjustePrecio tipo,
   required int valor,
   required int usuarioId,
+  int redondeoCentavos = centavosPorPeso,
 }) {
   return db.transaction(() async {
     for (final id in productoIds) {
@@ -460,6 +462,8 @@ Future<void> ajustarMontoEnLote(
         precioActualCentavos: montoActual ?? 0,
         tipo: tipo,
         valor: valor,
+        costoCentavos: anterior.esPesable ? anterior.costoPorKiloCentavos : anterior.costoCentavos,
+        redondeoCentavos: redondeoCentavos,
       );
       final ajustaPrecio = campo == CampoMonto.precio;
 
@@ -1074,48 +1078,82 @@ Future<int> aplicarPorcentajeDeProveedor(
   });
 }
 
-/// "Igualar la ganancia" de todo el catálogo (El dueño, 2026-10-16: "estandarizarlo todo"): todos los proveedores pasan a
-/// [gananciaBp] y cada producto con costo (sin cigarrillos ni fiambres) queda con ese precio y vuelve a seguir al porcentaje (deja de ser
-/// precio fijo), así un cambio de costo posterior respeta lo igualado. Pasa por [actualizarProducto] (Regla 3, historial de
-/// precios). Todo en una transacción. Devuelve cuántos precios cambiaron.
-Future<int> igualarGananciaGeneral(
-  AppDatabase db, {
-  required int gananciaBp,
-  required int usuarioId,
-}) {
+/// Escribe el precio nuevo de un producto por [actualizarProducto] (Regla 3: historial de precios igual que a mano). Con
+/// [precioFijo] null, queda como estaba.
+Future<void> _escribirPrecio(AppDatabase db, Producto p, int nuevo, {required int usuarioId, bool? precioFijo}) => actualizarProducto(
+      db,
+      id: p.id,
+      nombre: p.nombre,
+      codigoBarras: p.codigoBarras,
+      categoriaId: p.categoriaId,
+      proveedorId: p.proveedorId,
+      esPesable: p.esPesable,
+      tipoCigarrillo: p.tipoCigarrillo,
+      precioCentavos: p.esPesable ? p.precioCentavos : nuevo,
+      costoCentavos: p.costoCentavos,
+      precioPorKiloCentavos: p.esPesable ? nuevo : p.precioPorKiloCentavos,
+      costoPorKiloCentavos: p.costoPorKiloCentavos,
+      stock: p.stock,
+      stockGramos: p.stockGramos,
+      activo: p.activo,
+      usuarioId: usuarioId,
+      precioFijo: precioFijo,
+    );
+
+Future<Map<int, String>> _nombresDeCategoria(AppDatabase db) async => {for (final c in await db.select(db.categorias).get()) c.id: c.nombre};
+
+/// "Igualar el markup" de todo el catálogo ("estandarizarlo todo"): todos los proveedores pasan a ese markup (se guarda como
+/// ganancia sobre el precio, [gananciaBpDesdeMarkupBp]) y cada producto con costo (sin cigarrillos ni fiambres) queda con ese
+/// precio y vuelve a seguir al porcentaje (deja de ser precio fijo), así un cambio de costo posterior respeta lo igualado. Todo
+/// en una transacción. Devuelve cuántos precios cambiaron.
+Future<int> igualarMarkupGeneral(AppDatabase db, {required int markupBp, required int usuarioId}) {
   return db.transaction(() async {
     await (db.update(db.proveedores)).write(
-      ProveedoresCompanion(markupBp: Value(gananciaBp), actualizadoEn: Value(DateTime.now())),
+      ProveedoresCompanion(markupBp: Value(gananciaBpDesdeMarkupBp(markupBp)), actualizadoEn: Value(DateTime.now())),
     );
+    final categorias = await _nombresDeCategoria(db);
     var cambiados = 0;
-    final categorias = {for (final c in await db.select(db.categorias).get()) c.id: c.nombre};
     for (final p in await listarProductos(db)) {
-      final nuevo = precioAlIgualarGanancia(_paraPrecios(p, categorias[p.categoriaId]), gananciaBp);
+      final nuevo = precioAlIgualarMarkup(_paraPrecios(p, categorias[p.categoriaId]), markupBp);
       if (nuevo == null) continue;
       final actual = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
       if (actual == nuevo && !p.precioFijo) continue;
       if (actual != nuevo) cambiados++;
-      await actualizarProducto(
-        db,
-        id: p.id,
-        nombre: p.nombre,
-        codigoBarras: p.codigoBarras,
-        categoriaId: p.categoriaId,
-        proveedorId: p.proveedorId,
-        esPesable: p.esPesable,
-        tipoCigarrillo: p.tipoCigarrillo,
-        precioCentavos: p.esPesable ? p.precioCentavos : nuevo,
-        costoCentavos: p.costoCentavos,
-        precioPorKiloCentavos: p.esPesable ? nuevo : p.precioPorKiloCentavos,
-        costoPorKiloCentavos: p.costoPorKiloCentavos,
-        stock: p.stock,
-        stockGramos: p.stockGramos,
-        activo: p.activo,
-        usuarioId: usuarioId,
-        precioFijo: false,
-      );
+      await _escribirPrecio(db, p, nuevo, usuarioId: usuarioId, precioFijo: false);
     }
     return cambiados;
+  });
+}
+
+/// "Deshacer la última suba" (El dueño, 2026-10-16, después de subir todo un 15 % sobre el precio cuando lo quería sobre el
+/// costo): cada producto de la última suba general ([loteDeLaUltimaSuba], mirando el historial de los últimos 30 días) vuelve al
+/// precio de su foto anterior del historial. Uno que se volvió a tocar después de la suba no se toca. Con [soloContar] no cambia
+/// nada: dice cuántos volverían y de cuándo es la suba. Todo en una transacción.
+Future<({int productos, DateTime? cuando})> deshacerUltimaSuba(AppDatabase db, {required int usuarioId, bool soloContar = false}) {
+  return db.transaction(() async {
+    final desde = DateTime.now().subtract(const Duration(days: 30));
+    final filas = await (db.select(db.historialDePrecios)..where((h) => h.fecha.isBiggerOrEqualValue(desde))).get();
+    final lote = loteDeLaUltimaSuba([for (final h in filas) (id: h.id, productoId: h.productoId, fecha: h.fecha)]);
+    if (lote.isEmpty) return (productos: 0, cuando: null);
+    final porId = {for (final h in filas) h.id: h};
+    var vuelven = 0;
+    for (final f in lote) {
+      final foto = porId[f.id]!;
+      final p = await (db.select(db.productos)..where((t) => t.id.equals(f.productoId))).getSingleOrNull();
+      if (p == null) continue;
+      final actual = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
+      if (actual != (p.esPesable ? foto.precioPorKiloCentavos : foto.precioCentavos)) continue;
+      final anterior = await (db.select(db.historialDePrecios)
+            ..where((h) => h.productoId.equals(f.productoId) & h.id.isSmallerThanValue(f.id))
+            ..orderBy([(h) => OrderingTerm.desc(h.fecha), (h) => OrderingTerm.desc(h.id)])
+            ..limit(1))
+          .getSingleOrNull();
+      final precioAnterior = anterior == null ? null : (p.esPesable ? anterior.precioPorKiloCentavos : anterior.precioCentavos);
+      if (precioAnterior == null || precioAnterior == actual) continue;
+      vuelven++;
+      if (!soloContar) await _escribirPrecio(db, p, precioAnterior, usuarioId: usuarioId);
+    }
+    return (productos: vuelven, cuando: lote.map((f) => f.fecha).reduce((a, b) => a.isAfter(b) ? a : b));
   });
 }
 

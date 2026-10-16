@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, resultadoDesdeRespuesta;
 import '../domain/descuento.dart' show TipoDescuento;
 import '../servicios/registro_errores.dart';
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
@@ -921,6 +922,7 @@ class ClienteCompanion implements ServicioCompanion {
     required TipoAjustePrecio tipo,
     required int valor,
     required int usuarioId,
+    int redondeoCentavos = centavosPorPeso,
   }) async {
     final r = await _client.post(
       conexion._url('/productos/lote/monto'),
@@ -931,20 +933,27 @@ class ClienteCompanion implements ServicioCompanion {
         'tipo': tipo.name,
         'valor': valor,
         'usuarioId': usuarioId,
+        'redondeo': redondeoCentavos,
       }),
     );
     _revisar(r);
   }
 
   @override
-  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) async {
-    final r = await _client.post(
-      conexion._url('/productos/lote/igualar-ganancia'),
-      headers: _headers,
-      body: jsonEncode({'gananciaBp': gananciaBp, 'usuarioId': usuarioId}),
-    );
+  Future<int> igualarMarkupGeneral({required int markupBp, required int usuarioId}) async =>
+      (await _precios('igualar-markup', {'markupBp': markupBp, 'usuarioId': usuarioId}))['cambiados'] as int;
+
+  @override
+  Future<({int productos, DateTime? cuando})> deshacerUltimaSuba({required int usuarioId, bool soloContar = false}) async {
+    final j = await _precios('deshacer-suba', {'usuarioId': usuarioId, 'soloContar': soloContar});
+    final cuando = j['cuando'] as String?;
+    return (productos: j['productos'] as int, cuando: cuando == null ? null : DateTime.parse(cuando));
+  }
+
+  Future<Map<String, dynamic>> _precios(String ruta, Map<String, Object> cuerpo) async {
+    final r = await _client.post(conexion._url('/productos/lote/$ruta'), headers: _headers, body: jsonEncode(cuerpo));
     _revisar(r);
-    return (jsonDecode(r.body) as Map<String, dynamic>)['cambiados'] as int;
+    return jsonDecode(r.body) as Map<String, dynamic>;
   }
 
   @override

@@ -19,7 +19,7 @@ import '../mensaje_error.dart';
 import '../pantalla_conteo_stock.dart';
 import '../pantalla_formulario_producto.dart';
 import '../servicio_companion.dart';
-import '../../domain/precios_generales.dart' show gananciaPromedio;
+import '../../domain/precios_generales.dart' show promedioDePrecios;
 import 'hoja_cambiar_precio_ns.dart';
 import 'hoja_precios_generales_ns.dart';
 import 'hoja_lote_ns.dart';
@@ -343,11 +343,11 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: margenNs),
             child: Builder(builder: (context) {
-              final promedio = gananciaPromedio(_todos.map((p) => paraPreciosNs(p, _nombresCategoria)));
+              final promedio = promedioDePrecios(_todos.map((p) => paraPreciosNs(p, _nombresCategoria)));
               return TarjetaFilaNs(
                 key: const Key('productos_precios_generales'),
-                titulo: promedio == null ? 'Precios de todo' : 'Ganancia promedio: ${textoPorcentajeNs(promedio.gananciaBp)}',
-                subtitulo: 'Sin cigarrillos ni fiambres. Subí todos los precios o igualá la ganancia',
+                titulo: promedio == null ? 'Precios de todo' : 'Markup promedio: ${textoPorcentajeNs(promedio.markupBp)}',
+                subtitulo: 'Sin cigarrillos ni fiambres. Subí, igualá o deshacé la última suba',
                 icono: IconoNs.porcentaje,
                 onTap: _preciosGenerales,
               );

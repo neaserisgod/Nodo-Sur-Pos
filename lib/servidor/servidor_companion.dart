@@ -86,6 +86,7 @@ import '../servicios/preferencia_cobro_nube.dart';
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/cobro_posnet.dart';
 import '../domain/descuento.dart';
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart';
 import '../domain/edicion_masiva_stock.dart';
 import '../domain/medio_pago.dart';
@@ -974,16 +975,24 @@ Router _armarRouter(AppDatabase db, {http.Client? httpClientDePrueba}) {
       tipo: TipoAjustePrecio.values.byName(_textoRequerido(body, 'tipo')),
       valor: _intRequerido(body, 'valor'),
       usuarioId: _intRequerido(body, 'usuarioId'),
+      // Un celular de antes no lo manda: al peso, como siempre.
+      redondeoCentavos: body['redondeo'] is int && (body['redondeo'] as int) > 0 ? body['redondeo'] as int : centavosPorPeso,
     );
     return _json({'ok': true});
   });
 
-  router.post('/productos/lote/igualar-ganancia', (Request request) async {
+  // Precios de todo el catálogo desde el celular (El dueño, 2026-10-16): en markup, sobre el costo.
+  router.post('/productos/lote/igualar-markup', (Request request) async {
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-    final gananciaBp = _intRequerido(body, 'gananciaBp');
-    if (gananciaBp <= 0 || gananciaBp >= 10000) return _error(400, 'La ganancia tiene que ser mayor a 0 y menor a 100 %.');
-    final cambiados = await igualarGananciaGeneral(db, gananciaBp: gananciaBp, usuarioId: _intRequerido(body, 'usuarioId'));
-    return _json({'cambiados': cambiados});
+    final markupBp = _intRequerido(body, 'markupBp');
+    if (markupBp <= 0) return _error(400, 'El markup tiene que ser mayor a 0.');
+    return _json({'cambiados': await igualarMarkupGeneral(db, markupBp: markupBp, usuarioId: _intRequerido(body, 'usuarioId'))});
+  });
+
+  router.post('/productos/lote/deshacer-suba', (Request request) async {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final r = await deshacerUltimaSuba(db, usuarioId: _intRequerido(body, 'usuarioId'), soloContar: body['soloContar'] == true);
+    return _json({'productos': r.productos, 'cuando': r.cuando?.toIso8601String()});
   });
 
   router.post('/productos/lote/stock', (Request request) async {

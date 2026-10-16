@@ -46,6 +46,7 @@ import '../data/repositorio_ventas.dart' as repo_ventas;
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro, clasificarEstadoOrden;
 import '../domain/caja.dart' show diferenciaArqueo;
 import '../domain/descuento.dart' show TipoDescuento;
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/medio_pago.dart' show ComposicionPago, composicionPagoDesdeTexto;
@@ -491,8 +492,12 @@ class PuertoLocal implements ServicioCompanion {
   // `repositorio_productos.dart` (Regla 3: mismo camino que `ClienteCompanion`
   // usa por HTTP, acá sin red de por medio).
   @override
-  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) =>
-      repo_productos.igualarGananciaGeneral(db, gananciaBp: gananciaBp, usuarioId: usuarioId);
+  Future<int> igualarMarkupGeneral({required int markupBp, required int usuarioId}) =>
+      repo_productos.igualarMarkupGeneral(db, markupBp: markupBp, usuarioId: usuarioId);
+
+  @override
+  Future<({int productos, DateTime? cuando})> deshacerUltimaSuba({required int usuarioId, bool soloContar = false}) =>
+      repo_productos.deshacerUltimaSuba(db, usuarioId: usuarioId, soloContar: soloContar);
 
   @override
   Future<void> ajustarMontoEnLote({
@@ -501,6 +506,7 @@ class PuertoLocal implements ServicioCompanion {
     required TipoAjustePrecio tipo,
     required int valor,
     required int usuarioId,
+    int redondeoCentavos = centavosPorPeso,
   }) {
     return repo_productos.ajustarMontoEnLote(
       db,
@@ -509,6 +515,7 @@ class PuertoLocal implements ServicioCompanion {
       tipo: tipo,
       valor: valor,
       usuarioId: usuarioId,
+    redondeoCentavos: redondeoCentavos,
     );
   }
 

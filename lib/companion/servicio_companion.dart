@@ -22,6 +22,7 @@
 
 import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
 import '../domain/descuento.dart' show TipoDescuento;
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
@@ -182,11 +183,13 @@ abstract class ServicioCompanion {
     required TipoAjustePrecio tipo,
     required int valor,
     required int usuarioId,
+    int redondeoCentavos = centavosPorPeso,
   });
 
-  /// "Igualar la ganancia" de todo el catálogo (`igualarGananciaGeneral`, El dueño, 2026-10-16). Devuelve cuántos precios
-  /// cambiaron.
-  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId});
+  /// Precios de todo el catálogo (El dueño, 2026-10-16, `repositorio_productos.dart`): igualar el markup (devuelve cuántos precios
+  /// cambiaron) y deshacer la última suba. "Subir todo" es la edición en lote ([ajustarMontoEnLote]).
+  Future<int> igualarMarkupGeneral({required int markupBp, required int usuarioId});
+  Future<({int productos, DateTime? cuando})> deshacerUltimaSuba({required int usuarioId, bool soloContar = false});
 
   Future<void> ajustarStockEnLote({
     required List<int> productoIds,
