@@ -177,10 +177,11 @@ class _PantallaCuentaCompanionState extends State<PantallaCuentaCompanion> {
         if (cuenta == null && mounted) setState(() => _ofrecerNavegador = true);
       }
       await _leerCuenta();
-    } on GoogleNoDisponible {
+    } on GoogleNoDisponible catch (e) {
+      unawaited(registrarError('Entrar con Google desde la app', e)); // el motivo, para saber qué arreglar (ver pantalla_entrar_con_cuenta.dart)
       if (mounted) {
         setState(() {
-          _mensaje = 'No se pudo entrar con Google desde la app. Probá con el navegador.';
+          _mensaje = 'No se pudo entrar con Google desde la app (${e.detalle}). Probá con el navegador.';
           _ofrecerNavegador = true;
         });
       }

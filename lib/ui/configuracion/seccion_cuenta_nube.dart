@@ -152,12 +152,12 @@ class _SeccionCuentaNubeState extends State<SeccionCuentaNube> {
         Align(
           alignment: Alignment.centerLeft,
           child: Btn(
-            c.vinculando ? 'Esperando en el navegador…' : 'Vincular con mi cuenta',
+            c.vinculando ? 'Esperando en el navegador…' : 'Entrar con Google',
             variante: VarBtn.blue,
             onTap: c.vinculando ? null : c.vincular,
           ),
         ),
-        if (c.vinculando) Text('Se abrió tu navegador: entrá con Google, confirmá y volvé acá.', style: nota),
+        if (c.vinculando) Text('Se abrió tu navegador: elegí tu cuenta de Google y volvé acá.', style: nota),
         ...mensajes,
       ]);
     }

@@ -243,10 +243,13 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
         return;
       }
       await _resolver(cuenta);
-    } on GoogleNoDisponible {
+    } on GoogleNoDisponible catch (e) {
+      // El motivo queda anotado y a la vista: sin él no hay forma de saber si es Google Cloud (huella de la firma), el teléfono o
+      // el sitio, y la persona termina entrando siempre por el navegador sin que nadie se entere.
+      unawaited(registrarError('Entrar con Google desde la app', e));
       if (mounted) {
         setState(() {
-          _error = 'No se pudo entrar con Google desde la app. Probá con el navegador.';
+          _error = 'No se pudo entrar con Google desde la app (${e.detalle}). Probá con el navegador.';
           _trabajando = false;
           _ofrecerNavegador = true;
         });
