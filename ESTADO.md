@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (16/10/2026)
 
+- **Exportar la base desde el celular** (app de almacén, "Solo celular"): Más › Configuración › Tu base › Exportar. Arma la copia
+  sin tokens y comprimida y abre el selector para mandarla (WhatsApp, Drive, mail); la PC la importa en Respaldo. **Falta probarlo
+  en un celular real.** Y al publicar a mano ahora se elige qué app sale (`edicion`).
 - **Asistente con IA en Nodo Sur Servicios** (El dueño, 16/10: "responde y actúa"): botón ✦ en la Agenda y "Asistente" en Más
   (negocio de servicios sin PC). Contesta con los datos del negocio (agenda de −7 a +14 días, huecos, cobros) y propone dar,
   mover o cancelar turnos, anotar un gasto o ir a una pantalla; nada se hace sin confirmar. Probado con tests; **falta verlo con

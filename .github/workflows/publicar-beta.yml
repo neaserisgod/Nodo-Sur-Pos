@@ -1,7 +1,7 @@
 # Compila los instaladores de Windows (Nodo Sur POS y Nodo Sur Servicios), los firma para el actualizador y los publica en el canal BETA de horsepos.com:
 # desde ahí la bajan las cuentas de administrador en horsepos.com/descargar/ y la reciben por actualización automática.
 # Se publica SOLO cuando se pide (2026-10-03: "no quiero más despliegues por publicar una cosa chica"):
-#   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable);
+#   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable, y qué app: las dos, solo Servicios o solo almacén);
 #   * o al mergear con un título que empieza con "release:" (estable) o "beta:" (beta).
 # Un merge común a main NO publica nada: se acumulan los cambios y se publican juntos cuando vos decidís.
 #
@@ -42,6 +42,12 @@ on:
         description: Porcentaje de las PC con acceso (en beta dejá 100; en stable conviene empezar bajo y subirlo desde /admin/)
         required: true
         default: '100'
+      edicion:
+        description: "Qué app publicar: ambas, solo Nodo Sur Servicios o solo la de almacén (Nodo Sur POS)"
+        required: true
+        type: choice
+        options: [ambas, servicios, almacen]
+        default: ambas
 
 # Una publicación a la vez: dos corridas juntas subirían el mismo número de compilación.
 concurrency:
@@ -68,6 +74,9 @@ jobs:
       NOTAS: ${{ inputs.notas || github.event.head_commit.message || 'Versión de prueba' }}
       CANAL: ${{ inputs.canal || (startsWith(github.event.head_commit.message, 'release:') && 'stable') || 'beta' }}
       ROLLOUT: ${{ inputs.rollout || '100' }}
+      # Un merge "release:"/"beta:" publica las dos; a mano se elige (El dueño, 2026-10-16: una beta de Servicios no tiene por
+      # qué mandarle una versión nueva a los almacenes).
+      EDICION: ${{ inputs.edicion || 'ambas' }}
     steps:
       - name: Comprobar que están los secretos (antes de compilar nada)
         shell: pwsh
@@ -129,6 +138,7 @@ jobs:
       # Sube el número de compilación en pubspec.yaml, compila, arma y firma el instalador, lo firma para el
       # actualizador y lo sube al canal beta: es el mismo script que se usa desde la PC.
       - name: Compilar y publicar la beta
+        if: env.EDICION != 'servicios'
         shell: pwsh
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
@@ -136,6 +146,7 @@ jobs:
         run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT)
 
       - name: Guardar el instalador también como archivo de la corrida
+        if: env.EDICION != 'servicios'
         uses: actions/upload-artifact@v4
         with:
           name: instalador-beta
@@ -144,39 +155,43 @@ jobs:
 
       # El script subió el número de compilación: hay que dejarlo en el repo, o la próxima corrida intentaría publicar el mismo.
       - name: Guardar el nuevo número de compilación en el repositorio
+        if: env.EDICION != 'servicios'
         shell: pwsh
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pubspec.yaml
-          if (git diff --cached --quiet) { Write-Host "pubspec.yaml no cambió."; exit 0 }
-          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
-          git commit -m "Publicada la beta $v [skip ci]"
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push origin "HEAD:${{ github.ref_name }}"
-          if ($LASTEXITCODE -ne 0) { throw "No se pudo subir el cambio de pubspec.yaml (¿la rama está protegida?). La beta SÍ quedó publicada: pasá el número de compilación $v a mano antes de la próxima." }
+        run: .\tool\guardar_numero_publicado.ps1
 
       # Nodo Sur Servicios para Windows (docs/PLAN-ESCRITORIO-SERVICIOS.md): el mismo número, su propio instalador y su feed
       # (windows-servicios). Va después de guardar el número a propósito: si esto falla, la de almacén ya quedó publicada.
       # El bot de WhatsApp que va adentro (repo botdemo): el mismo del Android, con el Node de Windows.
       - uses: actions/checkout@v4
+        if: env.EDICION != 'almacen'
         with:
           repository: neaserisgod/botdemo
           path: botdemo
       - name: Node y el bot (servicios)
+        if: env.EDICION != 'almacen'
         shell: pwsh
         env:
           BOT_DIR: ${{ github.workspace }}\botdemo
         run: .\tool\preparar_bot_windows.ps1
 
+      # Con las dos, usa el número que ya subió la de almacén; sola, sube el suyo y lo guarda.
       - name: Compilar y publicar Nodo Sur Servicios para Windows
+        if: env.EDICION != 'almacen'
         shell: pwsh
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
           SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
-        run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT) -Edicion servicios -SinSubirBuild
+        run: |
+          $extra = if ($env:EDICION -eq 'ambas') { @{ SinSubirBuild = $true } } else { @{} }
+          .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT) -Edicion servicios @extra
+
+      - name: Guardar el nuevo número de compilación en el repositorio (solo Servicios)
+        if: env.EDICION == 'servicios'
+        shell: pwsh
+        run: .\tool\guardar_numero_publicado.ps1
 
       - name: Guardar el instalador de Nodo Sur Servicios como archivo de la corrida
+        if: env.EDICION != 'almacen'
         uses: actions/upload-artifact@v4
         with:
           name: instalador-servicios

@@ -52,6 +52,12 @@ on:
         description: "Rama del bot (repo botdemo) que va adentro de Nodo Sur Servicios"
         required: false
         default: main
+      edicion:
+        description: "Qué app publicar: ambas, solo Nodo Sur Servicios o solo la de almacén"
+        required: true
+        type: choice
+        options: [ambas, servicios, almacen]
+        default: ambas
       solo_compilar:
         description: "Solo compilar los dos APK y dejarlos como artefactos del run, sin publicar (para probar una rama)"
         type: boolean
@@ -85,6 +91,8 @@ jobs:
       ROLLOUT: ${{ inputs.rollout || '100' }}
       BUILD: ${{ inputs.build }}
       MENSAJE: ${{ inputs.notas || github.event.head_commit.message || 'Actualización de la companion' }}
+      # Un merge publica las dos; a mano se elige (como publicar-beta).
+      EDICION: ${{ inputs.edicion || 'ambas' }}
     steps:
       - name: Comprobar secretos
         run: |
@@ -175,14 +183,17 @@ jobs:
       # Un solo APK arm64, sin --split-per-abi: con split Flutter suma 2000 al build number y la comparación de versiones se rompe
       # (ver tool/publicar_actualizacion_companion.sh).
       - name: Compilar el APK (almacén)
+        if: env.EDICION != 'servicios'
         run: flutter build apk --release --flavor almacen --target-platform android-arm64 --build-number "$NUMERO"
 
       # Nodo Sur Servicios (`docs/PLAN-APP-SERVICIOS.md`): lleva Node de Termux y el bot de WhatsApp adentro.
       - name: Node y el bot (servicios)
+        if: env.EDICION != 'almacen'
         run: |
           sudo apt-get install -y patchelf
           BOT_DIR=botdemo bash tool/preparar_bot_android.sh
       - name: Compilar el APK (servicios)
+        if: env.EDICION != 'almacen'
         run: flutter build apk --release --flavor servicios --target-platform android-arm64 --build-number "$NUMERO"
 
       - name: Guardar los APK (solo compilar)
@@ -199,9 +210,13 @@ jobs:
           version=$(grep '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//')
           # La versión publicada lleva el número que quedó adentro del APK.
           version="${version%%+*}+${NUMERO}"
-          cp build/app/outputs/flutter-apk/app-almacen-release.apk "NodoSurPOS-Companion-${version}.apk"
-          node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
-            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
-          cp build/app/outputs/flutter-apk/app-servicios-release.apk "NodoSurServicios-${version}.apk"
-          node sitio/scripts/publicar-release.mjs --file "NodoSurServicios-${version}.apk" --platform android-servicios \
-            --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
+          if [ "$EDICION" != servicios ]; then
+            cp build/app/outputs/flutter-apk/app-almacen-release.apk "NodoSurPOS-Companion-${version}.apk"
+            node sitio/scripts/publicar-release.mjs --file "NodoSurPOS-Companion-${version}.apk" --platform android \
+              --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
+          fi
+          if [ "$EDICION" != almacen ]; then
+            cp build/app/outputs/flutter-apk/app-servicios-release.apk "NodoSurServicios-${version}.apk"
+            node sitio/scripts/publicar-release.mjs --file "NodoSurServicios-${version}.apk" --platform android-servicios \
+              --channel "$CANAL" --version "$version" --notes "$NOTAS" --rollout "$ROLLOUT"
+          fi

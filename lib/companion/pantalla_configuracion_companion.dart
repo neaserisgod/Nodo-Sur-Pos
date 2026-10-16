@@ -19,8 +19,12 @@
 // ninguna política especial acá, a diferencia de abrir/cerrar caja.
 
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../data/repositorio_configuracion.dart' show configurarValorHora;
 import '../data/repositorio_productos.dart' show crearCategoria;
@@ -29,6 +33,7 @@ import '../domain/forma_de_trabajo.dart';
 import '../domain/modulos.dart';
 import '../domain/plantillas_rubro.dart';
 import '../edicion.dart';
+import '../servicios/exportar_base.dart';
 import '../servicios/gemini.dart';
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
 import '../ui/comun/campo_texto.dart';
@@ -492,6 +497,18 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             // Desde la v64 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
             BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
           ],
+          // En "Solo celular" la base es la del negocio: se puede sacar para pasarla a la PC o guardarla (en "PC y celular" la
+          // base es la de la PC, que tiene su Respaldo).
+          if (!_pcEmparejada && _puedeCompartirArchivos) ...[
+            _seccion('Tu base'),
+            TarjetaFilaNs(
+              key: const Key('config-exportar-base'),
+              titulo: _exportandoBase ? 'Armando el archivo…' : 'Exportar la base',
+              subtitulo: 'Una copia de todo, para mandar por WhatsApp, Drive o mail. La PC la importa en Respaldo',
+              icono: IconoNs.descarga,
+              onTap: _exportandoBase ? null : _exportarBase,
+            ),
+          ],
           _seccion('Asistente IA'),
           _filaClaveIa(context),
           if (ClaveGemini.configurada) ...[
@@ -614,6 +631,23 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
   /// La clave de Google (Gemini): la del negocio, guardada en la cuenta (El dueño, 2026-10-07: "la clave es por cuenta"), o una de
   /// este celular si no está vinculado. Mismo guardado y mismas pruebas que la PC (`probarYGuardarClave`); un empleado con la clave del
   /// negocio no tiene nada que cargar.
+  bool _exportandoBase = false;
+
+  /// Compartir un archivo: el selector de Android/iPhone (WhatsApp, Drive, mail). En la compu y el navegador no hay.
+  bool get _puedeCompartirArchivos => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+  Future<void> _exportarBase() async {
+    setState(() => _exportandoBase = true);
+    try {
+      final ruta = await exportarBase(baseLocalCompanion(), carpeta: await getTemporaryDirectory());
+      await SharePlus.instance.share(ShareParams(files: [XFile(ruta)], subject: 'Base de Nodo Sur'));
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, 'No se pudo exportar la base: ${mensajeDeError(e)}', largo: true);
+    } finally {
+      if (mounted) setState(() => _exportandoBase = false);
+    }
+  }
+
   Widget _filaClaveIa(BuildContext context) {
     final ns = context.ns;
     final configurada = ClaveGemini.configurada;
