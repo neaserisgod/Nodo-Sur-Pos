@@ -41,7 +41,13 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    producto con `esServicio` (receta, sin stock, sin duración)**: reusa el costo por receta de `repositorio_servicios.dart`
    en vez de duplicarlo.
 4. **Lista de pedidos** (por confirmar, por hacer, listo, en camino) con el botón de estado de la cocina; el pedido de
-   mostrador se carga desde la caja; cobrar un pedido es una venta de siempre.
+   mostrador se carga desde la caja; cobrar un pedido es una venta de siempre. **Hecho ✅ (2026-10-16), salvo cobrar:**
+   `companion/pantallas/pantalla_pedidos_ns.dart` abre en lugar del Inicio cuando el rubro es de gastronomía (pestañas
+   "Pedidos" y "Carta"); cocina con un toque, lista por estado con el paso que sigue, detalle con cancelar y escribirle
+   por WhatsApp, "+" para tomar un pedido del mostrador o del teléfono (platos por unidad; lo que se pesa, después). Al
+   avanzar un pedido cargado por el local, ofrece avisarle al cliente por WhatsApp (los de WhatsApp los avisa el bot).
+   **Falta:** cobrar el pedido (pasa a venta), la pantalla para configurar entregas, zonas y pago, y que el rubro se pueda
+   elegir en un alta.
 5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
    la cocina pausada, pide el pago adelantado si el local lo quiere; el aviso "está listo" / "salió".
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…

@@ -147,11 +147,25 @@ Future<void> registrarPagoAdelantado(AppDatabase db, int id) {
   });
 }
 
-/// La lista de trabajo: lo que sigue abierto, del más viejo al más nuevo (el primero que entró es el primero que sale).
-Stream<List<PedidoGastronomia>> pedidosAbiertos(AppDatabase db) {
+/// La lista de trabajo: lo que sigue abierto, del más viejo al más nuevo (el primero que entró es el primero que sale). Se lee
+/// cuando la pantalla lo pide (al abrir y con cada aviso de cambio), como la Agenda.
+Future<List<PedidoGastronomia>> pedidosAbiertos(AppDatabase db) {
   final cerrados = [EstadoPedido.entregado.clave, EstadoPedido.rechazado.clave, EstadoPedido.cancelado.clave];
   return (db.select(db.pedidosGastronomia)
         ..where((p) => p.estado.isNotIn(cerrados))
         ..orderBy([(p) => OrderingTerm.asc(p.fechaCreacion), (p) => OrderingTerm.asc(p.id)]))
-      .watch();
+      .get();
 }
+
+/// Lo que se puede pedir: lo activo con precio, sin insumos ni "Varios". Por ahora por unidad: lo que se pesa entra con su
+/// propio paso (gramos) más adelante.
+Future<List<Producto>> cartaDelLocal(AppDatabase db) => (db.select(db.productos)
+      ..where((p) =>
+          p.activo.equals(true) &
+          p.esInsumo.equals(false) &
+          p.esVarios.equals(false) &
+          p.esPesable.equals(false) &
+          p.precioCentavos.isNotNull() &
+          p.globalId.isNotNull())
+      ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
+    .get();

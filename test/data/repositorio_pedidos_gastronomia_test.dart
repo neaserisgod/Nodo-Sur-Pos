@@ -134,7 +134,7 @@ void main() {
     final b = await crearPedido(db, canal: CanalPedido.mostrador, nombreCliente: 'B', lineas: const [milanesa], usuarioId: usuarioId);
     await avanzarPedido(db, a, EstadoPedido.cancelado);
     final c = await crearPedido(db, canal: CanalPedido.mostrador, nombreCliente: 'C', lineas: const [milanesa], usuarioId: usuarioId);
-    expect([for (final p in await pedidosAbiertos(db).first) p.id], [b, c]);
+    expect([for (final p in await pedidosAbiertos(db)) p.id], [b, c]);
   });
 
   test('viaja por la sync a otro equipo, con su usuario', () async {

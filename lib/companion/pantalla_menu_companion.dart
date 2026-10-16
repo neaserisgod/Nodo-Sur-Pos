@@ -58,6 +58,7 @@ import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'pantallas/pantalla_agenda_ns.dart';
+import 'pantallas/pantalla_pedidos_ns.dart';
 import 'pantallas/hoja_actualizar_ns.dart';
 import '../edicion.dart';
 import 'app_ns.dart';
@@ -891,11 +892,17 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
-            builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
+            // En un local gastronómico abre en los Pedidos (§22).
+            builder: (context, m, _) => switch (m.forma) {
+              FormaDeTrabajo.servicios => const PantallaAgendaNs(),
+              FormaDeTrabajo.gastronomia => const PantallaPedidosNs(),
+              FormaDeTrabajo.productos => const PantallaInicioNs(),
+            },
           ),
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
-            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs()),
+            // La carta de un local gastronómico son platos con receta, como los servicios: la misma pantalla.
+            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.productos ? const PantallaProductosNs() : const PantallaServiciosNs()),
           ),
           _servicio == null || _usuarioId == null
               ? const SizedBox.shrink()
@@ -973,6 +980,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                         onSeleccionar: irAPestania,
                         hayActualizacion: _hayActualizacion,
                         conServicios: m.forma == FormaDeTrabajo.servicios,
+                        conPedidos: m.forma == FormaDeTrabajo.gastronomia,
                       ),
                     ),
             ),
