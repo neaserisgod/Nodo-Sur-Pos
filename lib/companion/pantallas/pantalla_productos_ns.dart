@@ -97,6 +97,8 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     }
   }
 
+  Map<int, String> get _nombresCategoria => {for (final c in _categorias) c.id: c.nombre};
+
   String? _nombreProveedor(int? id) => _proveedores.where((p) => p.id == id).firstOrNull?.nombre;
 
   /// Lo que dice la lista cuando no hay nada para mostrar (mock `noProdMsg`).
@@ -233,7 +235,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     final s = app.servicio;
     final u = app.usuarioId;
     if (s == null || u == null) return;
-    final cambio = await mostrarHojaPreciosGenerales(context, servicio: s, usuarioId: u, productos: _todos);
+    final cambio = await mostrarHojaPreciosGenerales(context, servicio: s, usuarioId: u, productos: _todos, categorias: _nombresCategoria);
     if (cambio && mounted) await _cargar();
   }
 
@@ -341,11 +343,11 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: margenNs),
             child: Builder(builder: (context) {
-              final promedio = gananciaPromedio(_todos.map(paraPreciosNs));
+              final promedio = gananciaPromedio(_todos.map((p) => paraPreciosNs(p, _nombresCategoria)));
               return TarjetaFilaNs(
                 key: const Key('productos_precios_generales'),
                 titulo: promedio == null ? 'Precios de todo' : 'Ganancia promedio: ${textoPorcentajeNs(promedio.gananciaBp)}',
-                subtitulo: 'Sin cigarrillos. Subí todos los precios o igualá la ganancia',
+                subtitulo: 'Sin cigarrillos ni fiambres. Subí todos los precios o igualá la ganancia',
                 icono: IconoNs.porcentaje,
                 onTap: _preciosGenerales,
               );

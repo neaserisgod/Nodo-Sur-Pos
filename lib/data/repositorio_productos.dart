@@ -1075,7 +1075,7 @@ Future<int> aplicarPorcentajeDeProveedor(
 }
 
 /// "Igualar la ganancia" de todo el catálogo (El dueño, 2026-10-16: "estandarizarlo todo"): todos los proveedores pasan a
-/// [gananciaBp] y cada producto con costo (sin cigarrillos) queda con ese precio y vuelve a seguir al porcentaje (deja de ser
+/// [gananciaBp] y cada producto con costo (sin cigarrillos ni fiambres) queda con ese precio y vuelve a seguir al porcentaje (deja de ser
 /// precio fijo), así un cambio de costo posterior respeta lo igualado. Pasa por [actualizarProducto] (Regla 3, historial de
 /// precios). Todo en una transacción. Devuelve cuántos precios cambiaron.
 Future<int> igualarGananciaGeneral(
@@ -1088,8 +1088,9 @@ Future<int> igualarGananciaGeneral(
       ProveedoresCompanion(markupBp: Value(gananciaBp), actualizadoEn: Value(DateTime.now())),
     );
     var cambiados = 0;
+    final categorias = {for (final c in await db.select(db.categorias).get()) c.id: c.nombre};
     for (final p in await listarProductos(db)) {
-      final nuevo = precioAlIgualarGanancia(_paraPrecios(p), gananciaBp);
+      final nuevo = precioAlIgualarGanancia(_paraPrecios(p, categorias[p.categoriaId]), gananciaBp);
       if (nuevo == null) continue;
       final actual = p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos;
       if (actual == nuevo && !p.precioFijo) continue;
@@ -1118,10 +1119,12 @@ Future<int> igualarGananciaGeneral(
   });
 }
 
-ProductoParaPrecios _paraPrecios(Producto p) => (
+ProductoParaPrecios _paraPrecios(Producto p, String? nombreCategoria) => productoParaPrecios(
       precioCentavos: p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos,
       costoCentavos: p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos,
-      esCigarrillo: p.tipoCigarrillo != 'ninguno',
+      tipoCigarrillo: p.tipoCigarrillo,
+      esPesable: p.esPesable,
+      nombreCategoria: nombreCategoria,
     );
 
 /// El precio automático de un producto que todavía no está guardado (alta o

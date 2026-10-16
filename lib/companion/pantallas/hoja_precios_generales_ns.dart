@@ -1,5 +1,5 @@
 // Precios de todo el catálogo desde el celular (El dueño, 2026-10-16, `domain/precios_generales.dart`): subir todos los
-// precios X % o igualar la ganancia de todos a X %. Los cigarrillos nunca se tocan. Antes de aplicar se dice a cuántos
+// precios X % o igualar la ganancia de todos a X %. Cigarrillos y fiambres nunca se tocan. Antes de aplicar se dice a cuántos
 // productos les cambia el precio.
 
 import 'package:flutter/material.dart';
@@ -11,10 +11,13 @@ import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../servicio_companion.dart';
 
-ProductoParaPrecios paraPreciosNs(ProductoCompanion p) => (
+/// [categorias]: nombre de cada categoría por id (para reconocer los fiambres).
+ProductoParaPrecios paraPreciosNs(ProductoCompanion p, Map<int, String> categorias) => productoParaPrecios(
       precioCentavos: p.esPesable ? p.precioPorKiloCentavos : p.precioCentavos,
       costoCentavos: p.esPesable ? p.costoPorKiloCentavos : p.costoCentavos,
-      esCigarrillo: p.tipoCigarrillo != 'ninguno',
+      tipoCigarrillo: p.tipoCigarrillo,
+      esPesable: p.esPesable,
+      nombreCategoria: categorias[p.categoriaId],
     );
 
 /// "38 %" o "37,5 %".
@@ -38,18 +41,20 @@ Future<bool> mostrarHojaPreciosGenerales(
   required ServicioCompanion servicio,
   required int usuarioId,
   required List<ProductoCompanion> productos,
+  required Map<int, String> categorias,
 }) async =>
     await mostrarHojaNs<bool>(
       context,
-      builder: (_) => _HojaPreciosGenerales(servicio: servicio, usuarioId: usuarioId, productos: productos),
+      builder: (_) => _HojaPreciosGenerales(servicio: servicio, usuarioId: usuarioId, productos: productos, categorias: categorias),
     ) ??
     false;
 
 class _HojaPreciosGenerales extends StatefulWidget {
-  const _HojaPreciosGenerales({required this.servicio, required this.usuarioId, required this.productos});
+  const _HojaPreciosGenerales({required this.servicio, required this.usuarioId, required this.productos, required this.categorias});
   final ServicioCompanion servicio;
   final int usuarioId;
   final List<ProductoCompanion> productos;
+  final Map<int, String> categorias;
 
   @override
   State<_HojaPreciosGenerales> createState() => _HojaPreciosGeneralesState();
@@ -67,7 +72,7 @@ class _HojaPreciosGeneralesState extends State<_HojaPreciosGenerales> {
     super.dispose();
   }
 
-  List<ProductoCompanion> get _subibles => [for (final p in widget.productos) if (entraEnSubaGeneral(paraPreciosNs(p))) p];
+  List<ProductoCompanion> get _subibles => [for (final p in widget.productos) if (entraEnSubaGeneral(paraPreciosNs(p, widget.categorias))) p];
 
   /// A cuántos les cambia el precio con lo escrito. Null si lo escrito no sirve.
   int? _cuantosCambian(int? bp) {
@@ -75,8 +80,8 @@ class _HojaPreciosGeneralesState extends State<_HojaPreciosGenerales> {
     if (_modo == 0) return _subibles.length;
     if (bp >= 10000) return null;
     return widget.productos.where((p) {
-      final nuevo = precioAlIgualarGanancia(paraPreciosNs(p), bp);
-      return nuevo != null && nuevo != paraPreciosNs(p).precioCentavos;
+      final nuevo = precioAlIgualarGanancia(paraPreciosNs(p, widget.categorias), bp);
+      return nuevo != null && nuevo != paraPreciosNs(p, widget.categorias).precioCentavos;
     }).length;
   }
 
@@ -114,7 +119,7 @@ class _HojaPreciosGeneralesState extends State<_HojaPreciosGenerales> {
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    final promedio = gananciaPromedio(widget.productos.map(paraPreciosNs));
+    final promedio = gananciaPromedio(widget.productos.map((p) => paraPreciosNs(p, widget.categorias)));
     final bp = leerPorcentajeBp(_valor.text);
     final cuantos = _cuantosCambian(bp);
     final listo = cuantos != null && cuantos > 0 && !_aplicando;
@@ -123,7 +128,7 @@ class _HojaPreciosGeneralesState extends State<_HojaPreciosGenerales> {
       texto: promedio == null
           ? 'Todavía no hay productos con costo para calcular la ganancia promedio.'
           : 'Ganancia promedio: ${textoPorcentajeNs(promedio.gananciaBp)} sobre el precio, de ${promedio.productos} productos con costo. '
-              'Los cigarrillos no cuentan ni se tocan.',
+              'Cigarrillos y fiambres no cuentan ni se tocan.',
       bloques: [
         SegmentoNs(opciones: const ['Subir todo', 'Igualar ganancia'], indice: _modo, onCambio: (i) => setState(() => _modo = i)),
         const SizedBox(height: 12),

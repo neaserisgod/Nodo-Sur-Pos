@@ -2674,12 +2674,13 @@ Pedido del dueño: "subirle un porcentaje general a todos los precios y ver el p
 cigarrillos, estandarizarlo todo". Eligió las dos acciones y solo en el celular.
 
 - **Ganancia promedio**: sobre el precio (Regla 14, nunca markup), promedio simple de los productos con costo y precio, sin
-  cigarrillos (`gananciaPromedio`, `domain/precios_generales.dart`).
+  cigarrillos ni fiambres (`gananciaPromedio`, `domain/precios_generales.dart`).
 - **Subir todo X %**: la misma fórmula y el mismo camino que la edición en lote (`ajustarMontoEnLote`): redondeo al peso y los
   precios quedan **fijos** (como cualquier ajuste en lote: dejan de seguir al % del proveedor).
 - **Igualar la ganancia a X %** ("estandarizar"): cada producto con costo queda en `precioConGananciaACentena(costo, X)`, **deja de
   ser precio fijo** y **todos los proveedores pasan a X %** (`igualarGananciaGeneral`). Si no se cambiaran los proveedores, el
   próximo cambio de costo volvería a poner el % viejo y se perdería lo igualado.
-- Cigarrillos afuera siempre (Regla 6). "Varios", promos, servicios e insumos no vienen en la lista de productos.
+- Cigarrillos y fiambres afuera siempre: del promedio y de las dos acciones (Regla 6; El dueño, mismo día: "sin contar los
+  fiambres también"). Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`). "Varios", promos, servicios e insumos no vienen en la lista de productos.
 - Con PC, el celular lo pide a la PC (`/productos/lote/igualar-ganancia`); en "Solo celular" se hace en su base.
 
