@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (16/10/2026)
 
+- **Entrar con Google, sin "vincular"**: en la PC el botón dice "Entrar con Google"; el sitio (`/vincular/`) ya no pide confirmar
+  cuando hay un solo negocio y una sucursal (el bot sigue preguntando), así que en la PC, la compu de Servicios y el navegador
+  queda solo elegir la cuenta de Google. En el celular, si el selector de Google falla y cae al navegador, ahora se ve y queda
+  anotado el motivo. La huella del APK publicado (SHA-1 `33:F3:…:50:3C`) es la registrada en Google Cloud. **Sin probar en real.**
 - **Precios de todo, en markup**: "Subir todo X %" suma el X % del costo (antes era del precio: 15 % llevó $7.000 a $8.050), con
   redondeador ($1/$10/$50/$100; 0 % = solo redondear) y **"Deshacer" la última suba** desde el historial de precios. Es la edición
   en lote (`sumarPorcentajeDelCosto`, también en la PC). **Falta probarlo en un celular real.**
