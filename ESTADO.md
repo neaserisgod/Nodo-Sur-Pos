@@ -136,6 +136,13 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (16/10/2026)
+
+- **Asistente con IA en Nodo Sur Servicios** (El dueño, 16/10: "responde y actúa"): botón ✦ en la Agenda y "Asistente" en Más
+  (negocio de servicios sin PC). Contesta con los datos del negocio (agenda de −7 a +14 días, huecos, cobros) y propone dar,
+  mover o cancelar turnos, anotar un gasto o ir a una pantalla; nada se hace sin confirmar. Probado con tests; **falta verlo con
+  una clave real de Gemini y en un celular**. Motivos en `DECISIONES.md`.
+
 ## Últimos cambios (15/10/2026)
 
 - **Nodo Sur Servicios en la compu** (El dueño, 15/10; mock aprobado): con la ventana ancha (web y Windows) la app de servicios

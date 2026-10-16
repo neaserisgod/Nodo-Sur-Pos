@@ -48,7 +48,8 @@ enum IconoNs {
   tienda('M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6'),
   porcentaje('M6 18L18 6M7.5 6.5a1.5 1.5 0 100 .01M16.5 17.5a1.5 1.5 0 100 .01'),
   alertaCirculo('M12 8v5M12 16.5h.01M12 3a9 9 0 100 18 9 9 0 000-18z'),
-  camara('M4 8h3l2-3h6l2 3h3v11H4zM12 10a3.5 3.5 0 100 7 3.5 3.5 0 000-7z');
+  camara('M4 8h3l2-3h6l2 3h3v11H4zM12 10a3.5 3.5 0 100 7 3.5 3.5 0 000-7z'),
+  chispa('M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15v4M17 17h4');
 
   const IconoNs(this.trazo);
 
