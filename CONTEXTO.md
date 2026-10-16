@@ -114,7 +114,10 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
   número lo calcula solo: el mayor entre el de Windows (`pubspec.yaml` + 1) y el último APK publicado + 1, leído del sitio.
   A mano también se puede, con `canal`, `notas` y, si hace falta, un `build` propio.
 - Windows y Android van en **filas de publicación separadas** (`publicar` y `publicar-apk`): en el sitio cada plataforma es
-  un registro aparte y su archivo va a otra ruta de R2. Dentro de cada fila van de a uno. **Nunca publicar dos veces la
+  un registro aparte y su archivo va a otra ruta de R2. Dentro de cada fila van de a uno.
+- **Qué app se publica** (desde el 16/10): un merge `release:`/`beta:` publica almacén y Nodo Sur Servicios juntas. A mano
+  (Run workflow de `publicar-beta` y `publicar-apk`) se elige `edicion`: `ambas`, `servicios` o `almacen`. "Lanzá beta de
+  Servicios" = las dos corridas a mano con `edicion: servicios`; nunca arrastrar la de almacén sin que el dueño lo pida. **Nunca publicar dos veces la
   misma versión de la misma plataforma a la vez**: pisan el mismo archivo en R2 y la firma deja de coincidir (pasó con la 2122).
 - Probar en una sesión en la nube: Flutter lo instala solo `.claude/hooks/session-start.sh`. `flutter analyze` (tiene que
   dar "No issues found!", CI lo exige) y **solo los tests afectados**: `dart run tool/tests_afectados.dart --correr -- --reporter
