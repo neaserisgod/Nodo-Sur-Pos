@@ -312,6 +312,24 @@ void main() {
       expect(negocio, ('Rotisería Doña Ana', PlantillaRubro.rotiseria));
     });
 
+    testWidgets('en una rotisería el segundo paso es el primer plato, y suma el horario para el bot (§22)', (t) async {
+      await tamanio(t);
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.producto,
+        rubroInicial: PlantillaRubro.rotiseria,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.text('Cargá tu primer plato'), findsOneWidget);
+      expect(find.textContaining('código'), findsNothing);
+      expect(pasosDeLaForma(FormaDeTrabajo.gastronomia), contains(PasoNegocio.horario));
+      expect(pasosDeLaForma(FormaDeTrabajo.productos), isNot(contains(PasoNegocio.horario)));
+    });
+
     testWidgets('en un negocio de servicios el segundo paso es el primer servicio, sin código de barras ni stock', (t) async {
       await tamanio(t);
       ServicioDePrueba? guardado;
