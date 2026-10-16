@@ -170,4 +170,29 @@ void main() {
       expect(mensajeAlCliente(estado: EstadoPedido.entregado, forma: FormaEntrega.retiro, local: 'X', numero: '1'), isNull);
     });
   });
+
+  group('líneas', () {
+    test('por unidad y por peso, cada una por su helper', () {
+      const milanesa = LineaPedido(gid: 'p1', nombre: 'Milanesa', cantidad: 2, precioCentavos: 650000);
+      const ensalada = LineaPedido(gid: 'p2', nombre: 'Ensalada rusa', gramos: 250, precioCentavos: 1200000);
+      expect(milanesa.subtotalCentavos, 1300000);
+      expect(ensalada.subtotalCentavos, 300000);
+      expect(totalPedidoCentavos([milanesa, ensalada], costoEnvioCentavos: 150000), 1750000);
+    });
+
+    test('ida y vuelta por JSON, y lo roto se descarta', () {
+      const linea = LineaPedido(gid: 'p1', nombre: 'Tarta', cantidad: 1, precioCentavos: 900000);
+      expect(LineaPedido.desdeJson(linea.toJson())!.toJson(), linea.toJson());
+      for (final roto in [
+        null,
+        {'gid': 'p1', 'nombre': 'X', 'precioCentavos': 1},
+        {'gid': 'p1', 'nombre': 'X', 'cantidad': 1, 'gramos': 100, 'precioCentavos': 1},
+        {'gid': 'p1', 'nombre': 'X', 'cantidad': 0, 'precioCentavos': 1},
+        {'gid': '', 'nombre': 'X', 'cantidad': 1, 'precioCentavos': 1},
+        {'gid': 'p1', 'nombre': 'X', 'cantidad': 1, 'precioCentavos': -1},
+      ]) {
+        expect(LineaPedido.desdeJson(roto), isNull, reason: '$roto');
+      }
+    });
+  });
 }

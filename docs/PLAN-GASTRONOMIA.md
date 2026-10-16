@@ -41,4 +41,17 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    mostrador se carga desde la caja; cobrar un pedido es una venta de siempre.
 5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
    la cocina pausada, pide el pago adelantado si el local lo quiere; el aviso "está listo" / "salió".
+   **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
+   agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
+   - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.
+   - El cliente manda el carrito (`orderMessage`, con `orderId` y `token`) → `getOrderDetails` da cada producto (id de
+     WhatsApp, cantidad, precio) → el bot sigue la charla (retiro/envío, nombre) y sube el pedido.
+   - Coincidencia exacta: cada producto del catálogo lleva `retailerId` = `global_id` del plato. El id de WhatsApp se
+     traduce con `getCatalog` (trae los dos). **El precio que vale es el de Nodo Sur.**
+   - **Importar:** un local con catálogo ya armado lo trae a la carta con un toque (`getCatalog`).
+   - **Espejo:** después, el bot deja el catálogo igual a la carta (`productCreate` / `productUpdate` / `productDelete`,
+     `isHidden` para lo que se acabó).
+   - Límites: solo números de **WhatsApp Business**; WhatsApp revisa cada producto nuevo y pide foto (si no hay, el logo
+     del local); es la API no oficial, así que si deja de andar el bot vuelve al pedido por texto, que ya existe. A
+     verificar en un celular real: en qué unidad viene el precio (parece ×1000) y cuánto tarda la revisión.
 6. **Después:** teléfono, link propio, mesas (comandas, cocina, mozos, propinas).

@@ -1,0 +1,157 @@
+// Pedidos de un local gastronómico en la base (`REGLAS-NEGOCIO.md` §22, `docs/PLAN-GASTRONOMIA.md`). Las reglas (estado
+// inicial, pasos, cocina, entrega) son de `domain/pedido_gastronomico.dart`: acá solo se leen y se graban.
+
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+
+import '../domain/pedido_gastronomico.dart';
+import 'database.dart';
+import 'identidad_sync.dart';
+import 'numero_venta.dart';
+import 'repositorio_configuracion.dart';
+
+/// La cocina está pausada: el bot no toma pedidos (el mostrador sí, lo decide quien atiende).
+class CocinaPausada implements Exception {
+  const CocinaPausada();
+}
+
+/// Falta algo para tomar el pedido: platos, una forma de entrega que el local tenga, o la dirección y la zona de un envío.
+class PedidoIncompleto implements Exception {
+  const PedidoIncompleto(this.mensaje);
+  final String mensaje;
+}
+
+/// Un cambio de estado que las reglas no permiten (entregar algo sin hacer, cancelar algo en camino).
+class PasoDePedidoInvalido implements Exception {
+  const PasoDePedidoInvalido(this.desde, this.hasta);
+  final EstadoPedido desde;
+  final EstadoPedido hasta;
+}
+
+Future<ConfigPedidos> configPedidosActual(AppDatabase db) async {
+  final texto = (await configuracionNegocioActual(db)).configPedidos;
+  if (texto == null) return const ConfigPedidos();
+  try {
+    return ConfigPedidos.desdeJson(jsonDecode(texto));
+  } on FormatException {
+    return const ConfigPedidos();
+  }
+}
+
+Future<void> guardarConfigPedidos(AppDatabase db, ConfigPedidos config) =>
+    escribirConfiguracionNegocio(db, ConfiguracionNegocioTablaCompanion(configPedidos: Value(jsonEncode(config.toJson()))));
+
+Future<EstadoCocina> estadoCocinaActual(AppDatabase db) async =>
+    EstadoCocina.desdeClave((await configuracionNegocioActual(db)).estadoCocina);
+
+Future<void> cambiarEstadoCocina(AppDatabase db, EstadoCocina estado) =>
+    escribirConfiguracionNegocio(db, ConfiguracionNegocioTablaCompanion(estadoCocina: Value(estado.clave)));
+
+/// Lo pedido de [pedido]. Una línea que no se entiende se saltea (no frena la lista).
+List<LineaPedido> lineasDe(PedidoGastronomia pedido) {
+  try {
+    final crudo = jsonDecode(pedido.lineasJson);
+    if (crudo is! List) return const [];
+    return [for (final l in crudo) ?LineaPedido.desdeJson(l)];
+  } on FormatException {
+    return const [];
+  }
+}
+
+/// Toma un pedido nuevo y devuelve su id. El estado y la hora estimada salen de las reglas y de la cocina de ahora.
+Future<int> crearPedido(
+  AppDatabase db, {
+  required CanalPedido canal,
+  required String nombreCliente,
+  required List<LineaPedido> lineas,
+  required int usuarioId,
+  FormaEntrega formaEntrega = FormaEntrega.retiro,
+  String? telefono,
+  String? direccion,
+  ZonaEnvio? zona,
+  String? nota,
+  bool pagaAdelantado = false,
+  int? clienteId,
+  String? idRemoto,
+  DateTime? ahora,
+}) {
+  return db.transaction(() async {
+    if (lineas.isEmpty) throw const PedidoIncompleto('El pedido no tiene nada.');
+    if (nombreCliente.trim().isEmpty) throw const PedidoIncompleto('Falta el nombre.');
+    final config = await configPedidosActual(db);
+    final cocina = await estadoCocinaActual(db);
+    if (cocina == EstadoCocina.pausada && !canal.loCargaElLocal) throw const CocinaPausada();
+    if (!config.formasDisponibles.contains(formaEntrega)) {
+      throw PedidoIncompleto('El local no tiene "${formaEntrega.etiqueta}".');
+    }
+    final falta = faltaParaEntrega(formaEntrega, direccion: direccion, zona: zona);
+    if (falta.isNotEmpty) throw PedidoIncompleto('Falta ${falta.join(' y ')}.');
+
+    final momento = ahora ?? DateTime.now();
+    return db.into(db.pedidosGastronomia).insert(
+          PedidosGastronomiaCompanion.insert(
+            numero: await siguienteNumeroDePedido(db),
+            canal: canal.clave,
+            estado: estadoInicial(canal: canal, config: config, pagaAdelantado: pagaAdelantado).clave,
+            formaEntrega: Value(formaEntrega.clave),
+            clienteId: Value(clienteId),
+            nombreCliente: nombreCliente.trim(),
+            telefono: Value(telefono),
+            direccion: Value(formaEntrega.esEnvio ? direccion!.trim() : null),
+            zona: Value(formaEntrega.esEnvio ? zona!.nombre : null),
+            costoEnvioCentavos: Value(costoEnvioCentavos(formaEntrega, zona)),
+            lineasJson: jsonEncode([for (final l in lineas) l.toJson()]),
+            nota: Value(nota),
+            horaEstimada: Value(horaEstimada(ahora: momento, cocina: cocina, config: config, forma: formaEntrega, zona: zona)),
+            pagaAdelantado: Value(pagaAdelantado),
+            idRemoto: Value(idRemoto),
+            fechaCreacion: Value(momento),
+            usuarioId: usuarioId,
+            globalId: Value(generarGlobalId()),
+            origenDispositivo: Value(idDispositivoActual),
+            actualizadoEn: Value(momento),
+          ),
+        );
+  });
+}
+
+/// Pasa el pedido [id] a [nuevo], si las reglas lo permiten: el paso siguiente de su forma de entrega, o cancelar mientras no
+/// salió.
+Future<void> avanzarPedido(AppDatabase db, int id, EstadoPedido nuevo) {
+  return db.transaction(() async {
+    final pedido = await (db.select(db.pedidosGastronomia)..where((p) => p.id.equals(id))).getSingle();
+    final actual = EstadoPedido.desdeClave(pedido.estado);
+    final permitido = nuevo == EstadoPedido.cancelado
+        ? sePuedeCancelar(actual)
+        : siguientesEstados(actual, FormaEntrega.desdeClave(pedido.formaEntrega)).contains(nuevo);
+    if (!permitido) throw PasoDePedidoInvalido(actual, nuevo);
+    await (db.update(db.pedidosGastronomia)..where((p) => p.id.equals(id))).write(
+      PedidosGastronomiaCompanion(estado: Value(nuevo.clave), actualizadoEn: Value(DateTime.now())),
+    );
+  });
+}
+
+/// Llegó el pago adelantado de [id]: queda pagado y sigue como si recién entrara (por confirmar, o por hacer si entra solo).
+Future<void> registrarPagoAdelantado(AppDatabase db, int id) {
+  return db.transaction(() async {
+    final pedido = await (db.select(db.pedidosGastronomia)..where((p) => p.id.equals(id))).getSingle();
+    final estado = EstadoPedido.desdeClave(pedido.estado);
+    await (db.update(db.pedidosGastronomia)..where((p) => p.id.equals(id))).write(
+      PedidosGastronomiaCompanion(
+        pagado: const Value(true),
+        estado: estado == EstadoPedido.esperandoPago ? Value(estadoAlPagar(await configPedidosActual(db)).clave) : const Value.absent(),
+        actualizadoEn: Value(DateTime.now()),
+      ),
+    );
+  });
+}
+
+/// La lista de trabajo: lo que sigue abierto, del más viejo al más nuevo (el primero que entró es el primero que sale).
+Stream<List<PedidoGastronomia>> pedidosAbiertos(AppDatabase db) {
+  final cerrados = [EstadoPedido.entregado.clave, EstadoPedido.rechazado.clave, EstadoPedido.cancelado.clave];
+  return (db.select(db.pedidosGastronomia)
+        ..where((p) => p.estado.isNotIn(cerrados))
+        ..orderBy([(p) => OrderingTerm.asc(p.fechaCreacion), (p) => OrderingTerm.asc(p.id)]))
+      .watch();
+}

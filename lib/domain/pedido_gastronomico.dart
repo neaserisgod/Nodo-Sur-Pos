@@ -10,6 +10,8 @@
 //  * La entrega no es obligatoria: retiro, cadete propio y servicio de reparto (una cadetería de afuera), cada una opcional.
 //  * Cómo se paga lo elige cada local: al entregar, adelantado, o que elija el cliente.
 
+import 'pesables.dart';
+
 /// Por dónde llegó el pedido. Las claves se guardan en la base y viajan por la sync: no se renombran nunca.
 enum CanalPedido {
   mostrador('MOSTRADOR'),
@@ -310,3 +312,55 @@ String? mensajeAlCliente({required EstadoPedido estado, required FormaEntrega fo
       EstadoPedido.cancelado => 'Tu pedido $numero en $local quedó cancelado. Cualquier duda, escribinos.',
       _ => null,
     };
+
+/// Una línea de lo pedido, con el precio del momento (el que se le dijo al cliente). Por unidad o, si el plato se vende por
+/// peso, en gramos con el precio por kilo.
+class LineaPedido {
+  const LineaPedido({required this.gid, required this.nombre, this.cantidad, this.gramos, required this.precioCentavos})
+      : assert((cantidad == null) != (gramos == null), 'Una línea es por unidad o por peso, no las dos');
+
+  /// `global_id` del plato: el pedido viaja por la sync y el id local no vale en otro equipo.
+  final String gid;
+  final String nombre;
+  final int? cantidad;
+  final int? gramos;
+
+  /// Por unidad, o por kilo si [gramos] no es null.
+  final int precioCentavos;
+
+  /// Siempre por el helper de su forma (convención 4): nunca precio por kilo × gramos a mano.
+  int get subtotalCentavos => gramos != null
+      ? subtotalPesable(montoPorKiloCentavos: precioCentavos, gramos: gramos!)
+      : precioCentavos * cantidad!;
+
+  Map<String, Object?> toJson() => {
+        'gid': gid,
+        'nombre': nombre,
+        if (cantidad != null) 'cantidad': cantidad,
+        if (gramos != null) 'gramos': gramos,
+        'precioCentavos': precioCentavos,
+      };
+
+  /// Null si no se entiende: sin plato, sin cantidad ni gramos (o con los dos), o con algo en cero o negativo.
+  static LineaPedido? desdeJson(Object? crudo) {
+    if (crudo is! Map) return null;
+    final gid = crudo['gid'], nombre = crudo['nombre'], precio = crudo['precioCentavos'];
+    final cantidad = crudo['cantidad'], gramos = crudo['gramos'];
+    if (gid is! String || gid.isEmpty || nombre is! String || precio is! num || precio < 0) return null;
+    if ((cantidad == null) == (gramos == null)) return null;
+    final valor = cantidad ?? gramos;
+    if (valor is! num || valor <= 0) return null;
+    return LineaPedido(
+      gid: gid,
+      nombre: nombre,
+      cantidad: cantidad == null ? null : (cantidad as num).toInt(),
+      gramos: gramos == null ? null : (gramos as num).toInt(),
+      precioCentavos: precio.toInt(),
+    );
+  }
+}
+
+/// Lo que vale el pedido: sus líneas más el envío. El total que se cobra lo arma la venta (recargo, descuento, redondeo:
+/// convención 8) al cobrarlo.
+int totalPedidoCentavos(List<LineaPedido> lineas, {int costoEnvioCentavos = 0}) =>
+    lineas.fold(costoEnvioCentavos, (suma, l) => suma + l.subtotalCentavos);
