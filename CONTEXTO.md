@@ -155,6 +155,9 @@ Por orden aproximado de interés (nada de esto está pedido para hacer ya; confi
 0. **Nodo Sur Servicios como "socio de negocio", no una agenda** (2026-10-16, anotado sin aprobar): la plata por hora, precios
    al día con la inflación, meta del mes, agenda que se llena sola, recuperar clientas, monotributo. El dueño teme que suene a
    dashboard corporativo: hablarle como una amiga que sabe de números. Detalle en `docs/IDEA-SOCIO-DE-NEGOCIO.md`.
+   Revisión del arranque de Servicios (más de 50 toques hasta el primer turno con seña; bot y seña escondidos), decisiones
+   (descarga gratis y libre; segundo número opcional; resolver baneo y lista negra si usa su número personal) y propuesta:
+   `docs/REVISION-FLUJOS-SERVICIOS.md`. Es la base de la sesión que revisa todos los flujos de las dos apps y la página.
 1. **Integración total con Mercado Pago** (le interesa mucho): avisos en vivo por webhooks (venta confirmada al
    instante y alerta de cobros que entraron sin venta), **devoluciones desde el POS** al anular una venta cobrada por
    MP, **saldo real automático** en el cierre (reporte de liquidaciones; hay que verificar que se pueda), cobrar con
