@@ -27,6 +27,7 @@ import '../domain/cobro_posnet.dart' show ResultadoOrdenCobro;
 import '../domain/faltantes_cierre.dart' show CajaDelCierre;
 import '../servicios/sync_nube.dart' show SyncNubeOk;
 import '../domain/descuento.dart' show TipoDescuento;
+import '../domain/dinero.dart' show centavosPorPeso;
 import '../domain/edicion_masiva_precios.dart' show CampoMonto, TipoAjustePrecio;
 import '../domain/edicion_masiva_stock.dart' show TipoAjusteStock;
 import '../domain/venta.dart' show LineaVenta, ResultadoTotalVenta;
@@ -290,8 +291,12 @@ class ServicioCompanionOffline implements ServicioCompanion {
   );
 
   @override
-  Future<int> igualarGananciaGeneral({required int gananciaBp, required int usuarioId}) =>
-      _local.igualarGananciaGeneral(gananciaBp: gananciaBp, usuarioId: usuarioId);
+  Future<int> igualarMarkupGeneral({required int markupBp, required int usuarioId}) =>
+      _local.igualarMarkupGeneral(markupBp: markupBp, usuarioId: usuarioId);
+
+  @override
+  Future<({int productos, DateTime? cuando})> deshacerUltimaSuba({required int usuarioId, bool soloContar = false}) =>
+      _local.deshacerUltimaSuba(usuarioId: usuarioId, soloContar: soloContar);
 
   @override
   Future<void> ajustarMontoEnLote({
@@ -300,12 +305,14 @@ class ServicioCompanionOffline implements ServicioCompanion {
     required TipoAjustePrecio tipo,
     required int valor,
     required int usuarioId,
+    int redondeoCentavos = centavosPorPeso,
   }) => _local.ajustarMontoEnLote(
     productoIds: productoIds,
     campo: campo,
     tipo: tipo,
     valor: valor,
     usuarioId: usuarioId,
+    redondeoCentavos: redondeoCentavos,
   );
 
   @override

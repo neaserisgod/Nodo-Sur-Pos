@@ -149,4 +149,20 @@ void main() {
       );
     });
   });
+
+  test('sumar % del costo: al precio se le suma ese % del costo; sin costo queda igual', () {
+    expect(aplicarAjustePrecio(precioActualCentavos: 700000, tipo: TipoAjustePrecio.sumarPorcentajeDelCosto, valor: 1500, costoCentavos: 600000), 790000);
+    expect(aplicarAjustePrecio(precioActualCentavos: 700000, tipo: TipoAjustePrecio.sumarPorcentajeDelCosto, valor: 1500), 700000);
+  });
+
+  test('el redondeador: para arriba a \$10, \$50 o \$100; un precio que ya cae justo no sube', () {
+    // \$7.000 con costo \$6.130 y 15 % = \$7.919,50 → \$8.000 a la centena, \$7.950 a 50, \$7.920 a 10.
+    int subir(int paso) => aplicarAjustePrecio(precioActualCentavos: 700000, tipo: TipoAjustePrecio.sumarPorcentajeDelCosto, valor: 1500, costoCentavos: 613000, redondeoCentavos: paso);
+    expect(subir(10000), 800000);
+    expect(subir(5000), 795000);
+    expect(subir(1000), 792000);
+    // Solo redondear: sumar \$0.
+    expect(aplicarAjustePrecio(precioActualCentavos: 791300, tipo: TipoAjustePrecio.sumarMonto, valor: 0, redondeoCentavos: 10000), 800000);
+    expect(aplicarAjustePrecio(precioActualCentavos: 800000, tipo: TipoAjustePrecio.sumarMonto, valor: 0, redondeoCentavos: 10000), 800000);
+  });
 }

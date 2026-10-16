@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (16/10/2026)
 
+- **Precios de todo, en markup**: "Subir todo X %" suma el X % del costo (antes era del precio: 15 % llevó $7.000 a $8.050), con
+  redondeador ($1/$10/$50/$100; 0 % = solo redondear) y **"Deshacer" la última suba** desde el historial de precios. Es la edición
+  en lote (`sumarPorcentajeDelCosto`, también en la PC). **Falta probarlo en un celular real.**
 - **Precios de todo desde el celular** (Productos, almacén): muestra la ganancia promedio sobre el precio sin cigarrillos ni fiambres y deja
   **subir todos los precios X %** (quedan precio fijo) o **igualar la ganancia a X %** (todos los productos con costo y todos los
   proveedores a ese %). Cigarrillos y fiambres (por peso o de la categoría Fiambres) no se tocan. Arreglado "Negocio" que salía en vertical en Cuenta. **Falta probarlo en un

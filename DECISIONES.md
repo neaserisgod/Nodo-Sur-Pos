@@ -85,7 +85,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [El APK sale con el mismo merge que Windows, en su propia fila (2026-10-09)](#el-apk-sale-con-el-mismo-merge-que-windows-en-su-propia-fila-2026-10-09)
 - [Cobrar servicios: sin tabla de consumos y la propina después de cobrar (2026-10-10)](#cobrar-servicios-sin-tabla-de-consumos-y-la-propina-después-de-cobrar-2026-10-10)
 - [Asistente con IA de servicios: la IA propone, la app valida y la persona confirma (2026-10-16)](#asistente-con-ia-de-servicios-la-ia-propone-la-app-valida-y-la-persona-confirma-2026-10-16)
-- [Precios de todo: subir X % o igualar la ganancia, sin cigarrillos (2026-10-16)](#precios-de-todo-subir-x--o-igualar-la-ganancia-sin-cigarrillos-2026-10-16)
+- [Precios de todo: subir X % o igualar la ganancia, sin cigarrillos (2026-10-16)](#precios-de-todo-subir-x--o-igualar-la-ganancia-sin-cigarrillos-2026-10-16) — en markup, con redondeador y deshacer
 
 **Diseño y pantallas**
 
@@ -2671,16 +2671,20 @@ el Ctrl+K de la PC ni el buscador de funciones).
 ## Precios de todo: subir X % o igualar la ganancia, sin cigarrillos (2026-10-16)
 
 Pedido del dueño: "subirle un porcentaje general a todos los precios y ver el porcentaje promedio sin tener en cuenta los
-cigarrillos, estandarizarlo todo". Eligió las dos acciones y solo en el celular.
+cigarrillos, estandarizarlo todo". Solo en el celular (Productos › tarjeta "Markup promedio" › "Precios de todo").
 
-- **Ganancia promedio**: sobre el precio (Regla 14, nunca markup), promedio simple de los productos con costo y precio, sin
-  cigarrillos ni fiambres (`gananciaPromedio`, `domain/precios_generales.dart`).
-- **Subir todo X %**: la misma fórmula y el mismo camino que la edición en lote (`ajustarMontoEnLote`): redondeo al peso y los
-  precios quedan **fijos** (como cualquier ajuste en lote: dejan de seguir al % del proveedor).
-- **Igualar la ganancia a X %** ("estandarizar"): cada producto con costo queda en `precioConGananciaACentena(costo, X)`, **deja de
-  ser precio fijo** y **todos los proveedores pasan a X %** (`igualarGananciaGeneral`). Si no se cambiaran los proveedores, el
-  próximo cambio de costo volvería a poner el % viejo y se perdería lo igualado.
-- Cigarrillos y fiambres afuera siempre: del promedio y de las dos acciones (Regla 6; El dueño, mismo día: "sin contar los
-  fiambres también"). Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`). "Varios", promos, servicios e insumos no vienen en la lista de productos.
-- Con PC, el celular lo pide a la PC (`/productos/lote/igualar-ganancia`); en "Solo celular" se hace en su base.
-
+- **Todo en markup sobre el costo** (Regla 14, excepción del dueño). La primera versión subía un % del PRECIO: el dueño subió 15 %,
+  $7.000 pasó a $8.050 y dijo "el cálculo de suba se hace sobre el precio costo". Ahora $7.000 con costo $6.000 y 15 % → $7.900.
+- **"Subir todo" es la edición en lote** (El dueño: "¿por qué no reutilizás la lógica de edición masiva?"): un tipo nuevo,
+  `TipoAjustePrecio.sumarPorcentajeDelCosto`, en `aplicarAjustePrecio`, y `ajustarMontoEnLote` con todos los productos que entran.
+  También aparece como "Sumar % del costo" en la edición masiva de la PC. Quedan precio fijo, como todo ajuste en lote.
+- **Redondeador** (El dueño: "me dejó todos los precios con números sin redondear"): `aplicarAjustePrecio` y `ajustarMontoEnLote`
+  reciben a cuánto redondear para arriba ($1 por defecto; la hoja ofrece $1, $10, $50 y $100, con $100 de entrada). Con 0 % solo
+  redondea (es "sumar $0" en lote), para emprolijar precios que ya quedaron sueltos.
+- **Igualar a X %** ("estandarizar"): precio = costo × (1 + X) a la centena por el mismo cálculo del % del proveedor, y todos los
+  proveedores pasan a ese % (guardado como ganancia X / (1 + X), hacia abajo para no saltar de centena). Dejan de ser precio fijo.
+- **Deshacer la última suba**: cada producto vuelve al precio de su foto anterior en `historial_de_precios`. La suba se reconoce
+  como el último minuto con 5 o más cambios (`loteDeLaUltimaSuba`), tomando la foto más vieja de cada producto en ese minuto (la de la
+  suba); uno que se tocó a mano después no se toca. Sirvió para arreglar la suba del 15 % sobre el precio.
+- Cigarrillos y fiambres afuera siempre: del promedio y de las tres acciones (Regla 6; "sin contar los fiambres también").
+  Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`).
