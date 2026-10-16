@@ -93,6 +93,15 @@ class ControladorFalsoNs implements ControladorAppNs {
   @override
   Future<void> abrirActualizacion() async => llamadas.add('actualizacion');
   @override
+  Future<String?> cobrarPedido(int pedidoId) async {
+    pedidosCobrados.add(pedidoId);
+    return null;
+  }
+
+  /// Los pedidos que una pantalla mandó a cobrar.
+  final List<int> pedidosCobrados = [];
+
+  @override
   Future<void> cambiarUsuario() async => llamadas.add('cambiarUsuario');
   @override
   Future<void> cambiarModo() async => llamadas.add('cambiarModo');

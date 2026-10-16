@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../domain/pedido_gastronomico.dart';
+import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'numero_venta.dart';
@@ -20,6 +21,13 @@ class CocinaPausada implements Exception {
 class PedidoIncompleto implements Exception {
   const PedidoIncompleto(this.mensaje);
   final String mensaje;
+}
+
+/// El pedido ya tiene su venta, o se cerró sin entregarse (rechazado, cancelado): cobrarlo otra vez metería la misma plata dos
+/// veces en la caja.
+class PedidoYaCobrado implements Exception {
+  const PedidoYaCobrado(this.numero);
+  final String numero;
 }
 
 /// Un cambio de estado que las reglas no permiten (entregar algo sin hacer, cancelar algo en camino).
@@ -169,3 +177,79 @@ Future<List<Producto>> cartaDelLocal(AppDatabase db) => (db.select(db.productos)
           p.globalId.isNotNull())
       ..orderBy([(p) => OrderingTerm.asc(p.nombre)]))
     .get();
+
+/// Las líneas de la venta con que se cobra [pedido]: cada plato al precio que se le dijo al cliente (el del pedido) y con el
+/// costo de hoy (costo-foto, Regla 4), y el envío como una línea suelta ("Varios", sin stock ni costo). Un plato que ya no
+/// está en este equipo (se borró, o no llegó por la sync) frena el cobro: no se cobra algo que no se sabe qué es.
+Future<List<LineaVenta>> lineasDeVentaDePedido(AppDatabase db, PedidoGastronomia pedido) async {
+  final lineas = <LineaVenta>[];
+  for (final l in lineasDe(pedido)) {
+    final producto = await (db.select(db.productos)..where((p) => p.globalId.equals(l.gid))).getSingleOrNull();
+    if (producto == null) throw PedidoIncompleto('No está "${l.nombre}" en la carta de este equipo.');
+    if (l.gramos != null) {
+      lineas.add(LineaVentaPesable(
+        productoId: '${producto.id}',
+        nombreProducto: producto.nombre,
+        proveedorId: producto.proveedorId?.toString(),
+        gramos: l.gramos!,
+        precioPorKiloCentavos: l.precioCentavos,
+        costoPorKiloCentavos: producto.costoPorKiloCentavos,
+      ));
+    } else {
+      lineas.add(LineaVentaPorUnidad(
+        productoId: '${producto.id}',
+        nombreProducto: producto.nombre,
+        proveedorId: producto.proveedorId?.toString(),
+        cantidad: l.cantidad!,
+        tipoCigarrillo: tipoCigarrilloDesde(producto.tipoCigarrillo),
+        precioUnitarioCentavos: l.precioCentavos,
+        costoUnitarioCentavos: producto.costoCentavos,
+      ));
+    }
+  }
+  if (pedido.costoEnvioCentavos > 0) {
+    final varios = await _productoVarios(db);
+    lineas.add(LineaVentaPorUnidad(
+      productoId: '${varios.id}',
+      nombreProducto: 'Envío · ${pedido.zona ?? 'sin zona'}',
+      proveedorId: null,
+      cantidad: 1,
+      esVarios: true,
+      precioUnitarioCentavos: pedido.costoEnvioCentavos,
+    ));
+  }
+  return lineas;
+}
+
+/// "Varios": en la PC lo siembra la base; un celular solo lo recibe por la sync, y uno que trabaja sin PC puede no tenerlo. Se
+/// crea con el `global_id` fijo de la PC, así si después llega el de otro equipo es la misma fila.
+Future<Producto> _productoVarios(AppDatabase db) async {
+  final hay = await (db.select(db.productos)..where((p) => p.esVarios.equals(true))..limit(1)).getSingleOrNull();
+  if (hay != null) return hay;
+  final id = await db.into(db.productos).insert(ProductosCompanion.insert(
+        nombre: 'Varios',
+        esVarios: const Value(true),
+        globalId: const Value(globalIdProductoVarios),
+        origenDispositivo: Value(idDispositivoActual),
+        actualizadoEn: Value(DateTime.fromMillisecondsSinceEpoch(0)),
+      ));
+  return (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle();
+}
+
+/// La venta [ventaId] cobró el pedido [pedidoId]. Se llama DENTRO de la transacción de `registrarVenta`: si el pedido ya tenía
+/// venta (o se cerró sin entregarse), tira y la venta no se graba. Un retiro que estaba listo queda entregado (lo retiró y
+/// pagó); un envío sigue en la lista hasta que se entrega.
+Future<void> marcarPedidoCobrado(AppDatabase db, int pedidoId, {required int ventaId}) async {
+  final pedido = await (db.select(db.pedidosGastronomia)..where((p) => p.id.equals(pedidoId))).getSingle();
+  final estado = EstadoPedido.desdeClave(pedido.estado);
+  if (pedido.ventaId != null || estado == EstadoPedido.rechazado || estado == EstadoPedido.cancelado) {
+    throw PedidoYaCobrado(pedido.numero);
+  }
+  final forma = FormaEntrega.desdeClave(pedido.formaEntrega);
+  final entregado = !forma.esEnvio && estado == EstadoPedido.listo;
+  await (db.update(db.pedidosGastronomia)..where((p) => p.id.equals(pedidoId))).write(PedidosGastronomiaCompanion(
+        ventaId: Value(ventaId),
+        estado: entregado ? Value(EstadoPedido.entregado.clave) : const Value.absent(),
+        actualizadoEn: Value(DateTime.now()),
+      ));
+}

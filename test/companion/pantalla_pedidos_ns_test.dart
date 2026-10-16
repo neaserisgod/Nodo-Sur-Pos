@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:la_plazoleta/companion/app_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_pedidos_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
@@ -9,6 +10,7 @@ import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
+import '../helpers/controlador_falso_ns.dart';
 
 /// Los pedidos de una rotisería en el celular (`REGLAS-NEGOCIO.md` §22, etapa 4): el estado de la cocina con un toque, la
 /// lista por estado con el paso que sigue, y tomar un pedido del mostrador.
@@ -69,7 +71,30 @@ void main() {
     await tester.tap(find.text('Está listo'));
     await esperar(tester);
     expect(find.text('LISTO'), findsOneWidget);
+    // Un retiro listo se cobra cuando lo vienen a buscar: "Cobrar" primero, "Entregado" para el que ya pagó.
+    expect(find.text('Cobrar'), findsOneWidget);
     expect(find.text('Entregado'), findsOneWidget);
+  });
+
+  testWidgets('"Cobrar" manda el pedido a Cobrar', (tester) async {
+    final producto = (await tester.runAsync(() => (db.select(db.productos)..where((p) => p.id.equals(milanesa))).getSingle()))!;
+    final id = (await tester.runAsync(() => crearPedido(db,
+        canal: CanalPedido.mostrador,
+        nombreCliente: 'Juan',
+        lineas: [LineaPedido(gid: producto.globalId!, nombre: producto.nombre, cantidad: 1, precioCentavos: 650000)],
+        usuarioId: usuario)))!;
+    final controlador = ControladorFalsoNs();
+    tester.view.physicalSize = const Size(430, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(
+      theme: TemaCompanion.claro,
+      home: AppNs(controlador: controlador, version: 0, child: Scaffold(body: PantallaPedidosNs(db: db, usuarioId: usuario))),
+    ));
+    await esperar(tester);
+    await tester.tap(find.text('Cobrar'));
+    await esperar(tester);
+    expect(controlador.pedidosCobrados, [id]);
   });
 
   testWidgets('el "+" toma un pedido del mostrador con lo que elegís de la carta', (tester) async {

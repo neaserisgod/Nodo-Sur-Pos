@@ -5,7 +5,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_pedidos_gastronomia.dart';
+import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/data/repositorio_sincronizacion.dart';
+import 'package:la_plazoleta/data/repositorio_ventas.dart';
+import 'package:la_plazoleta/domain/medio_pago.dart';
+import 'package:la_plazoleta/domain/venta.dart';
 import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 
 import '../helpers/base_para_tests.dart';
@@ -150,4 +154,95 @@ void main() {
     expect(llegado.numero, (await leer(id)).numero);
     expect(lineasDe(llegado).single.nombre, 'Milanesa con papas');
   });
+
+  group('cobrar un pedido', () {
+    late int sesion;
+    late int mila;
+
+    setUp(() async {
+      sesion = await abrirSesion(db, usuarioId: usuarioId, fondoInicialCentavos: 0);
+      mila = await crearProducto(db, nombre: 'Milanesa con papas', precioCentavos: 700000, costoCentavos: 300000, stock: 10, usuarioId: usuarioId);
+    });
+
+    Future<int> pedidoDeMila({FormaEntrega forma = FormaEntrega.retiro, ZonaEnvio? zona}) async {
+      final p = await (db.select(db.productos)..where((x) => x.id.equals(mila))).getSingle();
+      return crearPedido(db,
+          canal: CanalPedido.mostrador,
+          nombreCliente: 'Juan',
+          formaEntrega: forma,
+          direccion: forma.esEnvio ? 'Mitre 100' : null,
+          zona: zona,
+          // El precio del pedido es el que se le dijo al cliente, aunque hoy el plato valga otra cosa.
+          lineas: [LineaPedido(gid: p.globalId!, nombre: p.nombre, cantidad: 2, precioCentavos: 650000)],
+          usuarioId: usuarioId);
+    }
+
+    test('las líneas de la venta salen del pedido, al precio que se le dijo al cliente y con el costo de hoy', () async {
+      final id = await pedidoDeMila();
+      final lineas = await lineasDeVentaDePedido(db, await leer(id));
+      final l = lineas.single as LineaVentaPorUnidad;
+      expect(l.productoId, '$mila');
+      expect(l.cantidad, 2);
+      expect(l.precioUnitarioCentavos, 650000);
+      expect(l.costoUnitarioCentavos, 300000);
+    });
+
+    test('el envío entra como una línea suelta (Varios) con el costo de la zona', () async {
+      await guardarConfigPedidos(db, const ConfigPedidos(cadetePropio: true, zonas: [centro]));
+      final id = await pedidoDeMila(forma: FormaEntrega.cadetePropio, zona: centro);
+      final lineas = await lineasDeVentaDePedido(db, await leer(id));
+      expect(lineas, hasLength(2));
+      final envio = lineas.last as LineaVentaPorUnidad;
+      expect(envio.esVarios, isTrue);
+      expect(envio.nombreProducto, 'Envío · Centro');
+      expect(envio.precioUnitarioCentavos, 150000);
+    });
+
+    test('cobrarlo graba la venta y la liga al pedido en la misma transacción; un retiro listo queda entregado', () async {
+      final id = await pedidoDeMila();
+      await avanzarPedido(db, id, EstadoPedido.listo);
+      final r = await registrarVentaSegunMedio(db,
+          lineas: await lineasDeVentaDePedido(db, await leer(id)),
+          medio: ComposicionPago.efectivo,
+          sesionCajaId: sesion,
+          usuarioId: usuarioId,
+          pedidoId: id);
+      final p = await leer(id);
+      expect(p.ventaId, r.ventaId);
+      expect(EstadoPedido.desdeClave(p.estado), EstadoPedido.entregado);
+      expect(r.totalCentavos, 1300000);
+    });
+
+    test('un envío cobrado antes de salir sigue en la lista hasta entregarse', () async {
+      await guardarConfigPedidos(db, const ConfigPedidos(cadetePropio: true, zonas: [centro]));
+      final id = await pedidoDeMila(forma: FormaEntrega.cadetePropio, zona: centro);
+      await registrarVentaSegunMedio(db,
+          lineas: await lineasDeVentaDePedido(db, await leer(id)),
+          medio: ComposicionPago.efectivo,
+          sesionCajaId: sesion,
+          usuarioId: usuarioId,
+          pedidoId: id);
+      expect(EstadoPedido.desdeClave((await leer(id)).estado), EstadoPedido.porHacer);
+    });
+
+    test('no se cobra dos veces, ni uno cancelado: y si falla no queda venta', () async {
+      final id = await pedidoDeMila();
+      final lineas = await lineasDeVentaDePedido(db, await leer(id));
+      await registrarVentaSegunMedio(db, lineas: lineas, medio: ComposicionPago.efectivo, sesionCajaId: sesion, usuarioId: usuarioId, pedidoId: id);
+      final ventasAntes = (await db.select(db.ventas).get()).length;
+      await expectLater(
+        registrarVentaSegunMedio(db, lineas: lineas, medio: ComposicionPago.efectivo, sesionCajaId: sesion, usuarioId: usuarioId, pedidoId: id),
+        throwsA(isA<PedidoYaCobrado>()),
+      );
+      expect((await db.select(db.ventas).get()).length, ventasAntes);
+
+      final otro = await pedidoDeMila();
+      await avanzarPedido(db, otro, EstadoPedido.cancelado);
+      await expectLater(
+        registrarVentaSegunMedio(db, lineas: lineas, medio: ComposicionPago.efectivo, sesionCajaId: sesion, usuarioId: usuarioId, pedidoId: otro),
+        throwsA(isA<PedidoYaCobrado>()),
+      );
+    });
+  });
 }
+

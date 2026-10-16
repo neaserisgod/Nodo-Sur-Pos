@@ -42,7 +42,7 @@ bool get esEscritorioAparte => esEdicionAparte && !kIsWeb && Platform.isWindows;
 String get nombreDeEdicion => switch (edicionActual) {
       Edicion.almacen => 'Nodo Sur POS',
       Edicion.servicios => 'Nodo Sur Servicios',
-      Edicion.gastronomia => 'Nodo Sur Gastronomía',
+      Edicion.gastronomia => 'Nodo Gastro',
     };
 
 /// Con qué nombre busca sus actualizaciones en el sitio: cada edición de cada sistema es un instalador distinto.

@@ -53,7 +53,7 @@ on:
         required: false
         default: main
       edicion:
-        description: "Qué app publicar: ambas (almacén y Servicios), una sola, o todas (también Nodo Sur Gastronomía)"
+        description: "Qué app publicar: ambas (almacén y Servicios), una sola, o todas (también Nodo Gastro)"
         required: true
         type: choice
         # Gastronomía (`docs/PLAN-GASTRONOMIA.md`) sale solo a mano, con "gastronomia" o "todas": el push a main no la publica

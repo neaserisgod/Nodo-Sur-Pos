@@ -47,8 +47,11 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    "Pedidos" y "Carta"); cocina con un toque, lista por estado con el paso que sigue, detalle con cancelar y escribirle
    por WhatsApp, "+" para tomar un pedido del mostrador o del teléfono (platos por unidad; lo que se pesa, después). Al
    avanzar un pedido cargado por el local, ofrece avisarle al cliente por WhatsApp (los de WhatsApp los avisa el bot).
-   **Falta:** cobrar el pedido (pasa a venta), la pantalla para configurar entregas, zonas y pago, y que el rubro se pueda
-   elegir en un alta.
+   **Cobrar ✅:** "Cobrar" arma la venta con lo del pedido (al precio que se le dijo al cliente, con el costo de hoy, y el envío
+   como línea "Varios") y abre Cobrar de siempre (efectivo, QR, mixto, Point). La venta y el pedido quedan ligados en la MISMA
+   transacción (`registrarVenta(pedidoId:)`); uno ya cobrado, rechazado o cancelado no se cobra. Un retiro listo queda
+   entregado al cobrar; un envío sigue en la lista hasta entregarse. **Falta:** la pantalla para configurar entregas, zonas y
+   pago.
 5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
    la cocina pausada, pide el pago adelantado si el local lo quiere; el aviso "está listo" / "salió".
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…

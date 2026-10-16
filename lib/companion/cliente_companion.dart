@@ -1339,8 +1339,10 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
   }) async {
+    if (pedidoId != null) throw const ErrorCompanion(400, 'Los pedidos se cobran en el celular: la PC todavía no los tiene.');
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
       headers: _headers,
@@ -1378,9 +1380,11 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) async {
+    if (pedidoId != null) throw const ErrorCompanion(400, 'Los pedidos se cobran en el celular: la PC todavía no los tiene.');
     final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
       conexion._url(mixto ? '/ventas/mixto/cobrar' : '/ventas/cobrar'),
@@ -1465,8 +1469,10 @@ class ClienteCompanion implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? montoEfectivoMixtoCentavos,
   }) async {
+    if (pedidoId != null) throw const ErrorCompanion(400, 'Los pedidos se cobran en el celular: la PC todavía no los tiene.');
     final mixto = montoEfectivoMixtoCentavos != null;
     final r = await _client.post(
       conexion._url(mixto ? '/ventas/mixto/posnet/confirmar' : '/ventas/posnet/confirmar'),

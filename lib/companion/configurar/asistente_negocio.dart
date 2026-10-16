@@ -324,7 +324,7 @@ class _PasoNegocio extends StatelessWidget {
         // quedaba fuera de la pantalla.
         // Nodo Sur Servicios es solo para turnos: no ofrece los rubros de productos.
         for (final (titulo, rubros) in [
-          // Nodo Sur Gastronomía, lo mismo: solo los de un local gastronómico.
+          // Nodo Gastro, lo mismo: solo los de un local gastronómico.
           if (!esEdicionAparte) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
           if (!esEdicionGastronomia) (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           if (esEdicionGastronomia) ('Tu rubro', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),

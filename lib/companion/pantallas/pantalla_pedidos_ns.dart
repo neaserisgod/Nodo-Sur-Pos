@@ -16,6 +16,7 @@ import '../../data/repositorio_pedidos_gastronomia.dart';
 import '../../domain/pedido_gastronomico.dart';
 import '../../domain/pedido_whatsapp.dart' show normalizarWhatsapp, urlWhatsapp;
 import '../../servicios/registro_errores.dart' show registrarSiNoEsDeRed;
+import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../emparejamiento.dart';
@@ -113,6 +114,14 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
       EstadoCocina.demorada => 'Con demora: el bot dice ${_config.minutosDemorada} minutos.',
       EstadoCocina.pausada => 'Pausada: el bot no toma pedidos. El mostrador sigue.',
     });
+  }
+
+  /// Cobrar: arma la venta con lo del pedido y abre Cobrar (efectivo, QR, mixto, Point, como cualquier venta).
+  Future<void> _cobrar(PedidoGastronomia pedido) async {
+    final app = AppNs.maybeOf(context);
+    if (app == null) return;
+    final problema = await app.cobrarPedido(pedido.id);
+    if (problema != null && mounted) mostrarAvisoNs(context, problema, largo: true);
   }
 
   Future<void> _avanzar(PedidoGastronomia pedido, EstadoPedido nuevo) async {
@@ -290,6 +299,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
                 pedido: p,
                 onVer: () => _verPedido(p),
                 onPaso: (nuevo) => _avanzar(p, nuevo),
+                onCobrar: () => _cobrar(p),
               ),
               const SizedBox(height: 10),
             ],
@@ -300,11 +310,12 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
 }
 
 class _TarjetaPedido extends StatelessWidget {
-  const _TarjetaPedido({required this.pedido, required this.onVer, required this.onPaso});
+  const _TarjetaPedido({required this.pedido, required this.onVer, required this.onPaso, required this.onCobrar});
 
   final PedidoGastronomia pedido;
   final VoidCallback onVer;
   final ValueChanged<EstadoPedido> onPaso;
+  final VoidCallback onCobrar;
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +324,14 @@ class _TarjetaPedido extends StatelessWidget {
     final forma = FormaEntrega.desdeClave(pedido.formaEntrega);
     final lineas = lineasDe(pedido);
     final pasos = siguientesEstados(estado, forma);
+    // Se cobra lo que ya se aceptó y todavía no tiene venta. Un retiro listo se cobra cuando lo vienen a buscar: "Cobrar" va
+    // primero (y lo deja entregado); "Entregado" queda para el que ya pagó por otro lado.
+    final cobrable = pedido.ventaId == null && (estado == EstadoPedido.porHacer || estado == EstadoPedido.listo || estado == EstadoPedido.enCamino);
+    final botones = <(String, VoidCallback)>[
+      if (cobrable && !forma.esEnvio && estado == EstadoPedido.listo) ('Cobrar', onCobrar),
+      for (final p in pasos) (_textoPaso(p), () => onPaso(p)),
+      if (cobrable && !(!forma.esEnvio && estado == EstadoPedido.listo)) ('Cobrar', onCobrar),
+    ];
     final resumen = lineas.map((l) => '${l.cantidad ?? '${l.gramos} g'} ${l.nombre}').join(' · ');
     return PresionNs(
       key: ValueKey('pedido-${pedido.id}'),
@@ -339,20 +358,28 @@ class _TarjetaPedido extends StatelessWidget {
             const SizedBox(height: 8),
             Text(resumen, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, color: ns.ink)),
             const SizedBox(height: 4),
-            Text(
-              plataNs(totalPedidoCentavos(lineas, costoEnvioCentavos: pedido.costoEnvioCentavos)),
-              style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true),
+            Row(
+              children: [
+                Text(
+                  plataNs(totalPedidoCentavos(lineas, costoEnvioCentavos: pedido.costoEnvioCentavos)),
+                  style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true),
+                ),
+                if (pedido.ventaId != null || pedido.pagado) ...[
+                  const SizedBox(width: 8),
+                  Text('· Cobrado', style: estiloNs(14, peso: FontWeight.w600, color: ns.g)),
+                ],
+              ],
             ),
-            if (pasos.isNotEmpty) ...[
+            if (botones.isNotEmpty) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
-                  for (var i = 0; i < pasos.length; i++) ...[
+                  for (var i = 0; i < botones.length; i++) ...[
                     if (i > 0) const SizedBox(width: 8),
                     Expanded(
                       child: i == 0
-                          ? BotonNs.primario(context, _textoPaso(pasos[i]), () => onPaso(pasos[i]), alto: 48, tamanio: 15)
-                          : BotonNs.secundario(context, _textoPaso(pasos[i]), () => onPaso(pasos[i]), alto: 48, tamanio: 15),
+                          ? BotonNs.primario(context, botones[i].$1, botones[i].$2, alto: 48, tamanio: 15)
+                          : BotonNs.secundario(context, botones[i].$1, botones[i].$2, alto: 48, tamanio: 15),
                     ),
                   ],
                 ],

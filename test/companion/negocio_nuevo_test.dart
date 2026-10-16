@@ -288,7 +288,7 @@ void main() {
       expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
     });
 
-    testWidgets('Nodo Sur Gastronomía ofrece solo su rubro: ni almacén ni servicios (§22)', (t) async {
+    testWidgets('Nodo Gastro ofrece solo su rubro: ni almacén ni servicios (§22)', (t) async {
       edicionActual = Edicion.gastronomia;
       addTearDown(() => edicionActual = Edicion.almacen);
       await tamanio(t);

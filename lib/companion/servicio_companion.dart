@@ -354,6 +354,7 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   });
@@ -383,6 +384,7 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? montoEfectivoMixtoCentavos,
   });
 
@@ -457,6 +459,7 @@ abstract class ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
   });
 }

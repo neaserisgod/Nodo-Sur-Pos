@@ -113,7 +113,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Instalador y actualización automática (2026-09-30)](#instalador-y-actualización-automática-2026-09-30)
 - [Generalización del producto (2026-09-30)](#generalización-del-producto-2026-09-30)
 - [Se publica solo cuando se pide (2026-10-03)](#se-publica-solo-cuando-se-pide-2026-10-03)
-- [Nodo Sur Gastronomía: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
+- [Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2690,12 +2690,12 @@ cigarrillos, estandarizarlo todo". Solo en el celular (Productos › tarjeta "Ma
 - Cigarrillos y fiambres afuera siempre: del promedio y de las tres acciones (Regla 6; "sin contar los fiambres también").
   Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`).
 
-## Nodo Sur Gastronomía: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)
+## Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)
 
-El dueño: "versión aparte, como Servicios". Plan y estado en `docs/PLAN-GASTRONOMIA.md`; reglas en `REGLAS-NEGOCIO.md` §22.
+El dueño: "versión aparte, como Servicios". Nombre: **Nodo Gastro**; el ícono "pedidos" en terracota queda ("igual que el diseño actual y el color me gusta"). Plan y estado en `docs/PLAN-GASTRONOMIA.md`; reglas en `REGLAS-NEGOCIO.md` §22.
 
 - **Tercera edición** (`lib/edicion.dart`): flavor de Android `gastronomia` (`com.laplazoleta.gastronomia`, "Nodo Sur
-  Gastronomía", ícono provisorio "pedidos" en terracota) y `--dart-define=EDICION=gastronomia` en Windows. Se instala al lado de
+  Gastronomía", ícono "pedidos" en terracota) y `--dart-define=EDICION=gastronomia` en Windows. Se instala al lado de
   las otras dos.
 - **Lo que comparten las dos ediciones aparte** pasó a `esEdicionAparte` / `esEscritorioAparte`: sin PC ("Solo celular", sync por
   internet), el bot de WhatsApp adentro, actualizaciones desde el sitio (`android-gastronomia`, `windows-gastronomia`), sin la

@@ -55,12 +55,12 @@ android {
             applicationId = "com.laplazoleta.servicios"
             manifestPlaceholders["nombreApp"] = "Nodo Sur Servicios"
         }
-        // Nodo Sur Gastronomía (El dueño, 2026-10-16, `docs/PLAN-GASTRONOMIA.md`): rotisería y comida para llevar, también con el
+        // Nodo Gastro (El dueño, 2026-10-16, `docs/PLAN-GASTRONOMIA.md`): rotisería y comida para llevar, también con el
         // bot adentro. Su manifiesto es el de servicios (el servicio del bot), en `src/gastronomia/`.
         create("gastronomia") {
             dimension = "edicion"
             applicationId = "com.laplazoleta.gastronomia"
-            manifestPlaceholders["nombreApp"] = "Nodo Sur Gastronomía"
+            manifestPlaceholders["nombreApp"] = "Nodo Gastro"
         }
     }
 

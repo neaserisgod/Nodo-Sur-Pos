@@ -173,7 +173,7 @@ void main() {
       expect(ModulosNegocio.desdeTexto(m.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.insumos});
     });
 
-    test('la app Nodo Sur Gastronomía: siempre gastronomía, con pedidos, recetas, pesables, combos, equipo y fijos (§22)', () {
+    test('la app Nodo Gastro: siempre gastronomía, con pedidos, recetas, pesables, combos, equipo y fijos (§22)', () {
       final rotiseria = ModulosNegocio.desdeTexto('promos').paraEdicionGastronomia();
       expect(rotiseria.forma, FormaDeTrabajo.gastronomia);
       for (final m in [Modulo.pedidos, Modulo.insumos, Modulo.pesables, Modulo.turnos, Modulo.equilibrio, Modulo.fiado, Modulo.cobroPoint]) {

@@ -1149,6 +1149,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
   }) {
     return repo_ventas.registrarVentaSegunMedio(
@@ -1160,6 +1161,7 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      pedidoId: pedidoId,
     );
   }
 
@@ -1172,6 +1174,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) {
@@ -1183,6 +1186,7 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      pedidoId: pedidoId,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     );
   }
@@ -1197,6 +1201,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? ordenCobroPendienteId,
     int? montoEfectivoMixtoCentavos,
   }) async {
@@ -1211,6 +1216,7 @@ class PuertoLocal implements ServicioCompanion {
         tipoDescuento: tipoDescuento,
         valorDescuento: valorDescuento,
         encargueId: encargueId,
+        pedidoId: pedidoId,
         ordenCobroPendienteId: ordenCobroPendienteId,
         montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
       );
@@ -1371,6 +1377,7 @@ class PuertoLocal implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? montoEfectivoMixtoCentavos,
   }) async {
     // La venta y la orden quedan ligadas en la MISMA transacción, y confirmar dos veces devuelve la misma venta.
@@ -1382,6 +1389,7 @@ class PuertoLocal implements ServicioCompanion {
       tipoDescuento: tipoDescuento,
       valorDescuento: valorDescuento,
       encargueId: encargueId,
+      pedidoId: pedidoId,
       ordenCobroPendienteId: ordenPendienteId,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     );

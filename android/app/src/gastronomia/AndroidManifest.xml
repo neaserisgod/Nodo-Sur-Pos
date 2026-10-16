@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Nodo Sur Gastronomía, igual que Servicios: el bot de WhatsApp corre adentro de la app (`ServicioBot.kt`). Servicio en primer plano para que
+    <!-- Nodo Gastro, igual que Servicios: el bot de WhatsApp corre adentro de la app (`ServicioBot.kt`). Servicio en primer plano para que
          Android no lo mate, el CPU despierto con la pantalla apagada, y pedir que no le apliquen el ahorro de batería. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

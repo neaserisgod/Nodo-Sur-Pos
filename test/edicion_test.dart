@@ -1,4 +1,4 @@
-// Las tres ediciones del mismo código (`lib/edicion.dart`): almacén, Nodo Sur Servicios y Nodo Sur Gastronomía (El dueño,
+// Las tres ediciones del mismo código (`lib/edicion.dart`): almacén, Nodo Sur Servicios y Nodo Gastro (El dueño,
 // 2026-10-16: "versión aparte, como Servicios"). Cada una con su nombre y sus actualizaciones; las dos aparte, sin PC.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
@@ -25,7 +25,7 @@ void main() {
     edicionActual = Edicion.gastronomia;
     expect(esEdicionAparte, isTrue);
     expect(esEdicionServicios, isFalse);
-    expect(nombreDeEdicion, 'Nodo Sur Gastronomía');
+    expect(nombreDeEdicion, 'Nodo Gastro');
     expect(plataformaActualizacion, 'android-gastronomia');
   });
 
