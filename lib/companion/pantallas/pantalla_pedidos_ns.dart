@@ -15,6 +15,7 @@ import '../../data/repositorio_configuracion.dart' show configuracionNegocioActu
 import '../../data/repositorio_pedidos_gastronomia.dart';
 import '../../domain/pedido_gastronomico.dart';
 import '../../domain/pedido_whatsapp.dart' show normalizarWhatsapp, urlWhatsapp;
+import '../../servicios/pedidos_bot_nube.dart' show pedidosBotSinCargar;
 import '../../servicios/registro_errores.dart' show registrarSiNoEsDeRed;
 import '../app_ns.dart';
 import '../base_local.dart';
@@ -85,11 +86,17 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
       });
     }
     _sub = avisosCambiosCompanion.listen((_) => _recargar());
+    pedidosBotSinCargar.addListener(_alCambiarSinCargar);
     _recargar();
+  }
+
+  void _alCambiarSinCargar() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    pedidosBotSinCargar.removeListener(_alCambiarSinCargar);
     _sub?.cancel();
     super.dispose();
   }
@@ -308,6 +315,11 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
             EstadoCocina.pausada => TonoNs.bad,
           },
         ),
+        // Pedidos del bot que no se pudieron poner acá: se dice por qué y se reintentan solos (`pedidos_bot_nube.dart`).
+        for (final motivo in pedidosBotSinCargar.value.take(3)) ...[
+          const SizedBox(height: 10),
+          InfoNs(motivo, tono: TonoNs.warn, icono: IconoNs.alerta),
+        ],
         if (pedidos != null && pedidos.isEmpty) ...[
           const SizedBox(height: 28),
           Text('Cuando entre un pedido, por el mostrador o por WhatsApp, aparece acá.', style: estiloNs(16, color: ns.mute)),

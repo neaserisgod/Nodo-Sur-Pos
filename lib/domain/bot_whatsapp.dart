@@ -2,6 +2,7 @@
 // pantalla. El bot corre en un celular con Termux (`neaserisgod/botdemo`); el sitio guarda su configuración, el catálogo que la
 // app publica y los pedidos que toma (`NodoSurPage`, `/api/bot/*`).
 
+import 'pedido_gastronomico.dart';
 import 'pesables.dart';
 import 'turnos.dart';
 
@@ -29,6 +30,9 @@ class ProductoParaBot {
     this.precioPorKiloCentavos,
     this.stock = 0,
     this.stockGramos,
+    this.esServicio = false,
+    this.esInsumo = false,
+    this.esVarios = false,
   });
   final String? globalId;
   final String nombre;
@@ -39,17 +43,27 @@ class ProductoParaBot {
   final int? precioPorKiloCentavos;
   final int stock;
   final int? stockGramos;
+
+  /// Un plato de un local gastronómico (o un servicio): se hace en el momento, sin stock propio, así que siempre "hay".
+  final bool esServicio;
+
+  /// Lo que se compra y se gasta de a poco: no se vende por WhatsApp.
+  final bool esInsumo;
+
+  /// El monto suelto del mostrador: no es algo que se pueda pedir.
+  final bool esVarios;
 }
 
 /// Los productos que el bot puede ofrecer. Quedan afuera: los inactivos, los que no tienen identidad de sincronización (el
 /// pedido vuelve por `global_id`), los que no tienen precio y las promos (su stock sale de sus artículos y no se venden desde el
-/// celular, Regla 14). Un pesable va con su precio por kilo y lo dice en el nombre. "Hay" = stock mayor a cero (Regla 8: sin
-/// stock no se vende), ordenado por nombre para que el catálogo sea el mismo si nada cambió.
+/// celular, Regla 14), los insumos y "Varios". Un pesable va con su precio por kilo y lo dice en el nombre. "Hay" = stock mayor
+/// a cero (Regla 8: sin stock no se vende), salvo un plato (o servicio), que se hace en el momento y no lleva stock (§22).
+/// Ordenado por nombre para que el catálogo sea el mismo si nada cambió.
 List<ItemCatalogoBot> catalogoParaBot(Iterable<ProductoParaBot> productos) {
   final items = <ItemCatalogoBot>[];
   for (final p in productos) {
     final gid = p.globalId;
-    if (!p.activo || p.esPromo || gid == null || gid.isEmpty) continue;
+    if (!p.activo || p.esPromo || p.esInsumo || p.esVarios || gid == null || gid.isEmpty) continue;
     final nombre = p.nombre.trim();
     if (nombre.isEmpty) continue;
     if (p.esPesable) {
@@ -59,7 +73,7 @@ List<ItemCatalogoBot> catalogoParaBot(Iterable<ProductoParaBot> productos) {
     } else {
       final precio = p.precioCentavos;
       if (precio == null || precio <= 0) continue;
-      items.add(ItemCatalogoBot(gid: gid, nombre: nombre, precioCentavos: precio, hay: p.stock > 0));
+      items.add(ItemCatalogoBot(gid: gid, nombre: nombre, precioCentavos: precio, hay: p.esServicio || p.stock > 0));
     }
   }
   items.sort((a, b) => a.nombre.compareTo(b.nombre) != 0 ? a.nombre.compareTo(b.nombre) : a.gid.compareTo(b.gid));
@@ -97,7 +111,20 @@ String textoLineaPedido(ItemPedidoBot x) {
   return '${_gramos(g)} de ${x.nombre.replaceFirst(RegExp(r'\s*\(por kg\)\s*$', caseSensitive: false), '').trim()}';
 }
 
-enum EstadoPedidoBot { porConfirmar, aceptado, rechazado }
+/// Cómo está un pedido del bot en el sitio. Los de después de aceptado (listo, en camino, entregado, cancelado) son de un local
+/// gastronómico (§22): los mueve la app y el bot le avisa al cliente.
+enum EstadoPedidoBot { porConfirmar, aceptado, rechazado, listo, enCamino, entregado, cancelado }
+
+/// El estado como lo escribe el sitio (`NodoSurPage/functions/_lib/bot.js`, `ESTADOS_PEDIDO`).
+String estadoPedidoBotEnSitio(EstadoPedidoBot e) => switch (e) {
+      EstadoPedidoBot.porConfirmar => 'por_confirmar',
+      EstadoPedidoBot.aceptado => 'aceptado',
+      EstadoPedidoBot.rechazado => 'rechazado',
+      EstadoPedidoBot.listo => 'listo',
+      EstadoPedidoBot.enCamino => 'en_camino',
+      EstadoPedidoBot.entregado => 'entregado',
+      EstadoPedidoBot.cancelado => 'cancelado',
+    };
 
 class PedidoBot {
   const PedidoBot({
@@ -109,6 +136,13 @@ class PedidoBot {
     this.nota,
     required this.creado,
     required this.actualizado,
+    this.formaEntrega,
+    this.direccion,
+    this.zona,
+    this.costoEnvioCentavos = 0,
+    this.pago,
+    this.horaEstimada,
+    this.programado = false,
   });
   final int id;
   final EstadoPedidoBot estado;
@@ -121,6 +155,16 @@ class PedidoBot {
   /// Cursor del sitio (milisegundos): se pide "lo que cambió después de esto".
   final int actualizado;
 
+  /// Lo de un local gastronómico (§22). Null en el pedido de un almacén: [formaEntrega] es la clave de `FormaEntrega` ('RETIRO',
+  /// 'CADETE', 'REPARTO'); [pago] es 'al_entregar', 'mp' o 'alias'.
+  final String? formaEntrega;
+  final String? direccion;
+  final String? zona;
+  final int costoEnvioCentavos;
+  final String? pago;
+  final DateTime? horaEstimada;
+  final bool programado;
+
   /// Lo que dijo el bot que salía todo (orientativo).
   int get totalOrientativoCentavos => items.fold(0, (s, x) => s + x.subtotalOrientativoCentavos);
 }
@@ -129,6 +173,10 @@ EstadoPedidoBot? _estadoPedido(Object? e) => switch (e) {
   'por_confirmar' => EstadoPedidoBot.porConfirmar,
   'aceptado' => EstadoPedidoBot.aceptado,
   'rechazado' => EstadoPedidoBot.rechazado,
+  'listo' => EstadoPedidoBot.listo,
+  'en_camino' => EstadoPedidoBot.enCamino,
+  'entregado' => EstadoPedidoBot.entregado,
+  'cancelado' => EstadoPedidoBot.cancelado,
   _ => null,
 };
 
@@ -137,6 +185,7 @@ PedidoBot? pedidoBotDesdeJson(Map<String, dynamic> j) {
   final estado = _estadoPedido(j['estado']);
   final cliente = j['cliente'];
   final items = j['items'];
+  final entrega = j['entrega'];
   if (j['id'] is! int || estado == null || cliente is! Map || items is! List) return null;
   final nombre = cliente['nombre'], telefono = cliente['telefono'];
   if (nombre is! String || telefono is! String) return null;
@@ -165,6 +214,13 @@ PedidoBot? pedidoBotDesdeJson(Map<String, dynamic> j) {
     nota: j['nota'] as String?,
     creado: DateTime.fromMillisecondsSinceEpoch((j['creado'] as num?)?.toInt() ?? 0),
     actualizado: (j['actualizado'] as num?)?.toInt() ?? 0,
+    formaEntrega: entrega is Map && entrega['forma'] is String ? entrega['forma'] as String : null,
+    direccion: entrega is Map && entrega['direccion'] is String ? entrega['direccion'] as String : null,
+    zona: entrega is Map && entrega['zona'] is String ? entrega['zona'] as String : null,
+    costoEnvioCentavos: entrega is Map && entrega['costoEnvioCentavos'] is int ? entrega['costoEnvioCentavos'] as int : 0,
+    pago: j['pago'] is String ? j['pago'] as String : null,
+    horaEstimada: j['horaEstimada'] is int ? DateTime.fromMillisecondsSinceEpoch(j['horaEstimada'] as int) : null,
+    programado: j['programado'] == true,
   );
 }
 
@@ -518,6 +574,45 @@ Map<String, dynamic> configBotConServicios(
     },
   };
 }
+
+/// Cómo trabaja un local gastronómico, para el bot (§22): qué entregas tiene y con qué zonas (los montos en pesos enteros, como el
+/// resto de la configuración del bot), cómo cobra, cuánto tarda la cocina y cómo está ahora, si lo de WhatsApp entra solo, y el
+/// horario de atención (fuera de hora el bot programa el pedido). El alias es el mismo de la seña. El resto de [anterior] (los
+/// números, los textos) queda igual.
+Map<String, dynamic> configBotConPedidos(
+  Map<String, dynamic> anterior, {
+  required ConfigPedidos config,
+  required EstadoCocina cocina,
+  required HorarioAtencion horario,
+  required String alias,
+  required String titular,
+}) => {
+      ...anterior,
+      'horarios': horario.toJson(),
+      'pedidos': {
+        'retiro': config.retiro,
+        'cadete': config.cadetePropio,
+        'reparto': config.servicioReparto,
+        'zonas': [
+          for (final z in config.zonas) {'nombre': z.nombre, 'costo': _pesosHaciaArriba(z.costoCentavos), 'demora_min': z.demoraExtraMin},
+        ],
+        'pago': switch (config.pago) {
+          ModoPagoPedido.alEntregar => 'al_entregar',
+          ModoPagoPedido.adelantado => 'adelantado',
+          ModoPagoPedido.aElegir => 'a_elegir',
+        },
+        'cocina': switch (cocina) {
+          EstadoCocina.normal => 'normal',
+          EstadoCocina.demorada => 'demorada',
+          EstadoCocina.pausada => 'pausada',
+        },
+        'minutos_normal': config.minutosNormal,
+        'minutos_demorada': config.minutosDemorada,
+        'confirmacion_automatica': config.confirmacionAutomatica,
+        'alias': alias.trim(),
+        'titular': titular.trim(),
+      },
+    };
 
 /// El WhatsApp de contacto de Nodo Sur (horsepos.com): recibe solo el latido de salud de los bots.
 const numeroSoporteNodoSur = '5492944796044';

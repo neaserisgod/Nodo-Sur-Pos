@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../domain/bot_whatsapp.dart' show PedidoBot;
 import '../domain/pedido_gastronomico.dart';
 import '../domain/venta.dart';
 import 'database.dart';
@@ -266,4 +267,78 @@ Future<void> marcarPedidoCobrado(AppDatabase db, int pedidoId, {required int ven
         estado: entregado ? Value(EstadoPedido.entregado.clave) : const Value.absent(),
         actualizadoEn: Value(DateTime.now()),
       ));
+}
+
+/// Pone en la lista un pedido que tomó el bot de WhatsApp (§22) y devuelve su id, o el del que ya estaba (el mismo pedido no entra
+/// dos veces: `idRemoto`). Lo que dijo el bot vale tal cual (la entrega, la zona y su costo, la hora que le prometió al cliente):
+/// ya se lo confirmó al cliente con la configuración de ese momento, así que no se vuelve a validar contra la de ahora. Lo que
+/// no se puede poner (un plato sin código, o que no está en este equipo) tira [PedidoIncompleto] con el motivo.
+Future<int> importarPedidoDelBot(AppDatabase db, PedidoBot p, {required int usuarioId}) {
+  return db.transaction(() async {
+    final idRemoto = '${p.id}';
+    final ya = await (db.select(db.pedidosGastronomia)..where((x) => x.idRemoto.equals(idRemoto))..limit(1)).getSingleOrNull();
+    if (ya != null) return ya.id;
+    if (p.items.isEmpty) throw PedidoIncompleto('El pedido de ${p.clienteNombre} llegó sin nada.');
+    final lineas = <LineaPedido>[];
+    for (final x in p.items) {
+      final gid = x.gid;
+      final producto = gid == null ? null : await (db.select(db.productos)..where((q) => q.globalId.equals(gid))).getSingleOrNull();
+      if (producto == null) throw PedidoIncompleto('Pedido de ${p.clienteNombre}: «${x.nombre}» no está en la carta de este equipo.');
+      final precio = x.precioCentavos ?? (x.gramos != null ? producto.precioPorKiloCentavos : producto.precioCentavos) ?? 0;
+      lineas.add(LineaPedido(gid: gid!, nombre: x.nombre, cantidad: x.cantidad, gramos: x.gramos, precioCentavos: precio));
+    }
+    final config = await configPedidosActual(db);
+    final forma = FormaEntrega.desdeClave(p.formaEntrega ?? FormaEntrega.retiro.clave);
+    // Pagó por Mercado Pago: el bot lo manda recién con el pago acreditado. Por alias, espera que el local vea el comprobante.
+    final pagaAdelantado = p.pago == 'mp' || p.pago == 'alias';
+    final pagado = p.pago == 'mp';
+    final estado = pagaAdelantado && !pagado
+        ? EstadoPedido.esperandoPago
+        : estadoInicial(canal: CanalPedido.whatsapp, config: config, pagaAdelantado: false);
+    final momento = p.creado.millisecondsSinceEpoch > 0 ? p.creado : DateTime.now();
+    return db.into(db.pedidosGastronomia).insert(PedidosGastronomiaCompanion.insert(
+          numero: await siguienteNumeroDePedido(db),
+          canal: CanalPedido.whatsapp.clave,
+          estado: estado.clave,
+          formaEntrega: Value(forma.clave),
+          nombreCliente: p.clienteNombre.trim().isEmpty ? 'Cliente de WhatsApp' : p.clienteNombre.trim(),
+          telefono: Value(p.clienteTelefono),
+          direccion: Value(forma.esEnvio ? p.direccion : null),
+          zona: Value(forma.esEnvio ? p.zona : null),
+          costoEnvioCentavos: Value(forma.esEnvio ? p.costoEnvioCentavos : 0),
+          lineasJson: jsonEncode([for (final l in lineas) l.toJson()]),
+          nota: Value(p.nota),
+          horaEstimada: Value(p.horaEstimada),
+          programado: Value(p.programado),
+          pagaAdelantado: Value(pagaAdelantado),
+          pagado: Value(pagado),
+          idRemoto: Value(idRemoto),
+          fechaCreacion: Value(momento),
+          usuarioId: usuarioId,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(DateTime.now()),
+        ));
+  });
+}
+
+/// En qué estado tiene que estar el pedido [p] en el sitio, según lo que se hizo con él acá. Null si el sitio no tiene nada que
+/// saber todavía (sigue por confirmar, o espera el pago).
+String? estadoParaElSitio(PedidoGastronomia p) => switch (EstadoPedido.desdeClave(p.estado)) {
+      EstadoPedido.esperandoPago || EstadoPedido.porConfirmar => null,
+      EstadoPedido.porHacer => 'aceptado',
+      EstadoPedido.rechazado => 'rechazado',
+      EstadoPedido.listo => 'listo',
+      EstadoPedido.enCamino => 'en_camino',
+      EstadoPedido.entregado => 'entregado',
+      EstadoPedido.cancelado => 'cancelado',
+    };
+
+/// Los pedidos del bot cuyo estado el sitio todavía no sabe: [enviados] es `idRemoto` → último estado mandado.
+Future<List<(PedidoGastronomia, String)>> pedidosDelBotParaAvisar(AppDatabase db, Map<String, String> enviados) async {
+  final filas = await (db.select(db.pedidosGastronomia)..where((p) => p.idRemoto.isNotNull())).get();
+  return [
+    for (final p in filas)
+      if (estadoParaElSitio(p) case final estado? when enviados[p.idRemoto] != estado) (p, estado),
+  ];
 }

@@ -18,6 +18,9 @@ Future<List<ProductoParaBot>> productosParaBot(AppDatabase db) async {
         precioPorKiloCentavos: p.precioPorKiloCentavos,
         stock: p.stock,
         stockGramos: p.stockGramos,
+        esServicio: p.esServicio,
+        esInsumo: p.esInsumo,
+        esVarios: p.esVarios,
       ),
   ];
 }

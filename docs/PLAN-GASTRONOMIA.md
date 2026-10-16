@@ -56,6 +56,13 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    Pedidos): entregas, zonas con costo y demora, cómo se cobra, tiempos de la cocina y si lo de WhatsApp entra solo.
 5. **Bot:** ofrece la carta, pregunta retiro o envío (dirección y zona), dice la hora según la cocina, no toma pedidos con
    la cocina pausada, pide el pago adelantado si el local lo quiere; el aviso "está listo" / "salió".
+   **Lado de la app y del sitio ✅ (2026-10-16):** el catálogo del bot incluye los platos (siempre "hay"; sin insumos ni
+   "Varios"); `servicios/pedidos_bot_nube.dart` baja los pedidos del bot a la lista (`importarPedidoDelBot`, con la entrega,
+   zona, costo, pago y hora que dijo el bot), le avisa al sitio cada paso (aceptado/rechazado por `/api/bot/pedido/resolver`;
+   listo, en camino, entregado, cancelado por `/api/bot/pedido/estado`, nuevo) y lleva al bot `pedidos` (entregas, zonas en
+   pesos, pago, cocina, minutos, si entran solos, alias) y el horario. Fuera de hora el pedido queda programado.
+   **Falta el bot mismo** (`botdemo`): la charla con la carta, retiro o envío, zona, hora según la cocina y el horario,
+   programar fuera de hora, pago (link de MP o alias) y los avisos al cliente; el link de pago de MP para pedidos en el sitio.
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
    agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
    - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.

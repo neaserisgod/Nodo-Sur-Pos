@@ -7,6 +7,7 @@
 
 import '../servicios/catalogo_bot_nube.dart';
 import '../servicios/turnos_bot_nube.dart';
+import '../servicios/pedidos_bot_nube.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -164,14 +165,16 @@ SyncNubeCompanion armarSyncNubeCompanion({
   );
 }
 
-/// Al terminar cada vuelta de subida, el bot de WhatsApp (si el negocio lo tiene): el catálogo (comercios) y los turnos de la
-/// Agenda (servicios). Los dos se fijan solos si les toca.
+/// Al terminar cada vuelta de subida, el bot de WhatsApp (si el negocio lo tiene): el catálogo (comercios), los turnos de la
+/// Agenda (servicios) y los pedidos (locales gastronómicos). Cada uno se fija solo si le toca.
 Future<void> Function(String token) _alTerminarVuelta(AppDatabase db, ClienteNube cliente) {
   final catalogo = PublicadorCatalogoBot(db: db, cliente: cliente);
   final turnos = SincronizadorTurnosBot(db: db, cliente: cliente, alBajar: avisarCambiosCompanion);
+  final pedidos = SincronizadorPedidosBot(db: db, cliente: cliente, alBajar: avisarCambiosCompanion);
   return (token) async {
     await catalogo.publicarSiHaceFalta(token);
     await turnos.vuelta(token);
+    await pedidos.vuelta(token);
   };
 }
 
