@@ -17,8 +17,14 @@ import '../domain/modulos.dart';
 import '../edicion.dart';
 
 // La app Nodo Sur Servicios es de servicios desde el arranque, antes de leer la base.
-final ValueNotifier<ModulosNegocio> modulosActuales =
-    ValueNotifier(esEdicionServicios ? ModulosNegocio.todosActivos.paraEdicionServicios() : ModulosNegocio.todosActivos);
+final ValueNotifier<ModulosNegocio> modulosActuales = ValueNotifier(modulosDeEdicion(ModulosNegocio.todosActivos));
+
+/// Lo que la edición deja ver de [m]: Servicios y Gastronomía son de su forma desde el arranque y con sus módulos nomás.
+ModulosNegocio modulosDeEdicion(ModulosNegocio m) => switch (edicionActual) {
+      Edicion.servicios => m.paraEdicionServicios(),
+      Edicion.gastronomia => m.paraEdicionGastronomia(),
+      Edicion.almacen => m,
+    };
 
 /// Atajo para el código que no es una pantalla.
 bool moduloActivo(Modulo modulo) => modulosActuales.value.estaActivo(modulo);
@@ -29,7 +35,7 @@ StreamSubscription<ModulosNegocio> seguirModulos(AppDatabase db) {
       .select(db.configuracionNegocioTabla)
       .watchSingleOrNull()
       .map(modulosDeConfiguracion)
-      .map((m) => esEdicionServicios ? m.paraEdicionServicios() : m)
+      .map(modulosDeEdicion)
       .listen((m) => modulosActuales.value = m);
 }
 

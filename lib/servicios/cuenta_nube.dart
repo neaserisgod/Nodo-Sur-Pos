@@ -656,6 +656,19 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// Un pedido aceptado de un local gastronómico avanza (§22): 'listo', 'en_camino', 'entregado' o 'cancelado'. El bot le avisa al
+  /// cliente. Si el paso no se puede (ya está más adelante), tira [ErrorNube] `paso_invalido`.
+  Future<void> avanzarPedidoBot(String token, int id, String estado) => _conRed(() async {
+    final r = await http
+        .post(
+          _uri('/api/bot/pedido/estado'),
+          headers: _auth(token, {'Content-Type': 'application/json'}),
+          body: jsonEncode({'id': id, 'estado': estado}),
+        )
+        .timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+  });
+
   /// Registra el token de notificaciones (Firebase Cloud Messaging) de este celular: le llegan los pedidos y turnos nuevos del bot
   /// aunque la app esté cerrada (`push.dart`).
   Future<void> registrarPush(String token, String tokenPush) => _conRed(() async {

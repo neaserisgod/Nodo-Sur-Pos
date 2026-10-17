@@ -21,11 +21,11 @@ import '../mensaje_error.dart';
 
 enum PasoNegocio { negocio, producto, horario, cobros }
 
-/// Los pasos de esa forma de trabajar, en orden: el horario de atención es solo de un negocio de servicios (lo usan la
-/// Agenda y el bot).
+/// Los pasos de esa forma de trabajar, en orden: el horario de atención es de un negocio de servicios (lo usan la Agenda y el
+/// bot) y de un local gastronómico (el bot dice si está abierto y no toma pedidos fuera de hora).
 List<PasoNegocio> pasosDeLaForma(FormaDeTrabajo forma) => [
       for (final p in PasoNegocio.values)
-        if (p != PasoNegocio.horario || forma == FormaDeTrabajo.servicios) p,
+        if (p != PasoNegocio.horario || forma != FormaDeTrabajo.productos) p,
     ];
 
 /// Los pasos del negocio de este equipo.
@@ -196,7 +196,9 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
               alCambiarNombre: () => setState(() {}),
               alSeguir: _guardarNegocio,
             ),
-          PasoNegocio.producto when (_rubro?.forma ?? modulosActuales.value.forma) == FormaDeTrabajo.servicios => _PasoServicio(
+          // Un plato se carga como un servicio: nombre, precio y lo que tarda (que suma la mano de obra), sin stock (§22).
+          PasoNegocio.producto when (_rubro?.forma ?? modulosActuales.value.forma) != FormaDeTrabajo.productos => _PasoServicio(
+              esPlato: (_rubro?.forma ?? modulosActuales.value.forma) == FormaDeTrabajo.gastronomia,
               cabecera: cabecera,
               categorias: _rubro != null ? [for (final c in _rubro!.categorias) c.nombre] : widget.categoriasExistentes,
               alGuardar: widget.alGuardarServicio ?? (_) async {},
@@ -310,7 +312,11 @@ class _PasoNegocio extends StatelessWidget {
           child: CampoNs(
             etiqueta: 'Nombre del comercio',
             controller: nombreCtrl,
-            placeholder: esEdicionServicios ? 'Ej.: Nails Sofi' : 'Ej.: Almacén Don Pepe',
+            placeholder: switch (edicionActual) {
+              Edicion.servicios => 'Ej.: Nails Sofi',
+              Edicion.gastronomia => 'Ej.: Rotisería Doña Ana',
+              Edicion.almacen => 'Ej.: Almacén Don Pepe',
+            },
             onChanged: (_) => alCambiarNombre(),
           ),
         ),
@@ -320,8 +326,10 @@ class _PasoNegocio extends StatelessWidget {
         // quedaba fuera de la pantalla.
         // Nodo Sur Servicios es solo para turnos: no ofrece los rubros de productos.
         for (final (titulo, rubros) in [
-          if (!esEdicionServicios) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
-          (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          // Nodo Gastro, lo mismo: solo los de un local gastronómico.
+          if (!esEdicionAparte) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
+          if (!esEdicionGastronomia) (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+          if (esEdicionGastronomia) ('Tu rubro', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
           ('¿Ninguno?', const [PlantillaRubro.otro]),
         ]) ...[
           SeccionNs(titulo),
@@ -524,7 +532,10 @@ class _PasoProductoState extends State<_PasoProducto> {
 // Paso 2 en un negocio de servicios · El primer servicio (sin código de barras ni stock: nombre, duración y precio)
 
 class _PasoServicio extends StatefulWidget {
-  const _PasoServicio({required this.cabecera, required this.categorias, required this.alGuardar, required this.alSeguir});
+  const _PasoServicio({required this.cabecera, required this.categorias, required this.alGuardar, required this.alSeguir, this.esPlato = false});
+
+  /// Nodo Gastro: el primer plato de la carta en vez del primer servicio.
+  final bool esPlato;
   final Widget cabecera;
   final List<String> categorias;
   final Future<void> Function(ServicioDePrueba servicio) alGuardar;
@@ -580,10 +591,12 @@ class _PasoServicioState extends State<_PasoServicio> {
         cabecera: widget.cabecera,
         titulo: '¡Listo, ya está cargado!',
         tituloChico: true,
-        bajada: 'Así se suma cualquier servicio, desde la pestaña Servicios.',
+        bajada: widget.esPlato ? 'Así se suma cualquier plato, desde la pestaña Carta.' : 'Así se suma cualquier servicio, desde la pestaña Servicios.',
         cuerpo: [
-          HeroHojaNs(rotulo: 'Servicio cargado', cifra: s.nombre, apoyo: '${s.categoria != null ? '${s.categoria} · ' : ''}${s.duracionMinutos} min'),
-          const InfoNs('En Servicios › Insumos cargás lo que usa (tintura, guantes, shampoo) y la app te dice cuánto te cuesta cada servicio y a cuánto conviene cobrarlo.'),
+          HeroHojaNs(rotulo: widget.esPlato ? 'Plato cargado' : 'Servicio cargado', cifra: s.nombre, apoyo: '${s.categoria != null ? '${s.categoria} · ' : ''}${s.duracionMinutos} min'),
+          InfoNs(widget.esPlato
+              ? 'En Carta › Insumos cargás lo que lleva (carne, pan rallado, aceite) y la app te dice cuánto te cuesta cada plato y a cuánto conviene venderlo.'
+              : 'En Servicios › Insumos cargás lo que usa (tintura, guantes, shampoo) y la app te dice cuánto te cuesta cada servicio y a cuánto conviene cobrarlo.'),
         ],
         botones: [KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.primario(context, 'Siguiente', widget.alSeguir))],
       );
@@ -591,18 +604,20 @@ class _PasoServicioState extends State<_PasoServicio> {
     final listo = _nombre.text.trim().isNotEmpty && _precioCentavos > 0 && _minutos > 0;
     return PaginaArranqueNs(
       cabecera: widget.cabecera,
-      titulo: 'Cargá tu primer servicio',
+      titulo: widget.esPlato ? 'Cargá tu primer plato' : 'Cargá tu primer servicio',
       tituloChico: true,
-      bajada: 'Con nombre, cuánto dura y el precio alcanza. Lo que usa cada vez lo sumás después.',
+      bajada: widget.esPlato
+          ? 'Con nombre, cuánto tarda en salir y el precio alcanza. Lo que lleva lo sumás después.'
+          : 'Con nombre, cuánto dura y el precio alcanza. Lo que usa cada vez lo sumás después.',
       cuerpo: [
         KeyedSubtree(
           key: const Key('servicio-nombre'),
-          child: CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Corte de dama', onChanged: (_) => setState(() {})),
+          child: CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: widget.esPlato ? 'Ej.: Milanesa con papas' : 'Ej.: Corte de dama', onChanged: (_) => setState(() {})),
         ),
         KeyedSubtree(
           key: const Key('servicio-duracion'),
           child: CampoNs(
-            etiqueta: 'Cuánto dura (min)',
+            etiqueta: widget.esPlato ? 'Cuánto tarda en salir (min)' : 'Cuánto dura (min)',
             controller: _duracion,
             teclado: TextInputType.number,
             formatos: [FilteringTextInputFormatter.digitsOnly],
@@ -792,7 +807,11 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
 
   static Map<PasoNegocio, String> get _nombres => {
         PasoNegocio.negocio: 'Nombre y rubro',
-        PasoNegocio.producto: modulosActuales.value.forma == FormaDeTrabajo.servicios ? 'Tu primer servicio' : 'Tu primer producto',
+        PasoNegocio.producto: switch (modulosActuales.value.forma) {
+          FormaDeTrabajo.servicios => 'Tu primer servicio',
+          FormaDeTrabajo.gastronomia => 'Tu primer plato',
+          FormaDeTrabajo.productos => 'Tu primer producto',
+        },
         PasoNegocio.horario: 'Horario de atención',
         PasoNegocio.cobros: esEdicionServicios ? 'Mercado Pago' : 'Mercado Pago y equipo',
       };

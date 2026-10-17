@@ -58,6 +58,8 @@ import 'pantalla_elegir_modo.dart';
 import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'pantallas/pantalla_agenda_ns.dart';
+import 'pantallas/pantalla_pedidos_ns.dart';
+import '../data/repositorio_pedidos_gastronomia.dart' show lineasDeVentaDePedido, PedidoIncompleto;
 import 'pantallas/hoja_actualizar_ns.dart';
 import '../edicion.dart';
 import 'app_ns.dart';
@@ -595,7 +597,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   @override
   Future<void> abrirActualizacion() async {
     // En la compu el instalador lo baja, verifica e instala WinSparkle, como en la PC del almacén (con su propio feed).
-    if (esEscritorioServicios) {
+    if (esEscritorioAparte) {
       final feed = urlFeedActualizaciones(
         idCliente: await idClienteActualizaciones(),
         plataforma: plataformaActualizacion,
@@ -745,6 +747,32 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
   /// El encargue por apartado que el carrito está entregando (null en una venta común).
   final ValueNotifier<int?> _encargueEnVenta = ValueNotifier<int?>(null);
 
+  /// El pedido de un local gastronómico que el carrito está cobrando (null en una venta común).
+  final ValueNotifier<({int id, String nombre})?> _pedidoEnVenta = ValueNotifier(null);
+
+  @override
+  Future<String?> cobrarPedido(int pedidoId) async {
+    if (_servicio == null || _usuarioId == null) return 'Todavía no se cargó la caja.';
+    if (_carrito.isNotEmpty) return 'Hay una venta armada: cobrala o vaciala antes de cobrar un pedido.';
+    final db = baseLocalCompanion();
+    final pedido = await (db.select(db.pedidosGastronomia)..where((p) => p.id.equals(pedidoId))).getSingleOrNull();
+    if (pedido == null) return 'Ese pedido ya no está.';
+    if (pedido.ventaId != null) return 'Ese pedido ya está cobrado.';
+    final List<LineaVenta> lineas;
+    try {
+      lineas = await lineasDeVentaDePedido(db, pedido);
+    } on PedidoIncompleto catch (e) {
+      return e.mensaje;
+    }
+    _carrito
+      ..clear()
+      ..addAll(lineas);
+    _encargueEnVenta.value = null;
+    _pedidoEnVenta.value = (id: pedido.id, nombre: pedido.nombreCliente);
+    await _abrirCarritoDesdeInicio();
+    return null;
+  }
+
   /// Encargues (El dueño, 2026-10-02). "Entregar" vuelve acá con el encargue elegido: se arma el carrito con lo
   /// apartado a los precios de hoy y se abre; al cobrar, la venta libera lo apartado.
   Future<void> _abrirEncargues() async {
@@ -891,11 +919,17 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           // En servicios la app abre en la Agenda (`REGLAS-NEGOCIO.md` §21); las cifras del día quedan en Caja › Resumen.
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
-            builder: (context, m, _) => m.forma == FormaDeTrabajo.servicios ? const PantallaAgendaNs() : const PantallaInicioNs(),
+            // En un local gastronómico abre en los Pedidos (§22).
+            builder: (context, m, _) => switch (m.forma) {
+              FormaDeTrabajo.servicios => const PantallaAgendaNs(),
+              FormaDeTrabajo.gastronomia => const PantallaPedidosNs(),
+              FormaDeTrabajo.productos => const PantallaInicioNs(),
+            },
           ),
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
-            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.servicios ? const PantallaServiciosNs() : const PantallaProductosNs()),
+            // La carta de un local gastronómico son platos con receta, como los servicios: la misma pantalla.
+            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.productos ? const PantallaProductosNs() : const PantallaServiciosNs()),
           ),
           _servicio == null || _usuarioId == null
               ? const SizedBox.shrink()
@@ -905,6 +939,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                   usuarioId: _usuarioId!,
                   carrito: _carrito,
                   encargue: _encargueEnVenta,
+                  pedido: _pedidoEnVenta,
                 ),
           _lectura(ancho, const PantallaCajaNs()),
           _lectura(ancho, PantallaMasNs(alAbrirEncargues: _abrirEncargues)),
@@ -973,6 +1008,7 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                         onSeleccionar: irAPestania,
                         hayActualizacion: _hayActualizacion,
                         conServicios: m.forma == FormaDeTrabajo.servicios,
+                        conPedidos: m.forma == FormaDeTrabajo.gastronomia,
                       ),
                     ),
             ),

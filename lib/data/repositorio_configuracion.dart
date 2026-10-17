@@ -43,6 +43,7 @@ const _configuracionDeFabrica = ConfiguracionNegocio(
   senaDevolverAlCancelar: false,
   aliasSena: '',
   titularSena: '',
+  estadoCocina: 'NORMAL',
 );
 
 /// Guarda [cambios] en la fila única de reglas del negocio. Si la fila todavía no está (un celular al que no le llegó por la

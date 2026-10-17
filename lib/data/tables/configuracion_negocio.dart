@@ -95,6 +95,15 @@ class ConfiguracionNegocioTabla extends Table {
   TextColumn get aliasSena => text().withDefault(const Constant(''))();
   TextColumn get titularSena => text().withDefault(const Constant(''))();
 
+  // --- Pedidos de un local gastronómico (v68, `REGLAS-NEGOCIO.md` §22, `domain/pedido_gastronomico.dart`) ---
+
+  /// `ConfigPedidos` como JSON: entregas, zonas, pago, confirmación automática y tiempos. Null: el de arranque (solo retiro,
+  /// pago al entregar, confirma el local).
+  TextColumn get configPedidos => text().nullable()();
+
+  /// `EstadoCocina.clave`: lo cambia el local con un toque y el bot lo respeta.
+  TextColumn get estadoCocina => text().withDefault(const Constant('NORMAL'))();
+
   /// Identidad de sincronización — ver el comentario de
   /// `Categorias.globalId` (`tables/catalogo.dart`) para el porqué completo.
   TextColumn get globalId => text().nullable()();

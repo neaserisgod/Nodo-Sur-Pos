@@ -27,7 +27,7 @@ Future<void> aplicarModoSoloCelular() async {
 /// Nodo Sur Servicios no tiene PC ni pasa por la bienvenida, que cuenta cosas de almacén (separar para proveedores, contar
 /// la caja, el stock con la cámara; El dueño, 2026-10-11: "que parezca que está hecho para turnos"): va directo a entrar con
 /// la cuenta, como "solo celular".
-Widget pantallaDeBienvenidaInicial() => esEdicionServicios
+Widget pantallaDeBienvenidaInicial() => esEdicionAparte
     ? const _DirectoALaCuenta()
     : PantallaBienvenida(
         alTerminar: (context) => Navigator.of(context).pushReplacement(

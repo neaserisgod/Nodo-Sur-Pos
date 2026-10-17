@@ -99,7 +99,7 @@ class PantallaMasNs extends StatelessWidget {
                 const SizedBox(height: 12),
                 // Un negocio de servicios en la app de almacén: se le ofrece pasarse a Nodo Sur Servicios (El dueño, 2026-10-10,
                 // `docs/PLAN-APP-SERVICIOS.md`), que trae el bot adentro. Misma cuenta: los datos llegan solos por la sincronización.
-                if (!esEdicionServicios && servicios && esAndroid) ...[
+                if (!esEdicionAparte && servicios && esAndroid) ...[
                   Container(
                     key: const Key('mas_pasarse_a_servicios'),
                     padding: const EdgeInsets.all(16),
@@ -129,13 +129,13 @@ class PantallaMasNs extends StatelessWidget {
                     if (servicios && !app.pcEmparejada)
                       _Fila(icono: IconoNs.chispa, titulo: 'Asistente', detalle: 'Preguntale por la agenda o lo cobrado; da y mueve turnos', onTap: () => app.irA((_) => const PantallaAsistenteIaNs())),
                     // Nodo Sur Servicios: sin encargues de productos, y proveedores solo si lleva insumos.
-                    if (!esEdicionServicios) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
+                    if (!esEdicionAparte) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
                     // servicios no los usa.
                     if (!servicios) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
                     if (!esEdicionServicios || moduloActivo(Modulo.insumos)) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
                     // El bot en Termux; Nodo Sur Servicios lo trae adentro.
-                    if (!esEdicionServicios && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    if (!esEdicionAparte && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',
@@ -185,7 +185,7 @@ class PantallaMasNs extends StatelessWidget {
                       icono: IconoNs.enchufe,
                       titulo: 'Cuenta',
                       // En el navegador y en la compu todo va y viene por internet (no hay PC por wifi): se dice eso y no "solo en este celular".
-                      detalle: 'Sincronización: ${kIsWeb || esEscritorioServicios ? 'por internet' : soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}',
+                      detalle: 'Sincronización: ${kIsWeb || esEscritorioAparte ? 'por internet' : soloCelular ? 'solo en este celular' : (app.sinConexion ? 'por internet' : 'con la PC')}',
                       onTap: () => app.irA((_) => const PantallaCuentaDelCelular()),
                     ),
                     // En el navegador la versión nueva llega sola al recargar la página: no hay nada que instalar.
@@ -200,7 +200,7 @@ class PantallaMasNs extends StatelessWidget {
                 // Beta o Estable: solo para las cuentas de prueba (las betas no les llegan a los clientes). Es de este celular.
                 if (!kIsWeb) const _CanalDeVersiones(),
                 // Nodo Sur Servicios no tiene PC: es siempre solo celular.
-                if (!esEdicionServicios) ...[
+                if (!esEdicionAparte) ...[
                   const SizedBox(height: 8),
                   BotonNs(
                     texto: 'Modo: ${soloCelular ? 'solo celular' : 'PC y celular'} · Cambiar',

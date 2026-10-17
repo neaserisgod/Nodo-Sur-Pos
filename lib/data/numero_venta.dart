@@ -49,3 +49,15 @@ Future<String> siguienteNumeroDeVenta(AppDatabase db) async {
 
 /// Cómo se nombra una venta en pantalla y en el ticket: el número global, o el `id` local en las ventas viejas.
 String etiquetaDeVenta({required int id, String? numero}) => numero ?? '#$id';
+
+/// El número que le toca al próximo pedido de un local gastronómico de este equipo: el mismo prefijo que las ventas, con una
+/// "P" para que en la cocina no se confunda con un ticket ("K7-P0042"). Se llama dentro de la transacción que lo crea.
+Future<String> siguienteNumeroDePedido(AppDatabase db) async {
+  final prefijo = '${await prefijoDeVentas(db)}-P';
+  final fila = await db.customSelect(
+    'SELECT MAX(CAST(substr(numero, ?) AS INTEGER)) AS n FROM pedidos_gastronomia WHERE numero LIKE ?',
+    variables: [Variable<int>(prefijo.length + 1), Variable<String>('$prefijo%')],
+  ).getSingle();
+  final siguiente = (fila.data['n'] as int? ?? 0) + 1;
+  return '$prefijo${siguiente.toString().padLeft(4, '0')}';
+}

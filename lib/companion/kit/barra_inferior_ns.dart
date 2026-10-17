@@ -14,7 +14,7 @@ import 'tokens_ns.dart';
 enum PestaniaNs { inicio, productos, vender, caja, mas }
 
 class BarraInferiorNs extends StatelessWidget {
-  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.conServicios = false});
+  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.conServicios = false, this.conPedidos = false});
 
   final PestaniaNs activa;
   final ValueChanged<PestaniaNs> onSeleccionar;
@@ -22,6 +22,9 @@ class BarraInferiorNs extends StatelessWidget {
 
   /// Un negocio de servicios: la pestaña de Productos es Servicios (`pantalla_servicios_ns.dart`).
   final bool conServicios;
+
+  /// Un local gastronómico (§22): Inicio es Pedidos y Productos es la Carta (los platos, con su receta).
+  final bool conPedidos;
 
   /// Cuánto espacio inferior necesita el contenido para no quedar tapado:
   /// barra 68 + margen 16 + aire 40 (doc 01 §3).
@@ -66,14 +69,24 @@ class BarraInferiorNs extends StatelessWidget {
                       ? _BotonVender(activo: activa == p, onTap: () => onSeleccionar(p), etiqueta: conServicios ? 'Cobrar' : 'Vender')
                       : _Pestania(
                           // En servicios la Agenda reemplaza al Inicio (`REGLAS-NEGOCIO.md` §21) y Productos pasa a Servicios.
-                          etiqueta: !conServicios
-                              ? etiqueta
-                              : switch (p) {
-                                  PestaniaNs.inicio => 'Agenda',
-                                  PestaniaNs.productos => 'Servicios',
+                          etiqueta: conPedidos
+                              ? switch (p) {
+                                  PestaniaNs.inicio => 'Pedidos',
+                                  PestaniaNs.productos => 'Carta',
                                   _ => etiqueta,
-                                },
-                          icono: p == PestaniaNs.inicio && conServicios ? IconoNs.calendario : icono,
+                                }
+                              : !conServicios
+                                  ? etiqueta
+                                  : switch (p) {
+                                      PestaniaNs.inicio => 'Agenda',
+                                      PestaniaNs.productos => 'Servicios',
+                                      _ => etiqueta,
+                                    },
+                          icono: p == PestaniaNs.inicio && conServicios
+                              ? IconoNs.calendario
+                              : p == PestaniaNs.inicio && conPedidos
+                                  ? IconoNs.portapapeles
+                                  : icono,
                           activa: activa == p,
                           punto: p == PestaniaNs.mas && hayActualizacion && activa != p,
                           onTap: () => onSeleccionar(p),

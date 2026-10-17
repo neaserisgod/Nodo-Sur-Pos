@@ -14,7 +14,7 @@ import '../edicion.dart';
 const subcarpetaBaseEscritorio = 'base';
 
 Future<Directory> carpetaDeLaBase() async {
-  if (!esEscritorioServicios) return getApplicationDocumentsDirectory();
+  if (!esEscritorioAparte) return getApplicationDocumentsDirectory();
   final dir = Directory(p.join((await getApplicationSupportDirectory()).path, subcarpetaBaseEscritorio));
   await dir.create(recursive: true);
   return dir;

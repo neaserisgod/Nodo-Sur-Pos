@@ -25,6 +25,7 @@ import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/turnos.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/sync_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -285,6 +286,48 @@ void main() {
       await t.tap(find.byKey(const Key('asistente-seguir')));
       await t.pumpAndSettle();
       expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
+    });
+
+    testWidgets('Nodo Gastro ofrece solo su rubro: ni almacén ni servicios (§22)', (t) async {
+      edicionActual = Edicion.gastronomia;
+      addTearDown(() => edicionActual = Edicion.almacen);
+      await tamanio(t);
+      (String, PlantillaRubro)? negocio;
+      await t.pumpWidget(app(AsistenteNegocio(
+        alGuardarNegocio: (n, r) async => negocio = (n, r),
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alAbrirWeb: (_) {},
+        alCompletarPaso: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('rubro-almacen'), skipOffstage: false), findsNothing);
+      expect(find.byKey(const Key('rubro-barberia'), skipOffstage: false), findsNothing);
+      await t.enterText(find.byKey(const Key('asistente-nombre')), 'Rotisería Doña Ana');
+      await t.tap(find.byKey(const Key('rubro-rotiseria')));
+      await t.pump();
+      await t.tap(find.byKey(const Key('asistente-seguir')));
+      await t.pumpAndSettle();
+      expect(negocio, ('Rotisería Doña Ana', PlantillaRubro.rotiseria));
+    });
+
+    testWidgets('en una rotisería el segundo paso es el primer plato, y suma el horario para el bot (§22)', (t) async {
+      await tamanio(t);
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.producto,
+        rubroInicial: PlantillaRubro.rotiseria,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.text('Cargá tu primer plato'), findsOneWidget);
+      expect(find.textContaining('código'), findsNothing);
+      expect(pasosDeLaForma(FormaDeTrabajo.gastronomia), contains(PasoNegocio.horario));
+      expect(pasosDeLaForma(FormaDeTrabajo.productos), isNot(contains(PasoNegocio.horario)));
     });
 
     testWidgets('en un negocio de servicios el segundo paso es el primer servicio, sin código de barras ni stock', (t) async {

@@ -54,6 +54,7 @@ class _Servicio extends Fake implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? montoEfectivoMixtoCentavos,
   }) async {
     confirmaciones++;
@@ -70,6 +71,7 @@ class _Servicio extends Fake implements ServicioCompanion {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) async {

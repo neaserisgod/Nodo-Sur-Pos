@@ -17,6 +17,7 @@ import '../../data/repositorio_servicios.dart';
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/ganancia.dart' show gananciaBpDesdeCostoYPrecio;
 import '../../domain/modulos.dart';
+import '../../domain/forma_de_trabajo.dart';
 import '../../domain/servicios.dart';
 import '../../servicios/modulos_activos.dart';
 import '../app_ns.dart';
@@ -26,6 +27,13 @@ import '../emparejamiento.dart';
 import '../guardar_una_vez.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
+
+/// En un local gastronómico (Nodo Gastro, §22) esta pantalla es la Carta: un plato es un servicio sin turno (receta, sin
+/// stock), y su "duración" es lo que tarda en prepararse, que es lo que suma la mano de obra.
+bool get _esCarta => modulosActuales.value.forma == FormaDeTrabajo.gastronomia;
+
+/// El texto de un negocio de servicios o el de un local gastronómico.
+String _t(String servicios, String gastronomia) => _esCarta ? gastronomia : servicios;
 
 class PantallaServiciosNs extends StatefulWidget {
   /// [db] y [usuarioId] son para tests.
@@ -50,7 +58,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
 
-  List<String> get _solapas => ['Servicios', 'Productos', if (_conInsumos) 'Insumos'];
+  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas y otros'), if (_conInsumos) 'Insumos'];
   String get _nombreSolapa => _solapas[_solapa.clamp(0, _solapas.length - 1)];
 
   @override
@@ -177,7 +185,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Servicios', style: tituloNs(42, track: -0.055, color: ns.ink))),
+                  Expanded(child: Text(_t('Servicios', 'Carta'), style: tituloNs(42, track: -0.055, color: ns.ink))),
                   if (!conPc)
                     BotonNs(
                       texto: switch (_nombreSolapa) { 'Productos' => '+ Producto', 'Insumos' => '+ Insumo', _ => '+ Nuevo' },
@@ -217,7 +225,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     final ns = context.ns;
     final servicios = _servicios!;
     if (servicios.isEmpty) {
-      return [const InfoNs('Todavía no cargaste ningún servicio. Con "+ Nuevo" ponés el nombre, cuánto dura y qué insumos usa, y la app calcula lo que te cuesta.')];
+      return [InfoNs(_t('Todavía no cargaste ningún servicio. Con "+ Nuevo" ponés el nombre, cuánto dura y qué insumos usa, y la app calcula lo que te cuesta.',
+          'Todavía no cargaste ningún plato. Con "+ Nuevo" ponés el nombre, el precio y qué insumos usa, y la app calcula lo que te cuesta.'))];
     }
     final porCategoria = <String, List<ServicioListado>>{};
     for (final s in servicios) {
@@ -306,7 +315,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
         const SizedBox(height: 16),
       ],
       if (_productos.isEmpty)
-        const InfoNs('Lo que vendés aparte de los servicios: un shampoo, una cera, una crema. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".')
+        InfoNs(_t('Lo que vendés aparte de los servicios: un shampoo, una cera, una crema. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".',
+            'Lo que vendés como viene: una gaseosa, un vino, un postre de heladera. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".'))
       else
         ListaAgrupadaNs(
           filas: [
@@ -497,7 +507,7 @@ class _HojaInsumoState extends State<_HojaInsumo> with GuardarUnaVezNs {
     final decimales = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
     return HojaNs(
       titulo: widget.existente == null ? 'Nuevo insumo' : 'Editar insumo',
-      texto: 'Lo que comprás y gastás de a poco. Se compra por envase y cada servicio usa una parte.',
+      texto: 'Lo que comprás y gastás de a poco. Se compra por envase y cada ${_t('servicio', 'plato')} usa una parte.',
       bloques: [
         CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Top coat', autofoco: widget.existente == null),
         Wrap(
@@ -567,7 +577,7 @@ class _HojaCompraState extends State<_HojaCompra> with GuardarUnaVezNs {
     final porUnidad = costoPorUnidadCentavos(InsumoParaCalculo(costoEnvaseCentavos: precio, contenidoEnvaseMilesimas: contenido, stockMilesimas: 0));
     final antes = _insumo.costoPorUnidadCentavos;
     return '$entra · ${plataNs(porUnidad)} por $u'
-        '${antes != null && antes != porUnidad ? ' (antes ${plataNs(antes)}). Los servicios que lo usan recalculan su costo.' : '.'}';
+        '${antes != null && antes != porUnidad ? ' (antes ${plataNs(antes)}). Los ${_t('servicios', 'platos')} que lo usan recalculan su costo.' : '.'}';
   }
 
   Future<void> _guardar() async {
@@ -733,7 +743,7 @@ class _HojaProductoState extends State<_HojaProducto> with GuardarUnaVezNs {
     final costo = _plata(_costo.text);
     return HojaNs(
       titulo: widget.existente == null ? 'Nuevo producto' : 'Editar producto',
-      texto: 'Lo que vendés aparte de los servicios. Se suma al cobrar con "+ Producto".',
+      texto: 'Lo que vendés aparte de los ${_t('servicios', 'platos')}. Se suma al cobrar con "+ Producto".',
       bloques: [
         CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Shampoo 500 ml', autofoco: widget.existente == null),
         Row(
@@ -957,7 +967,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
       context,
       builder: (ctx) => HojaNs(
         titulo: 'Agregar un insumo',
-        texto: 'Elegí qué usa este servicio. La cantidad se ajusta después.',
+        texto: 'Elegí qué usa este ${_t('servicio', 'plato')}. La cantidad se ajusta después.',
         bloques: [
           ListaAgrupadaNs(
             filas: [
@@ -1005,7 +1015,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
   Future<void> _guardar() async {
     final precio = _plata(_precio.text);
     if (_nombre.text.trim().isEmpty || precio == null || _minutos <= 0) {
-      setState(() => _error = 'Completá nombre, duración y precio');
+      setState(() => _error = _t('Completá nombre, duración y precio', 'Completá nombre, tiempo de preparación y precio'));
       return;
     }
     final receta = [for (final l in _receta) (insumoId: l.insumo.producto.id, milesimas: l.milesimas)];
@@ -1018,7 +1028,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
         await editarServicio(widget.db, id: e.producto.id, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
             sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
       }
-      if (mounted) Navigator.of(context).pop(e == null ? 'Servicio creado' : 'Servicio guardado');
+      if (mounted) Navigator.of(context).pop(e == null ? _t('Servicio creado', 'Plato creado') : _t('Servicio guardado', 'Plato guardado'));
     }, alFallar: (m) => setState(() => _error = m));
   }
 
@@ -1036,13 +1046,13 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
     final alcanza = alcanzaPara(_usos);
     final primero = seAcabaPrimero(_usos);
     return PaginaNs(
-      titulo: widget.existente == null ? 'Nuevo servicio' : 'Editar servicio',
+      titulo: widget.existente == null ? _t('Nuevo servicio', 'Nuevo plato') : _t('Editar servicio', 'Editar plato'),
       cuerpo: ListView(
         padding: EdgeInsets.zero,
         children: [
           CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Corte clásico', onChanged: (_) => setState(() => _error = null)),
           const SizedBox(height: 10),
-          CampoNs(etiqueta: 'Duración (min)', controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+          CampoNs(etiqueta: _t('Duración (min)', 'Preparación (min)'), controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
           if (_categorias.isNotEmpty) ...[
             const SizedBox(height: 14),
             const SeccionNs('Categoría'),
@@ -1064,7 +1074,8 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
           ],
           const SizedBox(height: 12),
           // §21: el negocio elige si pide seña en algunos servicios (estos), en todos o en ninguno (Más › Configuración).
-          InterruptorNs(
+          // Un plato no tiene turno: no hay seña que pedir.
+          if (!_esCarta) InterruptorNs(
             key: const Key('servicio_pide_sena'),
             etiqueta: 'Pide seña',
             descripcion: 'Al dar el turno se pide la seña que configuraste (por defecto, el 30 %)',
@@ -1096,7 +1107,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
                     Text(
                       alcanza < 1 && primero != null
                           ? 'Con el stock de hoy no alcanza: falta ${_receta[primero].insumo.producto.nombre.toLowerCase()}.'
-                          : 'Con el stock de hoy alcanza para $alcanza ${alcanza == 1 ? 'servicio' : 'servicios'}'
+                          : 'Con el stock de hoy alcanza para $alcanza ${alcanza == 1 ? _t('servicio', 'plato') : _t('servicios', 'platos')}'
                                 '${primero != null ? ' · se acaba primero: ${_receta[primero].insumo.producto.nombre.toLowerCase()}' : ''}',
                       style: estiloNs(14, altura: 1.35, color: TokensNs.blanco),
                     ),
@@ -1109,7 +1120,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
           if (_conInsumos) ...[
             if (precio != null && precio > 0)
               FilaClaveValorNs(
-                clave: 'Ganancia por servicio',
+                clave: _t('Ganancia por servicio', 'Ganancia por plato'),
                 valor: '${plataNs(precio - costo.totalCentavos)} · ${(gananciaBpDesdeCostoYPrecio(costo.totalCentavos, precio) / 100).round()} %',
                 colorValor: gananciaBpDesdeCostoYPrecio(costo.totalCentavos, precio) >= _gananciaBuscadaBp ? ns.g : ns.w,
                 tamanioValor: 16,
@@ -1138,7 +1149,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
       ),
       botones: [
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
-        BotonNs.primario(context, 'Guardar servicio', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
+        BotonNs.primario(context, _t('Guardar servicio', 'Guardar plato'), guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
         if (widget.existente != null) BotonNs.secundario(context, 'Dejar de ofrecerlo', guardando ? null : _dejarDeOfrecer),
       ],
     );

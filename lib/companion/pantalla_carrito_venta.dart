@@ -75,6 +75,7 @@ class PantallaCarritoVenta extends StatefulWidget {
     required this.usuarioId,
     required this.carrito,
     this.encargue,
+    this.pedido,
   });
 
   /// Imprimir ticket — exclusivo de la PC. Null sin PC emparejada.
@@ -91,6 +92,10 @@ class PantallaCarritoVenta extends StatefulWidget {
   /// El encargue por apartado que esta venta entrega (id): al cobrar libera lo apartado. Se comparte con el menú, que lo
   /// pone cuando se elige "Entregar" desde Más → Encargues; acá se limpia al cobrar o al vaciar la venta.
   final ValueNotifier<int?>? encargue;
+
+  /// El pedido de un local gastronómico que esta venta cobra (§22): lo pone el menú al tocar "Cobrar" en un pedido; al
+  /// cobrar queda ligado a la venta en la misma transacción, y se limpia al cobrar o al vaciar la venta.
+  final ValueNotifier<({int id, String nombre})?>? pedido;
 
   @override
   State<PantallaCarritoVenta> createState() => _PantallaCarritoVentaState();
@@ -168,10 +173,15 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   String? _encargueNombre;
   List<EncargueCompanion> _encargues = [];
 
+  late final ValueNotifier<({int id, String nombre})?> _pedido = widget.pedido ?? ValueNotifier(null);
+
   /// La venta se asentó a mano (sin pasar por la terminal) y a quién se le entregó un encargue: lo muestra la tarjeta de la
   /// última venta.
   bool _cobradoAMano = false;
   String? _encargueEntregado;
+
+  /// A quién se le cobró el pedido de la última venta (§22): lo muestra la tarjeta de la última venta.
+  String? _pedidoCobrado;
 
   /// La última venta se grabó en la base de la PC (el celular estaba conectado a ella): su ticket se imprime por la PC.
   bool _cobradoEnPc = false;
@@ -202,12 +212,19 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _cargarMasVendidos();
     _cargarEncargues();
     _encargue.addListener(_alCambiarEncargue);
+    _pedido.addListener(_alCambiarPedido);
+  }
+
+  void _alCambiarPedido() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _encargue.removeListener(_alCambiarEncargue);
     if (widget.encargue == null) _encargue.dispose();
+    _pedido.removeListener(_alCambiarPedido);
+    if (widget.pedido == null) _pedido.dispose();
     _otroCtrl.dispose();
     _mixtoCtrl.dispose();
     _busquedaCtrl.dispose();
@@ -432,7 +449,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       }
       _resultado = null;
     });
-    if (widget.carrito.isEmpty) _encargue.value = null; // sin líneas ya no se está entregando nada
+    if (widget.carrito.isEmpty) {
+      _encargue.value = null; // sin líneas ya no se está entregando nada
+      _pedido.value = null;
+    }
   }
 
   LineaVenta _conValor(LineaVenta l, int valor) {
@@ -850,6 +870,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
+        pedidoId: _pedido.value?.id,
         claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
@@ -902,6 +923,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
+        pedidoId: _pedido.value?.id,
         montoEfectivoMixtoCentavos: efectivoMixto,
       );
       if (resultado != null) {
@@ -942,6 +964,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         tipoDescuento: _valorDescuento == 0 ? null : _tipoDescuento,
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
+        pedidoId: _pedido.value?.id,
         claveCobro: _claveCobro,
         montoEfectivoMixtoCentavos: efectivoMixto,
       );
@@ -966,7 +989,9 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _cobradoAMano = aMano;
     _cobradoEnPc = widget.servicio is ClienteCompanion;
     _encargueEntregado = _encargueNombre;
+    _pedidoCobrado = _pedido.value?.nombre;
     _encargue.value = null;
+    _pedido.value = null;
     if (!mounted) return;
     setState(() {
       _cobrado = (ventaId: ventaId, totalCentavos: totalCentavos, medio: medio, productos: productos, vueltoCentavos: vuelto < 0 ? 0 : vuelto);
@@ -1008,6 +1033,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       _cobrado = null;
       _cobradoAMano = false;
       _encargueEntregado = null;
+      _pedidoCobrado = null;
       _efectivoMixtoCobrado = null;
     });
   }
@@ -1130,6 +1156,16 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             },
           ),
           SizedBox(height: teclado ? 10 : 14),
+          if (_pedido.value != null && n > 0 && !buscando) ...[
+            Container(
+              key: const Key('carrito_cobrando_pedido'),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+              child: Text('Cobrando el pedido de ${_pedido.value!.nombre}', style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+            ),
+            const SizedBox(height: 14),
+          ],
           if (_encargue.value != null && n > 0 && !buscando) ...[
             Container(
               width: double.infinity,
@@ -1685,6 +1721,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         'Efectivo ${plataNs(_efectivoMixtoCobrado!)} + MP ${plataNs(c.totalCentavos - _efectivoMixtoCobrado!)}',
       if (_cobradoAMano) 'cobrado a mano, sin la terminal',
       if (_encargueEntregado != null) 'encargue de $_encargueEntregado entregado',
+      if (_pedidoCobrado != null) 'pedido de $_pedidoCobrado cobrado',
     ].join(' · ');
     return EntradaNs(
       duracion: const Duration(milliseconds: 180),

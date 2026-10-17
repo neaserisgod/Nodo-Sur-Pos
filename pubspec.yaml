@@ -106,11 +106,12 @@ flutter:
   # deja en build/windows/x64/almacen/, donde el instalador no la encuentra (beta del 2026-10-10, `TRAMPAS.md`).
 
   # El bot de WhatsApp de Nodo Sur Servicios: assets/bot/bot.zip lo arma tool/preparar_bot_android.sh al compilar (no va al
-  # repo). Solo en esa edición. Sin él, la carpeta queda solo con su .gitkeep y la pantalla del bot lo dice.
+  # repo). Solo en las ediciones aparte (servicios y gastronomía). Sin él, la carpeta queda solo con su .gitkeep y la pantalla del bot lo dice.
   assets:
     - path: assets/bot/
       flavors:
         - servicios
+        - gastronomia
 
   # To add assets to your application, add an assets section, like this:
   # assets:

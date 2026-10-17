@@ -77,6 +77,8 @@ const Map<String, bool> tablasSincronizables = {
   // productos (a los que apunta) y de los movimientos, así al recibirla el stock se recalcula con todos los movimientos de la
   // misma bajada ([_recalcularStockDesdeBase]).
   'bases_de_stock': true,
+  // v68 (locales gastronómicos, `docs/PLAN-GASTRONOMIA.md`): después de clientes, usuarios y ventas, a las que apunta.
+  'pedidos_gastronomia': true,
 };
 
 /// Las tablas que un equipo con una versión anterior a la v61 no conoce: si la PC todavía no se actualizó, le contesta error al
@@ -94,6 +96,8 @@ const tablasSincronizablesV61 = {
   'turnos',
   // La de la v67.
   'bases_de_stock',
+  // La de la v68.
+  'pedidos_gastronomia',
 };
 
 bool _tablaValida(String tabla) {
@@ -151,6 +155,7 @@ const Map<String, Map<String, String>> _referenciasCruzadas = {
   'historial_de_precios': {'producto_id': 'productos', 'usuario_id': 'usuarios'},
   'pendientes': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
   'bases_de_stock': {'producto_id': 'productos'},
+  'pedidos_gastronomia': {'cliente_id': 'clientes', 'venta_id': 'ventas', 'usuario_id': 'usuarios'},
   'turnos': {
     'servicio_id': 'productos',
     'cliente_id': 'clientes',

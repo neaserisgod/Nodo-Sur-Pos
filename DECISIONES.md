@@ -113,6 +113,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Instalador y actualización automática (2026-09-30)](#instalador-y-actualización-automática-2026-09-30)
 - [Generalización del producto (2026-09-30)](#generalización-del-producto-2026-09-30)
 - [Se publica solo cuando se pide (2026-10-03)](#se-publica-solo-cuando-se-pide-2026-10-03)
+- [Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2688,3 +2689,24 @@ cigarrillos, estandarizarlo todo". Solo en el celular (Productos › tarjeta "Ma
   suba); uno que se tocó a mano después no se toca. Sirvió para arreglar la suba del 15 % sobre el precio.
 - Cigarrillos y fiambres afuera siempre: del promedio y de las tres acciones (Regla 6; "sin contar los fiambres también").
   Fiambre = se vende por peso **o** su categoría es Fiambres (`esFiambre`).
+
+## Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)
+
+El dueño: "versión aparte, como Servicios". Nombre: **Nodo Gastro**; el ícono "pedidos" en terracota queda ("igual que el diseño actual y el color me gusta"). Plan y estado en `docs/PLAN-GASTRONOMIA.md`; reglas en `REGLAS-NEGOCIO.md` §22.
+
+- **Tercera edición** (`lib/edicion.dart`): flavor de Android `gastronomia` (`com.laplazoleta.gastronomia`, "Nodo Sur
+  Gastronomía", ícono "pedidos" en terracota) y `--dart-define=EDICION=gastronomia` en Windows. Se instala al lado de
+  las otras dos.
+- **Lo que comparten las dos ediciones aparte** pasó a `esEdicionAparte` / `esEscritorioAparte`: sin PC ("Solo celular", sync por
+  internet), el bot de WhatsApp adentro, actualizaciones desde el sitio (`android-gastronomia`, `windows-gastronomia`), sin la
+  bienvenida de almacén ni encargues de productos. **Lo que es solo de Servicios sigue en `esEdicionServicios`**: la caja simple
+  ("Empezar el día", sin arqueo), una sola persona, sin gastos fijos, sus textos. Por eso Gastronomía arranca con la caja de
+  siempre (arqueo, varios usuarios, gastos fijos): una rotisería maneja efectivo y tiene empleados. **Pendiente de confirmar con el
+  dueño.**
+- **Módulos** (`ModulosNegocio.paraEdicionGastronomia`): pedidos, recetas (insumos, mano de obra), pesables, combos, encargues y
+  deudas, retiro de ganancias, gastos fijos, equipo y Point. Sin lata de cigarrillos, comparador ni carga histórica.
+- **El workflow `publicar-apk` no la publica con cada push a `main`**: solo a mano, con edición `gastronomia` o `todas`, hasta que
+  esté lista.
+- **Falta, del lado del dueño:** registrar `com.laplazoleta.gastronomia` en Firebase (sin su id de app no hay notificaciones con la
+  app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (sin él, el celular entra
+  con el navegador). `docs/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.

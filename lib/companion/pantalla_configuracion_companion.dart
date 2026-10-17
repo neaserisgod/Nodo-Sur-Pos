@@ -51,6 +51,7 @@ import 'pantalla_gastos_fijos.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
 import 'pantallas/pantalla_config_agenda_ns.dart';
+import 'pantallas/pantalla_config_pedidos_ns.dart';
 import 'servicio_companion.dart';
 import 'servicio_companion_offline.dart';
 import 'tema/hoja_vidrio.dart';
@@ -482,6 +483,16 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               onTap: _editarValorHora,
             ),
           ],
+          if (!_pcEmparejada && moduloActivo(Modulo.pedidos)) ...[
+            _seccion('Pedidos'),
+            TarjetaFilaNs(
+              key: const Key('config-pedidos'),
+              titulo: 'Pedidos',
+              subtitulo: 'Entregas, zonas de envío, cómo se cobra y cuánto tarda la cocina',
+              icono: IconoNs.portapapeles,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaConfigPedidosNs())),
+            ),
+          ],
           if (!_pcEmparejada && esNegocioDeServicios()) ...[
             _seccion('Agenda'),
             TarjetaFilaNs(
@@ -546,8 +557,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           // Dos grupos, como en el alta (`asistente_negocio.dart`): el rubro decide si la app es de productos o de servicios.
           // Nodo Sur Servicios: solo los de servicios.
           for (final (titulo, rubros) in [
-            if (!esEdicionServicios) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
-            ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+            if (!esEdicionAparte) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
+            if (!esEdicionGastronomia) ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
+            if (esEdicionGastronomia) ('Tu local', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
           ]) ...[
             Text(titulo, style: estiloNs(13, color: ns.mute)),
             const SizedBox(height: 6),

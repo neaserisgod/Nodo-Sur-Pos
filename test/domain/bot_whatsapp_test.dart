@@ -17,7 +17,58 @@ ProductoParaBot _p(String nombre, {String? gid = 'g', bool activo = true, bool p
     );
 
 void main() {
+  group('pedido de un local gastronómico (§22)', () {
+    test('trae la entrega, el pago y la hora; los estados nuevos se entienden', () {
+      final p = pedidoBotDesdeJson({
+        'id': 7,
+        'estado': 'en_camino',
+        'cliente': {'nombre': 'Caro', 'telefono': '5492944111111'},
+        'items': [
+          {'gid': 'g-mila', 'nombre': 'Milanesa', 'cantidad': 2, 'precioCentavos': 650000},
+        ],
+        'entrega': {'forma': 'CADETE', 'direccion': 'Mitre 100', 'zona': 'Centro', 'costoEnvioCentavos': 150000},
+        'pago': 'mp',
+        'horaEstimada': 1760000000000,
+        'programado': true,
+        'creado': 1,
+        'actualizado': 2,
+      })!;
+      expect(p.estado, EstadoPedidoBot.enCamino);
+      expect(p.formaEntrega, 'CADETE');
+      expect(p.zona, 'Centro');
+      expect(p.costoEnvioCentavos, 150000);
+      expect(p.pago, 'mp');
+      expect(p.horaEstimada, DateTime.fromMillisecondsSinceEpoch(1760000000000));
+      expect(p.programado, isTrue);
+      for (final e in EstadoPedidoBot.values) {
+        expect(pedidoBotDesdeJson({
+          'id': 1, 'estado': estadoPedidoBotEnSitio(e), 'cliente': {'nombre': 'A', 'telefono': '5492944111111'}, 'items': [], 'creado': 1, 'actualizado': 1,
+        })!.estado, e);
+      }
+    });
+
+    test('el de un almacén sigue igual: sin entrega, retiro sin envío', () {
+      final p = pedidoBotDesdeJson({
+        'id': 8, 'estado': 'por_confirmar', 'cliente': {'nombre': 'A', 'telefono': '5492944111111'},
+        'items': [{'gid': 'g', 'nombre': 'Yerba', 'cantidad': 1}], 'creado': 1, 'actualizado': 1,
+      })!;
+      expect(p.formaEntrega, isNull);
+      expect(p.costoEnvioCentavos, 0);
+      expect(p.programado, isFalse);
+    });
+  });
+
   group('catálogo para el bot', () {
+    test('un plato siempre hay (se hace en el momento); los insumos y "Varios" no van (§22)', () {
+      final c = catalogoParaBot([
+        const ProductoParaBot(globalId: 'g-mila', nombre: 'Milanesa', activo: true, esPesable: false, esPromo: false, precioCentavos: 650000, esServicio: true),
+        const ProductoParaBot(globalId: 'g-aceite', nombre: 'Aceite', activo: true, esPesable: false, esPromo: false, precioCentavos: 300000, stock: 5, esInsumo: true),
+        const ProductoParaBot(globalId: 'producto-varios', nombre: 'Varios', activo: true, esPesable: false, esPromo: false, precioCentavos: 100, esVarios: true),
+      ]);
+      expect(c.map((x) => x.nombre), ['Milanesa']);
+      expect(c.single.hay, isTrue);
+    });
+
     test('lo justo: gid, nombre, precio y si hay; nada de costos; ordenado por nombre', () {
       final c = catalogoParaBot([_p('Yerba', gid: 'g-y', precio: 520000, stock: 2), _p('Coca', gid: 'g-c', precio: 350000, stock: 0)]);
       expect(c.map((x) => x.toJson()).toList(), [

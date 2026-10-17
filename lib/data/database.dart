@@ -30,6 +30,7 @@ import 'tables/configuracion_negocio.dart';
 import 'tables/gastos_fijos.dart';
 import 'tables/historial_pedidos.dart';
 import 'tables/historial_precios.dart';
+import 'tables/pedidos_gastronomia.dart';
 import 'tables/pendientes.dart';
 import 'tables/secciones_menu.dart';
 import 'tables/stock.dart';
@@ -142,6 +143,7 @@ const seccionesMenuIniciales = [
     ProductosFacturaCompra,
     Turnos,
     BasesDeStock,
+    PedidosGastronomia,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -166,7 +168,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 67;
+  int get schemaVersion => 68;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1213,6 +1215,11 @@ class AppDatabase extends _$AppDatabase {
         }
         await _crearIndicesUnicosDeSincronizacion(this, tablas: tablasDeSyncV67);
       }
+      // v67 → v68 (El dueño, 2026-10-16: locales gastronómicos, `docs/PLAN-GASTRONOMIA.md`): los pedidos y cómo los trabaja el
+      // local. La tabla nace vacía; las columnas de configuración, con su valor de arranque.
+      if (from < 68) {
+        await _sumarPedidosGastronomia(this, m);
+      }
       if (from < 37 && !esEquipoCelular) {
         final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await customStatement(
@@ -1372,6 +1379,7 @@ const _tablasConIndiceUnicoDeSincronizacion = [
   ...tablasDeSyncV64,
   ...tablasDeSyncV66,
   ...tablasDeSyncV67,
+  ...tablasDeSyncV68,
 ];
 
 Future<void> _crearIndicesUnicosDeSincronizacion(
@@ -1584,6 +1592,23 @@ const tablasDeSyncV64 = ['gastos_fijos', 'gastos_fijos_montos'];
 
 const tablasDeSyncV66 = ['turnos'];
 const tablasDeSyncV67 = ['bases_de_stock'];
+const tablasDeSyncV68 = ['pedidos_gastronomia'];
+
+/// v67 → v68: los pedidos de un local gastronómico. Con chequeo de columna, como v65→v66.
+Future<void> _sumarPedidosGastronomia(AppDatabase db, Migrator m) async {
+  Future<Set<String>> columnasDe(String tabla) async =>
+      (await db.customSelect("SELECT name FROM pragma_table_info('$tabla')").get()).map((c) => c.data['name'] as String).toSet();
+
+  if ((await columnasDe('pedidos_gastronomia')).isEmpty) await m.createTable(db.pedidosGastronomia);
+  final deConfig = await columnasDe('configuracion_negocio_tabla');
+  for (final (nombre, columna) in [
+    ('config_pedidos', db.configuracionNegocioTabla.configPedidos),
+    ('estado_cocina', db.configuracionNegocioTabla.estadoCocina),
+  ]) {
+    if (!deConfig.contains(nombre)) await m.addColumn(db.configuracionNegocioTabla, columna);
+  }
+  await _crearIndicesUnicosDeSincronizacion(db, tablas: tablasDeSyncV68);
+}
 
 /// v65 → v66: la Agenda. La tabla nace vacía (con su índice único de `global_id`); las columnas nuevas nacen con su valor de
 /// arranque. Con chequeo de columna, como v59→v60.

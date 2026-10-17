@@ -26,7 +26,7 @@ final AccesoBot accesoBotDelCelular = AccesoBotNube(() async => (almacen: await 
 final BotEnCelular botDelCelular = _armarBot();
 
 BotEnCelular _armarBot() {
-  if (!esEscritorioServicios) return BotEnCelular(acceso: accesoBotDelCelular);
+  if (!esEscritorioAparte) return BotEnCelular(acceso: accesoBotDelCelular);
   late final BotEnCelular bot;
   final motor = MotorBotWindows(datos: () => bot.datos());
   bot = BotEnCelular(acceso: accesoBotDelCelular, motor: motor, zip: motor.leerZip);
@@ -34,7 +34,7 @@ BotEnCelular _armarBot() {
 }
 
 /// En qué equipos corre el bot adentro de la app: Nodo Sur Servicios en Android y en Windows (no en el navegador).
-bool get botEnEsteEquipo => esEdicionServicios && (esAndroid || esEscritorioServicios);
+bool get botEnEsteEquipo => esEdicionAparte && (esAndroid || esEscritorioAparte);
 
 /// Al abrir Nodo Sur Servicios: el bot encendido pasa a la versión que trae la app (`BotEnCelular.ponerAlDia`).
 Future<void> ponerAlDiaElBotDelCelular() async {

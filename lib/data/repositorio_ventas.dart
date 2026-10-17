@@ -18,6 +18,7 @@ import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
 import 'repositorio_turnos.dart' show senaPendienteDeTurno, marcarTurnoAtendido;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
+import 'repositorio_pedidos_gastronomia.dart' show marcarPedidoCobrado;
 import 'repositorio_servicios.dart' show consumirInsumosDeServicio, costoInsumosDeServicio;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
@@ -302,6 +303,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // transacción. Antes eran dos escrituras sueltas: una caída en el medio dejaba la venta grabada y la orden "sin resolver"
   // (falsa alarma en el cierre), y un reintento del celular grababa la venta otra vez.
   int? ordenCobroPendienteId,
+  // El pedido de un local gastronómico que esta venta cobra (`repositorio_pedidos_gastronomia.dart`, §22): queda ligado en la MISMA
+  // transacción, y uno ya cobrado frena la venta (la misma plata no entra dos veces).
+  int? pedidoId,
 }) {
   return db.transaction(() async {
     // Un pago negativo no es plata que entró: restaría del esperado de su caja (revisión 2026-10-03: un mixto cuyo
@@ -448,6 +452,8 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
         motivo: 'Devolución de lo que sobró de la seña (venta #$ventaId)',
       );
     }
+
+    if (pedidoId != null) await marcarPedidoCobrado(db, pedidoId, ventaId: ventaId);
 
     if (ordenCobroPendienteId != null) {
       final filas = await (db.update(db.ordenesCobroPendientes)..where((o) => o.id.equals(ordenCobroPendienteId))).write(
@@ -867,6 +873,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   int? turnoId,
   int? ordenCobroPendienteId,
   int? montoEfectivoMixtoCentavos,
+  int? pedidoId,
 }) {
   return db.transaction(() async {
     if (ordenCobroPendienteId != null) {
@@ -915,6 +922,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       encargueId: encargueId,
       turnoId: turnoId,
       ordenCobroPendienteId: ordenCobroPendienteId,
+      pedidoId: pedidoId,
     );
     return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
   });

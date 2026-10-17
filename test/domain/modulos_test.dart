@@ -75,6 +75,7 @@ void main() {
           'cobro_point',
           'insumos',
           'mano_de_obra',
+          'pedidos',
         },
       );
     });
@@ -121,6 +122,19 @@ void main() {
       expect(barberia.estaActivo(Modulo.manoDeObra), isTrue);
     });
 
+    test('un local gastronómico tiene sus pedidos y las recetas de la carta; un almacén y un servicio no ven los pedidos (§22)', () {
+      final rotiseria = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.gastronomia);
+      for (final m in [Modulo.pedidos, Modulo.insumos, Modulo.manoDeObra, Modulo.pesables, Modulo.promos, Modulo.cobroPoint, Modulo.equilibrio]) {
+        expect(rotiseria.estaActivo(m), isTrue, reason: m.clave);
+      }
+      for (final m in [Modulo.cajaAparte, Modulo.compararPrecios]) {
+        expect(rotiseria.estaActivo(m), isFalse, reason: m.clave);
+      }
+      expect(ModulosNegocio.desdeTexto('').estaActivo(Modulo.pedidos), isFalse);
+      expect(ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios).estaActivo(Modulo.pedidos), isFalse);
+      expect(Modulo.desdeClave('pedidos'), Modulo.pedidos);
+    });
+
     test('en un negocio de servicios, lo que es de un comercio con stock no se ve ni cuenta aunque no esté apagado', () {
       final modulos = ModulosNegocio.desdeTexto('', forma: FormaDeTrabajo.servicios);
       for (final m in [Modulo.cajaAparte, Modulo.pesables, Modulo.promos, Modulo.compararPrecios]) {
@@ -157,6 +171,18 @@ void main() {
       final m = ModulosNegocio.desdeTexto('fiado,pesables').paraEdicionServicios().conModulo(Modulo.insumos, activo: false);
       expect(m.disponibles, [Modulo.cobroPoint, Modulo.insumos, Modulo.manoDeObra]);
       expect(ModulosNegocio.desdeTexto(m.aTexto()).desactivados, {Modulo.pesables, Modulo.fiado, Modulo.insumos});
+    });
+
+    test('la app Nodo Gastro: siempre gastronomía, con pedidos, recetas, pesables, combos, equipo y fijos (§22)', () {
+      final rotiseria = ModulosNegocio.desdeTexto('promos').paraEdicionGastronomia();
+      expect(rotiseria.forma, FormaDeTrabajo.gastronomia);
+      for (final m in [Modulo.pedidos, Modulo.insumos, Modulo.pesables, Modulo.turnos, Modulo.equilibrio, Modulo.fiado, Modulo.cobroPoint]) {
+        expect(rotiseria.estaActivo(m), isTrue, reason: m.clave);
+      }
+      expect(rotiseria.estaActivo(Modulo.promos), isFalse, reason: 'lo apagado a propósito sigue apagado');
+      for (final m in [Modulo.cajaAparte, Modulo.compararPrecios, Modulo.cargaHistorica]) {
+        expect(rotiseria.estaActivo(m), isFalse, reason: m.clave);
+      }
     });
   });
 }

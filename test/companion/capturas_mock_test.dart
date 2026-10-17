@@ -185,6 +185,7 @@ class _PuertoPosnet extends PuertoLocal {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
   }) async => (ventaId: 1, totalCentavos: Venta(lineas: lineas).subtotalCentavos);
 
@@ -197,6 +198,7 @@ class _PuertoPosnet extends PuertoLocal {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) async => (ventaId: 1, totalCentavos: Venta(lineas: lineas).subtotalCentavos);
@@ -214,6 +216,7 @@ class _PuertoPosnet extends PuertoLocal {
     TipoDescuento? tipoDescuento,
     int valorDescuento = 0,
     int? encargueId,
+    int? pedidoId,
     int? montoEfectivoMixtoCentavos,
   }) async {
     if (falloAlGuardar != null) throw falloAlGuardar!;

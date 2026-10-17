@@ -219,7 +219,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
 
   Future<void> _entrar() async {
     // En la compu no hay cuenta de Google del teléfono: directo al navegador, como la PC.
-    if (kIsWeb || esEscritorioServicios) return _entrarConNavegador();
+    if (kIsWeb || esEscritorioAparte) return _entrarConNavegador();
     setState(() {
       _trabajando = true;
       _error = null;

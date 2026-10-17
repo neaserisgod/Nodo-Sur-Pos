@@ -105,6 +105,11 @@ abstract class ControladorAppNs {
   /// Conteo de stock: de un proveedor, de los productos sin stock o vacío para elegir.
   Future<void> abrirConteo({bool soloSinStock = false});
 
+  /// Un local gastronómico (§22): arma la venta con lo del pedido [pedidoId] (al precio que se le dijo al cliente, con el envío) y
+  /// abre Cobrar. Al cobrar, la venta queda ligada al pedido. Devuelve el motivo si no se pudo (hay otra venta armada, falta
+  /// un plato), o null.
+  Future<String?> cobrarPedido(int pedidoId);
+
   /// Cerrar el turno y volver a elegir usuario / desconectar de esta PC.
   Future<void> cambiarUsuario();
   Future<void> cambiarModo();

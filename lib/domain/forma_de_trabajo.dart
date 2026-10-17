@@ -16,4 +16,8 @@ enum FormaDeTrabajo {
 
   /// Da servicios con turno: barbería, uñas y belleza, otros servicios.
   servicios,
+
+  /// Local gastronómico: rotisería, comida para llevar (`REGLAS-NEGOCIO.md` §22, El dueño, 2026-10-16). Vende platos hechos con
+  /// receta (como un servicio, sin stock propio) y trabaja con pedidos.
+  gastronomia,
 }
