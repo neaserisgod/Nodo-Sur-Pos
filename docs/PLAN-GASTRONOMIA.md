@@ -61,8 +61,12 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    zona, costo, pago y hora que dijo el bot), le avisa al sitio cada paso (aceptado/rechazado por `/api/bot/pedido/resolver`;
    listo, en camino, entregado, cancelado por `/api/bot/pedido/estado`, nuevo) y lleva al bot `pedidos` (entregas, zonas en
    pesos, pago, cocina, minutos, si entran solos, alias) y el horario. Fuera de hora el pedido queda programado.
-   **Falta el bot mismo** (`botdemo`): la charla con la carta, retiro o envío, zona, hora según la cocina y el horario,
-   programar fuera de hora, pago (link de MP o alias) y los avisos al cliente; el link de pago de MP para pedidos en el sitio.
+   **Bot ✅ (2026-10-17, `botdemo` `src/core/gastro.js` y `comercio.js`, test `test/gastro.js`):** carta (escrita, o el link
+   `wa.me/c/` si el local prende `negocio.catalogo_whatsapp`), retiro o envío con dirección y zona, hora según la cocina y el
+   horario (la misma regla que `cuandoSale`: si cambia una, cambia la otra), programado fuera de hora, no toma pedidos con la
+   cocina pausada, pago al recibir o por alias (sin alias cargado, al recibir), y avisa aceptado, listo (retiro), en camino
+   (envío) y cancelado. **Falta:** el link de pago de MP para pedidos en el sitio (hasta entonces el bot no ofrece MP) y leer
+   el carrito del catálogo (abajo).
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
    agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
    - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.
