@@ -344,4 +344,29 @@ void main() {
     expect(comandoInstalarBot, startsWith('pkg install -y curl && curl -fsSL '));
     expect(comandoInstalarBot, endsWith('/neaserisgod/botdemo/main/instalar.sh | bash'));
   });
+
+  group('catálogo de WhatsApp a la carta (Nodo Gastro)', () {
+    const mila = ProductoWhatsapp(waId: '1', retailerId: 'ns-g-mila', nombre: 'Milanesa con papas', precioCentavos: 650000);
+    const tarta = ProductoWhatsapp(waId: '2', nombre: 'Tarta de jamón y queso', precioCentavos: 500000);
+    const flan = ProductoWhatsapp(waId: '3', nombre: 'FLAN  casero', precioCentavos: 300000);
+    const sinPrecio = ProductoWhatsapp(waId: '4', nombre: 'Consultar', precioCentavos: 0);
+    const tartaOtraVez = ProductoWhatsapp(waId: '5', nombre: 'tarta de jamon y queso', precioCentavos: 520000);
+
+    test('ofrece lo que no está: ni lo que el bot copió de un plato, ni un nombre repetido, ni lo que no tiene precio', () {
+      final r = productosParaTraer([mila, tarta, flan, sinPrecio, tartaOtraVez], gidsCarta: {'g-mila'}, nombresCarta: ['Flan casero']);
+      expect([for (final p in r) p.waId], ['2']);
+    });
+
+    test('un plato copiado por el bot que se borró de la carta se puede volver a traer', () {
+      expect([for (final p in productosParaTraer([mila], gidsCarta: {}, nombresCarta: [])) p.waId], ['1']);
+    });
+
+    test('se lee lo que manda el sitio, y lo que no se entiende queda afuera', () {
+      final p = ProductoWhatsapp.desdeJson({'waId': '9', 'retailerId': 'ns-g-x', 'nombre': ' Pollo ', 'descripcion': 'Al spiedo', 'precioCentavos': 900000, 'oculto': true})!;
+      expect((p.nombre, p.gidDeLaCarta, p.descripcion, p.precioCentavos, p.oculto), ('Pollo', 'g-x', 'Al spiedo', 900000, true));
+      expect(ProductoWhatsapp.desdeJson({'waId': '9', 'nombre': '', 'precioCentavos': 1}), isNull);
+      expect(ProductoWhatsapp.desdeJson({'waId': '9', 'nombre': 'x', 'precioCentavos': -1}), isNull);
+      expect(ProductoWhatsapp.desdeJson({'waId': '9', 'retailerId': '', 'nombre': 'x', 'precioCentavos': 1})!.retailerId, isNull);
+    });
+  });
 }

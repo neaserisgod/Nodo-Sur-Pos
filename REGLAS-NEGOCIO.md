@@ -732,6 +732,11 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   local.
 - **La carta, de las dos formas:** si el local tiene catálogo de WhatsApp Business, el bot manda el link; si no, la carta
   escrita en el chat, con números para elegir. (El dueño, 2026-10-16.)
+- **Carta y catálogo de WhatsApp, en los dos sentidos** (El dueño, 2026-10-17: "dejá cargar el catálogo de WhatsApp desde la
+  app usando sus datos, y viceversa"): con "Tengo catálogo de WhatsApp Business" prendido, el bot copia la carta al catálogo
+  (nombre, precio, escondido si no hay) y la Carta de la app ofrece "Traer de mi catálogo de WhatsApp" lo que el local cargó
+  allá y no está en la carta (entra con nombre y precio; insumos y tiempo se cargan después). Un mismo plato no se duplica:
+  se reconoce por el nombre (sin mayúsculas ni tildes). Si los precios no coinciden, **manda la app**.
 
 ---
 

@@ -44,6 +44,7 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
   bool _cadete = false;
   bool _reparto = false;
   bool _automatica = false;
+  bool _catalogo = false;
   ModoPagoPedido _pago = ModoPagoPedido.alEntregar;
   final _normal = TextEditingController();
   final _demorada = TextEditingController();
@@ -68,6 +69,7 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
       _cadete = c.cadetePropio;
       _reparto = c.servicioReparto;
       _automatica = c.confirmacionAutomatica;
+      _catalogo = c.catalogoWhatsapp;
       _pago = c.pago;
       _normal.text = '${c.minutosNormal}';
       _demorada.text = '${c.minutosDemorada}';
@@ -120,6 +122,7 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
           zonas: zonas,
           pago: _pago,
           confirmacionAutomatica: _automatica,
+          catalogoWhatsapp: _catalogo,
           minutosNormal: normal,
           minutosDemorada: demorada,
         ),
@@ -242,6 +245,16 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
                     descripcion: _automatica ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.',
                     encendido: _automatica,
                     onCambio: (v) => setState(() => _automatica = v),
+                  ),
+                  const SizedBox(height: 10),
+                  InterruptorNs(
+                    key: const Key('pedidos_catalogo'),
+                    etiqueta: 'Tengo catálogo de WhatsApp Business',
+                    descripcion: _catalogo
+                        ? 'El bot manda el link del catálogo y le copia la carta: los platos, precios y lo que no hay.'
+                        : 'El bot manda la carta escrita.',
+                    encendido: _catalogo,
+                    onCambio: (v) => setState(() => _catalogo = v),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),

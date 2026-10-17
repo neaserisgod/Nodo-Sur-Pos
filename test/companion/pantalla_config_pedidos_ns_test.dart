@@ -63,6 +63,9 @@ void main() {
     await tester.enterText(campo(const ValueKey('zona-demora-0')), '15');
     await tester.tap(find.text('Adelantado'));
     await tester.tap(find.byKey(const Key('pedidos_automatica')));
+    await tester.ensureVisible(find.byKey(const Key('pedidos_catalogo')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pedidos_catalogo')));
     await tester.enterText(campo(const Key('pedidos_min_normal')), '25');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Guardar'));
@@ -75,6 +78,7 @@ void main() {
     expect(c.zonas.single.demoraExtraMin, 15);
     expect(c.pago, ModoPagoPedido.adelantado);
     expect(c.confirmacionAutomatica, isTrue);
+    expect(c.catalogoWhatsapp, isTrue);
     expect(c.minutosNormal, 25);
     await tester.pump(const Duration(seconds: 3)); // que se vaya el aviso
   });

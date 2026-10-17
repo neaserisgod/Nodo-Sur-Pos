@@ -39,5 +39,16 @@ class SitioBotFalso implements AccesoBot {
     }
     resueltos.add((id: id, aceptado: aceptado));
   }
+
+  /// El catálogo de WhatsApp que "leyó el bot", y cuántas veces se le pidió que lo lea.
+  List<ProductoWhatsapp> catalogoWa = [];
+  var pedidosCatalogoWa = 0;
+  @override
+  Future<List<ProductoWhatsapp>> catalogoWhatsapp() async => catalogoWa;
+  @override
+  Future<bool> pedirCatalogoWhatsapp() async {
+    pedidosCatalogoWa++;
+    return true;
+  }
 }
 

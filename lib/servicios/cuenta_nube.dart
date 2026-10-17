@@ -669,6 +669,24 @@ class ClienteNube {
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
+  /// El catálogo de WhatsApp Business del local tal como lo leyó el bot (Nodo Gastro), para traer a la carta lo que se cargó allá.
+  Future<({List<ProductoWhatsapp> items, int? actualizado})> catalogoWhatsapp(String token) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/catalogo-wa'), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    final j = jsonDecode(r.body) as Map<String, dynamic>;
+    return (
+      items: [for (final x in (j['items'] as List? ?? const [])) ?ProductoWhatsapp.desdeJson(x)],
+      actualizado: (j['actualizado'] as num?)?.toInt(),
+    );
+  });
+
+  /// Que el bot vuelva a leer el catálogo de WhatsApp (el local recién cargó algo allá). Contesta si el aviso salió.
+  Future<bool> pedirCatalogoWhatsapp(String token) => _conRed(() async {
+    final r = await http.post(_uri('/api/bot/catalogo-wa/pedir'), headers: _auth(token, {'Content-Type': 'application/json'}), body: '{}').timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['avisado'] == true;
+  });
+
   /// Registra el token de notificaciones (Firebase Cloud Messaging) de este celular: le llegan los pedidos y turnos nuevos del bot
   /// aunque la app esté cerrada (`push.dart`).
   Future<void> registrarPush(String token, String tokenPush) => _conRed(() async {

@@ -2,6 +2,7 @@
 // pantalla. El bot corre en un celular con Termux (`neaserisgod/botdemo`); el sitio guarda su configuración, el catálogo que la
 // app publica y los pedidos que toma (`NodoSurPage`, `/api/bot/*`).
 
+import 'normalizacion_texto.dart';
 import 'pedido_gastronomico.dart';
 import 'pesables.dart';
 import 'turnos.dart';
@@ -609,6 +610,7 @@ Map<String, dynamic> configBotConPedidos(
         'minutos_normal': config.minutosNormal,
         'minutos_demorada': config.minutosDemorada,
         'confirmacion_automatica': config.confirmacionAutomatica,
+        'catalogo_whatsapp': config.catalogoWhatsapp,
         'alias': alias.trim(),
         'titular': titular.trim(),
       },
@@ -621,3 +623,55 @@ const numeroSoporteNodoSur = '5492944796044';
 /// instalado no lo trae (primera instalación real, 2026-10-09, `TRAMPAS.md`).
 const comandoInstalarBot =
     'pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/neaserisgod/botdemo/main/instalar.sh | bash';
+
+/// Un producto del catálogo de WhatsApp Business del local, como lo leyó el bot (`botdemo/src/core/espejo.js`,
+/// `catalogoParaLaApp`). [retailerId] es el "ID de contenido": `ns-<global_id>` si es un plato que el bot copió de la carta.
+class ProductoWhatsapp {
+  const ProductoWhatsapp({required this.waId, this.retailerId, required this.nombre, this.descripcion = '', required this.precioCentavos, this.oculto = false});
+
+  final String waId;
+  final String? retailerId;
+  final String nombre;
+  final String descripcion;
+  final int precioCentavos;
+
+  /// Escondido en WhatsApp: el local lo sacó de la vista (en general, porque no hay).
+  final bool oculto;
+
+  /// El `global_id` del plato si lo puso el bot; null si se cargó a mano en WhatsApp.
+  String? get gidDeLaCarta => retailerId != null && retailerId!.startsWith('ns-') ? retailerId!.substring(3) : null;
+
+  static ProductoWhatsapp? desdeJson(Object? x) {
+    if (x is! Map) return null;
+    final waId = x['waId'];
+    final nombre = x['nombre'];
+    final precio = x['precioCentavos'];
+    if (waId is! String || nombre is! String || nombre.trim().isEmpty || precio is! num || precio < 0) return null;
+    return ProductoWhatsapp(
+      waId: waId,
+      retailerId: x['retailerId'] is String && (x['retailerId'] as String).isNotEmpty ? x['retailerId'] as String : null,
+      nombre: nombre.trim(),
+      descripcion: x['descripcion'] is String ? (x['descripcion'] as String).trim() : '',
+      precioCentavos: precio.toInt(),
+      oculto: x['oculto'] == true,
+    );
+  }
+}
+
+String _nombreComparable(String t) => normalizarTexto(t).replaceAll(RegExp(r'\s+'), ' ').trim();
+
+/// Lo del catálogo de WhatsApp que todavía no está en la carta (Nodo Gastro: "dejá cargar el catálogo de WhatsApp desde la app, y
+/// viceversa", El dueño, 2026-10-17). Ya está si el bot lo copió de un plato que sigue ([gidsCarta]) o si hay un producto con el
+/// mismo nombre (sin importar mayúsculas, tildes ni espacios): traerlo lo duplicaría. Lo que no tiene precio no se ofrece.
+List<ProductoWhatsapp> productosParaTraer(List<ProductoWhatsapp> catalogo, {required Set<String> gidsCarta, required Iterable<String> nombresCarta}) {
+  final nombres = {for (final n in nombresCarta) _nombreComparable(n)};
+  final vistos = <String>{};
+  return [
+    for (final p in catalogo)
+      if (p.precioCentavos > 0 &&
+          !(p.gidDeLaCarta != null && gidsCarta.contains(p.gidDeLaCarta)) &&
+          !nombres.contains(_nombreComparable(p.nombre)) &&
+          vistos.add(_nombreComparable(p.nombre)))
+        p,
+  ];
+}
