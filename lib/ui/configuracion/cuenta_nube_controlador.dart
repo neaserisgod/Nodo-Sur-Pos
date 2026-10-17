@@ -75,7 +75,7 @@ class CuentaNubeControlador extends ChangeNotifier {
         abrirNavegador: nube.abrirNavegador,
       );
       nube.canal = await nube.copias.avisarYRenovar(cid: await nube.idDispositivo(), sistema: 'windows');
-      aviso = 'Listo: esta PC quedó vinculada.';
+      aviso = 'Listo: entraste con tu cuenta.';
     } on ErrorNube catch (e) {
       error = e.mensaje;
     } catch (e) {

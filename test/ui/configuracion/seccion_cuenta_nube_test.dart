@@ -77,7 +77,7 @@ void main() {
 
   testWidgets('sin vincular: explica y ofrece vincular', (tester) async {
     await abrirSeccion(tester, nubeCon((r) async => fail('no tenía que llamar a nada')));
-    expect(find.text('Vincular con mi cuenta'), findsOneWidget);
+    expect(find.text('Entrar con Google'), findsOneWidget);
     expect(find.byKey(const Key('nube_vinculada')), findsNothing);
   });
 
@@ -210,7 +210,7 @@ void main() {
     await tester.tap(find.text('Desvincular esta PC'));
     await tester.pumpAndSettle();
     expect(await almacen.leer(), isNull);
-    expect(find.text('Vincular con mi cuenta'), findsOneWidget);
+    expect(find.text('Entrar con Google'), findsOneWidget);
   });
 
   testWidgets('restaurar una copia dañada muestra el error y no pide confirmación', (tester) async {

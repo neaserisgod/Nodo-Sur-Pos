@@ -1092,7 +1092,7 @@ Future<CuentaVinculada> vincularEstaPc({
       pedido.response.write(
         '<!doctype html><meta charset="utf-8"><title>Nodo Sur POS</title>'
         '<body style="font-family:sans-serif;text-align:center;margin-top:15vh">'
-        '<h2>${celular ? 'Listo, entraste en tu celular' : 'Listo, tu PC quedó vinculada'}</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
+        '<h2>Listo, entraste con tu cuenta</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
       );
       if (!codigo.isCompleted) codigo.complete(code);
     }
