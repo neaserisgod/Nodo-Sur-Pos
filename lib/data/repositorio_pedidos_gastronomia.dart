@@ -5,13 +5,14 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
-import '../domain/bot_whatsapp.dart' show PedidoBot;
+import '../domain/bot_whatsapp.dart' show PedidoBot, ProductoWhatsapp;
 import '../domain/pedido_gastronomico.dart';
 import '../domain/venta.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'numero_venta.dart';
 import 'repositorio_configuracion.dart';
+import 'repositorio_servicios.dart' show crearServicio;
 import 'repositorio_turnos.dart' show configAgendaActual;
 
 /// La cocina está pausada: el bot no toma pedidos (el mostrador sí, lo decide quien atiende).
@@ -342,3 +343,17 @@ Future<List<(PedidoGastronomia, String)>> pedidosDelBotParaAvisar(AppDatabase db
       if (estadoParaElSitio(p) case final estado? when enviados[p.idRemoto] != estado) (p, estado),
   ];
 }
+
+/// Lo que tarda un plato traído del catálogo de WhatsApp hasta que el local lo edite: WhatsApp no lo sabe y un plato tiene que
+/// tardar algo (es lo que suma la mano de obra).
+const minutosPlatoTraido = 15;
+
+/// Crea en la carta los productos elegidos del catálogo de WhatsApp (Nodo Gastro, El dueño, 2026-10-17): nombre y precio de allá,
+/// sin receta. Todo junto o nada. El bot después los adopta en WhatsApp por el nombre (`botdemo/src/core/espejo.js`), así no se
+/// duplican. Devuelve cuántos creó.
+Future<int> traerPlatosDeWhatsapp(AppDatabase db, List<ProductoWhatsapp> elegidos, {required int usuarioId}) => db.transaction(() async {
+      for (final p in elegidos) {
+        await crearServicio(db, nombre: p.nombre, precioCentavos: p.precioCentavos, duracionMinutos: minutosPlatoTraido, usuarioId: usuarioId);
+      }
+      return elegidos.length;
+    });

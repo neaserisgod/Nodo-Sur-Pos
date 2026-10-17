@@ -19,6 +19,12 @@ abstract class AccesoBot {
   /// Tira [ErrorNube] `ya_resuelto` si otro equipo lo resolvió antes.
   Future<void> resolver(int id, {required bool aceptado});
 
+  /// El catálogo de WhatsApp Business del local, como lo leyó el bot la última vez. Vacío si el equipo no está vinculado.
+  Future<List<ProductoWhatsapp>> catalogoWhatsapp();
+
+  /// Que el bot lo vuelva a leer. False si no se le pudo avisar (no está conectado).
+  Future<bool> pedirCatalogoWhatsapp();
+
   /// El token del bot que corre adentro de este celular (Nodo Sur Servicios), con la dirección del sitio para el bot.
   Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId);
 }
@@ -96,5 +102,19 @@ class AccesoBotNube implements AccesoBot {
   Future<void> resolver(int id, {required bool aceptado}) async {
     final v = await _exigir();
     await v.cliente.resolverPedidoBot(v.token, id, aceptado: aceptado);
+  }
+
+  @override
+  Future<List<ProductoWhatsapp>> catalogoWhatsapp() async {
+    final v = await _vinculada();
+    if (v == null) return const [];
+    return (await v.cliente.catalogoWhatsapp(v.token)).items;
+  }
+
+  @override
+  Future<bool> pedirCatalogoWhatsapp() async {
+    final v = await _vinculada();
+    if (v == null) return false;
+    return v.cliente.pedirCatalogoWhatsapp(v.token);
   }
 }

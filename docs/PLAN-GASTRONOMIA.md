@@ -71,7 +71,9 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    "ID de contenido" (`ns-<global_id>` del plato) o, si no tiene, por el nombre; el precio es el de Nodo Sur. **Espejo ✅
    (2026-10-17):** con "Tengo catálogo de WhatsApp Business" prendido (Configurar pedidos), el bot copia la carta al
    catálogo cada 5 minutos si cambió (`botdemo/src/core/espejo.js`): crea lo nuevo con una foto genérica, cambia nombre y
-   precio, esconde lo que no hay, borra lo que salió de la carta; nunca toca lo cargado a mano; de a 20 por vuelta. **Falta** probarlo con un WhatsApp Business real.
+   precio, esconde lo que no hay, borra lo que salió de la carta; nunca toca lo cargado a mano; de a 20 por vuelta. **Al revés ✅:** el bot sube el catálogo de WhatsApp a Nodo Sur (`/api/bot/catalogo-wa`) y la Carta
+   ofrece "Traer de mi catálogo de WhatsApp" lo que no está (por nombre o por el `ns-` del plato); al copiar, el bot adopta
+   el producto cargado a mano con el mismo nombre en vez de duplicarlo. **Falta** probarlo con un WhatsApp Business real.
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
    agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
    - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.
