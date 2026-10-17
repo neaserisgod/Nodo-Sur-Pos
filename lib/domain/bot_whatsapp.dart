@@ -609,6 +609,7 @@ Map<String, dynamic> configBotConPedidos(
         'minutos_normal': config.minutosNormal,
         'minutos_demorada': config.minutosDemorada,
         'confirmacion_automatica': config.confirmacionAutomatica,
+        'catalogo_whatsapp': config.catalogoWhatsapp,
         'alias': alias.trim(),
         'titular': titular.trim(),
       },

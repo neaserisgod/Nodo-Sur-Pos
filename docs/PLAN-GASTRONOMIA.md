@@ -68,8 +68,10 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    (envío) y cancelado. **Mercado Pago ✅:** si el negocio lo conectó (el sitio le dice al bot `pedidos.mp`), el bot ofrece
    pagar por link; el pedido queda "esperando el pago" en el sitio y le llega a la app recién acreditado, ya pagado (sin link,
    entra para pagar al recibir). **Carrito del catálogo ✅:** el bot lee el carrito (`getOrderDetails`) y cada producto por su
-   "ID de contenido" (= global_id del plato) o, si no tiene, por el nombre; el precio es el de Nodo Sur. **Falta** el espejo
-   (abajo) y probarlo con un WhatsApp Business real.
+   "ID de contenido" (`ns-<global_id>` del plato) o, si no tiene, por el nombre; el precio es el de Nodo Sur. **Espejo ✅
+   (2026-10-17):** con "Tengo catálogo de WhatsApp Business" prendido (Configurar pedidos), el bot copia la carta al
+   catálogo cada 5 minutos si cambió (`botdemo/src/core/espejo.js`): crea lo nuevo con una foto genérica, cambia nombre y
+   precio, esconde lo que no hay, borra lo que salió de la carta; nunca toca lo cargado a mano; de a 20 por vuelta. **Falta** probarlo con un WhatsApp Business real.
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
    agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
    - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.
@@ -78,8 +80,8 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    - Coincidencia exacta: cada producto del catálogo lleva `retailerId` = `global_id` del plato. El id de WhatsApp se
      traduce con `getCatalog` (trae los dos). **El precio que vale es el de Nodo Sur.**
    - **Importar:** un local con catálogo ya armado lo trae a la carta con un toque (`getCatalog`).
-   - **Espejo:** después, el bot deja el catálogo igual a la carta (`productCreate` / `productUpdate` / `productDelete`,
-     `isHidden` para lo que se acabó).
+   - **Espejo ✅:** el bot deja el catálogo igual a la carta (`productCreate` / `productUpdate` / `productDelete`,
+     `isHidden` para lo que se acabó). Lo pesable no va (el catálogo pide unidades).
    - Límites: solo números de **WhatsApp Business**; WhatsApp revisa cada producto nuevo y pide foto (si no hay, el logo
      del local); es la API no oficial, así que si deja de andar el bot vuelve al pedido por texto, que ya existe. A
      verificar en un celular real: en qué unidad viene el precio (parece ×1000) y cuánto tarda la revisión.

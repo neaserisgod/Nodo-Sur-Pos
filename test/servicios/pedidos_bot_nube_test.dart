@@ -154,6 +154,7 @@ void main() {
       {'nombre': 'Centro', 'costo': 1500, 'demora_min': 15},
     ]);
     expect(p['cocina'], 'normal');
+    expect(p['catalogo_whatsapp'], isFalse);
     expect(configSitio!['numero_actual'], '5492944111111', reason: 'lo demás de la configuración queda');
     expect(configSitio!['horarios'], isA<Map>());
 

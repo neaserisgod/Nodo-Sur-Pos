@@ -129,9 +129,10 @@ void main() {
 
   group('configuración guardada', () {
     test('ida y vuelta por JSON', () {
-      final config = todo.copyWith(confirmacionAutomatica: true, pago: ModoPagoPedido.aElegir, minutosNormal: 25, minutosDemorada: 50);
+      final config = todo.copyWith(confirmacionAutomatica: true, pago: ModoPagoPedido.aElegir, minutosNormal: 25, minutosDemorada: 50, catalogoWhatsapp: true);
       final leida = ConfigPedidos.desdeJson(config.toJson());
       expect(leida.toJson(), config.toJson());
+      expect(leida.catalogoWhatsapp, isTrue);
     });
 
     test('un JSON roto o vacío da la configuración de arranque: solo retiro, pago al entregar, confirma el local', () {

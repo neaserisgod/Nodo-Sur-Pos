@@ -164,6 +164,7 @@ class ConfigPedidos {
     this.confirmacionAutomatica = false,
     this.minutosNormal = 30,
     this.minutosDemorada = 60,
+    this.catalogoWhatsapp = false,
   });
 
   final bool retiro;
@@ -179,6 +180,9 @@ class ConfigPedidos {
   /// Cuánto tarda un pedido en estar listo, con la cocina normal y con demora.
   final int minutosNormal;
   final int minutosDemorada;
+
+  /// El local tiene catálogo de WhatsApp Business: el bot manda su link y le copia la carta (`botdemo/src/core/espejo.js`).
+  final bool catalogoWhatsapp;
 
   /// Las formas que se le ofrecen al cliente. Un envío sin zonas no se ofrece: no habría cómo cobrarlo.
   List<FormaEntrega> get formasDisponibles => [
@@ -203,6 +207,7 @@ class ConfigPedidos {
     bool? confirmacionAutomatica,
     int? minutosNormal,
     int? minutosDemorada,
+    bool? catalogoWhatsapp,
   }) =>
       ConfigPedidos(
         retiro: retiro ?? this.retiro,
@@ -213,6 +218,7 @@ class ConfigPedidos {
         confirmacionAutomatica: confirmacionAutomatica ?? this.confirmacionAutomatica,
         minutosNormal: minutosNormal ?? this.minutosNormal,
         minutosDemorada: minutosDemorada ?? this.minutosDemorada,
+        catalogoWhatsapp: catalogoWhatsapp ?? this.catalogoWhatsapp,
       );
 
   Map<String, Object?> toJson() => {
@@ -224,6 +230,7 @@ class ConfigPedidos {
         'confirmacionAutomatica': confirmacionAutomatica,
         'minutosNormal': minutosNormal,
         'minutosDemorada': minutosDemorada,
+        'catalogoWhatsapp': catalogoWhatsapp,
       };
 
   /// Lo que no se entiende queda con el valor de arranque (solo retiro, pago al entregar, confirma el local): una
@@ -249,6 +256,7 @@ class ConfigPedidos {
       confirmacionAutomatica: siNo('confirmacionAutomatica', false),
       minutosNormal: minutos('minutosNormal', 30),
       minutosDemorada: minutos('minutosDemorada', 60),
+      catalogoWhatsapp: siNo('catalogoWhatsapp', false),
     );
   }
 }
