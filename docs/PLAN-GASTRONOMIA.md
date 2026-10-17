@@ -65,8 +65,11 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    `wa.me/c/` si el local prende `negocio.catalogo_whatsapp`), retiro o envío con dirección y zona, hora según la cocina y el
    horario (la misma regla que `cuandoSale`: si cambia una, cambia la otra), programado fuera de hora, no toma pedidos con la
    cocina pausada, pago al recibir o por alias (sin alias cargado, al recibir), y avisa aceptado, listo (retiro), en camino
-   (envío) y cancelado. **Falta:** el link de pago de MP para pedidos en el sitio (hasta entonces el bot no ofrece MP) y leer
-   el carrito del catálogo (abajo).
+   (envío) y cancelado. **Mercado Pago ✅:** si el negocio lo conectó (el sitio le dice al bot `pedidos.mp`), el bot ofrece
+   pagar por link; el pedido queda "esperando el pago" en el sitio y le llega a la app recién acreditado, ya pagado (sin link,
+   entra para pagar al recibir). **Carrito del catálogo ✅:** el bot lee el carrito (`getOrderDetails`) y cada producto por su
+   "ID de contenido" (= global_id del plato) o, si no tiene, por el nombre; el precio es el de Nodo Sur. **Falta** el espejo
+   (abajo) y probarlo con un WhatsApp Business real.
    **Con el catálogo de WhatsApp Business** (El dueño, 2026-10-16: "¿me pasás el catálogo? ¡Pum! link al catálogo…
    agrega el carrito, envía el carrito y toma los datos"). Revisado en Baileys 7.0.0-rc14 (`lib/Socket/business.js`):
    - "¿Me pasás el catálogo?" → el bot manda `wa.me/c/<número>` con cómo usarlo.
