@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import '../domain/bot_whatsapp.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/acceso_bot.dart';
+import '../domain/turnos.dart' show horaDeMinutos, minutosDeHora;
 import '../edicion.dart' show esEdicionGastronomia, rubroDeEdicion;
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ConfiguracionNegocioCompanion;
@@ -128,13 +129,19 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
   /// "5492944123456" → "2944 123456": como lo escribe cualquiera (se vuelve a normalizar al guardar).
   static String _legible(String n) => n.startsWith('549') && n.length == 13 ? '${n.substring(3, 7)} ${n.substring(7)}' : n;
 
+  /// "9:30" → "09:30": el campo deja teclear la hora sin el cero, y el bot la quiere con dos dígitos.
+  static String _hora(String t) {
+    final m = minutosDeHora(t);
+    return m == null ? t.trim() : horaDeMinutos(m);
+  }
+
   ConfigBotEditable get _editada => ConfigBotEditable(
     numeroBot: _numeroBot.text,
     numeroAvisos: _numeroAvisos.text,
     direccion: _direccion.text,
     mapa: _mapa.text,
     horarios: {
-      for (final d in diasBot) d: _abierto[d] == true ? (desde: _horas[d]!.desde.text.trim(), hasta: _horas[d]!.hasta.text.trim()) : null,
+      for (final d in diasBot) d: _abierto[d] == true ? (desde: _hora(_horas[d]!.desde.text), hasta: _hora(_horas[d]!.hasta.text)) : null,
     },
     pausaMinutos: _pausa,
   );
@@ -207,9 +214,9 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
               padding: const EdgeInsets.only(top: 6),
               child: Row(
                 children: [
-                  Expanded(child: CampoNs(etiqueta: 'Abre', controller: _horas[d]!.desde, placeholder: '09:00', teclado: TextInputType.datetime)),
+                  Expanded(child: CampoNs(etiqueta: 'Abre', controller: _horas[d]!.desde, placeholder: '09:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                   const SizedBox(width: 8),
-                  Expanded(child: CampoNs(etiqueta: 'Cierra', controller: _horas[d]!.hasta, placeholder: '20:00', teclado: TextInputType.datetime)),
+                  Expanded(child: CampoNs(etiqueta: 'Cierra', controller: _horas[d]!.hasta, placeholder: '20:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                 ],
               ),
             ),
