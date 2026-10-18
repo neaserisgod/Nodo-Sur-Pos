@@ -43,6 +43,9 @@ del dueño que queda para después.
    aparte (ahora toma la esperada, como el cierre). ✅ 2026-10-18.
 7. **Más:** ya en la misma familia. Los mosaicos de Asistente y Bot arriba del mock quedan para después. ✅ 2026-10-18 (aspecto).
 
+8. **Entrar y alta** (El dueño: "el login lo odio", "tarda demasiado"): pantalla de entrar clásica con la marca, una sola bajada de la
+   nube, sin la pantalla "Listo", y "Configurá tu negocio" en Más para volver al asistente. ✅ 2026-10-18. Captura: `entrar.png`.
+
 Capturas de todo: `flutter test test/companion/capturas_gastro_test.dart test/companion/capturas_gastro_pantallas_test.dart` →
 `capturas/gastro/`.
 

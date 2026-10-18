@@ -14,6 +14,7 @@ import 'package:la_plazoleta/companion/configurar/asistente_negocio.dart';
 import 'package:la_plazoleta/companion/configurar/negocio_nuevo.dart';
 import 'package:la_plazoleta/companion/configurar/pendientes_en_inicio.dart';
 import 'package:la_plazoleta/companion/pantalla_entrar_con_cuenta.dart';
+import 'package:la_plazoleta/companion/pantalla_menu_companion.dart';
 import 'package:la_plazoleta/companion/emparejamiento.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
@@ -326,7 +327,7 @@ void main() {
         alTerminar: (_, _) {},
       )));
       await t.pumpAndSettle();
-      expect(find.text('Cargá tu primer plato'), findsOneWidget);
+      expect(find.text('Tu primer plato.'), findsOneWidget);
       expect(find.textContaining('código'), findsNothing);
       expect(pasosDeLaForma(FormaDeTrabajo.gastronomia), contains(PasoNegocio.horario));
       expect(pasosDeLaForma(FormaDeTrabajo.productos), isNot(contains(PasoNegocio.horario)));
@@ -579,16 +580,14 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('el dueño de un negocio nuevo sigue a "Configurar mi negocio"', (t) async {
+    testWidgets('el dueño de un negocio nuevo va directo a "Configurá tu negocio", sin una pantalla de "Listo" en el medio', (t) async {
       await entrar(t, nuevo: true);
-      expect(find.text('Listo, Pepe.'), findsOneWidget);
-      expect(find.text('Configurar mi negocio'), findsOneWidget);
-      await t.tap(find.text('Configurar mi negocio'));
       for (var i = 0; i < 4; i++) {
         await t.pump(const Duration(milliseconds: 100));
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
       }
       await t.pumpAndSettle();
+      expect(find.text('Listo, Pepe.'), findsNothing);
       expect(find.text('Contanos de tu negocio'), findsOneWidget);
     });
 
@@ -596,6 +595,7 @@ void main() {
       // Revisión 2026-10-12 (Nodo Sur Servicios web): la misma cuenta en un segundo equipo creaba un "Pepe" nuevo, porque buscaba el
       // perfil por nombre con la base todavía vacía; cuando llegaba el de la nube, quedaban dos.
       await guardarModoUso(ModoUso.soloCelular);
+      var entro = false;
       final servidor = ServidorSyncFalso();
       final otro = (await t.runAsync(() async => _baseDeCelularNuevo()))!;
       final nuevo = (await t.runAsync(() async => _baseDeCelularNuevo()))!;
@@ -634,24 +634,31 @@ void main() {
       await t.pumpWidget(MaterialApp(
         theme: TemaCompanion.claro,
         builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
-        home: PantallaEntrarConCuenta(sync: syncNuevo, servicio: () async => PuertoLocal(nuevo), esNegocioNuevo: (_) async => false),
+        // Lo que importa acá pasa antes de ir a la app: se corta al entrar, sin armar el menú con la sync de verdad andando.
+        home: PantallaEntrarConCuenta(sync: syncNuevo, servicio: () async => PuertoLocal(nuevo), alEntrar: (_) => entro = true),
       ));
       for (var i = 0; i < 10; i++) {
         await t.pump(const Duration(milliseconds: 100));
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
       }
-      await t.pumpAndSettle();
-      expect(find.text('Listo, Pepe.'), findsOneWidget);
+      await t.pump(); // la ruedita de "entrando" sigue girando: no hay nada que esperar a que se asiente
+      expect(entro, isTrue);
       // Lo que tarde o temprano pasa igual: la sync baja el "Pepe" del otro equipo.
       await t.runAsync(() => syncNuevo.servicio.sincronizar());
       final pepes = (await t.runAsync(() => nuevo.select(nuevo.usuarios).get()))!.where((u) => u.nombre == 'Pepe');
       expect(pepes, hasLength(1));
     });
 
-    testWidgets('si no es un negocio nuevo, de "Listo" va directo al inicio', (t) async {
+    testWidgets('si no es un negocio nuevo, entra directo a la app, sin una pantalla de "Listo" en el medio', (t) async {
       await entrar(t, nuevo: false);
-      expect(find.text('Listo, Pepe.'), findsOneWidget);
-      expect(find.text('Ir al inicio'), findsOneWidget);
+      expect(find.byType(PantallaMenuCompanion), findsOneWidget);
+      expect(find.text('Listo, Pepe.'), findsNothing);
+      // Se desarma la app acá, para que el cierre de sus consultas no quede pendiente al terminar la prueba.
+      await t.pumpWidget(const SizedBox());
+      for (var i = 0; i < 3; i++) {
+        await t.pump(const Duration(seconds: 1));
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      }
     });
   });
 }

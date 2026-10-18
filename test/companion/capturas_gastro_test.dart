@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/companion/bienvenida/bienvenida_gastro.dart';
+import 'package:la_plazoleta/companion/bienvenida/vista_entrar_con_google.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_pedidos_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
@@ -124,5 +125,14 @@ void main() {
     for (var paso = 0; paso < 3; paso++) {
       await capturar(tester, 'bienvenida-${paso + 1}', pantalla: BienvenidaGastro(key: ValueKey(paso), alTerminar: (_) {}, pasoInicial: paso));
     }
+  });
+
+  testWidgets('Entrar con la cuenta', (tester) async {
+    Widget entrar({bool trabajando = false}) => Builder(
+        builder: (context) => Scaffold(
+            backgroundColor: context.ns.paper,
+            body: VistaEntrarConGoogle(alEntrar: () {}, trabajando: trabajando, etapa: trabajando ? 'Bajando los datos del negocio…' : null)));
+    await capturar(tester, 'entrar', pantalla: entrar());
+    await capturar(tester, 'entrar', oscuro: true, pantalla: entrar());
   });
 }

@@ -138,6 +138,14 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Entrar y el alta, más rápidos y con el asistente del mock** (El dueño, 18/10: "el login lo odio", "tarda demasiado", "el
+  onboarding luego del login no existe"). Entrar con la cuenta es ahora una pantalla clásica: marca grande, nombre de la app y su
+  frase, "Continuar con Google" abajo, y mientras trabaja dice qué está haciendo ("Bajando los datos del negocio…"). **Más rápido:**
+  la nube se bajaba dos veces (hasta 25 s cada una) y después había una pantalla "Listo" con otro toque; ahora una sola bajada y
+  se entra directo (al asistente si el negocio es nuevo, a la app si no). **Más › Configurá tu negocio** abre el asistente cuando se
+  quiera: antes solo aparecía si al entrar la nube respondía y el negocio estaba vacío, y no había otra forma de llegar. En Gastro,
+  Más muestra siempre **Bot de WhatsApp** (la pantalla explica si el plan no lo trae). Títulos del asistente de Gastro con la
+  segunda línea en naranja, como el mock.
 - **Nodo Gastro en Flutter con el diseño del mock v5** (El dueño, 18/10: "llevalo a flutter"; plan en
   [`docs/PLAN-APLICAR-GASTRO-V5.md`](./docs/PLAN-APLICAR-GASTRO-V5.md)). Solo la edición Gastronomía: paleta del sitio en claro y
   oscuro (`TokensNs.gastroClaro/gastroOscuro`, tokens nuevos `onPrim`, `acento`, `onAcento`), Bricolage + Geist en `fonts/`, barra

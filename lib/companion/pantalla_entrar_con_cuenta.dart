@@ -17,7 +17,6 @@ import '../servicios/cuenta_nube.dart';
 import '../servicios/registro_errores.dart';
 import '../domain/cuentas_del_celular.dart';
 import 'base_local.dart';
-import 'bienvenida/pantalla_listo.dart';
 import 'bienvenida/vista_entrar_con_google.dart';
 import 'borrar_celular.dart';
 import 'reinicio_companion.dart';
@@ -31,6 +30,7 @@ import 'kit/kit_ns.dart';
 import 'modo_uso.dart';
 import 'emparejamiento.dart';
 import 'mensaje_error.dart';
+import 'pantalla_menu_companion.dart';
 import 'perfil_por_cuenta.dart';
 import 'puerto_local.dart';
 import 'seleccion_servicio.dart';
@@ -97,8 +97,8 @@ class PantallaEntrarConCuenta extends StatefulWidget {
   final SyncNubeCompanion? sync;
   final Future<ServicioCompanion> Function()? servicio;
 
-  /// Qué hacer con el perfil ya resuelto; por defecto muestra "Listo", que después abre el menú (o "Configurá tu
-  /// negocio", si es el dueño de un negocio nuevo).
+  /// Qué hacer con el perfil ya resuelto; por defecto abre el menú, o "Configurá tu negocio" si es el dueño de un negocio
+  /// nuevo. Sin pantalla de "Listo" en el medio (El dueño, 2026-10-18: "tarda demasiado"): un toque menos.
   final void Function(BuildContext context)? alEntrar;
 
   /// Solo para tests: si quien entró es el dueño de un negocio nuevo. En la app real, [_esNegocioNuevo].
@@ -117,6 +117,12 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   SyncNubeCompanion? _sync;
   bool _trabajando = true;
   String? _error;
+
+  /// Qué está haciendo mientras trabaja: entrar puede tardar (bajar los datos del negocio), y el botón lo dice.
+  String? _etapa;
+
+  /// La vuelta de la sync que se hizo al entrar terminó bien: para saber si el negocio es nuevo no hace falta otra.
+  bool _sincronizado = false;
 
   /// El token ya no vale (sacaron a la persona del negocio o revocaron el celular): hay que entrar de nuevo.
   bool _hayQueEntrarDeNuevo = false;
@@ -222,6 +228,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (kIsWeb || esEscritorioAparte) return _entrarConNavegador();
     setState(() {
       _trabajando = true;
+      _etapa = 'Esperando a Google…';
       _error = null;
       _hayQueEntrarDeNuevo = false;
     });
@@ -281,9 +288,14 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     }
   }
 
+  void _enEtapa(String etapa) {
+    if (mounted) setState(() => _etapa = etapa);
+  }
+
   Future<void> _resolver(CuentaVinculada cuenta) async {
     if (mounted) setState(() => _trabajando = true);
     try {
+      _enEtapa('Buscando tu negocio…');
       final perfil = await _sync!.cliente.yo(cuenta.token);
       if (await _yaEstaGuardada(perfil)) return;
       // Cómo se llama este negocio, para la lista de cuentas del celular (`cuentas_del_celular.dart`), y que quede anotado
@@ -299,7 +311,11 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       // Un equipo nuevo en "Solo celular" (otro celular, o el navegador) baja primero lo que ya está en la nube: el perfil se busca
       // por nombre, y con la base todavía vacía se creaba otra persona con el mismo nombre (revisión 2026-10-12, "Caro" tres veces
       // en la Agenda). Sin red sigue igual que antes.
-      if (await leerModoUso() == ModoUso.soloCelular) await sincronizarUnaVez(_sync!.servicio);
+      if (await leerModoUso() == ModoUso.soloCelular) {
+        _enEtapa('Bajando los datos del negocio…');
+        _sincronizado = await sincronizarUnaVez(_sync!.servicio);
+      }
+      _enEtapa('Preparando la app…');
       final servicio = await (widget.servicio ?? servicioParaPerfil)();
       await resolverPerfilDeCuenta(perfil: perfil, servicio: servicio);
       if (!mounted) return;
@@ -309,13 +325,11 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
       }
       final nuevo = await (widget.esNegocioNuevo ?? _esNegocioNuevo)(perfil);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => nuevo
-              ? PantallaListo(textoBoton: 'Configurar mi negocio', alSeguir: (context) => abrirAsistenteNegocio(context))
-              : const PantallaListo(),
-        ),
-      );
+      if (nuevo) {
+        await abrirAsistenteNegocio(context);
+        return;
+      }
+      Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => const PantallaMenuCompanion()));
     } on PerfilDesactivado catch (e) {
       if (mounted) {
         setState(() {
@@ -347,7 +361,9 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
     if (perfil.rol != rolDuenio) return false;
     if (await leerModoUso() != ModoUso.soloCelular) return false;
     final db = baseLocalCompanion();
-    if (!await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db)) return false;
+    // Si la sync de recién terminó bien, ya está todo lo de la nube en la base: otra vuelta solo hacía esperar.
+    final esNuevo = _sincronizado ? await baseSinNegocio(db) : await esNegocioNuevoTrasSincronizar(sync: _sync!.servicio, db: db);
+    if (!esNuevo) return false;
     await prepararNegocioNuevo(db);
     await guardarPasosPendientes(pasosDelNegocio().toSet());
     return true;
@@ -366,6 +382,7 @@ class _PantallaEntrarConCuentaState extends State<PantallaEntrarConCuenta> {
   Widget build(BuildContext context) => VistaEntrarConGoogle(
         alEntrar: _entrar,
         trabajando: _trabajando,
+        etapa: _etapa,
         error: _error,
         // Con una cuenta ya vinculada y un error que no es de la sesión, se reintenta sin volver al navegador.
         alReintentar: _error != null && !_hayQueEntrarDeNuevo && _sync != null ? _reintentar : null,

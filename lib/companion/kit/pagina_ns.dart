@@ -4,6 +4,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../../edicion.dart';
+
 import 'movimiento_ns.dart';
 import 'piezas_ns.dart';
 import 'texto_ns.dart';
@@ -96,7 +98,7 @@ class PaginaArranqueNs extends StatelessWidget {
                   ),
                 if (alVolver == null && titulo != null) ...[
                   const SizedBox(height: 14),
-                  Text(titulo!, key: claveTitulo, style: tituloNs(tituloChico ? 34 : 40, track: -0.055, altura: 1.02, color: ns.ink)),
+                  _TituloArranque(titulo: titulo!, clave: claveTitulo, chico: tituloChico),
                 ],
                 if (bajada != null) ...[const SizedBox(height: 10), Text(bajada!, style: estiloNs(16, altura: 1.4, color: ns.mute))],
                 const SizedBox(height: 14),
@@ -233,6 +235,33 @@ class PaginaNs extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// El título de una página de arranque. En Nodo Gastro, como en el mock v5: lo que va después de un salto de línea sale en el
+/// naranja de la marca ("Contanos de / tu local."), siempre grande. En las demás ediciones el salto se lee como un espacio.
+class _TituloArranque extends StatelessWidget {
+  const _TituloArranque({required this.titulo, required this.clave, required this.chico});
+
+  final String titulo;
+  final Key? clave;
+  final bool chico;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final partes = titulo.split('\n');
+    if (!esEdicionGastronomia || partes.length < 2) {
+      return Text(partes.join(' '), key: clave, style: tituloNs(chico ? 34 : 40, track: -0.055, altura: 1.02, color: ns.ink));
+    }
+    return Text.rich(
+      key: clave,
+      TextSpan(children: [
+        TextSpan(text: '${partes.first}\n'),
+        TextSpan(text: partes.skip(1).join(' '), style: TextStyle(color: ns.acento)),
+      ]),
+      style: tituloNs(40, track: -0.055, altura: 0.98, color: ns.ink),
     );
   }
 }
