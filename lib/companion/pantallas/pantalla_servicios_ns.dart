@@ -214,8 +214,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
                       onTap: switch (_nombreSolapa) { 'Productos' => () => _hojaProducto(), 'Insumos' => () => _hojaInsumo(), _ => () => _abrirEditor() },
                       alto: 44,
                       tamanio: 15,
-                      fondo: ns.prim,
-                      color: TokensNs.blanco,
+                      fondo: ns.acento,
+                      color: ns.onAcento,
                       rellenar: false,
                       paddingH: 20,
                     ),
@@ -245,14 +245,16 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   List<Widget> _listaServicios(BuildContext context) => [
         if (_catalogoWa) ...[
+          // Banda naranja suave, como en el mock v5: es lo único de la Carta que llega de afuera.
           BotonNs(
             key: const Key('traer_whatsapp'),
             texto: 'Traer de mi catálogo de WhatsApp',
             onTap: _traerDeWhatsapp,
-            alto: 48,
+            alto: 52,
             tamanio: 15,
-            fondo: context.ns.s,
-            color: context.ns.i,
+            fondo: context.ns.wbg,
+            color: context.ns.w,
+            icono: IconoNs.descarga,
           ),
           const SizedBox(height: 14),
         ],

@@ -485,7 +485,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           alto: 60,
           tamanio: 17,
           fondo: ok ? ns.prim : ns.s,
-          color: ok ? TokensNs.blanco : ns.mute,
+          color: ok ? ns.onPrim : ns.mute,
           habilitado: !_trabajando,
         );
       case _Etapa.revisar:
@@ -495,7 +495,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           alto: 60,
           tamanio: 17,
           fondo: _completo ? ns.prim : ns.s,
-          color: _completo ? TokensNs.blanco : ns.mute,
+          color: _completo ? ns.onPrim : ns.mute,
           habilitado: !_trabajando,
         );
       case _Etapa.cerrada:

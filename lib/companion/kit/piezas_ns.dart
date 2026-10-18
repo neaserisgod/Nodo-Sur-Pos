@@ -46,7 +46,23 @@ class BotonNs extends StatelessWidget {
       alto: alto,
       tamanio: tamanio,
       fondo: habilitado ? ns.prim : ns.s,
-      color: habilitado ? TokensNs.blanco : ns.mute,
+      color: habilitado ? ns.onPrim : ns.mute,
+      habilitado: habilitado,
+      icono: icono,
+    );
+  }
+
+  /// La acción que más importa de la pantalla (aceptar un pedido, cobrar): en Gastro va en naranja con texto negro; en las
+  /// demás ediciones es igual al primario.
+  factory BotonNs.acento(BuildContext context, String texto, VoidCallback? onTap, {bool habilitado = true, double alto = 60, double tamanio = 17, IconoNs? icono}) {
+    final ns = context.ns;
+    return BotonNs(
+      texto: texto,
+      onTap: onTap,
+      alto: alto,
+      tamanio: tamanio,
+      fondo: habilitado ? ns.acento : ns.s,
+      color: habilitado ? ns.onAcento : ns.mute,
       habilitado: habilitado,
       icono: icono,
     );
@@ -248,7 +264,7 @@ class ChipNs extends StatelessWidget {
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(color: activo ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
-          child: Center(widthFactor: 1, child: Text(texto, maxLines: 1, style: estiloNs(15, peso: FontWeight.w600, color: activo ? TokensNs.blanco : ns.ink))),
+          child: Center(widthFactor: 1, child: Text(texto, maxLines: 1, style: estiloNs(15, peso: FontWeight.w600, color: activo ? ns.onPrim : ns.ink))),
         ),
       ),
     );
@@ -304,7 +320,7 @@ class SegmentoNs extends StatelessWidget {
                     height: alto,
                     decoration: BoxDecoration(color: n == indice ? ns.prim : Colors.transparent, borderRadius: BorderRadius.circular(999)),
                     alignment: Alignment.center,
-                    child: Text(opciones[n], maxLines: 1, style: estiloNs(15, peso: FontWeight.w600, color: n == indice ? TokensNs.blanco : ns.ink)),
+                    child: Text(opciones[n], maxLines: 1, style: estiloNs(15, peso: FontWeight.w600, color: n == indice ? ns.onPrim : ns.ink)),
                   ),
                 ),
               ),
@@ -842,7 +858,7 @@ class CasillaNs extends StatelessWidget {
         border: marcada ? null : Border.all(color: ns.line, width: 2),
       ),
       alignment: Alignment.center,
-      child: marcada ? IconoNsWidget(IconoNs.tilde, tamanio: tamanio * 0.6, color: TokensNs.blanco, grosor: 2.6) : null,
+      child: marcada ? IconoNsWidget(IconoNs.tilde, tamanio: tamanio * 0.6, color: ns.onPrim, grosor: 2.6) : null,
     );
   }
 }

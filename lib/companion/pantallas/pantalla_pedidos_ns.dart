@@ -41,20 +41,11 @@ String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toS
 String _textoPaso(EstadoPedido estado) => switch (estado) {
       EstadoPedido.porHacer => 'Aceptar',
       EstadoPedido.rechazado => 'Rechazar',
-      EstadoPedido.listo => 'Está listo',
+      EstadoPedido.listo => 'Listo',
       EstadoPedido.enCamino => 'Salió',
       EstadoPedido.entregado => 'Entregado',
       _ => estado.etiqueta,
     };
-
-/// En qué orden se ven los grupos: primero lo que espera una decisión, después la cocina, al final lo que ya salió.
-const _ordenDeGrupos = [
-  EstadoPedido.porConfirmar,
-  EstadoPedido.esperandoPago,
-  EstadoPedido.porHacer,
-  EstadoPedido.listo,
-  EstadoPedido.enCamino,
-];
 
 class PantallaPedidosNs extends StatefulWidget {
   /// [db], [usuarioId] y [ahora] son para tests.
@@ -76,6 +67,9 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
   String _local = '';
   int? _usuarioId;
   StreamSubscription<void>? _sub;
+
+  /// El filtro elegido; null: el primero que tenga pedidos.
+  EstadoPedido? _filtro;
 
   @override
   void initState() {
@@ -109,6 +103,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
       final config = await configPedidosActual(_db);
       final local = (await configuracionNegocioActual(_db)).nombreComercio;
       if (!mounted) return;
+      pedidosPorAceptarNs.value = pedidos.where((p) => p.estado == EstadoPedido.porConfirmar.clave).length;
       setState(() {
         _pedidos = pedidos;
         _cocina = cocina;
@@ -249,6 +244,48 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     if (creado == true) await _recargar();
   }
 
+  DateTime get _ahora => widget.ahora ?? DateTime.now();
+
+  /// Minutos hasta la hora prometida (negativo: atrasado).
+  int? _faltan(PedidoGastronomia p) => p.horaEstimada?.difference(_ahora).inMinutes;
+
+  Future<void> _hojaCocina() async {
+    await mostrarHojaNs<void>(
+      context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHoja) => HojaNs(
+          titulo: 'La cocina',
+          texto: 'El bot le dice al cliente cuánto tarda, según esto.',
+          bloques: [
+            SegmentoNs(
+              key: const Key('pedidos_cocina'),
+              opciones: const ['Normal', 'Con demora', 'Pausada'],
+              indice: EstadoCocina.values.indexOf(_cocina),
+              onCambio: (i) async {
+                await _cambiarCocina(EstadoCocina.values[i]);
+                setHoja(() {});
+              },
+            ),
+            const SizedBox(height: 10),
+            InfoNs(
+              switch (_cocina) {
+                EstadoCocina.normal => 'El bot dice que está en ${_config.minutosNormal} minutos.',
+                EstadoCocina.demorada => 'El bot avisa la demora: ${_config.minutosDemorada} minutos.',
+                EstadoCocina.pausada => 'El bot no toma pedidos. El mostrador sigue.',
+              },
+              tono: switch (_cocina) {
+                EstadoCocina.normal => TonoNs.good,
+                EstadoCocina.demorada => TonoNs.warn,
+                EstadoCocina.pausada => TonoNs.bad,
+              },
+            ),
+          ],
+          botones: [BotonNs.primario(ctx, 'Listo', () => Navigator.pop(ctx))],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
@@ -257,101 +294,450 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     for (final p in pedidos ?? const <PedidoGastronomia>[]) {
       (porEstado[EstadoPedido.desdeClave(p.estado)] ??= []).add(p);
     }
+    for (final g in porEstado.values) {
+      g.sort((a, b) => (a.horaEstimada ?? _ahora).compareTo(b.horaEstimada ?? _ahora));
+    }
+    // El filtro arranca en lo primero que pide atención; si el elegido se vacía, se queda (muestra que no hay nada).
+    final filtro =
+        _filtro ?? _filtros.map((f) => f.$1).firstWhere((e) => (porEstado[e] ?? const []).isNotEmpty, orElse: () => EstadoPedido.porConfirmar);
+    final enCocina = porEstado[EstadoPedido.porHacer] ?? const <PedidoGastronomia>[];
+    final atrasados = enCocina.where((p) => !p.programado && (_faltan(p) ?? 0) < 0).length;
+    final lista = porEstado[filtro] ?? const <PedidoGastronomia>[];
     return ListView(
-      padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, BarraInferiorNs.espacioReservado - 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, BarraInferiorNs.espacioReservado - 8),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Pedidos', style: estiloNs(15, peso: FontWeight.w600, color: ns.mute)),
-                  const SizedBox(height: 2),
-                  Text(
-                    pedidos == null ? '…' : pedidos.isEmpty ? 'Nada pendiente' : '${pedidos.length} abiertos',
-                    style: tituloNs(40, track: -0.055, color: ns.ink),
-                  ),
-                ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_cocina == EstadoCocina.demorada ? _config.minutosDemorada : _config.minutosNormal} min por pedido',
+                      style: estiloNs(14, peso: FontWeight.w500, color: ns.mute),
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text('Pedidos', style: tituloNs(40, track: -0.055, color: ns.ink)),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            BotonCircularNs(
-              key: const Key('pedidos_configurar'),
-              icono: IconoNs.ajustes,
-              etiqueta: 'Configurar pedidos',
-              onTap: _configurar,
-              tamanio: 52,
-            ),
-            const SizedBox(width: 10),
-            BotonCircularNs(
-              key: const Key('pedidos_nuevo'),
-              icono: IconoNs.masMas,
-              etiqueta: 'Nuevo pedido',
-              onTap: _nuevoPedido,
-              tamanio: 52,
-              fondo: ns.prim,
-              colorIcono: TokensNs.blanco,
-            ),
-          ],
+              _BotonCocina(estado: _cocina, onTap: _hojaCocina),
+              const SizedBox(width: 8),
+              BotonCircularNs(
+                key: const Key('pedidos_nuevo'),
+                icono: IconoNs.masMas,
+                etiqueta: 'Nuevo pedido',
+                onTap: _nuevoPedido,
+                tamanio: 48,
+                fondo: ns.acento,
+                colorIcono: ns.onAcento,
+              ),
+              const SizedBox(width: 8),
+              BotonCircularNs(
+                key: const Key('pedidos_configurar'),
+                icono: IconoNs.ajustes,
+                etiqueta: 'Configurar pedidos',
+                onTap: _configurar,
+                tamanio: 48,
+              ),
+            ],
+          ),
         ),
         // Un local gastronómico arranca acá: los pasos de "Configurá tu negocio" dejados para después se recuerdan acá (como en la
         // Agenda de servicios).
         const PendientesEnInicio(margenLateral: 0),
-        const SizedBox(height: 18),
-        const SeccionNs('La cocina'),
-        const SizedBox(height: 8),
-        SegmentoNs(
-          key: const Key('pedidos_cocina'),
-          opciones: const ['Normal', 'Con demora', 'Pausada'],
-          indice: EstadoCocina.values.indexOf(_cocina),
-          onCambio: (i) => _cambiarCocina(EstadoCocina.values[i]),
+        const SizedBox(height: 14),
+        // Tablero en mosaicos (mock v5): lo que sale ahora, cuántos esperan que alguien los acepte y cuántos hay en la cocina.
+        SizedBox(
+          height: 240,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 5,
+                child: _SaleAhora(
+                  pedido: enCocina.where((p) => !p.programado).firstOrNull,
+                  faltan: _faltan,
+                  onVer: _verPedido,
+                  onFiltrar: () => setState(() => _filtro = EstadoPedido.porHacer),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _Mosaico(
+                        key: const Key('pedidos_mosaico_nuevos'),
+                        rotulo: 'Nuevos',
+                        cifra: (porEstado[EstadoPedido.porConfirmar] ?? const []).length,
+                        pie: 'para aceptar',
+                        fondo: ns.acento,
+                        color: ns.onAcento,
+                        onTap: () => setState(() => _filtro = EstadoPedido.porConfirmar),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: _Mosaico(
+                        rotulo: 'En la cocina',
+                        cifra: enCocina.length,
+                        pie: atrasados == 0 ? 'todo en hora' : '$atrasados ${atrasados == 1 ? 'atrasado' : 'atrasados'}',
+                        colorPie: atrasados == 0 ? null : ns.b,
+                        fondo: ns.s,
+                        color: ns.ink,
+                        onTap: () => setState(() => _filtro = EstadoPedido.porHacer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
-        InfoNs(
-          switch (_cocina) {
-            EstadoCocina.normal => 'El bot dice que está en ${_config.minutosNormal} minutos.',
-            EstadoCocina.demorada => 'El bot avisa la demora: ${_config.minutosDemorada} minutos.',
-            EstadoCocina.pausada => 'El bot no toma pedidos. El mostrador sigue.',
-          },
-          tono: switch (_cocina) {
-            EstadoCocina.normal => TonoNs.good,
-            EstadoCocina.demorada => TonoNs.warn,
-            EstadoCocina.pausada => TonoNs.bad,
-          },
-        ),
+        if (_cocina == EstadoCocina.pausada) ...[
+          const SizedBox(height: 10),
+          const InfoNs('Cocina pausada: el bot no toma pedidos. El mostrador sigue.', tono: TonoNs.bad, peso: FontWeight.w600),
+        ],
         // Pedidos del bot que no se pudieron poner acá: se dice por qué y se reintentan solos (`pedidos_bot_nube.dart`).
         for (final motivo in pedidosBotSinCargar.value.take(3)) ...[
           const SizedBox(height: 10),
           InfoNs(motivo, tono: TonoNs.warn, icono: IconoNs.alerta),
         ],
-        if (pedidos != null && pedidos.isEmpty) ...[
-          const SizedBox(height: 28),
-          Text('Cuando entre un pedido, por el mostrador o por WhatsApp, aparece acá.', style: estiloNs(16, color: ns.mute)),
-        ],
-        for (final estado in _ordenDeGrupos)
-          if (porEstado[estado] case final grupo?) ...[
-            const SizedBox(height: 24),
-            SeccionNs(estado.etiqueta, derecha: Text('${grupo.length}', style: estiloNs(14, peso: FontWeight.w600, color: ns.mute))),
-            const SizedBox(height: 10),
-            for (final p in grupo) ...[
-              _TarjetaPedido(
-                pedido: p,
-                onVer: () => _verPedido(p),
-                onPaso: (nuevo) => _avanzar(p, nuevo),
-                onCobrar: () => _cobrar(p),
-              ),
-              const SizedBox(height: 10),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          child: Row(
+            children: [
+              for (final (estado, texto) in _filtros) ...[
+                _Filtro(
+                  key: ValueKey('pedidos_filtro_${estado.clave}'),
+                  texto: texto,
+                  cuenta: (porEstado[estado] ?? const []).length,
+                  activo: estado == filtro,
+                  onTap: () => setState(() => _filtro = estado),
+                ),
+                const SizedBox(width: 6),
+              ],
             ],
-          ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (pedidos != null && lista.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 36, 8, 0),
+            child: Column(
+              children: [
+                Text(
+                  _vacio(filtro).$1,
+                  textAlign: TextAlign.center,
+                  style: tituloNs(26, track: -0.04, color: ns.ink),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _vacio(filtro).$2,
+                  textAlign: TextAlign.center,
+                  style: estiloNs(15, color: ns.mute),
+                ),
+              ],
+            ),
+          ),
+        for (final p in lista) ...[
+          _TarjetaPedido(
+            pedido: p,
+            faltan: _faltan(p),
+            onVer: () => _verPedido(p),
+            onPaso: (nuevo) => _avanzar(p, nuevo),
+            onCobrar: () => _cobrar(p),
+          ),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
 }
 
+/// Los filtros de la lista, en el orden en que se trabaja.
+const _filtros = [
+  (EstadoPedido.porConfirmar, 'Nuevos'),
+  (EstadoPedido.porHacer, 'Cocina'),
+  (EstadoPedido.listo, 'Listos'),
+  (EstadoPedido.enCamino, 'En camino'),
+  (EstadoPedido.esperandoPago, 'Sin pagar'),
+];
+
+(String, String) _vacio(EstadoPedido filtro) => switch (filtro) {
+  EstadoPedido.porConfirmar => ('Nada nuevo.', 'Cuando entre un pedido, por el mostrador o por WhatsApp, aparece acá.'),
+  EstadoPedido.porHacer => ('Cocina al día.', 'No hay nada por hacer.'),
+  EstadoPedido.listo => ('Nada esperando.', 'Los pedidos listos aparecen acá.'),
+  EstadoPedido.enCamino => ('Nadie en la calle.', 'Los envíos que salieron aparecen acá.'),
+  _ => ('Todo pagado.', 'Los que pagan con link esperan acá hasta que se acredita.'),
+};
+
+/// Los pedidos por aceptar, para el globo de la pestaña Pedidos.
+final ValueNotifier<int> pedidosPorAceptarNs = ValueNotifier(0);
+
+class _BotonCocina extends StatelessWidget {
+  const _BotonCocina({required this.estado, required this.onTap});
+
+  final EstadoCocina estado;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final pausada = estado == EstadoCocina.pausada;
+    return PresionNs(
+      key: const Key('pedidos_boton_cocina'),
+      onTap: onTap,
+      etiqueta: switch (estado) {
+        EstadoCocina.normal => 'Cocina normal',
+        EstadoCocina.demorada => 'Cocina con demora',
+        EstadoCocina.pausada => 'Cocina pausada',
+      },
+      child: Container(
+        width: 48,
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: pausada ? ns.b : ns.s, shape: BoxShape.circle),
+        child: pausada
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < 2; i++) ...[
+                    if (i == 1) const SizedBox(width: 5),
+                    Container(
+                      width: 4,
+                      height: 14,
+                      decoration: BoxDecoration(color: TokensNs.blanco, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ],
+                ],
+              )
+            : Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(color: estado == EstadoCocina.normal ? ns.g : ns.acento, shape: BoxShape.circle),
+              ),
+      ),
+    );
+  }
+}
+
+class _Mosaico extends StatelessWidget {
+  const _Mosaico({
+    super.key,
+    required this.rotulo,
+    required this.cifra,
+    required this.pie,
+    required this.fondo,
+    required this.color,
+    required this.onTap,
+    this.colorPie,
+  });
+
+  final String rotulo;
+  final int cifra;
+  final String pie;
+  final Color fondo;
+  final Color color;
+  final Color? colorPie;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PresionNs(
+      onTap: onTap,
+      etiqueta: '$rotulo: $cifra $pie',
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+        decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(28)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              rotulo,
+              style: estiloNs(14, peso: FontWeight.w600, color: color.withValues(alpha: 0.8)),
+            ),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text('$cifra', style: tituloNs(36, track: -0.05, color: color)),
+              ),
+            ),
+            Text(
+              pie,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: estiloNs(13, peso: colorPie == null ? FontWeight.w500 : FontWeight.w600, color: colorPie ?? color.withValues(alpha: 0.8)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Sale ahora": el próximo pedido que tiene que salir de la cocina, como una actividad en vivo.
+class _SaleAhora extends StatelessWidget {
+  const _SaleAhora({required this.pedido, required this.faltan, required this.onVer, required this.onFiltrar});
+
+  final PedidoGastronomia? pedido;
+  final int? Function(PedidoGastronomia) faltan;
+  final ValueChanged<PedidoGastronomia> onVer;
+  final VoidCallback onFiltrar;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final p = pedido;
+    const texto = TokensNs.blanco;
+    final suave = TokensNs.blanco.withValues(alpha: 0.65);
+    final min = p == null ? null : faltan(p);
+    final tarde = min != null && min < 0;
+    return PresionNs(
+      key: const Key('pedidos_sale_ahora'),
+      onTap: p == null ? onFiltrar : () => onVer(p),
+      etiqueta: p == null ? 'Cocina al día' : 'Sale ahora: ${p.nombreCliente}',
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: ns.oscuro ? ns.s2 : ns.hero, borderRadius: BorderRadius.circular(28)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(color: p == null ? ns.g : (tarde ? ns.b : ns.acento), shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    p == null ? 'Cocina al día' : (tarde ? 'Atrasado' : 'Sale ahora'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: estiloNs(14, peso: FontWeight.w600, color: suave),
+                  ),
+                ),
+              ],
+            ),
+            if (p == null)
+              Text('Nada por hacer.', style: estiloNs(15, color: suave))
+            else ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: min == null ? '—' : '${min.abs()}',
+                            style: tituloNs(56, track: -0.05, color: tarde ? ns.b : texto),
+                          ),
+                          TextSpan(
+                            text: ' min',
+                            style: tituloNs(22, track: -0.03, color: tarde ? ns.b : texto),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Text(tarde ? 'de atraso' : (p.horaEstimada == null ? '' : 'para las ${_hora(p.horaEstimada!)}'), style: estiloNs(13, color: suave)),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${p.nombreCliente} · ${p.numero}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: estiloNs(15, peso: FontWeight.w600, color: texto),
+                  ),
+                  Text(
+                    lineasDe(p).map((l) => '${l.cantidad ?? '${l.gramos} g'} ${l.nombre}').join(' · '),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: estiloNs(13, color: suave),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Filtro extends StatelessWidget {
+  const _Filtro({super.key, required this.texto, required this.cuenta, required this.activo, required this.onTap});
+
+  final String texto;
+  final int cuenta;
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return PresionNs(
+      onTap: onTap,
+      etiqueta: '$texto, $cuenta',
+      child: AnimatedContainer(
+        duration: sinMovimiento(context) ? Duration.zero : const Duration(milliseconds: 200),
+        height: 40,
+        padding: const EdgeInsets.fromLTRB(15, 0, 10, 0),
+        decoration: BoxDecoration(color: activo ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              texto,
+              style: estiloNs(15, peso: FontWeight.w600, color: activo ? ns.onPrim : ns.mute),
+            ),
+            const SizedBox(width: 7),
+            Container(
+              constraints: const BoxConstraints(minWidth: 20),
+              height: 20,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: activo ? ns.acento : ns.paper, borderRadius: BorderRadius.circular(10)),
+              child: Text(
+                '$cuenta',
+                style: estiloNs(13, peso: FontWeight.w600, color: activo ? ns.onAcento : ns.ink, tabular: true),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TarjetaPedido extends StatelessWidget {
-  const _TarjetaPedido({required this.pedido, required this.onVer, required this.onPaso, required this.onCobrar});
+  const _TarjetaPedido({required this.pedido, required this.faltan, required this.onVer, required this.onPaso, required this.onCobrar});
 
   final PedidoGastronomia pedido;
+  final int? faltan;
   final VoidCallback onVer;
   final ValueChanged<EstadoPedido> onPaso;
   final VoidCallback onCobrar;
@@ -365,70 +751,178 @@ class _TarjetaPedido extends StatelessWidget {
     final pasos = siguientesEstados(estado, forma);
     // Se cobra lo que ya se aceptó y todavía no tiene venta. Un retiro listo se cobra cuando lo vienen a buscar: "Cobrar" va
     // primero (y lo deja entregado); "Entregado" queda para el que ya pagó por otro lado.
+    final cobrado = pedido.ventaId != null || pedido.pagado;
     final cobrable = pedido.ventaId == null && (estado == EstadoPedido.porHacer || estado == EstadoPedido.listo || estado == EstadoPedido.enCamino);
-    final botones = <(String, VoidCallback)>[
+    // Un botón principal por pedido; el resto, secundarios. Rechazar va como texto, para no tocarlo sin querer.
+    final principal = <(String, VoidCallback)>[
       if (cobrable && !forma.esEnvio && estado == EstadoPedido.listo) ('Cobrar', onCobrar),
-      for (final p in pasos) (_textoPaso(p), () => onPaso(p)),
+      for (final p in pasos)
+        if (p != EstadoPedido.rechazado) (_textoPaso(p), () => onPaso(p)),
       if (cobrable && !(!forma.esEnvio && estado == EstadoPedido.listo)) ('Cobrar', onCobrar),
     ];
-    final resumen = lineas.map((l) => '${l.cantidad ?? '${l.gramos} g'} ${l.nombre}').join(' · ');
+    final rechazar = pasos.contains(EstadoPedido.rechazado);
+    final (subHora, colorSub) = switch (estado) {
+      EstadoPedido.porConfirmar => ('Nuevo', ns.w),
+      EstadoPedido.enCamino => ('En la calle', ns.mute),
+      EstadoPedido.esperandoPago => ('Sin pagar', ns.w),
+      _ when pedido.programado && pedido.horaEstimada != null => (_diaCorto(pedido.horaEstimada!), ns.w),
+      _ when faltan == null => ('', ns.mute),
+      _ when faltan! < 0 => ('${-faltan!} min tarde', ns.b),
+      _ => ('en $faltan min', ns.mute),
+    };
+    final meta = [CanalPedido.desdeClave(pedido.canal).etiqueta, forma.esEnvio ? 'Envío a ${pedido.zona ?? ''}'.trim() : 'Retira'].join(' · ');
     return PresionNs(
       key: ValueKey('pedido-${pedido.id}'),
       onTap: onVer,
       etiqueta: 'Pedido ${pedido.numero} de ${pedido.nombreCliente}',
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(28)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Text(pedido.nombreCliente, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(18, peso: FontWeight.w600, color: ns.ink))),
-                if (pedido.horaEstimada != null)
-                  Text(_hora(pedido.horaEstimada!), style: estiloNs(18, peso: FontWeight.w600, color: pedido.programado ? ns.w : ns.ink, tabular: true)),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${pedido.numero} · ${CanalPedido.desdeClave(pedido.canal).etiqueta} · ${forma.etiqueta}${pedido.zona == null ? '' : ' · ${pedido.zona}'}',
-              style: estiloNs(13, peso: FontWeight.w500, color: ns.mute),
-            ),
-            if (pedido.programado && pedido.horaEstimada != null) ...[
-              const SizedBox(height: 2),
-              Text('Programado para ${_diaCorto(pedido.horaEstimada!)} a las ${_hora(pedido.horaEstimada!)}',
-                  style: estiloNs(13, peso: FontWeight.w600, color: ns.w)),
-            ],
-            const SizedBox(height: 8),
-            Text(resumen, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, color: ns.ink)),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  plataNs(totalPedidoCentavos(lineas, costoEnvioCentavos: pedido.costoEnvioCentavos)),
-                  style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pedido.nombreCliente,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: estiloNs(19, peso: FontWeight.w600, color: ns.ink),
+                      ),
+                      const SizedBox(height: 3),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: '${pedido.numero} · $meta'),
+                            if (cobrado)
+                              TextSpan(
+                                text: pedido.pagado && pedido.ventaId == null ? ' · Pagado' : ' · Cobrado',
+                                style: TextStyle(color: ns.g, fontWeight: FontWeight.w600),
+                              ),
+                          ],
+                        ),
+                        style: estiloNs(14, color: ns.mute),
+                      ),
+                    ],
+                  ),
                 ),
-                if (pedido.ventaId != null || pedido.pagado) ...[
-                  const SizedBox(width: 8),
-                  Text('· Cobrado', style: estiloNs(14, peso: FontWeight.w600, color: ns.g)),
-                ],
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (pedido.horaEstimada != null) Text(_hora(pedido.horaEstimada!), style: tituloNs(26, track: -0.04, color: ns.ink)),
+                    if (subHora.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subHora,
+                        style: estiloNs(13, peso: FontWeight.w600, color: colorSub),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
-            if (botones.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Row(
+            const SizedBox(height: 12),
+            // La comanda: cada plato en su renglón, con la cantidad bien visible.
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              decoration: BoxDecoration(color: ns.paper, borderRadius: BorderRadius.circular(18)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var i = 0; i < botones.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: i == 0
-                          ? BotonNs.primario(context, botones[i].$1, botones[i].$2, alto: 48, tamanio: 15)
-                          : BotonNs.secundario(context, botones[i].$1, botones[i].$2, alto: 48, tamanio: 15),
+                  for (final l in lineas)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          SizedBox(
+                            width: 34,
+                            child: Text(l.cantidad != null ? '${l.cantidad}' : '${l.gramos} g', style: tituloNs(18, track: -0.02, color: ns.ink)),
+                          ),
+                          Expanded(
+                            child: Text(l.nombre, style: estiloNs(16, color: ns.ink)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
                 ],
               ),
+            ),
+            if (pedido.nota != null && pedido.nota!.trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                pedido.nota!.trim(),
+                style: estiloNs(14, peso: FontWeight.w600, color: ns.w),
+              ),
             ],
+            if (estado == EstadoPedido.esperandoPago) ...[
+              const SizedBox(height: 10),
+              Text('Tiene el link de Mercado Pago. Se cocina cuando pague.', style: estiloNs(14, color: ns.mute)),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    plataNs(totalPedidoCentavos(lineas, costoEnvioCentavos: pedido.costoEnvioCentavos)),
+                    style: tituloNs(21, track: -0.03, color: ns.ink),
+                  ),
+                ),
+                if (rechazar)
+                  BotonNs(
+                    texto: 'Rechazar',
+                    onTap: () => onPaso(EstadoPedido.rechazado),
+                    alto: 48,
+                    tamanio: 15,
+                    fondo: Colors.transparent,
+                    color: ns.mute,
+                    rellenar: false,
+                    paddingH: 10,
+                  ),
+                for (var i = 0; i < principal.length; i++) ...[
+                  const SizedBox(width: 6),
+                  i == 0
+                      ? (estado == EstadoPedido.porConfirmar
+                            ? BotonNs(
+                                texto: principal[i].$1,
+                                onTap: principal[i].$2,
+                                alto: 48,
+                                tamanio: 16,
+                                fondo: ns.acento,
+                                color: ns.onAcento,
+                                rellenar: false,
+                                paddingH: 22,
+                              )
+                            : BotonNs(
+                                texto: principal[i].$1,
+                                onTap: principal[i].$2,
+                                alto: 48,
+                                tamanio: 16,
+                                fondo: ns.prim,
+                                color: ns.onPrim,
+                                rellenar: false,
+                                paddingH: 22,
+                              ))
+                      : BotonNs(
+                          texto: principal[i].$1,
+                          onTap: principal[i].$2,
+                          alto: 48,
+                          tamanio: 16,
+                          fondo: ns.paper,
+                          color: ns.ink,
+                          rellenar: false,
+                          paddingH: 18,
+                        ),
+                ],
+              ],
+            ),
           ],
         ),
       ),

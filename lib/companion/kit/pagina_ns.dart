@@ -187,7 +187,7 @@ class OpcionNs extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(color: ns.prim, borderRadius: BorderRadius.circular(999)),
-                  child: Text(derecha!, style: estiloNs(15, peso: FontWeight.w600, color: TokensNs.blanco)),
+                  child: Text(derecha!, style: estiloNs(15, peso: FontWeight.w600, color: ns.onPrim)),
                 ),
               ] else if (derecha != null) ...[const SizedBox(width: 10), Text(derecha!, style: estiloNs(18, peso: FontWeight.w500, color: texto))],
             ],

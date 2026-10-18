@@ -157,7 +157,7 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
           alto: 60,
           tamanio: 17,
           fondo: _completo ? ns.prim : ns.s,
-          color: _completo ? TokensNs.blanco : ns.mute,
+          color: _completo ? ns.onPrim : ns.mute,
           habilitado: !_guardando,
         ),
         BotonNs.secundario(context, 'Cancelar', () => Navigator.of(context).pop(false)),

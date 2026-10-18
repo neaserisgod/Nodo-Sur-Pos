@@ -3,6 +3,9 @@
 // Más — en una grilla `1fr 1fr 1.35fr 1fr 1fr`. La pestaña activa lleva una
 // burbuja azul claro de 48×28; "Más" muestra un punto naranja si hay una
 // actualización pendiente.
+//
+// Nodo Gastro (mock docs/mock-gastro/NodoGastro.html): cápsula flotante con cinco pestañas iguales, sin el botón azul en el medio;
+// la activa lleva una cápsula de superficie detrás. Pedidos muestra cuántos esperan que alguien los acepte.
 
 import 'package:flutter/material.dart';
 
@@ -14,7 +17,10 @@ import 'tokens_ns.dart';
 enum PestaniaNs { inicio, productos, vender, caja, mas }
 
 class BarraInferiorNs extends StatelessWidget {
-  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.conServicios = false, this.conPedidos = false});
+  const BarraInferiorNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.conServicios = false, this.conPedidos = false, this.pedidosNuevos = 0});
+
+  /// Pedidos por aceptar (solo con [conPedidos]): el globo de la pestaña Pedidos.
+  final int pedidosNuevos;
 
   final PestaniaNs activa;
   final ValueChanged<PestaniaNs> onSeleccionar;
@@ -43,6 +49,7 @@ class BarraInferiorNs extends StatelessWidget {
   Widget build(BuildContext context) {
     final ns = context.ns;
     final inferior = MediaQuery.paddingOf(context).bottom;
+    if (conPedidos) return _barraGastro(context, ns, inferior);
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + inferior),
       child: Semantics(
@@ -92,6 +99,113 @@ class BarraInferiorNs extends StatelessWidget {
                           onTap: () => onSeleccionar(p),
                         ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension on BarraInferiorNs {
+  Widget _barraGastro(BuildContext context, TokensNs ns, double inferior) {
+    const etiquetas = {
+      PestaniaNs.inicio: ('Pedidos', IconoNs.portapapeles),
+      PestaniaNs.productos: ('Carta', IconoNs.producto),
+      PestaniaNs.vender: ('Vender', IconoNs.carrito),
+      PestaniaNs.caja: ('Caja', IconoNs.billetera),
+      PestaniaNs.mas: ('Más', IconoNs.mas),
+    };
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + inferior),
+      child: Semantics(
+        container: true,
+        label: 'Secciones de la app',
+        child: Container(
+          height: 66,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            // En oscuro la cápsula se despega del fondo con una superficie, no con la sombra (que ahí no se ve).
+            color: ns.oscuro ? ns.s2 : ns.paper,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(color: Color(0x0F1A1714), spreadRadius: 1),
+              BoxShadow(color: Color(0x381A1714), blurRadius: 40, offset: Offset(0, 18), spreadRadius: -14),
+            ],
+          ),
+          child: Row(
+            children: [
+              for (final MapEntry(key: p, value: (etiqueta, icono)) in etiquetas.entries)
+                Expanded(
+                  child: _PestaniaGastro(
+                    etiqueta: etiqueta,
+                    icono: icono,
+                    activa: activa == p,
+                    globo: p == PestaniaNs.inicio ? pedidosNuevos : 0,
+                    punto: p == PestaniaNs.mas && hayActualizacion && activa != p,
+                    onTap: () => onSeleccionar(p),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PestaniaGastro extends StatelessWidget {
+  const _PestaniaGastro({required this.etiqueta, required this.icono, required this.activa, required this.globo, required this.punto, required this.onTap});
+
+  final String etiqueta;
+  final IconoNs icono;
+  final bool activa;
+  final int globo;
+  final bool punto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    final color = activa ? ns.ink : ns.mute;
+    return Semantics(
+      selected: activa,
+      child: PresionNs(
+        onTap: onTap,
+        etiqueta: globo > 0 ? '$etiqueta, $globo nuevos' : etiqueta,
+        child: AnimatedContainer(
+          duration: sinMovimiento(context) ? Duration.zero : const Duration(milliseconds: 250),
+          decoration: BoxDecoration(color: activa ? (ns.oscuro ? ns.paper : ns.s) : Colors.transparent, borderRadius: BorderRadius.circular(999)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconoNsWidget(icono, tamanio: 22, color: color, grosor: 2),
+                  if (globo > 0)
+                    Positioned(
+                      top: -5,
+                      right: -10,
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 18),
+                        height: 18,
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: ns.acento, borderRadius: BorderRadius.circular(9)),
+                        child: Text('$globo', style: estiloNs(11, peso: FontWeight.w700, color: ns.onAcento, tabular: true)),
+                      ),
+                    ),
+                  if (punto)
+                    Positioned(
+                      top: -2,
+                      right: -6,
+                      child: Container(width: 9, height: 9, decoration: BoxDecoration(color: ns.acento, shape: BoxShape.circle)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(etiqueta, maxLines: 1, style: estiloNs(11, peso: FontWeight.w600, color: color)),
             ],
           ),
         ),

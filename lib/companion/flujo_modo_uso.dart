@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../edicion.dart';
+import 'bienvenida/bienvenida_gastro.dart';
 import 'bienvenida/pantalla_bienvenida.dart';
 import 'emparejamiento.dart';
 import 'escucha_pc.dart';
@@ -27,7 +28,11 @@ Future<void> aplicarModoSoloCelular() async {
 /// Nodo Sur Servicios no tiene PC ni pasa por la bienvenida, que cuenta cosas de almacén (separar para proveedores, contar
 /// la caja, el stock con la cámara; El dueño, 2026-10-11: "que parezca que está hecho para turnos"): va directo a entrar con
 /// la cuenta, como "solo celular".
-Widget pantallaDeBienvenidaInicial() => esEdicionAparte
+///
+/// Nodo Gastro tiene su propia bienvenida (mock v5: el bot, la cocina y la caja) y de ahí va a la cuenta igual que Servicios.
+Widget pantallaDeBienvenidaInicial() => esEdicionGastronomia
+    ? BienvenidaGastro(alTerminar: (context) => elegirModo(context, ModoUso.soloCelular, actual: null))
+    : esEdicionAparte
     ? const _DirectoALaCuenta()
     : PantallaBienvenida(
         alTerminar: (context) => Navigator.of(context).pushReplacement(

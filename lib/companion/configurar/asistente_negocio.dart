@@ -381,7 +381,7 @@ class _PasoNegocio extends StatelessWidget {
         ],
       ],
       botones: [
-        KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.primario(context, 'Siguiente', listo && !guardando ? alSeguir : null, habilitado: listo && !guardando)),
+        KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.acento(context, 'Siguiente', listo && !guardando ? alSeguir : null, habilitado: listo && !guardando)),
       ],
     );
   }
@@ -485,7 +485,7 @@ class _PasoProductoState extends State<_PasoProducto> {
         botones: [
           KeyedSubtree(
             key: const Key('asistente-escanear'),
-            child: BotonNs.primario(context, _trabajando ? 'Buscando el código…' : 'Escanear', _trabajando ? null : _escanear, habilitado: !_trabajando),
+            child: BotonNs.acento(context, _trabajando ? 'Buscando el código…' : 'Escanear', _trabajando ? null : _escanear, habilitado: !_trabajando),
           ),
         ],
       );
@@ -540,7 +540,7 @@ class _PasoProductoState extends State<_PasoProducto> {
       botones: [
         KeyedSubtree(
           key: const Key('producto-guardar'),
-          child: BotonNs.primario(context, 'Guardar producto', listo && !_trabajando ? _guardar : null, habilitado: listo && !_trabajando),
+          child: BotonNs.acento(context, 'Guardar producto', listo && !_trabajando ? _guardar : null, habilitado: listo && !_trabajando),
         ),
       ],
     );
@@ -558,7 +558,7 @@ class _PasoProductoState extends State<_PasoProducto> {
         const InfoNs('Cuando vendas, escanealo desde Vender y se suma solo al carrito.'),
         const InfoNs('Desde Productos, el botón de escanear carga productos nuevos o edita los que ya tenés.'),
       ],
-      botones: [KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.primario(context, 'Siguiente', widget.alSeguir))],
+      botones: [KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.acento(context, 'Siguiente', widget.alSeguir))],
     );
   }
 }
@@ -633,7 +633,7 @@ class _PasoServicioState extends State<_PasoServicio> {
               ? 'En Carta › Insumos cargás lo que lleva (carne, pan rallado, aceite) y la app te dice cuánto te cuesta cada plato y a cuánto conviene venderlo.'
               : 'En Servicios › Insumos cargás lo que usa (tintura, guantes, shampoo) y la app te dice cuánto te cuesta cada servicio y a cuánto conviene cobrarlo.'),
         ],
-        botones: [KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.primario(context, 'Siguiente', widget.alSeguir))],
+        botones: [KeyedSubtree(key: const Key('asistente-seguir'), child: BotonNs.acento(context, 'Siguiente', widget.alSeguir))],
       );
     }
     final listo = _nombre.text.trim().isNotEmpty && _precioCentavos > 0 && _minutos > 0;
@@ -685,7 +685,7 @@ class _PasoServicioState extends State<_PasoServicio> {
       botones: [
         KeyedSubtree(
           key: const Key('servicio-guardar'),
-          child: BotonNs.primario(context, 'Guardar servicio', listo && !_trabajando ? _guardar : null, habilitado: listo && !_trabajando),
+          child: BotonNs.acento(context, 'Guardar servicio', listo && !_trabajando ? _guardar : null, habilitado: listo && !_trabajando),
         ),
       ],
     );
@@ -785,7 +785,7 @@ class _PasoHorarioState extends State<_PasoHorario> {
         botones: [
           KeyedSubtree(
             key: const Key('asistente-guardar-horario'),
-            child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Guardar horario', _guardando ? null : _guardar, habilitado: !_guardando),
+            child: BotonNs.acento(context, _guardando ? 'Guardando…' : 'Guardar horario', _guardando ? null : _guardar, habilitado: !_guardando),
           ),
         ],
       );
@@ -994,7 +994,7 @@ class _PasoPedidosState extends State<_PasoPedidos> {
       botones: [
         KeyedSubtree(
           key: const Key('asistente-guardar-pedidos'),
-          child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Dejarlo andando', _guardando ? null : _guardar, habilitado: !_guardando),
+          child: BotonNs.acento(context, _guardando ? 'Guardando…' : 'Dejarlo andando', _guardando ? null : _guardar, habilitado: !_guardando),
         ),
       ],
     );
@@ -1042,7 +1042,7 @@ class _PasoCobros extends StatelessWidget {
             ),
           ),
         ],
-        botones: [KeyedSubtree(key: const Key('asistente-terminar'), child: BotonNs.primario(context, 'Terminar', alTerminar))],
+        botones: [KeyedSubtree(key: const Key('asistente-terminar'), child: BotonNs.acento(context, 'Terminar', alTerminar))],
       );
 }
 

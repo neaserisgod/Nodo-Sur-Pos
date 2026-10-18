@@ -1011,12 +1011,16 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
                   ? const SizedBox.shrink()
                   : ValueListenableBuilder<ModulosNegocio>(
                       valueListenable: modulosActuales,
-                      builder: (context, m, _) => BarraInferiorNs(
-                        activa: _pestania,
-                        onSeleccionar: irAPestania,
-                        hayActualizacion: _hayActualizacion,
-                        conServicios: m.forma == FormaDeTrabajo.servicios,
-                        conPedidos: m.forma == FormaDeTrabajo.gastronomia,
+                      builder: (context, m, _) => ValueListenableBuilder<int>(
+                        valueListenable: pedidosPorAceptarNs,
+                        builder: (context, nuevos, _) => BarraInferiorNs(
+                          activa: _pestania,
+                          onSeleccionar: irAPestania,
+                          hayActualizacion: _hayActualizacion,
+                          conServicios: m.forma == FormaDeTrabajo.servicios,
+                          conPedidos: m.forma == FormaDeTrabajo.gastronomia,
+                          pedidosNuevos: nuevos,
+                        ),
                       ),
                     ),
             ),

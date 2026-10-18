@@ -138,6 +138,13 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Nodo Gastro en Flutter con el diseño del mock v5** (El dueño, 18/10: "llevalo a flutter"; plan en
+  [`docs/PLAN-APLICAR-GASTRO-V5.md`](./docs/PLAN-APLICAR-GASTRO-V5.md)). Solo la edición Gastronomía: paleta del sitio en claro y
+  oscuro (`TokensNs.gastroClaro/gastroOscuro`, tokens nuevos `onPrim`, `acento`, `onAcento`), Bricolage + Geist en `fonts/`, barra
+  de pestañas en cápsula con el globo de pedidos por aceptar, Pedidos con el tablero en mosaicos ("Sale ahora", Nuevos, En la
+  cocina) y filtros, bienvenida propia de tres pantallas y botones de acento en el asistente y la Carta. Capturas:
+  `flutter test test/companion/capturas_gastro_test.dart` → `capturas/gastro/`. Suite entera en verde. **Sin probar en un celular
+  real.** Faltan las etapas 4 a 7 (Carta, Vender y cobrar, Caja y cierre, Más).
 - **Mock de Nodo Gastro con la marca nueva** (18/10): `docs/mock-gastro/NodoGastro.html` (vivo: https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb).
   La app del celular de gastronomía (Pedidos, Carta, Vender, Caja, Más) con el estilo del sitio 2026-10 (Bricolage + Geist, piedra, tinta,
   naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **v5, mock completo** (El dueño: la v4 "me gustó mucho, quiero el mock entero así, incluyendo onboarding y todo lo que se deba

@@ -180,7 +180,7 @@ class _PantallaConsultarPrecioState extends State<PantallaConsultarPrecio> {
                         height: 56,
                         decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle),
                         alignment: Alignment.center,
-                        child: const IconoNsWidget(IconoNs.escanear, tamanio: 24, color: TokensNs.blanco),
+                        child: IconoNsWidget(IconoNs.escanear, tamanio: 24, color: ns.onPrim),
                       ),
                     ),
                   ],

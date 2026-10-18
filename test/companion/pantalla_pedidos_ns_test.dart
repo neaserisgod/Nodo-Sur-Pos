@@ -12,8 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/base_para_tests.dart';
 import '../helpers/controlador_falso_ns.dart';
 
-/// Los pedidos de una rotisería en el celular (`REGLAS-NEGOCIO.md` §22, etapa 4): el estado de la cocina con un toque, la
-/// lista por estado con el paso que sigue, y tomar un pedido del mostrador.
+/// Los pedidos de una rotisería en el celular (`REGLAS-NEGOCIO.md` §22, etapa 4; diseño del mock v5 de Nodo Gastro): el estado de
+/// la cocina desde su botón, la lista filtrada por estado con el paso que sigue, y tomar un pedido del mostrador.
 void main() {
   late AppDatabase db;
   late int usuario;
@@ -42,9 +42,11 @@ void main() {
 
   testWidgets('sin pedidos lo dice, y la cocina cambia con un toque', (tester) async {
     await abrir(tester);
-    expect(find.text('Nada pendiente'), findsOneWidget);
-    expect(find.textContaining('30 minutos'), findsOneWidget);
+    expect(find.text('Nada nuevo.'), findsOneWidget);
+    expect(find.text('30 min por pedido'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('pedidos_boton_cocina')));
+    await esperar(tester);
     await tester.tap(find.text('Pausada'));
     await esperar(tester);
     expect(await tester.runAsync(() => estadoCocinaActual(db)), EstadoCocina.pausada);
@@ -60,17 +62,18 @@ void main() {
         lineas: [LineaPedido(gid: producto.globalId!, nombre: producto.nombre, cantidad: 2, precioCentavos: 650000)],
         usuarioId: usuario));
     await abrir(tester);
-    expect(find.text('1 abiertos'), findsOneWidget);
-    expect(find.text('POR CONFIRMAR'), findsOneWidget);
+    // La lista arranca en lo que pide atención: los nuevos.
     expect(find.text('Caro'), findsOneWidget);
+    expect(find.text('Nuevo'), findsOneWidget);
 
     await tester.tap(find.text('Aceptar'));
     await esperar(tester);
-    expect(find.text('POR HACER'), findsOneWidget);
+    expect(EstadoPedido.desdeClave((await tester.runAsync(() => pedidosAbiertos(db)))!.single.estado), EstadoPedido.porHacer);
+    expect(find.text('Listo'), findsOneWidget, reason: 'la lista pasa sola a la cocina');
 
-    await tester.tap(find.text('Está listo'));
+    await tester.tap(find.text('Listo'));
     await esperar(tester);
-    expect(find.text('LISTO'), findsOneWidget);
+    expect(EstadoPedido.desdeClave((await tester.runAsync(() => pedidosAbiertos(db)))!.single.estado), EstadoPedido.listo);
     // Un retiro listo se cobra cuando lo vienen a buscar: "Cobrar" primero, "Entregado" para el que ya pagó.
     expect(find.text('Cobrar'), findsOneWidget);
     expect(find.text('Entregado'), findsOneWidget);
