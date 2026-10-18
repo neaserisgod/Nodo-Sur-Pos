@@ -136,6 +136,17 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (18/10/2026)
+
+- **Nodo Gastro, repaso del alta y de las pantallas** (El dueño, 18/10: "que sean 100% congruentes con la idea de gastronomía").
+  El asistente suma **"Pedidos y WhatsApp"** antes de los cobros: el bot (encenderlo si el plan lo trae, o verlo en la web),
+  cómo entrega (con su primera zona si hay envío), cuándo cobra y si lo de WhatsApp entra solo. Ya no ofrece "Otro" (llevaba al
+  producto con código de barras). Los pedidos del bot llegan aunque falte el rubro. Sin lata de cigarrillos, recargo ni vuelto;
+  menú lateral de Windows con Pedidos y Carta; buscador de funciones propio; "Horario y transferencias" en Configuración (antes
+  no había dónde cambiar el horario ni el alias del bot); los pasos dejados para después se recuerdan en Pedidos. **Falta verlo
+  en un celular real.** **Sigue faltando del lado del dueño** el cliente OAuth Android de `com.laplazoleta.gastronomia` en
+  Google Cloud (sin él, entrar con Google vuelve a la misma pantalla; ver `docs/PENDIENTE-GOOGLE-ANDROID.md`).
+
 ## Últimos cambios (16/10/2026)
 
 - **Precios de todo, en markup**: "Subir todo X %" suma el X % del costo (antes era del precio: 15 % llevó $7.000 a $8.050), con

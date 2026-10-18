@@ -15,6 +15,7 @@ navegador".
 |---|---|
 | Almacén (companion) | `com.laplazoleta.companion` |
 | Nodo Sur Servicios | `com.laplazoleta.servicios` |
+| Nodo Gastro | `com.laplazoleta.gastronomia` — **falta crearlo** (2026-10-18: sin él, se elige la cuenta y la app vuelve a "Entrá con tu cuenta") |
 
 ## Qué pasaba
 

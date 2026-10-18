@@ -21,6 +21,7 @@ import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
 import '../emparejamiento.dart';
+import '../configurar/pendientes_en_inicio.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import 'pantalla_config_pedidos_ns.dart';
@@ -293,6 +294,9 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
             ),
           ],
         ),
+        // Un local gastronómico arranca acá: los pasos de "Configurá tu negocio" dejados para después se recuerdan acá (como en la
+        // Agenda de servicios).
+        const PendientesEnInicio(margenLateral: 0),
         const SizedBox(height: 18),
         const SeccionNs('La cocina'),
         const SizedBox(height: 8),

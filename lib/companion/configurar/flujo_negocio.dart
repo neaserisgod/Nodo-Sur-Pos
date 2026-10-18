@@ -6,17 +6,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../data/repositorio_pedidos_gastronomia.dart' show configPedidosActual, guardarConfigPedidos;
 import '../../data/repositorio_productos.dart' as repo_productos;
 import '../../data/repositorio_servicios.dart' as repo_servicios;
 import '../../data/repositorio_turnos.dart' show ConfigAgenda, configAgendaActual, guardarConfigAgenda;
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart' show configuracionNegocioActual;
 import '../base_local.dart';
+import '../bot_celular.dart' show accesoBotDelCelular, botDelCelular, botEnEsteEquipo;
 import '../cuentas_del_celular.dart' show leerNegocioDeEstaCuenta;
 import '../emparejamiento.dart';
 import '../escanear_codigo.dart';
+import '../pantalla_bot_whatsapp.dart';
 import '../pantalla_entrar_con_cuenta.dart';
 import '../pantalla_menu_companion.dart';
+import '../pantallas/seccion_bot_en_celular_ns.dart';
 import 'asistente_negocio.dart';
 import 'negocio_nuevo.dart';
 
@@ -30,6 +34,7 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
   if (!context.mounted) return;
   final nombreInicial = await _nombreParaElAsistente(db);
   final agenda = await configAgendaActual(db);
+  final pedidos = await configPedidosActual(db);
   if (!context.mounted) return;
   final ruta = MaterialPageRoute<void>(
     builder: (_) => AsistenteNegocio(
@@ -53,6 +58,10 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
           ConfigAgenda(horario: horario, pasoMinutos: c.pasoMinutos, sena: c.sena, aliasSena: c.aliasSena, titularSena: c.titularSena),
         );
       },
+      pedidosIniciales: pedidos,
+      alGuardarPedidos: (c) => guardarConfigPedidos(db, c),
+      tieneBot: () async => (await accesoBotDelCelular.estado())?.tieneBot,
+      alAbrirBot: _abrirBot,
       alAbrirWeb: (_) => launchUrl(urlPaginaNegocio, mode: LaunchMode.externalApplication),
       alTerminar: (context, _) {
         final navigator = Navigator.of(context);
@@ -70,6 +79,19 @@ Future<void> abrirAsistenteNegocio(BuildContext context, {PasoNegocio paso = Pas
   } else {
     await navigator.pushAndRemoveUntil(ruta, (r) => false);
   }
+}
+
+/// La misma pantalla del bot que Más › Bot de WhatsApp: encenderlo y vincular el WhatsApp del local, sin salir del asistente.
+Future<void> _abrirBot(BuildContext context) async {
+  final servicio = await servicioParaPerfil();
+  if (!context.mounted) return;
+  await Navigator.of(context).push(MaterialPageRoute<void>(
+    builder: (_) => PantallaBotWhatsApp(
+      acceso: accesoBotDelCelular,
+      servicio: servicio,
+      enEsteCelular: botEnEsteEquipo ? (context, numero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero) : null,
+    ),
+  ));
 }
 
 /// El nombre que ya se sabe del comercio: el de la base, o el que se le puso al crear el negocio ("Crear un negocio nuevo").

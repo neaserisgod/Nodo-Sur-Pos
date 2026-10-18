@@ -2,7 +2,9 @@
 // vender. Tres pasos (El dueño, 2026-10-03): nombre y rubro, un primer producto escaneado que sirve de práctica de
 // cómo se carga cualquier producto, y los atajos a horsepos.com/negocio para Mercado Pago y el equipo. Un negocio de
 // servicios suma un cuarto, el horario de atención (El dueño, 2026-10-14: sin él, el bot ofrecía turnos en el horario de
-// fábrica). Cada paso se puede dejar para después: lo que falte queda como recordatorio en Inicio (o en la Agenda).
+// fábrica). Nodo Gastro suma, antes de los cobros, lo que la hace distinta: el bot de WhatsApp y cómo entrega y cobra los
+// pedidos (El dueño, 2026-10-18: "el onboarding debe mostrar una breve configuración de las features destacadas como el bot").
+// Cada paso se puede dejar para después: lo que falte queda como recordatorio en Inicio (en la Agenda, o en Pedidos).
 //
 // Solo la vista y el orden de los pasos. Guardar (nombre del comercio, plantilla del rubro, el producto) lo hace quien
 // la abre, por los callbacks.
@@ -11,7 +13,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/forma_de_trabajo.dart';
+import '../../domain/pedido_gastronomico.dart';
 import '../../domain/plantillas_rubro.dart';
 import '../../domain/turnos.dart';
 import '../../edicion.dart';
@@ -19,13 +23,14 @@ import '../../servicios/modulos_activos.dart' show modulosActuales;
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 
-enum PasoNegocio { negocio, producto, horario, cobros }
+enum PasoNegocio { negocio, producto, horario, pedidos, cobros }
 
 /// Los pasos de esa forma de trabajar, en orden: el horario de atención es de un negocio de servicios (lo usan la Agenda y el
 /// bot) y de un local gastronómico (el bot dice si está abierto y no toma pedidos fuera de hora).
+/// Los pedidos y el bot, solo en un local gastronómico.
 List<PasoNegocio> pasosDeLaForma(FormaDeTrabajo forma) => [
       for (final p in PasoNegocio.values)
-        if (p != PasoNegocio.horario || forma != FormaDeTrabajo.productos) p,
+        if ((p != PasoNegocio.horario || forma != FormaDeTrabajo.productos) && (p != PasoNegocio.pedidos || forma == FormaDeTrabajo.gastronomia)) p,
     ];
 
 /// Los pasos del negocio de este equipo.
@@ -58,6 +63,10 @@ class AsistenteNegocio extends StatefulWidget {
     required this.alGuardarProducto,
     this.alGuardarServicio,
     this.alGuardarHorario,
+    this.pedidosIniciales = const ConfigPedidos(),
+    this.alGuardarPedidos,
+    this.tieneBot,
+    this.alAbrirBot,
     this.horarioInicial = HorarioAtencion.porDefecto,
     required this.alAbrirWeb,
     required this.alTerminar,
@@ -89,6 +98,18 @@ class AsistenteNegocio extends StatefulWidget {
 
   /// El horario de atención (negocios de servicios). Sin esto, ese paso no guarda nada (solo se ve).
   final Future<void> Function(HorarioAtencion horario)? alGuardarHorario;
+
+  /// Cómo trabaja hoy los pedidos (local gastronómico), para arrancar ese paso.
+  final ConfigPedidos pedidosIniciales;
+
+  /// Guarda las entregas, el cobro y si lo de WhatsApp entra solo. Sin esto, ese paso no guarda nada (solo se ve).
+  final Future<void> Function(ConfigPedidos config)? alGuardarPedidos;
+
+  /// Si el plan del negocio trae el bot de WhatsApp. Null (o sin esto): no se sabe, se ofrece verlo en la web.
+  final Future<bool?> Function()? tieneBot;
+
+  /// Abre la pantalla del bot (encenderlo y vincular el WhatsApp del local). Al volver, el asistente sigue donde estaba.
+  final Future<void> Function(BuildContext context)? alAbrirBot;
 
   /// Lo que ya está guardado, para arrancar el paso del horario.
   final HorarioAtencion horarioInicial;
@@ -215,6 +236,15 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
               cabecera: cabecera,
               inicial: widget.horarioInicial,
               alGuardar: widget.alGuardarHorario ?? (_) async {},
+              alSeguir: () => _seguir(hecho: true),
+            ),
+          PasoNegocio.pedidos => _PasoPedidos(
+              cabecera: cabecera,
+              inicial: widget.pedidosIniciales,
+              alGuardar: widget.alGuardarPedidos ?? (_) async {},
+              tieneBot: widget.tieneBot,
+              alAbrirBot: widget.alAbrirBot,
+              alAbrirWeb: widget.alAbrirWeb,
               alSeguir: () => _seguir(hecho: true),
             ),
           PasoNegocio.cobros => _PasoCobros(cabecera: cabecera, alAbrirWeb: widget.alAbrirWeb, alTerminar: () => _seguir(hecho: true)),
@@ -719,8 +749,11 @@ class _PasoHorarioState extends State<_PasoHorario> {
         cabecera: widget.cabecera,
         titulo: '¿Cuándo atendés?',
         tituloChico: true,
-        bajada: 'La Agenda y el bot de WhatsApp solo ofrecen turnos en este horario. Si algún día es distinto, lo cambiás en '
-            'Configuración › Agenda y seña.',
+        bajada: esEdicionGastronomia
+            ? 'El bot de WhatsApp toma pedidos en este horario: lo que llega fuera de hora queda programado. Si algún día es distinto, '
+                'lo cambiás en Configuración › Horario y transferencias.'
+            : 'La Agenda y el bot de WhatsApp solo ofrecen turnos en este horario. Si algún día es distinto, lo cambiás en '
+                'Configuración › Agenda y seña.',
         cuerpo: [
           const SeccionNs('Días'),
           Wrap(
@@ -755,6 +788,203 @@ class _PasoHorarioState extends State<_PasoHorario> {
       );
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Nodo Gastro · Pedidos y WhatsApp: lo que la hace distinta, configurado en corto
+
+class _PasoPedidos extends StatefulWidget {
+  const _PasoPedidos({
+    required this.cabecera,
+    required this.inicial,
+    required this.alGuardar,
+    required this.tieneBot,
+    required this.alAbrirBot,
+    required this.alAbrirWeb,
+    required this.alSeguir,
+  });
+  final Widget cabecera;
+  final ConfigPedidos inicial;
+  final Future<void> Function(ConfigPedidos config) alGuardar;
+  final Future<bool?> Function()? tieneBot;
+  final Future<void> Function(BuildContext context)? alAbrirBot;
+  final void Function(String seccion) alAbrirWeb;
+  final VoidCallback alSeguir;
+
+  @override
+  State<_PasoPedidos> createState() => _PasoPedidosState();
+}
+
+class _PasoPedidosState extends State<_PasoPedidos> {
+  late bool _retiro = widget.inicial.retiro;
+  late bool _cadete = widget.inicial.cadetePropio;
+  late bool _reparto = widget.inicial.servicioReparto;
+  late ModoPagoPedido _pago = widget.inicial.pago;
+  late bool _entranSolos = widget.inicial.confirmacionAutomatica;
+  final _zona = TextEditingController();
+  final _costoZona = TextEditingController();
+
+  /// Null mientras se pregunta (o si no se pudo saber).
+  bool? _conBot;
+  bool _preguntandoBot = true;
+  bool _guardando = false;
+  String? _error;
+
+  /// Un envío necesita al menos una zona con su costo: sin eso no se ofrece (`ConfigPedidos.formasDisponibles`).
+  bool get _pideZona => (_cadete || _reparto) && widget.inicial.zonas.isEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _preguntarBot();
+  }
+
+  Future<void> _preguntarBot() async {
+    bool? con;
+    try {
+      con = await widget.tieneBot?.call();
+    } catch (_) {
+      // Sin red: se ofrece verlo en la web, que es lo mismo que no tenerlo todavía.
+    }
+    if (mounted) {
+      setState(() {
+        _conBot = con;
+        _preguntandoBot = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _zona.dispose();
+    _costoZona.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    if (!_retiro && !_cadete && !_reparto) return setState(() => _error = 'Elegí al menos una forma de entregar');
+    var zonas = widget.inicial.zonas;
+    if (_pideZona) {
+      int? costo;
+      try {
+        costo = parsearARS(_costoZona.text.trim());
+      } on FormatException {
+        costo = null;
+      }
+      if (_zona.text.trim().isEmpty || costo == null || costo < 0) return setState(() => _error = 'Poné una zona y lo que cobrás el envío');
+      zonas = [ZonaEnvio(nombre: _zona.text.trim(), costoCentavos: costo)];
+    }
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    final i = widget.inicial;
+    try {
+      await widget.alGuardar(ConfigPedidos(
+        retiro: _retiro,
+        cadetePropio: _cadete,
+        servicioReparto: _reparto,
+        zonas: zonas,
+        pago: _pago,
+        confirmacionAutomatica: _entranSolos,
+        minutosNormal: i.minutosNormal,
+        minutosDemorada: i.minutosDemorada,
+        catalogoWhatsapp: i.catalogoWhatsapp,
+      ));
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se pudo guardar: ${_textoDeError(e)}');
+      return;
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+    widget.alSeguir();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    const queHace = 'Contesta al toque, manda la carta, toma el pedido con la dirección y te lo deja en Pedidos listo para cocinar.';
+    return PaginaArranqueNs(
+      cabecera: widget.cabecera,
+      titulo: 'Pedidos y WhatsApp',
+      tituloChico: true,
+      bajada: 'Lo que hace distinto a Nodo Gastro, en un minuto. Las zonas, los tiempos de la cocina y el resto, en Configuración › Pedidos.',
+      cuerpo: [
+        const SeccionNs('Tu WhatsApp contesta solo'),
+        KeyedSubtree(
+          key: const Key('asistente-bot'),
+          child: _preguntandoBot
+              ? const InfoNs('Fijándonos si tu plan trae el bot…')
+              : _conBot == true && widget.alAbrirBot != null
+                  ? OpcionNs(
+                      titulo: 'Bot de WhatsApp',
+                      detalle: '$queHace Lo encendés y lo vinculás con el WhatsApp del local.',
+                      derecha: 'Encender',
+                      derechaComoBoton: true,
+                      onTap: () => widget.alAbrirBot!(context),
+                    )
+                  : OpcionNs(
+                      titulo: 'Bot de WhatsApp',
+                      detalle: '$queHace Viene con el plan Sistema + Bot; lo sumás en horsepos.com.',
+                      derecha: 'Ver planes',
+                      derechaComoBoton: true,
+                      onTap: () => widget.alAbrirWeb('bot'),
+                    ),
+        ),
+        const SeccionNs('¿Cómo entregás?'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChipNs(key: const Key('asistente-retiro'), texto: 'Retiran en el local', activo: _retiro, onTap: () => setState(() => _retiro = !_retiro)),
+            ChipNs(key: const Key('asistente-cadete'), texto: 'Cadete propio', activo: _cadete, onTap: () => setState(() => _cadete = !_cadete)),
+            ChipNs(key: const Key('asistente-reparto'), texto: 'Servicio de reparto', activo: _reparto, onTap: () => setState(() => _reparto = !_reparto)),
+          ],
+        ),
+        if (_pideZona) ...[
+          Row(
+            children: [
+              Expanded(child: CampoNs(key: const Key('asistente-zona'), etiqueta: 'Zona de envío', controller: _zona, placeholder: 'Centro')),
+              const SizedBox(width: 10),
+              Expanded(
+                child: CampoNs(key: const Key('asistente-costo-zona'), etiqueta: 'Cuánto cobrás', controller: _costoZona, placeholder: r'$ 1500', teclado: TextInputType.number, formatos: soloDigitosNs),
+              ),
+            ],
+          ),
+          const InfoNs('Una zona para empezar. Las demás, con su costo y su demora, en Configuración › Pedidos.'),
+        ],
+        const SeccionNs('¿Cuándo te pagan?'),
+        SegmentoNs(
+          key: const Key('asistente-pago'),
+          opciones: const ['Al entregar', 'Adelantado', 'Que elija'],
+          indice: ModoPagoPedido.values.indexOf(_pago),
+          onCambio: (i) => setState(() => _pago = ModoPagoPedido.values[i]),
+        ),
+        Text(
+          switch (_pago) {
+            ModoPagoPedido.alEntregar => 'Se cobra al retirar, o al recibir el envío.',
+            ModoPagoPedido.adelantado => 'El bot manda el link de Mercado Pago y el pedido entra cuando pagan.',
+            ModoPagoPedido.aElegir => 'El cliente elige si paga ahora por Mercado Pago o al recibir.',
+          },
+          style: estiloNs(14, color: ns.mute),
+        ),
+        InterruptorNs(
+          key: const Key('asistente-entran-solos'),
+          etiqueta: 'Los pedidos de WhatsApp entran solos',
+          descripcion: _entranSolos ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.',
+          encendido: _entranSolos,
+          onCambio: (v) => setState(() => _entranSolos = v),
+        ),
+        if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
+      ],
+      botones: [
+        KeyedSubtree(
+          key: const Key('asistente-guardar-pedidos'),
+          child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Guardar y seguir', _guardando ? null : _guardar, habilitado: !_guardando),
+        ),
+      ],
+    );
+  }
+}
+
 class _PasoCobros extends StatelessWidget {
   const _PasoCobros({required this.cabecera, required this.alAbrirWeb, required this.alTerminar});
   final Widget cabecera;
@@ -776,7 +1006,9 @@ class _PasoCobros extends StatelessWidget {
               titulo: 'Conectá Mercado Pago',
               detalle: esEdicionServicios
                   ? 'Las señas se cobran solas con un link que manda el bot, y en el local cobrás con un QR en la pantalla del celular.'
-                  : 'Cobrá con QR y débito en tu terminal Point. Lo cobrado entra en la caja como Mercado Pago.',
+                  : esEdicionGastronomia
+                      ? 'El bot manda el link de pago de los pedidos, y en el local cobrás con QR o con tu terminal Point.'
+                      : 'Cobrá con QR y débito en tu terminal Point. Lo cobrado entra en la caja como Mercado Pago.',
               derecha: 'Conectar',
               derechaComoBoton: true,
               onTap: () => alAbrirWeb('mercado-pago'),
@@ -815,6 +1047,7 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
           FormaDeTrabajo.productos => 'Tu primer producto',
         },
         PasoNegocio.horario: 'Horario de atención',
+        PasoNegocio.pedidos: 'Pedidos y WhatsApp',
         PasoNegocio.cobros: esEdicionServicios ? 'Mercado Pago' : 'Mercado Pago y equipo',
       };
 
