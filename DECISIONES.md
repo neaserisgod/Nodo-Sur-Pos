@@ -107,6 +107,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Clave de la IA por cuenta (El dueño, 2026-10-07)](#clave-de-la-ia-por-cuenta-el-dueño-2026-10-07-la-clave-es-por-cuenta)
 - [El rubro del comercio queda guardado (El dueño, 2026-10-09)](#el-rubro-del-comercio-queda-guardado-el-dueño-2026-10-09)
 - [La marca de cigarrillo que borraba el celular (El dueño, 2026-10-07)](#la-marca-de-cigarrillo-que-borraba-el-celular-el-dueño-2026-10-07)
+- [Sonidos: dos, cortos, y solo para lo que llega solo (2026-10-18)](#sonidos-dos-cortos-y-solo-para-lo-que-llega-solo-2026-10-18)
 
 **Producto, instalación y publicación**
 
@@ -2709,3 +2710,23 @@ El dueño: "versión aparte, como Servicios". Nombre: **Nodo Gastro**; el ícono
   esté lista.
 - **Falta, del lado del dueño:** registrar `com.laplazoleta.gastronomia` en Firebase (sin su id de app no hay notificaciones con la
   app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (**hecho el 2026-10-18**). `docs/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.
+
+## Sonidos: dos, cortos, y solo para lo que llega solo (2026-10-18)
+
+El dueño (2026-10-18): "unos soniditos para cuando se recibe un pago, las notificaciones". Eligió: pago aprobado, seña pagada y
+turno o pedido nuevo, **cortos y suaves**; una venta en efectivo **no** suena (en un almacén con mucho movimiento cansa).
+
+- **Dos sonidos y no uno por evento**: `pago` (dos notas que suben) para la plata que entró sola (Mercado Pago aprobó el QR o la
+  Point; una seña pagada con el link o aprobada por la dueña en WhatsApp) y `aviso` (dos notas que bajan) para lo que trae el bot
+  (turno nuevo, pedido). Con dos se aprenden sin mirar la pantalla. Son `assets/sonidos/*.wav`, sintetizados para esto: sin
+  licencias de terceros.
+- **En memoria al arrancar** (`sonidos.cargar()` en `main`): el pago aprobado no espera a leer un archivo, y mientras no se carga
+  no suena nada, así ningún test toca el plugin de audio.
+- **Una ráfaga suena una vez** (1,5 s por sonido) y una vuelta del bot con varios turnos suena una vez al final; si en esa vuelta
+  hubo seña, gana el de pago. Un turno que ya pasó no suena: un equipo nuevo baja todo lo que el bot dio hasta hoy.
+- **Dónde suena**: el pago, en el equipo que cobra. El turno y la seña, en el equipo que baja los turnos del bot (el que sube la
+  sync), porque es el único que sabe si es nuevo o si se pagó. El pedido, en todos los de la sucursal, con el aviso en vivo; ese
+  aviso también llega cuando se paga un pedido por link y no se distingue, así que suena igual.
+- **Encima de la música y respetando el silencio** (Android): no le saca el foco de audio a la radio del local y, con el celular en
+  silencio, no suena. Con la app cerrada sigue sonando la notificación de Android de siempre (canal "Pedidos y turnos").
+- Se apagan por equipo: Más › Apariencia (celular) y Configuración › Apariencia (PC). Código: `lib/servicios/sonidos.dart`.

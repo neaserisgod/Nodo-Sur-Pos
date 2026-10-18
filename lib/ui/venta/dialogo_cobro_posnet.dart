@@ -27,6 +27,7 @@ import '../../data/cobro_posnet.dart';
 import '../../domain/cobro_posnet.dart';
 import '../../domain/dinero.dart';
 import '../../servicios/avisos_cobro_mp.dart';
+import '../../servicios/sonidos.dart';
 import '../comun/botones.dart';
 import '../comun/modal.dart';
 import '../tema/tokens.dart';
@@ -163,6 +164,7 @@ class _DialogoCobroPosnetState extends State<_DialogoCobroPosnet> {
         await widget.controlador.confirmarCobroPosnetAprobado(
           _ordenPendienteId!,
         );
+        sonidos.sonar(Sonido.pago);
         if (mounted) setState(() => _fase = _Fase.aprobado);
         return;
       }

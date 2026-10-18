@@ -17,6 +17,7 @@ import 'package:la_plazoleta/data/repositorio_ventas.dart' show abrirSesion;
 import 'package:la_plazoleta/domain/turnos.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
+import 'package:la_plazoleta/servicios/sonidos.dart';
 import 'package:la_plazoleta/servicios/turnos_bot_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,8 +27,17 @@ import '../helpers/base_para_tests.dart';
 Future<void> cerrarSesionParaTest(AppDatabase db, int id) =>
     (db.update(db.sesionesDeCaja)..where((s) => s.id.equals(id))).write(SesionesDeCajaCompanion(estado: const Value('CERRADA'), fechaCierre: Value(DateTime.now())));
 
+class _Oido implements ReproductorSonidos {
+  final oidos = <Sonido>[];
+  @override
+  Future<void> preparar(Sonido s) async {}
+  @override
+  Future<void> tocar(Sonido s) async => oidos.add(s);
+}
+
 void main() {
   late AppDatabase db;
+  late _Oido oido;
   late int usuario;
   late int semi;
   late List<Map<String, dynamic>> remotos;
@@ -47,6 +57,8 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    oido = _Oido();
+    await sonidos.cargar(reproductor: oido);
     db = baseDeTest();
     usuario = (await db.select(db.usuarios).get()).first.id;
     await configurarRubro(db, PlantillaRubro.desdeClave('unas')!);
@@ -266,6 +278,28 @@ void main() {
     expect(t.senaCentavos, 540000, reason: 'no se anota dos veces');
     final ingresos = await (db.select(db.movimientosDeCaja)..where((m) => m.sesionCajaId.equals(sesion))).get();
     expect(ingresos.where((m) => m.montoCentavos == 540000), hasLength(1));
+  });
+
+  test('un turno nuevo del bot suena a aviso, una vez; uno que ya pasó (un equipo que baja todo) no suena', () async {
+    await sinc.vuelta('tok');
+    await sinc.vuelta('tok');
+    await Future<void>.delayed(Duration.zero);
+    expect(oido.oidos, [Sonido.aviso]);
+    final ayer = manana10.subtract(const Duration(days: 2));
+    remotos.add({...remotos.single, 'id': 'turno-bot-000002', 'inicio': ms(ayer), 'fin': ms(ayer.add(const Duration(hours: 1))), 'actualizado': 50});
+    await sinc.vuelta('tok');
+    await Future<void>.delayed(Duration.zero);
+    expect(oido.oidos, [Sonido.aviso], reason: 'un turno de ayer no es novedad');
+  });
+
+  test('la seña pagada suena a pago: con el link de Mercado Pago o aprobada por la dueña en WhatsApp', () async {
+    await sinc.vuelta('tok');
+    remotos.single
+      ..['estado'] = 'confirmado'
+      ..['actualizado'] = 99;
+    await sinc.vuelta('tok');
+    await Future<void>.delayed(Duration.zero);
+    expect(oido.oidos, [Sonido.aviso, Sonido.pago]);
   });
 
   test('un turno que llega ya pagado (la app estaba cerrada) también anota la seña', () async {

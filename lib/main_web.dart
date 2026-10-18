@@ -13,6 +13,7 @@ import 'companion/emparejamiento.dart';
 import 'companion/modo_uso.dart';
 import 'edicion.dart';
 import 'servicios/registro_errores.dart';
+import 'servicios/sonidos.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
@@ -23,6 +24,7 @@ Future<void> main() async {
     if (esDireccionDeDemo(Uri.base)) await prepararDemo();
     // En el navegador no hay PC con la que emparejarse por wifi: siempre "Solo celular", sin preguntar.
     if (await leerModoUso() == null) await guardarModoUso(ModoUso.soloCelular);
+    unawaited(sonidos.cargar()); // después de la demo: en la demo las preferencias viven en memoria
     runApp(const CompanionApp());
   }, (error, pila) => registrarError('Error sin capturar (web)', error, pila));
 }

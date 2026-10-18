@@ -29,6 +29,7 @@ import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
 import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../../servicios/sonidos.dart';
 import '../../plataforma.dart';
 
 class PantallaMasNs extends StatelessWidget {
@@ -96,6 +97,17 @@ class PantallaMasNs extends StatelessWidget {
                   opciones: const ['Claro', 'Oscuro', 'Automático'],
                   indice: indiceTema,
                   onCambio: (i) => guardarModoTemaNs(const [ThemeMode.light, ThemeMode.dark, ThemeMode.system][i]),
+                ),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<bool>(
+                  valueListenable: sonidos.activos,
+                  builder: (context, activos, _) => InterruptorNs(
+                    key: const Key('mas_sonidos'),
+                    etiqueta: 'Sonidos',
+                    descripcion: 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido',
+                    encendido: activos,
+                    onCambio: sonidos.guardarActivos,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 // Un negocio de servicios en la app de almacén: se le ofrece pasarse a Nodo Sur Servicios (El dueño, 2026-10-10,

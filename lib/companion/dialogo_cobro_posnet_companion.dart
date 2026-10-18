@@ -19,6 +19,7 @@ import '../domain/descuento.dart';
 import '../domain/venta.dart';
 import '../servicios/avisos_cobro_mp.dart';
 import '../servicios/pasarela_point_nube.dart' show qrEnPantallaDe;
+import '../servicios/sonidos.dart';
 import 'cliente_companion.dart' show ErrorCompanion;
 import 'mensaje_error.dart';
 import 'servicio_companion.dart';
@@ -250,6 +251,7 @@ class _DialogoCobroPosnetCompanionState
           pedidoId: widget.pedidoId,
         );
         _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
+        sonidos.sonar(Sonido.pago);
         if (mounted) setState(() => _fase = _Fase.aprobado);
         return;
       } on ErrorCompanion catch (e) {
