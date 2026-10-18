@@ -30,6 +30,9 @@ enum AccionFuncion {
   irAMas,
   actualizar,
   desconectar,
+  irAPedidos,
+  configurarPedidos,
+  horarioPedidos,
 }
 
 class FuncionNs {
@@ -137,8 +140,40 @@ FuncionNs _enServicios(FuncionNs f) {
   return FuncionNs(seccion: f.seccion, titulo: dicho.$1, ruta: dicho.$2, claves: '${f.claves} ${f.titulo}', icono: f.icono, accion: f.accion);
 }
 
+/// Lo que no se ofrece en Nodo Gastro: la pestaña de productos es la Carta (sin catálogo con códigos ni conteo de góndola), no
+/// hay Inicio con atajos, ni cigarrillos, vuelto en caramelos, ganancia por categoría (va en cada plato), carga histórica ni PC.
+bool _noEsDeGastronomia(FuncionNs f) =>
+    const {
+      AccionFuncion.consultarPrecio,
+      AccionFuncion.productosCatalogo,
+      AccionFuncion.productoNuevo,
+      AccionFuncion.productosEnLote,
+      AccionFuncion.controlarStock,
+      AccionFuncion.productosSinStock,
+      AccionFuncion.diasAnteriores,
+      AccionFuncion.desconectar,
+    }.contains(f.accion) ||
+    const {'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría', 'Estado de la conexión con la PC'}
+        .contains(f.titulo);
+
+/// En un local gastronómico (§22): los pedidos, la carta con sus insumos y cómo se toman los pedidos.
+const List<FuncionNs> _funcionesDeGastronomia = [
+  FuncionNs(seccion: 0, titulo: 'Pedidos: por confirmar, por hacer y listos', ruta: 'Pedidos', claves: 'pedido whatsapp cocina demora pausar envio retiro delivery comanda', icono: IconoNs.portapapeles, accion: AccionFuncion.irAPedidos),
+  FuncionNs(seccion: 0, titulo: 'Tomar un pedido de mostrador o por teléfono', ruta: 'Pedidos › +', claves: 'nuevo cargar llamada telefono mostrador', icono: IconoNs.portapapeles, accion: AccionFuncion.irAPedidos),
+  FuncionNs(seccion: 1, titulo: 'Platos y lo que cuestan', ruta: 'Carta', claves: 'carta menu precio costo ganancia receta comida', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Agregar un plato nuevo', ruta: 'Carta › + Nuevo', claves: 'alta agregar crear cargar', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Bebidas y otros', ruta: 'Carta › Bebidas y otros', claves: 'gaseosa vino cerveza agua postre producto', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Insumos: comprar y contar', ruta: 'Carta › Insumos', claves: 'stock carne harina aceite verdura compra envase reponer receta', icono: IconoNs.portapapeles, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 3, titulo: 'Configurar los pedidos', ruta: 'Más › Configuración › Pedidos', claves: 'entrega envio retiro zonas cadete reparto delivery cobro cocina tiempo catalogo', icono: IconoNs.ajustes, accion: AccionFuncion.configurarPedidos),
+  FuncionNs(seccion: 3, titulo: 'Horario y alias para transferencias', ruta: 'Más › Configuración › Horario y transferencias', claves: 'horario abre cierra dias alias cbu transferencia', icono: IconoNs.reloj, accion: AccionFuncion.horarioPedidos),
+  FuncionNs(seccion: 3, titulo: 'Bot de WhatsApp', ruta: 'Más › Bot de WhatsApp', claves: 'whatsapp bot contesta solo mensajes clientes', icono: IconoNs.ajustes, accion: AccionFuncion.irAMas),
+];
+
 /// Las funciones que se ofrecen, según el negocio. Ordenadas por sección, como [indiceFunciones].
 List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
+  if (esEdicionGastronomia) {
+    return [for (final f in indiceFunciones) if (!_noEsDeGastronomia(f)) f, ..._funcionesDeGastronomia]..sort((a, b) => a.seccion.compareTo(b.seccion));
+  }
   if (!servicios && !esEdicionServicios) return indiceFunciones;
   final lista = [
     for (final f in indiceFunciones)
@@ -148,7 +183,9 @@ List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
   return lista..sort((a, b) => a.seccion.compareTo(b.seccion));
 }
 
-String nombreDeSeccion(int seccion, {bool servicios = false}) => !servicios
+String nombreDeSeccion(int seccion, {bool servicios = false}) => esEdicionGastronomia && seccion == 1
+    ? 'Carta e insumos'
+    : !servicios
     ? seccionesFunciones[seccion]
     : switch (seccion) {
         0 => 'Cobrar',
@@ -159,6 +196,7 @@ String nombreDeSeccion(int seccion, {bool servicios = false}) => !servicios
 /// Sugerencias del estado inicial y de "sin resultados".
 const List<String> sugerenciasFunciones = ['Cerrar caja', 'Controlar stock', 'Subir precios', 'Imprimir ticket'];
 const List<String> sugerenciasFuncionesServicios = ['Cerrar el día', 'Insumos', 'Agregar un servicio', 'Gasto'];
+const List<String> sugerenciasFuncionesGastronomia = ['Pedidos', 'Agregar un plato', 'Insumos', 'Cerrar caja'];
 
 /// Minúsculas, sin tildes ni diacríticos, sin espacios de más.
 String normalizarNs(String texto) {

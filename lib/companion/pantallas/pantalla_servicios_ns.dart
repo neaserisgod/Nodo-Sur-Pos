@@ -223,7 +223,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               ),
               const SizedBox(height: 14),
               if (conPc)
-                const InfoNs('Con la PC, los servicios todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
+                InfoNs('Con la PC, los ${_t('servicios', 'platos')} todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
               else ...[
                 SegmentoNs(opciones: _solapas, indice: _solapas.indexOf(_nombreSolapa), onCambio: (i) => setState(() => _solapa = i)),
                 const SizedBox(height: 14),
@@ -354,7 +354,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       ],
       if (_productos.isEmpty)
         InfoNs(_t('Lo que vendés aparte de los servicios: un shampoo, una cera, una crema. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".',
-            'Lo que vendés como viene: una gaseosa, un vino, un postre de heladera. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".'))
+            'Lo que vendés como viene: una gaseosa, un vino, un postre de heladera. Cargalo con "+ Producto" y al cobrar lo buscás en Vender, como un plato.'))
       else
         ListaAgrupadaNs(
           filas: [
@@ -781,9 +781,9 @@ class _HojaProductoState extends State<_HojaProducto> with GuardarUnaVezNs {
     final costo = _plata(_costo.text);
     return HojaNs(
       titulo: widget.existente == null ? 'Nuevo producto' : 'Editar producto',
-      texto: 'Lo que vendés aparte de los ${_t('servicios', 'platos')}. Se suma al cobrar con "+ Producto".',
+      texto: _t('Lo que vendés aparte de los servicios. Se suma al cobrar con "+ Producto".', 'Lo que vendés aparte de los platos. Al cobrar se busca en Vender.'),
       bloques: [
-        CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Shampoo 500 ml', autofoco: widget.existente == null),
+        CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: _t('Ej.: Shampoo 500 ml', 'Ej.: Gaseosa 1,5 L'), autofoco: widget.existente == null),
         Row(
           children: [
             Expanded(child: CampoNs(etiqueta: 'Precio', controller: _precio, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {}))),

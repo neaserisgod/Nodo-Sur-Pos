@@ -35,7 +35,7 @@ import '../domain/plantillas_rubro.dart';
 import '../edicion.dart';
 import '../servicios/exportar_base.dart';
 import '../servicios/gemini.dart';
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo, modulosActuales;
 import '../ui/comun/campo_texto.dart';
 import '../ui/tema/tokens.dart';
 import 'aviso_modo_local.dart';
@@ -424,8 +424,9 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               ],
             ),
           ),
-          // Cigarrillos y el producto de vuelto son de un almacén: un negocio de servicios no los ve (lo guardado no se toca).
-          if (!esNegocioDeServicios()) ...[
+          // Cigarrillos y el producto de vuelto son de un almacén: ni un negocio de servicios ni un local gastronómico los ven (lo
+          // guardado no se toca).
+          if (modulosActuales.value.forma == FormaDeTrabajo.productos) ...[
             _seccion('Recargo de cigarrillos'),
             _campoMonto(_primerAtadoCtrl, 'Primer atado'),
             _campoMonto(_atadoAdicionalCtrl, 'Atado adicional'),
@@ -442,8 +443,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
                 child: InterruptorNs(etiqueta: m.nombre, descripcion: _medioActivo(m) ? 'Activo' : 'Inactivo', encendido: _medioActivo(m), onCambio: (v) => setState(() => v == m.activo ? _mediosPendientes.remove(m.id) : _mediosPendientes[m.id] = v)),
               ),
             ),
-          // En servicios la ganancia buscada es de cada servicio (se pone en el creador), no de la categoría.
-          if (esNegocioDeServicios()) ...[
+          // En servicios y en gastronomía la ganancia buscada es de cada servicio o plato (se pone en el creador), no de la categoría.
+          if (modulosActuales.value.forma != FormaDeTrabajo.productos) ...[
             _seccion('Categorías'),
             if (_categorias.isNotEmpty) Text(_categorias.map((c) => c.nombre).join(' · '), style: estiloNs(15, altura: 1.4, color: ns.ink)),
             const SizedBox(height: 10),
@@ -478,7 +479,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             TarjetaFilaNs(
               key: const Key('config-valor-hora'),
               titulo: 'Valor de la hora',
-              subtitulo: _valorHora == null ? 'Sin cargar: los servicios no suman mano de obra' : '${plataNs(_valorHora!)} la hora',
+              subtitulo: _valorHora == null ? 'Sin cargar: los ${esEdicionGastronomia ? 'platos' : 'servicios'} no suman mano de obra' : '${plataNs(_valorHora!)} la hora',
               icono: IconoNs.reloj,
               onTap: _editarValorHora,
             ),
@@ -491,6 +492,15 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
               subtitulo: 'Entregas, zonas de envío, cómo se cobra y cuánto tarda la cocina',
               icono: IconoNs.portapapeles,
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaConfigPedidosNs())),
+            ),
+            const SizedBox(height: 8),
+            // Sin turnos ni seña: el horario (el bot programa lo que llega fuera de hora) y el alias de las transferencias.
+            TarjetaFilaNs(
+              key: const Key('config-horario-pedidos'),
+              titulo: 'Horario y transferencias',
+              subtitulo: 'Cuándo atendés y el alias que el bot pasa para pagar',
+              icono: IconoNs.reloj,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaConfigAgendaNs(paraPedidos: true))),
             ),
           ],
           if (!_pcEmparejada && esNegocioDeServicios()) ...[

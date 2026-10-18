@@ -10,6 +10,8 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../domain/modulos.dart' show Modulo;
+import '../../servicios/modulos_activos.dart' show moduloActivo;
 import '../../edicion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
@@ -124,7 +126,7 @@ class _HojaAbrirCajaState extends State<_HojaAbrirCaja> {
         CampoNs(etiqueta: 'Fondo inicial (caja normal)', controller: _fondo, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs),
         CampoNs(etiqueta: 'Mercado Pago (lo que hay en la cuenta)', controller: _mp, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs),
         if (widget.mpCentavos != null) const InfoNs('Precargado con lo último contado en el cierre anterior. Si no coincide con la app de Mercado Pago, corregilo.'),
-        if (widget.lataCentavos != null) InfoNs('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(widget.lataCentavos!)} de antes — no hace falta contarla ahora.'),
+        if (widget.lataCentavos != null && moduloActivo(Modulo.cajaAparte)) InfoNs('Lata de cigarrillos: se arrastra sola, ya tiene ${plataNs(widget.lataCentavos!)} de antes — no hace falta contarla ahora.'),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad),
       ],
       botones: [

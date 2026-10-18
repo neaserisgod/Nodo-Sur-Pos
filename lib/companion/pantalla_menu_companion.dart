@@ -59,6 +59,8 @@ import 'sync_nube_companion.dart';
 import 'actualizacion.dart';
 import 'pantallas/pantalla_agenda_ns.dart';
 import 'pantallas/pantalla_pedidos_ns.dart';
+import 'pantallas/pantalla_config_agenda_ns.dart';
+import 'pantallas/pantalla_config_pedidos_ns.dart';
 import '../data/repositorio_pedidos_gastronomia.dart' show lineasDeVentaDePedido, PedidoIncompleto;
 import 'pantallas/hoja_actualizar_ns.dart';
 import '../edicion.dart';
@@ -691,6 +693,12 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
         if (_hayActualizacion) await abrirActualizacion();
       case AccionFuncion.desconectar:
         _cambiarModo();
+      case AccionFuncion.irAPedidos:
+        irAPestania(PestaniaNs.inicio);
+      case AccionFuncion.configurarPedidos:
+        await irA((_) => const PantallaConfigPedidosNs());
+      case AccionFuncion.horarioPedidos:
+        await irA((_) => const PantallaConfigAgendaNs(paraPedidos: true));
     }
   }
 

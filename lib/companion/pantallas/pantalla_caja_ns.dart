@@ -235,7 +235,7 @@ class _ResumenState extends State<_Resumen> {
             _Bloque(filas: [
               FilaClaveValorNs(clave: 'Efectivo', valor: plataNs(efectivo)),
               FilaClaveValorNs(clave: 'Mercado Pago', valor: plataNs(mp)),
-              if (!servicios) FilaClaveValorNs(clave: 'Lata de cigarrillos', valor: plataNs(lata)),
+              if (moduloActivo(Modulo.cajaAparte)) FilaClaveValorNs(clave: 'Lata de cigarrillos', valor: plataNs(lata)),
             ]),
             const SizedBox(height: 22),
             const SeccionNs('Cómo va el día'),

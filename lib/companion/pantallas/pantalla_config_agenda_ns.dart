@@ -1,6 +1,9 @@
 // Más › Configuración › Agenda y seña (`REGLAS-NEGOCIO.md` §21): el horario de atención (uno solo, que usan la Agenda y el
 // bot), cada cuánto se ofrecen turnos, y cómo se pide la seña y a dónde se transfiere. Es parte de los datos del negocio: el
 // bot de WhatsApp los toma de acá, sin una configuración aparte.
+//
+// En un local gastronómico (§22) no hay turnos ni seña: la misma pantalla queda en el horario (fuera de hora el bot deja el pedido
+// programado) y el alias al que se transfiere un pedido, que es el mismo dato que el de la seña.
 
 import 'package:flutter/material.dart';
 
@@ -16,8 +19,11 @@ const _nombresDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sá
 
 class PantallaConfigAgendaNs extends StatefulWidget {
   /// [db] es para tests.
-  const PantallaConfigAgendaNs({super.key, this.db});
+  const PantallaConfigAgendaNs({super.key, this.db, this.paraPedidos = false});
   final AppDatabase? db;
+
+  /// Local gastronómico: solo el horario y el alias, sin turnos ni seña (lo guardado de eso no se toca).
+  final bool paraPedidos;
 
   @override
   State<PantallaConfigAgendaNs> createState() => _PantallaConfigAgendaNsState();
@@ -46,12 +52,16 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
   final _titular = TextEditingController();
   String? _error;
 
+  /// Lo leído al abrir: en [PantallaConfigAgendaNs.paraPedidos] la seña y el paso se guardan tal cual estaban.
+  ConfigAgenda? _leida;
+
   @override
   void initState() {
     super.initState();
     configAgendaActual(_db).then((c) {
       if (!mounted) return;
       setState(() {
+        _leida = c;
         _dias = [for (var d = 1; d <= 7; d++) _DiaEditable(c.horario.dias[d])];
         _paso = c.pasoMinutos;
         _modo = c.sena.modo;
@@ -100,6 +110,28 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
     }
     final porcentaje = int.tryParse(_porcentaje.text.trim()) ?? -1;
     int? fijo;
+    final previa = _leida;
+    if (widget.paraPedidos) {
+      try {
+        await guardarConfigAgenda(
+          _db,
+          ConfigAgenda(
+            horario: HorarioAtencion(dias),
+            pasoMinutos: previa?.pasoMinutos ?? _paso,
+            sena: previa?.sena ?? const ConfigSena(),
+            aliasSena: _alias.text,
+            titularSena: _titular.text,
+          ),
+        );
+        if (mounted) {
+          mostrarAvisoNs(context, 'Horario guardado');
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) setState(() => _error = 'No se pudo guardar: ${mensajeDeError(e)}');
+      }
+      return;
+    }
     if (_modo != ModoSena.nunca) {
       if (_fijo) {
         try {
@@ -146,9 +178,14 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
             : ListView(
                 padding: const EdgeInsets.fromLTRB(margenNs, 8, margenNs, 32),
                 children: [
-                  CabeceraSubNs(titulo: 'Agenda y seña', onVolver: () => Navigator.of(context).pop()),
+                  CabeceraSubNs(titulo: widget.paraPedidos ? 'Horario y transferencias' : 'Agenda y seña', onVolver: () => Navigator.of(context).pop()),
                   const SizedBox(height: 8),
-                  Text('Lo usan la Agenda y el bot de WhatsApp.', style: estiloNs(15, color: ns.mute)),
+                  Text(
+                    widget.paraPedidos
+                        ? 'Lo usa el bot de WhatsApp: fuera de hora deja el pedido programado, y al que paga por transferencia le pasa este alias.'
+                        : 'Lo usan la Agenda y el bot de WhatsApp.',
+                    style: estiloNs(15, color: ns.mute),
+                  ),
                   const SizedBox(height: 18),
                   const SeccionNs('Horario de atención'),
                   const SizedBox(height: 8),
@@ -174,45 +211,55 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
                     const SizedBox(height: 8),
                   ],
                   const SizedBox(height: 10),
-                  const SeccionNs('Los turnos arrancan cada'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final m in const [10, 15, 20, 30, 60]) ChipNs(texto: '$m min', activo: _paso == m, onTap: () => setState(() => _paso = m)),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  const SeccionNs('Seña'),
-                  const SizedBox(height: 8),
-                  SegmentoNs(
-                    opciones: const ['Nunca', 'Algunos', 'Todos'],
-                    indice: ModoSena.values.indexOf(_modo),
-                    onCambio: (i) => setState(() => _modo = ModoSena.values[i]),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    switch (_modo) {
-                      ModoSena.nunca => 'No se pide seña.',
-                      ModoSena.algunos => 'Solo en los servicios marcados "Pide seña" (en Servicios).',
-                      ModoSena.todos => 'En todos los servicios.',
-                    },
-                    style: estiloNs(14, color: ns.mute),
-                  ),
-                  if (_modo != ModoSena.nunca) ...[
-                    const SizedBox(height: 12),
-                    SegmentoNs(opciones: const ['Porcentaje', 'Monto fijo'], indice: _fijo ? 1 : 0, onCambio: (i) => setState(() => _fijo = i == 1)),
-                    const SizedBox(height: 10),
-                    if (_fijo)
-                      CampoNs(etiqueta: 'Monto de la seña', controller: _montoFijo, placeholder: r'$ 5000', teclado: TextInputType.number, formatos: soloDigitosNs)
-                    else
-                      CampoNs(etiqueta: 'Porcentaje del precio', controller: _porcentaje, placeholder: '30', teclado: TextInputType.number, formatos: soloDigitosNs),
-                    const SizedBox(height: 10),
-                    SegmentoNs(opciones: const ['Si cancelan, se pierde', 'Se devuelve'], indice: _devolver ? 1 : 0, onCambio: (i) => setState(() => _devolver = i == 1)),
-                    const SizedBox(height: 10),
-                    CampoNs(etiqueta: 'Alias o CBU para la seña', controller: _alias, placeholder: 'tu.alias.mp'),
+                  if (widget.paraPedidos) ...[
+                    const SeccionNs('Transferencias'),
+                    const SizedBox(height: 8),
+                    CampoNs(key: const Key('pedidos_alias'), etiqueta: 'Alias o CBU', controller: _alias, placeholder: 'tu.alias.mp'),
                     const SizedBox(height: 10),
                     CampoNs(etiqueta: 'A nombre de', controller: _titular, placeholder: 'Como figura en la cuenta'),
+                    const SizedBox(height: 6),
+                    Text('Sin alias, el bot ofrece pagar al recibir.', style: estiloNs(14, color: ns.mute)),
+                  ] else ...[
+                    const SeccionNs('Los turnos arrancan cada'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final m in const [10, 15, 20, 30, 60]) ChipNs(texto: '$m min', activo: _paso == m, onTap: () => setState(() => _paso = m)),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                    const SeccionNs('Seña'),
+                    const SizedBox(height: 8),
+                    SegmentoNs(
+                      opciones: const ['Nunca', 'Algunos', 'Todos'],
+                      indice: ModoSena.values.indexOf(_modo),
+                      onCambio: (i) => setState(() => _modo = ModoSena.values[i]),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      switch (_modo) {
+                        ModoSena.nunca => 'No se pide seña.',
+                        ModoSena.algunos => 'Solo en los servicios marcados "Pide seña" (en Servicios).',
+                        ModoSena.todos => 'En todos los servicios.',
+                      },
+                      style: estiloNs(14, color: ns.mute),
+                    ),
+                    if (_modo != ModoSena.nunca) ...[
+                      const SizedBox(height: 12),
+                      SegmentoNs(opciones: const ['Porcentaje', 'Monto fijo'], indice: _fijo ? 1 : 0, onCambio: (i) => setState(() => _fijo = i == 1)),
+                      const SizedBox(height: 10),
+                      if (_fijo)
+                        CampoNs(etiqueta: 'Monto de la seña', controller: _montoFijo, placeholder: r'$ 5000', teclado: TextInputType.number, formatos: soloDigitosNs)
+                      else
+                        CampoNs(etiqueta: 'Porcentaje del precio', controller: _porcentaje, placeholder: '30', teclado: TextInputType.number, formatos: soloDigitosNs),
+                      const SizedBox(height: 10),
+                      SegmentoNs(opciones: const ['Si cancelan, se pierde', 'Se devuelve'], indice: _devolver ? 1 : 0, onCambio: (i) => setState(() => _devolver = i == 1)),
+                      const SizedBox(height: 10),
+                      CampoNs(etiqueta: 'Alias o CBU para la seña', controller: _alias, placeholder: 'tu.alias.mp'),
+                      const SizedBox(height: 10),
+                      CampoNs(etiqueta: 'A nombre de', controller: _titular, placeholder: 'Como figura en la cuenta'),
+                    ],
                   ],
                   if (_error != null) ...[
                     const SizedBox(height: 12),

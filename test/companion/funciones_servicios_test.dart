@@ -39,4 +39,22 @@ void main() {
     }
     expect(titulos, containsAll(['Agregar un servicio nuevo', 'Cerrar el día', 'Actualizar la aplicación']));
   });
+
+  test('Nodo Gastro: pedidos, carta e insumos; sin cigarrillos, catálogo con códigos, conteo de góndola ni PC', () {
+    edicionActual = Edicion.gastronomia;
+    addTearDown(() => edicionActual = Edicion.almacen);
+    final titulos = funcionesDelNegocio().map((f) => f.titulo).toList();
+    for (final t in ['Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría', 'Consultar un precio',
+        'Agregar un producto nuevo', 'Controlar el stock', 'Cargar días anteriores', 'Desconectar de esta PC']) {
+      expect(titulos, isNot(contains(t)), reason: t);
+    }
+    expect(titulos, containsAll(['Pedidos: por confirmar, por hacer y listos', 'Agregar un plato nuevo', 'Configurar los pedidos', 'Cerrar la caja']));
+    expect(buscarFunciones('delivery').first.titulo, 'Pedidos: por confirmar, por hacer y listos');
+    expect(buscarFunciones('alias').map((f) => f.titulo), contains('Horario y alias para transferencias'));
+    for (final s in sugerenciasFuncionesGastronomia) {
+      expect(buscarFunciones(s), isNotEmpty, reason: s);
+    }
+    final encabezados = todasLasFunciones().map((r) => r.encabezado).whereType<String>().toList();
+    expect(encabezados, ['Vender', 'Carta e insumos', 'Caja', 'Configuración y cuenta']);
+  });
 }
