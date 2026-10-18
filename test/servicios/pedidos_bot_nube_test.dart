@@ -13,6 +13,7 @@ import 'package:la_plazoleta/data/repositorio_pedidos_gastronomia.dart';
 import 'package:la_plazoleta/data/repositorio_productos.dart';
 import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/pedidos_bot_nube.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -161,6 +162,15 @@ void main() {
     await cambiarEstadoCocina(db, EstadoCocina.pausada);
     await sinc.vuelta('t');
     expect((configSitio!['pedidos'] as Map)['cocina'], 'pausada');
+  });
+
+  test('en Nodo Gastro baja los pedidos aunque el dueño no haya elegido el rubro', () async {
+    edicionActual = Edicion.gastronomia;
+    addTearDown(() => edicionActual = Edicion.almacen);
+    await configurarRubro(db, PlantillaRubro.otro);
+    remotos.add(pedido(7));
+    await sinc.vuelta('t');
+    expect(await pedidosAbiertos(db), hasLength(1));
   });
 
   test('un almacén no toca nada', () async {

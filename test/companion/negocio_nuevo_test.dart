@@ -304,6 +304,8 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byKey(const Key('rubro-almacen'), skipOffstage: false), findsNothing);
       expect(find.byKey(const Key('rubro-barberia'), skipOffstage: false), findsNothing);
+      // "Otro" es de productos: llevaba al primer producto con código de barras.
+      expect(find.byKey(const Key('rubro-otro'), skipOffstage: false), findsNothing);
       await t.enterText(find.byKey(const Key('asistente-nombre')), 'Rotisería Doña Ana');
       await t.tap(find.byKey(const Key('rubro-rotiseria')));
       await t.pump();

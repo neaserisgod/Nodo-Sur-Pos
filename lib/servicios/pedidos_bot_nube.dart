@@ -24,6 +24,7 @@ import '../data/repositorio_pedidos_gastronomia.dart';
 import '../data/repositorio_turnos.dart' show configAgendaActual;
 import '../domain/bot_whatsapp.dart';
 import '../domain/forma_de_trabajo.dart';
+import '../edicion.dart' show esEdicionGastronomia;
 import 'avisos_bot.dart';
 import 'cuenta_nube.dart';
 import 'registro_errores.dart' show registrarSiNoEsDeRed;
@@ -85,7 +86,9 @@ class SincronizadorPedidosBot {
 
   Future<void> _vuelta(String token) async {
     try {
-      if ((await modulosNegocioActuales(db)).forma != FormaDeTrabajo.gastronomia) return;
+      // Nodo Gastro es de gastronomía aunque el rubro guardado no lo diga (el dueño salteó el alta con "Después"): sin esto, los
+      // pedidos del bot nunca llegaban a la lista.
+      if (!esEdicionGastronomia && (await modulosNegocioActuales(db)).forma != FormaDeTrabajo.gastronomia) return;
       final ahora = DateTime.now();
       if (_estado == null || _planRevisado == null || ahora.difference(_planRevisado!) >= revisarPlanCada) {
         _estado = await cliente.estadoBot(token);

@@ -330,7 +330,9 @@ class _PasoNegocio extends StatelessWidget {
           if (!esEdicionAparte) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
           if (!esEdicionGastronomia) (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           if (esEdicionGastronomia) ('Tu rubro', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
-          ('¿Ninguno?', const [PlantillaRubro.otro]),
+          // "Otro" es de productos: en una edición aparte llevaba al primer producto con código de barras y sacaba el horario que
+          // usa el bot. Ahí no se ofrece, igual que en Configuración › Tu negocio.
+          if (!esEdicionAparte) ('¿Ninguno?', const [PlantillaRubro.otro]),
         ]) ...[
           SeccionNs(titulo),
           for (final r in rubros)
