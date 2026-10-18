@@ -140,9 +140,10 @@ Pendiente / ideas (sin hacer):
 
 - **Mock de Nodo Gastro con la marca nueva** (18/10): `docs/mock-gastro/NodoGastro.html` (vivo: https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb).
   La app del celular de gastronomía (Pedidos, Carta, Vender, Caja, Más) con el estilo del sitio 2026-10 (Bricolage + Geist, piedra, tinta,
-  naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **v3 oscura** (El dueño: la v2 "asqueroso", "no se ve estético": cargada, mucho color, tosca; pidió oscuro tipo pantalla de
-  cocina): fondo casi negro, un solo acento naranja para lo que pide acción, rojo solo para lo atrasado, Geist + Geist Mono, pedidos
-  en pestañas por estado (Nuevos, Cocina, Listos, En camino, Sin pagar) con la hora a la izquierda. **Falta el OK del dueño**; el código no se tocó.
+  naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **v4** (El dueño: "en base a la página con ese nuevo lenguaje de diseño y con las tendencias de 2026/7"; la v3 oscura no le
+  terminó de gustar): lenguaje del sitio (blanco/piedra, tinta, naranja, Bricolage + Geist) con tablero en bento arriba ("Sale ahora"
+  con cuenta regresiva, Nuevos, En la cocina), filtros en cápsula, barra de pestañas flotante, todo en hojas, respuesta al toque,
+  claro y oscuro. **Falta el OK del dueño**; el código no se tocó.
 - **Nodo Gastro, repaso del alta y de las pantallas** (El dueño, 18/10: "que sean 100% congruentes con la idea de gastronomía").
   **Sin elegir rubro**: un solo rubro "Gastronomía" para todo (clave `rotiseria`, la del bot). El asistente suma, antes de los
   cobros, **lo más rompedor**: el bot que atiende solo (encenderlo si el plan lo trae, o verlo en la web), el catálogo de
