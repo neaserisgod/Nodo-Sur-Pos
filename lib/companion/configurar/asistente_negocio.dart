@@ -334,7 +334,7 @@ class _PasoNegocio extends StatelessWidget {
     final categorias = rubro?.categorias ?? const [];
     return PaginaArranqueNs(
       cabecera: cabecera,
-      titulo: 'Contanos de tu negocio',
+      titulo: esEdicionGastronomia ? 'Contanos de\ntu local.' : 'Contanos de tu negocio',
       tituloChico: true,
       bajada: 'Con esto armamos la app a tu medida. Todo se puede cambiar después.',
       cuerpo: [
@@ -639,7 +639,7 @@ class _PasoServicioState extends State<_PasoServicio> {
     final listo = _nombre.text.trim().isNotEmpty && _precioCentavos > 0 && _minutos > 0;
     return PaginaArranqueNs(
       cabecera: widget.cabecera,
-      titulo: widget.esPlato ? 'Cargá tu primer plato' : 'Cargá tu primer servicio',
+      titulo: widget.esPlato ? 'Tu primer\nplato.' : 'Cargá tu primer servicio',
       tituloChico: true,
       bajada: widget.esPlato
           ? 'Con nombre, cuánto tarda en salir y el precio alcanza. Lo que lleva lo sumás después.'
@@ -750,7 +750,7 @@ class _PasoHorarioState extends State<_PasoHorario> {
   @override
   Widget build(BuildContext context) => PaginaArranqueNs(
         cabecera: widget.cabecera,
-        titulo: '¿Cuándo atendés?',
+        titulo: esEdicionGastronomia ? '¿Cuándo\natendés?' : '¿Cuándo atendés?',
         tituloChico: true,
         bajada: esEdicionGastronomia
             ? 'El bot de WhatsApp toma pedidos en este horario: lo que llega fuera de hora queda programado. Si algún día es distinto, '
@@ -909,7 +909,7 @@ class _PasoPedidosState extends State<_PasoPedidos> {
     final ns = context.ns;
     return PaginaArranqueNs(
       cabecera: widget.cabecera,
-      titulo: 'Lo que ningún otro sistema hace',
+      titulo: 'Lo que ningún\notro sistema hace.',
       tituloChico: true,
       bajada: 'Tu local atiende, cobra y se organiza solo. Lo dejás andando ahora; lo ajustás cuando quieras en Configuración › Pedidos.',
       cuerpo: [
@@ -1010,7 +1010,7 @@ class _PasoCobros extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PaginaArranqueNs(
         cabecera: cabecera,
-        titulo: esEdicionServicios ? 'Cobros' : 'Cobros y equipo',
+        titulo: esEdicionServicios ? 'Cobros' : esEdicionGastronomia ? 'Mercado Pago\ny tu equipo.' : 'Cobros y equipo',
         tituloChico: true,
         bajada: esEdicionServicios
             ? 'Se conecta en horsepos.com con tu cuenta. Se abre el navegador y volvés a la app.'

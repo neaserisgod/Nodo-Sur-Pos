@@ -9,6 +9,7 @@ import '../actualizacion.dart' show celularDePruebas, celularEligeBeta, elegirBe
 import '../app_ns.dart';
 import '../kit/kit_ns.dart';
 import '../base_local.dart';
+import '../configurar/flujo_negocio.dart' show abrirAsistenteNegocio;
 import '../demo/demo.dart';
 import '../demo/sembrar_ejemplo.dart';
 import '../modo_uso.dart';
@@ -125,6 +126,10 @@ class PantallaMasNs extends StatelessWidget {
                 ListaAgrupadaNs(
                   filas: [
                     _Fila(icono: IconoNs.ajustes, titulo: 'Configuración', detalle: 'Redondeo, medios de pago, categorías y usuarios', onTap: () => app.irA((_) => const PantallaConfiguracionCompanion())),
+                    // El asistente del alta, para retomarlo cuando se quiera: si al entrar la nube no respondió (o el negocio ya traía
+                    // datos) no se abre solo, y sin esta fila no había cómo volver a él.
+                    if (!app.pcEmparejada)
+                      _Fila(icono: IconoNs.chispa, titulo: 'Configurá tu negocio', detalle: esEdicionGastronomia ? 'Tu local, la carta, el horario y el bot, paso a paso' : 'Tu negocio, lo que vendés y el horario, paso a paso', onTap: () => abrirAsistenteNegocio(context, desdeInicio: true)),
                     // El asistente con IA trabaja sobre la agenda: solo en un negocio de servicios sin PC (`pantalla_asistente_ia_ns.dart`).
                     if (servicios && !app.pcEmparejada)
                       _Fila(icono: IconoNs.chispa, titulo: 'Asistente', detalle: 'Preguntale por la agenda o lo cobrado; da y mueve turnos', onTap: () => app.irA((_) => const PantallaAsistenteIaNs())),
@@ -150,7 +155,8 @@ class PantallaMasNs extends StatelessWidget {
                       ),
                     // Nodo Sur Servicios trae el bot adentro (Android y Windows): la misma pantalla, con el bot de este equipo en vez
                     // de Termux.
-                    if (botEnEsteEquipo && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
+                    // En Gastro el bot es la mitad de la app: la fila está siempre y la pantalla explica si el plan no lo trae.
+                    if (botEnEsteEquipo && (esEdicionGastronomia || estadoBotCelular.value?.tieneBot == true) && app.servicio != null)
                       _Fila(
                         icono: IconoNs.celular,
                         titulo: 'Bot de WhatsApp',

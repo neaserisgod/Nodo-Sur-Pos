@@ -41,7 +41,7 @@ class ControladorFalsoNs implements ControladorAppNs {
   @override
   bool get sinConexion => sinConex;
   @override
-  bool get pcEmparejada => true;
+  bool get pcEmparejada => modo == ModoUso.pcYCelular;
   @override
   ServicioCompanion? get servicio => null;
   @override
