@@ -775,9 +775,9 @@ class _PasoHorarioState extends State<_PasoHorario> {
           const SeccionNs('Horario'),
           Row(
             children: [
-              Expanded(child: CampoNs(key: const Key('horario-abre'), etiqueta: 'Abre', controller: _abre, placeholder: '09:00', teclado: TextInputType.datetime)),
+              Expanded(child: CampoNs(key: const Key('horario-abre'), etiqueta: 'Abre', controller: _abre, placeholder: '09:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
               const SizedBox(width: 10),
-              Expanded(child: CampoNs(key: const Key('horario-cierra'), etiqueta: 'Cierra', controller: _cierra, placeholder: '20:00', teclado: TextInputType.datetime)),
+              Expanded(child: CampoNs(key: const Key('horario-cierra'), etiqueta: 'Cierra', controller: _cierra, placeholder: '20:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
             ],
           ),
           if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
