@@ -19,7 +19,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../domain/modulos.dart' show Modulo;
 import 'cliente_companion.dart' show ResumenCierreCompanion, ResumenProveedorDiaCompanion;
 import 'kit/kit_ns.dart';
 import 'pantalla_carga_historica.dart' show SeccionProductosSinDatos;
@@ -47,13 +48,15 @@ class _SeccionExtraCierreCompanionState extends State<SeccionExtraCierreCompanio
     // Un negocio de servicios no tiene cigarrillos, ni productos sin costo, ni separa por proveedor (El dueño, 2026-10-11:
     // "lata de cigarrillos… que parezca que está hecho para turnos").
     final servicios = esNegocioDeServicios();
+    // La lata es la de los cigarrillos (caja aparte): ni servicios ni un local gastronómico la tienen.
+    final lata = moduloActivo(Modulo.cajaAparte);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Cuánta plata mover a la lata AHORA, en este cierre (sin esta línea había que calcularlo de memoria).
-        if (!servicios) FilaClaveValorNs(clave: 'A separar a la lata', valor: plataNs(r.separadoCentavos)),
-        if (!servicios && r.esSeparacionParcial)
+        if (lata) FilaClaveValorNs(clave: 'A separar a la lata', valor: plataNs(r.separadoCentavos)),
+        if (lata && r.esSeparacionParcial)
           FilaClaveValorNs(clave: 'De eso, no alcanza el efectivo — queda pendiente para el próximo cierre', valor: plataNs(r.pendienteCentavos), colorValor: ns.b),
         FilaClaveValorNs(clave: 'Redondeo acumulado', valor: plataNs(r.redondeoAcumuladoCentavos)),
         if (!servicios) ...[

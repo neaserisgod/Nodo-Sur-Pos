@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 
 import '../domain/dinero.dart';
 import '../edicion.dart';
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../domain/modulos.dart' show Modulo;
 import 'app_ns.dart';
 import 'cliente_companion.dart';
 import 'kit/kit_ns.dart';
@@ -139,8 +140,8 @@ class _PantallaMovimientoCajaState extends State<PantallaMovimientoCaja> {
     final listo = _montoCentavos > 0 && !_guardando;
     final cajas = [
       ('Cajón normal', MedioGastoCompanion.cajonNormal),
-      // Un negocio de servicios no tiene cigarrillos ni su lata.
-      if (!esNegocioDeServicios()) ('Lata cigarrillos', MedioGastoCompanion.lata),
+      // Solo el comercio que tiene la lata (un almacén con cigarrillos): ni servicios ni gastronomía.
+      if (moduloActivo(Modulo.cajaAparte)) ('Lata cigarrillos', MedioGastoCompanion.lata),
       ('Mercado Pago', MedioGastoCompanion.mercadoPago),
     ];
     return Scaffold(

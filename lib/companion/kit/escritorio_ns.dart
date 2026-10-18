@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../edicion.dart' show esEdicionGastronomia;
 import '../../servicios/marca_actual.dart';
 import 'barra_inferior_ns.dart';
 import 'iconos_ns.dart';
@@ -65,6 +66,18 @@ const entradasMenuServiciosNs = [
   EntradaMenuNs(pestania: PestaniaNs.mas, etiqueta: 'Más', icono: IconoNs.mas),
 ];
 
+/// Las de un local gastronómico (§22): abre en los Pedidos y la carta reemplaza a los servicios, como en la barra del celular.
+const entradasMenuGastronomiaNs = [
+  EntradaMenuNs(pestania: PestaniaNs.inicio, etiqueta: 'Pedidos', icono: IconoNs.portapapeles),
+  EntradaMenuNs(pestania: PestaniaNs.vender, etiqueta: 'Vender', icono: IconoNs.carrito, destacada: true),
+  EntradaMenuNs(pestania: PestaniaNs.productos, etiqueta: 'Carta', icono: IconoNs.producto),
+  EntradaMenuNs(pestania: PestaniaNs.caja, etiqueta: 'Caja', icono: IconoNs.billetera),
+  EntradaMenuNs(pestania: PestaniaNs.mas, etiqueta: 'Más', icono: IconoNs.mas),
+];
+
+/// Las entradas del menú lateral de esta edición.
+List<EntradaMenuNs> get entradasMenuNs => esEdicionGastronomia ? entradasMenuGastronomiaNs : entradasMenuServiciosNs;
+
 /// El menú lateral. [abajo] va pegado al pie (el estado del bot, por ejemplo).
 class MenuLateralNs extends StatelessWidget {
   const MenuLateralNs({super.key, required this.activa, required this.onSeleccionar, this.hayActualizacion = false, this.abajo});
@@ -89,7 +102,7 @@ class MenuLateralNs extends StatelessWidget {
           children: [
             const _Negocio(),
             const SizedBox(height: 12),
-            for (final (i, e) in entradasMenuServiciosNs.indexed) ...[
+            for (final (i, e) in entradasMenuNs.indexed) ...[
               if (e.destacada) const SizedBox(height: 6),
               _ItemMenu(
                 entrada: e,
@@ -126,7 +139,7 @@ class AtajosMenuNs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CallbackShortcuts(
         bindings: {
-          for (final (i, e) in entradasMenuServiciosNs.indexed)
+          for (final (i, e) in entradasMenuNs.indexed)
             SingleActivator(_digitos[i], alt: true): () => onSeleccionar(e.pestania),
         },
         child: Focus(autofocus: true, child: child),

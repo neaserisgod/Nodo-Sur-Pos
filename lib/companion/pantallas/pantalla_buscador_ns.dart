@@ -8,6 +8,7 @@ import '../app_ns.dart';
 import '../funciones_ns.dart';
 import '../kit/kit_ns.dart';
 import '../../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../../edicion.dart' show esEdicionGastronomia;
 
 class PantallaBuscadorNs extends StatefulWidget {
   const PantallaBuscadorNs({super.key, required this.origen});
@@ -84,7 +85,7 @@ class _PantallaBuscadorNsState extends State<PantallaBuscadorNs> {
                       if (sugerir)
                         Padding(
                           padding: const EdgeInsets.only(top: 2, bottom: 6),
-                          child: Wrap(spacing: 8, runSpacing: 8, children: [for (final s in servicios ? sugerenciasFuncionesServicios : sugerenciasFunciones) ChipNs(texto: s, activo: false, onTap: () => _poner(s))]),
+                          child: Wrap(spacing: 8, runSpacing: 8, children: [for (final s in esEdicionGastronomia ? sugerenciasFuncionesGastronomia : servicios ? sugerenciasFuncionesServicios : sugerenciasFunciones) ChipNs(texto: s, activo: false, onTap: () => _poner(s))]),
                         ),
                       if (!hayTokens && !_todas)
                         Padding(

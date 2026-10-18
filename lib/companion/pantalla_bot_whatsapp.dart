@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import '../domain/bot_whatsapp.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/acceso_bot.dart';
+import '../edicion.dart' show esEdicionGastronomia, rubroDeEdicion;
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ConfiguracionNegocioCompanion;
 import 'kit/kit_ns.dart';
@@ -142,12 +143,12 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     final negocio = _negocio;
     if (negocio == null) return;
     final c = _editada;
-    final problemas = problemasConfigBot(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro);
+    final problemas = problemasConfigBot(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro ?? rubroDeEdicion);
     setState(() => _problemas = problemas);
     if (problemas.isNotEmpty) return;
     setState(() => _guardando = true);
     try {
-      final config = configBotParaGuardar(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro!, anterior: _anterior);
+      final config = configBotParaGuardar(c, nombreNegocio: negocio.nombreComercio, rubro: (negocio.rubro ?? rubroDeEdicion)!, anterior: _anterior);
       await widget.acceso.guardarConfig(config);
       _anterior = config;
       if (mounted) mostrarAvisoNs(context, 'Guardado. El bot lo toma solo, sin reiniciarlo.');
@@ -220,7 +221,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
 
   List<Widget> _configuracion() {
     final negocio = _negocio!;
-    final rubro = negocio.rubro == null ? null : PlantillaRubro.desdeClave(negocio.rubro!);
+    final rubro = PlantillaRubro.desdeClave(negocio.rubro ?? rubroDeEdicion ?? '');
     return [
       _seccion('El negocio'),
       InfoNs(
@@ -276,6 +277,14 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
         const InfoNs(
           'Salen de tu negocio: el horario y la seña de Más › Configuración › Agenda y seña, y los servicios con su precio de la pestaña Servicios. El bot los recibe solo cada vez que los cambiás.',
           icono: IconoNs.calendario,
+        ),
+      ] else if (esEdicionGastronomia) ...[
+        // Lo mismo en un local gastronómico: el horario y cómo trabajan los pedidos los lleva `pedidos_bot_nube.dart` en cada
+        // vuelta. Un horario cargado acá se pisaría.
+        _seccion('Horario, carta y pedidos'),
+        const InfoNs(
+          'Salen de tu local: el horario y el alias de Más › Configuración › Horario y transferencias, la carta con sus precios de la pestaña Carta, y las entregas, zonas y tiempos de Más › Configuración › Pedidos. El bot los recibe solo cada vez que los cambiás.',
+          icono: IconoNs.reloj,
         ),
       ] else ...[
         _seccion('Horarios'),

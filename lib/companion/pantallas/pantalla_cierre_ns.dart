@@ -17,6 +17,8 @@ import '../../domain/dinero.dart';
 import '../../domain/faltantes_cierre.dart';
 import '../../domain/saldo_mp.dart' show SaldoMp;
 import '../../edicion.dart';
+import '../../domain/modulos.dart' show Modulo;
+import '../../servicios/modulos_activos.dart' show moduloActivo;
 import '../../servicios/saldo_mp_nube.dart';
 import '../app_ns.dart';
 import '../cliente_companion.dart' show ProveedorCompanion, ResumenCierreCompanion;
@@ -162,6 +164,10 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
   /// Nodo Sur Servicios: el cierre simple (la lata se precarga en [_cierreSimple], por eso no se muestra).
   bool get _servicios => esEdicionServicios;
 
+  /// La lata de los cigarrillos se cuenta solo donde existe (la caja aparte de un almacén). Donde no, queda como la calculó la
+  /// app, sin mostrarse: un local gastronómico no tiene lata.
+  bool get _conLata => moduloActivo(Modulo.cajaAparte);
+
   @override
   void initState() {
     super.initState();
@@ -217,6 +223,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
         mpContadoCentavos: _centavos(_mp),
         lataContadoCentavos: _centavos(_lata),
       );
+      if (!_conLata) _lata.text = _pesos(r.lataFinalCentavos);
       if (mounted) {
         setState(() {
           _resumen = r;
@@ -418,8 +425,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
             ),
           ),
         if (mp != null) dato('MP esperado', r.mpEsperadoCentavos, mp),
-        // Un negocio de servicios no tiene cigarrillos: la lata queda como la calculó la app, sin mostrarse.
-        if (!_servicios) ...[
+        if (_conLata) ...[
           const SizedBox(height: 4),
           campo('Lata contada', _lata),
           if (la != null) dato('Lata esperada', r.lataFinalCentavos, la),
@@ -462,7 +468,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           apoyo: todo ? 'El conteo coincide con lo esperado.' : 'Diferencia en efectivo: ${_dif(de).toLowerCase()}.',
         ),
         FilaClaveValorNs(clave: 'Diferencia', valor: _dif(de), colorValor: de == 0 ? ns.g : ns.b),
-        if (!_servicios) FilaClaveValorNs(clave: 'Lata al cierre', valor: plataNs(r.lataFinalCentavos)),
+        if (_conLata) FilaClaveValorNs(clave: 'Lata al cierre', valor: plataNs(r.lataFinalCentavos)),
         SeccionExtraCierreCompanion(resumen: r, nota: _nota.text),
       ],
     );

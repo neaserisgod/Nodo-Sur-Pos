@@ -21,6 +21,7 @@ import 'package:la_plazoleta/companion/sync_nube_companion.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
+import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 import 'package:la_plazoleta/domain/plantillas_rubro.dart';
 import 'package:la_plazoleta/data/repositorio_configuracion.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
@@ -288,7 +289,7 @@ void main() {
       expect(negocio, ('Estudio Lila', PlantillaRubro.unas));
     });
 
-    testWidgets('Nodo Gastro ofrece solo su rubro: ni almacén ni servicios (§22)', (t) async {
+    testWidgets('Nodo Gastro no pide rubro: es uno solo para toda la gastronomía (§22)', (t) async {
       edicionActual = Edicion.gastronomia;
       addTearDown(() => edicionActual = Edicion.almacen);
       await tamanio(t);
@@ -304,8 +305,9 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byKey(const Key('rubro-almacen'), skipOffstage: false), findsNothing);
       expect(find.byKey(const Key('rubro-barberia'), skipOffstage: false), findsNothing);
+      expect(find.byKey(const Key('rubro-otro'), skipOffstage: false), findsNothing);
+      expect(find.byKey(const Key('rubro-rotiseria'), skipOffstage: false), findsNothing);
       await t.enterText(find.byKey(const Key('asistente-nombre')), 'Rotisería Doña Ana');
-      await t.tap(find.byKey(const Key('rubro-rotiseria')));
       await t.pump();
       await t.tap(find.byKey(const Key('asistente-seguir')));
       await t.pumpAndSettle();
@@ -386,6 +388,72 @@ void main() {
       expect(guardado!.dias.values.where((f) => f != null), hasLength(7));
       expect(guardado!.dias[7], (desdeMin: 600, hastaMin: 1110));
       expect(find.byKey(const Key('asistente-terminar')), findsOneWidget, reason: 'sigue a cobros');
+    });
+
+    testWidgets('gastronomía: después del horario, bot, catálogo y cobro; un envío pide su primera zona (§22)', (t) async {
+      await tamanio(t);
+      ConfigPedidos? guardado;
+      var abrioBot = false;
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.pedidos,
+        rubroInicial: PlantillaRubro.rotiseria,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        alGuardarPedidos: (c) async => guardado = c,
+        tieneBot: () async => true,
+        alAbrirBot: (_) async => abrioBot = true,
+        alAbrirWeb: (_) {},
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(pasosDeLaForma(FormaDeTrabajo.gastronomia), [PasoNegocio.negocio, PasoNegocio.producto, PasoNegocio.horario, PasoNegocio.pedidos, PasoNegocio.cobros]);
+      expect(pasosDeLaForma(FormaDeTrabajo.servicios), isNot(contains(PasoNegocio.pedidos)));
+      expect(find.text('Paso 4 de 5'), findsOneWidget);
+      // El plan trae el bot: se enciende desde acá.
+      await t.tap(find.text('Encender'));
+      expect(abrioBot, isTrue);
+      await t.tap(find.byKey(const Key('asistente-catalogo')));
+      await t.dragUntilVisible(find.byKey(const Key('asistente-cadete')), find.byType(ListView), const Offset(0, -200));
+      await t.tap(find.byKey(const Key('asistente-cadete')));
+      await t.pump();
+      await t.ensureVisible(find.byKey(const Key('asistente-guardar-pedidos')));
+      await t.tap(find.byKey(const Key('asistente-guardar-pedidos')));
+      await t.pumpAndSettle();
+      expect(guardado, isNull, reason: 'un envío sin zona no se puede cobrar');
+      expect(find.text('Poné una zona y lo que cobrás el envío', skipOffstage: false), findsOneWidget);
+      await t.dragUntilVisible(find.byKey(const Key('asistente-costo-zona')), find.byType(ListView), const Offset(0, -200));
+      await t.enterText(find.descendant(of: find.byKey(const Key('asistente-zona')), matching: find.byType(EditableText)), 'Centro');
+      await t.enterText(find.descendant(of: find.byKey(const Key('asistente-costo-zona')), matching: find.byType(EditableText)), '1500');
+      await t.ensureVisible(find.byKey(const Key('asistente-guardar-pedidos')));
+      await t.tap(find.byKey(const Key('asistente-guardar-pedidos')));
+      await t.pumpAndSettle();
+      expect(guardado!.catalogoWhatsapp, isTrue);
+      expect(guardado!.retiro, isTrue);
+      expect(guardado!.cadetePropio, isTrue);
+      expect(guardado!.zonas.single.nombre, 'Centro');
+      expect(guardado!.zonas.single.costoCentavos, 150000);
+      expect(find.byKey(const Key('asistente-terminar')), findsOneWidget, reason: 'sigue a cobros');
+    });
+
+    testWidgets('sin el bot en el plan, se ofrece verlo en la web', (t) async {
+      await tamanio(t);
+      String? seccion;
+      await t.pumpWidget(app(AsistenteNegocio(
+        pasoInicial: PasoNegocio.pedidos,
+        rubroInicial: PlantillaRubro.rotiseria,
+        alGuardarNegocio: (_, _) async {},
+        alEscanear: (_) async => null,
+        alGuardarProducto: (_) async {},
+        tieneBot: () async => false,
+        alAbrirBot: (_) async {},
+        alAbrirWeb: (s) => seccion = s,
+        alTerminar: (_, _) {},
+      )));
+      await t.pumpAndSettle();
+      expect(find.text('Encender'), findsNothing);
+      await t.tap(find.text('Ver planes'));
+      expect(seccion, 'bot');
     });
 
     testWidgets('"Después" deja el paso pendiente y no lo da por hecho', (t) async {

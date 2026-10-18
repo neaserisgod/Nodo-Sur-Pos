@@ -87,4 +87,7 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    - Límites: solo números de **WhatsApp Business**; WhatsApp revisa cada producto nuevo y pide foto (si no hay, el logo
      del local); es la API no oficial, así que si deja de andar el bot vuelve al pedido por texto, que ya existe. A
      verificar en un celular real: en qué unidad viene el precio (parece ×1000) y cuánto tarda la revisión.
+**Alta y pantallas (2026-10-18):** sin elegir rubro (uno solo, "Gastronomía"); el asistente suma lo más rompedor (bot,
+   catálogo de WhatsApp, cobro adelantado, la cocina que frena al bot) y las entregas con su primera zona; Configuración › "Horario y transferencias" (el horario y el alias que usa el bot); sin lata ni cigarrillos;
+   menú lateral y buscador propios.
 6. **Después:** teléfono, link propio, mesas (comandas, cocina, mozos, propinas).
