@@ -1,0 +1,611 @@
+<title>Nodo Gastro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Geist:wght@400..600&display=swap">
+<style>
+/* Mock de Nodo Gastro (app del celular, edición gastronomía) con la marca 2026-10 del sitio (NodoSurPage/nodo.css):
+   claro tipo Apple, Bricolage para títulos, Geist para texto, naranja de acento con texto negro encima, nunca blanco.
+   Un solo aspecto claro, como el sitio: se fija a propósito y cada color sale de un token.
+   Layout: en escritorio, el celular a la derecha y qué probar a la izquierda; en el celular, la app ocupa la pantalla. */
+:root{
+  --blanco:#FFFFFF;--piedra:#F5F4F2;--linea:#EAE8E5;--tinta:#1A1714;--gris:#57534E;--gris2:#8A847D;
+  --naranja:#E4580B;--naranja-suave:#FCEBDD;--naranja-osc:#9A3A07;
+  --ok:#1F7A4D;--ok-suave:#E3F2EA;--esp:#8A5A00;--esp-suave:#FBF0D9;--mal:#B42318;--mal-suave:#FCE8E6;
+  --fondo:#ECEAE6;
+  --tit:'Bricolage Grotesque',system-ui,sans-serif;--txt:'Geist',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --r-chico:14px;--r:22px;--ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--fondo);color:var(--tinta);font:400 16px/1.45 var(--txt);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--tinta);outline-offset:2px;border-radius:8px}
+.num{font-variant-numeric:tabular-nums}
+.tit{font-family:var(--tit);font-weight:700;letter-spacing:-.04em;line-height:1;text-wrap:balance}
+
+/* página */
+.pag{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:64px;align-items:center;max-width:1120px;margin:0 auto;padding-block:32px}
+.intro{display:grid;gap:22px;max-width:440px;justify-self:end}
+.marca{display:flex;align-items:center;gap:10px;font-family:var(--tit);font-weight:700;font-size:20px;letter-spacing:-.03em}
+.marca i{width:30px;height:30px;border-radius:9px;background:var(--naranja);display:grid;place-items:center}
+.intro h1{font-size:clamp(40px,4.6vw,60px);font-weight:800;letter-spacing:-.05em}
+.intro h1 span{color:var(--naranja)}
+.intro .baj{font-size:18px;color:var(--gris);max-width:36ch}
+.probar{display:grid;gap:10px;padding:20px;border-radius:var(--r);background:var(--blanco)}
+.probar b{font-size:14px;font-weight:600;color:var(--gris)}
+.probar li{display:flex;gap:10px;align-items:baseline;font-size:15px}
+.probar li::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--naranja);transform:translateY(-2px)}
+.intro .nota{font-size:13px;color:var(--gris2)}
+
+/* celular */
+.tel{position:relative;width:390px;height:min(844px,calc(100dvh - 64px));min-height:640px;border-radius:52px;background:var(--blanco);
+  box-shadow:0 0 0 10px var(--tinta),0 60px 100px -40px rgba(26,23,20,.55);overflow:hidden;overflow:clip;display:flex;flex-direction:column}
+.est{flex:none;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font-size:14px;font-weight:600}
+.est .isla{width:110px;height:30px;border-radius:20px;background:var(--tinta)}
+.vista{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 20px 124px;scrollbar-width:none}
+.vista::-webkit-scrollbar{display:none}
+
+/* barra inferior */
+.barra{position:absolute;left:12px;right:12px;bottom:14px;height:68px;border-radius:24px;background:var(--tinta);display:grid;grid-template-columns:repeat(5,1fr);padding:6px;z-index:5}
+.barra button{border:0;background:none;color:#B9B3AC;display:grid;place-items:center;gap:2px;font-size:11px;font-weight:500;border-radius:18px;padding:6px 0 4px}
+.barra button svg{width:22px;height:22px}
+.barra button[aria-current=page]{background:var(--blanco);color:var(--tinta)}
+.barra .badge{position:absolute;transform:translate(13px,-12px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--naranja);color:var(--tinta);font-size:11px;font-weight:700;display:grid;place-items:center}
+.barra .ico{position:relative;display:grid;place-items:center}
+
+/* encabezado de pantalla */
+.cab{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:6px 0 18px}
+.cab small{display:block;font-size:15px;font-weight:600;color:var(--gris);margin-bottom:6px}
+.cab h2{font-size:40px;font-weight:800;letter-spacing:-.055em}
+.cab .acc{display:flex;gap:8px}
+.redondo{width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--piedra)}
+.redondo svg{width:22px;height:22px}
+.redondo.a{background:var(--naranja)}
+
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 10px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gris)}
+.sec span{letter-spacing:0}
+
+/* segmentado */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:16px;background:var(--piedra)}
+.seg button{border:0;background:none;min-height:42px;border-radius:12px;font-size:15px;font-weight:600;color:var(--gris)}
+.seg button[aria-pressed=true]{background:var(--blanco);color:var(--tinta);box-shadow:0 1px 3px rgba(26,23,20,.12)}
+.seg.pausa button[aria-pressed=true]{background:var(--tinta);color:var(--blanco)}
+.ayuda{font-size:14px;color:var(--gris);margin-top:8px}
+
+.aviso-cocina{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:var(--r-chico);background:var(--esp-suave);color:var(--esp);font-size:14px;font-weight:500;margin-bottom:4px}
+.aviso-cocina.pausa{background:var(--tinta);color:var(--blanco)}
+.aviso-cocina svg{flex:none;width:18px;height:18px}
+
+/* pedido */
+.peds{display:grid;gap:10px}
+.ped{border-radius:var(--r);background:var(--piedra);padding:16px;display:grid;gap:6px;text-align:left;border:0;width:100%;transition:transform .15s var(--ease)}
+.ped:active{transform:scale(.99)}
+.ped.nuevo{box-shadow:0 0 0 2px var(--naranja)}
+.ped-a{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.ped-a b{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ped-a .hora{font-size:18px;font-weight:600}
+.ped-a .hora.prog{color:var(--esp)}
+.ped-m{font-size:13px;color:var(--gris);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.wa{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:600}
+.wa::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.ped-r{font-size:15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ped-p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ped-p .tot{font-family:var(--tit);font-weight:700;font-size:20px;letter-spacing:-.03em;margin-right:auto}
+.chip{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--blanco);color:var(--gris)}
+.chip.ok{background:var(--ok-suave);color:var(--ok)}
+.chip.esp{background:var(--esp-suave);color:var(--esp)}
+.chip.mal{background:var(--mal-suave);color:var(--mal)}
+.chip.nar{background:var(--naranja-suave);color:var(--naranja-osc)}
+.prog-l{font-size:13px;font-weight:600;color:var(--esp)}
+
+.b{border:0;min-height:42px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s var(--ease),filter .15s}
+.b:active{transform:scale(.96)}
+.b-a{background:var(--naranja);color:var(--tinta)}
+.b-d{background:var(--tinta);color:var(--blanco)}
+.b-p{background:var(--blanco);color:var(--tinta)}
+.b-l{background:none;color:var(--gris);padding:0 8px}
+.b-g{min-height:56px;width:100%;border-radius:18px;font-size:17px}
+
+.vacio{padding:40px 8px;text-align:center;color:var(--gris)}
+.vacio b{display:block;font-family:var(--tit);font-size:24px;letter-spacing:-.03em;color:var(--tinta);margin-bottom:6px}
+
+/* carta */
+.lista{border-radius:var(--r);background:var(--piedra);overflow:hidden}
+.fila{display:flex;align-items:center;gap:12px;padding:14px 16px;border:0;background:none;width:100%;text-align:left}
+.fila+.fila{border-top:1px solid var(--linea)}
+.fila .q{flex:1;min-width:0}
+.fila .q b{display:block;font-weight:600;font-size:16px}
+.fila .q small{display:block;font-size:13px;color:var(--gris);margin-top:1px}
+.fila .d{text-align:right;flex:none}
+.fila .d b{display:block;font-weight:600}
+.fila .d small{display:block;font-size:13px;color:var(--gris)}
+.fila .d small.ok{color:var(--ok)}
+.fila .d small.mal{color:var(--mal)}
+.foto{flex:none;width:44px;height:44px;border-radius:12px;background:var(--blanco);display:grid;place-items:center;font-family:var(--tit);font-weight:700;color:var(--naranja-osc);font-size:17px}
+.traer{display:flex;gap:14px;align-items:center;padding:16px;border-radius:var(--r);background:var(--naranja-suave);border:0;width:100%;text-align:left;margin-bottom:6px}
+.traer b{display:block;font-weight:600}
+.traer small{display:block;font-size:13px;color:var(--naranja-osc)}
+.traer svg{flex:none;width:26px;height:26px;color:var(--naranja-osc)}
+
+/* vender */
+.buscar{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border-radius:18px;background:var(--piedra)}
+.buscar svg{width:22px;height:22px;color:var(--gris)}
+.buscar input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:17px}
+.rapidos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.rapido{border:0;border-radius:18px;background:var(--piedra);padding:12px 14px;text-align:left;display:grid;gap:2px;min-height:68px}
+.rapido b{font-size:15px;font-weight:600;line-height:1.2}
+.rapido span{font-size:14px;color:var(--gris)}
+.carrito .fila{padding:12px 16px}
+.paso{display:flex;align-items:center;gap:4px;background:var(--blanco);border-radius:999px;padding:3px}
+.paso button{width:32px;height:32px;border-radius:50%;border:0;background:var(--piedra);font-size:18px;font-weight:600;line-height:1}
+.paso span{min-width:22px;text-align:center;font-weight:600}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 12px}
+.total span{font-size:15px;color:var(--gris);font-weight:500}
+.total b{font-family:var(--tit);font-size:44px;font-weight:800;letter-spacing:-.05em}
+.medios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.medio{border:0;min-height:64px;border-radius:18px;background:var(--piedra);font-weight:600;font-size:16px;display:flex;align-items:center;gap:10px;padding:0 16px}
+.medio svg{width:22px;height:22px}
+.medio.a{background:var(--naranja)}
+.medio:disabled{opacity:.45;cursor:default}
+
+/* caja */
+.grande{border-radius:var(--r);background:var(--tinta);color:var(--blanco);padding:20px;display:grid;gap:4px}
+.grande small{color:#B9B3AC;font-size:14px;font-weight:500}
+.grande b{font-family:var(--tit);font-size:46px;font-weight:800;letter-spacing:-.05em;line-height:1}
+.grande p{font-size:14px;color:#D8D3CD}
+.barras{display:grid;gap:12px;padding:16px;border-radius:var(--r);background:var(--piedra)}
+.barras li{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;font-size:14px}
+.barras .bar{height:10px;border-radius:5px;background:var(--blanco);overflow:hidden}
+.barras .bar i{display:block;height:100%;border-radius:5px;background:var(--tinta)}
+.barras .bar i.wa{background:var(--ok)}
+.barras .bar i.nar{background:var(--naranja)}
+.tres{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{border-radius:18px;background:var(--piedra);padding:12px}
+.kpi small{display:block;font-size:12px;color:var(--gris);font-weight:500}
+.kpi b{font-family:var(--tit);font-size:24px;font-weight:700;letter-spacing:-.03em}
+
+/* hoja (diálogo de abajo) */
+.velo{position:absolute;inset:0;background:rgba(26,23,20,.38);z-index:10;opacity:0;pointer-events:none;transition:opacity .2s}
+.velo.on{opacity:1;pointer-events:auto}
+.hoja{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:var(--blanco);border-radius:32px 32px 0 0;padding:10px 20px 28px;z-index:11;transform:translateY(105%);visibility:hidden;transition:transform .28s var(--ease),visibility 0s .28s;scrollbar-width:none}
+.hoja.on{transform:none;visibility:visible;transition:transform .28s var(--ease)}
+.hoja::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--linea);margin:0 auto 14px}
+.hoja h3{font-family:var(--tit);font-size:26px;font-weight:700;letter-spacing:-.035em;line-height:1.05;margin-bottom:6px}
+.hoja .sub{font-size:14px;color:var(--gris)}
+.hoja .botones{display:grid;gap:8px;margin-top:20px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:15px}
+.kv+.kv{border-top:1px solid var(--linea)}
+.kv.t{font-weight:600;font-size:17px}
+.campo{display:grid;gap:6px;margin-top:14px}
+.campo label{font-size:14px;font-weight:600;color:var(--gris)}
+.campo input{height:52px;border-radius:14px;border:0;background:var(--piedra);padding:0 14px;font-size:16px;outline:none}
+.campo input:focus{box-shadow:0 0 0 2px var(--tinta)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chips button{border:0;min-height:40px;padding:0 14px;border-radius:999px;background:var(--piedra);font-size:14px;font-weight:600;color:var(--gris)}
+.chips button[aria-pressed=true]{background:var(--tinta);color:var(--blanco)}
+
+/* aviso arriba (mostrarAviso), nunca tapando el cobro */
+.toast{position:absolute;left:16px;right:16px;top:50px;z-index:20;padding:14px 16px;border-radius:18px;background:var(--tinta);color:var(--blanco);font-size:15px;font-weight:500;
+  box-shadow:0 20px 40px -18px rgba(26,23,20,.6);transform:translateY(-140%);opacity:0;transition:transform .3s var(--ease),opacity .3s}
+.toast.on{transform:none;opacity:1}
+
+@media (max-width:860px){
+  .pag{grid-template-columns:1fr;gap:28px;padding-block:16px}
+  .intro{justify-self:center;order:2}
+  .tel{justify-self:center}
+}
+@media (max-width:460px){
+  body{padding-left:0;padding-right:0}
+  .pag{padding-block:0}
+  .tel{width:100%;height:100dvh;min-height:0;border-radius:0;box-shadow:none}
+  .est{display:none}
+  .toast{top:12px}
+  .intro{padding:0 max(16px,env(safe-area-inset-left,0px)) 32px max(16px,env(safe-area-inset-right,0px))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="pag">
+  <section class="intro" aria-labelledby="t-intro">
+    <div class="marca"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1714" stroke-width="2.6" stroke-linecap="round"><path d="M5 19V5l14 14V5"/></svg></i>Nodo Gastro</div>
+    <h1 id="t-intro" class="tit">Tu WhatsApp contesta solo.<br><span>Vos cociná.</span></h1>
+    <p class="baj">La app del local con la marca nueva: pedidos del mostrador y del bot en una sola lista, la carta con su costo y la caja del día.</p>
+    <div class="probar">
+      <b>Probá en el celular de la derecha</b>
+      <ul style="display:grid;gap:8px">
+        <li>Aceptá el pedido de Juan que entró por WhatsApp.</li>
+        <li>Pausá la cocina: el bot deja de tomar pedidos.</li>
+        <li>Tomá un pedido del mostrador con el botón naranja.</li>
+        <li>Cobrá uno listo y miralo sumar en Caja.</li>
+      </ul>
+    </div>
+    <p class="nota">Maqueta con datos de ejemplo. No guarda nada: al recargar vuelve a empezar.</p>
+  </section>
+
+  <div class="tel" id="tel">
+    <div class="est" aria-hidden="true"><span class="num">21:02</span><span class="isla"></span><span>5G</span></div>
+    <main class="vista" id="vista" aria-live="polite"></main>
+    <nav class="barra" id="barra" aria-label="Secciones"></nav>
+    <div class="velo" id="velo"></div>
+    <div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t"></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+// Plata en centavos, como en la app (convención 1). Se muestra sin centavos, redondeando hacia arriba.
+const plata = c => '$ ' + Math.ceil(c / 100).toLocaleString('es-AR');
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const $ = id => document.getElementById(id);
+
+const ICO = {
+  pedidos:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  carta:'<path d="M4 5h7v15H4zM13 5h7v15h-7z"/><path d="M7 9h1M16 9h1"/>',
+  vender:'<path d="M3 4h2l2.4 11h10.2L20 8H6.3"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
+  caja:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>',
+  mas:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  mas2:'<path d="M12 5v14M5 12h14"/>',
+  tuerca:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 6.5l2.6 1.5M17.2 16l2.6 1.5M4.2 17.5l2.6-1.5M17.2 8l2.6-1.5"/>',
+  lupa:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  reloj:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  pausa:'<circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/>',
+  bajar:'<path d="M12 4v11M7 10.5 12 15.5l5-5M5 20h14"/>',
+  billete:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/>',
+  qr:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+  point:'<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M9 7h6M9 17h.01M12 17h.01M15 17h.01M9 13h.01M12 13h.01M15 13h.01"/>',
+  mixto:'<path d="M7 4v16M17 4v16M3 8h8M13 16h8"/>',
+};
+const svg = (k, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 1.9}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[k]}</svg>`;
+
+// ---- datos de ejemplo ----
+const CONFIG = { minutosNormal:30, minutosDemorada:60, zonas:[
+  {nombre:'Centro', costo:150000, demora:0}, {nombre:'Melipal', costo:220000, demora:10}, {nombre:'Km 8', costo:350000, demora:20}] };
+
+const CARTA = [
+  {id:'pollo', n:'Pollo al spiedo', cat:'Platos', p:1400000, costo:690000, min:15, receta:[['Pollo entero', '1,6 kg', 560000],['Limón, ajo y especias','',40000],['Gas y mano de obra','15 min',90000]]},
+  {id:'papas', n:'Papas fritas grandes', cat:'Platos', p:600000, costo:210000, min:10, receta:[['Papa','600 g',90000],['Aceite','',60000],['Mano de obra','10 min',60000]]},
+  {id:'emp', n:'Empanadas de carne · docena', cat:'Platos', p:1800000, costo:820000, min:20, receta:[['Carne picada','700 g',490000],['Tapas','12 u',150000],['Cebolla, huevo, aceituna','',90000],['Mano de obra','20 min',90000]]},
+  {id:'mila', n:'Milanesa napolitana con fritas', cat:'Platos', p:1150000, costo:580000, min:20, receta:[['Nalga','250 g',310000],['Pan rallado y huevo','',50000],['Jamón, queso, salsa','',120000],['Papa','300 g',45000],['Mano de obra','20 min',55000]]},
+  {id:'pizza', n:'Pizza muzzarella', cat:'Platos', p:1200000, costo:510000, min:18, receta:[['Prepizza','1 u',120000],['Muzzarella','350 g',330000],['Salsa y orégano','',30000],['Mano de obra','18 min',30000]]},
+  {id:'tarta', n:'Tarta de verdura', cat:'Platos', p:900000, costo:610000, min:25, receta:[['Acelga','1 atado',150000],['Tapas de tarta','2 u',180000],['Huevo y queso','',190000],['Mano de obra','25 min',90000]]},
+  {id:'coca', n:'Coca-Cola 1,5 L', cat:'Bebidas y otros', p:380000, costo:240000},
+  {id:'agua', n:'Agua sin gas 1,5 L', cat:'Bebidas y otros', p:220000, costo:120000},
+  {id:'flan', n:'Flan casero con dulce', cat:'Bebidas y otros', p:350000, costo:140000},
+];
+const INSUMOS = [
+  ['Pollo entero','42 kg','alcanza para 26 pollos'],['Papa','18 kg','alcanza para 30 porciones'],['Muzzarella','2,1 kg','alcanza para 6 pizzas'],
+  ['Carne picada','3,5 kg','alcanza para 5 docenas'],['Tapas de empanada','96 u','alcanza para 8 docenas'],['Acelga','2 atados','alcanza para 2 tartas'],
+];
+const plato = id => CARTA.find(p => p.id === id);
+
+let sig = 47;
+const PEDIDOS = [
+  {id:1, num:41, cli:'Juan Pérez', canal:'WhatsApp', entrega:'cadete', zona:'Centro', dir:'Mitre 340, 2° B', tel:'294 455-1203', hora:'21:40', estado:'porConfirmar', lin:[['pollo',1],['papas',1]], envio:150000, pagado:false, nuevo:true},
+  {id:2, num:40, cli:'Marta Giménez', canal:'WhatsApp', entrega:'retiro', tel:'294 430-8871', hora:'21:30', estado:'esperandoPago', lin:[['emp',1],['coca',1]], envio:0, pagado:false},
+  {id:3, num:39, cli:'Lucía', canal:'Mostrador', entrega:'retiro', hora:'21:20', estado:'porHacer', lin:[['mila',2],['flan',2]], envio:0, pagado:false},
+  {id:4, num:38, cli:'Ezequiel R.', canal:'WhatsApp', entrega:'reparto', zona:'Melipal', dir:'Av. Bustillo km 4,2', tel:'294 412-5560', hora:'21:25', estado:'porHacer', lin:[['pizza',2],['coca',1]], envio:220000, pagado:true},
+  {id:5, num:37, cli:'Familia Sosa', canal:'Teléfono', entrega:'retiro', tel:'294 467-0012', hora:'21:10', estado:'listo', lin:[['pollo',1],['papas',2],['agua',1]], envio:0, pagado:false},
+  {id:6, num:36, cli:'Carla', canal:'WhatsApp', entrega:'cadete', zona:'Centro', dir:'Moreno 1120', tel:'294 401-7745', hora:'21:00', estado:'enCamino', lin:[['tarta',1],['emp',1]], envio:150000, pagado:false},
+  {id:7, num:42, cli:'Nicolás', canal:'WhatsApp', entrega:'retiro', tel:'294 499-3321', hora:'12:30', dia:'mañana', estado:'porHacer', programado:true, lin:[['emp',2]], envio:0, pagado:true},
+];
+
+const ESTADOS = [['esperandoPago','Esperando el pago'],['porConfirmar','Por confirmar'],['porHacer','Por hacer'],['listo','Listo'],['enCamino','En camino']];
+const ENTREGA = { retiro:'Retira en el local', cadete:'Envío (cadete propio)', reparto:'Envío (servicio de reparto)' };
+const esEnvio = p => p.entrega !== 'retiro';
+const subtotal = p => p.lin.reduce((s, [id, q]) => s + plato(id).p * q, 0);
+const totalPedido = p => subtotal(p) + p.envio;
+
+// Caja: lo que ya se cobró hoy antes de abrir la maqueta, más lo que se cobra acá.
+const caja = { medios:{Efectivo:8640000, QR:11230000, Point:5870000, Mixto:0}, canales:{WhatsApp:15900000, Mostrador:7340000, Teléfono:2500000}, pedidos:23 };
+
+let tab = 'pedidos', cocina = 'normal', cartaCat = 'Platos';
+let carrito = [['emp',1],['coca',2]];
+
+// ---- avisos arriba ----
+let tt;
+function aviso(txt) {
+  const t = $('toast'); t.textContent = txt; t.classList.add('on');
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+// ---- hoja ----
+function abrirHoja(html) {
+  $('hoja').innerHTML = html; $('hoja').scrollTop = 0;
+  $('velo').classList.add('on'); $('hoja').classList.add('on');
+  const f = $('hoja').querySelector('button,input'); if (f) setTimeout(() => f.focus({preventScroll:true}), 280);
+}
+function cerrarHoja() { $('velo').classList.remove('on'); $('hoja').classList.remove('on'); }
+$('velo').onclick = cerrarHoja;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarHoja(); });
+
+// ---- barra ----
+function barra() {
+  const abiertos = PEDIDOS.filter(p => p.estado === 'porConfirmar' || p.estado === 'esperandoPago').length;
+  const items = [['pedidos','Pedidos'],['carta','Carta'],['vender','Vender'],['caja','Caja'],['mas','Más']];
+  $('barra').innerHTML = items.map(([k, n]) => `<button data-tab="${k}" ${tab === k ? 'aria-current="page"' : ''}><span class="ico">${svg(k)}${k === 'pedidos' && abiertos ? `<span class="badge num">${abiertos}</span>` : ''}</span>${n}</button>`).join('');
+}
+$('barra').onclick = e => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; render(); $('vista').scrollTop = 0; };
+
+// ---- Pedidos ----
+function acciones(p) {
+  const cobrable = !p.pagado && !p.cobrado;
+  const a = [];
+  if (p.estado === 'porConfirmar') { a.push(['Rechazar','rechazado','b-l'], ['Aceptar','porHacer','b-a']); }
+  else if (p.estado === 'porHacer') a.push(['Está listo','listo','b-d']);
+  else if (p.estado === 'listo' && esEnvio(p)) a.push(['Salió','enCamino','b-d']);
+  else if (p.estado === 'listo') a.push(cobrable ? ['Cobrar','cobrar','b-a'] : ['Entregado','entregado','b-d']);
+  else if (p.estado === 'enCamino') { if (cobrable) a.push(['Cobrar','cobrar','b-p']); a.push(['Entregado','entregado','b-d']); }
+  return a;
+}
+function tarjeta(p) {
+  const res = p.lin.map(([id, q]) => `${q} ${plato(id).n}`).join(' · ');
+  const chip = p.pagado ? '<span class="chip ok">Pagado</span>'
+    : p.estado === 'esperandoPago' ? '<span class="chip esp">Esperando Mercado Pago</span>'
+    : p.cobrado ? '<span class="chip ok">Cobrado</span>' : '';
+  return `<div class="ped${p.nuevo ? ' nuevo' : ''}" data-ped="${p.id}" role="button" tabindex="0" aria-label="Pedido ${p.num} de ${esc(p.cli)}">
+    <div class="ped-a"><b>${esc(p.cli)}</b><span class="hora num${p.programado ? ' prog' : ''}">${p.hora}</span></div>
+    <p class="ped-m"><span>#${p.num}</span>·${p.canal === 'WhatsApp' ? '<span class="wa">WhatsApp</span>' : `<span>${p.canal}</span>`}·<span>${ENTREGA[p.entrega]}${p.zona ? ' · ' + p.zona : ''}</span></p>
+    ${p.programado ? `<p class="prog-l">Programado para ${p.dia} a las ${p.hora}</p>` : ''}
+    <p class="ped-r">${esc(res)}</p>
+    <div class="ped-p"><span class="tot num">${plata(totalPedido(p))}</span>${chip}${acciones(p).map(([t, a, c]) => `<button class="b ${c}" data-acc="${a}" data-id="${p.id}">${t}</button>`).join('')}</div>
+  </div>`;
+}
+function vistaPedidos() {
+  const abiertos = PEDIDOS.filter(p => ESTADOS.some(([k]) => k === p.estado));
+  const txtCocina = { normal:`El bot dice que está en ${CONFIG.minutosNormal} minutos.`, demorada:`El bot avisa la demora: ${CONFIG.minutosDemorada} minutos.`, pausada:'El bot no toma pedidos. El mostrador sigue.' }[cocina];
+  let h = `<header class="cab"><div><small>Pedidos</small><h2 class="tit num">${abiertos.length ? abiertos.length + ' abiertos' : 'Nada pendiente'}</h2></div>
+    <div class="acc"><button class="redondo" data-ir="config" aria-label="Configurar pedidos">${svg('tuerca')}</button><button class="redondo a" data-ir="nuevo" aria-label="Nuevo pedido">${svg('mas2', 2.4)}</button></div></header>`;
+  if (cocina !== 'normal') h += `<div class="aviso-cocina${cocina === 'pausada' ? ' pausa' : ''}">${svg(cocina === 'pausada' ? 'pausa' : 'reloj')}${cocina === 'pausada' ? 'Cocina pausada. WhatsApp no toma pedidos.' : 'Cocina con demora. El bot promete ' + CONFIG.minutosDemorada + ' minutos.'}</div>`;
+  h += `<div class="sec" style="margin-top:8px">La cocina</div>
+    <div class="seg${cocina === 'pausada' ? ' pausa' : ''}" role="group" aria-label="Estado de la cocina">${[['normal','Normal'],['demorada','Con demora'],['pausada','Pausada']].map(([k, n]) => `<button data-cocina="${k}" aria-pressed="${cocina === k}">${n}</button>`).join('')}</div>
+    <p class="ayuda">${txtCocina}</p>`;
+  if (!abiertos.length) h += `<div class="vacio"><b>Todo entregado.</b>Cuando entre un pedido, por el mostrador o por WhatsApp, aparece acá.</div>`;
+  for (const [k, n] of ESTADOS) {
+    const g = abiertos.filter(p => p.estado === k);
+    if (!g.length) continue;
+    h += `<div class="sec">${n}<span class="num">${g.length}</span></div><div class="peds">${g.map(tarjeta).join('')}</div>`;
+  }
+  return h;
+}
+function avanzar(p, a) {
+  if (a === 'cobrar') return hojaCobro(p);
+  const antes = p.estado; p.estado = a; p.nuevo = false;
+  const msg = { porHacer:`Aceptado. ${p.canal === 'WhatsApp' ? 'El bot le avisó a ' + p.cli + '.' : ''}`, rechazado:`Rechazado. El bot le avisó a ${p.cli}.`, listo:`#${p.num} listo.`, enCamino:`#${p.num} salió para ${p.zona}.`, entregado:`#${p.num} entregado.` }[a];
+  render();
+  // Los de WhatsApp los avisa el bot; los cargados por el local, se ofrece avisar.
+  if (p.canal !== 'WhatsApp' && p.tel && (a === 'listo' || a === 'enCamino')) {
+    abrirHoja(`<h3 id="hoja-t">¿Le avisás a ${esc(p.cli)}?</h3><p class="sub">Se abre WhatsApp con el mensaje escrito: “Hola, tu pedido #${p.num} ${a === 'listo' ? 'ya está listo para retirar' : 'ya salió'}.”</p>
+      <div class="botones"><button class="b b-a b-g" data-cerrar="Abriendo WhatsApp…">Avisar por WhatsApp</button><button class="b b-p b-g" style="background:var(--piedra)" data-cerrar>Ahora no</button></div>`);
+  } else if (msg) aviso(msg);
+  void antes;
+}
+function hojaDetalle(p) {
+  const lin = p.lin.map(([id, q]) => `<div class="kv"><span>${q} × ${esc(plato(id).n)}</span><span class="num">${plata(plato(id).p * q)}</span></div>`).join('');
+  const se = p.estado !== 'entregado' && p.estado !== 'cancelado' && p.estado !== 'rechazado';
+  abrirHoja(`<h3 id="hoja-t">#${p.num} · ${esc(p.cli)}</h3>
+    <p class="sub">${p.canal} · ${ENTREGA[p.entrega]}${p.programado ? ` · Programado para ${p.dia} ${p.hora}` : ` · Para las ${p.hora}`}</p>
+    ${p.dir ? `<p class="sub">${esc(p.dir)} (${p.zona})</p>` : ''}${p.tel ? `<p class="sub num">Tel. ${p.tel}</p>` : ''}
+    <div style="margin-top:14px">${lin}${p.envio ? `<div class="kv"><span>Envío · ${p.zona}</span><span class="num">${plata(p.envio)}</span></div>` : ''}
+    <div class="kv t"><span>Total</span><span class="num">${plata(totalPedido(p))}</span></div></div>
+    ${p.pagado ? '<span class="chip ok" style="margin-top:6px">Pagado por Mercado Pago</span>' : p.estado === 'esperandoPago' ? '<span class="chip esp" style="margin-top:6px">Esperando el pago por Mercado Pago</span>' : ''}
+    <div class="botones">${p.tel ? `<button class="b b-p b-g" style="background:var(--piedra)" data-cerrar="Abriendo WhatsApp con ${esc(p.cli)}…">Escribirle por WhatsApp</button>` : ''}
+    ${se ? `<button class="b b-l b-g" style="color:var(--mal)" data-cancelar="${p.id}">Cancelar el pedido</button>` : ''}</div>`);
+}
+
+// cobrar: el pedido se vuelve una venta de siempre, con los mismos cuatro medios
+function hojaCobro(p, venta) {
+  const total = p ? totalPedido(p) : totalCarrito();
+  abrirHoja(`<h3 id="hoja-t">Cobrar ${p ? '#' + p.num : 'la venta'}</h3><p class="sub">${p ? esc(p.cli) + (p.envio ? ' · el envío va como “Varios”' : '') : carrito.length + ' productos'}</p>
+    <div class="total"><span>Total</span><b class="num">${plata(total)}</b></div>
+    <div class="medios">${[['Efectivo','billete'],['QR','qr'],['Point','point'],['Mixto','mixto']].map(([m, i], n) => `<button class="medio${n === 0 ? ' a' : ''}" data-medio="${m}" data-ped="${p ? p.id : ''}">${svg(i)}${m}</button>`).join('')}</div>`);
+  void venta;
+}
+function cobrar(medio, pid) {
+  if (pid) {
+    const p = PEDIDOS.find(x => x.id === +pid);
+    const t = totalPedido(p);
+    caja.medios[medio] += t; caja.canales[p.canal] += t; caja.pedidos++;
+    p.cobrado = true;
+    // Un retiro listo queda entregado al cobrar; un envío sigue hasta entregarse.
+    if (!esEnvio(p) && p.estado === 'listo') p.estado = 'entregado';
+    cerrarHoja(); render(); aviso(`Cobrado ${plata(t)} en ${medio.toLowerCase()} · #${p.num}`);
+  } else {
+    const t = totalCarrito();
+    caja.medios[medio] += t; caja.canales.Mostrador += t; caja.pedidos++;
+    carrito = []; cerrarHoja(); render(); aviso(`Venta cobrada · ${plata(t)} en ${medio.toLowerCase()}`);
+  }
+}
+
+// nuevo pedido del mostrador o del teléfono
+const np = {};
+function hojaNuevo() {
+  Object.assign(np, { canal:'Mostrador', nombre:'', tel:'', entrega:'retiro', zona:null, dir:'', cant:{} });
+  abrirHoja(`<h3 id="hoja-t">Nuevo pedido</h3>
+    <div class="seg" style="margin-top:10px" id="np-canal">${['Mostrador','Teléfono'].map(c => `<button data-np-canal="${c}" aria-pressed="${np.canal === c}">${c}</button>`).join('')}</div>
+    <div class="campo"><label for="np-nombre">Nombre</label><input id="np-nombre" placeholder="A nombre de quién" autocomplete="off"></div>
+    <div class="campo"><label for="np-tel">Teléfono (para avisarle por WhatsApp)</label><input id="np-tel" placeholder="Opcional" inputmode="tel" autocomplete="off"></div>
+    <div id="np-entrega"></div>
+    <div class="sec">Qué lleva</div><div class="lista" id="np-lista"></div>
+    <div style="margin-top:16px"><button class="b b-a b-g" id="np-ok"></button></div>`);
+  $('np-nombre').oninput = e => { np.nombre = e.target.value; npBoton(); };
+  $('np-tel').oninput = e => { np.tel = e.target.value; };
+  npEntrega(); npLista(); npBoton();
+}
+function npEntrega() {
+  $('np-entrega').innerHTML = `<div class="campo"><label>Entrega</label><div class="chips" style="margin-top:0">${[['retiro','Retira'],['cadete','Envío']].map(([k, n]) => `<button data-np-ent="${k}" aria-pressed="${np.entrega === k}">${n}</button>`).join('')}</div></div>
+    ${np.entrega !== 'retiro' ? `<div class="campo"><label for="np-dir">Dirección</label><input id="np-dir" autocomplete="off" value="${esc(np.dir)}"></div>
+    <div class="chips">${CONFIG.zonas.map(z => `<button data-np-zona="${z.nombre}" aria-pressed="${np.zona === z.nombre}">${z.nombre} · ${plata(z.costo)}</button>`).join('')}</div>` : ''}`;
+  const d = $('np-dir'); if (d) d.oninput = e => { np.dir = e.target.value; };
+}
+function npLista() {
+  $('np-lista').innerHTML = CARTA.map(p => `<div class="fila"><div class="q"><b>${esc(p.n)}</b><small class="num">${plata(p.p)}</small></div>
+    <div class="paso"><button data-np-q="${p.id}" data-d="-1" aria-label="Uno menos">−</button><span class="num">${np.cant[p.id] || 0}</span><button data-np-q="${p.id}" data-d="1" aria-label="Uno más">+</button></div></div>`).join('');
+}
+function npTotal() {
+  const sub = Object.entries(np.cant).reduce((s, [id, q]) => s + plato(id).p * q, 0);
+  const z = np.entrega !== 'retiro' && CONFIG.zonas.find(z => z.nombre === np.zona);
+  return sub ? sub + (z ? z.costo : 0) : 0;
+}
+function npBoton() {
+  const t = npTotal(), b = $('np-ok');
+  const falta = !t ? 'Elegí qué lleva' : !np.nombre.trim() ? 'Falta el nombre' : np.entrega !== 'retiro' && !np.zona ? 'Elegí la zona' : '';
+  b.textContent = falta || `Tomar pedido · ${plata(t)}`; b.disabled = !!falta; b.style.opacity = falta ? .5 : 1;
+}
+function tomarPedido() {
+  const z = np.entrega !== 'retiro' ? CONFIG.zonas.find(z => z.nombre === np.zona) : null;
+  const min = (cocina === 'demorada' ? CONFIG.minutosDemorada : CONFIG.minutosNormal) + (z ? z.demora : 0);
+  const h = new Date(2026, 9, 18, 21, 2 + min);
+  PEDIDOS.push({ id:Date.now(), num:sig++, cli:np.nombre.trim(), canal:np.canal, entrega:np.entrega, zona:z ? z.nombre : null, dir:np.dir || null, tel:np.tel || null,
+    hora:`${String(h.getHours()).padStart(2, '0')}:${String(h.getMinutes()).padStart(2, '0')}`, estado:'porHacer',
+    lin:Object.entries(np.cant).filter(([, q]) => q > 0), envio:z ? z.costo : 0, pagado:false, nuevo:true });
+  cerrarHoja(); tab = 'pedidos'; render(); aviso(`Pedido de ${np.nombre.trim()} a la cocina. Sale ${min} min.`);
+}
+
+function hojaConfig() {
+  abrirHoja(`<h3 id="hoja-t">Configurar pedidos</h3><p class="sub">Lo que el bot le ofrece al cliente sale de acá.</p>
+    <div class="sec">Entregas</div><div class="lista">
+      ${[['Retira en el local','Siempre disponible',true],['Cadete propio','3 zonas',true],['Servicio de reparto','Una cadetería de afuera',false]].map(([a, b, on]) => `<div class="fila"><div class="q"><b>${a}</b><small>${b}</small></div><span class="chip ${on ? 'ok' : ''}">${on ? 'Prendido' : 'Apagado'}</span></div>`).join('')}</div>
+    <div class="sec">Zonas de envío</div><div class="lista">${CONFIG.zonas.map(z => `<div class="fila"><div class="q"><b>${z.nombre}</b><small>${z.demora ? '+' + z.demora + ' min' : 'Sin demora extra'}</small></div><div class="d"><b class="num">${plata(z.costo)}</b></div></div>`).join('')}</div>
+    <div class="sec">Cómo se cobra</div><div class="seg">${['Al entregar','Adelantado','Que elija'].map((n, i) => `<button aria-pressed="${i === 2}">${n}</button>`).join('')}</div>
+    <p class="ayuda">Adelantado: el bot manda el link de Mercado Pago y el pedido entra recién acreditado.</p>
+    <div class="sec">La cocina</div><div class="lista"><div class="fila"><div class="q"><b>Normal</b></div><div class="d"><b class="num">${CONFIG.minutosNormal} min</b></div></div><div class="fila"><div class="q"><b>Con demora</b></div><div class="d"><b class="num">${CONFIG.minutosDemorada} min</b></div></div></div>
+    <div class="sec">WhatsApp</div><div class="lista"><div class="fila"><div class="q"><b>Lo de WhatsApp entra solo</b><small>Sin tocar Aceptar</small></div><span class="chip">Apagado</span></div><div class="fila"><div class="q"><b>Tengo catálogo de WhatsApp Business</b><small>El bot le copia la carta cada 5 minutos</small></div><span class="chip ok">Prendido</span></div></div>
+    <div class="botones"><button class="b b-d b-g" data-cerrar>Listo</button></div>`);
+}
+
+// ---- Carta ----
+function vistaCarta() {
+  const cats = ['Platos','Bebidas y otros','Insumos'];
+  let h = `<header class="cab"><div><small>Carta</small><h2 class="tit num">${CARTA.length} en la carta</h2></div>
+    <div class="acc"><button class="redondo a" data-aviso="Nuevo plato: nombre, precio y receta." aria-label="Nuevo plato">${svg('mas2', 2.4)}</button></div></header>
+    <button class="traer" data-aviso="Se trajeron 3 productos de tu catálogo de WhatsApp.">${svg('bajar')}<span><b>Traer de mi catálogo de WhatsApp</b><small>3 productos que no están en la carta</small></span></button>
+    <div class="seg" style="margin-top:14px" role="group" aria-label="Qué mostrar">${cats.map(c => `<button data-cat="${c}" aria-pressed="${cartaCat === c}">${c === 'Bebidas y otros' ? 'Bebidas' : c}</button>`).join('')}</div>`;
+  if (cartaCat === 'Insumos') {
+    h += `<div class="sec">Lo que hay<span>para cuántos alcanza</span></div><div class="lista">${INSUMOS.map(([n, q, a]) => `<div class="fila"><div class="q"><b>${n}</b><small>${a}</small></div><div class="d"><b class="num">${q}</b></div></div>`).join('')}</div>`;
+  } else {
+    const l = CARTA.filter(p => p.cat === cartaCat);
+    h += `<div class="sec">${cartaCat}<span>precio · ganancia</span></div><div class="lista">${l.map(p => {
+      const m = Math.round((p.p - p.costo) / p.p * 100);
+      return `<button class="fila" data-plato="${p.id}"><span class="foto">${p.n[0]}</span><span class="q"><b>${esc(p.n)}</b><small>${p.min ? 'Sale en ' + p.min + ' min · costo ' + plata(p.costo) : 'Costo ' + plata(p.costo)}</small></span>
+        <span class="d"><b class="num">${plata(p.p)}</b><small class="num ${m < 35 ? 'mal' : 'ok'}">${m} %</small></span></button>`; }).join('')}</div>`;
+    if (cartaCat === 'Bebidas y otros') h += `<p class="ayuda">Se cobran buscándolos en Vender.</p>`;
+    else h += `<p class="ayuda">La tarta deja poca ganancia: la acelga subió 40 % este mes.</p>`;
+  }
+  return h;
+}
+function hojaPlato(p) {
+  const m = Math.round((p.p - p.costo) / p.p * 100);
+  abrirHoja(`<h3 id="hoja-t">${esc(p.n)}</h3><p class="sub">${p.min ? 'Sale en ' + p.min + ' minutos · ' : ''}En la carta y en el catálogo de WhatsApp</p>
+    <div class="tres" style="margin-top:14px"><div class="kpi"><small>Precio</small><b class="num">${plata(p.p)}</b></div><div class="kpi"><small>Costo</small><b class="num">${plata(p.costo)}</b></div><div class="kpi"><small>Ganancia</small><b class="num">${m} %</b></div></div>
+    ${p.receta ? `<div class="sec">Receta</div>${p.receta.map(([a, q, c]) => `<div class="kv"><span>${a}${q ? ' · ' + q : ''}</span><span class="num">${plata(c)}</span></div>`).join('')}` : ''}
+    <div class="botones"><button class="b b-d b-g" data-cerrar>Listo</button></div>`);
+}
+
+// ---- Vender ----
+const totalCarrito = () => carrito.reduce((s, [id, q]) => s + plato(id).p * q, 0);
+function vistaVender() {
+  const t = totalCarrito();
+  return `<div class="buscar" style="margin-top:6px">${svg('lupa')}<label class="sr" for="v-buscar" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Buscar</label><input id="v-buscar" placeholder="Buscar en la carta" autocomplete="off"></div>
+    <div class="rapidos" id="rapidos">${CARTA.slice(0, 6).map(p => `<button class="rapido" data-sumar="${p.id}"><b>${esc(p.n)}</b><span class="num">${plata(p.p)}</span></button>`).join('')}</div>
+    <div class="sec">En la venta<span class="num">${carrito.reduce((s, [, q]) => s + q, 0)}</span></div>
+    ${carrito.length ? `<div class="lista carrito">${carrito.map(([id, q]) => `<div class="fila"><div class="q"><b>${esc(plato(id).n)}</b><small class="num">${plata(plato(id).p)} c/u</small></div>
+      <div class="paso"><button data-cq="${id}" data-d="-1" aria-label="Uno menos">−</button><span class="num">${q}</span><button data-cq="${id}" data-d="1" aria-label="Uno más">+</button></div></div>`).join('')}</div>` : '<div class="vacio" style="padding:20px"><b>Venta vacía.</b>Tocá un plato o buscalo.</div>'}
+    <div class="total"><span>Total</span><b class="num">${plata(t)}</b></div>
+    <div class="medios">${[['Efectivo','billete'],['QR','qr'],['Point','point'],['Mixto','mixto']].map(([m, i], n) => `<button class="medio${n === 0 ? ' a' : ''}" data-medio="${m}" data-ped="" ${t ? '' : 'disabled'}>${svg(i)}${m}</button>`).join('')}</div>`;
+}
+
+// ---- Caja ----
+function vistaCaja() {
+  const tot = Object.values(caja.medios).reduce((a, b) => a + b, 0);
+  const mx = Math.max(...Object.values(caja.medios)), cx = Math.max(...Object.values(caja.canales));
+  const ticket = Math.ceil(tot / caja.pedidos);
+  return `<header class="cab"><div><small>Caja</small><h2 class="tit">Hoy</h2></div></header>
+    <div class="grande"><small>Vendido hoy</small><b class="num">${plata(tot)}</b><p class="num">${caja.pedidos} pedidos · ticket promedio ${plata(ticket)}</p></div>
+    <div class="sec">Cómo te pagaron</div>
+    <ul class="barras">${Object.entries(caja.medios).map(([m, v]) => `<li><span>${m}</span><span class="bar"><i style="width:${v / mx * 100}%"></i></span><b class="num">${plata(v)}</b></li>`).join('')}</ul>
+    <div class="sec">Por dónde entró</div>
+    <ul class="barras">${Object.entries(caja.canales).map(([m, v]) => `<li><span>${m}</span><span class="bar"><i class="${m === 'WhatsApp' ? 'wa' : m === 'Teléfono' ? 'nar' : ''}" style="width:${v / cx * 100}%"></i></span><b class="num">${plata(v)}</b></li>`).join('')}</ul>
+    <p class="ayuda">El bot tomó ${Math.round(caja.canales.WhatsApp / tot * 100)} % de lo vendido hoy.</p>
+    <div class="tres" style="margin-top:14px"><div class="kpi"><small>Pollos</small><b class="num">14</b></div><div class="kpi"><small>Docenas</small><b class="num">9</b></div><div class="kpi"><small>Pizzas</small><b class="num">11</b></div></div>
+    <div style="margin-top:16px;display:grid;gap:8px"><button class="b b-p b-g" style="background:var(--piedra)" data-aviso="Pagar proveedor: a quién y cuánto.">Pagar proveedor</button><button class="b b-d b-g" data-aviso="Cierre del día: contá la plata y listo.">Cerrar el día</button></div>`;
+}
+
+// ---- Más ----
+function vistaMas() {
+  const g = [
+    ['Pedidos', [['Configurar pedidos','Entregas, zonas, cobro y cocina','config'],['Horario y transferencias','Lun a dom, 11 a 15 y 19 a 23 · alias LOCAL.POLLO',''],['Bot de WhatsApp','Prendido · contestó 41 charlas hoy','']]],
+    ['La carta', [['Insumos','6 con poco para mañana',''],['Promos','2x1 en empanadas los martes',''],['Catálogo de WhatsApp Business','Igual a la carta hace 3 min','']]],
+    ['El local', [['Cierre del día','Ayer: $ 384.200',''],['Equipos y personas','2 celulares y la PC',''],['Configuración','Datos del local, impresora, Mercado Pago','']]],
+  ];
+  return `<header class="cab"><div><small>Más</small><h2 class="tit">Lo del local</h2></div></header>
+    ${g.map(([t, l]) => `<div class="sec">${t}</div><div class="lista">${l.map(([a, b, ir]) => `<button class="fila" ${ir ? `data-ir="${ir}"` : `data-aviso="${a}"`}><span class="q"><b>${a}</b><small>${b}</small></span><span aria-hidden="true" style="color:var(--gris2)">›</span></button>`).join('')}</div>`).join('')}`;
+}
+
+function render() {
+  barra();
+  $('vista').innerHTML = { pedidos:vistaPedidos, carta:vistaCarta, vender:vistaVender, caja:vistaCaja, mas:vistaMas }[tab]();
+}
+
+// ---- eventos ----
+$('tel').addEventListener('click', e => {
+  const t = e.target;
+  const acc = t.closest('[data-acc]');
+  if (acc) { e.stopPropagation(); return avanzar(PEDIDOS.find(p => p.id === +acc.dataset.id), acc.dataset.acc); }
+  const k = t.closest('[data-cocina]');
+  if (k) { cocina = k.dataset.cocina; render(); return aviso({ normal:'Cocina normal. El bot vuelve a tomar pedidos.', demorada:`Con demora: el bot promete ${CONFIG.minutosDemorada} minutos.`, pausada:'Cocina pausada: el bot no toma pedidos.' }[cocina]); }
+  const ir = t.closest('[data-ir]');
+  if (ir) return ir.dataset.ir === 'nuevo' ? hojaNuevo() : hojaConfig();
+  const ped = t.closest('.ped[data-ped]');
+  if (ped) return hojaDetalle(PEDIDOS.find(p => p.id === +ped.dataset.ped));
+  const med = t.closest('[data-medio]');
+  if (med) {
+    if (tab === 'vender' && !med.dataset.ped && !$('hoja').classList.contains('on')) return hojaCobro(null);
+    return cobrar(med.dataset.medio, med.dataset.ped);
+  }
+  const cer = t.closest('[data-cerrar]');
+  if (cer) { cerrarHoja(); if (cer.dataset.cerrar) aviso(cer.dataset.cerrar); return; }
+  const can = t.closest('[data-cancelar]');
+  if (can) { const p = PEDIDOS.find(x => x.id === +can.dataset.cancelar); p.estado = 'cancelado'; cerrarHoja(); render(); return aviso(`#${p.num} cancelado.`); }
+  const cat = t.closest('[data-cat]');
+  if (cat) { cartaCat = cat.dataset.cat; return render(); }
+  const pl = t.closest('[data-plato]');
+  if (pl) return hojaPlato(plato(pl.dataset.plato));
+  const av = t.closest('[data-aviso]');
+  if (av) return aviso(av.dataset.aviso);
+  const su = t.closest('[data-sumar]');
+  if (su) { const l = carrito.find(([id]) => id === su.dataset.sumar); l ? l[1]++ : carrito.push([su.dataset.sumar, 1]); return render(); }
+  const cq = t.closest('[data-cq]');
+  if (cq) { const l = carrito.find(([id]) => id === cq.dataset.cq); l[1] += +cq.dataset.d; carrito = carrito.filter(([, q]) => q > 0); return render(); }
+  // hoja de nuevo pedido
+  const nc = t.closest('[data-np-canal]');
+  if (nc) { np.canal = nc.dataset.npCanal; $('np-canal').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === nc)); return; }
+  const ne = t.closest('[data-np-ent]');
+  if (ne) { np.entrega = ne.dataset.npEnt; if (np.entrega === 'retiro') np.zona = null; npEntrega(); return npBoton(); }
+  const nz = t.closest('[data-np-zona]');
+  if (nz) { np.zona = nz.dataset.npZona; npEntrega(); return npBoton(); }
+  const nq = t.closest('[data-np-q]');
+  if (nq) { const id = nq.dataset.npQ; np.cant[id] = Math.max(0, (np.cant[id] || 0) + +nq.dataset.d); npLista(); return npBoton(); }
+  if (t.closest('#np-ok')) return tomarPedido();
+});
+$('vista').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.ped[data-ped]')) { e.preventDefault(); e.target.click(); }
+});
+$('vista').addEventListener('input', e => {
+  if (e.target.id !== 'v-buscar') return;
+  const q = e.target.value.trim().toLowerCase();
+  const l = CARTA.filter(p => p.n.toLowerCase().includes(q)).slice(0, 6);
+  $('rapidos').innerHTML = l.length ? l.map(p => `<button class="rapido" data-sumar="${p.id}"><b>${esc(p.n)}</b><span class="num">${plata(p.p)}</span></button>`).join('') : '<p class="ayuda">No está en la carta.</p>';
+});
+
+render();
+setTimeout(() => aviso(`Pedido nuevo por WhatsApp: Juan Pérez, ${plata(totalPedido(PEDIDOS[0]))}`), 900);
+})();
+</script>

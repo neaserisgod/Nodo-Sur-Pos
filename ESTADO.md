@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Mock de Nodo Gastro con la marca nueva** (18/10): `docs/mock-gastro/NodoGastro.html` (vivo: https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb).
+  La app del celular de gastronomía (Pedidos, Carta, Vender, Caja, Más) con el estilo del sitio 2026-10 (Bricolage + Geist, piedra, tinta,
+  naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **Falta el OK del dueño**; el código no se tocó.
 - **Nodo Gastro, repaso del alta y de las pantallas** (El dueño, 18/10: "que sean 100% congruentes con la idea de gastronomía").
   **Sin elegir rubro**: un solo rubro "Gastronomía" para todo (clave `rotiseria`, la del bot). El asistente suma, antes de los
   cobros, **lo más rompedor**: el bot que atiende solo (encenderlo si el plan lo trae, o verlo en la web), el catálogo de
