@@ -138,6 +138,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Horarios y fechas con el teclado numérico** (El dueño, 18/10: "no deja poner horarios la app de gastro, pide : en teclado
+  numérico"). Los campos de hora (Abre/Cierra en Gastro, Agenda, bot y alta del negocio; "Otra hora" del turno) y la fecha de
+  Gastos fijos usaban el teclado de fecha y hora, que en muchos Android no trae ":" ni "/". Ahora es teclado numérico y los
+  separadores los pone la app (`2000` → `20:00`, `10102026` → `10/10/2026`): `lib/domain/tecleo.dart`. **Sin probar en un
+  celular real.**
 - **Entrar y el alta, más rápidos y con el asistente del mock** (El dueño, 18/10: "el login lo odio", "tarda demasiado", "el
   onboarding luego del login no existe"). Entrar con la cuenta es ahora una pantalla clásica: marca grande, nombre de la app y su
   frase, "Continuar con Google" abajo, y mientras trabaja dice qué está haciendo ("Bajando los datos del negocio…"). **Más rápido:**
