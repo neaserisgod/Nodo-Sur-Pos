@@ -144,7 +144,9 @@ Pendiente / ideas (sin hacer):
   de pestañas en cápsula con el globo de pedidos por aceptar, Pedidos con el tablero en mosaicos ("Sale ahora", Nuevos, En la
   cocina) y filtros, bienvenida propia de tres pantallas y botones de acento en el asistente y la Carta. Capturas:
   `flutter test test/companion/capturas_gastro_test.dart` → `capturas/gastro/`. Suite entera en verde. **Sin probar en un celular
-  real.** Faltan las etapas 4 a 7 (Carta, Vender y cobrar, Caja y cierre, Más).
+  real.** Etapas 4 a 7 (Carta, Vender, Caja y cierre, Más): con la paleta y las
+  letras ya quedan en la familia del mock; "Cobrar" en naranja. **Arreglos de paso:** en Gastro la solapa Bebidas mostraba los platos;
+  el cierre y "Contar la caja" de Gastro y Servicios hablaban de cigarrillos y pedían la lata sin tener ese módulo.
 - **Mock de Nodo Gastro con la marca nueva** (18/10): `docs/mock-gastro/NodoGastro.html` (vivo: https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb).
   La app del celular de gastronomía (Pedidos, Carta, Vender, Caja, Más) con el estilo del sitio 2026-10 (Bricolage + Geist, piedra, tinta,
   naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **v5, mock completo** (El dueño: la v4 "me gustó mucho, quiero el mock entero así, incluyendo onboarding y todo lo que se deba

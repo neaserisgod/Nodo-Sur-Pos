@@ -1417,7 +1417,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             ),
           ),
           const SizedBox(width: 12),
-          BotonNs(texto: 'Cobrar', onTap: _irACobro, alto: 56, tamanio: 17, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 30),
+          // En Gastro, cobrar es la acción de la pantalla: va en el naranja de la marca.
+          BotonNs(texto: 'Cobrar', onTap: _irACobro, alto: 56, tamanio: 17, fondo: esEdicionGastronomia ? ns.acento : ns.paper, color: esEdicionGastronomia ? ns.onAcento : ns.ink, rellenar: false, paddingH: 30),
         ],
       ),
     );

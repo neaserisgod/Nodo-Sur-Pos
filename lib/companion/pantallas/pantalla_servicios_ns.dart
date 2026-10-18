@@ -67,8 +67,10 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
 
-  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas y otros'), if (_conInsumos) 'Insumos'];
-  String get _nombreSolapa => _solapas[_solapa.clamp(0, _solapas.length - 1)];
+  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas'), if (_conInsumos) 'Insumos'];
+
+  /// Qué muestra la solapa elegida, sin importar cómo se llama en cada edición (en la Carta, "Productos" es "Bebidas").
+  String get _nombreSolapa => const ['Servicios', 'Productos', 'Insumos'][_solapa.clamp(0, _solapas.length - 1)];
 
   @override
   void initState() {
@@ -225,7 +227,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               if (conPc)
                 InfoNs('Con la PC, los ${_t('servicios', 'platos')} todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
               else ...[
-                SegmentoNs(opciones: _solapas, indice: _solapas.indexOf(_nombreSolapa), onCambio: (i) => setState(() => _solapa = i)),
+                SegmentoNs(opciones: _solapas, indice: _solapa.clamp(0, _solapas.length - 1), onCambio: (i) => setState(() => _solapa = i)),
                 const SizedBox(height: 14),
                 if (_servicios == null)
                   const EsqueletoListaNs()
@@ -1090,7 +1092,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
       cuerpo: ListView(
         padding: EdgeInsets.zero,
         children: [
-          CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Corte clásico', onChanged: (_) => setState(() => _error = null)),
+          CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: _t('Ej.: Corte clásico', 'Ej.: Milanesa con papas'), onChanged: (_) => setState(() => _error = null)),
           const SizedBox(height: 10),
           CampoNs(etiqueta: _t('Duración (min)', 'Preparación (min)'), controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
           if (_categorias.isNotEmpty) ...[

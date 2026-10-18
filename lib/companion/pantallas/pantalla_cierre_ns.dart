@@ -357,7 +357,10 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
       children: [
         _titulo(context, 'Etapa 1 de 2', 'Contá el efectivo del cajón'),
         const SizedBox(height: 10),
-        const InfoNs('Contá el efectivo del cajón, cigarrillos incluidos, antes de ver la diferencia y la separación.'),
+        // Servicios y Gastro no venden cigarrillos (§21, §22): no hay nada que sumar al cajón.
+        InfoNs(esEdicionAparte
+            ? 'Contá el efectivo del cajón antes de ver la diferencia y la separación.'
+            : 'Contá el efectivo del cajón, cigarrillos incluidos, antes de ver la diferencia y la separación.'),
         if (widget.servicio is ServicioCompanionOffline) ...[
           const SizedBox(height: 10),
           const InfoNs('Sin conexión con la PC: este cierre se calcula con los datos ya sincronizados a este celular. Si algo de la PC todavía no llegó, puede no coincidir.', tono: TonoNs.warn),

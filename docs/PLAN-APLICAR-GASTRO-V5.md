@@ -33,14 +33,18 @@ del dueño que queda para después.
    (`BotonNs.acento`). ✅ 2026-10-18. El asistente ya tenía el paso de progreso y "Después" del mock; con la paleta y las letras
    nuevas queda igual.
 4a. **Carta, primer retoque:** "+ Nuevo" en naranja y "Traer de mi catálogo de WhatsApp" como banda naranja suave. ✅ 2026-10-18.
-4. **Carta, lo que falta:** segmentos Platos · Bebidas · Insumos, "Traer de mi catálogo" arriba, ganancia en verde o rojo por plato,
-   insumos por acabarse primero. Hoja del plato con el costo y la ganancia que se recalculan. Pendiente.
-5. **Vender y cobrar:** más vendidos en mosaicos, total grande, los cuatro medios; hoja de cobro con "con cuánto paga" y
-   vuelto, QR en pantalla esperando la aprobación, "Venta cobrada" que se cierra sola. Pendiente.
-6. **Caja y cierre:** tablero (vendido, efectivo en el cajón, cuánto trajo el bot), las cuatro acciones en mosaicos,
-   Resumen · Ventas · Movimientos, cierre en dos etapas como el mock. Pendiente.
-7. **Más y páginas:** buscador arriba, mosaicos de Asistente y Bot, grupos Pedidos · Carta y compras · Esta aplicación;
-   páginas internas con título grande y "Volver" en cápsula. Pendiente.
+4. **Carta:** con la paleta y las letras nuevas ya queda como el mock (segmentos, ganancia por plato en verde, insumos por acabarse
+   primero con "Poco stock"). La solapa se llama "Bebidas" y **se arregló un error**: en Gastro, "Bebidas y otros" mostraba los
+   platos y "+ Nuevo" abría el editor de plato, porque la pantalla decidía por el nombre de la solapa ("Productos" en Servicios).
+   El placeholder del plato dice "Ej.: Milanesa con papas". ✅ 2026-10-18.
+5. **Vender y cobrar:** "Cobrar" en naranja (solo Gastro); el resto de Vender y el cobro ya son de la misma familia. ✅ 2026-10-18.
+6. **Caja y cierre:** ya en la misma familia con la paleta nueva. **Se arreglaron textos de almacén en Gastro y Servicios:** el cierre
+   y "Contar la caja" decían "cigarrillos incluidos", y "Contar la caja" mostraba y exigía la lata aunque no haya módulo de caja
+   aparte (ahora toma la esperada, como el cierre). ✅ 2026-10-18.
+7. **Más:** ya en la misma familia. Los mosaicos de Asistente y Bot arriba del mock quedan para después. ✅ 2026-10-18 (aspecto).
+
+Capturas de todo: `flutter test test/companion/capturas_gastro_test.dart test/companion/capturas_gastro_pantallas_test.dart` →
+`capturas/gastro/`.
 
 ## Lo que el mock tiene y la app todavía no
 
