@@ -79,7 +79,7 @@ class _PantallaGastosFijosState extends State<PantallaGastosFijos> {
     final r = _resumen;
     return PaginaNs(
       titulo: 'Gastos fijos',
-      derecha: BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 20),
+      derecha: BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: ns.onPrim, rellenar: false, paddingH: 20),
       cuerpo: r == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(

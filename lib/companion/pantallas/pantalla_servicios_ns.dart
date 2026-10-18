@@ -67,8 +67,10 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
 
-  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas y otros'), if (_conInsumos) 'Insumos'];
-  String get _nombreSolapa => _solapas[_solapa.clamp(0, _solapas.length - 1)];
+  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas'), if (_conInsumos) 'Insumos'];
+
+  /// Qué muestra la solapa elegida, sin importar cómo se llama en cada edición (en la Carta, "Productos" es "Bebidas").
+  String get _nombreSolapa => const ['Servicios', 'Productos', 'Insumos'][_solapa.clamp(0, _solapas.length - 1)];
 
   @override
   void initState() {
@@ -214,8 +216,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
                       onTap: switch (_nombreSolapa) { 'Productos' => () => _hojaProducto(), 'Insumos' => () => _hojaInsumo(), _ => () => _abrirEditor() },
                       alto: 44,
                       tamanio: 15,
-                      fondo: ns.prim,
-                      color: TokensNs.blanco,
+                      fondo: ns.acento,
+                      color: ns.onAcento,
                       rellenar: false,
                       paddingH: 20,
                     ),
@@ -225,7 +227,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               if (conPc)
                 InfoNs('Con la PC, los ${_t('servicios', 'platos')} todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
               else ...[
-                SegmentoNs(opciones: _solapas, indice: _solapas.indexOf(_nombreSolapa), onCambio: (i) => setState(() => _solapa = i)),
+                SegmentoNs(opciones: _solapas, indice: _solapa.clamp(0, _solapas.length - 1), onCambio: (i) => setState(() => _solapa = i)),
                 const SizedBox(height: 14),
                 if (_servicios == null)
                   const EsqueletoListaNs()
@@ -245,14 +247,16 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   List<Widget> _listaServicios(BuildContext context) => [
         if (_catalogoWa) ...[
+          // Banda naranja suave, como en el mock v5: es lo único de la Carta que llega de afuera.
           BotonNs(
             key: const Key('traer_whatsapp'),
             texto: 'Traer de mi catálogo de WhatsApp',
             onTap: _traerDeWhatsapp,
-            alto: 48,
+            alto: 52,
             tamanio: 15,
-            fondo: context.ns.s,
-            color: context.ns.i,
+            fondo: context.ns.wbg,
+            color: context.ns.w,
+            icono: IconoNs.descarga,
           ),
           const SizedBox(height: 14),
         ],
@@ -1088,7 +1092,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
       cuerpo: ListView(
         padding: EdgeInsets.zero,
         children: [
-          CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: 'Ej.: Corte clásico', onChanged: (_) => setState(() => _error = null)),
+          CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: _t('Ej.: Corte clásico', 'Ej.: Milanesa con papas'), onChanged: (_) => setState(() => _error = null)),
           const SizedBox(height: 10),
           CampoNs(etiqueta: _t('Duración (min)', 'Preparación (min)'), controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
           if (_categorias.isNotEmpty) ...[

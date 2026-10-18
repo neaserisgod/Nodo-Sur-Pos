@@ -107,7 +107,7 @@ class _PantallaProveedoresState extends State<PantallaProveedores> {
     final deBaja = [for (final f in filas ?? const <({Proveedor proveedor, int saldo})>[]) if (!f.proveedor.activo && pasa(f)) f];
     return PaginaNs(
       titulo: 'Proveedores',
-      derecha: BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 20),
+      derecha: BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: ns.onPrim, rellenar: false, paddingH: 20),
       cuerpo: filas == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(

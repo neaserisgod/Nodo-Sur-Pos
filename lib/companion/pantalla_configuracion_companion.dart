@@ -366,7 +366,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
       alto: 60,
       tamanio: 17,
       fondo: activo ? ns.prim : ns.s,
-      color: activo ? TokensNs.blanco : ns.mute,
+      color: activo ? ns.onPrim : ns.mute,
       habilitado: activo,
     );
   }

@@ -1,0 +1,1202 @@
+<title>Nodo Gastro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Geist:wght@400..700&display=swap">
+<style>
+/* Mock completo de Nodo Gastro (app del celular, edición gastronomía). Versión 5 (El dueño, 18/10: la v4 "me gustó mucho,
+   quiero el mock entero así, incluyendo onboarding y todo lo que se deba tener en la app real").
+   Cubre lo que la app real tiene hoy (lib/companion/, edición gastronomía): bienvenida, entrar con Google, el asistente
+   "Configurá tu negocio" con sus cinco pasos, Pedidos, Carta con recetas e insumos, Vender y los cuatro medios, Caja con
+   conteo y cierre en dos etapas, Bot de WhatsApp, Asistente IA, Notificaciones, Configuración, Proveedores, Promos y Cuenta.
+   Lenguaje del sitio (NodoSurPage/nodo.css) con patrones móviles de 2026: bento, barra flotante en cápsula, hojas de abajo,
+   respuesta al toque, claro y oscuro. Sin backdrop-filter (traba celulares baratos, regla del sitio). */
+:root{
+  --fondo:#FFFFFF;--sup:#F5F4F2;--sup2:#ECEAE6;--linea:#E6E3DF;
+  --txt:#1A1714;--txt2:#57534E;--txt3:#8A847D;
+  --acento:#E4580B;--acento-txt:#1A1714;--acento-suave:#FCEBDD;--acento-osc:#9A3A07;
+  --inv:#1A1714;--inv-txt:#FFFFFF;--inv-txt2:#B9B3AC;
+  --rojo:#C4291C;--rojo-suave:#FCE6E3;--verde:#1F7A4D;--verde-suave:#E2F3EA;
+  --barra:#FFFFFF;--sombra:0 18px 40px -14px rgba(26,23,20,.28),0 0 0 1px rgba(26,23,20,.06);
+  --pag:#ECEAE6;--pag-txt:#1A1714;--marco:#1A1714;
+  --tit:'Bricolage Grotesque',system-ui,sans-serif;--sans:'Geist',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --resorte:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --fondo:#0F0E0D;--sup:#1B1917;--sup2:#272421;--linea:#2C2926;
+  --txt:#F4F1EC;--txt2:#B8B1A9;--txt3:#8C857D;
+  --acento:#F26A1B;--acento-txt:#140A03;--acento-suave:#3A1E0E;--acento-osc:#FFA36B;
+  --inv:#F4F1EC;--inv-txt:#1A1714;--inv-txt2:#57534E;
+  --rojo:#FF7A6E;--rojo-suave:#3A1714;--verde:#5FD49A;--verde-suave:#12301F;
+  --barra:#1F1D1A;--sombra:0 18px 40px -14px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);
+  --pag:#161412;--pag-txt:#F4F1EC;--marco:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fondo:#0F0E0D;--sup:#1B1917;--sup2:#272421;--linea:#2C2926;
+  --txt:#F4F1EC;--txt2:#B8B1A9;--txt3:#8C857D;
+  --acento:#F26A1B;--acento-txt:#140A03;--acento-suave:#3A1E0E;--acento-osc:#FFA36B;
+  --inv:#F4F1EC;--inv-txt:#1A1714;--inv-txt2:#57534E;
+  --rojo:#FF7A6E;--rojo-suave:#3A1714;--verde:#5FD49A;--verde-suave:#12301F;
+  --barra:#1F1D1A;--sombra:0 18px 40px -14px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);
+  --pag:#161412;--pag-txt:#F4F1EC;--marco:#000;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--pag);color:var(--pag-txt);font:400 16px/1.4 var(--sans);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:0;background:none;padding:0;text-align:inherit}
+:focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:10px}
+.n{font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.toque{transition:transform .35s var(--resorte)}
+.toque:active{transform:scale(.95);transition-duration:.1s}
+
+/* página */
+.pag{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:72px;align-items:center;max-width:1080px;margin:0 auto;padding-block:32px}
+.intro{display:grid;gap:22px;max-width:420px;justify-self:end}
+.marca{display:flex;align-items:center;gap:10px;font-family:var(--tit);font-weight:700;font-size:19px;letter-spacing:-.03em}
+.marca i{width:28px;height:28px;border-radius:9px;background:var(--acento);display:grid;place-items:center;color:var(--acento-txt)}
+.intro h1{font-family:var(--tit);font-size:clamp(40px,4.4vw,56px);font-weight:800;letter-spacing:-.05em;line-height:.95;text-wrap:balance}
+.intro h1 span{color:var(--acento)}
+.intro .baj{font-size:17px;color:var(--txt2);max-width:36ch}
+.recorrido{display:grid;gap:10px;padding:18px;border-radius:24px;background:var(--fondo)}
+.recorrido b{font-size:14px;font-weight:600;color:var(--txt2)}
+.saltos{display:flex;flex-wrap:wrap;gap:6px}
+.saltos button{height:36px;padding:0 14px;border-radius:999px;background:var(--sup);font-size:14px;font-weight:600}
+.saltos button.a{background:var(--acento);color:var(--acento-txt)}
+.intro .pie-i{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--txt3)}
+.tema{height:36px;padding:0 14px;border-radius:999px;background:var(--fondo);font-size:14px;font-weight:600;color:var(--txt);flex:none}
+
+/* celular */
+.tel{position:relative;width:390px;height:min(844px,calc(100dvh - 64px));min-height:640px;border-radius:52px;background:var(--fondo);color:var(--txt);
+  box-shadow:0 0 0 10px var(--marco),0 60px 100px -40px rgba(26,23,20,.55);overflow:hidden;overflow:clip;display:flex;flex-direction:column}
+.est{flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font-size:15px;font-weight:600}
+.est .isla{width:110px;height:31px;border-radius:20px;background:#000}
+.vista{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px 128px;scrollbar-width:none}
+.vista.sola{padding-bottom:20px}
+.vista::-webkit-scrollbar{display:none}
+.vista.entra{animation:empuja .4s var(--ease)}
+@keyframes empuja{from{opacity:0;transform:translateX(24px)}}
+
+/* encabezados */
+.cab{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:6px 4px 16px}
+.cab small{display:block;font-size:14px;font-weight:500;color:var(--txt3);margin-bottom:4px}
+.cab h2{font-family:var(--tit);font-size:40px;font-weight:800;letter-spacing:-.055em;line-height:.95;text-wrap:balance}
+.cab.sub h2{font-size:32px}
+.cab .der{display:flex;gap:8px;flex:none}
+.volver{height:40px;padding:0 16px;border-radius:999px;background:var(--sup);font-size:15px;font-weight:600;flex:none;margin-bottom:2px}
+.redondo{width:48px;height:48px;border-radius:50%;background:var(--sup);display:grid;place-items:center;color:var(--txt);position:relative}
+.redondo svg{width:22px;height:22px}
+.redondo.a{background:var(--acento);color:var(--acento-txt)}
+.redondo.pau{background:var(--rojo);color:#fff}
+.redondo .pt{width:10px;height:10px;border-radius:50%;background:var(--verde)}
+.redondo.dem .pt{background:var(--acento)}
+.redondo .badge{position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;background:var(--acento);box-shadow:0 0 0 2px var(--fondo)}
+
+/* bento */
+.bento{display:grid;grid-template-columns:1.25fr 1fr;gap:8px}
+.bento.dos{grid-template-columns:1fr 1fr}
+.mos{border-radius:28px;padding:16px;text-align:left;display:grid;align-content:space-between;gap:10px;min-height:104px;background:var(--sup);color:var(--txt)}
+.mos small{font-size:14px;font-weight:600;color:var(--txt2)}
+.mos b{font-family:var(--tit);font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9}
+.mos .sub{font-size:14px;color:var(--txt2);line-height:1.25}
+.mos.nar{background:var(--acento);color:var(--acento-txt)}
+.mos.nar small,.mos.nar .sub{color:var(--acento-txt);opacity:.8}
+.mos.inv{background:var(--inv);color:var(--inv-txt)}
+.mos.inv small,.mos.inv .sub{color:var(--inv-txt2)}
+.mos.alto{grid-row:span 2;min-height:216px}
+.mos.ancho{grid-column:span 2;min-height:0}
+.mos.inv b.xl{font-size:64px}
+.mos b .u{font-size:26px;letter-spacing:-.03em}
+.mos .quien{display:block;font-weight:600;font-size:17px}
+.mos.chico{min-height:0;padding:14px 16px;gap:4px}
+.mos.chico b{font-size:20px;letter-spacing:-.03em;font-family:var(--sans);font-weight:600}
+.vivo{display:inline-flex;align-items:center;gap:7px}
+.vivo::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--acento);animation:latido 1.6s ease-in-out infinite}
+.vivo.ok::before{background:var(--verde)}
+.tarde .vivo::before{background:var(--rojo)}
+.tarde b{color:var(--rojo)}
+@keyframes latido{50%{opacity:.25}}
+.barrita{height:6px;border-radius:3px;background:rgba(127,127,127,.28);overflow:hidden}
+.barrita i{display:block;height:100%;border-radius:3px;background:var(--acento)}
+
+/* filtros y segmentados */
+.filtros{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:18px -16px 4px;padding:0 16px}
+.filtros::-webkit-scrollbar{display:none}
+.filtros button{flex:none;height:40px;padding:0 15px;border-radius:999px;background:var(--sup);font-size:15px;font-weight:600;color:var(--txt2);display:flex;gap:7px;align-items:center}
+.filtros button .c{font-size:13px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--fondo);display:grid;place-items:center;color:var(--txt)}
+.filtros button[aria-pressed=true]{background:var(--txt);color:var(--fondo)}
+.filtros button[aria-pressed=true] .c{background:var(--acento);color:var(--acento-txt)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:999px;background:var(--sup)}
+.seg button{height:44px;border-radius:999px;font-size:15px;font-weight:600;color:var(--txt2);text-align:center;transition:background-color .25s,color .25s;padding:0 6px}
+.seg button[aria-pressed=true]{background:var(--txt);color:var(--fondo)}
+.seg button.pau[aria-pressed=true]{background:var(--rojo);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{height:40px;padding:0 15px;border-radius:999px;background:var(--sup);font-size:15px;font-weight:600;color:var(--txt2)}
+.chips button[aria-pressed=true]{background:var(--txt);color:var(--fondo)}
+
+.aviso{margin-top:12px;padding:14px 16px;border-radius:20px;background:var(--rojo-suave);color:var(--rojo);font-size:15px;font-weight:600}
+.pendiente{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:14px 16px;border-radius:22px;background:var(--acento-suave);width:100%;text-align:left}
+.pendiente span{flex:1;font-size:15px}
+.pendiente span b{display:block;font-weight:600}
+.pendiente em{font-style:normal;height:34px;padding:0 14px;border-radius:999px;background:var(--acento);color:var(--acento-txt);font-weight:600;font-size:14px;display:grid;place-items:center}
+
+/* pedido */
+.peds{display:grid;gap:8px;margin-top:12px}
+.ped{border-radius:28px;background:var(--sup);padding:18px;display:grid;gap:12px;animation:entra .45s var(--resorte) both}
+@keyframes entra{from{opacity:0;transform:translateY(12px) scale(.98)}}
+.ped.sale{animation:sale .3s var(--ease) forwards}
+@keyframes sale{to{opacity:0;transform:translateX(40px) scale(.96)}}
+.ped-a{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ped-a .q b{display:block;font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.ped-a .q small{display:block;font-size:14px;color:var(--txt2);margin-top:3px}
+em.ok{font-style:normal;font-weight:600;color:var(--verde)}
+.reloj{text-align:right;flex:none}
+.reloj b{display:block;font-family:var(--tit);font-size:26px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.reloj small{display:inline-block;margin-top:5px;font-size:13px;font-weight:600;color:var(--txt2)}
+.reloj small.tarde{color:var(--rojo)}
+.reloj small.nuevo{color:var(--acento-osc)}
+.items{display:grid;gap:4px;padding:12px 14px;border-radius:18px;background:var(--fondo)}
+.items li{display:grid;grid-template-columns:30px 1fr;font-size:16px;align-items:baseline}
+.items li b{font-family:var(--tit);font-weight:700;font-size:18px}
+.nota-c{font-size:14px;font-weight:600;color:var(--acento-osc)}
+.ped-p{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ped-p .tot{font-family:var(--tit);font-size:21px;font-weight:700;letter-spacing:-.03em;padding:6px 0}
+.accs{display:flex;gap:6px}
+
+.b{height:48px;padding:0 20px;border-radius:999px;font-size:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.b svg{width:20px;height:20px;flex:none}
+.b-a{background:var(--acento);color:var(--acento-txt)}
+.b-c{background:var(--txt);color:var(--fondo)}
+.b-s{background:var(--sup);color:var(--txt)}
+.b-t{color:var(--txt2);padding:0 12px}
+.b-r{color:var(--rojo)}
+.b-g{width:100%;height:56px;font-size:17px}
+.b:disabled{opacity:.45;cursor:default}
+
+.vacio{padding:44px 8px;text-align:center;color:var(--txt2);font-size:15px}
+.vacio b{display:block;font-family:var(--tit);font-size:26px;letter-spacing:-.04em;color:var(--txt);margin-bottom:6px}
+
+/* listas en grupos */
+.grupo{margin-top:22px}
+.grupo>h3{font-size:14px;font-weight:600;color:var(--txt3);margin:0 6px 8px;display:flex;justify-content:space-between}
+.lista{border-radius:24px;background:var(--sup);overflow:hidden}
+.fila{display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;text-align:left}
+.fila+.fila{border-top:1px solid var(--linea)}
+.fila .q{flex:1;min-width:0}
+.fila .q b{display:block;font-weight:600;font-size:16px}
+.fila .q small{display:block;font-size:14px;color:var(--txt2);margin-top:1px}
+.fila .d{text-align:right;flex:none}
+.fila .d b{display:block;font-weight:600}
+.fila .d small{display:block;font-size:13px;font-weight:600;color:var(--txt2)}
+.fila .d small.ok{color:var(--verde)}
+.fila .d small.bajo{color:var(--rojo)}
+.fila .fl{color:var(--txt3);font-size:22px;line-height:1}
+.ico-f{flex:none;width:42px;height:42px;border-radius:14px;background:var(--fondo);display:grid;place-items:center;color:var(--txt);font-family:var(--tit);font-weight:800;font-size:17px}
+.ico-f svg{width:21px;height:21px}
+.ico-f.nar{background:var(--acento);color:var(--acento-txt)}
+.ico-f.verde{background:var(--verde-suave);color:var(--verde)}
+.ico-f.rojo{background:var(--rojo-suave);color:var(--rojo)}
+.sw{flex:none;width:52px;height:32px;border-radius:999px;background:var(--sup2);position:relative;transition:background-color .25s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .35s var(--resorte)}
+.sw[aria-checked=true]{background:var(--acento)}
+.sw[aria-checked=true]::after{transform:translateX(20px)}
+.buscar{display:flex;align-items:center;gap:10px;height:54px;padding:0 18px;border-radius:999px;background:var(--sup)}
+.buscar svg{width:22px;height:22px;color:var(--txt3);flex:none}
+.buscar input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:17px}
+.buscar input::placeholder{color:var(--txt3)}
+
+/* carta y vender */
+.traer{display:flex;gap:12px;align-items:center;margin-top:10px;padding:16px;border-radius:24px;background:var(--acento-suave);width:100%;text-align:left}
+.traer span{flex:1;font-size:15px}
+.traer span b{display:block;font-weight:600}
+.traer em{font-style:normal;height:36px;padding:0 14px;border-radius:999px;background:var(--acento);color:var(--acento-txt);font-weight:600;font-size:14px;display:grid;place-items:center}
+.rapidos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.rapido{border-radius:24px;background:var(--sup);padding:14px 16px;text-align:left;display:grid;gap:10px;min-height:92px;align-content:space-between}
+.rapido b{font-size:15px;font-weight:600;line-height:1.2}
+.rapido span{font-family:var(--tit);font-size:19px;font-weight:700;letter-spacing:-.03em}
+.paso{display:flex;align-items:center;gap:4px;background:var(--fondo);border-radius:999px;padding:3px;flex:none}
+.paso button{width:34px;height:34px;border-radius:50%;background:var(--sup);font-size:18px;font-weight:600;line-height:1;text-align:center}
+.paso span{min-width:24px;text-align:center;font-weight:700}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin:20px 6px 12px}
+.total span{font-size:15px;color:var(--txt2);font-weight:500}
+.total b{font-family:var(--tit);font-size:46px;font-weight:800;letter-spacing:-.055em}
+.medios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.medio{height:62px;border-radius:22px;background:var(--sup);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;gap:8px}
+.medio svg{width:22px;height:22px}
+.medio.a,.medio[aria-pressed=true]{background:var(--acento);color:var(--acento-txt)}
+.medio:disabled{opacity:.4;cursor:default}
+.link{font-size:15px;font-weight:600;color:var(--txt2);text-decoration:underline;text-underline-offset:3px;padding:8px 6px}
+
+/* caja */
+.barras{display:grid;gap:12px;padding:16px;border-radius:24px;background:var(--sup)}
+.barras li{display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;font-size:15px}
+.barras li b{font-weight:600}
+.barras .bar{height:8px;border-radius:4px;background:var(--fondo);overflow:hidden}
+.barras .bar i{display:block;height:100%;border-radius:4px;background:var(--txt)}
+.barras .bar i.a{background:var(--acento)}
+.acciones4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.acc4{border-radius:24px;background:var(--sup);padding:14px 16px;text-align:left;display:grid;gap:14px;min-height:96px;align-content:space-between}
+.acc4 svg{width:24px;height:24px}
+.acc4 b{font-weight:600;font-size:15px;line-height:1.2}
+.acc4 small{display:block;font-size:13px;color:var(--txt2);font-weight:500;margin-top:2px}
+
+/* onboarding */
+.ob{min-height:100%;display:flex;flex-direction:column;gap:16px;padding-top:6px}
+.ob-pie{margin-top:auto;display:grid;gap:6px;padding-top:12px}
+.ob-prog{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--txt3)}
+.ob-prog .barrita{flex:1}
+.ob h2{font-family:var(--tit);font-size:40px;font-weight:800;letter-spacing:-.055em;line-height:.95;text-wrap:balance}
+.ob h2 span{color:var(--acento)}
+.ob .baj{font-size:17px;color:var(--txt2)}
+.ob-escena{border-radius:32px;background:var(--sup);padding:18px;display:grid;gap:10px;min-height:300px;align-content:center;overflow:hidden}
+.puntos{display:flex;gap:6px;justify-content:center;padding:4px 0}
+.puntos i{width:8px;height:8px;border-radius:4px;background:var(--sup2);transition:width .3s var(--ease),background-color .3s}
+.puntos i.on{width:24px;background:var(--txt)}
+.burb{max-width:82%;padding:10px 14px;border-radius:20px;font-size:15px;line-height:1.3;animation:entra .5s var(--resorte) both}
+.burb.cli{justify-self:end;background:var(--acento);color:var(--acento-txt);border-bottom-right-radius:6px}
+.burb.bot{background:var(--fondo);border-bottom-left-radius:6px}
+.burb small{display:block;font-size:12px;opacity:.7;margin-top:2px}
+.g{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--fondo);color:var(--txt);font-weight:700;font-size:15px}
+.chk{display:flex;gap:12px;align-items:center;padding:12px 0;font-size:16px}
+.chk+.chk{border-top:1px solid var(--linea)}
+.chk i{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--verde-suave);color:var(--verde);font-style:normal;font-weight:700}
+.chk i.no{background:var(--sup2);color:var(--txt3)}
+.chk span{flex:1}
+.chk small{display:block;font-size:13px;color:var(--txt2)}
+.dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dias button{height:44px;border-radius:14px;background:var(--sup);font-weight:600;font-size:14px;text-align:center;color:var(--txt2)}
+.dias button[aria-pressed=true]{background:var(--txt);color:var(--fondo)}
+.dos-c{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* chat de la IA y registro del bot */
+.chat{display:grid;gap:8px;padding-bottom:8px}
+.chat .burb.yo{justify-self:end;background:var(--txt);color:var(--fondo);border-bottom-right-radius:6px}
+.chat .burb.ia{background:var(--sup);border-bottom-left-radius:6px;max-width:90%}
+.chat .accion{background:var(--fondo);border-radius:16px;padding:12px;margin-top:8px;display:grid;gap:8px}
+.registro{font-size:14px;color:var(--txt2);display:grid;gap:8px;padding:14px 16px;border-radius:24px;background:var(--sup)}
+.registro li{display:grid;grid-template-columns:46px 1fr;gap:8px}
+.registro li b{font-weight:600;color:var(--txt3)}
+.qr{width:188px;height:188px;margin:6px auto;padding:12px;border-radius:24px;background:#fff}
+.qr svg{width:100%;height:100%}
+.espera{display:grid;place-items:center;gap:10px;padding:18px 0;text-align:center;color:var(--txt2)}
+.rueda{width:40px;height:40px;border-radius:50%;border:4px solid var(--sup2);border-top-color:var(--acento);animation:gira .9s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.hecho{width:72px;height:72px;border-radius:50%;background:var(--verde);color:#fff;display:grid;place-items:center;margin:4px auto 10px;animation:entra .5s var(--resorte) both}
+.hecho svg{width:36px;height:36px}
+
+/* barra de pestañas flotante */
+.barra{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));height:66px;border-radius:999px;background:var(--barra);box-shadow:var(--sombra);display:grid;grid-template-columns:repeat(5,1fr);padding:6px;z-index:5}
+.barra button{border-radius:999px;display:grid;place-items:center;gap:1px;font-size:11px;font-weight:600;color:var(--txt3);text-align:center;transition:background-color .25s,color .25s}
+.barra button svg{width:22px;height:22px}
+.barra button[aria-current=page]{background:var(--sup);color:var(--txt)}
+.barra .ico{position:relative}
+.barra .badge{position:absolute;top:-4px;right:-9px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--acento);color:var(--acento-txt);font-size:11px;font-weight:700;display:grid;place-items:center}
+
+/* hoja */
+.velo{position:absolute;inset:0;background:rgba(10,9,8,.42);z-index:10;opacity:0;pointer-events:none;transition:opacity .25s}
+.velo.on{opacity:1;pointer-events:auto}
+.hoja{position:absolute;left:8px;right:8px;bottom:8px;max-height:90%;overflow-y:auto;background:var(--fondo);border-radius:36px;padding:10px 20px 22px;z-index:11;transform:translateY(110%);visibility:hidden;transition:transform .4s var(--ease),visibility 0s .4s;scrollbar-width:none;box-shadow:var(--sombra)}
+.hoja.on{transform:none;visibility:visible;transition:transform .45s var(--resorte)}
+.hoja::before{content:"";display:block;width:38px;height:5px;border-radius:3px;background:var(--sup2);margin:0 auto 14px}
+.hoja h3{font-family:var(--tit);font-size:28px;font-weight:800;letter-spacing:-.045em;line-height:1;margin-bottom:8px}
+.hoja .sub{font-size:15px;color:var(--txt2)}
+.hoja .botones{display:grid;gap:8px;margin-top:20px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:11px 0;font-size:16px}
+.kv+.kv{border-top:1px solid var(--linea)}
+.kv.t{font-weight:700;font-size:18px}
+.kv .rojo{color:var(--rojo);font-weight:600}
+.kv .ok{color:var(--verde);font-weight:600}
+.hsec{margin:20px 6px 8px;font-size:14px;font-weight:600;color:var(--txt3)}
+.campo{display:grid;gap:6px;margin-top:12px}
+.campo label{font-size:14px;font-weight:500;color:var(--txt2);margin-left:6px}
+.campo input{height:54px;border-radius:18px;border:0;background:var(--sup);padding:0 18px;font-size:17px;outline:none;width:100%}
+.campo input:focus{box-shadow:0 0 0 2px var(--txt)}
+.ayuda{font-size:14px;color:var(--txt2);margin:10px 6px 0}
+.info{font-size:14px;color:var(--txt2);padding:12px 14px;border-radius:16px;background:var(--sup);margin-top:10px}
+
+/* aviso arriba (mostrarAviso), en cápsula */
+.toast{position:absolute;left:50%;top:10px;z-index:20;max-width:calc(100% - 24px);width:max-content;padding:12px 18px;border-radius:22px;background:#000;color:#fff;font-size:15px;font-weight:500;text-align:center;
+  transform:translate(-50%,-140%) scale(.9);opacity:0;transition:transform .45s var(--resorte),opacity .25s;display:flex;gap:12px;align-items:center}
+.toast.on{transform:translate(-50%,0) scale(1);opacity:1}
+.toast button{color:var(--acento);font-weight:600}
+
+@media (max-width:860px){
+  .pag{grid-template-columns:minmax(0,1fr);gap:28px;padding-block:16px}
+  .intro{justify-self:center;order:2}
+  .tel{justify-self:center;max-width:100%;min-width:0}
+}
+@media (max-width:460px){
+  body{padding-left:0;padding-right:0}
+  .pag{padding-block:0}
+  .tel{width:100%;height:100dvh;min-height:0;border-radius:0;box-shadow:none}
+  .est{display:none}
+  .toast{top:calc(10px + env(safe-area-inset-top,0px))}
+  .intro{padding:0 max(16px,env(safe-area-inset-left,0px)) 32px max(16px,env(safe-area-inset-right,0px))}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+
+<div class="pag">
+  <section class="intro" aria-labelledby="t-intro">
+    <div class="marca"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M5 19V5l14 14V5"/></svg></i>Nodo Gastro</div>
+    <h1 id="t-intro">La app entera,<br><span>de punta a punta.</span></h1>
+    <p class="baj">Desde que el dueño la abre por primera vez hasta que cierra el día. Todo se puede tocar.</p>
+    <div class="recorrido">
+      <b>Ir directo a</b>
+      <div class="saltos" id="saltos">
+        <button data-salto="ob" class="a">Primera vez</button>
+        <button data-salto="pedidos">Pedidos</button>
+        <button data-salto="carta">Carta</button>
+        <button data-salto="vender">Vender</button>
+        <button data-salto="caja">Caja</button>
+        <button data-salto="cierre">Cierre del día</button>
+        <button data-salto="bot">Bot de WhatsApp</button>
+        <button data-salto="ia">Asistente IA</button>
+        <button data-salto="config">Configuración</button>
+      </div>
+    </div>
+    <div class="pie-i"><span>Maqueta con datos de ejemplo. Son las 21:02 de un sábado.</span><button class="tema" id="tema">Ver en oscuro</button></div>
+  </section>
+
+  <div class="tel" id="tel">
+    <div class="est" aria-hidden="true"><span class="n">21:02</span><span class="isla"></span><span>5G</span></div>
+    <main class="vista" id="vista" aria-live="polite"></main>
+    <nav class="barra" id="barra" aria-label="Secciones"></nav>
+    <div class="velo" id="velo"></div>
+    <div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t"></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+// Plata en centavos, como en la app (convención 1). Se muestra sin centavos, redondeando hacia arriba.
+const plata = c => (c < 0 ? '−' : '') + '$ ' + Math.ceil(Math.abs(c) / 100).toLocaleString('es-AR');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const $ = id => document.getElementById(id);
+const pesos = v => Math.round((parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0) * 100);
+const AHORA = 21 * 60 + 2;
+const aMin = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+const hhmm = m => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+
+const ICO = {
+  pedidos:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  carta:'<path d="M4 5h7v15H4zM13 5h7v15h-7z"/>',
+  vender:'<path d="M3 4h2l2.4 11h10.2L20 8H6.3"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+  caja:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/>',
+  mas:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  mas2:'<path d="M12 5v14M5 12h14"/>',
+  lupa:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  pausa:'<path d="M9 6v12M15 6v12"/>',
+  campana:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  chat:'<path d="M4 19.5 5.3 16A8 8 0 1 1 8 18.7z"/>',
+  chispa:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+  ajustes:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',
+  reloj:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  camion:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.7"/><circle cx="17" cy="17.5" r="1.7"/>',
+  etiqueta:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  calendario:'<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  persona:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  luna:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  bajar:'<path d="M12 4v11M7 10.5 12 15.5l5-5M5 20h14"/>',
+  billete:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/>',
+  qr:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2v2h-2zM18 18h2v2h-2z"/>',
+  point:'<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M9 7h6M9 17h.01M12 17h.01M15 17h.01"/>',
+  mixto:'<path d="M7 4v16M17 4v16M3 8h8M13 16h8"/>',
+  flechas:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  contar:'<path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  separar:'<path d="M12 3v18M5 8h9a3 3 0 0 1 0 6H8"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  tienda:'<path d="M4 9.5 5.5 4h13L20 9.5M4 9.5V20h16V9.5M4 9.5h16"/>',
+  llave:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l2 2"/>',
+  base:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  actualizar:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+  impresora:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><path d="M7 14h10v7H7z"/>',
+};
+const svg = (k, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 1.9}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[k] || ''}</svg>`;
+
+// =================== datos de ejemplo ===================
+const S = {
+  ob:{ activo:true, pantalla:'bienvenida', slide:0, paso:0, saltados:[], hechos:[],
+       nombre:'', plato:{ nombre:'', min:'', precio:'' }, dias:[1,1,1,1,1,1,0], abre:'11:00', cierra:'23:00',
+       bot:false, catalogo:false, pago:'aElegir', solos:false, retiro:true, cadete:true, reparto:false, zona:'Centro', zonaCosto:'1500', mp:false },
+  tab:'pedidos', pila:[], filtro:'porConfirmar', cocina:'normal', cartaCat:'Platos', cajaVista:'Resumen',
+  local:'Rotisería Doña Ana', usuario:'Ana', tema:'auto',
+  cfg:{ retiro:true, cadete:true, reparto:false, pago:'aElegir', min:30, minDem:60, solos:false, catalogo:true, alias:'DONA.ANA.POLLO', redondeo:'100', valorHora:600000,
+        medios:{Efectivo:true, QR:true, Point:true, Mixto:true}, zonas:[{nombre:'Centro', costo:150000, demora:0},{nombre:'Melipal', costo:220000, demora:10},{nombre:'Km 8', costo:350000, demora:20}],
+        horario:{ dias:[1,1,1,1,1,1,1], turnos:[['11:00','15:00'],['19:00','23:30']] } },
+  bot:{ prendido:true, charlas:41, pedidos:12, silencio:'30 min' },
+  caja:{ abierta:true, desde:'11:02', fondo:2000000, ventas:23, medios:{Efectivo:8640000, QR:11230000, Point:5870000, Mixto:0}, canales:{WhatsApp:15900000, Mostrador:7340000, Teléfono:2500000},
+         movs:[{t:'Gasto', m:'Gas', monto:1850000, de:'Efectivo', h:'13:10'}, {t:'Gasto', m:'Verdulería', monto:620000, de:'Efectivo', h:'17:40'}], cerrado:false },
+  carrito:[['emp',1],['coca',2]], descuento:0,
+  chat:[], notifVistas:false,
+};
+const CARTA = [
+  {id:'pollo', n:'Pollo al spiedo', cat:'Platos', p:1400000, min:15, rec:[['pollo',1.6],['esp',1]]},
+  {id:'papas', n:'Papas fritas grandes', cat:'Platos', p:600000, min:10, rec:[['papa',0.6],['aceite',0.15]]},
+  {id:'emp', n:'Empanadas de carne, docena', cat:'Platos', p:1800000, min:20, rec:[['carne',0.7],['tapas',12],['esp',1]]},
+  {id:'mila', n:'Milanesa napolitana con fritas', cat:'Platos', p:1150000, min:20, rec:[['nalga',0.25],['muzza',0.08],['papa',0.3],['aceite',0.1]]},
+  {id:'pizza', n:'Pizza muzzarella', cat:'Platos', p:1200000, min:18, rec:[['prepizza',1],['muzza',0.35]]},
+  {id:'tarta', n:'Tarta de verdura', cat:'Platos', p:900000, min:25, rec:[['acelga',1],['tapasT',2],['muzza',0.15]]},
+  {id:'coca', n:'Coca-Cola 1,5 L', cat:'Bebidas y otros', p:380000, costo:240000},
+  {id:'agua', n:'Agua sin gas 1,5 L', cat:'Bebidas y otros', p:220000, costo:120000},
+  {id:'flan', n:'Flan casero con dulce', cat:'Bebidas y otros', p:350000, costo:140000},
+];
+const INSUMOS = {
+  pollo:{n:'Pollo entero', u:'kg', hay:42, c:350000}, papa:{n:'Papa', u:'kg', hay:18, c:150000}, aceite:{n:'Aceite', u:'L', hay:9, c:400000},
+  carne:{n:'Carne picada', u:'kg', hay:3.5, c:700000}, tapas:{n:'Tapas de empanada', u:'u', hay:96, c:12500}, nalga:{n:'Nalga', u:'kg', hay:4, c:1240000},
+  muzza:{n:'Muzzarella', u:'kg', hay:2.1, c:940000}, prepizza:{n:'Prepizza', u:'u', hay:14, c:120000}, acelga:{n:'Acelga', u:'atado', hay:2, c:150000},
+  tapasT:{n:'Tapas de tarta', u:'u', hay:6, c:90000}, esp:{n:'Especias y otros', u:'u', hay:99, c:40000},
+};
+const plato = id => CARTA.find(p => p.id === id);
+const fmtCant = (q, u) => `${String(q).replace('.', ',')} ${u}`;
+// La mano de obra suma por los minutos que tarda en salir, al valor de la hora (Configuración › Mano de obra).
+const costo = p => p.rec ? Math.ceil((p.rec.reduce((s, [i, q]) => s + INSUMOS[i].c * q, 0) + S.cfg.valorHora * (p.min / 60)) / 100) * 100 : p.costo;
+const ganancia = p => pct(p.p - costo(p), p.p);
+const alcanza = id => { const usos = CARTA.filter(p => p.rec && p.rec.some(([i]) => i === id)); if (!usos.length) return ''; const p = usos[0], q = p.rec.find(([i]) => i === id)[1]; return `${Math.floor(INSUMOS[id].hay / q)} × ${p.n}`; };
+const poco = id => { const usos = CARTA.filter(p => p.rec && p.rec.some(([i]) => i === id)); return usos.some(p => Math.floor(INSUMOS[id].hay / p.rec.find(([i]) => i === id)[1]) < 8); };
+
+let sig = 43;
+const PEDIDOS = [
+  {id:1, num:41, cli:'Juan Pérez', canal:'WhatsApp', entrega:'cadete', zona:'Centro', dir:'Mitre 340, 2° B', tel:'294 455-1203', hora:'21:40', estado:'porConfirmar', lin:[['pollo',1],['papas',1]], envio:150000, nota:'Sin sal las papas'},
+  {id:8, num:42, cli:'Rocío', canal:'WhatsApp', entrega:'retiro', tel:'294 410-2290', hora:'21:35', estado:'porConfirmar', lin:[['pizza',1],['coca',1]], envio:0, pagado:true},
+  {id:3, num:39, cli:'Lucía', canal:'Mostrador', entrega:'retiro', hora:'21:20', estado:'porHacer', lin:[['mila',2],['flan',2]], envio:0},
+  {id:4, num:38, cli:'Ezequiel R.', canal:'WhatsApp', entrega:'reparto', zona:'Melipal', dir:'Av. Bustillo km 4,2', tel:'294 412-5560', hora:'21:08', estado:'porHacer', lin:[['pizza',2],['coca',1]], envio:220000, pagado:true},
+  {id:9, num:35, cli:'Diego', canal:'Teléfono', entrega:'retiro', tel:'294 420-1188', hora:'21:15', estado:'porHacer', lin:[['emp',1]], envio:0},
+  {id:5, num:37, cli:'Familia Sosa', canal:'Teléfono', entrega:'retiro', tel:'294 467-0012', hora:'21:10', estado:'listo', lin:[['pollo',1],['papas',2],['agua',1]], envio:0},
+  {id:6, num:36, cli:'Carla', canal:'WhatsApp', entrega:'cadete', zona:'Centro', dir:'Moreno 1120', tel:'294 401-7745', hora:'21:00', estado:'enCamino', lin:[['tarta',1],['emp',1]], envio:150000},
+  {id:2, num:40, cli:'Marta Giménez', canal:'WhatsApp', entrega:'retiro', tel:'294 430-8871', hora:'21:30', estado:'esperandoPago', lin:[['emp',1],['coca',1]], envio:0},
+];
+const VENTAS = [
+  {num:34, h:'20:51', items:'2 Pizza muzzarella · 1 Coca-Cola', total:2780000, medio:'QR', canal:'WhatsApp'},
+  {num:33, h:'20:40', items:'1 Pollo al spiedo · 1 Papas fritas', total:2000000, medio:'Efectivo', canal:'Mostrador'},
+  {num:32, h:'20:22', items:'2 Empanadas de carne, docena', total:3600000, medio:'Point', canal:'Teléfono'},
+  {num:31, h:'20:05', items:'1 Milanesa napolitana · 1 Flan', total:1500000, medio:'Efectivo', canal:'Mostrador'},
+  {num:30, h:'14:38', items:'1 Tarta de verdura · 1 Agua', total:1120000, medio:'QR', canal:'WhatsApp'},
+];
+const PROVEEDORES = [
+  {n:'Avícola del Sur', d:'Pollos · los martes y viernes', deuda:18400000},
+  {n:'Distribuidora Andina', d:'Bebidas', deuda:4250000},
+  {n:'Lácteos Nevado', d:'Muzzarella y huevos', deuda:0},
+  {n:'Verdulería Melipal', d:'Papa, acelga y verdura', deuda:1320000},
+];
+const PROMOS = [{n:'2x1 en empanadas', d:'Los martes, todo el día', on:true}, {n:'Pollo + papas', d:'Combo a $ 18.500', on:true}];
+const FILTROS = [['porConfirmar','Nuevos'],['porHacer','Cocina'],['listo','Listos'],['enCamino','En camino'],['esperandoPago','Sin pagar']];
+const esEnvio = p => p.entrega !== 'retiro';
+const totalPedido = p => p.lin.reduce((s, [id, q]) => s + plato(id).p * q, 0) + p.envio;
+const cuenta = k => PEDIDOS.filter(p => p.estado === k).length;
+const faltan = p => aMin(p.hora) - AHORA;
+const totalCaja = () => Object.values(S.caja.medios).reduce((a, b) => a + b, 0);
+const gastosEf = () => S.caja.movs.reduce((s, m) => s + (m.de === 'Efectivo' ? (m.t === 'Ingreso' ? -m.monto : m.monto) : 0), 0);
+const efectivoEsperado = () => S.caja.fondo + S.caja.medios.Efectivo - gastosEf();
+const mpEsperado = () => S.caja.medios.QR + S.caja.medios.Point + S.caja.medios.Mixto;
+const totalCarrito = () => Math.max(0, S.carrito.reduce((s, [id, q]) => s + plato(id).p * q, 0) - S.descuento);
+
+// =================== tema ===================
+const raiz = document.documentElement;
+const oscuroAhora = () => raiz.dataset.theme ? raiz.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const rotular = () => { $('tema').textContent = oscuroAhora() ? 'Ver en claro' : 'Ver en oscuro'; };
+function ponerTema(t) { S.tema = t; if (t === 'auto') delete raiz.dataset.theme; else raiz.dataset.theme = t; rotular(); }
+$('tema').onclick = () => { ponerTema(oscuroAhora() ? 'light' : 'dark'); render(); };
+rotular();
+
+// =================== avisos, hojas, navegación ===================
+let tt;
+function aviso(txt, deshacer) {
+  const t = $('toast'); t.innerHTML = `<span>${esc(txt)}</span>${deshacer ? '<button data-do="deshacer">Deshacer</button>' : ''}`; t.classList.add('on');
+  avisoDeshacer = deshacer || null; clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), deshacer ? 4500 : 2600);
+}
+let avisoDeshacer = null;
+let hojaActual = null;
+function abrirHoja(nombre, arg) {
+  hojaActual = [nombre, arg];
+  $('hoja').innerHTML = HOJAS[nombre](arg); $('hoja').scrollTop = 0; $('velo').classList.add('on'); $('hoja').classList.add('on');
+  const f = $('hoja').querySelector('input,button:not([data-cerrar])'); if (f) setTimeout(() => f.focus({preventScroll:true}), 320);
+}
+function refrescarHoja() { if (hojaActual) { const st = $('hoja').scrollTop; $('hoja').innerHTML = HOJAS[hojaActual[0]](hojaActual[1]); $('hoja').scrollTop = st; } }
+function cerrarHoja() { hojaActual = null; $('velo').classList.remove('on'); $('hoja').classList.remove('on'); clearTimeout(esperaTimer); }
+$('velo').onclick = cerrarHoja;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarHoja(); });
+
+function ir(pagina, arg) { S.pila.push([pagina, arg]); render(true); $('vista').scrollTop = 0; }
+function volver() { S.pila.pop(); render(); }
+function irTab(t) { S.tab = t; S.pila = []; render(); $('vista').scrollTop = 0; }
+
+// =================== piezas ===================
+const cab = (titulo, chico, der) => `<header class="cab"><div>${chico ? `<small>${chico}</small>` : ''}<h2>${titulo}</h2></div>${der ? `<div class="der">${der}</div>` : ''}</header>`;
+const cabSub = (titulo, chico) => `<header class="cab sub"><div>${chico ? `<small>${chico}</small>` : ''}<h2>${titulo}</h2></div><button class="volver toque" data-do="volver">Volver</button></header>`;
+const sw = (k, on, label) => `<button class="sw" role="switch" aria-checked="${!!on}" aria-label="${esc(label || '')}" data-do="sw" data-k="${k}"></button>`;
+const get = k => k.split('.').reduce((o, p) => o?.[p], S);
+const set = (k, v) => { const ps = k.split('.'), u = ps.pop(); ps.reduce((o, p) => o[p], S)[u] = v; };
+const segm = (k, ops, cls) => `<div class="seg ${cls || ''}" role="group">${ops.map(([v, t, c]) => `<button class="${c || ''}" data-do="seg" data-k="${k}" data-v="${v}" aria-pressed="${String(get(k)) === String(v)}">${t}</button>`).join('')}</div>`;
+const campo = (id, label, k, extra) => `<div class="campo"><label for="${id}">${label}</label><input id="${id}" data-bind="${k}" value="${esc(get(k))}" autocomplete="off" ${extra || ''}></div>`;
+const fila = o => `<${o.do || o.go ? 'button' : 'div'} class="fila" ${o.do ? `data-do="${o.do}"` : ''} ${o.go ? `data-go="${o.go}"` : ''} ${o.id ? `data-id="${o.id}"` : ''}>
+  ${o.ico ? `<span class="ico-f ${o.icoc || ''}">${ICO[o.ico] ? svg(o.ico) : esc(o.ico)}</span>` : ''}
+  <span class="q"><b>${o.t}</b>${o.s ? `<small>${o.s}</small>` : ''}</span>
+  ${o.d || o.ds ? `<span class="d">${o.d ? `<b class="n">${o.d}</b>` : ''}${o.ds ? `<small class="n ${o.dsc || ''}">${o.ds}</small>` : ''}</span>` : ''}
+  ${o.der || ''}${(o.do || o.go) && !o.der ? '<span class="fl" aria-hidden="true">›</span>' : ''}</${o.do || o.go ? 'button' : 'div'}>`;
+const qrSvg = () => { let r = '', x = 7; const on = (i, j) => { x = (x * 9301 + 49297) % 233280; return x / 233280 > .5; };
+  for (let i = 0; i < 25; i++) for (let j = 0; j < 25; j++) { const f = (a, b) => a < 7 && b < 7; if (f(i, j) || f(i, 24 - j) || f(24 - i, j)) continue; if (on(i, j)) r += `<rect x="${j}" y="${i}" width="1" height="1"/>`; }
+  const ojo = (a, b) => `<rect x="${b + .5}" y="${a + .5}" width="6" height="6" fill="none" stroke="#000"/><rect x="${b + 2}" y="${a + 2}" width="3" height="3"/>`;
+  return `<svg viewBox="0 0 25 25" fill="#000" aria-label="Código QR de ejemplo"><g>${r}</g>${ojo(0, 0)}${ojo(0, 18)}${ojo(18, 0)}</svg>`; };
+
+// =================== onboarding ===================
+const SLIDES = [
+  { t:'Tu WhatsApp <span>atiende solo.</span>', b:'Contesta al toque, manda la carta y te deja el pedido listo para cocinar.',
+    escena:() => `<div class="burb cli">Hola! hacen envíos? quiero un pollo con papas<small>21:01</small></div>
+      <div class="burb bot" style="animation-delay:.3s">¡Hola! Sí, al Centro sale $ 1.500. Pollo al spiedo + papas grandes: $ 21.500 con envío. ¿A qué dirección?<small>21:01 · Bot de Doña Ana</small></div>
+      <div class="burb cli" style="animation-delay:.6s">Mitre 340 2B<small>21:02</small></div>
+      <div class="burb bot" style="animation-delay:.9s">Listo, llega 21:40. Te aviso cuando sale 🛵<small>21:02</small></div>` },
+  { t:'La cocina <span>manda.</span>', b:'Si se llena, tocás "Con demora" o "Pausada" y el bot avisa la demora real o deja de tomar pedidos.',
+    escena:() => `<div class="mos inv" style="min-height:0"><small class="vivo">Sale ahora</small><b class="n">6<span class="u"> min</span></b><span class="sub">Ezequiel R. · 2 pizzas</span><span class="barrita"><i style="width:80%"></i></span></div>
+      <div class="seg" style="pointer-events:none"><button aria-pressed="false">Normal</button><button aria-pressed="true">Con demora</button><button aria-pressed="false">Pausada</button></div>
+      <div class="burb bot">Estamos con mucha demanda: tu pedido sale en 60 min. ¿Lo confirmo?</div>` },
+  { t:'La caja <span>cierra sola.</span>', b:'Efectivo, QR y Point en un lugar. Al final del día contás el cajón y listo.',
+    escena:() => `<div class="mos inv" style="min-height:0"><small>Vendido hoy</small><b class="n" style="font-size:46px">$ 257.400</b><span class="sub">23 ventas · el bot trajo el 62 %</span></div>
+      <div class="bento dos"><div class="mos chico"><small>Efectivo</small><b class="n">$ 86.400</b></div><div class="mos chico"><small>Mercado Pago</small><b class="n">$ 171.000</b></div></div>
+      <div class="kv" style="padding:4px 6px"><span>Contaste el cajón</span><span class="ok">Cuadró</span></div>` },
+];
+const PASOS = [
+  ['negocio','Tu local'], ['plato','Tu primer plato'], ['horario','Horario'], ['pedidos','Bot, catálogo y cobro adelantado'], ['cobros','Mercado Pago y equipo'],
+];
+function vistaOnboarding() {
+  const o = S.ob;
+  if (o.pantalla === 'bienvenida') {
+    const s = SLIDES[o.slide];
+    return `<div class="ob"><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 4px 0"><span class="marca" style="font-size:17px"><i style="width:24px;height:24px;border-radius:8px">${'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M5 19V5l14 14V5"/></svg>'}</i>Nodo Gastro</span>
+      <button class="link" data-do="obEntrar">Ya tengo cuenta</button></div>
+      <div class="ob-escena" aria-hidden="true">${s.escena()}</div>
+      <h2>${s.t}</h2><p class="baj">${s.b}</p>
+      <div class="ob-pie"><div class="puntos">${SLIDES.map((_, i) => `<i class="${i === o.slide ? 'on' : ''}"></i>`).join('')}</div>
+      <button class="b b-c b-g toque" data-do="obSlide">${o.slide < SLIDES.length - 1 ? 'Siguiente' : 'Empezar'}</button></div></div>`;
+  }
+  if (o.pantalla === 'entrar') {
+    return `<div class="ob"><div style="padding-top:40px"><h2>Entrá con<br><span>tu cuenta.</span></h2></div>
+      <p class="baj">Internet, una sola vez, para entrar. Después el celular sigue andando sin conexión.</p>
+      <div class="info">¿Primera vez? Tu cuenta se crea sola al entrar con Google. Es la misma de horsepos.com.</div>
+      <div class="info" style="margin-top:0">¿Te invitaron a un local? Entrá con el mismo mail al que te llegó la invitación.</div>
+      <div class="ob-pie"><button class="b b-c b-g toque" data-do="obGoogle"><span class="g">G</span>Continuar con Google</button>
+      <p class="ayuda" style="text-align:center">Lo que hagas desde este celular queda a tu nombre.</p></div></div>`;
+  }
+  if (o.pantalla === 'entrando') return `<div class="ob"><div class="espera" style="margin:auto"><div class="rueda"></div>Entrando…</div></div>`;
+  if (o.pantalla === 'listo') {
+    const est = PASOS.map(([k, t]) => `<div class="chk"><i class="${o.saltados.includes(k) ? 'no' : ''}">${o.saltados.includes(k) ? '–' : '✓'}</i><span>${t}${o.saltados.includes(k) ? '<small>Quedó para después: te lo recuerdo en Pedidos</small>' : ''}</span></div>`).join('');
+    return `<div class="ob"><div class="hecho" style="margin-top:30px">${svg('check', 3)}</div><h2 style="text-align:center">Todo listo,<br><span>${esc(o.nombre || S.local)}.</span></h2>
+      <p class="baj" style="text-align:center">Este celular ya está listo para tomar pedidos y cobrar.</p>
+      <div class="lista" style="padding:0 16px">${est}</div>
+      <div class="ob-pie"><button class="b b-a b-g toque" data-do="obFin">Ir a Pedidos</button></div></div>`;
+  }
+  // asistente "Configurá tu negocio"
+  const [k, nombre] = PASOS[o.paso];
+  const prog = `<div class="ob-prog"><span>Paso ${o.paso + 1} de ${PASOS.length}</span><span class="barrita"><i style="width:${(o.paso + 1) / PASOS.length * 100}%"></i></span><span>${nombre}</span></div>`;
+  const pie = (txt) => `<div class="ob-pie"><button class="b b-a b-g toque" data-do="obSig">${txt || 'Siguiente'}</button><button class="b b-t b-g" data-do="obDespues">Después</button></div>`;
+  let h = '';
+  if (k === 'negocio') h = `<h2>Contanos de<br><span>tu local.</span></h2><p class="baj">Con esto armamos la app a tu medida. Todo se puede cambiar después.</p>
+    ${campo('ob-nombre', 'Nombre del local', 'ob.nombre', 'placeholder="Ej.: Rotisería Doña Ana"')}<p class="ayuda">Sale en los tickets, arriba de la app y es como se presenta el bot.</p>
+    <div class="info">Gastronomía trae las categorías Platos, Pizzas, Sándwiches, Empanadas y Bebidas y otros. Las cambiás cuando quieras.</div>${pie()}`;
+  if (k === 'plato') h = `<h2>Tu primer<br><span>plato.</span></h2><p class="baj">Con nombre, cuánto tarda en salir y el precio alcanza. Lo que lleva lo sumás después.</p>
+    ${campo('ob-pn', 'Nombre', 'ob.plato.nombre', 'placeholder="Ej.: Milanesa con papas"')}
+    <div class="dos-c">${campo('ob-pm', 'Cuánto tarda en salir (min)', 'ob.plato.min', 'inputmode="numeric" placeholder="20"')}${campo('ob-pp', 'Precio de venta', 'ob.plato.precio', 'inputmode="numeric" placeholder="11.500"')}</div>
+    <p class="ayuda">Así se suma cualquier plato, desde la pestaña Carta.</p>${pie('Guardar plato')}`;
+  if (k === 'horario') h = `<h2>¿Cuándo<br><span>atendés?</span></h2><p class="baj">El bot toma pedidos en este horario: lo que llega fuera de hora queda programado.</p>
+    <div class="dias" style="margin-top:4px">${['L','M','M','J','V','S','D'].map((d, i) => `<button data-do="obDia" data-i="${i}" aria-pressed="${!!o.dias[i]}" aria-label="Día ${i + 1}">${d}</button>`).join('')}</div>
+    <div class="dos-c">${campo('ob-ab', 'Abre', 'ob.abre', 'inputmode="numeric"')}${campo('ob-ci', 'Cierra', 'ob.cierra', 'inputmode="numeric"')}</div>
+    <p class="ayuda">Si algún día es distinto, lo cambiás en Configuración › Horario y transferencias.</p>${pie('Guardar horario')}`;
+  if (k === 'pedidos') h = `<h2>Lo que ningún<br><span>otro sistema hace.</span></h2><p class="baj">Tu local atiende, cobra y se organiza solo. Lo dejás andando ahora; lo ajustás cuando quieras.</p>
+    <div class="lista">
+      ${fila({ ico:'chat', icoc:'nar', t:'Tu WhatsApp atiende solo', s:'Contesta al toque, manda la carta y te deja el pedido en Pedidos. Viene con tu plan.', der:o.bot ? '<span class="d"><small class="ok">Encendido</small></span>' : '<button class="b b-a" style="height:38px;padding:0 14px;font-size:14px" data-do="obBot">Encender</button>' })}
+      ${fila({ ico:'etiqueta', t:'Te piden desde tu catálogo', s:'Tengo WhatsApp Business con catálogo: el bot le copia tu carta y toma el carrito.', der:sw('ob.catalogo', o.catalogo, 'Catálogo de WhatsApp') })}
+    </div>
+    <p class="hsec">Cobrás antes de cocinar</p>${segm('ob.pago', [['alEntregar','Al entregar'],['adelantado','Adelantado'],['aElegir','Que elija']])}
+    <p class="ayuda">${{ alEntregar:'Se cobra al retirar, o al recibir el envío.', adelantado:'El bot manda el link de Mercado Pago y el pedido te entra recién pagado.', aElegir:'El cliente elige si paga ahora por Mercado Pago o al recibir.' }[o.pago]}</p>
+    <p class="hsec">La cocina manda</p><div class="lista">${fila({ ico:'reloj', t:'Los de WhatsApp entran solos', s:o.solos ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.', der:sw('ob.solos', o.solos, 'Entran solos') })}</div>
+    <p class="ayuda">Si se llena, en Pedidos tocás "Con demora" o "Pausada". El mostrador sigue igual.</p>
+    <p class="hsec">Y cómo entregás</p><div class="lista">
+      ${fila({ t:'Retiran en el local', der:sw('ob.retiro', o.retiro, 'Retiro') })}${fila({ t:'Cadete propio', der:sw('ob.cadete', o.cadete, 'Cadete') })}${fila({ t:'Servicio de reparto', s:'Una cadetería de afuera', der:sw('ob.reparto', o.reparto, 'Reparto') })}</div>
+    ${o.cadete || o.reparto ? `<div class="dos-c">${campo('ob-z', 'Zona de envío', 'ob.zona')}${campo('ob-zc', 'Lo que cobrás', 'ob.zonaCosto', 'inputmode="numeric"')}</div><p class="ayuda">Una zona para empezar. Las demás, en Configuración › Pedidos.</p>` : ''}
+    ${pie('Dejarlo andando')}`;
+  if (k === 'cobros') h = `<h2>Mercado Pago<br><span>y tu equipo.</span></h2><p class="baj">El bot manda el link de pago de los pedidos, y en el local cobrás con QR o con tu terminal Point.</p>
+    <div class="lista">${fila({ ico:'qr', icoc:o.mp ? 'verde' : '', t:'Conectá Mercado Pago', s:o.mp ? 'Conectado · Point en el mostrador' : 'Se conecta en horsepos.com con tu cuenta. Se abre el navegador y volvés.', der:o.mp ? '<span class="d"><small class="ok">Listo</small></span>' : '<button class="b b-c" style="height:38px;padding:0 14px;font-size:14px" data-do="obMp">Conectar</button>' })}
+    ${fila({ ico:'persona', t:'Sumá a tu equipo', s:'Invitá a tus empleados por mail. Lo que hace cada uno queda a su nombre.', der:'<button class="b b-s" style="height:38px;padding:0 14px;font-size:14px;background:var(--fondo)" data-do="aviso" data-t="Se abre horsepos.com para invitar">Invitar</button>' })}</div>
+    ${pie('Terminar')}`;
+  return `<div class="ob">${prog}${h}</div>`;
+}
+
+// =================== Pedidos ===================
+function acciones(p) {
+  const cobrable = !p.pagado && !p.cobrado;
+  if (p.estado === 'porConfirmar') return [['Rechazar','rechazado','b-t'], ['Aceptar','porHacer','b-a']];
+  if (p.estado === 'porHacer') return [['Listo','listo','b-c']];
+  if (p.estado === 'listo' && esEnvio(p)) return [['Salió','enCamino','b-c']];
+  if (p.estado === 'listo' || p.estado === 'enCamino') return [cobrable ? ['Cobrar','cobrar','b-c'] : ['Entregado','entregado','b-c']];
+  return [];
+}
+function tarjeta(p) {
+  const d = faltan(p);
+  const sub = p.estado === 'porConfirmar' ? '<small class="nuevo">Nuevo</small>' : p.estado === 'enCamino' ? '<small>En la calle</small>'
+    : p.estado === 'esperandoPago' ? '<small>Sin pagar</small>' : d < 0 ? `<small class="tarde">${-d} min tarde</small>` : `<small>en ${d} min</small>`;
+  const meta = `${p.canal} · ${esEnvio(p) ? 'Envío a ' + p.zona : 'Retira'}${p.pagado ? ' · <em class="ok">Pagado</em>' : p.cobrado ? ' · <em class="ok">Cobrado</em>' : ''}`;
+  return `<article class="ped" aria-label="Pedido ${p.num} de ${esc(p.cli)}">
+    <div class="ped-a"><div class="q"><b>${esc(p.cli)}</b><small>${meta}</small></div><div class="reloj"><b class="n">${p.hora}</b>${sub}</div></div>
+    <ul class="items">${p.lin.map(([id, q]) => `<li><b class="n">${q}</b><span>${esc(plato(id).n)}</span></li>`).join('')}</ul>
+    ${p.nota ? `<p class="nota-c">${esc(p.nota)}</p>` : ''}
+    ${p.estado === 'esperandoPago' ? '<p class="ayuda" style="margin:0">Tiene el link de Mercado Pago. Se cocina cuando pague.</p>' : ''}
+    <div class="ped-p"><button class="tot n" data-do="detalle" data-id="${p.id}" aria-label="Ver el detalle">${plata(totalPedido(p))}</button>
+      <div class="accs">${acciones(p).map(([t, a, c]) => `<button class="b ${c} toque" data-do="avanzar" data-a="${a}" data-id="${p.id}">${t}</button>`).join('')}</div></div>
+  </article>`;
+}
+function mosaicoAhora() {
+  // "Sale ahora": el próximo que tiene que salir de la cocina, como una actividad en vivo.
+  const p = PEDIDOS.filter(x => x.estado === 'porHacer').sort((a, b) => aMin(a.hora) - aMin(b.hora))[0];
+  if (!p) return `<button class="mos inv alto toque" data-do="filtro" data-v="porHacer"><small class="vivo ok">Cocina al día</small><b class="xl n">0</b><span class="sub">No hay nada por hacer.</span></button>`;
+  const d = faltan(p), tarde = d < 0;
+  return `<button class="mos inv alto toque${tarde ? ' tarde' : ''}" data-do="detalle" data-id="${p.id}">
+    <small class="vivo">${tarde ? 'Atrasado' : 'Sale ahora'}</small>
+    <span><b class="xl n">${Math.abs(d)}<span class="u"> min</span></b><span class="sub" style="display:block;margin-top:4px">${tarde ? 'de atraso' : 'para las ' + p.hora}</span></span>
+    <span><span class="quien">${esc(p.cli)} · #${p.num}</span><span class="sub">${p.lin.map(([id, q]) => q + ' ' + esc(plato(id).n)).join(' · ')}</span></span>
+    <span class="barrita"><i style="width:${Math.max(6, Math.min(100, 100 - d / 30 * 100))}%"></i></span></button>`;
+}
+function vistaPedidos() {
+  const coc = { normal:['', 'Cocina normal'], demorada:['dem', 'Cocina con demora'], pausada:['pau', 'Cocina pausada'] }[S.cocina];
+  const tarde = PEDIDOS.filter(p => p.estado === 'porHacer' && faltan(p) < 0).length;
+  const l = PEDIDOS.filter(p => p.estado === S.filtro).sort((a, b) => aMin(a.hora) - aMin(b.hora));
+  const vac = { porConfirmar:['Nada nuevo.','Lo que llegue por WhatsApp aparece acá.'], porHacer:['Cocina al día.','No hay nada por hacer.'], listo:['Nada esperando.','Los listos aparecen acá.'], enCamino:['Nadie en la calle.','Los envíos que salieron aparecen acá.'], esperandoPago:['Todo pagado.','Los que pagan con link esperan acá.'] }[S.filtro];
+  const falt = S.ob.saltados.map(k => PASOS.find(p => p[0] === k)[1]);
+  return cab('Pedidos', `Sábado 18 · ${S.cocina === 'demorada' ? S.cfg.minDem : S.cfg.min} min por pedido`,
+      `<button class="redondo toque ${coc[0]}" data-do="hoja" data-h="cocina" aria-label="${coc[1]}">${S.cocina === 'pausada' ? svg('pausa', 2.4) : '<span class="pt"></span>'}</button>
+       <button class="redondo a toque" data-do="hoja" data-h="nuevo" aria-label="Nuevo pedido">${svg('mas2', 2.4)}</button>`)
+    + (falt.length ? `<button class="pendiente toque" data-do="obRetomar"><span><b>Te falta configurar</b>${falt.join(' · ')}</span><em>Seguir</em></button>` : '')
+    + `<div class="bento">${mosaicoAhora()}
+      <button class="mos nar toque" data-do="filtro" data-v="porConfirmar"><small>Nuevos</small><b class="n">${cuenta('porConfirmar')}</b><span class="sub">para aceptar</span></button>
+      <button class="mos toque" data-do="filtro" data-v="porHacer"><small>En la cocina</small><b class="n">${cuenta('porHacer')}</b><span class="sub" style="${tarde ? 'color:var(--rojo);font-weight:600' : ''}">${tarde ? tarde + ' atrasado' + (tarde > 1 ? 's' : '') : 'todo en hora'}</span></button></div>
+    ${S.cocina === 'pausada' ? '<p class="aviso">Cocina pausada: el bot no toma pedidos. El mostrador sigue.</p>' : ''}
+    <div class="filtros" role="group" aria-label="Qué pedidos ver">${FILTROS.map(([k, t]) => `<button class="toque" data-do="filtro" data-v="${k}" aria-pressed="${S.filtro === k}">${t}<span class="c n">${cuenta(k)}</span></button>`).join('')}</div>
+    <div class="peds">${l.length ? l.map(tarjeta).join('') : `<div class="vacio"><b>${vac[0]}</b>${vac[1]}</div>`}</div>`;
+}
+
+// =================== Carta ===================
+function vistaCarta() {
+  let h = cab('Carta', `${CARTA.length} en la carta · ${Object.keys(INSUMOS).length - 1} insumos`, `<button class="redondo toque" data-do="hoja" data-h="precios" aria-label="Precios de todo">${svg('flechas')}</button><button class="redondo a toque" data-do="hoja" data-h="plato" aria-label="Nuevo">${svg('mas2', 2.4)}</button>`)
+    + segm('cartaCat', [['Platos','Platos'],['Bebidas y otros','Bebidas'],['Insumos','Insumos']]);
+  if (S.cartaCat === 'Insumos') {
+    const ids = Object.keys(INSUMOS).filter(i => i !== 'esp').sort((a, b) => poco(b) - poco(a));
+    h += `<div class="grupo"><h3><span>Por acabarse primero</span><span>lo que hay</span></h3><div class="lista">${ids.map(i => fila({ do:'insumo', id:i, t:INSUMOS[i].n, s:`Alcanza para ${alcanza(i)}`, d:fmtCant(INSUMOS[i].hay, INSUMOS[i].u), ds:poco(i) ? 'Poco' : plata(INSUMOS[i].c) + ' / ' + INSUMOS[i].u, dsc:poco(i) ? 'bajo' : '' })).join('')}</div></div>
+      <button class="b b-s b-g toque" style="margin-top:12px" data-do="hoja" data-h="insumoNuevo">Nuevo insumo</button>`;
+  } else {
+    if (S.cartaCat === 'Platos') h += `<button class="traer toque" data-do="hoja" data-h="traer"><span><b>Catálogo de WhatsApp</b>3 productos no están en la carta</span><em>Traer</em></button>`;
+    h += `<div class="grupo"><h3><span>${S.cartaCat === 'Platos' ? 'Precio y ganancia por plato' : 'Lo que vendés aparte de los platos'}</span></h3><div class="lista">${CARTA.filter(p => p.cat === S.cartaCat).map(p => {
+      const g = ganancia(p);
+      return fila({ do:'plato', id:p.id, ico:p.n[0], t:esc(p.n) + (p.oculto ? ' <small style="display:inline;color:var(--txt3);font-weight:500">· escondido en WhatsApp</small>' : ''), s:p.min ? `Sale en ${p.min} min · le cuesta ${plata(costo(p))}` : `Le cuesta ${plata(costo(p))}`, d:plata(p.p), ds:g + ' %', dsc:g < 35 ? 'bajo' : 'ok', der:' ' }); }).join('')}</div></div>`;
+    if (S.cartaCat !== 'Platos') h += '<p class="ayuda">Al cobrar se buscan en Vender.</p>';
+  }
+  return h;
+}
+
+// =================== Vender ===================
+const rapidos = l => l.map(p => `<button class="rapido toque" data-do="sumar" data-id="${p.id}"><b>${esc(p.n)}</b><span class="n">${plata(p.p)}</span></button>`).join('');
+function vistaVender() {
+  const t = totalCarrito();
+  return cab('Vender', S.caja.abierta ? `Mostrador · ${S.usuario}` : 'El día no empezó')
+    + (!S.caja.abierta ? `<button class="pendiente toque" data-do="hoja" data-h="abrirCaja"><span><b>El día no empezó</b>Empezalo para cobrar. Lo que entre se ve en Caja.</span><em>Empezar</em></button>` : '')
+    + `<div class="buscar">${svg('lupa')}<label class="sr" for="v-buscar">Buscar en la carta</label><input id="v-buscar" placeholder="Buscar en la carta" autocomplete="off"></div>
+    <p class="hsec" style="margin-top:14px">Más vendidos</p><div class="rapidos" id="rapidos" style="margin-top:0">${rapidos(CARTA.slice(0, 4))}</div>
+    <div class="grupo"><h3><span>En la venta</span>${S.carrito.length ? '<button class="link" style="padding:0" data-do="vaciar">Vaciar</button>' : ''}</h3>${S.carrito.length ? `<div class="lista">${S.carrito.map(([id, q]) => fila({ t:esc(plato(id).n), s:plata(plato(id).p), der:`<div class="paso"><button data-do="cq" data-id="${id}" data-d="-1" aria-label="Uno menos">−</button><span class="n">${q}</span><button data-do="cq" data-id="${id}" data-d="1" aria-label="Uno más">+</button></div>` })).join('')}
+      ${S.descuento ? fila({ t:'Descuento', d:plata(-S.descuento), der:'<button class="link" style="padding:0" data-do="sinDesc">Quitar</button>' }) : ''}</div>` : '<p class="vacio" style="padding:18px 0">Buscá o tocá un plato para empezar.</p>'}</div>
+    <div class="total"><span>${S.carrito.length && !S.descuento ? '<button class="link" style="padding:0" data-do="hoja" data-h="descuento">Descuento</button>' : 'Total'}</span><b class="n">${plata(t)}</b></div>
+    <div class="medios">${medios4('', t ? '' : 'disabled')}</div>`;
+}
+const MED = [['Efectivo','billete'],['QR','qr'],['Point','point'],['Mixto','mixto']];
+const medios4 = (pid, dis) => MED.filter(([m]) => S.cfg.medios[m]).map(([m, i], n) => `<button class="medio toque${n === 0 ? ' a' : ''}" data-do="cobrar" data-m="${m}" data-ped="${pid}" ${dis || ''}>${svg(i)}${m}</button>`).join('');
+
+// =================== Caja ===================
+function vistaCaja() {
+  const c = S.caja, tot = totalCaja();
+  if (!c.abierta) return cab('Caja', c.cerrado ? 'Día cerrado' : 'Sábado 18') + `<div class="vacio"><b>${c.cerrado ? 'Día cerrado.' : 'El día no empezó.'}</b>${c.cerrado ? 'Mañana arrancás con "Empezar el día".' : 'Abrí la caja con el fondo inicial para cobrar.'}</div>
+    <button class="b b-a b-g toque" data-do="hoja" data-h="abrirCaja">Empezar el día</button>
+    <div class="grupo"><h3>Antes</h3><div class="lista">${fila({ go:'cierres', ico:'calendario', t:'Cierres anteriores', s:'Lo que se contó cada día' })}</div></div>`;
+  const ganan = Math.round(tot * .46);
+  let h = cab('Caja', `Abierta desde las ${c.desde} · ${S.usuario}`, `<button class="redondo toque" data-do="go" data-p="notif" aria-label="Notificaciones">${svg('campana')}${S.notifVistas ? '' : '<span class="badge"></span>'}</button>`)
+    + `<div class="bento">
+      <div class="mos inv ancho"><small>Vendido hoy</small><b class="n" style="font-size:52px">${plata(tot)}</b><span class="sub">${S.caja.ventas} ventas · ganancia ${plata(ganan)}</span></div>
+      <div class="mos"><small>En el cajón</small><b class="n" style="font-size:30px">${plata(efectivoEsperado())}</b><span class="sub">efectivo esperado</span></div>
+      <div class="mos nar"><small>Trajo el bot</small><b class="n" style="font-size:30px">${pct(c.canales.WhatsApp, tot)} %</b><span class="sub">de lo vendido</span></div></div>
+    <div style="margin-top:14px">${segm('cajaVista', [['Resumen','Resumen'],['Ventas','Ventas'],['Movimientos','Movimientos']])}</div>`;
+  if (S.cajaVista === 'Resumen') {
+    const mx = Math.max(...Object.values(c.medios), 1), cx = Math.max(...Object.values(c.canales), 1);
+    h += `<div class="acciones4">
+        <button class="acc4 toque" data-do="hoja" data-h="gasto">${svg('flechas')}<span><b>Gasto o ingreso</b><small>Plata que sale o entra</small></span></button>
+        <button class="acc4 toque" data-do="hoja" data-h="pagarProv">${svg('camion')}<span><b>Pagar proveedor</b><small>Anota el pago y baja la deuda</small></span></button>
+        <button class="acc4 toque" data-do="hoja" data-h="contar">${svg('contar')}<span><b>Contar la caja</b><small>Sin cerrar el día</small></span></button>
+        <button class="acc4 toque" data-do="hoja" data-h="separar">${svg('separar')}<span><b>Separar</b><small>Para reponer insumos</small></span></button></div>
+      <div class="grupo"><h3>Cómo te pagaron</h3><ul class="barras">${Object.entries(c.medios).map(([m, v]) => `<li><span>${m}</span><span class="bar"><i style="width:${v / mx * 100}%"></i></span><b class="n">${plata(v)}</b></li>`).join('')}</ul></div>
+      <div class="grupo"><h3>Por dónde entró</h3><ul class="barras">${Object.entries(c.canales).map(([m, v]) => `<li><span>${m}</span><span class="bar"><i class="${m === 'WhatsApp' ? 'a' : ''}" style="width:${v / cx * 100}%"></i></span><b class="n">${plata(v)}</b></li>`).join('')}</ul></div>
+      <button class="b b-c b-g toque" style="margin-top:18px" data-do="go" data-p="cierre">Cerrar el día</button>
+      <div class="grupo"><div class="lista">${fila({ go:'cierres', ico:'calendario', t:'Cierres anteriores', s:'Ayer cuadró · $ 384.200' })}</div></div>`;
+  } else if (S.cajaVista === 'Ventas') {
+    h += `<div class="grupo"><div class="lista">${VENTAS.length ? '' : '<p class="vacio">Sin ventas todavía.</p>'}${VENTAS.map((v, i) => fila({ do:'venta', id:i, t:`#${v.num} · ${v.h}${v.anulada ? ' · anulada' : ''}`, s:esc(v.items), d:plata(v.total), ds:v.medio })).join('')}</div></div>`;
+  } else {
+    h += `<div class="grupo"><div class="lista">${c.movs.length ? c.movs.map(m => fila({ ico:m.t === 'Gasto' ? '−' : '+', icoc:m.t === 'Gasto' ? 'rojo' : 'verde', t:esc(m.m), s:`${m.t} · ${m.h} · de ${m.de.toLowerCase()}`, d:plata(m.t === 'Gasto' ? -m.monto : m.monto) })).join('') : '<p class="vacio">Sin movimientos hoy.</p>'}</div></div>`;
+  }
+  return h;
+}
+
+// =================== Más ===================
+const FUNCIONES = [
+  ['Pedidos: por confirmar, por hacer y listos','Pedidos','tab:pedidos'], ['Tomar un pedido de mostrador o por teléfono','Pedidos › +','hoja:nuevo'],
+  ['Pausar la cocina o avisar demora','Pedidos › cocina','hoja:cocina'], ['Agregar un plato','Carta › +','hoja:plato'], ['Insumos: comprar y contar','Carta › Insumos','carta:Insumos'],
+  ['Precios de todo','Carta › flechas','hoja:precios'], ['Cobrar con efectivo, QR o débito','Vender','tab:vender'], ['Aplicar un descuento','Vender › Descuento','hoja:descuento'],
+  ['Empezar el día','Caja › Empezar el día','hoja:abrirCaja'], ['Anotar un gasto o un ingreso','Caja › Gasto o ingreso','hoja:gasto'], ['Pagar a un proveedor','Caja › Pagar proveedor','hoja:pagarProv'],
+  ['Contar la plata de la caja (sin cerrar)','Caja › Contar la caja','hoja:contar'], ['Cerrar el día','Caja › Cerrar el día','go:cierre'], ['Bot de WhatsApp','Más › Bot de WhatsApp','go:bot'],
+  ['Configurar los pedidos','Más › Configuración › Pedidos','go:cfgPedidos'], ['Horario y alias para transferencias','Más › Configuración › Horario','go:horario'],
+  ['Formas de cobro que aceptás','Más › Configuración › Cobro','go:config'], ['Agregar o desactivar usuarios','Más › Cuenta y equipo','go:cuenta'], ['Asistente IA','Más › Asistente','go:ia'],
+  ['Promos y combos','Más › Promos','go:promos'], ['Cargar días anteriores','Más › Carga histórica','go:historica'], ['Actualizar la aplicación','Más › Actualización','go:actualizacion'],
+];
+function vistaMas() {
+  return cab('Más', esc(S.local))
+    + `<div class="buscar">${svg('lupa')}<label class="sr" for="m-buscar">Buscar una función o ajuste</label><input id="m-buscar" placeholder="Buscar una función o ajuste" autocomplete="off"></div>
+    <div id="m-res"></div>
+    <div id="m-resto"><div class="bento dos" style="margin-top:12px">
+      <button class="mos inv toque" data-do="go" data-p="ia"><small class="vivo">Asistente</small><span class="sub" style="font-size:15px">Preguntale a tu negocio o pedile que anote algo.</span></button>
+      <button class="mos toque" data-do="go" data-p="bot"><small class="vivo ok" style="${S.bot.prendido ? '' : 'opacity:.5'}">Bot ${S.bot.prendido ? 'atendiendo' : 'apagado'}</small><b class="n">${S.bot.charlas}</b><span class="sub">charlas hoy</span></button></div>
+    <div class="grupo"><h3>Turno</h3><div class="lista">${fila({ ico:S.usuario[0], icoc:'nar', t:`Usuario de este turno: ${S.usuario}`, s:'Lo que se cobra queda a su nombre', do:'hoja', id:'usuario', der:'<span class="link" style="padding:0">Cambiar</span>' })}</div></div>
+    <div class="grupo"><h3>Pedidos</h3><div class="lista">
+      ${fila({ go:'notif', ico:'campana', t:'Notificaciones', s:S.notifVistas ? 'Todo al día' : '3 pendientes' })}
+      ${fila({ go:'cfgPedidos', ico:'pedidos', t:'Configurar pedidos', s:'Entregas, zonas, cobro y tiempos de la cocina' })}
+      ${fila({ go:'horario', ico:'reloj', t:'Horario y transferencias', s:`Todos los días · alias ${S.cfg.alias}` })}</div></div>
+    <div class="grupo"><h3>Carta y compras</h3><div class="lista">
+      ${fila({ go:'proveedores', ico:'camion', t:'Proveedores', s:'A quién le comprás los insumos, lo que les debés y pagos' })}
+      ${fila({ go:'promos', ico:'etiqueta', t:'Promos', s:'Armá combos y mirá cuáles te sugiere la app' })}
+      ${fila({ go:'historica', ico:'calendario', t:'Carga histórica', s:'Días anteriores: completá ventas que no registraste' })}</div></div>
+    <div class="grupo"><h3>Esta aplicación</h3><div class="lista">
+      ${fila({ go:'config', ico:'ajustes', t:'Configuración', s:'Tu local, cobro, redondeo, mano de obra, IA' })}
+      ${fila({ go:'cuenta', ico:'persona', t:'Cuenta y equipo', s:'ana.rotiseria@gmail.com · 3 personas' })}
+      ${fila({ go:'apariencia', ico:'luna', t:'Apariencia', s:{ auto:'Automático', light:'Claro', dark:'Oscuro' }[S.tema] })}
+      ${fila({ go:'actualizacion', ico:'actualizar', t:'Actualización', s:'Ya tenés la última versión' })}
+      ${fila({ do:'obReiniciar', ico:'chispa', t:'Configurá tu negocio', s:'El asistente del principio, de nuevo' })}</div></div></div>`;
+}
+
+// =================== páginas internas ===================
+const PAGINAS = {
+  notif() { S.notifVistas = true;
+    return cabSub('Notificaciones', 'Lo que pide atención') + `<div class="grupo"><h3>Pendientes</h3><div class="lista">
+      ${fila({ ico:'contar', icoc:'nar', t:'Insumos por acabarse', s:'Acelga y tapas de tarta. Tocá para contarlos y reponer', do:'notifInsumos' })}
+      ${fila({ ico:'separar', t:'Separar para proveedores', s:`Hoy: ${plata(Math.round(totalCaja() * .54))} para reponer lo vendido`, do:'hoja', id:'separar' })}
+      ${fila({ ico:'qr', t:'Mercado Pago', s:'Marta Giménez todavía no pagó el link del #40' })}</div></div>
+      <div class="grupo"><h3>Antes</h3><div class="lista">
+      ${fila({ ico:'check', icoc:'verde', t:'Cierre guardado', s:'Ayer, 23:48 · cuadró' })}
+      ${fila({ ico:'actualizar', t:'Hay una versión nueva', s:'Se bajó sola. Actualizá cuando no estés vendiendo' })}</div></div>`; },
+  ia() {
+    const sug = ['¿Cómo vengo este mes?', '¿Qué plato me deja más?', 'Anotá un gasto de 8000 de gas'];
+    return cabSub('Asistente', 'Preguntale a tu negocio') + `<div class="chat" id="chat">${S.chat.length ? S.chat.map(m => m.yo ? `<div class="burb yo">${esc(m.t)}</div>` : `<div class="burb ia">${m.t}</div>`).join('') : `<div class="burb ia">Hola, ${S.usuario}. Puedo contarte cómo viene el local o anotar cosas por vos. Probá con una de abajo.</div>`}</div>
+      <div class="chips" style="margin-top:10px">${sug.map(s => `<button data-do="iaPreguntar" data-t="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+      <div class="buscar" style="margin-top:12px">${svg('chispa')}<label class="sr" for="ia-q">Preguntá o pedí algo</label><input id="ia-q" placeholder="Preguntá o pedí algo" autocomplete="off"><button class="b b-a" style="height:38px;padding:0 14px;font-size:14px" data-do="iaEnviar">Preguntar</button></div>`; },
+  bot() { const b = S.bot;
+    return cabSub('Bot de WhatsApp', 'El WhatsApp del local atiende solo') + `<div class="bento">
+      <div class="mos inv alto"><small class="vivo ${b.prendido ? 'ok' : ''}" style="${b.prendido ? '' : 'opacity:.6'}">${b.prendido ? 'Atendiendo' : 'Apagado'}</small><span><b class="xl n">${b.charlas}</b><span class="sub" style="display:block">charlas hoy</span></span><span class="sub">294 455-0000 · en este celular</span></div>
+      <div class="mos nar"><small>Pedidos</small><b class="n">${b.pedidos}</b><span class="sub">tomados hoy</span></div>
+      <div class="mos"><small>Contesta en</small><b class="n" style="font-size:34px">4 s</b><span class="sub">promedio</span></div></div>
+      <div class="grupo"><div class="lista">${fila({ ico:'chat', icoc:b.prendido ? 'verde' : '', t:b.prendido ? 'Encendido' : 'Apagado', s:b.prendido ? 'Contesta, manda la carta y toma pedidos' : 'Los mensajes esperan a que lo prendas', der:sw('bot.prendido', b.prendido, 'Bot encendido') })}</div></div>
+      <div class="grupo"><h3>Lo que sabe</h3><div class="lista">
+        ${fila({ go:'horario', t:'Horario', s:'Todos los días, 11 a 15 y 19 a 23:30' })}
+        ${fila({ do:'tab', id:'carta', t:'La carta', s:`${CARTA.length} productos · copia al catálogo de WhatsApp` })}
+        ${fila({ go:'cfgPedidos', t:'Pedidos', s:'Retiro, cadete a 3 zonas · paga el cliente cuando elige' })}
+        ${fila({ t:'Dirección', s:'Mitre 1234, Bariloche · con link de Maps' })}</div></div>
+      <div class="grupo"><h3>Cuando contestás vos</h3><p class="ayuda" style="margin:0 6px 8px">El bot se calla en ese chat durante:</p>${segm('bot.silencio', [['15 min','15 min'],['30 min','30 min'],['1 h','1 h'],['Todo el día','Hoy']])}</div>
+      <div class="grupo"><h3>Números</h3><div class="lista">${fila({ t:'WhatsApp del bot (el del local)', s:'294 455-0000' })}${fila({ t:'Tu WhatsApp, para los avisos', s:'294 466-1122' })}</div></div>
+      <div class="grupo"><h3>Lo último que hizo</h3><ul class="registro">
+        <li><b>21:02</b>Tomó el pedido #41 de Juan Pérez · envío al Centro</li><li><b>21:01</b>Mandó la carta a 294 410-2290</li>
+        <li><b>20:58</b>Avisó a Carla que su pedido salió</li><li><b>20:51</b>Cobró por link el #34 · $ 27.800</li></ul></div>
+      <button class="b b-s b-g toque" style="margin-top:12px" data-do="aviso" data-t="Código copiado: pegalo en el celular del bot">Vincular de nuevo</button>`; },
+  cfgPedidos() { const c = S.cfg;
+    return cabSub('Pedidos', 'Lo usan la lista de pedidos y el bot') + `<div class="grupo"><h3>Cómo se entrega</h3><div class="lista">
+      ${fila({ t:'Retiro en el local', der:sw('cfg.retiro', c.retiro, 'Retiro') })}${fila({ t:'Envío con cadete propio', der:sw('cfg.cadete', c.cadete, 'Cadete') })}${fila({ t:'Envío con servicio de reparto', s:'Una cadetería o mensajería de afuera', der:sw('cfg.reparto', c.reparto, 'Reparto') })}</div></div>
+      <div class="grupo"><h3>Zonas de envío</h3><div class="lista">${c.zonas.map((z, i) => fila({ t:esc(z.nombre), s:z.demora ? `+${z.demora} min` : 'Sin demora extra', d:plata(z.costo), der:`<button class="link" style="padding:0 0 0 8px" data-do="sacarZona" data-id="${i}" aria-label="Sacar la zona">✕</button>` })).join('')}
+        ${fila({ do:'hoja', id:'zona', ico:'+', t:'Agregar una zona' })}</div></div>
+      <div class="grupo"><h3>Cómo se cobra</h3>${segm('cfg.pago', [['alEntregar','Al entregar'],['adelantado','Adelantado'],['aElegir','Que elija']])}
+        <p class="ayuda">${{ alEntregar:'Se cobra al retirar, o al recibir el envío.', adelantado:'El bot manda el link de Mercado Pago y el pedido entra cuando pagan.', aElegir:'El cliente elige si paga ahora por Mercado Pago o al recibir.' }[c.pago]}</p></div>
+      <div class="grupo"><h3>Cuánto tarda la cocina</h3><div class="dos-c">${campo('cp-n', 'Normal (min)', 'cfg.min', 'inputmode="numeric"')}${campo('cp-d', 'Con demora (min)', 'cfg.minDem', 'inputmode="numeric"')}</div></div>
+      <div class="grupo"><h3>Pedidos de WhatsApp</h3><div class="lista">
+        ${fila({ t:'Entran solos', s:c.solos ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.', der:sw('cfg.solos', c.solos, 'Entran solos') })}
+        ${fila({ t:'Tengo catálogo de WhatsApp Business', s:c.catalogo ? 'El bot le copia la carta cada 5 minutos' : 'El bot manda la carta escrita', der:sw('cfg.catalogo', c.catalogo, 'Catálogo') })}</div></div>
+      <button class="b b-c b-g toque" style="margin-top:18px" data-do="guardar" data-t="Pedidos guardado">Guardar</button>`; },
+  horario() { const h = S.cfg.horario;
+    return cabSub('Horario y transferencias', 'Cuándo atendés y el alias que pasa el bot') + `<div class="grupo"><h3>Días</h3><div class="dias">${['L','M','M','J','V','S','D'].map((d, i) => `<button data-do="hDia" data-i="${i}" aria-pressed="${!!h.dias[i]}">${d}</button>`).join('')}</div></div>
+      <div class="grupo"><h3>Turnos</h3><div class="lista">${h.turnos.map(([a, b]) => fila({ t:`${a} a ${b}`, s:'Todos los días marcados' })).join('')}${fila({ do:'aviso', id:'Turno agregado: 19:00 a 23:30', ico:'+', t:'Agregar un turno' })}</div>
+        <p class="ayuda">Lo que llega fuera de hora queda programado para cuando abrís.</p></div>
+      <div class="grupo"><h3>Transferencias</h3>${campo('h-alias', 'Alias o CBU que el bot pasa para pagar', 'cfg.alias')}</div>
+      <button class="b b-c b-g toque" style="margin-top:18px" data-do="guardar" data-t="Horario guardado">Guardar</button>`; },
+  config() { const c = S.cfg;
+    return cabSub('Configuración', esc(S.local)) + `<div class="grupo"><h3>Tu local</h3><div class="lista">${fila({ do:'hoja', id:'nombreLocal', t:'Nombre del local', s:esc(S.local) })}${fila({ t:'Rubro', s:'Gastronomía · lo usa el bot para saber cómo atender' })}</div></div>
+      <div class="grupo"><h3>Pedidos</h3><div class="lista">${fila({ go:'cfgPedidos', t:'Pedidos', s:'Entregas, zonas de envío, cómo se cobra y cuánto tarda la cocina' })}${fila({ go:'horario', t:'Horario y transferencias', s:'Cuándo atendés y el alias que el bot pasa para pagar' })}</div></div>
+      <div class="grupo"><h3>Cobro · formas que aceptás</h3><div class="lista">${MED.map(([m]) => fila({ t:m, s:{ Efectivo:'Con vuelto y redondeo', QR:'QR de Mercado Pago, en la pantalla o en la terminal', Point:'Débito y crédito en tu terminal', Mixto:'Efectivo + Mercado Pago' }[m], der:sw('cfg.medios.' + m, c.medios[m], m) })).join('')}</div></div>
+      <div class="grupo"><h3>Redondeo en efectivo</h3>${segm('cfg.redondeo', [['0','Sin redondeo'],['10','A $ 10'],['100','A $ 100']])}</div>
+      <div class="grupo"><h3>Costos</h3><div class="lista">${fila({ do:'hoja', id:'valorHora', t:'Mano de obra', s:`${plata(c.valorHora)} la hora · se suma a cada plato por lo que tarda` })}${fila({ do:'aviso', id:'Gastos fijos: alquiler, luz, gas', t:'Gastos fijos del mes', s:'Alquiler, luz, gas · $ 1.240.000' })}</div></div>
+      <div class="grupo"><h3>Asistente IA</h3><div class="lista">${fila({ do:'aviso', id:'Clave cargada: la usan todos tus equipos', ico:'llave', t:'IA de Google (Gemini)', s:'Clave del negocio: la usan todos tus equipos', ds:'Cargada', dsc:'ok', der:' ' })}</div></div>
+      <div class="grupo"><h3>Tu base</h3><div class="lista">${fila({ do:'aviso', id:'Armando el archivo…', ico:'base', t:'Exportar la base', s:'Una copia de todo, para mandar por WhatsApp, Drive o mail' })}</div></div>`; },
+  cuenta() {
+    return cabSub('Cuenta y equipo', 'Plan Nodo Gastro · bot incluido') + `<div class="bento dos"><div class="mos inv"><small>Tu plan</small><b style="font-size:28px">Nodo Gastro</b><span class="sub">$ 18.000 por mes · renueva el 2/11</span></div>
+      <div class="mos"><small>Equipos</small><b class="n">3</b><span class="sub">2 celulares y la PC</span></div></div>
+      <div class="grupo"><h3>Quiénes usan la app</h3><div class="lista">
+      ${fila({ ico:'A', icoc:'nar', t:'Ana · dueña', s:'ana.rotiseria@gmail.com' })}${fila({ ico:'M', t:'Martín · cocina', s:'Entró hoy a las 18:30', ds:'Activo', dsc:'ok', der:' ' })}${fila({ ico:'S', t:'Sofi · mostrador', s:'Invitación enviada', ds:'Pendiente', der:' ' })}
+      ${fila({ do:'aviso', id:'Se abre horsepos.com para invitar', ico:'+', t:'Invitar a alguien' })}</div></div>
+      <div class="grupo"><div class="lista">${fila({ do:'aviso', id:'Tus negocios: Rotisería Doña Ana', t:'Cambiar de negocio' })}${fila({ do:'aviso', id:'Sesión cerrada (de mentira)', t:'Cerrar sesión' })}</div></div>`; },
+  apariencia() {
+    return cabSub('Apariencia') + `<div class="grupo">${segm('tema', [['light','Claro'],['dark','Oscuro'],['auto','Automático']])}<p class="ayuda">Automático sigue lo que tenga el celular. En la cocina, de noche, el oscuro cansa menos la vista.</p></div>`; },
+  actualizacion() {
+    return cabSub('Actualización') + `<div class="vacio" style="padding-top:20px"><div class="hecho">${svg('check', 3)}</div><b>Estás al día.</b>Versión 1.0.0+2181 · se baja sola</div>
+      <div class="grupo"><h3>Qué versiones recibís</h3>${segm('canal', [['Estable','Estable'],['Prueba','De prueba']])}<p class="ayuda">De prueba: recibís las versiones nuevas apenas salen, y también las estables.</p></div>`; },
+  proveedores() {
+    const deuda = PROVEEDORES.reduce((s, p) => s + p.deuda, 0);
+    return cabSub('Proveedores', `Les debés ${plata(deuda)}`) + `<div class="grupo"><div class="lista">${PROVEEDORES.map((p, i) => fila({ do:'proveedor', id:i, ico:p.n[0], t:esc(p.n), s:esc(p.d), d:p.deuda ? plata(p.deuda) : 'Al día', ds:p.deuda ? 'le debés' : '', dsc:'bajo', der:' ' })).join('')}</div></div>
+      <button class="b b-s b-g toque" style="margin-top:12px" data-do="aviso" data-t="Nuevo proveedor">Nuevo proveedor</button>`; },
+  promos() {
+    return cabSub('Promos', 'Combos y descuentos') + `<div class="grupo"><div class="lista">${PROMOS.map((p, i) => fila({ t:esc(p.n), s:esc(p.d), der:sw(`promos.${i}`, p.on, p.n) })).join('')}</div></div>
+      <div class="grupo"><h3>La app te sugiere</h3><div class="mos nar ancho" style="min-height:0"><small>Se piden juntos 7 de cada 10 veces</small><b style="font-size:26px;letter-spacing:-.03em">Pizza + Coca 1,5 L</b><span class="sub">Combo a $ 14.900 · te deja 41 %</span>
+        <button class="b b-c" style="justify-self:start" data-do="crearCombo">Crear el combo</button></div></div>`; },
+  historica() {
+    return cabSub('Carga histórica', 'Días que no registraste') + `<p class="ayuda" style="margin:0 6px 12px">Completá lo que vendiste un día que no usaste la app, para que las cuentas del mes den bien.</p>
+      ${campo('hi-f', 'Día', 'hist.dia')}${campo('hi-t', 'Total vendido', 'hist.total', 'inputmode="numeric"')}<p class="hsec">Cómo te pagaron, más o menos</p>${segm('hist.medio', [['Efectivo','Efectivo'],['Mercado Pago','MP'],['Mitad y mitad','Mitad']])}
+      <button class="b b-c b-g toque" style="margin-top:18px" data-do="guardar" data-t="Día cargado">Cargar</button>`; },
+  cierres() {
+    return cabSub('Cierres anteriores') + `<div class="grupo"><div class="lista">${[['Viernes 17','$ 384.200','Cuadró','ok'],['Jueves 16','$ 211.800','Faltaron $ 1.200','bajo'],['Miércoles 15','$ 198.500','Cuadró','ok'],['Martes 14','$ 302.100','Cuadró','ok']].map(([d, t, e, c]) => fila({ t:d, s:'Contó Ana', d:t, ds:e, dsc:c })).join('')}</div></div>`; },
+  cierre() {
+    const c = S.cierre;
+    if (c.etapa === 3) return `<div class="vacio" style="padding-top:40px"><div class="hecho">${svg('check', 3)}</div><b>Día cerrado.</b>Lo contado queda en Cierres anteriores.</div>
+      <div class="lista" style="padding:0 16px">${'<div class="kv"><span>Vendido</span><span class="n">' + plata(totalCaja()) + '</span></div><div class="kv"><span>Efectivo contado</span><span class="n">' + plata(c.ef) + '</span></div><div class="kv"><span>Mercado Pago</span><span class="n">' + plata(c.mp) + '</span></div>'}</div>
+      <button class="b b-a b-g toque" style="margin-top:18px" data-do="cierreFin">Listo</button>`;
+    const difEf = c.ef - efectivoEsperado(), difMp = c.mp - mpEsperado();
+    if (c.etapa === 1) return cabSub('Cierre del día', 'Etapa 1 de 2') + `<h3 style="font-family:var(--tit);font-size:24px;letter-spacing:-.03em;margin:4px 6px 4px">Contá el efectivo del cajón.</h3>
+      <p class="ayuda" style="margin-top:0">Primero se cuenta. Después, la diferencia.</p>
+      ${campo('ci-ef', 'Efectivo contado', 'cierre.efTxt', 'inputmode="numeric" placeholder="0" data-after="cierreDif"')}
+      <div class="dos-c" style="align-items:end">${campo('ci-mp', 'Mercado Pago (según su app)', 'cierre.mpTxt', 'inputmode="numeric" placeholder="0" data-after="cierreDif"')}<button class="b b-s" style="height:54px;font-size:14px" data-do="traerMp">Traer saldo de Mercado Pago</button></div>
+      <div class="lista" style="padding:0 16px;margin-top:14px" id="ci-dif">${difCierre()}</div>
+      <button class="b b-c b-g toque" style="margin-top:16px" data-do="cierreEtapa">Confirmar conteo</button>`;
+    return cabSub('Cierre del día', 'Etapa 2 de 2') + (difEf || difMp ? `<h3 style="font-family:var(--tit);font-size:24px;letter-spacing:-.03em;margin:4px 6px 4px">¿A dónde fue esta plata?</h3>
+      <p class="ayuda" style="margin-top:0">Faltan ${plata(Math.abs(difEf))} de efectivo. Si sabés, anotalo; si no, cerrá igual.</p>
+      <div class="chips" style="margin-top:10px">${['Gasto mío','Pago a un proveedor','Gasto fijo','Otro gasto'].map(m => `<button data-do="seg" data-k="cierre.motivo" data-v="${m}" aria-pressed="${c.motivo === m}">${m}</button>`).join('')}</div>
+      ${campo('ci-nota', 'Nota (opcional)', 'cierre.nota', 'placeholder="Ej: faltó cambio"')}
+      <div class="botones" style="display:grid;gap:8px;margin-top:18px"><button class="b b-c b-g toque" data-do="cierreCerrar" ${c.motivo ? '' : 'disabled'}>Anotar y cerrar el día</button><button class="b b-t b-g" data-do="cierreCerrar">Cerrar igual (no sé)</button></div>`
+      : `<div class="vacio"><div class="hecho">${svg('check', 3)}</div><b>Todo cuadró.</b>El conteo coincide con lo esperado.</div><button class="b b-c b-g toque" data-do="cierreCerrar">Cerrar el día</button>`);
+  },
+};
+function difCierre() {
+  const c = S.cierre, difEf = c.ef - efectivoEsperado(), difMp = c.mp - mpEsperado();
+  const d = (v, hay) => !hay ? '<span class="n" style="color:var(--txt3)">—</span>' : v === 0 ? '<span class="ok">Cuadró</span>' : `<span class="rojo n">${v > 0 ? 'Sobran ' : 'Faltan '}${plata(Math.abs(v))}</span>`;
+  return `<div class="kv"><span>Efectivo esperado</span><span class="n">${plata(efectivoEsperado())}</span></div><div class="kv"><span>Diferencia en efectivo</span>${d(difEf, c.efTxt !== '')}</div>
+    <div class="kv"><span>MP esperado</span><span class="n">${plata(mpEsperado())}</span></div><div class="kv"><span>Diferencia en MP</span>${d(difMp, c.mpTxt !== '')}</div>`;
+}
+const AFTER = { cierreDif() { S.cierre.ef = pesos(S.cierre.efTxt); S.cierre.mp = pesos(S.cierre.mpTxt); const e = $('ci-dif'); if (e) e.innerHTML = difCierre(); },
+  cuentaContar() { const e = $('cc-dif'); if (e) { const v = pesos(S.contar) - efectivoEsperado(); e.innerHTML = S.contar === '' ? '—' : v === 0 ? '<span class="ok">Cuadró</span>' : `<span class="rojo n">${v > 0 ? 'Sobran ' : 'Faltan '}${plata(Math.abs(v))}</span>`; } },
+  vuelto() { const e = $('vuelto'); if (e) e.innerHTML = vueltoTxt(); }, mixto() { const e = $('mixto-r'); if (e) e.textContent = plata(Math.max(0, S.cobro.total - pesos(S.cobro.ef))); } };
+S.cierre = { etapa:1, efTxt:'', mpTxt:'', ef:0, mp:0, motivo:'', nota:'' };
+S.hist = { dia:'Jueves 9 de octubre', total:'', medio:'Efectivo' };
+S.contar = '';
+S.canal = 'Estable';
+S.promos = PROMOS.map(p => p.on);
+
+// =================== hojas ===================
+let esperaTimer;
+const vueltoTxt = () => { const paga = S.cobro.paga === 'justo' ? S.cobro.total : pesos(S.cobro.paga); const v = paga - S.cobro.total; return paga ? (v >= 0 ? `Vuelto <b class="n">${plata(v)}</b>` : `<span class="rojo">Faltan ${plata(-v)}</span>`) : 'Elegí con cuánto paga'; };
+const HOJAS = {
+  cocina:() => `<h3 id="hoja-t">La cocina</h3><p class="sub">El bot le dice al cliente cuánto tarda, según esto.</p>
+    <div style="margin-top:16px">${segm('cocina', [['normal','Normal'],['demorada','Con demora'],['pausada','Pausada','pau']])}</div>
+    <p class="ayuda">${{ normal:`Promete ${S.cfg.min} minutos.`, demorada:`Avisa la demora: ${S.cfg.minDem} minutos.`, pausada:'No toma pedidos por WhatsApp. El mostrador sigue.' }[S.cocina]}</p>
+    <div class="botones"><button class="b b-c b-g toque" data-cerrar>Listo</button></div>`,
+  detalle:id => { const p = PEDIDOS.find(x => x.id === +id);
+    return `<h3 id="hoja-t">#${p.num} · ${esc(p.cli)}</h3><p class="sub">${p.canal} · ${esEnvio(p) ? 'Envío a ' + p.zona : 'Retira en el local'} · para las ${p.hora}</p>
+    ${p.dir ? `<p class="sub">${esc(p.dir)}</p>` : ''}${p.tel ? `<p class="sub n">${p.tel}</p>` : ''}
+    <div style="margin-top:12px">${p.lin.map(([i, q]) => `<div class="kv"><span>${q} × ${esc(plato(i).n)}</span><span class="n">${plata(plato(i).p * q)}</span></div>`).join('')}
+    ${p.envio ? `<div class="kv"><span>Envío</span><span class="n">${plata(p.envio)}</span></div>` : ''}<div class="kv t"><span>Total</span><span class="n">${plata(totalPedido(p))}</span></div></div>
+    <div class="botones">${acciones(p).filter(a => a[2] !== 'b-t').map(([t, a]) => `<button class="b b-a b-g toque" data-do="avanzar" data-a="${a}" data-id="${p.id}">${t}</button>`).join('')}
+    ${p.tel ? `<button class="b b-s b-g toque" data-cerrar="Abriendo WhatsApp">Escribirle por WhatsApp</button>` : ''}<button class="b b-t b-g b-r" data-do="cancelarPed" data-id="${p.id}">Cancelar el pedido</button></div>`; },
+  avisar:([id, a]) => { const p = PEDIDOS.find(x => x.id === +id); return `<h3 id="hoja-t">¿Le avisás a ${esc(p.cli)}?</h3><p class="sub">Se abre WhatsApp con el mensaje escrito: “Tu pedido #${p.num} ${a === 'listo' ? 'está listo para retirar' : 'ya salió'}.”</p>
+    <div class="botones"><button class="b b-c b-g toque" data-cerrar="Abriendo WhatsApp">Avisar por WhatsApp</button><button class="b b-t b-g" data-cerrar>Ahora no</button></div>`; },
+  nuevo:() => { const n = S.np, z = n.entrega !== 'retiro' && S.cfg.zonas.find(x => x.nombre === n.zona);
+    const sub = Object.entries(n.cant).reduce((s, [i, q]) => s + plato(i).p * q, 0), t = sub ? sub + (z ? z.costo : 0) : 0;
+    const falta = !t ? 'Elegí qué lleva' : !n.nombre.trim() ? 'Falta el nombre' : n.entrega !== 'retiro' && !n.zona ? 'Elegí la zona' : '';
+    return `<h3 id="hoja-t">Nuevo pedido</h3><div style="margin-top:12px">${segm('np.canal', [['Mostrador','Mostrador'],['Teléfono','Teléfono']])}</div>
+    ${campo('np-nombre', 'A nombre de', 'np.nombre', 'data-after="npBoton"')}${n.canal === 'Teléfono' ? campo('np-tel', 'Teléfono, para avisarle', 'np.tel', 'inputmode="tel"') : ''}
+    <p class="hsec">Entrega</p>${segm('np.entrega', [['retiro','Retira'],['cadete','Envío']])}
+    ${n.entrega !== 'retiro' ? `${campo('np-dir', 'Dirección', 'np.dir')}<div class="chips" style="margin-top:8px">${S.cfg.zonas.map(x => `<button data-do="seg" data-k="np.zona" data-v="${esc(x.nombre)}" aria-pressed="${n.zona === x.nombre}">${esc(x.nombre)} · ${plata(x.costo)}</button>`).join('')}</div>` : ''}
+    <p class="hsec">Qué lleva</p><div class="lista">${CARTA.map(p => fila({ t:esc(p.n), s:plata(p.p), der:`<div class="paso"><button data-do="npq" data-id="${p.id}" data-d="-1" aria-label="Uno menos">−</button><span class="n">${n.cant[p.id] || 0}</span><button data-do="npq" data-id="${p.id}" data-d="1" aria-label="Uno más">+</button></div>` })).join('')}</div>
+    <div style="margin-top:16px"><button class="b b-a b-g toque" id="np-ok" data-do="tomarPedido" ${falta ? 'disabled' : ''}>${falta || 'A la cocina · ' + plata(t)}</button></div>`; },
+  cobro:() => { const c = S.cobro;
+    if (c.fase === 'espera') return `<h3 id="hoja-t">${c.medio === 'QR' ? 'Escaneá para pagar' : 'En la terminal Point'}</h3><p class="sub">${plata(c.total)} · ${c.medio === 'QR' ? 'QR de Mercado Pago' : 'Pasá la tarjeta de débito'}</p>
+      ${c.medio === 'QR' ? `<div class="qr">${qrSvg()}</div>` : ''}<div class="espera"><div class="rueda"></div>Vas a ver acá si el pago se aprobó.</div>
+      <div class="botones"><button class="b b-t b-g" data-do="cobroMano">Cobrar a mano (sin terminal)</button></div>`;
+    if (c.fase === 'hecho') return `<div class="hecho" style="margin-top:8px">${svg('check', 3)}</div><h3 id="hoja-t" style="text-align:center">Venta cobrada</h3>
+      <p class="sub" style="text-align:center">${plata(c.total)} · ${c.medio}${c.vuelto ? ' · vuelto ' + plata(c.vuelto) : ''}</p>
+      <div class="botones"><button class="b b-s b-g toque" data-cerrar="Ticket impreso">${svg('impresora')}Imprimir ticket</button><button class="b b-c b-g toque" data-cerrar>Listo</button></div>`;
+    const cab2 = `<h3 id="hoja-t">Cobrar ${c.ped ? '#' + c.ped.num : 'la venta'}</h3><p class="sub">${c.ped ? esc(c.ped.cli) + (c.ped.envio ? ' · el envío va como Varios' : '') : 'Mostrador · ' + S.usuario}</p>
+      <div class="total"><span>Total</span><b class="n">${plata(c.total)}</b></div>`;
+    const sel = `<div class="medios">${MED.filter(([m]) => S.cfg.medios[m]).map(([m, i]) => `<button class="medio toque" data-do="seg" data-k="cobro.medio" data-v="${m}" aria-pressed="${c.medio === m}">${svg(i)}${m}</button>`).join('')}</div>`;
+    let det = '';
+    if (c.medio === 'Efectivo') det = `<p class="hsec">Con cuánto paga</p><div class="chips">${[['justo','Justo'], ...[1000000, 2000000, 3000000, 5000000].filter(v => v >= c.total).slice(0, 3).map(v => [String(v / 100), plata(v)])].map(([v, t]) => `<button data-do="seg" data-k="cobro.paga" data-v="${v}" aria-pressed="${c.paga === v}">${t}</button>`).join('')}</div>
+      <div class="kv t" style="margin-top:10px" id="vuelto">${vueltoTxt()}</div>`;
+    if (c.medio === 'Mixto') det = `${campo('mx-ef', 'Parte en efectivo', 'cobro.ef', 'inputmode="numeric" data-after="mixto"')}<div class="kv t" style="margin-top:8px"><span>El resto por Mercado Pago</span><span class="n" id="mixto-r">${plata(Math.max(0, c.total - pesos(c.ef)))}</span></div>`;
+    if (c.medio === 'QR') det = `<p class="hsec">Dónde sale el QR</p>${segm('cobro.qrDonde', [['pantalla','En la pantalla'],['terminal','En la terminal Point']])}`;
+    if (c.medio === 'Point') det = `<p class="ayuda">Se cobra con la tarjeta de débito en la terminal. Vas a ver acá si el pago se aprobó.</p>`;
+    return cab2 + sel + det + `<div class="botones"><button class="b b-a b-g toque" data-do="cobroOk">Cobrar ${plata(c.total)}</button></div>`; },
+  descuento:() => `<h3 id="hoja-t">Descuento</h3><p class="sub">Poné el monto o el porcentaje. Nunca puede pasar del total.</p>
+    <div class="chips" style="margin-top:14px">${[5, 10, 15].map(p => `<button data-do="descPct" data-v="${p}">${p} %</button>`).join('')}</div>${campo('d-m', 'Monto en pesos', 'descTxt', 'inputmode="numeric"')}
+    <div class="botones"><button class="b b-c b-g toque" data-do="descOk">Aplicar</button></div>`,
+  plato:id => { const p = id ? plato(id) : null, e = S.ed;
+    const c = e.rec.reduce((s, [i, q]) => s + INSUMOS[i].c * q, 0) + S.cfg.valorHora * ((+e.min || 0) / 60), pr = pesos(e.precio), g = pr ? pct(pr - c, pr) : 0;
+    return `<h3 id="hoja-t">${p ? 'Editar plato' : 'Nuevo plato'}</h3>
+    ${campo('pl-n', 'Nombre', 'ed.n', 'placeholder="Ej.: Milanesa con papas"')}
+    <div class="dos-c">${campo('pl-m', 'Preparación (min)', 'ed.min', 'inputmode="numeric" data-after="platoCosto"')}${campo('pl-p', 'Precio al cliente', 'ed.precio', 'inputmode="numeric" data-after="platoCosto"')}</div>
+    <p class="hsec">Lo que lleva</p><div class="lista">${e.rec.map(([i, q], k) => fila({ t:INSUMOS[i].n, s:fmtCant(q, INSUMOS[i].u), d:plata(INSUMOS[i].c * q), der:`<button class="link" style="padding:0 0 0 8px" data-do="recSacar" data-id="${k}" aria-label="Sacar">✕</button>` })).join('')}
+      ${fila({ t:'Mano de obra', s:`${e.min || 0} min a ${plata(S.cfg.valorHora)} la hora`, d:plata(S.cfg.valorHora * ((+e.min || 0) / 60)) })}</div>
+    <div class="chips" style="margin-top:8px">${Object.keys(INSUMOS).filter(i => !e.rec.some(([x]) => x === i)).slice(0, 6).map(i => `<button data-do="recSumar" data-id="${i}">+ ${INSUMOS[i].n}</button>`).join('')}</div>
+    <div class="bento dos" style="margin-top:14px" id="pl-cost"><div class="mos chico"><small>Le cuesta a tu negocio</small><b class="n">${plata(c)}</b></div><div class="mos chico"><small>Ganancia por plato</small><b class="n" style="color:${g < 35 ? 'var(--rojo)' : 'var(--verde)'}">${g} %</b></div></div>
+    <div class="lista" style="margin-top:8px">${fila({ t:'Escondido en WhatsApp', s:'No aparece en la carta del bot ni en el catálogo', der:sw('ed.oculto', e.oculto, 'Escondido') })}</div>
+    <div class="botones"><button class="b b-a b-g toque" data-do="platoOk" data-id="${id || ''}">Guardar plato</button>${p ? '<button class="b b-t b-g b-r" data-do="platoBaja" data-id="' + id + '">Dejar de ofrecerlo</button>' : ''}</div>`; },
+  insumo:id => { const i = INSUMOS[id];
+    return `<h3 id="hoja-t">${i.n}</h3><p class="sub">Hay ${fmtCant(i.hay, i.u)} · alcanza para ${alcanza(id) || '—'}</p>
+    <div style="margin-top:14px">${segm('insModo', [['compra','Cargar compra'],['conteo','Contar lo que hay']])}</div>
+    ${S.insModo === 'compra' ? `<div class="dos-c">${campo('in-q', `Cuánto compraste (${i.u})`, 'insQ', 'inputmode="decimal"')}${campo('in-p', `Precio por ${i.u}`, 'insP', 'inputmode="numeric"')}</div><p class="ayuda">Se suma a lo que hay y actualiza el costo de los platos que lo usan.</p>`
+      : `${campo('in-c', `Lo que hay de verdad (${i.u})`, 'insQ', 'inputmode="decimal"')}<p class="ayuda">Queda anotado como conteo.</p>`}
+    <div class="botones"><button class="b b-c b-g toque" data-do="insumoOk" data-id="${id}">${S.insModo === 'compra' ? 'Sumar la compra' : 'Guardar conteo'}</button></div>`; },
+  insumoNuevo:() => `<h3 id="hoja-t">Nuevo insumo</h3>${campo('ni-n', 'Nombre', 'ni.n', 'placeholder="Ej.: Harina 000"')}<div class="dos-c">${campo('ni-u', 'Unidad', 'ni.u', 'placeholder="kg"')}${campo('ni-c', 'Precio por unidad', 'ni.c', 'inputmode="numeric"')}</div>
+    <div class="botones"><button class="b b-c b-g toque" data-do="insumoNuevoOk">Guardar insumo</button></div>`,
+  precios:() => `<h3 id="hoja-t">Precios de todo</h3><p class="sub">Subí toda la carta de una vez. Se redondea para arriba.</p>
+    <div class="chips" style="margin-top:14px">${[5, 10, 15, 20].map(p => `<button data-do="seg" data-k="subir" data-v="${p}" aria-pressed="${S.subir == p}">+${p} %</button>`).join('')}</div>
+    <p class="hsec">Redondear para arriba a</p>${segm('redSubir', [['100','$ 100'],['500','$ 500'],['1000','$ 1.000']])}
+    <div class="lista" style="margin-top:12px">${CARTA.slice(0, 3).map(p => fila({ t:esc(p.n), s:plata(p.p), d:plata(subido(p.p)) })).join('')}</div>
+    <div class="botones"><button class="b b-a b-g toque" data-do="preciosOk">Subir ${CARTA.length} precios</button></div>`,
+  traer:() => `<h3 id="hoja-t">Traer de tu catálogo</h3><p class="sub">Están en tu catálogo de WhatsApp Business y no en la carta.</p>
+    <div class="lista" style="margin-top:12px">${S.traer.map((t, i) => fila({ t:esc(t.n), s:plata(t.p), der:sw(`traer.${i}.on`, t.on, t.n) })).join('')}</div>
+    <div class="botones"><button class="b b-a b-g toque" data-do="traerOk">Traer ${S.traer.filter(t => t.on).length}</button></div>`,
+  abrirCaja:() => `<h3 id="hoja-t">Empezar el día</h3><p class="sub">Contá lo que hay en el cajón para arrancar.</p>${campo('ac-f', 'Fondo inicial (efectivo)', 'fondoTxt', 'inputmode="numeric"')}${campo('ac-mp', 'Mercado Pago (lo que hay en la cuenta)', 'mpIniTxt', 'inputmode="numeric"')}
+    <div class="botones"><button class="b b-a b-g toque" data-do="abrirCajaOk">Abrir la caja</button></div>`,
+  gasto:() => `<h3 id="hoja-t">Gasto o ingreso</h3><div style="margin-top:12px">${segm('mov.t', [['Gasto','Gasto'],['Ingreso','Ingreso']])}</div>${campo('g-m', 'Monto', 'mov.monto', 'inputmode="numeric"')}
+    <p class="hsec">Motivo</p><div class="chips">${['Gas','Verdulería','Cadete','Limpieza','Otro'].map(m => `<button data-do="seg" data-k="mov.m" data-v="${m}" aria-pressed="${S.mov.m === m}">${m}</button>`).join('')}</div>
+    <p class="hsec">Sale de</p>${segm('mov.de', [['Efectivo','Efectivo'],['Mercado Pago','Mercado Pago']])}
+    <div class="botones"><button class="b b-c b-g toque" data-do="gastoOk">Anotar</button></div>`,
+  pagarProv:() => `<h3 id="hoja-t">Pagar proveedor</h3><p class="sub">Anota el pago y baja lo que le debés.</p><p class="hsec">A quién</p>
+    <div class="lista">${PROVEEDORES.map((p, i) => `<button class="fila" data-do="seg" data-k="pp.i" data-v="${i}" aria-pressed="${S.pp.i == i}" style="${S.pp.i == i ? 'background:var(--sup2)' : ''}"><span class="q"><b>${esc(p.n)}</b><small>${p.deuda ? 'Le debés ' + plata(p.deuda) : 'Al día'}</small></span>${S.pp.i == i ? '<span class="ok" style="color:var(--verde);font-weight:700">✓</span>' : ''}</button>`).join('')}</div>
+    ${campo('pp-m', 'Monto', 'pp.monto', 'inputmode="numeric"')}<p class="hsec">De dónde sale</p>${segm('pp.de', [['Efectivo','Efectivo'],['Mercado Pago','Mercado Pago']])}
+    <div class="botones"><button class="b b-c b-g toque" data-do="pagarProvOk">Pagar</button></div>`,
+  contar:() => `<h3 id="hoja-t">Contar la caja</h3><p class="sub">Sin cerrar el día. Sirve para el cambio de turno.</p>${campo('cc-e', 'Efectivo contado', 'contar', 'inputmode="numeric" data-after="cuentaContar"')}
+    <div class="kv" style="margin-top:8px"><span>Efectivo esperado</span><span class="n">${plata(efectivoEsperado())}</span></div><div class="kv"><span>Diferencia</span><span id="cc-dif">—</span></div>
+    <div class="botones"><button class="b b-c b-g toque" data-cerrar="Conteo guardado">Guardar conteo</button></div>`,
+  separar:() => { const s = Math.round(totalCaja() * .54);
+    return `<h3 id="hoja-t">Separar para proveedores</h3><p class="sub">Lo que costó lo que vendiste hoy. Si lo apartás, mañana hay para reponer.</p>
+    <div class="total"><span>Para reponer</span><b class="n">${plata(s)}</b></div>
+    <div class="lista">${fila({ t:'Pollo y carne', d:plata(Math.round(s * .55)) })}${fila({ t:'Muzzarella y harinas', d:plata(Math.round(s * .25)) })}${fila({ t:'Bebidas', d:plata(Math.round(s * .12)) })}${fila({ t:'Verdura y otros', d:plata(s - Math.round(s * .55) - Math.round(s * .25) - Math.round(s * .12)) })}</div>
+    <div class="botones"><button class="b b-c b-g toque" data-cerrar="Separado: no cuenta como efectivo del cajón">Separar</button></div>`; },
+  venta:i => { const v = VENTAS[i];
+    return `<h3 id="hoja-t">Venta #${v.num}</h3><p class="sub">${v.h} · ${v.canal} · ${v.medio}</p><div class="lista" style="margin-top:12px;padding:0 16px"><div class="kv"><span>${esc(v.items)}</span></div><div class="kv t"><span>Total</span><span class="n">${plata(v.total)}</span></div></div>
+    ${v.medio !== 'Efectivo' ? '<p class="ayuda">Esta venta se cobró por Mercado Pago. Si la anulás, la plata vuelve al cliente por Mercado Pago.</p>' : ''}
+    <div class="botones"><button class="b b-s b-g toque" data-cerrar="Ticket impreso">Imprimir ticket</button>${v.anulada ? '' : `<button class="b b-t b-g b-r" data-do="anular" data-id="${i}">Anular venta</button>`}</div>`; },
+  proveedor:i => { const p = PROVEEDORES[i];
+    return `<h3 id="hoja-t">${esc(p.n)}</h3><p class="sub">${esc(p.d)}</p><div class="total"><span>Le debés</span><b class="n">${plata(p.deuda)}</b></div>
+    <div class="lista">${fila({ t:'Factura 0003-1182', s:'Martes 14', d:plata(12400000) })}${fila({ t:'Pago en efectivo', s:'Sábado 11', d:plata(-8000000) })}</div>
+    <div class="botones"><button class="b b-c b-g toque" data-do="pagarA" data-id="${i}" ${p.deuda ? '' : 'disabled'}>Pagar</button><button class="b b-s b-g toque" data-cerrar="Se abre la cámara para la factura">Cargar factura</button></div>`; },
+  zona:() => `<h3 id="hoja-t">Nueva zona</h3>${campo('z-n', 'Nombre', 'nz.nombre', 'placeholder="Ej.: Llao Llao"')}<div class="dos-c">${campo('z-c', 'Lo que cobrás', 'nz.costo', 'inputmode="numeric"')}${campo('z-d', 'Demora extra (min)', 'nz.demora', 'inputmode="numeric"')}</div>
+    <div class="botones"><button class="b b-c b-g toque" data-do="zonaOk">Agregar</button></div>`,
+  nombreLocal:() => `<h3 id="hoja-t">Nombre del local</h3>${campo('nl', 'Nombre', 'local')}<p class="ayuda">Sale en los tickets, arriba de la app y es como se presenta el bot.</p><div class="botones"><button class="b b-c b-g toque" data-do="guardar" data-t="Configuración guardada">Guardar</button></div>`,
+  valorHora:() => `<h3 id="hoja-t">Mano de obra</h3><p class="sub">Lo que vale una hora de trabajo en la cocina. Se suma a cada plato por lo que tarda en salir.</p>${campo('vh', 'Valor de la hora', 'vhTxt', 'inputmode="numeric"')}<div class="botones"><button class="b b-c b-g toque" data-do="vhOk">Guardar</button></div>`,
+  usuario:() => `<h3 id="hoja-t">¿Quién está ahora?</h3><p class="sub">Lo que se cobra queda a su nombre.</p><div class="lista" style="margin-top:12px">${['Ana','Martín','Sofi'].map(u => fila({ do:'usuarioOk', id:u, ico:u[0], icoc:S.usuario === u ? 'nar' : '', t:u, s:{ Ana:'Dueña', Martín:'Cocina', Sofi:'Mostrador' }[u] })).join('')}</div>`,
+};
+const subido = p => { const r = +S.redSubir * 100; return Math.ceil(p * (1 + S.subir / 100) / r) * r; };
+AFTER.npBoton = () => { const b = $('np-ok'); if (!b) return; const st = $('hoja').scrollTop; refrescarHoja(); $('hoja').scrollTop = st; const i = $('np-nombre'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } };
+AFTER.platoCosto = () => { const e = $('pl-cost'); if (!e) return; const ed = S.ed; const c = ed.rec.reduce((s, [i, q]) => s + INSUMOS[i].c * q, 0) + S.cfg.valorHora * ((+ed.min || 0) / 60), pr = pesos(ed.precio), g = pr ? pct(pr - c, pr) : 0;
+  e.innerHTML = `<div class="mos chico"><small>Le cuesta a tu negocio</small><b class="n">${plata(c)}</b></div><div class="mos chico"><small>Ganancia por plato</small><b class="n" style="color:${g < 35 ? 'var(--rojo)' : 'var(--verde)'}">${g} %</b></div>`; };
+Object.assign(S, { np:{}, cobro:{}, ed:{ rec:[] }, insModo:'compra', insQ:'', insP:'', ni:{ n:'', u:'', c:'' }, subir:10, redSubir:'100', descTxt:'', fondoTxt:'20.000', mpIniTxt:'0',
+  mov:{ t:'Gasto', monto:'', m:'Gas', de:'Efectivo' }, pp:{ i:0, monto:'', de:'Efectivo' }, nz:{ nombre:'', costo:'', demora:'0' }, vhTxt:'6.000',
+  traer:[{ n:'Sándwich de milanesa', p:850000, on:true }, { n:'Porción de papas chica', p:350000, on:true }, { n:'Cerveza lata 473', p:280000, on:false }] });
+
+// =================== acciones ===================
+function avanzar(p, a, boton) {
+  if (a === 'cobrar') return empezarCobro(p);
+  const card = boton && boton.closest('.ped');
+  const hacer = () => {
+    p.estado = a; render();
+    if (p.canal !== 'WhatsApp' && p.tel && (a === 'listo' || a === 'enCamino')) return abrirHoja('avisar', [p.id, a]);
+    aviso({ porHacer:`#${p.num} a la cocina${p.canal === 'WhatsApp' ? ', el bot le avisó' : ''}`, rechazado:`#${p.num} rechazado, el bot le avisó`, listo:`#${p.num} listo`, enCamino:`#${p.num} salió`, entregado:`#${p.num} entregado` }[a]);
+  };
+  if (card && !matchMedia('(prefers-reduced-motion: reduce)').matches) { card.classList.add('sale'); setTimeout(hacer, 260); } else hacer();
+}
+function empezarCobro(p) {
+  if (!S.caja.abierta) { aviso('El día no empezó: abrí la caja para cobrar'); return abrirHoja('abrirCaja'); }
+  S.cobro = { ped:p || null, total:p ? totalPedido(p) : totalCarrito(), medio:S.cobro.medioIni || 'Efectivo', paga:'justo', ef:'', qrDonde:'pantalla', fase:'elegir' };
+  abrirHoja('cobro');
+}
+function registrarCobro() {
+  const c = S.cobro, canal = c.ped ? c.ped.canal : 'Mostrador';
+  S.caja.medios[c.medio] += c.total; S.caja.canales[canal] += c.total;
+  S.caja.ventas++; VENTAS.unshift({ num:(VENTAS[0]?.num || 0) + 1, h:'21:02', items:c.ped ? c.ped.lin.map(([i, q]) => q + ' ' + plato(i).n).join(' · ') : S.carrito.map(([i, q]) => q + ' ' + plato(i).n).join(' · '), total:c.total, medio:c.medio, canal });
+  if (c.ped) { c.ped.cobrado = true; if (c.ped.estado === 'listo' || c.ped.estado === 'enCamino') c.ped.estado = 'entregado'; }
+  else { S.carrito = []; S.descuento = 0; }
+  c.vuelto = c.medio === 'Efectivo' && c.paga !== 'justo' ? Math.max(0, pesos(c.paga) - c.total) : 0;
+  c.fase = 'hecho'; refrescarHoja(); render();
+  // "Venta cobrada" se cierra sola (rediseño v4 de la PC): no hay que tocar nada para seguir.
+  clearTimeout(esperaTimer); esperaTimer = setTimeout(() => { if (hojaActual && hojaActual[0] === 'cobro') cerrarHoja(); }, 4000);
+}
+function iaResponder(q) {
+  S.chat.push({ yo:true, t:q });
+  const l = q.toLowerCase(); let r;
+  if (l.includes('gasto')) { const m = (q.match(/\d+/) || ['8000'])[0];
+    r = `Anoto un gasto de ${plata(+m * 100)} de gas, de efectivo.<div class="accion"><b>¿Lo hago?</b><button class="b b-a" style="height:40px" data-do="iaHacer" data-v="${m}">Sí, hacerlo</button></div>`; }
+  else if (l.includes('plato')) r = 'La que más te deja es la <b>pizza muzzarella</b>: 52 % por pizza, y salieron 11 hoy. La que menos, la <b>tarta de verdura</b> (21 %): la acelga subió 40 % este mes. Te conviene subirla a $ 11.000.';
+  else r = `Vas muy bien: este mes llevás <b>${plata(612000000)}</b>, un 18 % más que septiembre a esta altura. El bot trajo el 58 %. El sábado es tu mejor día.`;
+  S.chat.push({ t:r }); render();
+  const v = $('vista'); v.scrollTop = v.scrollHeight;
+}
+
+const DO = {
+  volver, tab:el => irTab(el.dataset.id), go:el => ir(el.dataset.p),
+  aviso:el => aviso(el.dataset.t || el.dataset.id),
+  hoja:el => { if (el.dataset.h === 'nuevo') S.np = { canal:'Mostrador', nombre:'', tel:'', entrega:'retiro', zona:null, dir:'', cant:{} };
+    if (el.dataset.h === 'plato') S.ed = { n:'', min:'', precio:'', rec:[], oculto:false };
+    if (el.dataset.h === 'zona') S.nz = { nombre:'', costo:'', demora:'0' };
+    abrirHoja(el.dataset.h || el.dataset.id, el.dataset.arg); },
+  filtro:el => { S.filtro = el.dataset.v; render(); const f = $('vista').querySelector('.filtros'); if (f) $('vista').scrollTo({ top:f.offsetTop - 8, behavior:'smooth' }); },
+  avanzar:el => { if (hojaActual) cerrarHoja(); avanzar(PEDIDOS.find(p => p.id === +el.dataset.id), el.dataset.a, el); },
+  detalle:el => abrirHoja('detalle', el.dataset.id),
+  cancelarPed:el => { const p = PEDIDOS.find(x => x.id === +el.dataset.id), antes = p.estado; p.estado = 'cancelado'; cerrarHoja(); render(); aviso(`#${p.num} cancelado`, () => { p.estado = antes; render(); }); },
+  sw:el => { const k = el.dataset.k; set(k, !get(k)); if (k.startsWith('promos.')) PROMOS[+k.split('.')[1]].on = get(k);
+    if (k === 'bot.prendido') aviso(S.bot.prendido ? 'Bot encendido' : 'Bot apagado: los mensajes esperan'); if (hojaActual) refrescarHoja(); else render(); },
+  seg:el => { const k = el.dataset.k, v = el.dataset.v; set(k, v);
+    if (k === 'cocina') { aviso({ normal:'Cocina normal', demorada:`Con demora · ${S.cfg.minDem} min`, pausada:'Cocina pausada · el bot no toma pedidos' }[v]); render(); }
+    if (k === 'tema') ponerTema(v);
+    if (k === 'np.entrega' && v === 'retiro') S.np.zona = null;
+    if (hojaActual) refrescarHoja(); if (!hojaActual || k === 'cocina' || k === 'tema') render(); },
+  // onboarding
+  obSlide:() => { if (S.ob.slide < SLIDES.length - 1) S.ob.slide++; else S.ob.pantalla = 'entrar'; render(true); },
+  obEntrar:() => { S.ob.pantalla = 'entrar'; render(true); },
+  obGoogle:() => { S.ob.pantalla = 'entrando'; render(); setTimeout(() => { S.ob.pantalla = 'asistente'; S.ob.paso = 0; render(true); }, 1100); },
+  obSig:() => { const o = S.ob, k = PASOS[o.paso][0];
+    if (k === 'negocio' && !o.nombre.trim()) return aviso('Escribí el nombre del local');
+    if (k === 'negocio') S.local = o.nombre.trim();
+    if (k === 'plato') { if (!o.plato.nombre.trim() || !pesos(o.plato.precio)) return aviso('Completá el nombre y el precio');
+      CARTA.unshift({ id:'p' + Date.now(), n:o.plato.nombre.trim(), cat:'Platos', p:pesos(o.plato.precio), min:+o.plato.min || 15, rec:[] }); aviso('¡Listo, ya está cargado!'); }
+    if (k === 'horario' && !o.dias.some(Boolean)) return aviso('Elegí al menos un día');
+    if (k === 'pedidos') { if (!o.retiro && !o.cadete && !o.reparto) return aviso('Elegí al menos una forma de entregar');
+      Object.assign(S.cfg, { retiro:o.retiro, cadete:o.cadete, reparto:o.reparto, pago:o.pago, solos:o.solos, catalogo:o.catalogo }); S.bot.prendido = o.bot || S.bot.prendido; }
+    o.saltados = o.saltados.filter(x => x !== k); siguientePaso(); },
+  obDespues:() => { const k = PASOS[S.ob.paso][0]; if (!S.ob.saltados.includes(k)) S.ob.saltados.push(k); siguientePaso(); },
+  obDia:el => { const i = +el.dataset.i; S.ob.dias[i] = S.ob.dias[i] ? 0 : 1; render(); },
+  obBot:() => { S.ob.bot = true; aviso('Bot encendido. Lo vinculás con el WhatsApp del local'); render(); },
+  obMp:() => { S.ob.mp = true; aviso('Mercado Pago conectado'); render(); },
+  obFin:() => { S.ob.activo = false; S.tab = 'pedidos'; S.pila = []; render(true); setTimeout(() => aviso(`Nuevo por WhatsApp · Juan Pérez · ${plata(totalPedido(PEDIDOS[0]))}`), 700); },
+  obRetomar:() => { S.ob.activo = true; S.ob.pantalla = 'asistente'; S.ob.paso = PASOS.findIndex(p => p[0] === S.ob.saltados[0]); render(true); },
+  obReiniciar:() => { Object.assign(S.ob, { activo:true, pantalla:'asistente', paso:0 }); render(true); },
+  // pedidos
+  npq:el => { const id = el.dataset.id; S.np.cant[id] = Math.max(0, (S.np.cant[id] || 0) + +el.dataset.d); refrescarHoja(); },
+  tomarPedido:() => { const n = S.np, z = n.entrega !== 'retiro' ? S.cfg.zonas.find(x => x.nombre === n.zona) : null;
+    const min = (S.cocina === 'demorada' ? S.cfg.minDem : S.cfg.min) + (z ? z.demora : 0);
+    PEDIDOS.push({ id:Date.now(), num:sig++, cli:n.nombre.trim(), canal:n.canal, entrega:n.entrega, zona:z ? z.nombre : null, dir:n.dir || null, tel:n.tel || null, hora:hhmm(AHORA + min), estado:'porHacer', lin:Object.entries(n.cant).filter(([, q]) => q > 0), envio:z ? z.costo : 0 });
+    cerrarHoja(); S.tab = 'pedidos'; S.pila = []; S.filtro = 'porHacer'; render(); aviso(`${n.nombre.trim()} a la cocina · ${min} min`); },
+  // vender y cobrar
+  sumar:el => { const l = S.carrito.find(([i]) => i === el.dataset.id); l ? l[1]++ : S.carrito.push([el.dataset.id, 1]); render(); },
+  cq:el => { const l = S.carrito.find(([i]) => i === el.dataset.id); l[1] += +el.dataset.d; S.carrito = S.carrito.filter(([, q]) => q > 0); if (!S.carrito.length) S.descuento = 0; render(); },
+  vaciar:() => { const antes = S.carrito; S.carrito = []; S.descuento = 0; render(); aviso('Venta vaciada', () => { S.carrito = antes; render(); }); },
+  sinDesc:() => { S.descuento = 0; render(); },
+  descPct:el => { S.descTxt = String(Math.round(S.carrito.reduce((s, [i, q]) => s + plato(i).p * q, 0) * el.dataset.v / 100 / 100)); refrescarHoja(); },
+  descOk:() => { const sub = S.carrito.reduce((s, [i, q]) => s + plato(i).p * q, 0); S.descuento = Math.min(sub, pesos(S.descTxt)); cerrarHoja(); render(); aviso('Descuento aplicado'); },
+  cobrar:el => { S.cobro.medioIni = el.dataset.m; const p = el.dataset.ped ? PEDIDOS.find(x => x.id === +el.dataset.ped) : null; empezarCobro(p); S.cobro.medioIni = null; },
+  cobroOk:() => { const c = S.cobro;
+    if (c.medio === 'Efectivo' && c.paga !== 'justo' && pesos(c.paga) < c.total) return aviso('Con eso no alcanza');
+    if (c.medio === 'QR' || c.medio === 'Point') { c.fase = 'espera'; refrescarHoja(); clearTimeout(esperaTimer); esperaTimer = setTimeout(() => { if (hojaActual && S.cobro.fase === 'espera') registrarCobro(); }, 2400); return; }
+    registrarCobro(); },
+  cobroMano:() => registrarCobro(),
+  // carta
+  plato:el => { const p = plato(el.dataset.id); S.ed = { n:p.n, min:String(p.min || ''), precio:String(p.p / 100), rec:(p.rec || []).map(r => [...r]), oculto:!!p.oculto }; abrirHoja('plato', p.id); },
+  recSumar:el => { S.ed.rec.push([el.dataset.id, INSUMOS[el.dataset.id].u === 'u' ? 1 : 0.2]); refrescarHoja(); },
+  recSacar:el => { S.ed.rec.splice(+el.dataset.id, 1); refrescarHoja(); },
+  platoOk:el => { const e = S.ed; if (!e.n.trim() || !pesos(e.precio)) return aviso('Completá nombre, tiempo de preparación y precio');
+    const p = el.dataset.id ? plato(el.dataset.id) : null;
+    if (p) Object.assign(p, { n:e.n.trim(), min:+e.min || p.min, p:pesos(e.precio), rec:p.rec ? e.rec : p.rec, oculto:e.oculto });
+    else CARTA.unshift({ id:'p' + Date.now(), n:e.n.trim(), cat:'Platos', p:pesos(e.precio), min:+e.min || 15, rec:e.rec, oculto:e.oculto });
+    cerrarHoja(); render(); aviso(p ? 'Plato guardado' : 'Plato creado · ya está en la carta del bot'); },
+  platoBaja:el => { const i = CARTA.findIndex(p => p.id === el.dataset.id), p = CARTA.splice(i, 1)[0]; cerrarHoja(); render(); aviso(`${p.n}: ya no se ofrece`, () => { CARTA.splice(i, 0, p); render(); }); },
+  insumo:el => { S.insQ = ''; S.insP = String(INSUMOS[el.dataset.id].c / 100); abrirHoja('insumo', el.dataset.id); },
+  insumoOk:el => { const i = INSUMOS[el.dataset.id], q = parseFloat(String(S.insQ).replace(',', '.'));
+    if (!(q >= 0) || S.insQ === '') return aviso('Escribí cuánto'); if (S.insModo === 'compra') { i.hay = Math.round((i.hay + q) * 100) / 100; i.c = pesos(S.insP) || i.c; aviso('Compra sumada al stock'); } else { i.hay = q; aviso('Conteo guardado'); }
+    cerrarHoja(); render(); },
+  insumoNuevoOk:() => { if (!S.ni.n.trim()) return aviso('Escribí el nombre'); INSUMOS['i' + Date.now()] = { n:S.ni.n.trim(), u:S.ni.u || 'u', hay:0, c:pesos(S.ni.c) }; cerrarHoja(); render(); aviso('Insumo cargado. Sumá lo que tenés con "Cargar compra"'); },
+  preciosOk:() => { const antes = CARTA.map(p => p.p); CARTA.forEach(p => { p.p = subido(p.p); }); cerrarHoja(); render(); aviso(`Cambiaron ${CARTA.length} precios`, () => { CARTA.forEach((p, i) => { p.p = antes[i]; }); render(); }); },
+  traerOk:() => { S.traer.filter(t => t.on).forEach(t => CARTA.push({ id:'w' + Math.random(), n:t.n, cat:'Platos', p:t.p, min:10, rec:[] })); const n = S.traer.filter(t => t.on).length; S.traer = S.traer.filter(t => !t.on); cerrarHoja(); render(); aviso(`Se trajeron ${n} a la carta`); },
+  // caja
+  abrirCajaOk:() => { Object.assign(S.caja, { abierta:true, cerrado:false, desde:'21:02', fondo:pesos(S.fondoTxt), medios:{Efectivo:0, QR:0, Point:0, Mixto:0}, canales:{WhatsApp:0, Mostrador:0, Teléfono:0}, movs:[], ventas:0 }); VENTAS.length = 0; cerrarHoja(); render(); aviso('Caja abierta. A vender'); },
+  gastoOk:() => { const m = pesos(S.mov.monto); if (!m) return aviso('Escribí el monto'); S.caja.movs.unshift({ t:S.mov.t, m:S.mov.m, monto:m, de:S.mov.de, h:'21:02' }); S.mov.monto = ''; cerrarHoja(); S.cajaVista = 'Movimientos'; render(); aviso(`${S.mov.t} anotado`); },
+  pagarA:el => { S.pp = { i:+el.dataset.id, monto:String(PROVEEDORES[+el.dataset.id].deuda / 100), de:'Efectivo' }; abrirHoja('pagarProv'); },
+  pagarProvOk:() => { const p = PROVEEDORES[S.pp.i], m = Math.min(pesos(S.pp.monto), p.deuda || pesos(S.pp.monto)); if (!m) return aviso('Escribí el monto'); p.deuda = Math.max(0, p.deuda - m);
+    S.caja.movs.unshift({ t:'Gasto', m:'Pago a ' + p.n, monto:m, de:S.pp.de, h:'21:02' }); cerrarHoja(); render(); aviso(`Pagado ${plata(m)} a ${p.n}`); },
+  venta:el => abrirHoja('venta', el.dataset.id),
+  anular:el => { const v = VENTAS[+el.dataset.id]; v.anulada = true; S.caja.medios[v.medio] -= v.total; S.caja.canales[v.canal] -= v.total; cerrarHoja(); render(); aviso('Venta anulada'); },
+  proveedor:el => abrirHoja('proveedor', el.dataset.id),
+  traerMp:() => { S.cierre.mpTxt = String(mpEsperado() / 100); AFTER.cierreDif(); const i = $('ci-mp'); if (i) i.value = S.cierre.mpTxt; aviso('Saldo traído de Mercado Pago'); },
+  cierreEtapa:() => { if (S.cierre.efTxt === '' || S.cierre.mpTxt === '') return aviso('Contá el efectivo y anotalo antes de confirmar'); S.cierre.etapa = 2; render(true); },
+  cierreCerrar:() => { S.cierre.etapa = 3; S.caja.abierta = false; S.caja.cerrado = true; render(true); },
+  cierreFin:() => { S.cierre = { etapa:1, efTxt:'', mpTxt:'', ef:0, mp:0, motivo:'', nota:'' }; irTab('caja'); },
+  // más
+  notifInsumos:() => { S.cartaCat = 'Insumos'; irTab('carta'); },
+  iaPreguntar:el => iaResponder(el.dataset.t),
+  iaEnviar:() => { const i = $('ia-q'); if (i && i.value.trim()) iaResponder(i.value.trim()); },
+  iaHacer:el => { S.caja.movs.unshift({ t:'Gasto', m:'Gas', monto:+el.dataset.v * 100, de:'Efectivo', h:'21:02' }); S.chat.push({ t:'Listo, anotado. Lo ves en Caja › Movimientos.' }); render(); aviso('Gasto anotado'); },
+  crearCombo:() => { PROMOS.push({ n:'Pizza + Coca 1,5 L', d:'Combo a $ 14.900', on:true }); S.promos.push(true); render(); aviso('Combo creado · el bot ya lo ofrece'); },
+  sacarZona:el => { const z = S.cfg.zonas.splice(+el.dataset.id, 1)[0]; render(); aviso(`Zona ${z.nombre} sacada`, () => { S.cfg.zonas.splice(+el.dataset.id, 0, z); render(); }); },
+  zonaOk:() => { if (!S.nz.nombre.trim() || !pesos(S.nz.costo)) return aviso('Poné una zona y lo que cobrás el envío'); S.cfg.zonas.push({ nombre:S.nz.nombre.trim(), costo:pesos(S.nz.costo), demora:+S.nz.demora || 0 }); cerrarHoja(); render(); aviso('Zona agregada'); },
+  hDia:el => { const d = S.cfg.horario.dias, i = +el.dataset.i; d[i] = d[i] ? 0 : 1; render(); },
+  vhOk:() => { S.cfg.valorHora = pesos(S.vhTxt) || S.cfg.valorHora; cerrarHoja(); render(); aviso('Mano de obra guardada · los costos se actualizaron'); },
+  usuarioOk:el => { S.usuario = el.dataset.id; cerrarHoja(); render(); aviso(`Ahora está ${S.usuario}`); },
+  guardar:el => { if (hojaActual) cerrarHoja(); render(); aviso(el.dataset.t || 'Guardado'); },
+  deshacer:() => { if (avisoDeshacer) { avisoDeshacer(); avisoDeshacer = null; } $('toast').classList.remove('on'); },
+};
+function siguientePaso() { const o = S.ob; if (o.paso < PASOS.length - 1) { o.paso++; render(true); } else { o.pantalla = 'listo'; render(true); } }
+
+// =================== render ===================
+function barra() {
+  const n = cuenta('porConfirmar');
+  $('barra').innerHTML = [['pedidos','Pedidos'],['carta','Carta'],['vender','Vender'],['caja','Caja'],['mas','Más']].map(([k, t]) =>
+    `<button data-do="tab" data-id="${k}" ${S.tab === k ? 'aria-current="page"' : ''}><span class="ico">${svg(k)}${k === 'pedidos' && n ? `<span class="badge n">${n}</span>` : ''}</span>${t}</button>`).join('');
+}
+function render(anim) {
+  const v = $('vista'), ob = S.ob.activo, sub = !ob && S.pila.length;
+  $('barra').hidden = ob || sub; v.classList.toggle('sola', ob || !!sub);
+  if (!ob && !sub) barra();
+  const st = v.scrollTop;
+  v.innerHTML = ob ? vistaOnboarding() : sub ? PAGINAS[S.pila[S.pila.length - 1][0]](S.pila[S.pila.length - 1][1]) : { pedidos:vistaPedidos, carta:vistaCarta, vender:vistaVender, caja:vistaCaja, mas:vistaMas }[S.tab]();
+  if (anim) { v.classList.remove('entra'); void v.offsetWidth; v.classList.add('entra'); v.scrollTop = 0; } else v.scrollTop = st;
+  document.querySelectorAll('#saltos button').forEach(b => b.classList.toggle('a', b.dataset.salto === (ob ? 'ob' : sub ? S.pila[S.pila.length - 1][0] : S.tab)));
+}
+
+// =================== eventos ===================
+$('tel').addEventListener('click', e => {
+  const c = e.target.closest('[data-cerrar]'); if (c) { cerrarHoja(); if (c.dataset.cerrar) aviso(c.dataset.cerrar); return; }
+  const g = e.target.closest('[data-go]'); if (g) return ir(g.dataset.go);
+  const d = e.target.closest('[data-do]'); if (d && DO[d.dataset.do]) { if (d.disabled) return; DO[d.dataset.do](d, e); }
+});
+$('tel').addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.bind) { set(t.dataset.bind, t.value); if (t.dataset.after && AFTER[t.dataset.after]) AFTER[t.dataset.after](); }
+  if (t.id === 'v-buscar') { const s = t.value.trim().toLowerCase(), l = CARTA.filter(p => p.n.toLowerCase().includes(s)).slice(0, 6); $('rapidos').innerHTML = l.length ? rapidos(l) : '<p class="ayuda">No está en la carta.</p>'; }
+  if (t.id === 'm-buscar') { const s = t.value.trim().toLowerCase(); $('m-resto').hidden = !!s;
+    const l = FUNCIONES.filter(([a, r]) => (a + ' ' + r).toLowerCase().includes(s));
+    $('m-res').innerHTML = !s ? '' : `<div class="grupo"><div class="lista">${l.length ? l.map(([a, r, x]) => fila({ do:'funcion', id:x, t:a, s:r })).join('') : '<p class="vacio">No encontré esa función.</p>'}</div></div>`; }
+});
+$('tel').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'ia-q') DO.iaEnviar(); });
+DO.funcion = el => { const [tipo, x] = el.dataset.id.split(':');
+  if (tipo === 'tab') irTab(x); else if (tipo === 'go') { S.pila = []; ir(x); } else if (tipo === 'carta') { S.cartaCat = x; irTab('carta'); }
+  else { DO.hoja({ dataset:{ h:x } }); } };
+$('saltos').addEventListener('click', e => {
+  const b = e.target.closest('[data-salto]'); if (!b) return; cerrarHoja(); const s = b.dataset.salto;
+  if (s === 'ob') { Object.assign(S.ob, { activo:true, pantalla:'bienvenida', slide:0, paso:0 }); return render(true); }
+  S.ob.activo = false; S.pila = [];
+  if (['pedidos','carta','vender','caja'].includes(s)) { S.tab = s; render(true); }
+  else if (s === 'cierre') { if (!S.caja.abierta) { S.caja.abierta = true; S.caja.cerrado = false; } S.tab = 'caja'; S.cierre.etapa = 1; ir('cierre'); }
+  else { S.tab = 'mas'; ir(s); }
+});
+
+render();
+})();
+</script>

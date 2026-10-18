@@ -11,6 +11,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 import '../../ui/tema/tokens.dart';
+import '../kit/texto_ns.dart' show familiaNs;
 import '../kit/tokens_ns.dart';
 import 'colores_companion.dart';
 
@@ -51,7 +52,7 @@ abstract final class TemaCompanion {
           TargetPlatform.iOS: _TransicionCompanion(),
         },
       ),
-      fontFamily: familiaTipografica,
+      fontFamily: familiaNs,
       splashColor: colores.textoPrimario.withValues(alpha: 0.08),
       highlightColor: colores.textoPrimario.withValues(alpha: 0.04),
       hoverColor: colores.textoPrimario.withValues(alpha: 0.04),
@@ -68,7 +69,7 @@ abstract final class TemaCompanion {
         colores,
         acentos,
         brillo == Brightness.dark ? acentosPlazoletaCompanionOscuro : acentosPlazoletaCompanionClaro,
-        brillo == Brightness.dark ? TokensNs.oscuroTokens : TokensNs.claro,
+        TokensNs.paraBrillo(brillo),
       ],
       dividerTheme: DividerThemeData(color: colores.borde, thickness: Bordes.fino, space: Espaciado.lg),
       appBarTheme: AppBarTheme(
@@ -89,8 +90,8 @@ abstract final class TemaCompanion {
       // Aviso flotante del mock (docs/01 §6.14): fondo `toast`, texto blanco
       // 15/600 centrado, radio 26, a 100 px del borde de abajo.
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: brillo == Brightness.dark ? TokensNs.oscuroTokens.toast : TokensNs.claro.toast,
-        contentTextStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35, color: TokensNs.blanco),
+        backgroundColor: TokensNs.paraBrillo(brillo).toast,
+        contentTextStyle: TextStyle(fontFamily: familiaNs, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35, color: TokensNs.blanco),
         behavior: SnackBarBehavior.floating,
         insetPadding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -126,7 +127,7 @@ abstract final class TemaCompanion {
           foregroundColor: colores.acentoTexto,
           disabledBackgroundColor: colores.borde,
           disabledForegroundColor: colores.textoTenue,
-          textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
+          textStyle: TextStyle(fontFamily: familiaNs, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
           shape: const StadiumBorder(),
           padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
@@ -137,7 +138,7 @@ abstract final class TemaCompanion {
           backgroundColor: colores.acento,
           foregroundColor: colores.acentoTexto,
           elevation: 0,
-          textStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 17, fontWeight: FontWeight.w600),
+          textStyle: TextStyle(fontFamily: familiaNs, fontSize: 17, fontWeight: FontWeight.w600),
           minimumSize: const Size.fromHeight(alturaControlCompanion),
           shape: const StadiumBorder(),
           padding: const EdgeInsets.symmetric(horizontal: Espaciado.xl),
@@ -167,7 +168,7 @@ abstract final class TemaCompanion {
         hoverElevation: 3,
         highlightElevation: 3,
         shape: const StadiumBorder(),
-        extendedTextStyle: const TextStyle(fontFamily: familiaTipografica, fontSize: 16, fontWeight: FontWeight.w600),
+        extendedTextStyle: TextStyle(fontFamily: familiaNs, fontSize: 16, fontWeight: FontWeight.w600),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: colores.acento, circularTrackColor: colores.borde),
       bottomSheetTheme: BottomSheetThemeData(
@@ -195,7 +196,7 @@ abstract final class TemaCompanion {
 
   static TextTheme _construirTextTheme(TextTheme base, ColoresPlazoleta colores) {
     TextStyle estilo(double tamanio, FontWeight peso, Color color, {double altura = 1.25, double apretado = 0}) => TextStyle(
-          fontFamily: familiaTipografica,
+          fontFamily: familiaNs,
           fontSize: tamanio,
           fontWeight: peso,
           color: color,

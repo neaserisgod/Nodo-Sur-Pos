@@ -138,6 +138,25 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Nodo Gastro en Flutter con el diseño del mock v5** (El dueño, 18/10: "llevalo a flutter"; plan en
+  [`docs/PLAN-APLICAR-GASTRO-V5.md`](./docs/PLAN-APLICAR-GASTRO-V5.md)). Solo la edición Gastronomía: paleta del sitio en claro y
+  oscuro (`TokensNs.gastroClaro/gastroOscuro`, tokens nuevos `onPrim`, `acento`, `onAcento`), Bricolage + Geist en `fonts/`, barra
+  de pestañas en cápsula con el globo de pedidos por aceptar, Pedidos con el tablero en mosaicos ("Sale ahora", Nuevos, En la
+  cocina) y filtros, bienvenida propia de tres pantallas y botones de acento en el asistente y la Carta. Capturas:
+  `flutter test test/companion/capturas_gastro_test.dart` → `capturas/gastro/`. Suite entera en verde. **Sin probar en un celular
+  real.** Etapas 4 a 7 (Carta, Vender, Caja y cierre, Más): con la paleta y las
+  letras ya quedan en la familia del mock; "Cobrar" en naranja. **Arreglos de paso:** en Gastro la solapa Bebidas mostraba los platos;
+  el cierre y "Contar la caja" de Gastro y Servicios hablaban de cigarrillos y pedían la lata sin tener ese módulo.
+- **Mock de Nodo Gastro con la marca nueva** (18/10): `docs/mock-gastro/NodoGastro.html` (vivo: https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb).
+  La app del celular de gastronomía (Pedidos, Carta, Vender, Caja, Más) con el estilo del sitio 2026-10 (Bricolage + Geist, piedra, tinta,
+  naranja con texto negro). Interactivo con datos de ejemplo: aceptar, cocina, nuevo pedido, cobrar. **v5, mock completo** (El dueño: la v4 "me gustó mucho, quiero el mock entero así, incluyendo onboarding y todo lo que se deba
+  tener en la app real"): mismo estilo de la v4 (lenguaje del sitio + bento, barra flotante, hojas, claro/oscuro) cubriendo lo que tiene la
+  app real de gastronomía: bienvenida, entrar con Google, asistente de 5 pasos (local, primer plato, horario, bot/catálogo/cobro/entregas,
+  Mercado Pago y equipo) con "Después" y recordatorio en Pedidos, Pedidos, Carta (platos con receta y mano de obra, insumos con compra y
+  conteo, precios de todo, traer del catálogo), Vender (descuento, efectivo con vuelto, QR en pantalla, Point, mixto, venta cobrada que se
+  cierra sola), Caja (empezar el día, gasto o ingreso, pagar proveedor, contar, separar, ventas y anular, cierre en dos etapas, cierres
+  anteriores) y Más (buscador de funciones, usuario del turno, Asistente IA, Bot, Notificaciones, Configurar pedidos, Horario, Configuración,
+  Proveedores, Promos con sugerencia, Carga histórica, Cuenta y equipo, Apariencia, Actualización). **Falta el OK del dueño**; el código no se tocó.
 - **Nodo Gastro, repaso del alta y de las pantallas** (El dueño, 18/10: "que sean 100% congruentes con la idea de gastronomía").
   **Sin elegir rubro**: un solo rubro "Gastronomía" para todo (clave `rotiseria`, la del bot). El asistente suma, antes de los
   cobros, **lo más rompedor**: el bot que atiende solo (encenderlo si el plan lo trae, o verlo en la web), el catálogo de

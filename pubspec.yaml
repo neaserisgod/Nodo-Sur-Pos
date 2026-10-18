@@ -145,6 +145,27 @@ flutter:
     - family: FigtreeV
       fonts:
         - asset: fonts/FigtreeVariable.ttf
+    # Nodo Gastro usa la marca del sitio (NodoSurPage/nodo.css, mock docs/mock-gastro/NodoGastro.html): Bricolage Grotesque para
+    # títulos y cifras, Geist para el texto. Instancias fijas de Google Fonts (Bricolage en tamaño óptico 96, el de los títulos).
+    # Licencias OFL en fonts/BricolageGrotesque-OFL.txt y fonts/Geist-OFL.txt.
+    - family: Bricolage
+      fonts:
+        - asset: fonts/BricolageGrotesque-600.ttf
+          weight: 600
+        - asset: fonts/BricolageGrotesque-700.ttf
+          weight: 700
+        - asset: fonts/BricolageGrotesque-800.ttf
+          weight: 800
+    - family: Geist
+      fonts:
+        - asset: fonts/Geist-400.ttf
+          weight: 400
+        - asset: fonts/Geist-500.ttf
+          weight: 500
+        - asset: fonts/Geist-600.ttf
+          weight: 600
+        - asset: fonts/Geist-700.ttf
+          weight: 700
 
 # Ícono de la app (escritorio y companion) — "pos" con un punto, tinta y Figtree (opción 4 elegida por el dueño,
 # 2026-10-03; reemplaza al "P41" azul). `dart run flutter_launcher_icons` regenera

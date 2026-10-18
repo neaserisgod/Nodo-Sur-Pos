@@ -357,7 +357,10 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
       children: [
         _titulo(context, 'Etapa 1 de 2', 'Contá el efectivo del cajón'),
         const SizedBox(height: 10),
-        const InfoNs('Contá el efectivo del cajón, cigarrillos incluidos, antes de ver la diferencia y la separación.'),
+        // Servicios y Gastro no venden cigarrillos (§21, §22): no hay nada que sumar al cajón.
+        InfoNs(esEdicionAparte
+            ? 'Contá el efectivo del cajón antes de ver la diferencia y la separación.'
+            : 'Contá el efectivo del cajón, cigarrillos incluidos, antes de ver la diferencia y la separación.'),
         if (widget.servicio is ServicioCompanionOffline) ...[
           const SizedBox(height: 10),
           const InfoNs('Sin conexión con la PC: este cierre se calcula con los datos ya sincronizados a este celular. Si algo de la PC todavía no llegó, puede no coincidir.', tono: TonoNs.warn),
@@ -485,7 +488,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           alto: 60,
           tamanio: 17,
           fondo: ok ? ns.prim : ns.s,
-          color: ok ? TokensNs.blanco : ns.mute,
+          color: ok ? ns.onPrim : ns.mute,
           habilitado: !_trabajando,
         );
       case _Etapa.revisar:
@@ -495,7 +498,7 @@ class _PantallaCierreNsState extends State<PantallaCierreNs> {
           alto: 60,
           tamanio: 17,
           fondo: _completo ? ns.prim : ns.s,
-          color: _completo ? TokensNs.blanco : ns.mute,
+          color: _completo ? ns.onPrim : ns.mute,
           habilitado: !_trabajando,
         );
       case _Etapa.cerrada:

@@ -205,7 +205,7 @@ class _PantallaAsistenteIaNsState extends State<PantallaAsistenteIaNs> {
                         etiqueta: 'Preguntar',
                         tamanio: 52,
                         fondo: ns.prim,
-                        colorIcono: TokensNs.blanco,
+                        colorIcono: ns.onPrim,
                         onTap: _pensando ? null : () => _preguntar(_ctrl.text),
                       ),
                     ],

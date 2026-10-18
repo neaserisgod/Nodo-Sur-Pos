@@ -10,7 +10,7 @@ import 'package:la_plazoleta/companion/servicio_companion.dart';
 import 'package:la_plazoleta/domain/venta.dart';
 
 class ControladorFalsoNs implements ControladorAppNs {
-  ControladorFalsoNs({this.abierta = true, this.sinConex = false, PendientesNs? pend, DatosDiaNs? dia})
+  ControladorFalsoNs({this.abierta = true, this.sinConex = false, PendientesNs? pend, DatosDiaNs? dia, this.modo = ModoUso.pcYCelular})
       : pendientes = ValueNotifier(pend ?? const PendientesNs(faltaSepararCentavos: 18140000, proveedoresPendientes: 4, proveedoresTotal: 4, sinStock: 3, hayActualizacion: true, arqueoVencido: true, minutosDesdeConteo: 135)),
         datosDia = ValueNotifier(dia ?? const DatosDiaNs(vendidoCentavos: 48230000, gananciaCentavos: 16890000, efectivoCentavos: 23150000, mpCentavos: 25080000, ventas: 6));
 
@@ -69,8 +69,11 @@ class ControladorFalsoNs implements ControladorAppNs {
           porProveedor: [],
         ),
       );
+  /// Cómo se usa el celular: con PC (lo de siempre en estas pruebas) o solo (las ediciones aparte).
+  final ModoUso modo;
+
   @override
-  ModoUso? get modoUso => ModoUso.pcYCelular;
+  ModoUso? get modoUso => modo;
 
   @override
   void irAPestania(PestaniaNs p) {

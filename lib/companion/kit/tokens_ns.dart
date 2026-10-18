@@ -3,8 +3,14 @@
 // primario pasa a ser el azul de marca. Todo el kit (`lib/companion/kit/`) lee
 // sus colores de acá: nada de hex sueltos en las pantallas, porque el modo
 // oscuro funciona solo si todo pasa por un token.
+//
+// Nodo Gastro tiene su propia paleta (la marca del sitio, mock docs/mock-gastro/NodoGastro.html): blanco y piedra, tinta y un solo
+// acento naranja, siempre con texto negro encima. Las pantallas no preguntan la edición: piden los tokens con [TokensNs.paraBrillo]
+// o `context.ns` y reciben los que tocan.
 
 import 'package:flutter/material.dart';
+
+import '../../edicion.dart';
 
 @immutable
 class TokensNs extends ThemeExtension<TokensNs> {
@@ -27,7 +33,20 @@ class TokensNs extends ThemeExtension<TokensNs> {
     required this.ibg,
     required this.i,
     required this.oscuro,
+    this.onPrim = const Color(0xFFFFFFFF),
+    required this.acento,
+    this.onAcento = const Color(0xFFFFFFFF),
   });
+
+  /// Texto e iconos sobre [prim]. Blanco salvo en el oscuro de Gastro, donde el primario es claro.
+  final Color onPrim;
+
+  /// La acción que más importa de la pantalla (aceptar un pedido, cobrar, el "+"). En almacén y Servicios es el mismo
+  /// [prim]; en Gastro, el naranja de la marca.
+  final Color acento;
+
+  /// Texto sobre [acento]: sobre el naranja va negro, nunca blanco (regla de la marca).
+  final Color onAcento;
 
   /// Texto principal e iconos principales.
   final Color ink;
@@ -93,6 +112,7 @@ class TokensNs extends ThemeExtension<TokensNs> {
     ibg: Color(0xFFE0E9FF),
     i: Color(0xFF1D3A9A),
     oscuro: false,
+    acento: Color(0xFF121317),
   );
 
   static const oscuroTokens = TokensNs(
@@ -114,7 +134,62 @@ class TokensNs extends ThemeExtension<TokensNs> {
     ibg: Color(0xFF17254F),
     i: Color(0xFFA3BCFF),
     oscuro: true,
+    acento: Color(0xFF2F5BE8),
   );
+
+  /// Nodo Gastro, claro: los colores de NodoSurPage/nodo.css.
+  static const gastroClaro = TokensNs(
+    ink: Color(0xFF1A1714),
+    paper: Color(0xFFFFFFFF),
+    s: Color(0xFFF5F4F2),
+    s2: Color(0xFFECEAE6),
+    mute: Color(0xFF57534E),
+    line: Color(0xFFD6D2CC),
+    prim: Color(0xFF1A1714),
+    hero: Color(0xFF1A1714),
+    toast: Color(0xFF000000),
+    gbg: Color(0xFFE2F3EA),
+    g: Color(0xFF1F7A4D),
+    bbg: Color(0xFFFCE6E3),
+    b: Color(0xFFC4291C),
+    wbg: Color(0xFFFCEBDD),
+    w: Color(0xFF9A3A07),
+    ibg: Color(0xFFF5F4F2),
+    i: Color(0xFF1A1714),
+    oscuro: false,
+    acento: Color(0xFFE4580B),
+    onAcento: Color(0xFF1A1714),
+  );
+
+  /// Nodo Gastro, oscuro: de noche en la cocina cansa menos la vista. El primario es claro y lleva texto oscuro.
+  static const gastroOscuro = TokensNs(
+    ink: Color(0xFFF4F1EC),
+    paper: Color(0xFF0F0E0D),
+    s: Color(0xFF1B1917),
+    s2: Color(0xFF272421),
+    mute: Color(0xFFB8B1A9),
+    line: Color(0xFF3A3632),
+    prim: Color(0xFFF4F1EC),
+    hero: Color(0xFF2A2724),
+    toast: Color(0xFF000000),
+    gbg: Color(0xFF12301F),
+    g: Color(0xFF5FD49A),
+    bbg: Color(0xFF3A1714),
+    b: Color(0xFFFF7A6E),
+    wbg: Color(0xFF3A1E0E),
+    w: Color(0xFFFFA36B),
+    ibg: Color(0xFF1B1917),
+    i: Color(0xFFF4F1EC),
+    oscuro: true,
+    onPrim: Color(0xFF0F0E0D),
+    acento: Color(0xFFF26A1B),
+    onAcento: Color(0xFF140A03),
+  );
+
+  /// Los tokens de la edición para ese brillo.
+  static TokensNs paraBrillo(Brightness brillo) => esEdicionGastronomia
+      ? (brillo == Brightness.dark ? gastroOscuro : gastroClaro)
+      : (brillo == Brightness.dark ? oscuroTokens : claro);
 
   // Colores fijos: no cambian con el tema (doc 01 §2.2).
 
@@ -179,6 +254,6 @@ extension TokensNsDelContexto on BuildContext {
   /// armada con el tema del escritorio), se toman los del brillo que tenga.
   TokensNs get ns {
     final tema = Theme.of(this);
-    return tema.extension<TokensNs>() ?? (tema.brightness == Brightness.dark ? TokensNs.oscuroTokens : TokensNs.claro);
+    return tema.extension<TokensNs>() ?? TokensNs.paraBrillo(tema.brightness);
   }
 }

@@ -1388,7 +1388,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             decoration: BoxDecoration(color: activo ? ns.prim : ns.s, borderRadius: BorderRadius.circular(999)),
             child: Center(
               widthFactor: 1,
-              child: Text(activo ? 'Descuento aplicado' : 'Descuento', style: estiloNs(14, peso: FontWeight.w600, color: activo ? TokensNs.blanco : ns.ink)),
+              child: Text(activo ? 'Descuento aplicado' : 'Descuento', style: estiloNs(14, peso: FontWeight.w600, color: activo ? ns.onPrim : ns.ink)),
             ),
           ),
         ),
@@ -1417,7 +1417,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             ),
           ),
           const SizedBox(width: 12),
-          BotonNs(texto: 'Cobrar', onTap: _irACobro, alto: 56, tamanio: 17, fondo: ns.paper, color: ns.ink, rellenar: false, paddingH: 30),
+          // En Gastro, cobrar es la acción de la pantalla: va en el naranja de la marca.
+          BotonNs(texto: 'Cobrar', onTap: _irACobro, alto: 56, tamanio: 17, fondo: esEdicionGastronomia ? ns.acento : ns.paper, color: esEdicionGastronomia ? ns.onAcento : ns.ink, rellenar: false, paddingH: 30),
         ],
       ),
     );
@@ -1544,7 +1545,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
             alto: 64,
             tamanio: 18,
             fondo: activo ? ns.prim : ns.s,
-            color: activo ? TokensNs.blanco : ns.mute,
+            color: activo ? ns.onPrim : ns.mute,
             habilitado: puede,
           ),
         ],
@@ -1791,7 +1792,7 @@ class _CajaCerrada extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(esEdicionServicios ? 'Empezalo para cobrar. Lo que entre se ve en Caja.' : 'Para cobrar primero abrí la caja con el fondo inicial.', style: estiloNs(16, color: ns.mute)),
                 const SizedBox(height: 14),
-                BotonNs(texto: esEdicionServicios ? 'Empezar el día' : 'Abrir caja', onTap: onAbrir, alto: 60, tamanio: 17, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 30),
+                BotonNs(texto: esEdicionServicios ? 'Empezar el día' : 'Abrir caja', onTap: onAbrir, alto: 60, tamanio: 17, fondo: ns.prim, color: ns.onPrim, rellenar: false, paddingH: 30),
               ],
             ),
           ),
@@ -1839,8 +1840,8 @@ class _FilaBuscador extends StatelessWidget {
             decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle),
             alignment: Alignment.center,
             child: escaneando
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: TokensNs.blanco))
-                : const IconoNsWidget(IconoNs.escanear, tamanio: 24, color: TokensNs.blanco),
+                ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: ns.onPrim))
+                : IconoNsWidget(IconoNs.escanear, tamanio: 24, color: ns.onPrim),
           ),
         ),
       ],
@@ -2067,7 +2068,7 @@ class _ChipPago extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(color: activo ? ns.prim : ns.paper, borderRadius: BorderRadius.circular(999)),
-        child: Center(widthFactor: 1, child: Text(texto, style: estiloNs(15, peso: FontWeight.w600, color: activo ? TokensNs.blanco : ns.ink, tabular: true))),
+        child: Center(widthFactor: 1, child: Text(texto, style: estiloNs(15, peso: FontWeight.w600, color: activo ? ns.onPrim : ns.ink, tabular: true))),
       ),
     );
   }

@@ -404,7 +404,7 @@ class _PantallaAgendaNsState extends State<PantallaAgendaNs> {
                     onTap: () => _nuevoTurno(),
                     tamanio: 52,
                     fondo: ns.prim,
-                    colorIcono: TokensNs.blanco,
+                    colorIcono: ns.onPrim,
                   ),
                 ],
               ],
@@ -664,8 +664,8 @@ class _Dia extends StatelessWidget {
     final ns = context.ns;
     final on = dia == elegido;
     final esHoy = dia == hoy;
-    final colorNombre = on ? TokensNs.blanco.withValues(alpha: 0.8) : (esHoy ? ns.prim : ns.mute);
-    final colorNumero = on ? TokensNs.blanco : (esHoy ? ns.prim : ns.ink);
+    final colorNombre = on ? ns.onPrim.withValues(alpha: 0.8) : (esHoy ? ns.prim : ns.mute);
+    final colorNumero = on ? ns.onPrim : (esHoy ? ns.prim : ns.ink);
     // Uno, dos o tres puntitos: alcanza para ver de un vistazo qué día está cargado.
     final puntos = turnos > 4 ? 3 : (turnos > 1 ? 2 : turnos);
     final clave = '${dia.year}-${dia.month.toString().padLeft(2, '0')}-${dia.day.toString().padLeft(2, '0')}';

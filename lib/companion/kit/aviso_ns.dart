@@ -334,9 +334,9 @@ class EstadoErrorNs extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const IconoNsWidget(IconoNs.reintentar, tamanio: 18, color: TokensNs.blanco, grosor: 2.2),
+                      IconoNsWidget(IconoNs.reintentar, tamanio: 18, color: ns.onPrim, grosor: 2.2),
                       const SizedBox(width: 8),
-                      Text('Reintentar', style: estiloNs(16, peso: FontWeight.w600, color: TokensNs.blanco)),
+                      Text('Reintentar', style: estiloNs(16, peso: FontWeight.w600, color: ns.onPrim)),
                     ],
                   ),
                 ),

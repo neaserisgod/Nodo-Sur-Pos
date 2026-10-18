@@ -262,7 +262,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
                           BotonCircularNs(icono: IconoNs.campana, onTap: () => app.irA((_) => const PantallaNotificacionesNs()), etiqueta: app.pendientes.value.cantidad == 0 ? 'Notificaciones' : '${app.pendientes.value.cantidad} notificaciones', globo: app.pendientes.value.cantidad),
                           if (!conteo) ...[
                             const SizedBox(width: 12),
-                            BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: TokensNs.blanco, rellenar: false, paddingH: 20),
+                            BotonNs(texto: '+ Nuevo', onTap: _nuevo, alto: 44, tamanio: 15, fondo: ns.prim, color: ns.onPrim, rellenar: false, paddingH: 20),
                           ],
                         ],
                       ),
@@ -305,7 +305,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
               decoration: BoxDecoration(color: ns.prim, borderRadius: BorderRadius.circular(999)),
               child: Row(
                 children: [
-                  Container(width: 44, height: 44, decoration: const BoxDecoration(color: Color(0x24FFFFFF), shape: BoxShape.circle), alignment: Alignment.center, child: const IconoNsWidget(IconoNs.portapapeles, tamanio: 22, color: TokensNs.blanco)),
+                  Container(width: 44, height: 44, decoration: const BoxDecoration(color: Color(0x24FFFFFF), shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.portapapeles, tamanio: 22, color: ns.onPrim)),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -332,7 +332,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
               PresionNs(
                 onTap: _escanear,
                 etiqueta: 'Escanear código de barras',
-                child: Container(width: 56, height: 56, decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle), alignment: Alignment.center, child: const IconoNsWidget(IconoNs.escanear, tamanio: 24, color: TokensNs.blanco)),
+                child: Container(width: 56, height: 56, decoration: BoxDecoration(color: ns.prim, shape: BoxShape.circle), alignment: Alignment.center, child: IconoNsWidget(IconoNs.escanear, tamanio: 24, color: ns.onPrim)),
               ),
             ],
           ),

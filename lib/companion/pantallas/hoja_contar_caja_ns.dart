@@ -7,6 +7,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../domain/modulos.dart' show Modulo;
+import '../../edicion.dart';
+import '../../servicios/modulos_activos.dart' show moduloActivo;
 import '../cliente_companion.dart' show EstadoArqueoIntermedioCompanion;
 import '../debounce.dart';
 import '../app_ns.dart';
@@ -83,6 +86,9 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
 
   bool get _completo => _centavos(_efectivo) != null && _centavos(_mp) != null && _centavos(_lata) != null;
 
+  /// Sin el módulo de caja aparte no hay lata que contar: se toma la esperada, como en el cierre.
+  bool get _conLata => moduloActivo(Modulo.cajaAparte);
+
   /// Vista previa en vivo (no guarda nada): trae lo esperado y la diferencia.
   Future<void> _calcular() async {
     try {
@@ -91,6 +97,7 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
         mpContadoCentavos: _centavos(_mp),
         lataContadoCentavos: _centavos(_lata),
       );
+      if (!_conLata && _lata.text.isEmpty) _lata.text = '${e.lataEsperadoCentavos ~/ centavosPorPeso}';
       if (mounted) setState(() => _estado = e);
     } catch (e) {
       if (mounted) setState(() => _error = mensajeDeError(e));
@@ -132,15 +139,18 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
     final dif = e == null || _centavos(_efectivo) == null ? null : _centavos(_efectivo)! - e.efectivoEsperadoCentavos;
     return HojaNs(
       titulo: 'Contar la caja',
-      texto: 'Contá el efectivo del cajón, cigarrillos incluidos. Es opcional: lo que cuentes queda precargado en el cierre.',
+      texto: esEdicionAparte
+          ? 'Contá el efectivo del cajón. Es opcional: lo que cuentes queda precargado en el cierre.'
+          : 'Contá el efectivo del cajón, cigarrillos incluidos. Es opcional: lo que cuentes queda precargado en el cierre.',
       bloques: [
         if (widget.vencidoHace != null) InfoNs('Pasaron ${widget.vencidoHace} desde el último conteo.', tono: TonoNs.warn),
         FilaClaveValorNs(clave: 'Caja esperada', valor: e == null ? '…' : plataNs(e.efectivoEsperadoCentavos)),
         FilaClaveValorNs(clave: 'MP esperado', valor: e == null ? '…' : plataNs(e.mpEsperadoCentavos)),
-        FilaClaveValorNs(clave: 'Lata esperada', valor: e == null ? '…' : plataNs(e.lataEsperadoCentavos)),
+        // La lata es del módulo de caja aparte (cigarrillos): sin él no hay nada que esperar ahí.
+        if (_conLata) FilaClaveValorNs(clave: 'Lata esperada', valor: e == null ? '…' : plataNs(e.lataEsperadoCentavos)),
         CampoNs(etiqueta: 'Efectivo contado', controller: _efectivo, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
         CampoNs(etiqueta: 'MP contado (según la app de Mercado Pago)', controller: _mp, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
-        CampoNs(etiqueta: 'Lata contada', controller: _lata, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
+        if (_conLata) CampoNs(etiqueta: 'Lata contada', controller: _lata, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => _alCambiar()),
         if (_completo && dif != null)
           FilaClaveValorNs(
             clave: 'Diferencia en efectivo',
@@ -157,7 +167,7 @@ class _HojaContarCajaState extends State<_HojaContarCaja> {
           alto: 60,
           tamanio: 17,
           fondo: _completo ? ns.prim : ns.s,
-          color: _completo ? TokensNs.blanco : ns.mute,
+          color: _completo ? ns.onPrim : ns.mute,
           habilitado: !_guardando,
         ),
         BotonNs.secundario(context, 'Cancelar', () => Navigator.of(context).pop(false)),

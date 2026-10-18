@@ -245,7 +245,7 @@ class _PantallaConteoStockState extends State<PantallaConteoStock> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            IconoNsWidget(IconoNs.guardar, tamanio: 22, color: cuantos == 0 ? ns.mute : TokensNs.blanco),
+                            IconoNsWidget(IconoNs.guardar, tamanio: 22, color: cuantos == 0 ? ns.mute : ns.onPrim),
                             const SizedBox(width: 10),
                             Flexible(
                               child: Text(
@@ -328,7 +328,7 @@ class _FilaConteo extends StatelessWidget {
               controller: controller,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              cursorColor: vacio ? ns.ink : TokensNs.blanco,
+              cursorColor: vacio ? ns.ink : ns.onPrim,
               style: estiloNs(18, peso: FontWeight.w600, color: invalido ? ns.b : (vacio ? ns.ink : TokensNs.blanco), tabular: true),
               decoration: InputDecoration(
                 isDense: true,
