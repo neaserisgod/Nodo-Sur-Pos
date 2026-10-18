@@ -558,6 +558,8 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             key: const Key('config_nombre_comercio'),
             child: CampoNs(etiqueta: 'Nombre del comercio', controller: _nombreComercioCtrl, placeholder: 'Ej: Almacén Don Pepe'),
           ),
+          // Nodo Gastro es un solo rubro para toda la gastronomía: no hay nada que elegir (El dueño, 2026-10-18).
+          if (!esEdicionGastronomia) ...[
           const SizedBox(height: 12),
           Text(
             rubro == null ? 'Rubro · Sin elegir. Lo usa el bot de WhatsApp para saber cómo atender' : 'Rubro',
@@ -568,8 +570,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
           // Nodo Sur Servicios: solo los de servicios.
           for (final (titulo, rubros) in [
             if (!esEdicionAparte) ('Vendés productos', [...PlantillaRubro.deForma(FormaDeTrabajo.productos), PlantillaRubro.otro]),
-            if (!esEdicionGastronomia) ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
-            if (esEdicionGastronomia) ('Tu local', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
+            ('Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           ]) ...[
             Text(titulo, style: estiloNs(13, color: ns.mute)),
             const SizedBox(height: 6),
@@ -587,6 +588,7 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             const SizedBox(height: 10),
           ],
           if (_avisoCambioDeForma() case final aviso?) InfoNs(aviso, tono: TonoNs.warn),
+          ],
         ],
       ),
     );

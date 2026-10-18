@@ -159,14 +159,19 @@ class PlantillaRubro {
     gastosFijos: ['Alquiler', 'Luz', 'Internet'],
   );
 
-  /// Local gastronómico (§22): la carta de ejemplo de una rotisería, y el gas, que en una cocina es un fijo más.
+  /// Local gastronómico (§22), uno solo para todos: rotisería, pizzería, take away o restaurante trabajan con la misma lógica
+  /// (El dueño, 2026-10-18: "toda la gastronomía se basa en más o menos las mismas lógicas"). La clave sigue siendo `rotiseria`:
+  /// es la que ya está guardada y la que usa el diccionario del bot (`botdemo/src/core/diccionario/rubros.js`). El gas, en una
+  /// cocina, es un fijo más.
   static const rotiseria = PlantillaRubro(
     clave: 'rotiseria',
-    nombre: 'Rotisería',
-    descripcion: 'Comida para llevar o con envío: minutas, pastas, empanadas, tartas.',
+    nombre: 'Gastronomía',
+    descripcion: 'Rotisería, pizzería, take away o restaurante: para llevar, con envío o en el local.',
     forma: FormaDeTrabajo.gastronomia,
     categorias: [
       CategoriaDePlantilla('Minutas'),
+      CategoriaDePlantilla('Pizzas'),
+      CategoriaDePlantilla('Sándwiches'),
       CategoriaDePlantilla('Pastas'),
       CategoriaDePlantilla('Empanadas y tartas'),
       CategoriaDePlantilla('Guarniciones'),

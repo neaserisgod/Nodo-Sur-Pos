@@ -2708,5 +2708,4 @@ El dueño: "versión aparte, como Servicios". Nombre: **Nodo Gastro**; el ícono
 - **El workflow `publicar-apk` no la publica con cada push a `main`**: solo a mano, con edición `gastronomia` o `todas`, hasta que
   esté lista.
 - **Falta, del lado del dueño:** registrar `com.laplazoleta.gastronomia` en Firebase (sin su id de app no hay notificaciones con la
-  app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (sin él, el celular entra
-  con el navegador). `docs/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.
+  app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (**hecho el 2026-10-18**). `docs/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.

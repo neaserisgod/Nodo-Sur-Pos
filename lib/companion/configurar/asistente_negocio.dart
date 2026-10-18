@@ -134,7 +134,8 @@ class _AsistenteNegocioState extends State<AsistenteNegocio> {
   bool _adelante = true;
 
   late final _nombreCtrl = TextEditingController(text: widget.nombreInicial);
-  late PlantillaRubro? _rubro = widget.rubroInicial;
+  // Nodo Gastro no elige rubro: es uno solo para toda la gastronomía.
+  late PlantillaRubro? _rubro = widget.rubroInicial ?? PlantillaRubro.desdeClave(rubroDeEdicion ?? '');
   bool _guardando = false;
 
   @override
@@ -351,15 +352,17 @@ class _PasoNegocio extends StatelessWidget {
           ),
         ),
         const InfoNs('Sale en los tickets y arriba de la app.'),
+        // Nodo Gastro: un solo rubro, ya elegido (El dueño, 2026-10-18: "el selector está demás"). Se dice qué categorías trae.
+        if (esEdicionGastronomia && rubro != null)
+          InfoNs('Te dejamos estas categorías para tu carta: ${categorias.map((c) => c.nombre).join(', ')}. Las cambiás cuando quieras.', tono: TonoNs.good),
         // En dos grupos (`docs/PLAN-SERVICIOS.md`, etapa 1): el rubro decide si la app es de productos o de servicios. Lo
         // que trae el rubro elegido se cuenta debajo de su grupo, a la vista: con siete rubros, al final de la lista
         // quedaba fuera de la pantalla.
         // Nodo Sur Servicios es solo para turnos: no ofrece los rubros de productos.
+        if (!esEdicionGastronomia)
         for (final (titulo, rubros) in [
-          // Nodo Gastro, lo mismo: solo los de un local gastronómico.
           if (!esEdicionAparte) ('Vendés productos', PlantillaRubro.deForma(FormaDeTrabajo.productos)),
-          if (!esEdicionGastronomia) (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
-          if (esEdicionGastronomia) ('Tu rubro', PlantillaRubro.deForma(FormaDeTrabajo.gastronomia)),
+          (esEdicionServicios ? 'Tu rubro' : 'Das servicios', PlantillaRubro.deForma(FormaDeTrabajo.servicios)),
           // "Otro" es de productos: en una edición aparte llevaba al primer producto con código de barras y sacaba el horario que
           // usa el bot. Ahí no se ofrece, igual que en Configuración › Tu negocio.
           if (!esEdicionAparte) ('¿Ninguno?', const [PlantillaRubro.otro]),
@@ -789,7 +792,9 @@ class _PasoHorarioState extends State<_PasoHorario> {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Nodo Gastro · Pedidos y WhatsApp: lo que la hace distinta, configurado en corto
+// Nodo Gastro · lo más rompedor, configurado en corto (El dueño, 2026-10-18: "las funciones deberían ser las más rompedoras"):
+// el bot que atiende solo, el catálogo de WhatsApp que copia la carta, cobrar antes de cocinar y la cocina que frena al bot. Las
+// entregas van al final: el bot las necesita, pero no son lo que lo hace distinto.
 
 class _PasoPedidos extends StatefulWidget {
   const _PasoPedidos({
@@ -819,6 +824,7 @@ class _PasoPedidosState extends State<_PasoPedidos> {
   late bool _reparto = widget.inicial.servicioReparto;
   late ModoPagoPedido _pago = widget.inicial.pago;
   late bool _entranSolos = widget.inicial.confirmacionAutomatica;
+  late bool _catalogo = widget.inicial.catalogoWhatsapp;
   final _zona = TextEditingController();
   final _costoZona = TextEditingController();
 
@@ -887,7 +893,7 @@ class _PasoPedidosState extends State<_PasoPedidos> {
         confirmacionAutomatica: _entranSolos,
         minutosNormal: i.minutosNormal,
         minutosDemorada: i.minutosDemorada,
-        catalogoWhatsapp: i.catalogoWhatsapp,
+        catalogoWhatsapp: _catalogo,
       ));
     } catch (e) {
       if (mounted) setState(() => _error = 'No se pudo guardar: ${_textoDeError(e)}');
@@ -901,35 +907,67 @@ class _PasoPedidosState extends State<_PasoPedidos> {
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    const queHace = 'Contesta al toque, manda la carta, toma el pedido con la dirección y te lo deja en Pedidos listo para cocinar.';
     return PaginaArranqueNs(
       cabecera: widget.cabecera,
-      titulo: 'Pedidos y WhatsApp',
+      titulo: 'Lo que ningún otro sistema hace',
       tituloChico: true,
-      bajada: 'Lo que hace distinto a Nodo Gastro, en un minuto. Las zonas, los tiempos de la cocina y el resto, en Configuración › Pedidos.',
+      bajada: 'Tu local atiende, cobra y se organiza solo. Lo dejás andando ahora; lo ajustás cuando quieras en Configuración › Pedidos.',
       cuerpo: [
-        const SeccionNs('Tu WhatsApp contesta solo'),
+        // 1. El bot: contesta al toque, que es justo lo que le falta a un local que pierde pedidos por no llegar a contestar.
+        const SeccionNs('Tu WhatsApp atiende solo'),
         KeyedSubtree(
           key: const Key('asistente-bot'),
           child: _preguntandoBot
               ? const InfoNs('Fijándonos si tu plan trae el bot…')
-              : _conBot == true && widget.alAbrirBot != null
-                  ? OpcionNs(
-                      titulo: 'Bot de WhatsApp',
-                      detalle: '$queHace Lo encendés y lo vinculás con el WhatsApp del local.',
-                      derecha: 'Encender',
-                      derechaComoBoton: true,
-                      onTap: () => widget.alAbrirBot!(context),
-                    )
-                  : OpcionNs(
-                      titulo: 'Bot de WhatsApp',
-                      detalle: '$queHace Viene con el plan Sistema + Bot; lo sumás en horsepos.com.',
-                      derecha: 'Ver planes',
-                      derechaComoBoton: true,
-                      onTap: () => widget.alAbrirWeb('bot'),
-                    ),
+              : OpcionNs(
+                  titulo: 'Bot de WhatsApp',
+                  detalle: 'Contesta al toque a cualquier hora, manda la carta, toma el pedido con la dirección y te lo deja en Pedidos '
+                      'listo para cocinar. ${_conBot == true && widget.alAbrirBot != null ? 'Lo vinculás con el WhatsApp del local.' : 'Viene con el plan Sistema + Bot.'}',
+                  derecha: _conBot == true && widget.alAbrirBot != null ? 'Encender' : 'Ver planes',
+                  derechaComoBoton: true,
+                  onTap: () => _conBot == true && widget.alAbrirBot != null ? widget.alAbrirBot!(context) : widget.alAbrirWeb('bot'),
+                ),
         ),
-        const SeccionNs('¿Cómo entregás?'),
+        // 2. El catálogo de WhatsApp Business, espejo de la carta: el cliente arma el carrito y el bot lo toma.
+        const SeccionNs('Te piden desde tu catálogo de WhatsApp'),
+        InterruptorNs(
+          key: const Key('asistente-catalogo'),
+          etiqueta: 'Tengo WhatsApp Business con catálogo',
+          descripcion: _catalogo
+              ? 'El bot le copia tu carta (precios y lo que se acabó) y toma el carrito que arma el cliente.'
+              : 'El bot manda la carta escrita. Si armás el catálogo después, lo prendés en Configuración › Pedidos.',
+          encendido: _catalogo,
+          onCambio: (v) => setState(() => _catalogo = v),
+        ),
+        // 3. Cobrar antes de cocinar: el pedido entra recién pagado, sin plantones.
+        const SeccionNs('Cobrás antes de cocinar'),
+        SegmentoNs(
+          key: const Key('asistente-pago'),
+          opciones: const ['Al entregar', 'Adelantado', 'Que elija'],
+          indice: ModoPagoPedido.values.indexOf(_pago),
+          onCambio: (i) => setState(() => _pago = ModoPagoPedido.values[i]),
+        ),
+        Text(
+          switch (_pago) {
+            ModoPagoPedido.alEntregar => 'Se cobra al retirar, o al recibir el envío.',
+            ModoPagoPedido.adelantado => 'El bot manda el link de Mercado Pago y el pedido te entra recién pagado. Nadie te deja un pedido colgado.',
+            ModoPagoPedido.aElegir => 'El cliente elige si paga ahora por Mercado Pago o al recibir.',
+          },
+          style: estiloNs(14, color: ns.mute),
+        ),
+        if (_pago != ModoPagoPedido.alEntregar) const InfoNs('Para el link, conectá Mercado Pago en el paso que sigue.'),
+        // 4. La cocina manda: el bot no promete lo que la cocina no puede sacar.
+        const SeccionNs('La cocina manda'),
+        const InfoNs('Si se llena, en Pedidos tocás "Con demora" o "Pausada": el bot avisa la demora real o deja de tomar pedidos. '
+            'El mostrador sigue igual.'),
+        InterruptorNs(
+          key: const Key('asistente-entran-solos'),
+          etiqueta: 'Los pedidos de WhatsApp entran solos a la cocina',
+          descripcion: _entranSolos ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.',
+          encendido: _entranSolos,
+          onCambio: (v) => setState(() => _entranSolos = v),
+        ),
+        const SeccionNs('Y cómo entregás'),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -951,34 +989,12 @@ class _PasoPedidosState extends State<_PasoPedidos> {
           ),
           const InfoNs('Una zona para empezar. Las demás, con su costo y su demora, en Configuración › Pedidos.'),
         ],
-        const SeccionNs('¿Cuándo te pagan?'),
-        SegmentoNs(
-          key: const Key('asistente-pago'),
-          opciones: const ['Al entregar', 'Adelantado', 'Que elija'],
-          indice: ModoPagoPedido.values.indexOf(_pago),
-          onCambio: (i) => setState(() => _pago = ModoPagoPedido.values[i]),
-        ),
-        Text(
-          switch (_pago) {
-            ModoPagoPedido.alEntregar => 'Se cobra al retirar, o al recibir el envío.',
-            ModoPagoPedido.adelantado => 'El bot manda el link de Mercado Pago y el pedido entra cuando pagan.',
-            ModoPagoPedido.aElegir => 'El cliente elige si paga ahora por Mercado Pago o al recibir.',
-          },
-          style: estiloNs(14, color: ns.mute),
-        ),
-        InterruptorNs(
-          key: const Key('asistente-entran-solos'),
-          etiqueta: 'Los pedidos de WhatsApp entran solos',
-          descripcion: _entranSolos ? 'Van directo a "por hacer".' : 'Esperan que alguien del local los acepte.',
-          encendido: _entranSolos,
-          onCambio: (v) => setState(() => _entranSolos = v),
-        ),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
       botones: [
         KeyedSubtree(
           key: const Key('asistente-guardar-pedidos'),
-          child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Guardar y seguir', _guardando ? null : _guardar, habilitado: !_guardando),
+          child: BotonNs.primario(context, _guardando ? 'Guardando…' : 'Dejarlo andando', _guardando ? null : _guardar, habilitado: !_guardando),
         ),
       ],
     );
@@ -1047,7 +1063,7 @@ class TarjetaConfiguracionPendiente extends StatelessWidget {
           FormaDeTrabajo.productos => 'Tu primer producto',
         },
         PasoNegocio.horario: 'Horario de atención',
-        PasoNegocio.pedidos: 'Pedidos y WhatsApp',
+        PasoNegocio.pedidos: 'Bot, catálogo y cobro adelantado',
         PasoNegocio.cobros: esEdicionServicios ? 'Mercado Pago' : 'Mercado Pago y equipo',
       };
 

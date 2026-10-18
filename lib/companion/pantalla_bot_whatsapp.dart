@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 import '../domain/bot_whatsapp.dart';
 import '../domain/plantillas_rubro.dart';
 import '../servicios/acceso_bot.dart';
-import '../edicion.dart' show esEdicionGastronomia;
+import '../edicion.dart' show esEdicionGastronomia, rubroDeEdicion;
 import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ConfiguracionNegocioCompanion;
 import 'kit/kit_ns.dart';
@@ -143,12 +143,12 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     final negocio = _negocio;
     if (negocio == null) return;
     final c = _editada;
-    final problemas = problemasConfigBot(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro);
+    final problemas = problemasConfigBot(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro ?? rubroDeEdicion);
     setState(() => _problemas = problemas);
     if (problemas.isNotEmpty) return;
     setState(() => _guardando = true);
     try {
-      final config = configBotParaGuardar(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro!, anterior: _anterior);
+      final config = configBotParaGuardar(c, nombreNegocio: negocio.nombreComercio, rubro: (negocio.rubro ?? rubroDeEdicion)!, anterior: _anterior);
       await widget.acceso.guardarConfig(config);
       _anterior = config;
       if (mounted) mostrarAvisoNs(context, 'Guardado. El bot lo toma solo, sin reiniciarlo.');
@@ -221,7 +221,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
 
   List<Widget> _configuracion() {
     final negocio = _negocio!;
-    final rubro = negocio.rubro == null ? null : PlantillaRubro.desdeClave(negocio.rubro!);
+    final rubro = PlantillaRubro.desdeClave(negocio.rubro ?? rubroDeEdicion ?? '');
     return [
       _seccion('El negocio'),
       InfoNs(

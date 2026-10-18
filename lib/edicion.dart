@@ -38,6 +38,10 @@ bool get esEdicionAparte => edicionActual != Edicion.almacen;
 /// Una edición aparte instalada en una compu con Windows: la app del celular, con ventana de PC y su propio instalador.
 bool get esEscritorioAparte => esEdicionAparte && !kIsWeb && Platform.isWindows;
 
+/// El rubro que la edición ya trae: Nodo Gastro es un solo rubro para toda la gastronomía, sin elegir (El dueño, 2026-10-18). Lo
+/// usa quien necesita un rubro y no hay uno guardado (el dueño salteó el primer paso del alta). Null: hay que elegirlo.
+String? get rubroDeEdicion => esEdicionGastronomia ? 'rotiseria' : null;
+
 /// El nombre que se ve en la ventana y en la tienda.
 String get nombreDeEdicion => switch (edicionActual) {
       Edicion.almacen => 'Nodo Sur POS',

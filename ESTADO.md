@@ -139,13 +139,14 @@ Pendiente / ideas (sin hacer):
 ## Últimos cambios (18/10/2026)
 
 - **Nodo Gastro, repaso del alta y de las pantallas** (El dueño, 18/10: "que sean 100% congruentes con la idea de gastronomía").
-  El asistente suma **"Pedidos y WhatsApp"** antes de los cobros: el bot (encenderlo si el plan lo trae, o verlo en la web),
-  cómo entrega (con su primera zona si hay envío), cuándo cobra y si lo de WhatsApp entra solo. Ya no ofrece "Otro" (llevaba al
-  producto con código de barras). Los pedidos del bot llegan aunque falte el rubro. Sin lata de cigarrillos, recargo ni vuelto;
+  **Sin elegir rubro**: un solo rubro "Gastronomía" para todo (clave `rotiseria`, la del bot). El asistente suma, antes de los
+  cobros, **lo más rompedor**: el bot que atiende solo (encenderlo si el plan lo trae, o verlo en la web), el catálogo de
+  WhatsApp Business que copia la carta, cobrar adelantado con link y la cocina que frena al bot; las entregas, al final (con su
+  primera zona si hay envío). Los pedidos del bot llegan aunque falte el rubro. Sin lata de cigarrillos, recargo ni vuelto;
   menú lateral de Windows con Pedidos y Carta; buscador de funciones propio; "Horario y transferencias" en Configuración (antes
   no había dónde cambiar el horario ni el alias del bot); los pasos dejados para después se recuerdan en Pedidos. **Falta verlo
-  en un celular real.** **Sigue faltando del lado del dueño** el cliente OAuth Android de `com.laplazoleta.gastronomia` en
-  Google Cloud (sin él, entrar con Google vuelve a la misma pantalla; ver `docs/PENDIENTE-GOOGLE-ANDROID.md`).
+  en un celular real.** El cliente OAuth Android de `com.laplazoleta.gastronomia` ya está creado en
+  Google Cloud (18/10), así que se entra con Google sin navegador.
 
 ## Últimos cambios (16/10/2026)
 
