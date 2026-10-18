@@ -198,26 +198,4 @@ void main() {
       expect(filas([]), ['libre 09:00-20:00']);
     });
   });
-
-  group('horaTecleada (el teclado numérico no trae ":")', () {
-    test('pone los dos puntos sola a medida que se teclea', () {
-      expect(horaTecleada(''), '');
-      expect(horaTecleada('2'), '2');
-      expect(horaTecleada('20'), '20');
-      expect(horaTecleada('200'), '2:00');
-      expect(horaTecleada('2000'), '20:00');
-      expect(horaTecleada('0930'), '09:30');
-    });
-
-    test('tolera los ":" o "." tecleados y corta en 4 dígitos', () {
-      expect(horaTecleada('20:00'), '20:00');
-      expect(horaTecleada('9.30'), '9:30');
-      expect(horaTecleada('20:005'), '20:00');
-    });
-
-    test('lo que deja es una hora que se entiende', () {
-      expect(minutosDeHora(horaTecleada('930')), 570);
-      expect(minutosDeHora(horaTecleada('2000')), 1200);
-    });
-  });
 }

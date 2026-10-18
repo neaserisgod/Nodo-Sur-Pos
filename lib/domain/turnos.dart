@@ -52,17 +52,6 @@ int? minutosDeHora(String texto) {
   return h * 60 + min;
 }
 
-/// Lo que muestra un campo de hora mientras se teclea solo con números: los ":" los pone la app, porque el teclado
-/// numérico de muchos Android no los tiene. "9" → "9", "930" → "9:30", "2000" → "20:00". Lo que no es dígito se
-/// descarta (un ":" o "." tecleado no estorba) y se corta en 4 dígitos.
-String horaTecleada(String texto) {
-  final d = texto.replaceAll(RegExp(r'\D'), '');
-  final c = d.length > 4 ? d.substring(0, 4) : d;
-  if (c.length <= 2) return c;
-  final corte = c.length - 2;
-  return '${c.substring(0, corte)}:${c.substring(corte)}';
-}
-
 /// 570 → "09:30".
 String horaDeMinutos(int minutos) => '${(minutos ~/ 60).toString().padLeft(2, '0')}:${(minutos % 60).toString().padLeft(2, '0')}';
 

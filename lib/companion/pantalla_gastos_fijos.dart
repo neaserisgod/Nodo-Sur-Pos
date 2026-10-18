@@ -291,7 +291,7 @@ class _HojaPagarFijoState extends State<_HojaPagarFijo> {
             ),
           ],
         ),
-        CampoNs(etiqueta: 'Fecha del pago (DD/MM/AAAA)', controller: _fecha, placeholder: 'Ej: 10/10/2026', teclado: TextInputType.datetime),
+        CampoNs(etiqueta: 'Fecha del pago (DD/MM/AAAA)', controller: _fecha, placeholder: 'Ej: 10/10/2026', teclado: TextInputType.number, formatos: formatoFechaNs),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
       botones: [BotonNs.primario(context, _guardando ? 'Anotando…' : 'Anotar pago', _guardando ? null : _pagar, habilitado: !_guardando)],

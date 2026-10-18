@@ -1340,7 +1340,7 @@ class _HojaTurnoNsState extends State<HojaTurnoNs> {
                 if (!_verTodas && libres.length > mostrar.length) ChipNs(texto: 'Más…', activo: false, onTap: () => setState(() => _verTodas = true)),
               ],
             ),
-          CampoNs(etiqueta: 'Otra hora (opcional)', controller: _otraHora, placeholder: '10:30', teclado: tecladoHoraNs, formatos: formatoHoraNs, onChanged: (_) => setState(() {})),
+          CampoNs(etiqueta: 'Otra hora (opcional)', controller: _otraHora, placeholder: '10:30', teclado: TextInputType.number, formatos: formatoHoraNs, onChanged: (_) => setState(() {})),
         ],
         if (!_moviendo) ...[
           CampoNs(key: const Key('turno_nombre'), etiqueta: 'Nombre', controller: _nombre, placeholder: 'Quién viene'),

@@ -214,9 +214,9 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
               padding: const EdgeInsets.only(top: 6),
               child: Row(
                 children: [
-                  Expanded(child: CampoNs(etiqueta: 'Abre', controller: _horas[d]!.desde, placeholder: '09:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
+                  Expanded(child: CampoNs(etiqueta: 'Abre', controller: _horas[d]!.desde, placeholder: '09:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                   const SizedBox(width: 8),
-                  Expanded(child: CampoNs(etiqueta: 'Cierra', controller: _horas[d]!.hasta, placeholder: '20:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
+                  Expanded(child: CampoNs(etiqueta: 'Cierra', controller: _horas[d]!.hasta, placeholder: '20:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                 ],
               ),
             ),

@@ -202,9 +202,9 @@ class _PantallaConfigAgendaNsState extends State<PantallaConfigAgendaNs> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Row(
                           children: [
-                            Expanded(child: CampoNs(etiqueta: 'Abre', controller: dias[i].desde, placeholder: '09:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
+                            Expanded(child: CampoNs(etiqueta: 'Abre', controller: dias[i].desde, placeholder: '09:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                             const SizedBox(width: 10),
-                            Expanded(child: CampoNs(etiqueta: 'Cierra', controller: dias[i].hasta, placeholder: '20:00', teclado: tecladoHoraNs, formatos: formatoHoraNs)),
+                            Expanded(child: CampoNs(etiqueta: 'Cierra', controller: dias[i].hasta, placeholder: '20:00', teclado: TextInputType.number, formatos: formatoHoraNs)),
                           ],
                         ),
                       ),

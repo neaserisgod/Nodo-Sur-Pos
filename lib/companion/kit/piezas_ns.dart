@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/dinero.dart' show formatearARS;
-import '../../domain/turnos.dart' show horaTecleada;
+import '../../domain/tecleo.dart';
 
 import 'iconos_ns.dart';
 import 'movimiento_ns.dart';
@@ -424,15 +424,15 @@ class CampoNs extends StatelessWidget {
 /// Solo dígitos (los importes y cantidades del mock se toman así).
 final List<TextInputFormatter> soloDigitosNs = [FilteringTextInputFormatter.digitsOnly];
 
-/// Campo de hora (Abre/Cierra): teclado numérico y los ":" los pone la app, porque el teclado de hora de muchos Android
-/// no trae ":" y no dejaba escribir el horario.
-const TextInputType tecladoHoraNs = TextInputType.number;
-final List<TextInputFormatter> formatoHoraNs = [
-  TextInputFormatter.withFunction((viejo, nuevo) {
-    final t = horaTecleada(nuevo.text);
-    return TextEditingValue(text: t, selection: TextSelection.collapsed(offset: t.length));
-  }),
-];
+/// Campos de hora (Abre/Cierra) y de fecha: teclado numérico y los ":" o "/" los pone la app, porque el teclado de muchos
+/// Android no los trae y no dejaba escribir el horario.
+final List<TextInputFormatter> formatoHoraNs = [_formatoTecleado(horaTecleada)];
+final List<TextInputFormatter> formatoFechaNs = [_formatoTecleado(fechaTecleada)];
+
+TextInputFormatter _formatoTecleado(String Function(String) formatear) => TextInputFormatter.withFunction((viejo, nuevo) {
+  final t = formatear(nuevo.text);
+  return TextEditingValue(text: t, selection: TextSelection.collapsed(offset: t.length));
+});
 
 /// Campo de búsqueda: píldora `s`, lupa y texto; alto 52 (Productos) o 56.
 class BuscadorNs extends StatelessWidget {
