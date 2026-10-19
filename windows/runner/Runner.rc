@@ -116,12 +116,12 @@ BEGIN
             VALUE "CompanyName", "com.laplazoleta" "\0"
 #ifdef EDICION_SERVICIOS
             // ProductName decide la carpeta de datos (path_provider): distinta de la de almacén, nunca la misma base.
-            VALUE "FileDescription", "Nodo Sur Servicios" "\0"
+            VALUE "FileDescription", "Nodo Estudio" "\0"
             VALUE "InternalName", "nodo_sur_servicios" "\0"
             VALUE "OriginalFilename", "nodo_sur_servicios.exe" "\0"
             VALUE "ProductName", "Nodo Sur Servicios" "\0"
 #else
-            VALUE "FileDescription", "Nodo Sur POS" "\0"
+            VALUE "FileDescription", "Nodo Gestión" "\0"
             VALUE "InternalName", "la_plazoleta" "\0"
             VALUE "OriginalFilename", "la_plazoleta.exe" "\0"
             VALUE "ProductName", "Nodo Sur POS" "\0"

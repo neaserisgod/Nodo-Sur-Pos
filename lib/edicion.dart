@@ -42,10 +42,11 @@ bool get esEscritorioAparte => esEdicionAparte && !kIsWeb && Platform.isWindows;
 /// usa quien necesita un rubro y no hay uno guardado (el dueño salteó el primer paso del alta). Null: hay que elegirlo.
 String? get rubroDeEdicion => esEdicionGastronomia ? 'rotiseria' : null;
 
-/// El nombre que se ve en la ventana y en la tienda.
+/// El nombre que se ve en la ventana y en la tienda: los del sitio (El dueño, 2026-10-19, `docs/PLAN-CUENTAS.md`). Solo el nombre
+/// visible: el paquete de Android, la carpeta de datos y las rutas de actualización siguen con los nombres de antes.
 String get nombreDeEdicion => switch (edicionActual) {
-      Edicion.almacen => 'Nodo Sur POS',
-      Edicion.servicios => 'Nodo Sur Servicios',
+      Edicion.almacen => 'Nodo Gestión',
+      Edicion.servicios => 'Nodo Estudio',
       Edicion.gastronomia => 'Nodo Gastro',
     };
 

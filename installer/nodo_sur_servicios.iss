@@ -20,7 +20,8 @@
 #ifndef SourceDir
   #define SourceDir "..\build\windows\x64\runner\Release"
 #endif
-#define MyAppName "Nodo Sur Servicios"
+; Nombre visible (El dueño, 2026-10-19, docs/PLAN-CUENTAS.md). El AppId, la carpeta de datos y el .exe no cambian.
+#define MyAppName "Nodo Estudio"
 #define MyAppExe "nodo_sur_servicios.exe"
 ; Tiene que coincidir EXACTO con el mutex de windows/runner/main.cpp (rama EDICION_SERVICIOS).
 #define MyAppMutex "NodoSurServiciosAppMutex"
@@ -64,6 +65,9 @@ Type: filesandordirs; Name: "{app}\data"
 Type: files; Name: "{app}\*.dll"
 Type: files; Name: "{app}\*.exe"
 Type: filesandordirs; Name: "{app}\bot"
+; Accesos directos con el nombre anterior (renombre a Nodo Estudio, 2026-10-19): se borran para no dejar duplicados.
+Type: files; Name: "{userstartup}\Nodo Sur Servicios.lnk"
+Type: files; Name: "{userdesktop}\Nodo Sur Servicios.lnk"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion

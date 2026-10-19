@@ -5,6 +5,10 @@ gastronomía para los mozos… quiero organizar sobre todo el tema de las cuenta
 (`NodoSurPage`, `functions/_lib/`) y este repo (`lib/servicios/cuenta_nube.dart`, `lib/edicion.dart`). **No hay código
 todavía.**
 
+**Estado al 2026-10-19:** las cinco etapas hechas. Las del sitio (1, 2 y 5) y sacar «Solo el bot» están en NodoSurPage#97,
+sin mezclar (en el sitio mezclar publica: espera el "mergeá" del dueño). La 3 está mezclada (#145) y la 4 en #146; salen con
+la próxima beta.
+
 ## Decisiones del dueño (2026-10-19)
 
 1. **Cada negocio es de un solo producto**: Nodo Gestión (almacén, kiosco), Nodo Estudio (turnos) o Nodo Gastro
@@ -67,7 +71,8 @@ de su producto todavía sin cubrir; la de Gestión, después, el más viejo de E
 3. **App: mandar la edición y filtrar.** `cuenta_nube.dart` manda `edicion`; el selector de negocios muestra solo los
    del producto de la app, y ante `otro_producto` dice "Este negocio es de Nodo X: bajala de horsepos.com".
 4. **App: nombres.** `nombreDeEdicion`, `manifestPlaceholders` y el nombre visible de los instaladores pasan a Nodo
-   Gestión / Nodo Estudio / Nodo Gastro. Sale con la próxima beta.
+   Gestión / Nodo Estudio / Nodo Gastro. Sale con la próxima beta. **El `ProductName` de `windows/runner/Runner.rc` no se
+   toca**: de él sale la carpeta de datos de Windows (`migracion_carpeta_datos.dart`), y cambiarlo deja a la PC sin su base.
 5. **Sitio: pantallas.** `/negocio/` y `/cuenta/` muestran el producto de cada negocio y qué plan lo cubre (o que
    está incluido en el de Gestión). `/admin/` suma la columna.
 
@@ -76,6 +81,13 @@ lo estén mandando.
 
 ## Preguntas abiertas
 
+Contestadas el mismo día: 1, sí (se saca del sitio); 2, sí (el incluido trae el bot).
+
 1. **El plan "Solo el bot" ($ 35.000 + alta $ 70.000)**: Estudio y Gastro ya traen el bot por $ 18.000, así que nadie
    lo va a elegir. Propuesta: sacarlo del sitio (las suscripciones que existan siguen andando).
 2. **El negocio incluido con Gestión, ¿trae el bot?** Estudio y Gastro siempre lo traen, así que la propuesta es que sí.
+3. **Pendiente (2026-10-19): el precio del bot en el almacén.** Con Gestión ($ 35.000) la rotisería o el estudio incluido
+   traen el bot sin costo, pero el bot para el propio almacén cuesta $ 25.000 más por mes y $ 70.000 de alta (Sistema + Bot).
+   Para un cliente puede sonar incoherente. Opciones: (a) dejarlo así (el bot de un almacén da más trabajo de configurar);
+   (b) bajar el alta o el adicional; (c) que Gestión traiga el bot en el propio almacén. Decide el dueño; no hay código
+   hasta que lo haga.

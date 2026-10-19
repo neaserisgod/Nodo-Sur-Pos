@@ -48,12 +48,12 @@ android {
     productFlavors {
         create("almacen") {
             dimension = "edicion"
-            manifestPlaceholders["nombreApp"] = "Nodo Sur POS"
+            manifestPlaceholders["nombreApp"] = "Nodo Gestión"
         }
         create("servicios") {
             dimension = "edicion"
             applicationId = "com.laplazoleta.servicios"
-            manifestPlaceholders["nombreApp"] = "Nodo Sur Servicios"
+            manifestPlaceholders["nombreApp"] = "Nodo Estudio"
         }
         // Nodo Gastro (El dueño, 2026-10-16, `docs/PLAN-GASTRONOMIA.md`): rotisería y comida para llevar, también con el
         // bot adentro. Su manifiesto es el de servicios (el servicio del bot), en `src/gastronomia/`.

@@ -12,7 +12,7 @@ void main() {
   test('sin flavor ni EDICION es la de almacén', () {
     expect(edicionActual, Edicion.almacen);
     expect(esEdicionAparte, isFalse);
-    expect(nombreDeEdicion, 'Nodo Sur POS');
+    expect(nombreDeEdicion, 'Nodo Gestión');
     expect(plataformaActualizacion, 'android');
   });
 

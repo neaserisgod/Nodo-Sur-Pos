@@ -3,8 +3,8 @@ import 'package:la_plazoleta/domain/marca.dart';
 
 void main() {
   group('MarcaNegocio — cómo se llama lo que se ve', () {
-    test('el nombre del producto es Nodo Sur POS', () {
-      expect(nombreProducto, 'Nodo Sur POS');
+    test('el nombre del producto es Nodo Gestión', () {
+      expect(nombreProducto, 'Nodo Gestión');
     });
 
     test('sin nada cargado se usa el nombre del producto, tanto de nombre como de encabezado', () {

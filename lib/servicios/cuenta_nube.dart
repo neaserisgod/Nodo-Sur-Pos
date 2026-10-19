@@ -17,7 +17,7 @@ import '../domain/bot_whatsapp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../domain/saldo_mp.dart';
 import '../domain/vinculacion.dart';
-import '../edicion.dart' show edicionActual;
+import '../edicion.dart' show edicionActual, nombreDeEdicion;
 import 'avisos_bot.dart';
 import 'avisos_cobro_mp.dart';
 import 'socket_de_avisos.dart';
@@ -1118,7 +1118,7 @@ Future<CuentaVinculada> vincularEstaPc({
       pedido.response.write('<!doctype html><meta charset="utf-8"><p>Este enlace no es de esta vinculación.</p>');
     } else {
       pedido.response.write(
-        '<!doctype html><meta charset="utf-8"><title>Nodo Sur POS</title>'
+        '<!doctype html><meta charset="utf-8"><title>$nombreDeEdicion</title>'
         '<body style="font-family:sans-serif;text-align:center;margin-top:15vh">'
         '<h2>${celular ? 'Listo, entraste en tu celular' : 'Listo, tu PC quedó vinculada'}</h2><p>Ya podés cerrar esta pestaña y volver a la app.</p></body>',
       );

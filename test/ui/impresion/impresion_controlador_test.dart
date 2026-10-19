@@ -141,7 +141,7 @@ void main() {
     await configurarEncabezadoTicket(db, '');
     await configurarNombreComercio(db, '');
     await c.reimprimirEnPosnet(ventaId);
-    expect(capturada!.body, contains('Nodo Sur POS'));
+    expect(capturada!.body, contains('Nodo Gestión'));
   });
 
   test(

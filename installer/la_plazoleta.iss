@@ -21,7 +21,8 @@
 #ifndef SourceDir
   #define SourceDir "..\build\windows\x64\runner\Release"
 #endif
-#define MyAppName "Nodo Sur POS"
+; Nombre visible (El dueño, 2026-10-19, docs/PLAN-CUENTAS.md). El AppId, la carpeta y el .exe no cambian.
+#define MyAppName "Nodo Gestión"
 #define MyAppExe "la_plazoleta.exe"
 ; Tiene que coincidir EXACTO con el mutex de windows/runner/main.cpp.
 #define MyAppMutex "LaPlazoletaAppMutex"
@@ -77,6 +78,9 @@ Type: files; Name: "{app}\*.exe"
 ; Accesos directos con el nombre anterior (renombre a Nodo Sur POS): se borran para no dejar duplicados.
 Type: files; Name: "{userstartup}\La Plazoleta.lnk"
 Type: files; Name: "{userdesktop}\la_plazoleta - Acceso directo.lnk"
+; Y los del nombre siguiente (renombre a Nodo Gestión, 2026-10-19).
+Type: files; Name: "{userstartup}\Nodo Sur POS.lnk"
+Type: files; Name: "{userdesktop}\Nodo Sur POS.lnk"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -88,7 +92,7 @@ Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "
 Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; Comment: "{#MyAppName}"; Check: CrearAccesos
 
 [Run]
-; Instalación a mano: casilla "Abrir Nodo Sur POS" al final.
+; Instalación a mano: casilla "Abrir Nodo Gestión" al final.
 Filename: "{app}\{#MyAppExe}"; Description: "Abrir {#MyAppName}"; Flags: nowait postinstall skipifsilent
 ; Actualización silenciosa (WinSparkle): la reabre sola, que el local siga
 ; vendiendo sin que nadie tenga que buscar el icono.
