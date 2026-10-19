@@ -5,6 +5,9 @@ gastronomía para los mozos… quiero organizar sobre todo el tema de las cuenta
 (`NodoSurPage`, `functions/_lib/`) y este repo (`lib/servicios/cuenta_nube.dart`, `lib/edicion.dart`). **No hay código
 todavía.**
 
+**Estado al 2026-10-19:** etapas 1 y 2 en el sitio (NodoSurPage#97, sin mezclar: mezclar publica), etapa 3 mezclada (#145),
+etapa 4 en su PR. «Solo el bot» sale del sitio en NodoSurPage#97. Falta la 5 (pantallas del sitio).
+
 ## Decisiones del dueño (2026-10-19)
 
 1. **Cada negocio es de un solo producto**: Nodo Gestión (almacén, kiosco), Nodo Estudio (turnos) o Nodo Gastro
@@ -67,7 +70,8 @@ de su producto todavía sin cubrir; la de Gestión, después, el más viejo de E
 3. **App: mandar la edición y filtrar.** `cuenta_nube.dart` manda `edicion`; el selector de negocios muestra solo los
    del producto de la app, y ante `otro_producto` dice "Este negocio es de Nodo X: bajala de horsepos.com".
 4. **App: nombres.** `nombreDeEdicion`, `manifestPlaceholders` y el nombre visible de los instaladores pasan a Nodo
-   Gestión / Nodo Estudio / Nodo Gastro. Sale con la próxima beta.
+   Gestión / Nodo Estudio / Nodo Gastro. Sale con la próxima beta. **El `ProductName` de `windows/runner/Runner.rc` no se
+   toca**: de él sale la carpeta de datos de Windows (`migracion_carpeta_datos.dart`), y cambiarlo deja a la PC sin su base.
 5. **Sitio: pantallas.** `/negocio/` y `/cuenta/` muestran el producto de cada negocio y qué plan lo cubre (o que
    está incluido en el de Gestión). `/admin/` suma la columna.
 
@@ -75,6 +79,8 @@ Orden: 1 → 3 → 2 → 4 → 5. La 2 va después de la 3 para que, cuando el c
 lo estén mandando.
 
 ## Preguntas abiertas
+
+Contestadas el mismo día: 1, sí (se saca del sitio); 2, sí (el incluido trae el bot).
 
 1. **El plan "Solo el bot" ($ 35.000 + alta $ 70.000)**: Estudio y Gastro ya traen el bot por $ 18.000, así que nadie
    lo va a elegir. Propuesta: sacarlo del sitio (las suscripciones que existan siguen andando).

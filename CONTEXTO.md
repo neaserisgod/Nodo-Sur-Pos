@@ -29,8 +29,9 @@ estética) y **Nodo Gastro** (rotiserías y take away, con pedidos por el bot y 
 Business; en beta desde octubre, PRs #138 a #140).
 
 **Nombres y cuentas (2026-10-19, `docs/PLAN-CUENTAS.md`):** los tres productos se llaman como en el sitio: **Nodo
-Gestión** (el almacén; la app todavía dice "Nodo Sur POS"), **Nodo Estudio** (la app todavía dice "Nodo Sur Servicios")
-y **Nodo Gastro**. Cada negocio de una cuenta es de un solo producto, y el plan de Gestión trae incluido uno de Estudio
+Gestión** (el almacén; antes "Nodo Sur POS"), **Nodo Estudio** (antes "Nodo Sur Servicios") y **Nodo Gastro**. Cambió solo el
+nombre que se ve: el paquete de Android, el `ProductName` de Windows (decide la carpeta de la base) y las rutas de
+actualización siguen como antes. Cada negocio de una cuenta es de un solo producto, y el plan de Gestión trae incluido uno de Estudio
 o de Gastro. Los mozos van a ser un rol dentro de Gastro, no otra app.
 
 El tercer repo es **`neaserisgod/botdemo`**: el bot de WhatsApp (Node + Baileys). Corre en un celular con Termux o adentro de

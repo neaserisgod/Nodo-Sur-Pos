@@ -72,9 +72,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // 2008 que ya no corre esta app).
   Win32Window::Size size(1920, 1080);
 #ifdef EDICION_SERVICIOS
-  const wchar_t* titulo = L"Nodo Sur Servicios";
+  const wchar_t* titulo = L"Nodo Estudio";
 #else
-  const wchar_t* titulo = L"Nodo Sur POS";
+  const wchar_t* titulo = L"Nodo Gesti\u00f3n";
 #endif
   if (!window.Create(titulo, origin, size)) {
     return EXIT_FAILURE;

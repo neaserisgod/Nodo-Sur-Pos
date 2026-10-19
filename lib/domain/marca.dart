@@ -6,7 +6,7 @@
 // de un nombre ajeno o un espacio en blanco.
 
 /// Nombre del producto. Se cambia acá y en ningún otro lado.
-const String nombreProducto = 'Nodo Sur POS';
+const String nombreProducto = 'Nodo Gestión';
 
 class MarcaNegocio {
   const MarcaNegocio({this.nombreComercio = '', this.encabezadoTicket = ''});

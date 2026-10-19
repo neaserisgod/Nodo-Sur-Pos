@@ -120,7 +120,7 @@ class PantallaMasNs extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Pasate a Nodo Sur Servicios', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
+                        Text('Pasate a Nodo Estudio', style: estiloNs(18, peso: FontWeight.w600, color: ns.ink)),
                         const SizedBox(height: 4),
                         Text(
                           'La app para turnos, más simple, con el bot de WhatsApp adentro (sin Termux). Instalala y entrá con tu misma cuenta: tus turnos, servicios y clientes llegan solos.',
