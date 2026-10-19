@@ -50,8 +50,10 @@ marketing, impuestos y seguridad de datos. Usa Claude casi siempre desde el celu
 - **No inventar causas.** Si no se sabe, buscar (código, docs, web) antes de responder; si no se encontró, decirlo y
   pedir el dato concreto (una captura, el PDF del día). Las cuentas de la caja se auditaron a fondo (ver `ESTADO.md`):
   los negativos que vio eran error humano, no del sistema.
-- **Si funciona, no se toca.** Si al trabajar aparece algo roto que afecta el funcionamiento, es prioridad uno:
-  avisar y proponer el arreglo.
+- **Si funciona, no se toca.** Al sumar algo que roza otras partes: si lo nuevo y lo de alrededor funcionan, queda así,
+  aunque el código de alrededor sea desprolijo o incongruente. Solo se arregla lo que afecta el funcionamiento. Única
+  excepción para avisar (no para tocar): una cuenta de plata duplicada o incongruente, que hoy da bien pero puede
+  desfasarse; se avisa en una línea y decide el dueño.
 - Ideas que no pidió: al final, una o dos líneas, solo si valen la pena.
 - **Prioridad del negocio** (al 2026-10-19): vender por suscripción; hoy 0 clientes pagos. Foco en **Nodo Gastro** y
   **Nodo Sur Servicios**; el almacén lo usa La Plazoleta todos los días, así que nada puede romper su caja. Hasta el
