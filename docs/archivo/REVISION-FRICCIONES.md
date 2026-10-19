@@ -2,7 +2,7 @@
 
 Hecha mirando capturas reales de cada pantalla (`test/ui/capturas_escritorio_test.dart` y
 `test/companion/capturas_companion_test.dart`, 24 + 50 tests verdes con Flutter 3.47.5), el código de la navegación y los
-mocks (`Lenguaje de diseño/`, `docs/anotaciones-mocks.md`). **No se usó la app corriendo en Windows ni en un celular**: lo
+mocks (`docs/mock-lenguaje/`, `docs/anotaciones-mocks.md`). **No se usó la app corriendo en Windows ni en un celular**: lo
 que dice "se siente" es lectura del código y de las capturas, no uso real. En las capturas los íconos salen como cuadrados
 vacíos: es la fuente del entorno de test, no un bug de la app.
 

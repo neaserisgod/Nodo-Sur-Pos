@@ -28,6 +28,11 @@ Además del almacén hay dos ediciones para otros rubros: **Nodo Sur Servicios**
 estética) y **Nodo Gastro** (rotiserías y take away, con pedidos por el bot y la carta del catálogo de WhatsApp
 Business; en beta desde octubre, PRs #138 a #140).
 
+**Nombres y cuentas (2026-10-19, `docs/PLAN-CUENTAS.md`):** los tres productos se llaman como en el sitio: **Nodo
+Gestión** (el almacén; la app todavía dice "Nodo Sur POS"), **Nodo Estudio** (la app todavía dice "Nodo Sur Servicios")
+y **Nodo Gastro**. Cada negocio de una cuenta es de un solo producto, y el plan de Gestión trae incluido uno de Estudio
+o de Gastro. Los mozos van a ser un rol dentro de Gastro, no otra app.
+
 El tercer repo es **`neaserisgod/botdemo`**: el bot de WhatsApp (Node + Baileys). Corre en un celular con Termux o adentro de
 la app **Nodo Sur Servicios** (edición Android para negocios con turnos, flavor `servicios` de este repo), y habla con el
 sitio por `/api/bot/*`. (`horsepospronative` existe pero no se tocó en estas sesiones.)
@@ -116,7 +121,7 @@ plata y comprueba que el esperado coincide con un libro independiente.
 Estilo **antigravity.google + horsepos.com**, igual en PC, celular y web: fondo blanco, bloques gris claro `#F3F4F7`
 sin sombra, tinta `#121317` como acento (botón principal, pastilla activa), botones y selectores en forma de pastilla,
 radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto. Fuente de verdad: `DISENO.md` (tokens en
-`lib/ui/tema/`). Mocks de referencia en `Lenguaje de diseño/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
+`lib/ui/tema/`). Mocks de referencia en `docs/mock-lenguaje/*.dc.html` y en `NodoSurPage/mocks/antigravity/`
 (`docs/anotaciones-mocks.md` lista lo que está en los mocks pero no en la app).
 
 - **PC** (rediseño v4, 2026-10-06; detalle en `docs/CLAUDE-DETALLE.md`, "Pantalla de venta"): Venta es la pantalla principal (la tecla

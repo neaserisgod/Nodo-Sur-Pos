@@ -100,7 +100,7 @@ Future<void> _main() async {
   await PreferenciaTicketPoint.cargar(); // interruptor "imprimir el ticket en la Point al cobrar" (etapa C)
   await PreferenciaCobroNube.cargar(); // interruptor de prueba "cobrar por Nodo Sur": se lee una vez, después va en memoria
 
-  // Ventana propia (mocks `ventana-la-plazoleta/`, 2026-09-29): saca la
+  // Ventana propia (mocks `docs/mock-ventana/`, 2026-09-29): saca la
   // barra de título nativa y deja que la app decida el cierre. También
   // arranca el plugin que el simulador de resolución de debug necesita.
   await configurarVentanaEscritorio();

@@ -1034,7 +1034,7 @@ Configuración. La migración v39 borra las cinco filas de `secciones_menu`
 
 ## "Lenguaje de diseño": mocks de el dueño aplicados a toda la app (2026-09-26/28)
 
-El dueño dejó la carpeta `Lenguaje de diseño/` con mocks de escritorio y
+El dueño dejó la carpeta `docs/mock-lenguaje/` con mocks de escritorio y
 celular ("es una medio inspiración" / "y distribución, que es la foking
 idea"). Se aplicó en toda la app, PC y celular. Lo que se decidió con él:
 
@@ -1698,7 +1698,7 @@ Decididas con el dueño antes de empezar (fase 1):
 
 El dueño tiene un mock completo del celular y de la PC en el canvas "Mocks Nodo
 Sur" (`Movil.dc.html`, 31 pantallas). Reemplaza a los `Movil*.dc.html` sueltos de
-`Lenguaje de diseño/`, que cubrían solo seis pantallas. La app del celular se lleva
+`docs/mock-lenguaje/`, que cubrían solo seis pantallas. La app del celular se lleva
 a ese mock en **disposición y contenido**; el lenguaje visual (hero negro, píldoras,
 bloques grises) ya era el mismo desde el rediseño del 2026-10-02.
 
@@ -2196,7 +2196,7 @@ Arriba de las líneas de cada factura, el lector dice cuántas de las líneas re
 
 ## Rediseño del lector de facturas con el lenguaje de la PC (El dueño, 2026-10-05: "se ve horrible")
 
-El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas ("bul…", "× u…"), nombres de producto truncados y un alto fijo que tapaba el selector de modelo. Se rehízo con las piezas del sistema de diseño (`Superficie`, `Insignia`, tipografía y espaciado de `tokens.dart`; claro y oscuro): una barra con los archivos y el modelo, una tarjeta por factura (proveedor y total impreso grandes, insignias de control, resumen "reconocí X de Y") y una tabla con encabezado de columnas (En la factura · Tu producto · Cant. · × unid. · Unidades · Total · Costo c/u) sobre fondo blanco. Un bulto propuesto pinta la casilla en alerta y debajo de "Unidades" dice "4 bultos × 24". El diálogo usa casi todo el alto de la ventana y scrollea adentro. Los mocks de escritorio del repo (`Lenguaje de diseño/`) no incluyen esta pantalla: se tomó su lenguaje (bloques planos, píldoras, números grandes), no una pantalla concreta.
+El diálogo estaba armado a las apuradas: filas apretadas con etiquetas cortadas ("bul…", "× u…"), nombres de producto truncados y un alto fijo que tapaba el selector de modelo. Se rehízo con las piezas del sistema de diseño (`Superficie`, `Insignia`, tipografía y espaciado de `tokens.dart`; claro y oscuro): una barra con los archivos y el modelo, una tarjeta por factura (proveedor y total impreso grandes, insignias de control, resumen "reconocí X de Y") y una tabla con encabezado de columnas (En la factura · Tu producto · Cant. · × unid. · Unidades · Total · Costo c/u) sobre fondo blanco. Un bulto propuesto pinta la casilla en alerta y debajo de "Unidades" dice "4 bultos × 24". El diálogo usa casi todo el alto de la ventana y scrollea adentro. Los mocks de escritorio del repo (`docs/mock-lenguaje/`) no incluyen esta pantalla: se tomó su lenguaje (bloques planos, píldoras, números grandes), no una pantalla concreta.
 
 ## Un CUIT para varios proveedores en las facturas (El dueño, 2026-10-07)
 
@@ -2709,7 +2709,7 @@ El dueño: "versión aparte, como Servicios". Nombre: **Nodo Gastro**; el ícono
 - **El workflow `publicar-apk` no la publica con cada push a `main`**: solo a mano, con edición `gastronomia` o `todas`, hasta que
   esté lista.
 - **Falta, del lado del dueño:** registrar `com.laplazoleta.gastronomia` en Firebase (sin su id de app no hay notificaciones con la
-  app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (**hecho el 2026-10-18**). `docs/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.
+  app cerrada: `push.dart`, `_appIdGastronomia`) y crear su cliente OAuth tipo Android con la misma SHA-1 (**hecho el 2026-10-18**). `docs/archivo/PENDIENTE-GOOGLE-ANDROID.md` tiene el cómo.
 
 ## Sonidos: dos, cortos, y solo para lo que llega solo (2026-10-18)
 
