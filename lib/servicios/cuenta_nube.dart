@@ -17,6 +17,7 @@ import '../domain/bot_whatsapp.dart';
 import '../domain/conciliacion_mp.dart';
 import '../domain/saldo_mp.dart';
 import '../domain/vinculacion.dart';
+import '../edicion.dart' show edicionActual;
 import 'avisos_bot.dart';
 import 'avisos_cobro_mp.dart';
 import 'socket_de_avisos.dart';
@@ -244,6 +245,7 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'google_invalido' => 'Google no confirmó la cuenta. Probá de nuevo.',
   'nombre_invalido' => 'Poné un nombre de entre 2 y 80 letras.',
   'demasiados_negocios' => 'Llegaste al máximo de negocios por cuenta.',
+  'otro_producto' => 'Ese negocio es de otra app de Nodo Sur: bajala desde horsepos.com/descargar.',
   'sin_sucursal' => 'Ese mail todavía no tiene una sucursal donde trabajar. Pedile al dueño que te la asigne en Mi negocio.',
   'sin_negocio' => 'Este dispositivo no pertenece a ningún negocio: volvé a vincularlo con tu cuenta.',
   'mp_rechazo' => 'Mercado Pago rechazó el pedido.',
@@ -390,6 +392,12 @@ class ClienteNube {
       if (j is Map && j['error'] is String) codigo = j['error'] as String;
       // Un rechazo de Mercado Pago trae su propio código y motivo: se muestran tal cual para poder diagnosticarlo.
       if (j is Map && j['mensaje'] is String) motivo = j['mensaje'] as String;
+      // El negocio es de otra app (Gestión, Estudio o Gastro): el sitio dice cuál, para mandar a bajar esa.
+      if (codigo == 'otro_producto' && j is Map && j['nombre'] is String) {
+        throw ErrorNube(codigo, 'Ese negocio es de ${j['nombre']}. Para entrar ahí, bajá ${j['nombre']} desde horsepos.com/descargar.', estado: estado);
+      }
+    } on ErrorNube {
+      rethrow;
     } catch (_) {}
     final propio = motivo == null ? _mensajeDe(codigo) : 'Mercado Pago respondió ($estado): $motivo';
     throw ErrorNube(codigo, propio, estado: estado);
@@ -463,6 +471,8 @@ class ClienteNube {
         'branchId': ?sucursal,
         'nuevoNegocio': ?nuevoNegocio,
         if (elegirSiempre) 'elegirSiempre': true,
+        // Cada app entra solo a los negocios de su producto (`docs/PLAN-CUENTAS.md`).
+        'edicion': edicionActual.name,
       }),
     ).timeout(_limite);
     if (r.statusCode != 200) _falla(r.statusCode, r.body);
@@ -1125,6 +1135,7 @@ Future<CuentaVinculada> vincularEstaPc({
       nombre: nombre,
       host: host,
       celular: celular,
+      edicion: celular ? edicionActual.name : null,
     ));
     final code = await codigo.future.timeout(
       espera,

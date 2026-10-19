@@ -37,6 +37,13 @@ void main() {
       expect(u.queryParameters['tipo'], 'celular');
       expect(urlVincular(puerto: 1234, state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'PC').queryParameters.containsKey('tipo'), isFalse);
     });
+    test('lleva la edición de la app: el sitio ofrece solo los negocios de su producto (PLAN-CUENTAS)', () {
+      final u = urlVincular(puerto: 1234, state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'Celular', celular: true, edicion: 'gastronomia');
+      expect(u.queryParameters['edicion'], 'gastronomia');
+      expect(urlVincular(puerto: 1234, state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'PC').queryParameters.containsKey('edicion'), isFalse);
+      final w = urlVincularWeb(base: Uri.parse('https://horsepos.com/app/'), state: 's', desafio: 'd', idDispositivo: 'e', nombre: 'N', edicion: 'servicios');
+      expect(w.queryParameters['edicion'], 'servicios');
+    });
   });
 
   group('el aviso que vuelve al servidor local', () {

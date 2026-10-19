@@ -38,6 +38,8 @@ Uri urlVincular({
   // El celular se vincula con la cuenta de CADA persona (no con la del dueño): el sitio le ofrece sus sucursales y le dice
   // quién es, y la app toma su perfil de ahí en vez de pedir que lo elija.
   bool celular = false,
+  // Qué app abre la página (`Edicion.name`): el sitio ofrece solo los negocios de su producto (`docs/PLAN-CUENTAS.md`).
+  String? edicion,
 }) => Uri(
   scheme: 'https',
   host: host,
@@ -49,6 +51,7 @@ Uri urlVincular({
     'device': idDispositivo,
     'name': nombre,
     if (celular) 'tipo': 'celular',
+    'edicion': ?edicion,
   },
 );
 
@@ -60,12 +63,13 @@ Uri urlVincularWeb({
   required String desafio,
   required String idDispositivo,
   required String nombre,
+  String? edicion,
 }) => Uri(
   scheme: base.scheme,
   host: base.host,
   port: base.hasPort ? base.port : null,
   path: '/vincular/',
-  queryParameters: {'web': '1', 'state': state, 'challenge': desafio, 'device': idDispositivo, 'name': nombre},
+  queryParameters: {'web': '1', 'state': state, 'challenge': desafio, 'device': idDispositivo, 'name': nombre, 'edicion': ?edicion},
 );
 
 /// El código que trae la vuelta a la app web (`/app/?code=…&state=…`). Null si no es de la vinculación que se empezó.
