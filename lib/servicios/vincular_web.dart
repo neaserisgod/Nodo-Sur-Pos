@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/vinculacion.dart';
+import '../edicion.dart' show edicionActual;
 import 'cuenta_nube.dart';
 import 'limpiar_url.dart';
 
@@ -19,7 +20,7 @@ Future<Never> empezarVinculacionWeb({required String idDispositivo, required Str
   final verificador = generarVerificador();
   final state = generarState();
   await (await SharedPreferences.getInstance()).setString(_clavePendiente, jsonEncode({'state': state, 'verificador': verificador}));
-  final url = urlVincularWeb(base: Uri.base, state: state, desafio: desafioDe(verificador), idDispositivo: idDispositivo, nombre: nombre);
+  final url = urlVincularWeb(base: Uri.base, state: state, desafio: desafioDe(verificador), idDispositivo: idDispositivo, nombre: nombre, edicion: edicionActual.name);
   if (!await launchUrl(url, webOnlyWindowName: '_self')) {
     throw const ErrorNube('sin_navegador', 'No se pudo abrir la página para entrar.');
   }
