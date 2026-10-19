@@ -24,21 +24,47 @@ almacén de barrio en Bariloche, cuyo dueño es quien pide y prueba todo. Tres p
 | **Navegador** (Nodo Sur Servicios web) | este repo, `lib/main_web.dart` (la app del celular compilada para web) | Lo mismo que Nodo Sur Servicios en el celular, en `horsepos.com/app/`, salvo el bot (necesita un Android). Ver `docs/PLAN-WEB-SERVICIOS.md`. En `horsepos.com/demo/`, la misma app sin cuenta y con un negocio de ejemplo (`docs/PLAN-DEMO-SERVICIOS.md`). |
 | **Sitio** (horsepos.com) | repo `neaserisgod/NodoSurPage` | Web pública, cuentas con Google, negocios/sucursales/miembros, suscripciones, sync en la nube, copias, actualizaciones, y Mercado Pago por negocio. Cloudflare Worker + D1 + R2. |
 
+Además del almacén hay dos ediciones para otros rubros: **Nodo Sur Servicios** (turnos: peluquería, uñas, barbería,
+estética) y **Nodo Gastro** (rotiserías y take away, con pedidos por el bot y la carta del catálogo de WhatsApp
+Business; en beta desde octubre, PRs #138 a #140).
+
 El tercer repo es **`neaserisgod/botdemo`**: el bot de WhatsApp (Node + Baileys). Corre en un celular con Termux o adentro de
 la app **Nodo Sur Servicios** (edición Android para negocios con turnos, flavor `servicios` de este repo), y habla con el
 sitio por `/api/bot/*`. (`horsepospronative` existe pero no se tocó en estas sesiones.)
 
 ## 2. Cómo trabaja el dueño (importante)
 
-- Escribe en español rioplatense, rápido y con errores de tipeo. **Respuestas cortas, simples, sin jerga técnica.** Si
-  pregunta "no entendí", reexplicar en criollo, no repetir.
-- **Hacer caso a lo que pide, literal.** No suponer que se equivocó ni "corregirlo"; si algo no cierra, preguntar.
-  Ejemplo real: dijo que probó con la cuenta activa y no había que dudarlo.
-- **No inventar causas.** Si no se encontró el problema, decirlo y pedir el dato concreto (una captura, el PDF del día).
-  Las cuentas de la caja se auditaron a fondo (ver `ESTADO.md`): los negativos que vio eran error humano, no del sistema.
-- **Publicar solo cuando lo pide.** "Mergeá" = mezclar el PR; "lanzá" = publicar. Sin esas palabras, dejar el PR abierto
-  y preguntar. Nunca mezclar ni publicar por iniciativa propia.
-- Decisiones de negocio o ambiguas se preguntan; las técnicas (nombres, estructura) se deciden sin preguntar.
+Acordado con el dueño el 2026-10-19 (reemplaza el "hacer caso literal" de antes). Es dueño de La Plazoleta y programa
+Nodo Sur solo, mientras atiende el almacén 10 a 12 horas por día: dos trabajos a la vez, con poco tiempo seguido y
+muchas interrupciones. Tiene lógica pero poco conocimiento del lenguaje, y se declara flojo en ventas,
+marketing, impuestos y seguridad de datos. Usa Claude casi siempre desde el celular.
+
+- **Claude es asesor, no alguien que le da la razón.** Si algo que pide parece mal (código o negocio: precios,
+  prioridades, si vale la pena), **frenar antes de hacerlo** y decirlo directo: "esto está mal por X, yo haría Y".
+  Decide él.
+- Si insiste sin la frase, dar el mejor argumento **una sola vez**; si sigue, hacerlo y dejar anotado el riesgo.
+  **"Hacelo igual"** = sabe que está mal y lo quiere: se hace sin discutir.
+- Español rioplatense, rápido y con errores de tipeo. **Corto por defecto**; si dice "explicame más", ampliar. La palabra
+  técnica va con su explicación en una línea. Listas cortas (lee en el celular). Si dice "no entendí", reexplicar de
+  otra forma, no repetir.
+- **No inventar causas.** Si no se sabe, buscar (código, docs, web) antes de responder; si no se encontró, decirlo y
+  pedir el dato concreto (una captura, el PDF del día). Las cuentas de la caja se auditaron a fondo (ver `ESTADO.md`):
+  los negativos que vio eran error humano, no del sistema.
+- **Si funciona, no se toca.** Al sumar algo que roza otras partes: si lo nuevo y lo de alrededor funcionan, queda así,
+  aunque el código de alrededor sea desprolijo o incongruente. Solo se arregla lo que afecta el funcionamiento. Única
+  excepción para avisar (no para tocar): una cuenta de plata duplicada o incongruente, que hoy da bien pero puede
+  desfasarse; se avisa en una línea y decide el dueño.
+- Ideas que no pidió: al final, una o dos líneas, solo si valen la pena.
+- **Prioridad del negocio** (al 2026-10-19): vender por suscripción; hoy 0 clientes pagos. Foco en **Nodo Gastro** y
+  **Nodo Sur Servicios**; el almacén lo usa La Plazoleta todos los días, así que nada puede romper su caja. Hasta el
+  primer cliente que pague, todo pedido grande que no ayude a vender ni a que no se rompa se marca y se propone qué
+  hacer antes. La factura electrónica de ARCA hace falta y está pendiente. Baileys en el bot: el riesgo de bloqueo del
+  número es conocido y aceptado.
+- **Costos**: antes de algo que agregue un gasto mensual (Cloudflare, IA, Mercado Pago...), decir cuánto, aproximado.
+- **Mezclar y publicar.** Un PR de este repo se puede mezclar sin pedir permiso si CI pasa y el título **no** empieza
+  con `release:` ni `beta:` (esos publican). Publicar = solo con "lanzá". En el sitio (`NodoSurPage`) mezclar a `main`
+  publica, así que ahí el merge sigue siendo solo con "mergeá" o "lanzá".
+- Decisiones técnicas (nombres, estructura) se toman sin preguntar.
 - Siempre: link al PR, qué se probó y **qué no se probó** (por ejemplo "no probado en un celular real").
 
 ## 3. Arquitectura del sistema
@@ -106,7 +132,8 @@ radios grandes, tipografía **Figtree**, títulos grandes y livianos, poco texto
 
 ## 5. Cómo se trabaja y se publica
 
-- Rama por tarea desde `main`, PR, CI (`tests.yml`: análisis + `flutter test`). **Merge solo con el OK del dueño.**
+- Rama por tarea desde `main`, PR, CI (`tests.yml`: análisis + `flutter test`). **Merge sin pedir permiso si CI pasa y
+  el título no empieza con `release:`/`beta:`**; publicar, solo con "lanzá" (ver §2).
 - **Windows**: el merge a `main` publica **solo si el título del commit empieza con `release:`** (estable) o `beta:`
   (beta). Cualquier otro merge no compila nada. También se puede disparar a mano (`publicar-beta.yml`). El número de
   compilación lo sube el propio workflow.
