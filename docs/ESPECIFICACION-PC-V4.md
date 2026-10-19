@@ -109,4 +109,4 @@ Se agregó **todo lo de la auditoría (`archivo/AUDITORIA-MOCK-V4.md`, sección 
 - **Sacado del mock:** "Rubro" en Configuración › Comercio y "Excluir de la reposición" en Proveedor › Avanzado.
 - **Venta cobrada:** en la app real **no se cierra sola ni se imprime sola**: el acuse queda en el panel del carrito con "Imprimir ticket". El modal de "Venta cobrada" del mock queda solo como referencia visual.
 - **Seña de encargues:** entra en la caja con la que se pagó; es ingreso de caja (no venta) y, al pagar completo, pasa a venta del día en que se completó; si se cancela, se devuelve. **Asistente Ctrl+K:** buscador de acciones, sin pregunta libre a la IA. **Logo del ticket:** sí. **WhatsApp del proveedor:** número + botón para mandar el pedido. **Sucursal y Miembros:** se muestran (informativos).
-Detalle y orden de implementación en `docs/PLAN-APLICAR-V4.md`.
+Detalle y orden de implementación en `docs/archivo/PLAN-APLICAR-V4.md`.

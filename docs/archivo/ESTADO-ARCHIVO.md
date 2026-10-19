@@ -289,8 +289,8 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
 - **Qué sigue**:
   1. Mocks del celular que el dueño todavía no mandó (carrito, historial,
      gestión/configuración, movimiento de caja/arqueo, conteo, login) —
-     pedido en `Lenguaje de diseño/PEDIDO-MOCKS-2.md`. Cuando lleguen, van a
-     `Lenguaje de diseño/`; aplicar con el mismo criterio (distribución sí,
+     pedido en `docs/mock-lenguaje/PEDIDO-MOCKS-2.md`. Cuando lleguen, van a
+     `docs/mock-lenguaje/`; aplicar con el mismo criterio (distribución sí,
      reglas/datos inventados no — ver `DECISIONES.md`, "Segunda tanda de
      mocks").
   2. Ventas y los pasos de Cobro* tienen mocks en la carpeta pero el dueño los
@@ -298,7 +298,7 @@ con la suite en verde y sin cambiar cómo funciona el local de origen.
      tocarlos sin que lo pida.
   3. Supabase sigue cortado por cuota; la sync celular↔PC va por wifi
      (`DECISIONES.md`, "Sync instantánea por wifi").
-- **Leer un mock**: `PYTHONIOENCODING=utf-8 python tool/ver_mock.py "Lenguaje de diseño/X.dc.html" --estilos`.
+- **Leer un mock**: `PYTHONIOENCODING=utf-8 python tool/ver_mock.py "docs/mock-lenguaje/X.dc.html" --estilos`.
 - **Capturas para revisar a ojo**: `flutter test test/capturas` → PNG en
   `capturas/` (nuevas hoy: `capturas_dialogos_venta_test.dart`,
   `capturas_conteo_stock_test.dart`, `capturas_comparar_precios_test.dart`).
@@ -811,7 +811,7 @@ final, no antes.
 
 ## En curso: "Lenguaje de diseño" (2026-09-26/28)
 
-Mocks de el dueño en `Lenguaje de diseño/` aplicados a toda la app (qué se
+Mocks de el dueño en `docs/mock-lenguaje/` aplicados a toda la app (qué se
 decidió: `DECISIONES.md`; tokens y piezas: `DISENO.md`, aviso de arriba).
 
 - **Hecho, escritorio**:
@@ -3442,7 +3442,7 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
 
 ## Hecho: ventana propia y logo nuevo (2026-09-29)
 
-- Mocks en `ventana-la-plazoleta/` (Main, Barra, Cierre, LEEME). Se saca la
+- Mocks en `docs/mock-ventana/` (Main, Barra, Cierre, LEEME). Se saca la
   barra de título nativa (`window_manager`, `TitleBarStyle.hidden`) y se
   dibuja una de 40 px: marca "P", "La Plazoleta", chip "Caja abierta" (o
   "Caja de ayer sin cerrar"), "Respaldo hoy HH:mm" y minimizar/maximizar/
@@ -3456,7 +3456,7 @@ Sin esto, se sabe dónde está el proyecto pero no para dónde va. En orden:
   `flutter_launcher_icons`, regeneró los mipmaps de Android) y
   `windows/runner/resources/app_icon.ico` (el multi-tamaño del paquete;
   ojo: `dart run flutter_launcher_icons` lo pisa con uno propio, volver a
-  copiar `ventana-la-plazoleta/logo.ico`). La APK con el ícono nuevo sale
+  copiar `docs/mock-ventana/logo.ico`). La APK con el ícono nuevo sale
   en la próxima publicación de la companion. El ícono fijado en la barra de
   tareas de Windows queda cacheado hasta reiniciar el explorador.
 

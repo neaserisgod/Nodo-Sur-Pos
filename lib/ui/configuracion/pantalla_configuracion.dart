@@ -7,7 +7,7 @@
 //
 // Lo que el mock trae y la app no tiene detrás no está, para no poner controles que no guardan nada: el interruptor
 // "Redondear el efectivo" (el efectivo siempre redondea, REGLAS-NEGOCIO), el día del retiro semanal (eliminado, §13),
-// la "Reserva diaria de fijos" (ver `docs/ESTADO-FIDELIDAD-MOCK.md`: hoy sale de los fijos del mes), los roles de
+// la "Reserva diaria de fijos" (ver `docs/archivo/ESTADO-FIDELIDAD-MOCK.md`: hoy sale de los fijos del mes), los roles de
 // usuario, el logo prendido/apagado, partículas/cursor/desplazamiento suave y el canal Beta/Estable.
 
 import 'dart:async';

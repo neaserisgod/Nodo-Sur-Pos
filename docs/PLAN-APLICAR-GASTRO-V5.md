@@ -2,7 +2,7 @@
 
 El dueño, 2026-10-18: aprobó el mock completo (`docs/mock-gastro/NodoGastro.html`, vivo:
 https://claude.ai/artifact/As8mcQ9WVRsTCdTZSVADsb) y pidió "llevalo a flutter". Se hace por etapas, como el rediseño v4 de la
-PC (`docs/PLAN-APLICAR-V4.md`): cada etapa se prueba con `flutter analyze` y los tests afectados antes de la siguiente.
+PC (`docs/archivo/PLAN-APLICAR-V4.md`): cada etapa se prueba con `flutter analyze` y los tests afectados antes de la siguiente.
 
 ## Alcance
 

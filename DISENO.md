@@ -72,7 +72,7 @@ segundo y respeta "reducir animaciones" del sistema (`MediaQuery.disableAnimatio
 - Nunca: algo que demore el foco, lo que se tipea o el cobro.
 
 **"Lenguaje de diseño" (2026-09-26/28) — reemplazado en paleta y navegación por el bloque de arriba.** Se conserva
-por los mocks y las distribuciones, que siguen valiendo. El dueño dejó en `Lenguaje de diseño/` (raíz del repo) mocks `.dc.html` de
+por los mocks y las distribuciones, que siguen valiendo. El dueño dejó en `docs/mock-lenguaje/` (raíz del repo) mocks `.dc.html` de
 escritorio y celular más un LEEME con tokens: son **medio inspiración, pero
 la distribución de cada pantalla es la idea**. Lo que cambió respecto de las
 secciones de más abajo (que describen el remake del 2026-09-19 y todavía no
@@ -118,7 +118,7 @@ colores/tipografía/radios sí se actualizan como cualquier pantalla.
 
 ---
 
-**Celular: movimiento (2026-10-05).** El mock manda una entrada de pantalla `fade + subida de 14 px`; el dueño eligió en su lugar un **fundido cruzado** (Material Motion, `FadeThroughTransition`) para que pasar de una pantalla a otra se sienta una sola unidad. Se aplica al abrir/cerrar pantallas (`pageTransitionsTheme` en `lib/companion/tema/tema_companion.dart`) y al cambiar de pestaña (`CambioDePestanaNs`, `lib/companion/kit/movimiento_ns.dart`). Reglas: una pantalla **no** anima su propia entrada (`PantallaEntradaNs` es un pase directo: antes se sumaba una segunda entrada a la de la ruta); lo que sí anima es lo chico (tarjetas y filas con `EntradaNs`, hojas, avisos, el 0,97 al apretar); todo respeta "reducir movimiento". Detalle en `docs/COMPARACION-MOCK-CELULAR.md` §6c.
+**Celular: movimiento (2026-10-05).** El mock manda una entrada de pantalla `fade + subida de 14 px`; el dueño eligió en su lugar un **fundido cruzado** (Material Motion, `FadeThroughTransition`) para que pasar de una pantalla a otra se sienta una sola unidad. Se aplica al abrir/cerrar pantallas (`pageTransitionsTheme` en `lib/companion/tema/tema_companion.dart`) y al cambiar de pestaña (`CambioDePestanaNs`, `lib/companion/kit/movimiento_ns.dart`). Reglas: una pantalla **no** anima su propia entrada (`PantallaEntradaNs` es un pase directo: antes se sumaba una segunda entrada a la de la ruta); lo que sí anima es lo chico (tarjetas y filas con `EntradaNs`, hojas, avisos, el 0,97 al apretar); todo respeta "reducir movimiento". Detalle en `docs/archivo/COMPARACION-MOCK-CELULAR.md` §6c.
 
 ## Principio rector: evitar fatiga visual
 
@@ -688,7 +688,7 @@ definición para las tres, no una por pantalla:
 
 ## Navegación: navbar superior (remake 2026-09-19)
 
-**Rediseño v4 (2026-10-05, aplicado en la etapa 1 del plan `docs/PLAN-APLICAR-V4.md`)** — gana sobre lo de abajo si se contradice:
+**Rediseño v4 (2026-10-05, aplicado en la etapa 1 del plan `docs/archivo/PLAN-APLICAR-V4.md`)** — gana sobre lo de abajo si se contradice:
 la barra tiene **tres costados simétricos** (izquierda y derecha ocupan lo mismo, así las pastillas quedan en el centro de la ventana):
 **"Caja ▾"** a la izquierda (`BotonCaja`, `lib/ui/navegacion/boton_caja.dart`; estado de la caja a la vista y menú con arqueo, turno,
 gasto, ingreso y cerrar, o "Abrir caja"; las filas salen de `armarAccionesMenuCaja` en `acciones_caja.dart` para que Venta y el resto

@@ -164,7 +164,7 @@ real por pantalla en `ESTADO.md`.
 ## Pantalla de venta
 
 Composición actual: rediseño v4 (2026-10-05/06), hecho 1:1 con el mock (`docs/ESPECIFICACION-PC-V4.md`,
-`docs/ESTADO-FIDELIDAD-MOCK.md`). Cómo se llegó (las pasadas del 2026-09-25, el panel fijo de cobro, el dropdown
+`docs/archivo/ESTADO-FIDELIDAD-MOCK.md`). Cómo se llegó (las pasadas del 2026-09-25, el panel fijo de cobro, el dropdown
 anclado) está en `DECISIONES.md`.
 
 **Venta es la pantalla principal** (El dueño, 2026-10-03): la app arranca

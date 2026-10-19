@@ -14,6 +14,7 @@ Buscar el título con `grep -n '^## ' ARCHIVO.md` y leer solo esa sección con `
 |---|---|
 | Retomar desde cero: qué es el sistema, cómo trabaja el dueño, cómo se publica | `CONTEXTO.md` |
 | Qué está hecho HOY y qué falta | `ESTADO.md` (lo último está arriba) |
+| Cuentas, negocios, qué cubre cada plan y las tres apps (Gestión, Estudio, Gastro) | `docs/PLAN-CUENTAS.md` |
 | Reglas del negocio (si el código las contradice, el código está mal) | `REGLAS-NEGOCIO.md` |
 | Por qué algo se hizo así | `DECISIONES.md` (tiene "Índice por tema" arriba) |
 | Bugs que ya mordieron | `TRAMPAS.md` |

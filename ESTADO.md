@@ -47,7 +47,7 @@ en 14.3 (asistente con pregunta libre, IA contextual, medio inicial Efectivo, "V
 (vivo: https://claude.ai/artifact/XumwdGBG2BR9FcbLShoSqh). La v3 queda intacta. Funciones movidas a confirmar: menú **Caja ▾**, ✕ en las pestañas de venta,
 "Venta cobrada" sin botón de siguiente, diálogos sin "Cancelar".
 
-**Aplicación al código (06/10, etapa 1 en curso):** se empezó a llevar el diseño v4 a Flutter, con el plan en [`docs/PLAN-APLICAR-V4.md`](./docs/PLAN-APLICAR-V4.md).
+**Aplicación al código (06/10, etapa 1 en curso):** se empezó a llevar el diseño v4 a Flutter, con el plan en [`docs/archivo/PLAN-APLICAR-V4.md`](./docs/archivo/PLAN-APLICAR-V4.md).
 Hecho y probado con `flutter analyze` + tests: **avisos arriba** (`mostrarAviso`, reemplaza a todos los `SnackBar` de la PC), botón **"Caja ▾"** (menú de caja en Venta y en el
 resto de las pantallas), **navbar y barra de la ventana en tres costados simétricos**. **Sin probar en Windows real** (aspecto, rendimiento, terminal). Falta de la etapa 1: campanita en
 todas las pantallas. **Etapa 2 (Venta) empezada**: sin título "Vender", buscador grande con **Pagar proveedor (Alt+P)** al lado (diálogo rápido nuevo, usa `pagarDeuda`), pastilla **Varios**.
@@ -87,7 +87,7 @@ entregar encargue, hoja de la terminal con todos sus estados), Caja (Resumen · 
 en dos etapas, Gasto o ingreso (con lata), Productos (filtros, ganancia, proveedor), Controlar stock, Editar en lote por
 contexto, Nuevo/Editar producto, Días históricos, Cierres anteriores, Encargues, Pagar proveedor, Cuenta y sincronización,
 Actualización en 3 pasos, Más y Configuración. Comparación y decisiones en
-[`docs/COMPARACION-MOCK-CELULAR.md`](./docs/COMPARACION-MOCK-CELULAR.md); el kit está en `lib/companion/kit/` y las pantallas
+[`docs/archivo/COMPARACION-MOCK-CELULAR.md`](./docs/archivo/COMPARACION-MOCK-CELULAR.md); el kit está en `lib/companion/kit/` y las pantallas
 nuevas en `lib/companion/pantallas/`. **Probado por el dueño en su celular (05/10/2026): anda todo.**
 
 Lo que pasó después del primer lanzamiento (2133):
@@ -131,7 +131,7 @@ Pendiente / ideas (sin hacer):
   ser más de $0 y menos que el total (`validarEfectivoMixto`). Crédito pasa al color de débito y el mixto recupera el suyo.
   Probado con tests; **no probado en un celular real ni con la terminal real**.
 - **Funciones de la PC en el celular** (El dueño, 2026-10-07: "que las funciones del sistema desktop estén disponibles para el apk, reutilizando la lógica"): hechas la lectura de facturas, pagar proveedor sin la PC, promos (con sugerencias), la cuenta corriente y separaciones completas. **Comparar precios queda de lado** (El dueño, 2026-10-07: "eso dejémoslo de lado"): La Anónima y Carrefour salen de un archivo de ~330 MB por día que el celular no puede bajar; no se decidió de dónde los sacaría. Criterio: sacar la lógica de la pantalla de la PC a `servicios/`/`data/` y que el celular trabaje sobre su base propia.
-- **Rediseño v4, etapa 8 (2026-10-06)**: hechos el **Asistente Ctrl+K**, el **WhatsApp del proveedor** (migración v53; botón "Pedir por WhatsApp" con lo de stock bajo) y el **logo del ticket** en el PDF (migración v54, `schemaVersion` **54**). La **seña de encargues** está hecha en la PC (migración v55, `schemaVersion` **55**; ver `docs/PLAN-SENA.md`; falta probarla en una Windows real). **Sucursal y Miembros**: la PC ya los muestra (Configuración › Cuenta de Nodo Sur) pero depende de un endpoint nuevo del sitio (`GET /api/device/team`) ya aplicado en `NodoSurPage` (PR #51, 2026-10-06). Detalle en `docs/PLAN-APLICAR-V4.md`.
+- **Rediseño v4, etapa 8 (2026-10-06)**: hechos el **Asistente Ctrl+K**, el **WhatsApp del proveedor** (migración v53; botón "Pedir por WhatsApp" con lo de stock bajo) y el **logo del ticket** en el PDF (migración v54, `schemaVersion` **54**). La **seña de encargues** está hecha en la PC (migración v55, `schemaVersion` **55**; ver `docs/PLAN-SENA.md`; falta probarla en una Windows real). **Sucursal y Miembros**: la PC ya los muestra (Configuración › Cuenta de Nodo Sur) pero depende de un endpoint nuevo del sitio (`GET /api/device/team`) ya aplicado en `NodoSurPage` (PR #51, 2026-10-06). Detalle en `docs/archivo/PLAN-APLICAR-V4.md`.
 - **IA de Google (Gemini) y promos sugeridas, 2026-10-05**: cliente en `lib/servicios/gemini.dart`; la clave se carga en Configuración › Asistente IA de la PC y del celular (desde el 2026-10-07 es la del negocio, guardada en la cuenta: ver "Clave de la IA por cuenta" en `DECISIONES.md`; `probarYGuardarClave` no guarda una clave rota y elige el modelo que le anda a la clave: la 2133 de Windows salió con `gemini-2.5-flash` fijo y daba 404 con claves nuevas, corregido después). **Sugerir promos** (solo PC, Proveedores › Promos › "Sugerir promos"): `domain/sugerencia_promos.dart` busca los pares que se llevan juntos (≥2 ventas, lift ≥ 1,2, últimos 90 días, sin anuladas), `data/repositorio_sugerencia_promos.dart` les calcula el precio con `calcularPromo`, y Gemini (`servicios/asistente_promos.dart`, que no ve precios ni costos) solo les pone nombre y motivo; cada sugerencia deja elegir el porcentaje como el creador; sin clave o sin cupo se ven igual con "A + B". "Crear" abre el creador precargado. Probado con `flutter analyze` y tests; **no probado con una clave real de Google ni en un celular**. Desde el 2026-10-07 el celular tiene promos con sugerencias. **Facturas de compra con IA**: plan en `docs/PLAN-FACTURAS.md` (decidido el 2026-10-05); hechas las cuentas (`domain/factura_compra.dart`) y la lectura con Gemini (`servicios/lector_facturas.dart`, `domain/lectura_factura.dart`, achicar la foto) con la pantalla en Proveedores › "Leer factura"; **no probada con la clave ni las facturas reales**; hechos también los vínculos con tus productos (por CUIT del proveedor, aprendido, parecido de nombre y ayuda de la IA; migración v52, `schemaVersion` **52**); **bultos vs. unidades** propuestos por la descripción y el costo que ya tenés cargado (`domain/unidades_bulto.dart`, confirmás vos y se aprende por producto); **aplicar** hecho el 2026-10-07 (stock, costo, deuda, "No va", aviso de precio perdedor, sin repetir, "Deshacer"; migraciones v56–v57). Falta: notas de crédito, adjuntar la imagen y el celular con cámara.
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
@@ -529,7 +529,7 @@ obligatorio en cada gasto.
 **Pendientes técnicos conocidos:**
 
 - (Resuelto el 2026-10-14: Google Cloud no dejaba crear el cliente Android del almacén porque Firebase ya tenía la pareja
-  paquete + SHA-1. Ver `TRAMPAS.md` y `docs/PENDIENTE-GOOGLE-ANDROID.md`.)
+  paquete + SHA-1. Ver `TRAMPAS.md` y `docs/archivo/PENDIENTE-GOOGLE-ANDROID.md`.)
 
 - (Resuelto el 2026-10-13: el stock contado dos veces en un equipo que bajaba todo de cero. Ver `DECISIONES.md`, "Base de stock".)
 
