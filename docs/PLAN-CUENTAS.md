@@ -50,11 +50,12 @@ app instalada (edición) ── solo entra a negocios de su mismo producto
 
 | Plan | Cubre |
 |---|---|
-| `pos` (Gestión, $ 35.000) | 1 negocio de Gestión **+ 1 de Estudio o Gastro** |
-| `pos-bot` (Gestión + bot) | igual que `pos`, con el bot en el de Gestión |
-| `emprendedor` (Estudio) | 1 negocio de Estudio, con bot |
-| `gastro` (Gastro) | 1 negocio de Gastro, con bot |
-| `bot` (solo el bot) | ver pregunta abierta 1 |
+| `pos` (Gestión, $ 35.000) | 1 negocio de Gestión **+ 1 de Estudio o Gastro**, los dos con bot |
+| `emprendedor` (Estudio, $ 18.000) | 1 negocio de Estudio, con bot |
+| `gastro` (Gastro, $ 18.000) | 1 negocio de Gastro, con bot |
+| `pos-bot` y `bot` | ya no se ofrecen; quien los tiene sigue: `pos-bot` como `pos`, `bot` cubre cualquiera |
+
+**El bot viene en todos los planes** (el dueño, 2026-10-19, pregunta 3).
 
 El reparto sigue siendo "del más viejo al más nuevo", pero **por producto**: cada suscripción busca el negocio más viejo
 de su producto todavía sin cubrir; la de Gestión, después, el más viejo de Estudio o Gastro sin cubrir.
@@ -86,8 +87,9 @@ Contestadas el mismo día: 1, sí (se saca del sitio); 2, sí (el incluido trae 
 1. **El plan "Solo el bot" ($ 35.000 + alta $ 70.000)**: Estudio y Gastro ya traen el bot por $ 18.000, así que nadie
    lo va a elegir. Propuesta: sacarlo del sitio (las suscripciones que existan siguen andando).
 2. **El negocio incluido con Gestión, ¿trae el bot?** Estudio y Gastro siempre lo traen, así que la propuesta es que sí.
-3. **Pendiente (2026-10-19): el precio del bot en el almacén.** Con Gestión ($ 35.000) la rotisería o el estudio incluido
+3. **Contestada (2026-10-19): "el bot quiero que esté incluido en los planes"**, la opción (c). Gestión trae el bot en el
+   propio almacén y «Nodo Gestión + Bot» deja de ofrecerse (NodoSurPage#97). La pregunta era:
+   **el precio del bot en el almacén.** Con Gestión ($ 35.000) la rotisería o el estudio incluido
    traen el bot sin costo, pero el bot para el propio almacén cuesta $ 25.000 más por mes y $ 70.000 de alta (Sistema + Bot).
    Para un cliente puede sonar incoherente. Opciones: (a) dejarlo así (el bot de un almacén da más trabajo de configurar);
-   (b) bajar el alta o el adicional; (c) que Gestión traiga el bot en el propio almacén. Decide el dueño; no hay código
-   hasta que lo haga.
+   (b) bajar el alta o el adicional; (c) que Gestión traiga el bot en el propio almacén.
