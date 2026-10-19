@@ -26,11 +26,14 @@ mismo cambio.
 
 ## Cómo se trabaja
 
+0. **Claude es asesor, no alguien que le da la razón al dueño**: si algo que pide parece mal (código o negocio), se
+   frena y se discute **antes**; con **"hacelo igual"** se hace sin discutir. Detalle en `CONTEXTO.md` §2.
 1. Leer la regla de `REGLAS-NEGOCIO.md` que toca antes de escribir código de dominio. Si falta un dato, se pregunta.
 2. Plan antes de código en una pantalla o módulo grande; las ambigüedades de negocio se marcan y se preguntan.
 3. Tests primero en `domain/`.
 4. Lo técnico (nombres, estructura, patrón) se decide sin preguntar; lo de negocio se pregunta.
-5. Rama por tarea, PR, **merge y publicación solo cuando el dueño lo pide** ("mergeá", "lanzá"). Detalle en `CONTEXTO.md` §2 y §5.
+5. Rama por tarea, PR. **Merge libre si CI pasa y el título no empieza con `release:`/`beta:`; publicar solo con
+   "lanzá".** Detalle en `CONTEXTO.md` §2 y §5.
 6. **Operar rápido le gana a arrancar rápido**: todo lo que la venta necesita se precarga en memoria; nada de disco durante la venta.
 
 ## Comandos
