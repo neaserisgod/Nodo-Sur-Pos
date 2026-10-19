@@ -33,6 +33,7 @@ import 'servicios/nube.dart';
 import 'servicios/preferencia_cobro_nube.dart';
 import 'servicios/marca_actual.dart';
 import 'servicios/registro_errores.dart';
+import 'servicios/sonidos.dart';
 import 'servicios/migracion_carpeta_datos.dart';
 import 'package:path_provider/path_provider.dart';
 import 'servicios/gemini.dart';
@@ -55,6 +56,7 @@ Future<void> main() async {
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   instalarRegistroDeErrores();
+  unawaited(sonidos.cargar()); // en memoria antes del primer cobro
   // Android: un cambio de negocio (`companion/cuentas_del_celular.dart`) se termina ANTES de leer nada de la cuenta, empezando por
   // la clave de la IA de la línea de abajo. Si no se puede, la app no sigue con media cuenta puesta: lo muestra y deja reintentar.
   // Nodo Sur Servicios de Windows es la app del celular con ventana de PC (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): arranca igual.

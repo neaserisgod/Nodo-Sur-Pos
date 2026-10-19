@@ -4,13 +4,20 @@
 
 import 'dart:async';
 
+import 'sonidos.dart';
+
 final StreamController<int> _pedidos = StreamController<int>.broadcast();
 
 /// Ids (del sitio) de los pedidos nuevos que mandó el bot.
 Stream<int> get avisosPedidoBot => _pedidos.stream;
 
-/// Lo llama la conexión en vivo de la sync al recibir un pedido nuevo del bot.
-void avisarPedidoBot(int id) => _pedidos.add(id);
+/// Lo llama la conexión en vivo de la sync al recibir un pedido nuevo del bot. Suena en todos los equipos de la sucursal (el
+/// aviso les llega a todos); el mismo aviso llega también cuando se paga un pedido con el link, y suena igual: pasó algo con un
+/// pedido.
+void avisarPedidoBot(int id) {
+  sonidos.sonar(Sonido.aviso);
+  _pedidos.add(id);
+}
 
 final StreamController<String> _turnos = StreamController<String>.broadcast();
 

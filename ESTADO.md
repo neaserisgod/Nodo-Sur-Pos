@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (18/10/2026)
 
+- **Sonidos** (El dueño, 18/10: "unos soniditos para cuando se recibe un pago, las notificaciones"). Dos cortos y suaves: uno cuando
+  Mercado Pago aprueba un cobro (QR o Point) o se paga una seña, y otro cuando el bot da un turno o toma un pedido. En efectivo no
+  suena. Se apagan en Más › Apariencia y en Configuración › Apariencia de la PC. Motivos en `DECISIONES.md`. **Sin escucharlo
+  todavía en un celular, la PC ni el navegador reales.**
 - **Horarios y fechas con el teclado numérico** (El dueño, 18/10: "no deja poner horarios la app de gastro, pide : en teclado
   numérico"). Los campos de hora (Abre/Cierra en Gastro, Agenda, bot y alta del negocio; "Otra hora" del turno) y la fecha de
   Gastos fijos usaban el teclado de fecha y hora, que en muchos Android no trae ":" ni "/". Ahora es teclado numérico y los

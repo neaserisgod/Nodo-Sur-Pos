@@ -32,6 +32,7 @@ import 'avisos_bot.dart';
 import '../edicion.dart';
 import 'cuenta_nube.dart';
 import 'registro_errores.dart' show registrarSiNoEsDeRed;
+import 'sonidos.dart';
 
 const _claveCursor = 'turnosBot.cursor';
 const _claveHuellas = 'turnosBot.huellas';
@@ -155,9 +156,14 @@ class SincronizadorTurnosBot {
   static String huellaDe(Turno t) =>
       '${t.estado}|${t.inicio.millisecondsSinceEpoch}|${t.inicio.add(Duration(minutes: t.duracionMinutos)).millisecondsSinceEpoch}';
 
+  // Lo que pasó en esta bajada, para que suene una sola vez al final (`_sonar`).
+  var _huboTurnoNuevo = false;
+  var _huboSena = false;
+
   Future<void> _bajar(String token, SharedPreferences prefs, Map<String, String> huellas) async {
     var desde = prefs.getInt(_claveCursor) ?? 0;
     var bajoAlgo = false;
+    _huboTurnoNuevo = _huboSena = false;
     // Los que quedaron sin cargar en otra vuelta (por id del sitio: si vuelve a bajar uno más nuevo, gana ese).
     final pendientes = <String, ({Map<String, dynamic> turno, String motivo})>{};
     try {
@@ -205,6 +211,17 @@ class SincronizadorTurnosBot {
     final motivos = [for (final p in pendientes.values) p.motivo];
     if (!_mismaLista(motivos, turnosBotSinCargar.value)) turnosBotSinCargar.value = motivos;
     if (bajoAlgo) alBajar?.call();
+    _sonar();
+  }
+
+  /// Una seña pagada (con el link o aprobada por la dueña en WhatsApp) suena a pago; un turno nuevo del bot, a aviso. Si
+  /// pasaron las dos, gana el pago: es un turno que llegó ya señado.
+  void _sonar() {
+    if (_huboSena) {
+      sonidos.sonar(Sonido.pago);
+    } else if (_huboTurnoNuevo) {
+      sonidos.sonar(Sonido.aviso);
+    }
   }
 
   static bool _mismaLista(List<String> a, List<String> b) => a.length == b.length && [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
@@ -249,7 +266,9 @@ class SincronizadorTurnosBot {
         origen: 'BOT',
         idRemoto: idRemoto,
       );
-      await _senaPagadaPorLink(nuevo, usuario.id, x['senaPagada']);
+      // Uno que ya pasó es historia (un equipo nuevo baja todo lo que el bot dio): no suena.
+      if (inicio.isAfter(_ahora())) _huboTurnoNuevo = true;
+      if (await _senaPagadaPorLink(nuevo, usuario.id, x['senaPagada'])) _huboSena = true;
       return nuevo;
     }
     // Ya está: lo que el cliente hizo por WhatsApp (canceló, lo cambió, la dueña aprobó la seña ahí). Lo que ya se cerró acá
@@ -262,7 +281,7 @@ class SincronizadorTurnosBot {
     // Una cancelación del cliente sí entra: el turno ya no va a pasar, haya hecho lo que haya hecho la dueña.
     final previa = huellas[idRemoto];
     if (previa != null && previa != huellaDe(existente) && estado != EstadoTurno.cancelado) {
-      if (estado.abierto) await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada']);
+      if (estado.abierto && await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada'])) _huboSena = true;
       return null; // sin tocar su huella: así `_avisarCambios` todavía ve el cambio y lo manda
     }
     if (estado == EstadoTurno.cancelado) {
@@ -277,22 +296,24 @@ class SincronizadorTurnosBot {
     } else if (estado == EstadoTurno.confirmado && local == EstadoTurno.esperandoSena) {
       await (db.update(db.turnos)..where((t) => t.id.equals(existente.id)))
           .write(TurnosCompanion(estado: Value(EstadoTurno.confirmado.clave), actualizadoEn: Value(DateTime.now())));
+      _huboSena = true;
     }
-    if (estado.abierto) await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada']);
+    if (estado.abierto && await _senaPagadaPorLink(existente.id, existente.usuarioId, x['senaPagada'])) _huboSena = true;
     if (estado.abierto && existente.inicio != inicio) await moverTurno(db, existente.id, inicio);
     return existente.id;
   }
 
   /// La seña que la clienta pagó con el link de Mercado Pago del bot (`senaPagada` del sitio): entra a la caja como Mercado Pago, una
   /// sola vez. Sin caja abierta queda anotada y entra al abrirla (`ingresarSenasPendientes`). Una pagada tarde (el horario ya se
-  /// había liberado) no entra: la dueña decide desde la notificación.
-  Future<void> _senaPagadaPorLink(int turnoId, int usuarioId, Object? pagada) async {
-    if (pagada is! Map || pagada['tarde'] == true) return;
+  /// había liberado) no entra: la dueña decide desde la notificación. Devuelve si la anotó ahora.
+  Future<bool> _senaPagadaPorLink(int turnoId, int usuarioId, Object? pagada) async {
+    if (pagada is! Map || pagada['tarde'] == true) return false;
     final centavos = pagada['centavos'];
-    if (centavos is! int || centavos <= 0) return;
+    if (centavos is! int || centavos <= 0) return false;
     final t = await (db.select(db.turnos)..where((x) => x.id.equals(turnoId))).getSingleOrNull();
-    if (t == null || t.senaCentavos > 0 || !EstadoTurno.desdeClave(t.estado).abierto) return;
+    if (t == null || t.senaCentavos > 0 || !EstadoTurno.desdeClave(t.estado).abierto) return false;
     await registrarSenaDeTurno(db, turnoId, montoCentavos: centavos, esEfectivo: false, usuarioId: usuarioId, sesionCajaId: await sesionAbiertaId(db));
+    return true;
   }
 
   Future<Producto?> _servicioDe(Object? s) async {

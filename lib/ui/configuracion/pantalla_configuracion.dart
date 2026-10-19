@@ -26,6 +26,7 @@ import '../../servicios/actualizaciones.dart';
 import '../../servicios/modulos_activos.dart';
 import '../../servicios/nube.dart';
 import '../../servicios/pc_local_nube.dart';
+import '../../servicios/sonidos.dart';
 import '../../servidor/servidor_companion.dart';
 import '../comun/armazon_gestion.dart';
 import '../comun/aviso_superior.dart';
@@ -1173,6 +1174,21 @@ class _SeccionTema extends StatelessWidget {
         },
       ),
       const Nota(texto: 'Con "reducir animaciones" de Windows todo se apaga solo. Las animaciones nunca demoran lo que se tipea ni el cobro.'),
+      const Sec('Sonidos'),
+      ValueListenableBuilder<bool>(
+        valueListenable: sonidos.activos,
+        builder: (context, activos, _) => Lista(
+          filas: [
+            Interruptor(
+              key: const Key('interruptor_sonidos'),
+              titulo: 'Sonidos',
+              detalle: 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido del bot',
+              valor: activos,
+              onCambio: sonidos.guardarActivos,
+            ),
+          ],
+        ),
+      ),
     ]);
   }
 }

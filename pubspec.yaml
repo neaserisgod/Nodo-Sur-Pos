@@ -71,6 +71,7 @@ dependencies:
   web: ^1.1.1
   google_sign_in: ^7.2.0
   share_plus: ^13.3.1
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -112,6 +113,8 @@ flutter:
       flavors:
         - servicios
         - gastronomia
+    # Los sonidos de pago aprobado y de aviso (`lib/servicios/sonidos.dart`), en todas las ediciones.
+    - assets/sonidos/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
