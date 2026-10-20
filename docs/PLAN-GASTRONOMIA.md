@@ -105,7 +105,7 @@ WhatsApp."* Motivos en `DECISIONES.md`. Hecho (2026-10-20), **sin probar en una 
 | Instalador | `installer/nodo_gastro.iss`: su `AppId`, `C:\NodoGastro\app`, copia de la base antes de actualizar, apaga el bot al desinstalar |
 | Publicación | `publicar-beta`, a mano, con "gastronomia" (sube su número) o "todas" (usa el de almacén). Feed `windows-gastronomia` |
 | CI | `tests.yml`, job de Windows: compila también Gastro y revisa el `.exe` y el `ProductName` |
-| Pantalla ancha | Menú lateral (Pedidos, Vender, Carta, Caja, Más; Alt+1…5). Pedidos y Vender centrados a 760 px |
+| Pantalla ancha | Menú lateral con los colores de Gastro (Pedidos, Vender, Carta, Caja, Más; Alt+1…5). **Pedidos** en columnas (Nuevos, Cocina, Listos; En camino y Sin pagar si hay), **Vender** con la grilla de platos y el cobro al costado (como el Cobrar de Servicios), **Carta** en dos columnas (1160 px). Captura: `flutter test test/companion/capturas_escritorio_gastro_test.dart` → `capturas/gastro-escritorio/` |
 | Bot | Corre en la compu como en Servicios (supervisor, clave Run `NodoGastroBot`). Se vincula **escaneando el QR** con el celular del local, sin cargar el número |
 
 **Falta:** probarla en una PC real (instalar al lado de las otras, entrar con Google, cargar la carta, vincular el bot con el QR y

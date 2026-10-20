@@ -56,3 +56,6 @@ class SiModulo extends StatelessWidget {
 /// El negocio da servicios (peluquería, barbería…) en vez de vender productos con stock: lo que es de un almacén
 /// (código de barras, cigarrillos, separar para proveedores, stock bajo) no se le muestra.
 bool esNegocioDeServicios() => modulosActuales.value.forma == FormaDeTrabajo.servicios;
+
+/// Un local gastronómico (§22): la carta son platos con receta, como los servicios, y abre en los Pedidos.
+bool esNegocioGastronomico() => modulosActuales.value.forma == FormaDeTrabajo.gastronomia;
