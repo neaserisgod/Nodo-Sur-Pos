@@ -1,12 +1,15 @@
 // "En este celular" dentro de Bot de WhatsApp, en Nodo Sur Servicios (El dueño, 2026-10-10, `docs/PLAN-APP-SERVICIOS.md`): el bot
 // corre adentro de la app, sin Termux. Acá se enciende y se apaga, se ve si está conectado y, la primera vez, el código para
 // vincularlo con el WhatsApp del local. Lo que pasa después ya no depende de esta pantalla: Android lo mantiene andando. En
-// Windows (2026-10-15) es la misma sección, "En esta compu", y lo mantiene el supervisor (`bot_en_pc.dart`).
+// Windows (2026-10-15) es la misma sección, "En esta compu", y lo mantiene el supervisor (`bot_en_pc.dart`). En la compu se
+// vincula con el QR (El dueño, 2026-10-20: "si estoy en desktop me des el qr para escanear"): se escanea con el celular del
+// local, sin cargar el número. En el celular sigue el código, porque no se puede escanear la propia pantalla.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../domain/bot_en_celular.dart';
 import '../../edicion.dart';
@@ -14,13 +17,16 @@ import '../../servicios/bot_en_celular.dart';
 import '../kit/kit_ns.dart';
 
 class SeccionBotEnCelularNs extends StatefulWidget {
-  const SeccionBotEnCelularNs({super.key, required this.bot, required this.numeroBot, this.ahora});
+  const SeccionBotEnCelularNs({super.key, required this.bot, required this.numeroBot, this.ahora, this.enLaCompu});
 
   final BotEnCelular bot;
 
   /// El WhatsApp del local, ya normalizado (`5492944…`). Null si falta o está mal escrito.
   final String? numeroBot;
   final DateTime Function()? ahora;
+
+  /// Si corre en la compu (vincula con el QR). Null: lo que diga la edición instalada. Para las pruebas, que no corren en Windows.
+  final bool? enLaCompu;
 
   @override
   State<SeccionBotEnCelularNs> createState() => _SeccionBotEnCelularNsState();
@@ -78,8 +84,13 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     await _leer();
   }
 
+  /// Con qué número se pide el código. En la compu ninguno: se vincula con el QR.
+  String? get _numeroParaVincular => _enLaCompu ? '' : widget.numeroBot;
+
+  bool get _enLaCompu => widget.enLaCompu ?? esEscritorioAparte;
+
   Future<void> _encender() async {
-    final numero = widget.numeroBot;
+    final numero = _numeroParaVincular;
     if (numero == null) {
       setState(() => _error = 'Cargá arriba el WhatsApp del local y guardá: es el número que va a atender el bot.');
       return;
@@ -107,7 +118,7 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
   }
 
   Future<void> _vincularDeNuevo() async {
-    final numero = widget.numeroBot;
+    final numero = _numeroParaVincular;
     if (numero == null) {
       setState(() => _error = 'Cargá arriba el WhatsApp del local y guardá.');
       return;
@@ -122,16 +133,42 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     final fase = faseDelBot(encendido: _encendido, estado: _estado);
     final (tono, icono) = switch (fase) {
       FaseBot.conectado => (TonoNs.good, IconoNs.tilde),
-      FaseBot.apagado => (TonoNs.neutro, esEscritorioAparte ? IconoNs.computadora : IconoNs.celular),
+      FaseBot.apagado => (TonoNs.neutro, _enLaCompu ? IconoNs.computadora : IconoNs.celular),
       FaseBot.conectando => (TonoNs.info, IconoNs.reloj),
       FaseBot.vincular || FaseBot.desvinculado => (TonoNs.warn, IconoNs.alertaCirculo),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(esEscritorioAparte ? 'En esta compu' : 'En este celular')),
+        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(_enLaCompu ? 'En esta compu' : 'En este celular')),
         InfoNs(textoDelBot(fase, _estado, ahora), key: const Key('bot_celular_estado'), tono: tono, icono: icono),
-        if (fase == FaseBot.vincular && _estado?.codigo != null) ...[
+        if (fase == FaseBot.vincular && _enLaCompu && _estado?.qr != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(22)),
+            child: Column(
+              children: [
+                Text('Escaneá con el WhatsApp del local', style: estiloNs(14, color: ns.mute)),
+                const SizedBox(height: 12),
+                // Fondo blanco siempre: con el tema oscuro, un QR claro sobre oscuro muchos celulares no lo leen.
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                  child: QrImageView(key: const Key('bot_celular_qr'), data: _estado!.qr!, size: 240, padding: EdgeInsets.zero, backgroundColor: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'En el celular con el WhatsApp del local: Ajustes › Dispositivos vinculados › Vincular un dispositivo, y apuntá la '
+                  'cámara a este código. WhatsApp lo cambia cada tanto: se actualiza acá solo.',
+                  textAlign: TextAlign.center,
+                  style: estiloNs(14, color: ns.ink),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (fase == FaseBot.vincular && !_enLaCompu && _estado?.codigo != null) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(18),

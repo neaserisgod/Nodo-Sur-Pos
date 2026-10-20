@@ -27,9 +27,12 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MINOR=${FLUTT
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=${FLUTTER_VERSION_PATCH}")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTTER_VERSION_BUILD}")
 
-# La edición Servicios cambia nombre, ícono y mutex en Runner.rc y main.cpp (ver el CMakeLists.txt de arriba).
+# Las ediciones aparte cambian nombre, ícono y mutex en Runner.rc y main.cpp (ver el CMakeLists.txt de arriba). EDICION_APARTE
+# es lo que comparten: el arranque oculto del bot de WhatsApp.
 if(EDICION_SERVICIOS)
-  target_compile_definitions(${BINARY_NAME} PRIVATE "EDICION_SERVICIOS")
+  target_compile_definitions(${BINARY_NAME} PRIVATE "EDICION_SERVICIOS" "EDICION_APARTE")
+elseif(EDICION_GASTRONOMIA)
+  target_compile_definitions(${BINARY_NAME} PRIVATE "EDICION_GASTRONOMIA" "EDICION_APARTE")
 endif()
 
 # Disable Windows macros that collide with C++ standard library functions.

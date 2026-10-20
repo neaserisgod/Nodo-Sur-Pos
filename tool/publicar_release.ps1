@@ -7,6 +7,8 @@
 #   .\tool\publicar_release.ps1 -DryRun            # todo menos subir y subir el build
 #   .\tool\publicar_release.ps1 -Notas "..." -Edicion servicios -SinSubirBuild
 #                    # Nodo Sur Servicios para Windows (plataforma windows-servicios) con el mismo número que la de almacén
+#   .\tool\publicar_release.ps1 -Notas "..." -Edicion gastronomia -SinSubirBuild
+#                    # Nodo Gastro para Windows (plataforma windows-gastronomia)
 #
 # Variables de entorno (NINGUNA se imprime ni se guarda):
 #   RELEASE_TOKEN        token del servidor de actualizaciones. Lo lee
@@ -31,7 +33,7 @@ param(
     [string]$Canal = "stable",
     [switch]$DryRun,
     [switch]$CertificadoDePrueba,
-    [ValidateSet("almacen", "servicios")]
+    [ValidateSet("almacen", "servicios", "gastronomia")]
     [string]$Edicion = "almacen",
     # Publicar con el número que ya tiene pubspec.yaml: la segunda edición de una misma publicación (el workflow sube el
     # número una sola vez, con la de almacén).
@@ -87,8 +89,10 @@ $argsInstalador = @{ Edicion = $Edicion }
 if ($CertificadoDePrueba) { $argsInstalador["CertificadoDePrueba"] = $true }
 & "$PSScriptRoot\crear_instalador.ps1" @argsInstalador
 
-$servicios = $Edicion -eq "servicios"
-$archivo = Join-Path $raiz $(if ($servicios) { "dist\NodoSurServicios-Setup-$($version.Feed).exe" } else { "dist\NodoSurPOS-Setup-$($version.Feed).exe" })
+# El mismo nombre que le da crear_instalador.ps1, y la plataforma con que la busca cada edición (`lib/edicion.dart`).
+$nombreInstalador = switch ($Edicion) { "servicios" { "NodoSurServicios" } "gastronomia" { "NodoGastro" } default { "NodoSurPOS" } }
+$plataforma = switch ($Edicion) { "servicios" { "windows-servicios" } "gastronomia" { "windows-gastronomia" } default { "windows" } }
+$archivo = Join-Path $raiz "dist\$nombreInstalador-Setup-$($version.Feed).exe"
 if (-not (Test-Path $archivo)) { throw "No encuentro el instalador $archivo" }
 
 # --- 3. Firma para el actualizador (sign_update del paquete auto_updater) ---
@@ -124,7 +128,7 @@ try {
 $argumentos = @(
     $scriptPublicar,
     "--file", $archivo,
-    "--platform", $(if ($servicios) { "windows-servicios" } else { "windows" }),
+    "--platform", $plataforma,
     "--channel", $Canal,
     "--version", $version.Feed,
     "--signature", $firma,

@@ -1,4 +1,4 @@
-// "En este celular" en Bot de WhatsApp (Nodo Sur Servicios): estado, código para vincular y encender.
+// "En este celular" en Bot de WhatsApp (Nodo Sur Servicios): estado, código (o QR en la compu) para vincular y encender.
 import 'dart:convert';
 import 'dart:io';
 
@@ -48,14 +48,14 @@ void main() {
 
   BotEnCelular bot() => BotEnCelular(acceso: SitioBotFalso(), soporte: () async => tmp, canal: canal, zip: () async => ByteData(0));
 
-  Future<void> abrir(WidgetTester t, {String? numero = '5492944123456'}) async {
+  Future<void> abrir(WidgetTester t, {String? numero = '5492944123456', bool enLaCompu = false}) async {
     t.view.physicalSize = const Size(390, 1600);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
-      home: Builder(builder: (c) => Scaffold(backgroundColor: c.ns.paper, body: ListView(children: [SeccionBotEnCelularNs(bot: bot(), numeroBot: numero)]))),
+      home: Builder(builder: (c) => Scaffold(backgroundColor: c.ns.paper, body: ListView(children: [SeccionBotEnCelularNs(bot: bot(), numeroBot: numero, enLaCompu: enLaCompu)]))),
     ));
     await asentar(t);
   }
@@ -84,6 +84,41 @@ void main() {
     await asentar(t);
     expect(find.text('Conectado y atendiendo'), findsOneWidget);
     expect(find.text('ABCD-1234'), findsNothing);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('en la compu: dibuja el QR para escanear con el celular, sin código', (t) async {
+    encendido = true;
+    final datos = Directory(p.join(tmp.path, 'bot-datos'))..createSync();
+    File(p.join(datos.path, 'estado.json')).writeAsStringSync(jsonEncode({'conectado': false, 'qr': '2@abc,def,ghi', 'codigo': 'ABCD1234'}));
+    await abrir(t, enLaCompu: true);
+    expect(find.text('Falta vincularlo con WhatsApp'), findsOneWidget);
+    expect(find.byKey(const Key('bot_celular_qr')), findsOneWidget);
+    expect(find.text('ABCD-1234'), findsNothing);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('en el celular: el QR no se muestra (no se escanea la propia pantalla)', (t) async {
+    encendido = true;
+    final datos = Directory(p.join(tmp.path, 'bot-datos'))..createSync();
+    File(p.join(datos.path, 'estado.json')).writeAsStringSync(jsonEncode({'conectado': false, 'qr': '2@abc,def,ghi', 'codigo': 'ABCD1234'}));
+    await abrir(t);
+    expect(find.byKey(const Key('bot_celular_qr')), findsNothing);
+    expect(find.text('ABCD-1234'), findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('en la compu se enciende sin el número del local: vincula con el QR', (t) async {
+    await abrir(t, numero: null, enLaCompu: true);
+    await t.tap(find.byKey(const Key('bot_celular_encender')));
+    // Encender descomprime el bot y vincula la cuenta (archivos de verdad): en una máquina lenta tarda más que [asentar].
+    for (var i = 0; i < 100 && !llamadas.any((c) => c.method == 'encender'); i++) {
+      await asentar(t);
+    }
+    expect(find.byKey(const Key('bot_celular_error')), findsNothing);
+    final encender = llamadas.where((c) => c.method == 'encender').toList();
+    expect(encender, hasLength(1));
+    expect((encender.single.arguments as Map)['numero'], '');
     await t.pumpWidget(const SizedBox());
   });
 }

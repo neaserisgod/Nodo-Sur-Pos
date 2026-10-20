@@ -2730,3 +2730,27 @@ turno o pedido nuevo, **cortos y suaves**; una venta en efectivo **no** suena (e
 - **Encima de la música y respetando el silencio** (Android): no le saca el foco de audio a la radio del local y, con el celular en
   silencio, no suena. Con la app cerrada sigue sonando la notificación de Android de siempre (canal "Pedidos y turnos").
 - Se apagan por equipo: Más › Apariencia (celular) y Configuración › Apariencia (PC). Código: `lib/servicios/sonidos.dart`.
+
+## Nodo Gastro en la compu: la misma edición de Windows que Servicios, y el bot se vincula con QR (El dueño, 2026-10-20)
+
+El dueño: *"prepará la versión desktop para yo poder cargar desde acá, también revisá que si estoy en desktop me des el QR para
+escanear de WhatsApp"*. Plan y estado en `docs/PLAN-GASTRONOMIA.md`, "Nodo Gastro en Windows".
+
+- **La misma receta que Nodo Sur Servicios en Windows** (`docs/PLAN-ESCRITORIO-SERVICIOS.md`), no algo nuevo: `NODOSUR_EDICION=gastronomia`
+  da `nodo_gastro.exe`, su ícono, su mutex, su instalador (`installer/nodo_gastro.iss`, otro `AppId`) y su feed
+  (`windows-gastronomia`, que el sitio ya tenía). Lo que comparten las dos ediciones aparte en lo nativo (el arranque oculto del bot)
+  pasó a `EDICION_APARTE`.
+- **`ProductName` "Nodo Gastro"**, el nombre del sitio: es una edición nueva en Windows, sin carpeta de datos vieja que cuidar (la
+  regla de no tocar el `ProductName` de `docs/PLAN-CUENTAS.md` es para las que ya están instaladas).
+- **El bot de cada edición tiene su clave Run** (`NodoGastroBot`, `bot_en_pc.dart`): Servicios y Gastro pueden estar en la misma compu.
+- **Se publica solo a mano** (`publicar-beta`, "gastronomia" o "todas"), como su APK: un merge `beta:`/`release:` sigue publicando
+  almacén y Servicios.
+- **Menú lateral también en gastronomía** (`usaMenuLateralNs`): antes solo servicios lo usaba, y Gastro en Windows se veía del ancho de
+  un celular. Pedidos y Vender van centrados a 760 px (son las pantallas del celular); la Carta y lo que se abre encima, como en
+  Servicios.
+- **QR en la compu, código en el celular**: desde el celular no se puede escanear la propia pantalla, en la compu sí. El bot
+  (`botdemo`, `src/adaptadores/baileys.js`) anota el QR en `estado.json`; la app lo dibuja solo en Windows. **En la compu no se pide el
+  número**: el supervisor no pasa `PAREO` sin número, así el bot no pide un código en paralelo al QR (dos vinculaciones a la vez no).
+  Una compu ya vinculada con código sigue igual: `numero.txt` guarda el número de antes.
+- **Orden de publicación**: el cambio del bot tiene que estar en `main` de `botdemo` antes de publicar la app (el instalador baja el bot
+  de ahí). Con un bot viejo, la compu queda en "Conectando…" sin QR.

@@ -1,7 +1,7 @@
-# Compila los instaladores de Windows (Nodo Sur POS y Nodo Sur Servicios), los firma para el actualizador y los publica en el canal BETA de horsepos.com:
+# Compila los instaladores de Windows (Nodo Sur POS, Nodo Sur Servicios y, a mano, Nodo Gastro), los firma para el actualizador y los publica en el canal BETA de horsepos.com:
 # desde ahí la bajan las cuentas de administrador en horsepos.com/descargar/ y la reciben por actualización automática.
 # Se publica SOLO cuando se pide (2026-10-03: "no quiero más despliegues por publicar una cosa chica"):
-#   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable, y qué app: las dos, solo Servicios o solo almacén);
+#   * a mano: Actions → "publicar-beta" → Run workflow (beta o stable, y qué app: las dos, una sola o todas);
 #   * o al mergear con un título que empieza con "release:" (estable) o "beta:" (beta).
 # Un merge común a main NO publica nada: se acumulan los cambios y se publican juntos cuando vos decidís.
 #
@@ -43,10 +43,11 @@ on:
         required: true
         default: '100'
       edicion:
-        description: "Qué app publicar: ambas, solo Nodo Sur Servicios o solo la de almacén (Nodo Sur POS)"
+        # Nodo Gastro (docs/PLAN-GASTRONOMIA.md) sale solo a mano, con "gastronomia" o "todas", como su APK: un merge no la publica.
+        description: "Qué app publicar: ambas (almacén y Servicios), una sola, o todas (con Nodo Gastro)"
         required: true
         type: choice
-        options: [ambas, servicios, almacen]
+        options: [ambas, servicios, almacen, gastronomia, todas]
         default: ambas
 
 # Una publicación a la vez: dos corridas juntas subirían el mismo número de compilación.
@@ -138,7 +139,7 @@ jobs:
       # Sube el número de compilación en pubspec.yaml, compila, arma y firma el instalador, lo firma para el
       # actualizador y lo sube al canal beta: es el mismo script que se usa desde la PC.
       - name: Compilar y publicar la beta
-        if: env.EDICION != 'servicios'
+        if: env.EDICION != 'servicios' && env.EDICION != 'gastronomia'
         shell: pwsh
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
@@ -146,7 +147,7 @@ jobs:
         run: .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT)
 
       - name: Guardar el instalador también como archivo de la corrida
-        if: env.EDICION != 'servicios'
+        if: env.EDICION != 'servicios' && env.EDICION != 'gastronomia'
         uses: actions/upload-artifact@v4
         with:
           name: instalador-beta
@@ -155,7 +156,7 @@ jobs:
 
       # El script subió el número de compilación: hay que dejarlo en el repo, o la próxima corrida intentaría publicar el mismo.
       - name: Guardar el nuevo número de compilación en el repositorio
-        if: env.EDICION != 'servicios'
+        if: env.EDICION != 'servicios' && env.EDICION != 'gastronomia'
         shell: pwsh
         run: .\tool\guardar_numero_publicado.ps1
 
@@ -167,7 +168,7 @@ jobs:
         with:
           repository: neaserisgod/botdemo
           path: botdemo
-      - name: Node y el bot (servicios)
+      - name: Node y el bot (servicios y gastronomía)
         if: env.EDICION != 'almacen'
         shell: pwsh
         env:
@@ -176,13 +177,13 @@ jobs:
 
       # Con las dos, usa el número que ya subió la de almacén; sola, sube el suyo y lo guarda.
       - name: Compilar y publicar Nodo Sur Servicios para Windows
-        if: env.EDICION != 'almacen'
+        if: contains(fromJSON('["ambas","servicios","todas"]'), env.EDICION)
         shell: pwsh
         env:
           NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
           SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
         run: |
-          $extra = if ($env:EDICION -eq 'ambas') { @{ SinSubirBuild = $true } } else { @{} }
+          $extra = if ($env:EDICION -ne 'servicios') { @{ SinSubirBuild = $true } } else { @{} }
           .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT) -Edicion servicios @extra
 
       - name: Guardar el nuevo número de compilación en el repositorio (solo Servicios)
@@ -191,11 +192,36 @@ jobs:
         run: .\tool\guardar_numero_publicado.ps1
 
       - name: Guardar el instalador de Nodo Sur Servicios como archivo de la corrida
-        if: env.EDICION != 'almacen'
+        if: contains(fromJSON('["ambas","servicios","todas"]'), env.EDICION)
         uses: actions/upload-artifact@v4
         with:
           name: instalador-servicios
           path: dist/NodoSurServicios-Setup-*.exe
+          retention-days: 14
+
+      # Nodo Gastro para Windows: igual que Servicios, con su instalador y su feed (windows-gastronomia). Con "todas" usa el
+      # número que ya subió la de almacén; sola, sube el suyo y lo guarda.
+      - name: Compilar y publicar Nodo Gastro para Windows
+        if: contains(fromJSON('["gastronomia","todas"]'), env.EDICION)
+        shell: pwsh
+        env:
+          NODOSUR_SCRIPTS: ${{ github.workspace }}\sitio\scripts
+          SITE_URL: https://broad-frog-1e4b.gtalovergamer.workers.dev
+        run: |
+          $extra = if ($env:EDICION -eq 'todas') { @{ SinSubirBuild = $true } } else { @{} }
+          .\tool\publicar_release.ps1 -Notas $env:NOTAS -Canal $env:CANAL -Rollout ([int]$env:ROLLOUT) -Edicion gastronomia @extra
+
+      - name: Guardar el nuevo número de compilación en el repositorio (solo Nodo Gastro)
+        if: env.EDICION == 'gastronomia'
+        shell: pwsh
+        run: .\tool\guardar_numero_publicado.ps1
+
+      - name: Guardar el instalador de Nodo Gastro como archivo de la corrida
+        if: contains(fromJSON('["gastronomia","todas"]'), env.EDICION)
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-gastronomia
+          path: dist/NodoGastro-Setup-*.exe
           retention-days: 14
 
       - name: Borrar las claves

@@ -7,6 +7,7 @@ class EstadoBotLocal {
     this.conectado = false,
     this.codigo,
     this.codigoPara,
+    this.qr,
     this.deslogueado = false,
     this.desde,
     this.ultimoMensaje,
@@ -19,6 +20,11 @@ class EstadoBotLocal {
   /// El código de vinculación mientras WhatsApp no lo aceptó (se escribe en Dispositivos vinculados).
   final String? codigo;
   final String? codigoPara;
+
+  /// Lo que va en el QR de vinculación, mientras WhatsApp no lo aceptó. Lo dibuja la compu (Windows), donde se escanea con el
+  /// celular del local; en el celular no sirve (no se escanea la propia pantalla): ahí va el código. WhatsApp lo cambia cada
+  /// tanto y el bot pisa el anterior.
+  final String? qr;
 
   /// WhatsApp cerró la sesión (la desvincularon desde el teléfono): hay que vincular de nuevo.
   final bool deslogueado;
@@ -36,6 +42,7 @@ class EstadoBotLocal {
       conectado: j['conectado'] == true,
       codigo: texto(j['codigo']),
       codigoPara: texto(j['codigoPara']),
+      qr: texto(j['qr']),
       deslogueado: j['deslogueado'] == true,
       desde: fecha(j['desde']),
       ultimoMensaje: fecha(j['ultimoMensaje']),
@@ -52,7 +59,7 @@ enum FaseBot {
   /// Encendido, Node todavía no dijo nada o se está conectando.
   conectando,
 
-  /// Falta vincular: hay un código para escribir en WhatsApp.
+  /// Falta vincular: hay un código para escribir en WhatsApp, o un QR para escanear.
   vincular,
 
   /// Conectado y atendiendo.
@@ -67,7 +74,7 @@ FaseBot faseDelBot({required bool encendido, EstadoBotLocal? estado}) {
   if (estado == null) return FaseBot.conectando;
   if (estado.deslogueado) return FaseBot.desvinculado;
   if (estado.conectado) return FaseBot.conectado;
-  if (estado.codigo != null) return FaseBot.vincular;
+  if (estado.codigo != null || estado.qr != null) return FaseBot.vincular;
   return FaseBot.conectando;
 }
 

@@ -88,8 +88,8 @@ jobs:
         if: steps.cambios.outputs.compilar == 'true'
         run: flutter build web --release -t lib/main_web.dart --base-href /app/ --no-web-resources-cdn --pwa-strategy=none
 
-  # Nodo Sur Servicios para Windows (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): la otra edición del mismo proyecto de Windows (otro
-  # .exe, nombre, ícono y mutex por `NODOSUR_EDICION`). Que compile y que el .exe salga con su nombre: Linux no lo ve. Solo
+  # Nodo Sur Servicios y Nodo Gastro para Windows (`docs/PLAN-ESCRITORIO-SERVICIOS.md`): las otras ediciones del mismo proyecto
+  # de Windows (otro .exe, nombre, ícono y mutex por `NODOSUR_EDICION`). Que compile y que el .exe salga con su nombre: Linux no lo ve. Solo
   # cuando se toca lo que la arma (corre en Windows, que es más lento y caro).
   windows-servicios:
     runs-on: windows-latest
@@ -126,6 +126,22 @@ jobs:
           if (-not (Test-Path $exe)) { throw "No salió $exe" }
           $info = (Get-Item $exe).VersionInfo
           if ($info.ProductName -ne "Nodo Sur Servicios") { throw "ProductName es '$($info.ProductName)': la carpeta de datos sería la de otra app" }
+          Write-Host "OK: $exe ($($info.ProductName))"
+      # Nodo Gastro sale del mismo proyecto (`NODOSUR_EDICION=gastronomia`). CMake no se reconfigura por una variable de entorno:
+      # sin borrar el build, saldría el .exe de la edición anterior.
+      - name: Compila Nodo Gastro para Windows
+        if: steps.cambios.outputs.compilar == 'true'
+        shell: pwsh
+        env:
+          NODOSUR_EDICION: gastronomia
+        run: |
+          Remove-Item -Recurse -Force build\windows -ErrorAction SilentlyContinue
+          flutter build windows --release --dart-define=EDICION=gastronomia
+          if ($LASTEXITCODE -ne 0) { throw "No compiló" }
+          $exe = "build\windows\x64\runner\Release\nodo_gastro.exe"
+          if (-not (Test-Path $exe)) { throw "No salió $exe" }
+          $info = (Get-Item $exe).VersionInfo
+          if ($info.ProductName -ne "Nodo Gastro") { throw "ProductName es '$($info.ProductName)': la carpeta de datos sería la de otra app" }
           Write-Host "OK: $exe ($($info.ProductName))"
       # El bot que va adentro (repo botdemo) con el Node de Windows: que el script que lo arma siga andando.
       - uses: actions/checkout@v4

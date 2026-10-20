@@ -1,5 +1,5 @@
-// El bot de WhatsApp de Nodo Sur Servicios en Windows (El dueño, 2026-10-15, `docs/PLAN-ESCRITORIO-SERVICIOS.md`): hace lo que
-// en Android hace `ServicioBot.kt`. Lo arranca la app (o Windows al iniciar sesión, por la clave Run que deja la app) con
+// El bot de WhatsApp de Nodo Sur Servicios y Nodo Gastro en Windows (El dueño, 2026-10-15, `docs/PLAN-ESCRITORIO-SERVICIOS.md`):
+// hace lo que en Android hace `ServicioBot.kt`. Lo arranca la app (o Windows al iniciar sesión, por la clave Run que deja la app) con
 //   node.exe supervisor.js <carpeta de datos del bot>
 // y corre oculto, aunque la app esté cerrada:
 //  * lee `arranque.json` de la carpeta de datos (lo escribe la app: encendido, carpeta del bot, número);
@@ -99,8 +99,10 @@ function arrancar(arranque) {
       ADAPTADOR: 'baileys',
       // Todo sale de la app: sin servicios cargados, el bot no ofrece los de ejemplo (`botdemo/src/config.js`).
       BOT_EN_APP: '1',
-      PAREO: '1',
-      NUMERO_BOT: String(arranque.numero || ''),
+      // Con número, vincula con el código (como en el celular). Sin número (lo que manda la app desde el 2026-10-20) no se pide
+      // código: la app dibuja el QR que deja el bot en estado.json y se escanea con el celular del local. Sin PAREO el bot no
+      // pide código aunque tenga el número en su configuración: dos vinculaciones a la vez no.
+      ...(arranque.numero ? { PAREO: '1', NUMERO_BOT: String(arranque.numero) } : {}),
     },
   });
   fs.closeSync(salida);

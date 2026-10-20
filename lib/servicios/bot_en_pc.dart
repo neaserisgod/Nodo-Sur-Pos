@@ -1,4 +1,4 @@
-// El bot de WhatsApp adentro de Nodo Sur Servicios de Windows (El dueño, 2026-10-15: "el bot también en la PC",
+// El bot de WhatsApp adentro de Nodo Sur Servicios y Nodo Gastro de Windows (El dueño, 2026-10-15: "el bot también en la PC",
 // `docs/PLAN-ESCRITORIO-SERVICIOS.md`). Lo que en Android hace `ServicioBot.kt` lo hace acá `windows/bot/supervisor.js`, que
 // corre con el Node de Windows que trae la app (`<app>\bot\node.exe`, lo baja `tool/preparar_bot_windows.ps1`):
 //  * el bot es el mismo `bot.zip` del Android (JavaScript puro, con el SQLite que trae Node);
@@ -14,10 +14,12 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import '../edicion.dart';
 import 'bot_en_celular.dart';
 
-/// El nombre del valor en `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (lo borra también el desinstalador).
-const valorArranqueBot = 'NodoSurServiciosBot';
+/// El nombre del valor en `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (lo borra también el desinstalador). Uno por
+/// edición: Nodo Sur Servicios y Nodo Gastro pueden estar instaladas en la misma compu, cada una con su bot.
+String get valorArranqueBot => esEdicionGastronomia ? 'NodoGastroBot' : 'NodoSurServiciosBot';
 const _claveRun = r'HKCU\Software\Microsoft\Windows\CurrentVersion\Run';
 
 class MotorBotWindows extends MotorBot {
