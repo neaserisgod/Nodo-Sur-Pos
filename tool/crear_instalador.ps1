@@ -6,6 +6,7 @@
 #   .\tool\crear_instalador.ps1 -CertificadoDePrueba   # firma autofirmada, solo para probar
 #   .\tool\crear_instalador.ps1 -SinBuild              # reusa build\...\Release ya compilado
 #   .\tool\crear_instalador.ps1 -Edicion servicios     # Nodo Sur Servicios: dist\NodoSurServicios-Setup-<version>.exe
+#   .\tool\crear_instalador.ps1 -Edicion gastronomia   # Nodo Gastro: dist\NodoGastro-Setup-<version>.exe
 #
 # NO sube el build number (eso lo hace tool\publicar_release.ps1).
 #
@@ -28,7 +29,7 @@
 param(
     [switch]$CertificadoDePrueba,
     [switch]$SinBuild,
-    [ValidateSet("almacen", "servicios")]
+    [ValidateSet("almacen", "servicios", "gastronomia")]
     [string]$Edicion = "almacen"
 )
 
@@ -40,11 +41,13 @@ Set-Location $raiz
 
 $version = Get-VersionPubspec
 $carpetaBuild = Join-Path $raiz "build\windows\x64\runner\Release"
-# Nodo Sur Servicios (docs/PLAN-ESCRITORIO-SERVICIOS.md) sale del mismo proyecto: otro .exe, otro instalador.
-$servicios = $Edicion -eq "servicios"
-$exeApp = Join-Path $carpetaBuild $(if ($servicios) { "nodo_sur_servicios.exe" } else { "la_plazoleta.exe" })
-$issApp = Join-Path $raiz $(if ($servicios) { "installer\nodo_sur_servicios.iss" } else { "installer\la_plazoleta.iss" })
-$instalador = Join-Path $raiz $(if ($servicios) { "dist\NodoSurServicios-Setup-$($version.Feed).exe" } else { "dist\NodoSurPOS-Setup-$($version.Feed).exe" })
+# Nodo Sur Servicios (docs/PLAN-ESCRITORIO-SERVICIOS.md) y Nodo Gastro (docs/PLAN-GASTRONOMIA.md) salen del mismo proyecto:
+# otro .exe, otro instalador. Las dos ediciones aparte llevan el bot de WhatsApp adentro.
+$aparte = $Edicion -ne "almacen"
+$exeApp = Join-Path $carpetaBuild $(switch ($Edicion) { "servicios" { "nodo_sur_servicios.exe" } "gastronomia" { "nodo_gastro.exe" } default { "la_plazoleta.exe" } })
+$issApp = Join-Path $raiz $(switch ($Edicion) { "servicios" { "installer\nodo_sur_servicios.iss" } "gastronomia" { "installer\nodo_gastro.iss" } default { "installer\la_plazoleta.iss" } })
+$nombreInstalador = switch ($Edicion) { "servicios" { "NodoSurServicios" } "gastronomia" { "NodoGastro" } default { "NodoSurPOS" } }
+$instalador = Join-Path $raiz "dist\$nombreInstalador-Setup-$($version.Feed).exe"
 $urlTimestamp = if ($env:SIGN_TIMESTAMP_URL) { $env:SIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }
 
 function Find-Signtool {
@@ -141,9 +144,9 @@ if (-not $SinBuild) {
     # La edición la lee CMake del entorno al configurar (windows/CMakeLists.txt), y CMake no se vuelve a configurar porque
     # cambie una variable de entorno: sin borrar el build, la segunda edición saldría con el .exe de la primera.
     Remove-Item -Recurse -Force (Join-Path $raiz "build\windows") -ErrorAction SilentlyContinue
-    if ($servicios) {
-        $env:NODOSUR_EDICION = "servicios"
-        try { flutter build windows --release --dart-define=EDICION=servicios } finally { Remove-Item env:NODOSUR_EDICION -ErrorAction SilentlyContinue }
+    if ($aparte) {
+        $env:NODOSUR_EDICION = $Edicion
+        try { flutter build windows --release --dart-define=EDICION=$Edicion } finally { Remove-Item env:NODOSUR_EDICION -ErrorAction SilentlyContinue }
     } else {
         flutter build windows --release
     }
@@ -151,9 +154,9 @@ if (-not $SinBuild) {
 }
 if (-not (Test-Path $exeApp)) { throw "No existe $exeApp — compilá primero (sin -SinBuild)." }
 
-# Nodo Sur Servicios lleva el bot de WhatsApp adentro (<app>\bot): Node y el bot los arma tool\preparar_bot_windows.ps1, el
+# Las ediciones aparte llevan el bot de WhatsApp adentro (<app>\bot): Node y el bot los arma tool\preparar_bot_windows.ps1, el
 # supervisor está en el repo. Sin ellos no se arma el instalador: saldría una versión sin bot.
-if ($servicios) {
+if ($aparte) {
     $origenBot = Join-Path $raiz "build\bot-windows"
     foreach ($f in "node.exe", "bot.zip") {
         if (-not (Test-Path (Join-Path $origenBot $f))) { throw "Falta $f en ${origenBot}: corré antes .\tool\preparar_bot_windows.ps1" }

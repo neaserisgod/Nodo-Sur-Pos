@@ -899,9 +899,10 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     return ValueListenableBuilder<ModulosNegocio>(
       valueListenable: modulosActuales,
       builder: (context, m, _) {
-        // Un negocio de servicios en una ventana ancha (la compu, `docs/PLAN-ESCRITORIO-SERVICIOS.md`): menú lateral en vez de
-        // barra inferior. Se mira el ancho real de la ventana: mientras otra pantalla tapa al menú, la app está achicada.
-        final ancho = m.forma == FormaDeTrabajo.servicios && !_tapadoPorPagina && anchoDeLaVentanaNs(context) >= anchoEscritorioNs;
+        // Un negocio de servicios o un local gastronómico en una ventana ancha (la compu, `docs/PLAN-ESCRITORIO-SERVICIOS.md`): menú
+        // lateral en vez de barra inferior. Se mira el ancho real de la ventana: mientras otra pantalla tapa al menú, la app está
+        // achicada.
+        final ancho = !_tapadoPorPagina && usaMenuLateralNs(m.forma, anchoVentana: anchoDeLaVentanaNs(context));
         if (anchoLibreNs.value != ancho) {
           SchedulerBinding.instance.addPostFrameCallback((_) {
             if (mounted && !_tapadoPorPagina) anchoLibreNs.value = ancho;
@@ -928,9 +929,10 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
             // En un local gastronómico abre en los Pedidos (§22).
+            // La agenda se arma sola a lo ancho (el turno al costado); los pedidos, centrados a un ancho cómodo de leer.
             builder: (context, m, _) => switch (m.forma) {
               FormaDeTrabajo.servicios => const PantallaAgendaNs(),
-              FormaDeTrabajo.gastronomia => const PantallaPedidosNs(),
+              FormaDeTrabajo.gastronomia => _lectura(ancho, const PantallaPedidosNs()),
               FormaDeTrabajo.productos => const PantallaInicioNs(),
             },
           ),
@@ -941,13 +943,18 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           ),
           _servicio == null || _usuarioId == null
               ? const SizedBox.shrink()
-              : PantallaCarritoVenta(
-                  cliente: _cliente,
-                  servicio: _servicio!,
-                  usuarioId: _usuarioId!,
-                  carrito: _carrito,
-                  encargue: _encargueEnVenta,
-                  pedido: _pedidoEnVenta,
+              // Cobrar de servicios se arma a lo ancho (grilla y cobro al costado); el Vender de un local gastronómico es el del
+              // celular, centrado.
+              : _lectura(
+                  ancho && !esNegocioDeServicios(),
+                  PantallaCarritoVenta(
+                    cliente: _cliente,
+                    servicio: _servicio!,
+                    usuarioId: _usuarioId!,
+                    carrito: _carrito,
+                    encargue: _encargueEnVenta,
+                    pedido: _pedidoEnVenta,
+                  ),
                 ),
           _lectura(ancho, const PantallaCajaNs()),
           _lectura(ancho, PantallaMasNs(alAbrirEncargues: _abrirEncargues)),

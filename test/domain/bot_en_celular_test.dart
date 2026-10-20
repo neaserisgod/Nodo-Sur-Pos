@@ -14,12 +14,19 @@ void main() {
     });
 
     test('un archivo roto o de otra versión no rompe: queda vacío', () {
-      for (final j in [null, 'texto', 3, [], {'conectado': 'sí', 'codigo': '  ', 'desde': 'ayer'}]) {
+      for (final j in [null, 'texto', 3, [], {'conectado': 'sí', 'codigo': '  ', 'qr': 7, 'desde': 'ayer'}]) {
         final e = EstadoBotLocal.desdeJson(j);
         expect(e.conectado, isFalse);
         expect(e.codigo, isNull);
+        expect(e.qr, isNull);
         expect(e.desde, isNull);
       }
+    });
+
+    test('el QR que deja el bot para escanear desde la compu', () {
+      final e = EstadoBotLocal.desdeJson({'conectado': false, 'qr': '2@abc,def,ghi', 'qrDesde': ms});
+      expect(e.qr, '2@abc,def,ghi');
+      expect(e.codigo, isNull);
     });
   });
 
@@ -34,6 +41,10 @@ void main() {
       expect(faseDelBot(encendido: true, estado: const EstadoBotLocal(codigo: 'ABCD1234')), FaseBot.vincular);
       expect(faseDelBot(encendido: true, estado: const EstadoBotLocal(conectado: true)), FaseBot.conectado);
       expect(faseDelBot(encendido: true, estado: const EstadoBotLocal(deslogueado: true, codigo: 'X')), FaseBot.desvinculado);
+    });
+    test('con QR y sin código (la compu vincula escaneando): falta vincular', () {
+      expect(faseDelBot(encendido: true, estado: const EstadoBotLocal(qr: '2@abc')), FaseBot.vincular);
+      expect(faseDelBot(encendido: true, estado: const EstadoBotLocal(conectado: true, qr: '2@abc')), FaseBot.conectado);
     });
   });
 

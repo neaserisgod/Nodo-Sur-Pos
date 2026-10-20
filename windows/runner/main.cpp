@@ -7,7 +7,7 @@
 #include "flutter_window.h"
 #include "utils.h"
 
-#ifdef EDICION_SERVICIOS
+#ifdef EDICION_APARTE
 // "--bot <comando>": lanza <comando> oculto (sin consola) y termina sin abrir ventana. Lo usa la clave Run que deja la app
 // para que el bot de WhatsApp arranque al iniciar sesión (lib/servicios/bot_en_pc.dart): Node es un programa de consola y,
 // llamado directo desde Run, abriría una ventana negra.
@@ -31,7 +31,7 @@ static bool LanzarBotOculto(const wchar_t* command_line) {
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-#ifdef EDICION_SERVICIOS
+#ifdef EDICION_APARTE
   // Antes del mutex: este arranque no es la app (el instalador no tiene que esperarlo).
   if (LanzarBotOculto(command_line)) return EXIT_SUCCESS;
 #endif
@@ -40,10 +40,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // termine antes de actualizar. Tiene que coincidir EXACTO con MyAppMutex
   // del .iss. El handle se deja
   // abierto a propósito hasta que termine el proceso.
-  // Nodo Sur Servicios tiene el suyo (installer/nodo_sur_servicios.iss): si fuera el mismo, actualizar una
-  // esperaría a que se cierre la otra.
+  // Nodo Sur Servicios y Nodo Gastro tienen el suyo (installer/nodo_sur_servicios.iss, installer/nodo_gastro.iss): si
+  // fuera el mismo, actualizar una esperaría a que se cierre la otra.
 #ifdef EDICION_SERVICIOS
   ::CreateMutexW(nullptr, FALSE, L"NodoSurServiciosAppMutex");
+#elif defined(EDICION_GASTRONOMIA)
+  ::CreateMutexW(nullptr, FALSE, L"NodoGastroAppMutex");
 #else
   ::CreateMutexW(nullptr, FALSE, L"LaPlazoletaAppMutex");
 #endif
@@ -73,6 +75,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   Win32Window::Size size(1920, 1080);
 #ifdef EDICION_SERVICIOS
   const wchar_t* titulo = L"Nodo Estudio";
+#elif defined(EDICION_GASTRONOMIA)
+  const wchar_t* titulo = L"Nodo Gastro";
 #else
   const wchar_t* titulo = L"Nodo Gesti\u00f3n";
 #endif

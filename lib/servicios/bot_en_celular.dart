@@ -152,7 +152,8 @@ class BotEnCelular {
     }
   }
 
-  /// Enciende el bot para [numero] (el WhatsApp del local, `5492944…`). Devuelve null si quedó encendido, o qué falta.
+  /// Enciende el bot para [numero] (el WhatsApp del local, `5492944…`; vacío en la compu, que vincula con el QR). Devuelve null si
+  /// quedó encendido, o qué falta.
   Future<String?> encender({required String numero}) async {
     final falta = await _motor.faltante();
     if (falta != null) return falta;
@@ -189,15 +190,16 @@ class BotEnCelular {
     try {
       if (!await encendido()) return;
       final f = File(p.join((await datos()).path, 'numero.txt'));
-      final numero = f.existsSync() ? f.readAsStringSync().trim() : '';
-      if (numero.isEmpty) return;
-      await encender(numero: numero);
+      // Vacío es válido: la compu vincula con el QR, sin número. Lo que no hay es el archivo (nunca se encendió desde acá).
+      if (!f.existsSync()) return;
+      await encender(numero: f.readAsStringSync().trim());
     } catch (_) {}
   }
 
   Future<void> apagar() => _motor.apagar();
 
-  /// Borra la sesión de WhatsApp (la desvincularon, o se quiere usar otro número) y lo vuelve a encender: pide un código nuevo.
+  /// Borra la sesión de WhatsApp (la desvincularon, o se quiere usar otro número) y lo vuelve a encender: pide un código (o un
+  /// QR) nuevo.
   Future<String?> vincularDeNuevo({required String numero}) async {
     await apagar();
     final d = await datos();

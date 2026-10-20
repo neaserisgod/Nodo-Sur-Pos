@@ -91,3 +91,23 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
    catálogo de WhatsApp, cobro adelantado, la cocina que frena al bot) y las entregas con su primera zona; Configuración › "Horario y transferencias" (el horario y el alias que usa el bot); sin lata ni cigarrillos;
    menú lateral y buscador propios.
 6. **Después:** teléfono, link propio, mesas (comandas, cocina, mozos, propinas).
+
+## Nodo Gastro en Windows (El dueño, 2026-10-20)
+
+*"Prepará la versión desktop para yo poder cargar desde acá, también revisá que si estoy en desktop me des el QR para escanear de
+WhatsApp."* Motivos en `DECISIONES.md`. Hecho (2026-10-20), **sin probar en una PC con Windows real**:
+
+| Pieza | Cómo |
+|---|---|
+| Compilar | `tool/crear_instalador.ps1 -Edicion gastronomia` (o `NODOSUR_EDICION=gastronomia` + `--dart-define=EDICION=gastronomia`) |
+| `.exe`, nombre, ícono, mutex | `nodo_gastro.exe`, "Nodo Gastro", `app_icon_gastronomia.ico` (del ícono de Android), `NodoGastroAppMutex` |
+| Carpeta de datos y base | `%APPDATA%\com.laplazoleta\Nodo Gastro\base` (`carpeta_base.dart`, igual que Servicios) |
+| Instalador | `installer/nodo_gastro.iss`: su `AppId`, `C:\NodoGastro\app`, copia de la base antes de actualizar, apaga el bot al desinstalar |
+| Publicación | `publicar-beta`, a mano, con "gastronomia" (sube su número) o "todas" (usa el de almacén). Feed `windows-gastronomia` |
+| CI | `tests.yml`, job de Windows: compila también Gastro y revisa el `.exe` y el `ProductName` |
+| Pantalla ancha | Menú lateral (Pedidos, Vender, Carta, Caja, Más; Alt+1…5). Pedidos y Vender centrados a 760 px |
+| Bot | Corre en la compu como en Servicios (supervisor, clave Run `NodoGastroBot`). Se vincula **escaneando el QR** con el celular del local, sin cargar el número |
+
+**Falta:** probarla en una PC real (instalar al lado de las otras, entrar con Google, cargar la carta, vincular el bot con el QR y
+actualizar con WinSparkle). Los editores de plato e insumo se abren del ancho de un celular, centrados, como en Servicios.
+

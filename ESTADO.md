@@ -136,6 +136,17 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (20/10/2026)
+
+- **Nodo Gastro para Windows** (El dueño, 20/10: "prepará la versión desktop para yo poder cargar desde acá"). Otra edición del mismo
+  proyecto, como Nodo Sur Servicios: `nodo_gastro.exe`, su ícono, su instalador (`installer/nodo_gastro.iss`) y su feed
+  (`windows-gastronomia`, el sitio ya lo tenía). Se publica a mano (`publicar-beta`, "gastronomia" o "todas"). Con la ventana ancha,
+  **menú lateral** (antes Gastro en la compu se veía del ancho de un celular). Detalle en `docs/PLAN-GASTRONOMIA.md`. **Sin probar
+  en una PC real.**
+- **El bot se vincula con QR en la compu** ("si estoy en desktop me des el QR para escanear de WhatsApp"): Nodo Gastro y Nodo Sur
+  Servicios de Windows dibujan el QR para escanear con el celular del local, sin pedir el número; el celular sigue con el código.
+  Necesita el cambio del bot (`botdemo`) en `main` antes de publicar. **Sin probar con un WhatsApp real.**
+
 ## Últimos cambios (18/10/2026)
 
 - **Sonidos** (El dueño, 18/10: "unos soniditos para cuando se recibe un pago, las notificaciones"). Dos cortos y suaves: uno cuando

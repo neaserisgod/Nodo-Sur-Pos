@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../domain/forma_de_trabajo.dart';
 import '../../edicion.dart' show esEdicionGastronomia;
 import '../../servicios/marca_actual.dart';
 import 'barra_inferior_ns.dart';
@@ -32,6 +33,11 @@ final ValueNotifier<bool> anchoLibreNs = ValueNotifier(false);
 final RouteObserver<PageRoute<dynamic>> observadorRutasNs = RouteObserver<PageRoute<dynamic>>();
 
 bool esAnchoEscritorioNs(BuildContext context) => MediaQuery.sizeOf(context).width >= anchoEscritorioNs;
+
+/// Si el menú del negocio va al costado (la compu) en vez de abajo: servicios y gastronomía, con la ventana ancha. El almacén
+/// tiene su propia app de PC (`lib/ui/`).
+bool usaMenuLateralNs(FormaDeTrabajo forma, {required double anchoVentana}) =>
+    forma != FormaDeTrabajo.productos && anchoVentana >= anchoEscritorioNs;
 
 /// Centra a [child] con un ancho cómodo de leer cuando la pantalla es más ancha que eso.
 class AnchoLecturaNs extends StatelessWidget {

@@ -131,7 +131,7 @@ class CompanionApp extends StatelessWidget {
 
 /// En el navegador de una compu (Nodo Sur Servicios web, `docs/PLAN-WEB-SERVICIOS.md`) y en Windows la app es la del celular:
 /// estirada a todo el ancho de una pantalla grande quedaba con filas de un metro. Se muestra centrada, del ancho de un celular
-/// grande, salvo mientras se ve el menú de un negocio de servicios con la ventana ancha (`anchoLibreNs`, menú lateral: usa todo
+/// grande, salvo mientras se ve el menú de servicios o de gastronomía con la ventana ancha (`anchoLibreNs`, menú lateral: usa todo
 /// el ancho). En el celular (y en un navegador angosto) no cambia nada.
 class _AnchoDelNavegador extends StatelessWidget {
   const _AnchoDelNavegador({required this.child});

@@ -54,6 +54,8 @@ END
 // remains consistent on all systems.
 #ifdef EDICION_SERVICIOS
 IDI_APP_ICON            ICON                    "resources\\app_icon_servicios.ico"
+#elif defined(EDICION_GASTRONOMIA)
+IDI_APP_ICON            ICON                    "resources\\app_icon_gastronomia.ico"
 #else
 IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 #endif
@@ -120,6 +122,12 @@ BEGIN
             VALUE "InternalName", "nodo_sur_servicios" "\0"
             VALUE "OriginalFilename", "nodo_sur_servicios.exe" "\0"
             VALUE "ProductName", "Nodo Sur Servicios" "\0"
+#elif defined(EDICION_GASTRONOMIA)
+            // Una edición nueva en Windows (2026-10-20): no hay carpeta de datos vieja que cuidar, así que lleva el nombre del sitio.
+            VALUE "FileDescription", "Nodo Gastro" "\0"
+            VALUE "InternalName", "nodo_gastro" "\0"
+            VALUE "OriginalFilename", "nodo_gastro.exe" "\0"
+            VALUE "ProductName", "Nodo Gastro" "\0"
 #else
             VALUE "FileDescription", "Nodo Gestión" "\0"
             VALUE "InternalName", "la_plazoleta" "\0"
