@@ -111,7 +111,10 @@ void main() {
   testWidgets('en la compu se enciende sin el número del local: vincula con el QR', (t) async {
     await abrir(t, numero: null, enLaCompu: true);
     await t.tap(find.byKey(const Key('bot_celular_encender')));
-    await asentar(t);
+    // Encender descomprime el bot y vincula la cuenta (archivos de verdad): en una máquina lenta tarda más que [asentar].
+    for (var i = 0; i < 100 && !llamadas.any((c) => c.method == 'encender'); i++) {
+      await asentar(t);
+    }
     expect(find.byKey(const Key('bot_celular_error')), findsNothing);
     final encender = llamadas.where((c) => c.method == 'encender').toList();
     expect(encender, hasLength(1));
