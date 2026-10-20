@@ -303,9 +303,8 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     final enCocina = porEstado[EstadoPedido.porHacer] ?? const <PedidoGastronomia>[];
     final atrasados = enCocina.where((p) => !p.programado && (_faltan(p) ?? 0) < 0).length;
     final lista = porEstado[filtro] ?? const <PedidoGastronomia>[];
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, BarraInferiorNs.espacioReservado - 8),
-      children: [
+    // Lo mismo en el celular y en la compu: la cabecera, el tablero y los avisos.
+    final cabecera = <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
@@ -354,7 +353,8 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
         // Agenda de servicios).
         const PendientesEnInicio(margenLateral: 0),
         const SizedBox(height: 14),
-        // Tablero en mosaicos (mock v5): lo que sale ahora, cuántos esperan que alguien los acepte y cuántos hay en la cocina.
+    ];
+    final tablero = // Tablero en mosaicos (mock v5): lo que sale ahora, cuántos esperan que alguien los acepte y cuántos hay en la cocina.
         SizedBox(
           height: 240,
           child: Row(
@@ -403,7 +403,8 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
               ),
             ],
           ),
-        ),
+        );
+    final avisos = <Widget>[
         if (_cocina == EstadoCocina.pausada) ...[
           const SizedBox(height: 10),
           const InfoNs('Cocina pausada: el bot no toma pedidos. El mostrador sigue.', tono: TonoNs.bad, peso: FontWeight.w600),
@@ -413,6 +414,62 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
           const SizedBox(height: 10),
           InfoNs(motivo, tono: TonoNs.warn, icono: IconoNs.alerta),
         ],
+    ];
+    Widget tarjeta(PedidoGastronomia p) => _TarjetaPedido(
+          pedido: p,
+          faltan: _faltan(p),
+          onVer: () => _verPedido(p),
+          onPaso: (nuevo) => _avanzar(p, nuevo),
+          onCobrar: () => _cobrar(p),
+        );
+    // En la compu (menú lateral): cada estado en su columna, uno al lado del otro, como un tablero de cocina. Se ve todo sin
+    // cambiar de filtro. En camino y sin pagar aparecen solo si hay alguno.
+    if (ConMenuLateralNs.de(context)) {
+      final columnas = [
+        for (final (estado, texto) in _filtros)
+          if (_columnaFija(estado) || (porEstado[estado] ?? const []).isNotEmpty) (estado, texto),
+      ];
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ...cabecera,
+            // Tablero en mosaicos (mock v5): lo que sale ahora, cuántos esperan que alguien los acepte y cuántos hay en la cocina.
+            SizedBox(height: 180, child: tablero.child),
+            ...avisos,
+            const SizedBox(height: 16),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (i, (estado, texto)) in columnas.indexed) ...[
+                    if (i > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: _Columna(
+                        key: ValueKey('pedidos_columna_${estado.clave}'),
+                        titulo: texto,
+                        pedidos: porEstado[estado] ?? const [],
+                        vacio: _vacio(estado),
+                        tarjeta: tarjeta,
+                        cargando: pedidos == null,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, BarraInferiorNs.espacioReservado - 8),
+      children: [
+        ...cabecera,
+        // Tablero en mosaicos (mock v5): lo que sale ahora, cuántos esperan que alguien los acepte y cuántos hay en la cocina.
+        tablero,
+        ...avisos,
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -452,16 +509,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
               ],
             ),
           ),
-        for (final p in lista) ...[
-          _TarjetaPedido(
-            pedido: p,
-            faltan: _faltan(p),
-            onVer: () => _verPedido(p),
-            onPaso: (nuevo) => _avanzar(p, nuevo),
-            onCobrar: () => _cobrar(p),
-          ),
-          const SizedBox(height: 8),
-        ],
+        for (final p in lista) ...[tarjeta(p), const SizedBox(height: 8)],
       ],
     );
   }
@@ -483,6 +531,63 @@ const _filtros = [
   EstadoPedido.enCamino => ('Nadie en la calle.', 'Los envíos que salieron aparecen acá.'),
   _ => ('Todo pagado.', 'Los que pagan con link esperan acá hasta que se acredita.'),
 };
+
+/// Las columnas que la compu muestra siempre, aunque estén vacías: lo que se trabaja en cada turno.
+bool _columnaFija(EstadoPedido e) => e == EstadoPedido.porConfirmar || e == EstadoPedido.porHacer || e == EstadoPedido.listo;
+
+/// Una columna del tablero de la compu: el estado, cuántos hay y sus pedidos, con su propio scroll.
+class _Columna extends StatelessWidget {
+  const _Columna({super.key, required this.titulo, required this.pedidos, required this.vacio, required this.tarjeta, required this.cargando});
+
+  final String titulo;
+  final List<PedidoGastronomia> pedidos;
+  final (String, String) vacio;
+  final Widget Function(PedidoGastronomia) tarjeta;
+  final bool cargando;
+
+  @override
+  Widget build(BuildContext context) {
+    final ns = context.ns;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
+          child: Row(
+            children: [
+              Expanded(child: Text(titulo, style: tituloNs(22, track: -0.04, color: ns.ink))),
+              Text('${pedidos.length}', style: estiloNs(15, peso: FontWeight.w700, color: ns.mute)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: pedidos.isEmpty
+              ? (cargando
+                  ? const SizedBox.shrink()
+                  : Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(border: Border.all(color: ns.s2), borderRadius: BorderRadius.circular(22)),
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(vacio.$1, style: estiloNs(15, peso: FontWeight.w600, color: ns.ink)),
+                          const SizedBox(height: 4),
+                          Text(vacio.$2, style: estiloNs(14, color: ns.mute)),
+                        ],
+                      ),
+                    ))
+              : ListView.separated(
+                  itemCount: pedidos.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => tarjeta(pedidos[i]),
+                ),
+        ),
+      ],
+    );
+  }
+}
 
 /// Los pedidos por aceptar, para el globo de la pestaña Pedidos.
 final ValueNotifier<int> pedidosPorAceptarNs = ValueNotifier(0);

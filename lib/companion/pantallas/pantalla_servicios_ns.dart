@@ -278,8 +278,9 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       for (final MapEntry(key: categoria, value: lista) in porCategoria.entries) ...[
         SeccionNs(categoria),
         const SizedBox(height: 8),
-        ListaAgrupadaNs(
-          filas: [
+        _grupo(
+          context,
+          [
             for (final s in lista)
               TarjetaFilaNs(
                 key: ValueKey('servicio-${s.producto.id}'),
@@ -301,6 +302,21 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
         const SizedBox(height: 16),
       ],
     ];
+  }
+
+  /// Una lista de filas. En la compu de un local gastronómico (menú lateral) va en dos columnas: la carta entra entera sin
+  /// estirar renglones de un metro.
+  Widget _grupo(BuildContext context, List<Widget> filas) {
+    if (!ConMenuLateralNs.de(context) || !_esCarta || filas.length < 2) return ListaAgrupadaNs(filas: filas);
+    final mitad = (filas.length + 1) ~/ 2;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: ListaAgrupadaNs(filas: filas.sublist(0, mitad))),
+        const SizedBox(width: 12),
+        Expanded(child: ListaAgrupadaNs(filas: filas.sublist(mitad))),
+      ],
+    );
   }
 
   String _subtituloServicio(ServicioListado s) {
@@ -328,8 +344,9 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       else ...[
         const SeccionNs('Por acabarse primero'),
         const SizedBox(height: 8),
-        ListaAgrupadaNs(
-          filas: [
+        _grupo(
+          context,
+          [
             for (final i in _porAcabarse)
               TarjetaFilaNs(
                 key: ValueKey('insumo-${i.producto.id}'),
@@ -360,8 +377,9 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
         InfoNs(_t('Lo que vendés aparte de los servicios: un shampoo, una cera, una crema. Cargalo con "+ Producto" y lo sumás al cobrar con "+ Producto".',
             'Lo que vendés como viene: una gaseosa, un vino, un postre de heladera. Cargalo con "+ Producto" y al cobrar lo buscás en Vender, como un plato.'))
       else
-        ListaAgrupadaNs(
-          filas: [
+        _grupo(
+          context,
+          [
             for (final p in _productos)
               TarjetaFilaNs(
                 key: ValueKey('producto-${p.id}'),

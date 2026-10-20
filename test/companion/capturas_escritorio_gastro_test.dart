@@ -172,13 +172,13 @@ void main() {
     final s = oscuro ? ' (oscuro)' : '';
     testWidgets('pedidos$s', (tester) async {
       await sembrar(tester);
-      await abrir(tester, PestaniaNs.inicio, AnchoLecturaNs(child: PantallaPedidosNs(db: db, usuarioId: usuario, ahora: _ahora)), oscuro: oscuro);
+      await abrir(tester, PestaniaNs.inicio, PantallaPedidosNs(db: db, usuarioId: usuario, ahora: _ahora), oscuro: oscuro);
       expect(find.text('Juan Pérez'), findsWidgets);
       await guardar(tester, 'pedidos', oscuro: oscuro);
     });
     testWidgets('carta$s', (tester) async {
       await sembrar(tester);
-      await abrir(tester, PestaniaNs.productos, AnchoLecturaNs(child: PantallaServiciosNs(db: db, usuarioId: usuario)), oscuro: oscuro);
+      await abrir(tester, PestaniaNs.productos, AnchoLecturaNs(ancho: anchoCartaNs, child: PantallaServiciosNs(db: db, usuarioId: usuario)), oscuro: oscuro);
       expect(find.text('Smash doble'), findsWidgets);
       await guardar(tester, 'carta', oscuro: oscuro);
     });
@@ -188,8 +188,15 @@ void main() {
       await tester.runAsync(() => servicio.abrirSesion(usuarioId: usuario, fondoInicialCentavos: 0));
       final carrito = <LineaVenta>[];
       await abrir(tester, PestaniaNs.vender,
-          AnchoLecturaNs(child: PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: usuario, carrito: carrito)), oscuro: oscuro);
+          PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: usuario, carrito: carrito), oscuro: oscuro);
+      // La grilla de platos y el cobro al costado, como el Cobrar de servicios.
+      expect(find.text('Tocá un plato o una bebida para sumarlo.'), findsOneWidget);
       await guardar(tester, 'vender', oscuro: oscuro);
+      await tester.tap(find.text('Smash doble').first);
+      await tester.tap(find.text('Papas fritas').first);
+      await esperar(tester);
+      expect(find.text('Tocá un plato o una bebida para sumarlo.'), findsNothing);
+      await guardar(tester, 'vender-cobro', oscuro: oscuro);
     });
   }
 }

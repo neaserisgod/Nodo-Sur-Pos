@@ -929,32 +929,30 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
             // En un local gastronómico abre en los Pedidos (§22).
-            // La agenda se arma sola a lo ancho (el turno al costado); los pedidos, centrados a un ancho cómodo de leer.
+            // La agenda y los pedidos se arman solos a lo ancho (el turno al costado; los pedidos en columnas).
             builder: (context, m, _) => switch (m.forma) {
               FormaDeTrabajo.servicios => const PantallaAgendaNs(),
-              FormaDeTrabajo.gastronomia => _lectura(ancho, const PantallaPedidosNs()),
+              FormaDeTrabajo.gastronomia => const PantallaPedidosNs(),
               FormaDeTrabajo.productos => const PantallaInicioNs(),
             },
           ),
           ValueListenableBuilder<ModulosNegocio>(
             valueListenable: modulosActuales,
             // La carta de un local gastronómico son platos con receta, como los servicios: la misma pantalla.
-            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.productos ? const PantallaProductosNs() : const PantallaServiciosNs()),
+            // En gastronomía, más ancha: la carta va en dos columnas.
+            builder: (context, m, _) => _lectura(ancho, m.forma == FormaDeTrabajo.productos ? const PantallaProductosNs() : const PantallaServiciosNs(),
+                maximo: m.forma == FormaDeTrabajo.gastronomia ? anchoCartaNs : anchoLecturaNs),
           ),
           _servicio == null || _usuarioId == null
               ? const SizedBox.shrink()
-              // Cobrar de servicios se arma a lo ancho (grilla y cobro al costado); el Vender de un local gastronómico es el del
-              // celular, centrado.
-              : _lectura(
-                  ancho && !esNegocioDeServicios(),
-                  PantallaCarritoVenta(
-                    cliente: _cliente,
-                    servicio: _servicio!,
-                    usuarioId: _usuarioId!,
-                    carrito: _carrito,
-                    encargue: _encargueEnVenta,
-                    pedido: _pedidoEnVenta,
-                  ),
+              // Con la ventana ancha se arma sola: la grilla de servicios o de platos y el cobro al costado.
+              : PantallaCarritoVenta(
+                  cliente: _cliente,
+                  servicio: _servicio!,
+                  usuarioId: _usuarioId!,
+                  carrito: _carrito,
+                  encargue: _encargueEnVenta,
+                  pedido: _pedidoEnVenta,
                 ),
           _lectura(ancho, const PantallaCajaNs()),
           _lectura(ancho, PantallaMasNs(alAbrirEncargues: _abrirEncargues)),
@@ -1039,5 +1037,6 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
 
   /// Con el menú lateral, las pantallas del celular se centran a un ancho cómodo de leer. Siempre el mismo envoltorio (sin
   /// límite en el celular), así cambiar de disposición no las arma de nuevo.
-  Widget _lectura(bool ancho, Widget pantalla) => AnchoLecturaNs(ancho: ancho ? anchoLecturaNs : double.infinity, child: pantalla);
+  Widget _lectura(bool ancho, Widget pantalla, {double maximo = anchoLecturaNs}) =>
+      AnchoLecturaNs(ancho: ancho ? maximo : double.infinity, child: pantalla);
 }

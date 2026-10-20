@@ -45,7 +45,7 @@ import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
 import '../edicion.dart';
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, esNegocioGastronomico;
 import '../servicios/preferencia_qr.dart';
 import 'modo_uso.dart';
 import 'terminal_mp.dart';
@@ -1087,7 +1087,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           child: PantallaEntradaNs(
             child: !abierta && _paso == _Paso.carrito
                 ? _CajaCerrada(onAbrir: () => mostrarHojaAbrirCaja(context, servicio: widget.servicio, usuarioId: widget.usuarioId).then((_) => app.refrescar()))
-                : ConMenuLateralNs.de(context) && esNegocioDeServicios()
+                : ConMenuLateralNs.de(context) && (esNegocioDeServicios() || esNegocioGastronomico())
                 ? _vistaAncha(context)
                 : switch (_paso) {
                     _Paso.carrito => _vistaCarrito(context),
@@ -1197,6 +1197,8 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   Widget _vistaAncha(BuildContext context) {
     final ns = context.ns;
     final n = widget.carrito.length;
+    // En un local gastronómico la grilla son los platos de la carta, y lo que se vende aparte son las bebidas (§22).
+    final gastro = esNegocioGastronomico();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1204,7 +1206,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(margenNs, 28, margenNs, 28),
             children: [
-              Text('Cobrar', style: tituloNs(40, color: ns.ink)),
+              Text(gastro ? 'Vender' : 'Cobrar', style: tituloNs(40, color: ns.ink)),
               const SizedBox(height: 14),
               if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
               GrillaServiciosNs(onElegir: _agregarServicio),
@@ -1213,7 +1215,14 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 alignment: Alignment.centerLeft,
                 child: SizedBox(
                   width: 260,
-                  child: BotonNs(key: const Key('cobrar_mas_producto'), texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: ns.s, color: ns.i),
+                  child: BotonNs(
+                      key: const Key('cobrar_mas_producto'),
+                      texto: gastro ? '+ Bebida u otro' : '+ Producto',
+                      onTap: _elegirProducto,
+                      alto: 52,
+                      tamanio: 15,
+                      fondo: ns.s,
+                      color: ns.i),
                 ),
               ),
             ],
@@ -1238,9 +1247,21 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                         ],
                       ),
                       const SizedBox(height: 14),
+                      if (_pedido.value != null && n > 0) ...[
+                        Container(
+                          key: const Key('carrito_cobrando_pedido'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          decoration: BoxDecoration(color: ns.ibg, borderRadius: BorderRadius.circular(22)),
+                          child: Text('Cobrando el pedido de ${_pedido.value!.nombre}',
+                              style: estiloNs(14, peso: FontWeight.w600, altura: 1.3, color: ns.i)),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
                       Expanded(
                         child: n == 0
-                            ? Text('Tocá un servicio o un producto para sumarlo.', style: estiloNs(15, color: ns.mute))
+                            ? Text(gastro ? 'Tocá un plato o una bebida para sumarlo.' : 'Tocá un servicio o un producto para sumarlo.',
+                                style: estiloNs(15, color: ns.mute))
                             : _lineas(context),
                       ),
                       if (n > 0) ...[_filaDescuento(context), const SizedBox(height: 14), _barraTotal(context)],

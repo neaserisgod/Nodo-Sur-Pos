@@ -24,6 +24,9 @@ const anchoMenuLateralNs = 232.0;
 /// Las pantallas pensadas para el celular no se estiran más que esto en la compu: renglones de un metro no se leen.
 const anchoLecturaNs = 760.0;
 
+/// La carta de un local gastronómico en la compu: dos columnas de platos.
+const anchoCartaNs = 1160.0;
+
 /// Con la ventana ancha, el menú del negocio de servicios (Agenda, Cobrar…) está a la vista y usa todo el ancho. Mientras sea
 /// true, `companion_app.dart` no achica la app al ancho de un celular; lo pone y lo saca `PantallaMenuCompanion`.
 final ValueNotifier<bool> anchoLibreNs = ValueNotifier(false);
@@ -170,8 +173,10 @@ class _Negocio extends StatelessWidget {
                 width: 36,
                 height: 36,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: TokensNs.ciruela, borderRadius: BorderRadius.circular(11)),
-                child: Text(nombre.characters.first.toUpperCase(), style: estiloNs(15, peso: FontWeight.w700, color: TokensNs.ciruelaTexto)),
+                // El color de la app: ciruela en Servicios, naranja en Gastro.
+                decoration: BoxDecoration(color: esEdicionGastronomia ? ns.acento : TokensNs.ciruela, borderRadius: BorderRadius.circular(11)),
+                child: Text(nombre.characters.first.toUpperCase(),
+                    style: estiloNs(15, peso: FontWeight.w700, color: esEdicionGastronomia ? ns.onAcento : TokensNs.ciruelaTexto)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -198,8 +203,13 @@ class _ItemMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final ns = context.ns;
     final destacada = entrada.destacada;
-    final fondo = destacada ? TokensNs.marca : (activa ? ns.ibg : Colors.transparent);
-    final color = destacada ? TokensNs.blanco : (activa ? ns.i : ns.mute);
+    // En Nodo Gastro, los colores de su marca: Vender en naranja con texto negro y la pestaña activa en tinta, bien visible (su
+    // `ibg` es un gris casi blanco que apenas se distingue del fondo).
+    final gastro = esEdicionGastronomia;
+    final fondo = destacada
+        ? (gastro ? ns.acento : TokensNs.marca)
+        : (activa ? (gastro ? ns.ink : ns.ibg) : Colors.transparent);
+    final color = destacada ? (gastro ? ns.onAcento : TokensNs.blanco) : (activa ? (gastro ? ns.paper : ns.i) : ns.mute);
     return Semantics(
       selected: activa,
       button: true,
@@ -213,7 +223,7 @@ class _ItemMenu extends StatelessWidget {
           decoration: BoxDecoration(
             color: fondo,
             borderRadius: BorderRadius.circular(999),
-            boxShadow: destacada && activa ? [BoxShadow(color: ns.ibg, spreadRadius: 3)] : null,
+            boxShadow: destacada && activa ? [BoxShadow(color: gastro ? ns.ink : ns.ibg, spreadRadius: gastro ? 2 : 3)] : null,
           ),
           child: Row(
             children: [
