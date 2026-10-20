@@ -367,7 +367,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final elegido = await mostrarHojaNs<ServicioListado>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: 'Otro servicio',
+        titulo: esNegocioGastronomico() ? 'Plato' : 'Otro servicio',
         bloques: [GrillaServiciosNs(onElegir: (s) => Navigator.of(ctx).pop(s))],
       ),
     );
@@ -1275,15 +1275,23 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
 
   Widget _vacio(BuildContext context) {
     final ns = context.ns;
-    // Un negocio de servicios cobra tocando el servicio: sin más vendidos ni encargues de productos.
-    if (esNegocioDeServicios()) {
+    // Un negocio de servicios cobra tocando el servicio: sin más vendidos ni encargues de productos. En un local
+    // gastronómico la grilla son los platos de la carta (§22): sin ella había que buscar cada plato por nombre.
+    if (esNegocioDeServicios() || esNegocioGastronomico()) {
       return ListView(
         padding: EdgeInsets.zero,
         children: [
           if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
           GrillaServiciosNs(onElegir: _agregarServicio),
           const SizedBox(height: 12),
-          BotonNs(key: const Key('cobrar_mas_producto'), texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: ns.s, color: ns.i),
+          BotonNs(
+              key: const Key('cobrar_mas_producto'),
+              texto: esNegocioGastronomico() ? '+ Bebida u otro' : '+ Producto',
+              onTap: _elegirProducto,
+              alto: 52,
+              tamanio: 15,
+              fondo: ns.s,
+              color: ns.i),
         ],
       );
     }
@@ -1366,12 +1374,29 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (i == n) {
-          if (esNegocioDeServicios()) {
+          // En la compu Gastro ya tiene la grilla de platos a la vista: los botones serían lo mismo dos veces.
+          final gastro = esNegocioGastronomico() && !ConMenuLateralNs.de(context);
+          if (esNegocioDeServicios() || gastro) {
             return Row(
               children: [
-                Expanded(child: BotonNs(texto: '+ Otro servicio', onTap: _elegirOtroServicio, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i)),
+                Expanded(
+                    child: BotonNs(
+                        key: const Key('cobrar_otro_servicio'),
+                        texto: gastro ? '+ Plato' : '+ Otro servicio',
+                        onTap: _elegirOtroServicio,
+                        alto: 52,
+                        tamanio: 15,
+                        fondo: context.ns.s,
+                        color: context.ns.i)),
                 const SizedBox(width: 10),
-                Expanded(child: BotonNs(texto: '+ Producto', onTap: _elegirProducto, alto: 52, tamanio: 15, fondo: context.ns.s, color: context.ns.i)),
+                Expanded(
+                    child: BotonNs(
+                        texto: gastro ? '+ Bebida u otro' : '+ Producto',
+                        onTap: _elegirProducto,
+                        alto: 52,
+                        tamanio: 15,
+                        fondo: context.ns.s,
+                        color: context.ns.i)),
               ],
             );
           }
