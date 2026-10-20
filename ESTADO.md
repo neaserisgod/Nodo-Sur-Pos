@@ -147,6 +147,9 @@ Pendiente / ideas (sin hacer):
   columnas (Nuevos, Cocina, Listos), Vender con la grilla de platos y el cobro al costado (antes no mostraba los platos: había que
   buscarlos), la Carta en dos columnas y el menú lateral en naranja y tinta (antes, Vender siempre en el azul de Servicios). El
   celular no cambia. Publicada la beta de Windows 1.0.0.2184 (antes de este cambio).
+- **Vender de Gastro en el celular muestra los platos** (El dueño, 20/10: "arreglá Vender en el celular"): con el carrito vacío, la
+  grilla de la carta (antes caía en la vista del almacén y cada plato se buscaba por nombre); con algo en el carrito, "+ Plato" y
+  "+ Bebida u otro". La compu no cambia.
 - **El bot se vincula con QR en la compu** ("si estoy en desktop me des el QR para escanear de WhatsApp"): Nodo Gastro y Nodo Sur
   Servicios de Windows dibujan el QR para escanear con el celular del local, sin pedir el número; el celular sigue con el código.
   Necesita el cambio del bot (`botdemo`) en `main` antes de publicar. **Sin probar con un WhatsApp real.**
