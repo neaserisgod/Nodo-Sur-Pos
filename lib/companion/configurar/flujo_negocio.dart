@@ -89,7 +89,7 @@ Future<void> _abrirBot(BuildContext context) async {
     builder: (_) => PantallaBotWhatsApp(
       acceso: accesoBotDelCelular,
       servicio: servicio,
-      enEsteCelular: botEnEsteEquipo ? (context, numero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero) : null,
+      enEsteCelular: botEnEsteEquipo ? (context, numero, cambiarNumero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero, cambiarNumero: cambiarNumero) : null,
     ),
   ));
 }

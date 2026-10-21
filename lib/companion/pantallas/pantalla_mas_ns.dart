@@ -178,7 +178,7 @@ class PantallaMasNs extends StatelessWidget {
                             acceso: accesoBotDelCelular,
                             servicio: app.servicio!,
                             alIrATuNegocio: () => app.irA((_) => const PantallaConfiguracionCompanion()),
-                            enEsteCelular: (context, numero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero),
+                            enEsteCelular: (context, numero, cambiarNumero) => SeccionBotEnCelularNs(bot: botDelCelular, numeroBot: numero, cambiarNumero: cambiarNumero),
                           ),
                         ),
                       ),

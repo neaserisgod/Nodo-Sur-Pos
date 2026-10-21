@@ -48,14 +48,14 @@ void main() {
 
   BotEnCelular bot() => BotEnCelular(acceso: SitioBotFalso(), soporte: () async => tmp, canal: canal, zip: () async => ByteData(0));
 
-  Future<void> abrir(WidgetTester t, {String? numero = '5492944123456', bool enLaCompu = false}) async {
+  Future<void> abrir(WidgetTester t, {String? numero = '5492944123456', bool enLaCompu = false, Future<bool> Function(String)? cambiarNumero}) async {
     t.view.physicalSize = const Size(390, 1600);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(MaterialApp(
       theme: TemaCompanion.claro,
-      home: Builder(builder: (c) => Scaffold(backgroundColor: c.ns.paper, body: ListView(children: [SeccionBotEnCelularNs(bot: bot(), numeroBot: numero, enLaCompu: enLaCompu)]))),
+      home: Builder(builder: (c) => Scaffold(backgroundColor: c.ns.paper, body: ListView(children: [SeccionBotEnCelularNs(bot: bot(), numeroBot: numero, enLaCompu: enLaCompu, cambiarNumero: cambiarNumero)]))),
     ));
     await asentar(t);
   }
@@ -119,6 +119,63 @@ void main() {
     final encender = llamadas.where((c) => c.method == 'encender').toList();
     expect(encender, hasLength(1));
     expect((encender.single.arguments as Map)['numero'], '');
+    await t.pumpWidget(const SizedBox());
+  });
+
+  // Control del bot (El dueño, 2026-10-21): desvincular y vincular otro número desde la app. Apagar espera a que Node pare: el
+  // reloj de la prueba se adelanta.
+  Future<void> esperarApagado(WidgetTester t, bool Function() listo) async {
+    for (var i = 0; i < 100 && !listo(); i++) {
+      await t.pump(const Duration(milliseconds: 500));
+      await asentar(t);
+    }
+  }
+
+  Directory sesionDePrueba() {
+    final datos = Directory(p.join(tmp.path, 'bot-datos'))..createSync();
+    File(p.join(datos.path, 'estado.json')).writeAsStringSync(jsonEncode({'conectado': true}));
+    return Directory(p.join(datos.path, 'sesion-baileys'))..createSync();
+  }
+
+  testWidgets('encendido: muestra el número y el control; desvincular pide confirmar, apaga y borra la sesión', (t) async {
+    encendido = true;
+    final sesion = sesionDePrueba();
+    await abrir(t);
+    expect(find.text('WhatsApp del bot: 2944 12-3456'), findsOneWidget);
+    expect(find.byKey(const Key('bot_celular_reiniciar')), findsOneWidget);
+    await t.ensureVisible(find.byKey(const Key('bot_celular_desvincular')));
+    await t.tap(find.byKey(const Key('bot_celular_desvincular')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Desvincular'));
+    await esperarApagado(t, () => !sesion.existsSync());
+    expect(llamadas.where((c) => c.method == 'apagar'), isNotEmpty);
+    expect(sesion.existsSync(), isFalse);
+    expect(llamadas.where((c) => c.method == 'encender'), isEmpty, reason: 'queda apagado hasta que se vincule de nuevo');
+    await t.pump(const Duration(seconds: 4));
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('vincular otro número: lo guarda en la configuración y pide el código para ese número', (t) async {
+    encendido = true;
+    final sesion = sesionDePrueba();
+    final guardados = <String>[];
+    await abrir(t, cambiarNumero: (n) async {
+      guardados.add(n);
+      return true;
+    });
+    await t.ensureVisible(find.byKey(const Key('bot_celular_otro_numero')));
+    await t.tap(find.byKey(const Key('bot_celular_otro_numero')));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextField).last, '12');
+    await t.tap(find.text('Vincular este número'));
+    await t.pump();
+    expect(find.textContaining('no parece de WhatsApp'), findsOneWidget);
+    await t.enterText(find.byType(TextField).last, '2944 999888');
+    await t.tap(find.text('Vincular este número'));
+    await esperarApagado(t, () => llamadas.any((c) => c.method == 'encender'));
+    expect(guardados, ['5492944999888']);
+    expect(sesion.existsSync(), isFalse);
+    expect((llamadas.lastWhere((c) => c.method == 'encender').arguments as Map)['numero'], '5492944999888');
     await t.pumpWidget(const SizedBox());
   });
 }
