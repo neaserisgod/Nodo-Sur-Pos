@@ -19,13 +19,16 @@
 // ninguna política especial acá, a diferencia de abrir/cerrar caja.
 
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_selector/file_selector.dart' show XTypeGroup, getSaveLocation, openFile;
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../data/importar_base.dart' show BaseParaImportar, ErrorImportacion;
 import '../data/repositorio_configuracion.dart' show configurarValorHora;
 import '../data/repositorio_productos.dart' show crearCategoria;
 import '../domain/dinero.dart';
@@ -44,6 +47,7 @@ import 'cliente_companion.dart';
 import 'kit/kit_ns.dart';
 import 'debounce.dart';
 import 'emparejamiento.dart';
+import 'importar_base_celular.dart';
 import 'mensaje_error.dart';
 import 'navegacion.dart';
 import 'pantalla_entrar_con_cuenta.dart' show avisarNombreDelNegocio;
@@ -518,16 +522,26 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
             // Desde la v64 los fijos viajan entre la PC y el celular (El dueño, 2026-10-09: independizar el celular).
             BotonNs.secundario(context, 'Gastos fijos del mes', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantallaGastosFijos())), icono: IconoNs.calendario),
           ],
-          // En "Solo celular" la base es la del negocio: se puede sacar para pasarla a la PC o guardarla (en "PC y celular" la
-          // base es la de la PC, que tiene su Respaldo).
-          if (!_pcEmparejada && _puedeCompartirArchivos) ...[
+          // En "Solo celular" la base es la del negocio: se puede sacar para pasarla a la PC o guardarla, y volver a cargar una
+          // (en "PC y celular" la base es la de la PC, que tiene su Respaldo). En el navegador no hay archivo de base.
+          if (!_pcEmparejada && !kIsWeb) ...[
             _seccion('Tu base'),
             TarjetaFilaNs(
               key: const Key('config-exportar-base'),
               titulo: _exportandoBase ? 'Armando el archivo…' : 'Exportar la base',
-              subtitulo: 'Una copia de todo, para mandar por WhatsApp, Drive o mail. La PC la importa en Respaldo',
+              subtitulo: _puedeCompartirArchivos
+                  ? 'Una copia de todo, para mandar por WhatsApp, Drive o mail. La PC la importa en Respaldo'
+                  : 'Una copia de todo, en un archivo que guardás donde quieras',
               icono: IconoNs.descarga,
-              onTap: _exportandoBase ? null : _exportarBase,
+              onTap: _exportandoBase || _importandoBase ? null : _exportarBase,
+            ),
+            const SizedBox(height: 8),
+            TarjetaFilaNs(
+              key: const Key('config-importar-base'),
+              titulo: _importandoBase ? 'Revisando el archivo…' : 'Importar una base',
+              subtitulo: 'Reemplaza todo lo de este equipo por lo del archivo',
+              icono: IconoNs.subida,
+              onTap: _exportandoBase || _importandoBase ? null : _importarBase,
             ),
           ],
           _seccion('Asistente IA'),
@@ -664,11 +678,65 @@ class _PantallaConfiguracionCompanionState extends State<PantallaConfiguracionCo
     setState(() => _exportandoBase = true);
     try {
       final ruta = await exportarBase(baseLocalCompanion(), carpeta: await getTemporaryDirectory());
-      await SharePlus.instance.share(ShareParams(files: [XFile(ruta)], subject: 'Base de Nodo Sur'));
+      if (_puedeCompartirArchivos) {
+        await SharePlus.instance.share(ShareParams(files: [XFile(ruta)], subject: 'Base de Nodo Sur'));
+      } else {
+        // En la compu no hay a quién compartirle: se guarda donde elija, con el nombre con fecha de siempre.
+        final destino = await getSaveLocation(suggestedName: p.basename(ruta));
+        if (destino == null) return;
+        await File(ruta).copy(destino.path);
+        if (mounted) mostrarAvisoNs(context, 'Base guardada en ${destino.path}', largo: true);
+      }
     } catch (e) {
       if (mounted) mostrarAvisoNs(context, 'No se pudo exportar la base: ${mensajeDeError(e)}', largo: true);
     } finally {
       if (mounted) setState(() => _exportandoBase = false);
+    }
+  }
+
+  bool _importandoBase = false;
+
+  /// Cargar una base exportada (de este equipo o de otro del mismo negocio). Reemplaza todo: se valida el archivo antes de
+  /// preguntar, y recién con el sí se frena la app, se cambia la base y se arma de nuevo (`reemplazarBaseDelCelular`).
+  Future<void> _importarBase() async {
+    final elegido = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Base de datos', extensions: ['sqlite', 'db', 'gz'], mimeTypes: ['application/gzip', 'application/x-sqlite3', 'application/octet-stream']),
+      ],
+    );
+    if (elegido == null || !mounted) return;
+    setState(() => _importandoBase = true);
+    final BaseParaImportar lista;
+    try {
+      lista = await prepararBaseParaElCelular(elegido.path);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _importandoBase = false);
+        mostrarAvisoNs(context, e is ErrorImportacion ? e.mensaje : 'No se pudo leer el archivo: ${mensajeDeError(e)}', largo: true);
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _importandoBase = false);
+    final seguir = await mostrarHojaNs<bool>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '¿Reemplazar todo por esta base?',
+        texto: 'Lo que hay ahora en este equipo (carta, ventas, caja, pedidos) se cambia por lo de «${elegido.name}». No se puede '
+            'deshacer. Usá solo una base de este mismo negocio: con tu cuenta, lo que traiga se sube a la nube y llega a tus otros '
+            'equipos.${lista.vieja ? ' Es de una versión anterior de la app: se actualiza sola al abrirla.' : ''}',
+        botones: [
+          BotonNs.peligroSolido(ctx, 'Reemplazar', () => Navigator.of(ctx).pop(true)),
+          BotonNs.secundario(ctx, 'Cancelar', () => Navigator.of(ctx).pop(false)),
+        ],
+      ),
+    );
+    if (seguir != true || !mounted) return;
+    // El aviso va al overlay de la app, que sigue después de armarla de nuevo; esta pantalla no.
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final error = await reemplazarBaseDelCelular(lista.ruta);
+    if (overlay.mounted) {
+      mostrarAvisoEnNs(overlay, error == null ? 'Listo: la app ya usa la base importada' : 'No se pudo importar la base: ${mensajeDeError(error)}', largo: true);
     }
   }
 
