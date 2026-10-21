@@ -64,6 +64,14 @@ android {
         }
     }
 
+    // Node y sus librerías los deja `tool/preparar_bot_android.sh` en la carpeta de servicios; Nodo Gastro corre el mismo bot y
+    // las toma de ahí. Sin esto el APK de Gastro salía sin Node y la app decía "Esta versión de la app no trae el bot".
+    sourceSets {
+        getByName("gastronomia") {
+            jniLibs.srcDir("src/servicios/jniLibs")
+        }
+    }
+
     // Prueba del bot adentro de la app: Node (libns_node.so) tiene que quedar descomprimido en la carpeta de librerías para poder
     // ejecutarlo (Android no deja ejecutar desde los datos de la app).
     packaging {
