@@ -355,7 +355,11 @@ class CampoNs extends StatelessWidget {
     this.alineadoDerecha = false,
     this.onSubmit,
     this.estiloGrande,
+    this.lineas = 1,
   });
+
+  /// Más de 1: un texto largo que crece hasta ese alto (una respuesta del bot) y deja saltar de renglón.
+  final int lineas;
 
   /// Tamaño del valor cuando se quiere otro "grande" que el de 40 (p. ej. 46 en Monto).
   final double? estiloGrande;
@@ -395,13 +399,17 @@ class CampoNs extends StatelessWidget {
               autofocus: autofoco,
               enabled: habilitado,
               obscureText: oculto,
-              keyboardType: teclado,
+              minLines: lineas > 1 ? 2 : null,
+              maxLines: lineas > 1 ? lineas : 1,
+              keyboardType: lineas > 1 ? TextInputType.multiline : teclado,
               inputFormatters: formatos,
               onChanged: onChanged,
               onSubmitted: onSubmit,
               textAlign: alineadoDerecha ? TextAlign.right : TextAlign.left,
               cursorColor: ns.ink,
-              style: estiloGrande != null ? tituloNs(estiloGrande!, track: -0.05, color: ns.ink) : (grande ? tituloNs(40, track: -0.05, color: ns.ink) : estiloNs(20, peso: FontWeight.w500, color: ns.ink, tabular: true)),
+              style: estiloGrande != null
+                  ? tituloNs(estiloGrande!, track: -0.05, color: ns.ink)
+                  : (grande ? tituloNs(40, track: -0.05, color: ns.ink) : estiloNs(lineas > 1 ? 16 : 20, peso: FontWeight.w500, color: ns.ink, tabular: lineas == 1)),
               decoration: InputDecoration(
                 isDense: true,
                 filled: false,

@@ -138,6 +138,13 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (21/10/2026)
 
+- **Preguntas frecuentes del bot desde la app** (El dueño, 21/10: "quiero que cubra todas las posibles preguntas acerca de las
+  hamburguesas"). Más › Bot de WhatsApp › **Preguntas del bot**: agregar, editar y borrar preguntas (frases que la disparan +
+  respuesta), los textos de "¿cómo se paga?" y "¿hacen envíos?", el emoji del local y **"Pegar preguntas copiadas"** (un bloque
+  de texto con `claves:` / `respuesta:` separado por `---`). Avisa las claves sueltas cortas o que son palabras de la carta. Va a
+  `preguntas`, `respuestas` y `textos.emoji` de la configuración del bot, que ya los entendía (`domain/preguntas_bot.dart`).
+  Necesita el bot con el cambio del mismo día (`botdemo`: las preguntas del local antes que pasar a una persona, y una pregunta no
+  se anota en el pedido). **Sin probar en un celular real.**
 - **Importar una base en el celular y en Gastro/Servicios de Windows** (El dueño, 21/10: "quiero poder exportar la base de datos del
   sistema … y en base a eso vos escribís y me lo devolvés"). Más › Configuración › **Tu base**: además de "Exportar la base" (que en la
   compu ahora guarda el archivo donde se elija, en vez de no aparecer), **"Importar una base"**. Valida como la PC

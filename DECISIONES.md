@@ -116,6 +116,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Se publica solo cuando se pide (2026-10-03)](#se-publica-solo-cuando-se-pide-2026-10-03)
 - [Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
 - [Importar una base en el celular, sin cerrar la app (El dueño, 2026-10-21)](#importar-una-base-en-el-celular-sin-cerrar-la-app-el-dueño-2026-10-21)
+- [Preguntas frecuentes del bot desde la app (El dueño, 2026-10-21)](#preguntas-frecuentes-del-bot-desde-la-app-el-dueño-2026-10-21)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2773,4 +2774,22 @@ con el espejo de siempre. El celular ya exportaba; faltaba volver a cargar una b
   Servicios de Windows) "Exportar la base" ahora guarda el archivo donde se elija: antes no aparecía porque no hay a quién compartirle.
 - **La base no sabe de qué negocio es**: importar la de otro negocio la subiría a este. La confirmación lo avisa; no se agregó una marca
   de negocio en la base por un caso que hoy hace solo el dueño.
+
+## Preguntas frecuentes del bot desde la app (El dueño, 2026-10-21)
+
+El dueño: *"quiero que el bot hable como si fuese humano y que cubra todas las posibles preguntas acerca de las hamburguesas"*.
+Eligió "FAQ + tono natural" (sin IA: el bot no inventa nada). El bot ya contestaba `config.preguntas` ([{claves, respuesta}], antes
+que pagos, envíos, horarios y ubicación); la app las conservaba pero no tenía dónde cargarlas.
+
+- **Pantalla aparte** (`companion/pantallas/pantalla_preguntas_bot_ns.dart`), desde Más › Bot de WhatsApp. Al guardar **relee la
+  configuración del sitio** y pone las preguntas encima (`configConPreguntas`): mientras estaba abierta, `pedidos_bot_nube.dart` pudo
+  mandar la carta o la cocina. Al volver, la pantalla del bot relee la suya, así su "Guardar" no las pisa.
+- **Pegar un bloque** (`leerBloquePreguntas`): el dueño arma las preguntas una vez (o se las arma Claude) y las pasa por WhatsApp.
+  Separador `---`, `claves:` con comas, `respuesta:` hasta el separador (renglones incluidos), `pregunta:` como título; `emoji:`,
+  `pagos:`, `envios:` sueltos. Lo que tiene el mismo título se reemplaza.
+- **Las claves son frases de pregunta.** El bot compara por frase o por palabra con tolerancia a errores ("llena" calza con "lleva"),
+  así que una palabra suelta de la carta ("cerveza") se confunde con un pedido. El editor avisa (`avisosDeClave`), no lo impide.
+- **"¿Sos un bot?"**: si el local cargó qué contestar, lo contesta (el bot dice que es el asistente del local; no se hace pasar por
+  una persona). Sin respuesta cargada sigue yendo a una persona, como antes.
+- `CampoNs` suma `lineas` (texto de varios renglones) para las respuestas.
 
