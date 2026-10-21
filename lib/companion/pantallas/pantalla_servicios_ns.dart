@@ -12,21 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
-import '../../data/repositorio_pedidos_gastronomia.dart' show configPedidosActual, traerPlatosDeWhatsapp;
 import '../../data/repositorio_productos.dart' show cambiarActivo, listarCategorias;
 import '../../data/repositorio_servicios.dart';
-import '../../domain/bot_whatsapp.dart' show ProductoWhatsapp, productosParaTraer;
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/ganancia.dart' show gananciaBpDesdeCostoYPrecio;
 import '../../domain/modulos.dart';
-import '../../domain/pedido_gastronomico.dart' show ConfigPedidos;
 import '../../domain/forma_de_trabajo.dart';
 import '../../domain/servicios.dart';
-import '../../servicios/acceso_bot.dart';
 import '../../servicios/modulos_activos.dart';
 import '../app_ns.dart';
 import '../base_local.dart';
-import '../bot_celular.dart' show accesoBotDelCelular;
 import '../cambios_companion.dart';
 import '../emparejamiento.dart';
 import '../guardar_una_vez.dart';
@@ -41,12 +36,11 @@ bool get _esCarta => modulosActuales.value.forma == FormaDeTrabajo.gastronomia;
 String _t(String servicios, String gastronomia) => _esCarta ? gastronomia : servicios;
 
 class PantallaServiciosNs extends StatefulWidget {
-  /// [db], [usuarioId] y [bot] son para tests.
-  const PantallaServiciosNs({super.key, this.db, this.usuarioId, this.bot});
+  /// [db] y [usuarioId] son para tests.
+  const PantallaServiciosNs({super.key, this.db, this.usuarioId});
 
   final AppDatabase? db;
   final int? usuarioId;
-  final AccesoBot? bot;
 
   @override
   State<PantallaServiciosNs> createState() => _PantallaServiciosNsState();
@@ -63,7 +57,6 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
   StreamSubscription<void>? _sub;
 
   /// El local tiene catálogo de WhatsApp Business (Configurar pedidos): la Carta ofrece traer lo que cargó allá.
-  bool _catalogoWa = false;
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
 
@@ -99,11 +92,9 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       listarInsumos(_db),
       listarCategorias(_db),
       listarProductosDeVenta(_db),
-      if (_esCarta) configPedidosActual(_db),
     ]);
     if (!mounted) return;
     setState(() {
-      _catalogoWa = r.length > 4 && (r[4] as ConfigPedidos).catalogoWhatsapp;
       _servicios = r[0] as List<ServicioListado>;
       _insumos = r[1] as List<InsumoListado>;
       _categorias = {for (final c in r[2] as List<Categoria>) c.id: c.nombre};
@@ -127,17 +118,6 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     );
     await _recargar();
     if (guardo != null && mounted) mostrarAvisoNs(context, guardo);
-  });
-
-  Future<void> _traerDeWhatsapp() => _conUsuario((u) async {
-    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaTraerWhatsapp(
-      db: _db,
-      usuarioId: u,
-      bot: widget.bot ?? accesoBotDelCelular,
-      carta: [for (final s in _servicios ?? const <ServicioListado>[]) s.producto, ..._productos],
-    ));
-    await _recargar();
-    if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
 
   Future<void> _hojaInsumo({InsumoListado? existente}) => _conUsuario((u) async {
@@ -246,20 +226,6 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
   }
 
   List<Widget> _listaServicios(BuildContext context) => [
-        if (_catalogoWa) ...[
-          // Banda naranja suave, como en el mock v5: es lo único de la Carta que llega de afuera.
-          BotonNs(
-            key: const Key('traer_whatsapp'),
-            texto: 'Traer de mi catálogo de WhatsApp',
-            onTap: _traerDeWhatsapp,
-            alto: 52,
-            tamanio: 15,
-            fondo: context.ns.wbg,
-            color: context.ns.w,
-            icono: IconoNs.descarga,
-          ),
-          const SizedBox(height: 14),
-        ],
         ..._filasServicios(context),
       ];
 
@@ -1259,121 +1225,3 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
 }
 
 // ───────────────────────── Carta: traer del catálogo de WhatsApp ─────────────────────────
-
-/// Lo que el local cargó en su catálogo de WhatsApp Business y todavía no está en la carta, para traerlo con un toque (El dueño,
-/// 2026-10-17: "dejá cargar el catálogo de WhatsApp desde la app, y viceversa"). Lo lee el bot: al abrir se le pide que lo
-/// vuelva a leer, y "Volver a leer" espera unos segundos su respuesta. Lo escondido en WhatsApp viene sin marcar.
-class _HojaTraerWhatsapp extends StatefulWidget {
-  const _HojaTraerWhatsapp({required this.db, required this.usuarioId, required this.bot, required this.carta});
-  final AppDatabase db;
-  final int usuarioId;
-  final AccesoBot bot;
-  final List<Producto> carta;
-
-  @override
-  State<_HojaTraerWhatsapp> createState() => _HojaTraerWhatsappState();
-}
-
-class _HojaTraerWhatsappState extends State<_HojaTraerWhatsapp> with GuardarUnaVezNs {
-  List<ProductoWhatsapp>? _lista;
-  final Set<String> _elegidos = {};
-  String? _error;
-  bool _leyendo = false;
-
-  /// Por qué la lista está vacía (primer celular real, 2026-10-21: decía "nada nuevo" con el bot desconectado): el bot no se
-  /// enteró de que tenía que leer, o leyó y WhatsApp no le devolvió ningún artículo.
-  bool _botAvisado = true;
-  int _enWhatsapp = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _leer(esperar: false);
-  }
-
-  Future<void> _leer({required bool esperar}) async {
-    setState(() => _leyendo = true);
-    try {
-      final avisado = await widget.bot.pedirCatalogoWhatsapp();
-      if (esperar) await Future<void>.delayed(const Duration(seconds: 4));
-      final todos = await widget.bot.catalogoWhatsapp();
-      final lista = productosParaTraer(
-        todos,
-        gidsCarta: {for (final p in widget.carta) ?p.globalId},
-        nombresCarta: [for (final p in widget.carta) p.nombre],
-      );
-      if (!mounted) return;
-      setState(() {
-        _botAvisado = avisado;
-        _enWhatsapp = todos.length;
-        _lista = lista;
-        _elegidos
-          ..clear()
-          ..addAll([for (final p in lista) if (!p.oculto) p.waId]);
-        _error = null;
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = 'No pude leer el catálogo de WhatsApp. Revisá que el bot esté conectado.');
-    } finally {
-      if (mounted) setState(() => _leyendo = false);
-    }
-  }
-
-  Future<void> _traer() => unaVez(() async {
-    final elegidos = [for (final p in _lista ?? const <ProductoWhatsapp>[]) if (_elegidos.contains(p.waId)) p];
-    final n = await traerPlatosDeWhatsapp(widget.db, elegidos, usuarioId: widget.usuarioId);
-    if (mounted) Navigator.of(context).pop(n == 1 ? '1 plato traído de WhatsApp' : '$n platos traídos de WhatsApp');
-  }, alFallar: (m) => setState(() => _error = m));
-
-  @override
-  Widget build(BuildContext context) {
-    final ns = context.ns;
-    final lista = _lista;
-    final n = _elegidos.length;
-    return HojaNs(
-      titulo: 'Traer de WhatsApp',
-      texto: 'Lo que tenés en tu catálogo de WhatsApp Business y todavía no está en la carta. Entra con el nombre y el precio de allá; después le cargás los insumos y cuánto tarda.',
-      bloques: [
-        if (lista == null && _error == null)
-          const EsqueletoListaNs()
-        else if (lista != null && lista.isEmpty && !_botAvisado)
-          const InfoNs('El bot no está conectado, así que no pude pedirle que lea tu catálogo de WhatsApp. Encendelo en Bot de WhatsApp y tocá "Volver a leer".', key: Key('wa_sin_bot'), tono: TonoNs.warn)
-        else if (lista != null && lista.isEmpty && _enWhatsapp == 0)
-          const InfoNs(
-            'El bot no encontró ningún artículo en tu catálogo de WhatsApp. Si recién cargaste uno, puede estar en revisión: WhatsApp lo muestra cuando lo aprueba. Probá "Volver a leer" en un rato.',
-            key: Key('wa_vacio'),
-          )
-        else if (lista != null && lista.isEmpty)
-          const InfoNs('No hay nada nuevo: todo lo de tu catálogo de WhatsApp ya está en la carta. Si recién cargaste algo allá, tocá "Volver a leer".')
-        else if (lista != null)
-          ListaAgrupadaNs(
-            filas: [
-              for (final p in lista)
-                TarjetaFilaNs(
-                  key: ValueKey('wa-${p.waId}'),
-                  titulo: p.nombre,
-                  subtitulo: [if (p.descripcion.isNotEmpty) p.descripcion, if (p.oculto) 'Escondido en WhatsApp'].join(' · '),
-                  chevron: false,
-                  radio: 0,
-                  onTap: () => setState(() => _elegidos.contains(p.waId) ? _elegidos.remove(p.waId) : _elegidos.add(p.waId)),
-                  derecha: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(plataNs(p.precioCentavos), style: estiloNs(16, peso: FontWeight.w600, color: ns.ink)),
-                      const SizedBox(width: 10),
-                      CasillaNs(marcada: _elegidos.contains(p.waId)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
-      ],
-      botones: [
-        BotonNs.primario(context, n == 0 ? 'Elegí qué traer' : (n == 1 ? 'Traer 1 plato' : 'Traer $n platos'), n == 0 || guardando ? null : _traer,
-            habilitado: n > 0 && !guardando, icono: IconoNs.tilde),
-        BotonNs(texto: _leyendo ? 'Leyendo…' : 'Volver a leer', onTap: _leyendo ? null : () => _leer(esperar: true), alto: 48, tamanio: 15, fondo: ns.s, color: ns.i),
-      ],
-    );
-  }
-}
