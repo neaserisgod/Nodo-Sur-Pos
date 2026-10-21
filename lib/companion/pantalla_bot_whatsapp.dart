@@ -18,6 +18,7 @@ import '../servicios/modulos_activos.dart' show esNegocioDeServicios;
 import 'cliente_companion.dart' show ConfiguracionNegocioCompanion;
 import 'kit/kit_ns.dart';
 import 'mensaje_error.dart';
+import 'pantallas/pantalla_preguntas_bot_ns.dart';
 import 'servicio_companion.dart';
 
 class PantallaBotWhatsApp extends StatefulWidget {
@@ -166,6 +167,17 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     }
   }
 
+  /// Las preguntas se guardan en la misma configuración: al volver se relee, así "Guardar" de acá no las pisa con la vieja.
+  Future<void> _abrirPreguntas() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PantallaPreguntasBotNs(acceso: widget.acceso)));
+    try {
+      final config = (await widget.acceso.config()).config;
+      if (config != null) _anterior = config;
+    } catch (_) {
+      // Sin red al volver: la próxima vez que se abra la pantalla se lee de nuevo.
+    }
+  }
+
   Future<void> _copiarComando() async {
     await Clipboard.setData(const ClipboardData(text: comandoInstalarBot));
     if (mounted) mostrarAvisoNs(context, 'Comando copiado. Pegalo en Termux.');
@@ -297,6 +309,14 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
         _seccion('Horarios'),
         for (final d in diasBot) _dia(d),
       ],
+      _seccion('Preguntas frecuentes'),
+      TarjetaFilaNs(
+        key: const Key('bot_preguntas'),
+        titulo: 'Preguntas del bot',
+        subtitulo: 'Lo que contesta solo: tus productos, cómo se paga, envíos y lo que te preguntan siempre',
+        icono: IconoNs.portapapeles,
+        onTap: _abrirPreguntas,
+      ),
       _seccion('Cuando contestás vos'),
       Text('El bot se calla en ese chat durante:', style: estiloNs(14, color: context.ns.mute)),
       const SizedBox(height: 10),
