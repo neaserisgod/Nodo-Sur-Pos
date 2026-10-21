@@ -25,6 +25,11 @@ abstract class AccesoBot {
   /// Que el bot lo vuelva a leer. False si no se le pudo avisar (no está conectado).
   Future<bool> pedirCatalogoWhatsapp();
 
+  /// La foto de un producto para el catálogo de WhatsApp (por su `global_id`): subirla, verla (null si no tiene) y sacarla.
+  Future<void> subirFoto(String gid, List<int> bytes);
+  Future<List<int>?> foto(String gid);
+  Future<void> borrarFoto(String gid);
+
   /// El token del bot que corre adentro de este celular (Nodo Sur Servicios), con la dirección del sitio para el bot.
   Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId);
 }
@@ -49,6 +54,24 @@ class AccesoBotNube implements AccesoBot {
     final v = await _vinculada();
     if (v == null) throw const ErrorNube('no_device', 'Este equipo no está vinculado a la cuenta.');
     return v;
+  }
+
+  @override
+  Future<void> subirFoto(String gid, List<int> bytes) async {
+    final v = await _exigir();
+    await v.cliente.subirFotoBot(v.token, gid, bytes);
+  }
+
+  @override
+  Future<List<int>?> foto(String gid) async {
+    final v = await _exigir();
+    return v.cliente.fotoBot(v.token, gid);
+  }
+
+  @override
+  Future<void> borrarFoto(String gid) async {
+    final v = await _exigir();
+    await v.cliente.borrarFotoBot(v.token, gid);
   }
 
   @override
