@@ -69,6 +69,7 @@ void main() {
     expect(bot.fotos['g-mila'], _png);
     expect(find.byKey(const Key('foto_producto')), findsOneWidget);
     expect(find.text('Quitar la foto'), findsOneWidget);
+    await t.pump(const Duration(seconds: 3)); // el aviso de arriba se va solo
   });
 
   testWidgets('con foto: la muestra, se elige otra de la galería y se puede quitar', (t) async {
@@ -86,5 +87,6 @@ void main() {
     await _esperar(t);
     expect(bot.fotos.containsKey('g-mila'), isFalse);
     expect(find.text('Todavía no tiene foto: en WhatsApp va una genérica.'), findsOneWidget);
+    await t.pump(const Duration(seconds: 3));
   });
 }

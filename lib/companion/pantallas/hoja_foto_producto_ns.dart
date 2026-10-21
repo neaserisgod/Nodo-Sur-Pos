@@ -72,9 +72,10 @@ class _HojaFotoProductoState extends State<_HojaFotoProducto> {
       return;
     }
     if (bytes == null || !mounted) return;
+    final elegida = bytes;
     await _trabajar(() async {
-      await widget.bot.subirFoto(_gid, bytes!);
-      _foto = Uint8List.fromList(bytes);
+      await widget.bot.subirFoto(_gid, elegida);
+      _foto = Uint8List.fromList(elegida);
     }, 'Foto guardada: en unos minutos aparece en WhatsApp');
   }
 
