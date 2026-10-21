@@ -115,6 +115,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Generalización del producto (2026-09-30)](#generalización-del-producto-2026-09-30)
 - [Se publica solo cuando se pide (2026-10-03)](#se-publica-solo-cuando-se-pide-2026-10-03)
 - [Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
+- [Importar una base en el celular, sin cerrar la app (El dueño, 2026-10-21)](#importar-una-base-en-el-celular-sin-cerrar-la-app-el-dueño-2026-10-21)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2754,3 +2755,22 @@ escanear de WhatsApp"*. Plan y estado en `docs/PLAN-GASTRONOMIA.md`, "Nodo Gastr
   Una compu ya vinculada con código sigue igual: `numero.txt` guarda el número de antes.
 - **Orden de publicación**: el cambio del bot tiene que estar en `main` de `botdemo` antes de publicar la app (el instalador baja el bot
   de ahí). Con un bot viejo, la compu queda en "Conectando…" sin QR.
+
+## Importar una base en el celular, sin cerrar la app (El dueño, 2026-10-21)
+
+El dueño: *"quiero poder exportar la base de datos del sistema … y en base a eso vos escribís y me lo devolvés"*. La idea: cargar la
+carta (insumos, platos con receta) escribiendo en una copia de la base, en vez de a mano, y que el bot la pase al catálogo de WhatsApp
+con el espejo de siempre. El celular ya exportaba; faltaba volver a cargar una base. Código: `lib/companion/importar_base_celular.dart`.
+
+- **La misma validación que la PC** (`prepararImportacion`): SQLite de este sistema, ni más nueva que la app ni anterior a la mínima.
+  Se valida antes de preguntar; un archivo malo no llega a la confirmación.
+- **Sin cerrar la app**, como al cambiar de negocio: `frenarLoQueEscribe` (sync, avisos de Mercado Pago, escucha de la PC, bot; la base
+  queda cerrada y bloqueada), `restaurarDesdeArchivo` (el reemplazo a prueba de cortes de la PC, que deja `.antes-de-restaurar`),
+  olvidar el registro de la sync y `volverAEmpezar`. En Android `exit` no es una opción (`reinicio_companion.dart`).
+- **El registro de la sync se olvida solo si el archivo cambió**: la próxima vuelta baja todo (upsert por `global_id`, no duplica) y
+  sube lo que la base nueva tiene y la nube no. Si el reemplazo falla, la base anterior queda entera y la app se arma igual.
+- **Solo "Solo celular"** (en "PC y celular" la base es la de la PC, que tiene Respaldo) y no en el navegador. En la compu (Gastro y
+  Servicios de Windows) "Exportar la base" ahora guarda el archivo donde se elija: antes no aparecía porque no hay a quién compartirle.
+- **La base no sabe de qué negocio es**: importar la de otro negocio la subiría a este. La confirmación lo avisa; no se agregó una marca
+  de negocio en la base por un caso que hoy hace solo el dueño.
+

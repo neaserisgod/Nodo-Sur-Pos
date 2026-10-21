@@ -21,6 +21,7 @@ enum IconoNs {
   calendario('M4 6h16v14H4zM4 10h16M8 3v4M16 3v4'),
   enchufe('M9 7V3M15 7V3M6 7h12v4a6 6 0 01-12 0zM12 17v4'),
   descarga('M12 4v12M7 11l5 5 5-5M5 20h14'),
+  subida('M12 20V8M7 13l5-5 5 5M5 4h14'),
   billetes('M3 7h18v10H3zM12 10a2 2 0 100 4 2 2 0 000-4zM6 10v.01M18 14v.01'),
   tarjeta('M3 6h18v12H3zM3 10h18M7 15h3'),
   lupa('M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5'),

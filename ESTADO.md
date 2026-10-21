@@ -136,6 +136,15 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (21/10/2026)
+
+- **Importar una base en el celular y en Gastro/Servicios de Windows** (El dueño, 21/10: "quiero poder exportar la base de datos del
+  sistema … y en base a eso vos escribís y me lo devolvés"). Más › Configuración › **Tu base**: además de "Exportar la base" (que en la
+  compu ahora guarda el archivo donde se elija, en vez de no aparecer), **"Importar una base"**. Valida como la PC
+  (`prepararImportacion`), pide confirmar y reemplaza sin cerrar la app (`companion/importar_base_celular.dart`: frena lo que
+  escribe, cambia el archivo, olvida el registro de la sync y arma la app con `volverAEmpezar`). Solo en "Solo celular". **Sin
+  probar en un celular ni en una PC reales.**
+
 ## Últimos cambios (20/10/2026)
 
 - **Nodo Gastro para Windows** (El dueño, 20/10: "prepará la versión desktop para yo poder cargar desde acá"). Otra edición del mismo
