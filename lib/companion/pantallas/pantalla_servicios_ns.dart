@@ -1280,6 +1280,11 @@ class _HojaTraerWhatsappState extends State<_HojaTraerWhatsapp> with GuardarUnaV
   String? _error;
   bool _leyendo = false;
 
+  /// Por qué la lista está vacía (primer celular real, 2026-10-21: decía "nada nuevo" con el bot desconectado): el bot no se
+  /// enteró de que tenía que leer, o leyó y WhatsApp no le devolvió ningún artículo.
+  bool _botAvisado = true;
+  int _enWhatsapp = 0;
+
   @override
   void initState() {
     super.initState();
@@ -1289,7 +1294,7 @@ class _HojaTraerWhatsappState extends State<_HojaTraerWhatsapp> with GuardarUnaV
   Future<void> _leer({required bool esperar}) async {
     setState(() => _leyendo = true);
     try {
-      await widget.bot.pedirCatalogoWhatsapp();
+      final avisado = await widget.bot.pedirCatalogoWhatsapp();
       if (esperar) await Future<void>.delayed(const Duration(seconds: 4));
       final todos = await widget.bot.catalogoWhatsapp();
       final lista = productosParaTraer(
@@ -1299,6 +1304,8 @@ class _HojaTraerWhatsappState extends State<_HojaTraerWhatsapp> with GuardarUnaV
       );
       if (!mounted) return;
       setState(() {
+        _botAvisado = avisado;
+        _enWhatsapp = todos.length;
         _lista = lista;
         _elegidos
           ..clear()
@@ -1329,6 +1336,13 @@ class _HojaTraerWhatsappState extends State<_HojaTraerWhatsapp> with GuardarUnaV
       bloques: [
         if (lista == null && _error == null)
           const EsqueletoListaNs()
+        else if (lista != null && lista.isEmpty && !_botAvisado)
+          const InfoNs('El bot no está conectado, así que no pude pedirle que lea tu catálogo de WhatsApp. Encendelo en Bot de WhatsApp y tocá "Volver a leer".', key: Key('wa_sin_bot'), tono: TonoNs.warn)
+        else if (lista != null && lista.isEmpty && _enWhatsapp == 0)
+          const InfoNs(
+            'El bot no encontró ningún artículo en tu catálogo de WhatsApp. Si recién cargaste uno, puede estar en revisión: WhatsApp lo muestra cuando lo aprueba. Probá "Volver a leer" en un rato.',
+            key: Key('wa_vacio'),
+          )
         else if (lista != null && lista.isEmpty)
           const InfoNs('No hay nada nuevo: todo lo de tu catálogo de WhatsApp ya está en la carta. Si recién cargaste algo allá, tocá "Volver a leer".')
         else if (lista != null)
