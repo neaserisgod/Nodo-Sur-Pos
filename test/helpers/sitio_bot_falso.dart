@@ -13,6 +13,14 @@ class SitioBotFalso implements AccesoBot {
   Map<String, dynamic>? configGuardada;
   int version = 0;
 
+  final Map<String, List<int>> fotos = {};
+  @override
+  Future<void> subirFoto(String gid, List<int> bytes) async => fotos[gid] = bytes;
+  @override
+  Future<List<int>?> foto(String gid) async => fotos[gid];
+  @override
+  Future<void> borrarFoto(String gid) async => fotos.remove(gid);
+
   final List<String> tokensPedidos = [];
   @override
   Future<({String sitio, String token, String email, int expiresAt})> tokenDelBot(String deviceId) async {

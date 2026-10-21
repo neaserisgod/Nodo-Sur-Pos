@@ -4,28 +4,33 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/dinero.dart';
+import '../../servicios/acceso_bot.dart';
 import '../cliente_companion.dart';
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 import '../servicio_companion.dart';
+import 'hoja_foto_producto_ns.dart';
 
-/// `true` si se guardó el precio; `false` si se pidió la ficha completa; `null` si se canceló.
+/// `true` si se guardó el precio; `false` si se pidió la ficha completa; `null` si se canceló. Con [bot] (Nodo Gastro) ofrece la foto
+/// del plato para el catálogo de WhatsApp.
 Future<bool?> mostrarHojaCambiarPrecio(
   BuildContext context, {
   required ServicioCompanion servicio,
   required int usuarioId,
   required ProductoCompanion producto,
   required String? nombreProveedor,
+  AccesoBot? bot,
 }) {
-  return mostrarHojaNs<bool>(context, builder: (_) => _HojaCambiarPrecio(servicio: servicio, usuarioId: usuarioId, producto: producto, nombreProveedor: nombreProveedor));
+  return mostrarHojaNs<bool>(context, builder: (_) => _HojaCambiarPrecio(servicio: servicio, usuarioId: usuarioId, producto: producto, nombreProveedor: nombreProveedor, bot: bot));
 }
 
 class _HojaCambiarPrecio extends StatefulWidget {
-  const _HojaCambiarPrecio({required this.servicio, required this.usuarioId, required this.producto, required this.nombreProveedor});
+  const _HojaCambiarPrecio({required this.servicio, required this.usuarioId, required this.producto, required this.nombreProveedor, this.bot});
   final ServicioCompanion servicio;
   final int usuarioId;
   final ProductoCompanion producto;
   final String? nombreProveedor;
+  final AccesoBot? bot;
 
   @override
   State<_HojaCambiarPrecio> createState() => _HojaCambiarPrecioState();
@@ -86,12 +91,16 @@ class _HojaCambiarPrecioState extends State<_HojaCambiarPrecio> {
   @override
   Widget build(BuildContext context) {
     final p = widget.producto;
+    final bot = widget.bot;
+    // Lo que se vende por peso no va al catálogo de WhatsApp (solo pide unidades), y sin identidad el bot no sabe de qué plato es.
+    final conFoto = bot != null && p.globalId != null && !p.esPesable;
     return HojaNs(
       titulo: p.nombre,
       texto: '${widget.nombreProveedor ?? 'Sin proveedor'} · cambiá el precio de venta',
       bloques: [
         CampoNs(etiqueta: p.esPesable ? 'Precio de venta por kilo' : 'Precio de venta', controller: _precio, grande: true, placeholder: '\$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, autofoco: true, onSubmit: (_) => _guardar()),
         BotonNs.secundario(context, 'Editar ficha completa (costo, stock, categoría)', () => Navigator.of(context).pop(false), alto: 54, tamanio: 15),
+        if (conFoto) BotonNs.secundario(context, 'Foto para WhatsApp', () => mostrarHojaFotoProducto(context, bot: bot, producto: p), alto: 54, tamanio: 15),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad),
       ],
       botones: [

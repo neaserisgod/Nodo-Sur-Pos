@@ -255,6 +255,7 @@ String _mensajeDe(String codigo) => switch (codigo) {
   'orden_de_otra_sucursal' => 'Ese cobro es de otra sucursal: hay que cancelarlo o devolverlo desde la caja que lo cobró.',
   'no_cobrada' => 'Ese cobro no figura como cobrado en Mercado Pago: no hay nada para devolver.',
   'sin_plan_bot' => 'El negocio no tiene un plan con el bot de WhatsApp.',
+  'no_es_foto' => 'Esa imagen no se puede usar: tiene que ser JPG o PNG.',
   'bot_no_configurado' => 'El bot de WhatsApp todavía no está listo en el servidor. Probá más tarde.',
   'ya_resuelto' => 'Ese pedido ya lo resolvió otro equipo.',
   'no_existe' => 'Ese pedido ya no existe.',
@@ -688,6 +689,29 @@ class ClienteNube {
       items: [for (final x in (j['items'] as List? ?? const [])) ?ProductoWhatsapp.desdeJson(x)],
       actualizado: (j['actualizado'] as num?)?.toInt(),
     );
+  });
+
+  /// La foto de un producto para el catálogo de WhatsApp (JPEG o PNG, hasta 1 MB): queda en el sitio y el bot la pone allá.
+  /// Devuelve su versión.
+  Future<String> subirFotoBot(String token, String gid, List<int> bytes) => _conRed(() async {
+    final r = await http.post(_uri('/api/bot/foto', {'gid': gid}), headers: _auth(token, {'Content-Type': 'application/octet-stream'}), body: bytes).timeout(_limite);
+    if (r.statusCode == 413) throw ErrorNube('too_large', 'La foto es demasiado grande.', estado: r.statusCode);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return (jsonDecode(r.body) as Map<String, dynamic>)['version'] as String;
+  });
+
+  /// La foto que tiene ese producto, o null si no tiene.
+  Future<List<int>?> fotoBot(String token, String gid) => _conRed(() async {
+    final r = await http.get(_uri('/api/bot/foto', {'gid': gid}), headers: _auth(token)).timeout(_limite);
+    if (r.statusCode == 404) return null;
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
+    return r.bodyBytes;
+  });
+
+  /// El bot vuelve a la foto genérica.
+  Future<void> borrarFotoBot(String token, String gid) => _conRed(() async {
+    final r = await http.post(_uri('/api/bot/foto/borrar'), headers: _auth(token, {'Content-Type': 'application/json'}), body: jsonEncode({'gid': gid})).timeout(_limite);
+    if (r.statusCode != 200) _falla(r.statusCode, r.body);
   });
 
   /// Que el bot vuelva a leer el catálogo de WhatsApp (el local recién cargó algo allá). Contesta si el aviso salió.
