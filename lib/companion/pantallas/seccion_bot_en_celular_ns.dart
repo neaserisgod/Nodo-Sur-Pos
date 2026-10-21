@@ -181,6 +181,17 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     await _hacer(() => widget.bot.vincularDeNuevo(numero: numero));
   }
 
+  Future<void> _copiarRegistro() async {
+    final lineas = await widget.bot.ultimasLineas(400);
+    if (!mounted) return;
+    if (lineas.isEmpty) {
+      mostrarAvisoNs(context, 'El registro está vacío');
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: lineas.join('\n')));
+    if (mounted) mostrarAvisoNs(context, 'Registro copiado: pegalo en WhatsApp o donde quieras');
+  }
+
   Future<void> _vincularDeNuevo() async {
     final numero = _numeroParaVincular;
     if (numero == null) {
@@ -330,6 +341,14 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
           },
           child: Text(_verRegistro ? 'Ocultar el registro' : 'Ver el registro del bot', style: estiloNs(14, color: ns.mute)),
         ),
+        if (_verRegistro) ...[
+          // Para mandárselo a quien da soporte (El dueño, 2026-10-21): más líneas que las que se ven.
+          KeyedSubtree(
+            key: const Key('bot_celular_copiar_registro'),
+            child: BotonNs.secundario(context, 'Copiar el registro', _copiarRegistro, alto: 44, tamanio: 15),
+          ),
+          const SizedBox(height: 8),
+        ],
         if (_verRegistro)
           Container(
             constraints: const BoxConstraints(maxHeight: 320),

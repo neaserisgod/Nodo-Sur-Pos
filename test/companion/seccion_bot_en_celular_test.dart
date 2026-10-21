@@ -178,4 +178,25 @@ void main() {
     expect((llamadas.lastWhere((c) => c.method == 'encender').arguments as Map)['numero'], '5492944999888');
     await t.pumpWidget(const SizedBox());
   });
+
+  testWidgets('el registro se puede copiar entero', (t) async {
+    final datos = Directory(p.join(tmp.path, 'bot-datos'))..createSync();
+    File(p.join(datos.path, 'bot.log')).writeAsStringSync('WhatsApp conectado.\nNodo Sur (ping): fetch failed\n');
+    String? copiado;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (c) async {
+      if (c.method == 'Clipboard.setData') copiado = (c.arguments as Map)['text'] as String?;
+      return null;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await abrir(t);
+    await t.ensureVisible(find.text('Ver el registro del bot'));
+    await t.tap(find.text('Ver el registro del bot'));
+    await asentar(t);
+    await t.ensureVisible(find.byKey(const Key('bot_celular_copiar_registro')));
+    await t.tap(find.byKey(const Key('bot_celular_copiar_registro')));
+    await asentar(t);
+    expect(copiado, contains('fetch failed'));
+    await t.pump(const Duration(seconds: 4));
+    await t.pumpWidget(const SizedBox());
+  });
 }
