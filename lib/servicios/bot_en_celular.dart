@@ -259,23 +259,40 @@ class BotEnCelular {
     final dir = Directory(p.join((await _soporte()).path, 'bot', huella));
     final listo = File(p.join(dir.path, '.listo'));
     if (listo.existsSync() && _piezas.every((x) => File(p.join(dir.path, x)).existsSync())) return dir;
-    if (dir.existsSync()) dir.deleteSync(recursive: true); // quedó a medias
-    dir.createSync(recursive: true);
-    for (final f in ZipDecoder().decodeBytes(bytes).files) {
-      final destino = p.normalize(p.join(dir.path, f.name));
-      if (!p.isWithin(dir.path, destino)) continue;
-      if (f.isFile) {
-        File(destino)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(f.content as List<int>);
-      } else {
-        Directory(destino).createSync(recursive: true);
+    // Se descomprime en una carpeta aparte y recién al final se renombra (en el mismo disco, de un saque): la carpeta con el
+    // nombre de la versión nunca existe a medias. Antes, si Android levantaba el bot mientras se descomprimía (al actualizar la
+    // app), arrancaba con la mitad de los archivos ("Cannot find package 'protobufjs'", primer celular real 2026-10-21).
+    final armando = Directory('${dir.path}.armando-${DateTime.now().microsecondsSinceEpoch}');
+    armando.createSync(recursive: true);
+    try {
+      for (final f in ZipDecoder().decodeBytes(bytes).files) {
+        final destino = p.normalize(p.join(armando.path, f.name));
+        if (!p.isWithin(armando.path, destino)) continue;
+        if (f.isFile) {
+          File(destino)
+            ..createSync(recursive: true)
+            ..writeAsBytesSync(f.content as List<int>);
+        } else {
+          Directory(destino).createSync(recursive: true);
+        }
       }
+      for (final e in extras.entries) {
+        e.value.copySync(p.join(armando.path, e.key));
+      }
+      File(p.join(armando.path, '.listo')).writeAsStringSync(huella);
+      if (listo.existsSync() && _piezas.every((x) => File(p.join(dir.path, x)).existsSync())) {
+        // Otro la terminó mientras tanto (y el bot puede estar corriendo de ahí): la nuestra sobra.
+        armando.deleteSync(recursive: true);
+        return dir;
+      }
+      if (dir.existsSync()) dir.deleteSync(recursive: true); // quedó a medias (una versión anterior de la app)
+      armando.renameSync(dir.path);
+    } catch (_) {
+      if (armando.existsSync()) armando.deleteSync(recursive: true);
+      // Otro proceso la terminó primero: si quedó completa, sirve.
+      if (listo.existsSync() && _piezas.every((x) => File(p.join(dir.path, x)).existsSync())) return dir;
+      rethrow;
     }
-    for (final e in extras.entries) {
-      e.value.copySync(p.join(dir.path, e.key));
-    }
-    listo.writeAsStringSync(huella);
     return dir;
   }
 

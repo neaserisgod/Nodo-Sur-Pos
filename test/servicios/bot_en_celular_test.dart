@@ -49,6 +49,17 @@ void main() {
     expect(File(p.join(v.path, 'node_modules/protobufjs/package.json')).existsSync(), isTrue);
   });
 
+  test('se descomprime aparte y se renombra: no quedan carpetas a medias ni temporales', () async {
+    final b = bot(SitioBotFalso(), _zipCon({'src/index.js': 'uno', ..._piezas}));
+    final v = await b.preparar();
+    // Una carpeta de antes, sin .listo (quedó a medias): se reemplaza entera.
+    v.deleteSync(recursive: true);
+    Directory(p.join(v.path, 'src')).createSync(recursive: true);
+    await b.preparar();
+    expect(File(p.join(v.path, 'node_modules/protobufjs/package.json')).existsSync(), isTrue);
+    expect(Directory(p.dirname(v.path)).listSync().where((d) => d.path.contains('.armando-')), isEmpty);
+  });
+
   test('dos preparaciones a la vez son la misma: una no le borra la carpeta a la otra', () async {
     final b = bot(SitioBotFalso(), _zipCon({'src/index.js': 'uno', ..._piezas}));
     final a = b.preparar();
