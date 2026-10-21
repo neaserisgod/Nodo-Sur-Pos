@@ -201,6 +201,18 @@ jobs:
         if: contains(fromJSON('["gastronomia","todas"]'), env.EDICION)
         run: flutter build apk --release --flavor gastronomia --target-platform android-arm64 --build-number "$NUMERO"
 
+      # Un APK de servicios o gastronomía sin Node no puede correr el bot ("Esta versión de la app no trae el bot"): mejor que
+      # falle acá que publicarlo (pasó con Nodo Gastro, 2026-10-21).
+      - name: Revisar que el bot vaya adentro
+        if: env.EDICION != 'almacen'
+        run: |
+          for apk in build/app/outputs/flutter-apk/app-servicios-release.apk build/app/outputs/flutter-apk/app-gastronomia-release.apk; do
+            [ -f "$apk" ] || continue
+            unzip -l "$apk" | grep -q 'lib/arm64-v8a/libns_node.so' || { echo "$apk no trae libns_node.so"; exit 1; }
+            unzip -l "$apk" | grep -q 'assets/bot/bot.zip' || { echo "$apk no trae el bot (bot.zip)"; exit 1; }
+            echo "$apk trae el bot"
+          done
+
       - name: Guardar los APK (solo compilar)
         if: inputs.solo_compilar
         uses: actions/upload-artifact@v4
