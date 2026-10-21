@@ -4,6 +4,9 @@
 // Windows (2026-10-15) es la misma sección, "En esta compu", y lo mantiene el supervisor (`bot_en_pc.dart`). En la compu se
 // vincula con el QR (El dueño, 2026-10-20: "si estoy en desktop me des el qr para escanear"): se escanea con el celular del
 // local, sin cargar el número. En el celular sigue el código, porque no se puede escanear la propia pantalla.
+// "Control del bot" (El dueño, 2026-10-21: "unos botoncitos para controlar un poco más el bot: desvincular, vincular, con
+// distintos números"): reiniciar sin desvincular, desvincular, y vincular con otro número (o con otro WhatsApp, en la compu).
+// Un bot atiende un número a la vez: cambiar de número suelta el anterior.
 
 import 'dart:async';
 
@@ -12,12 +15,13 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../domain/bot_en_celular.dart';
+import '../../domain/bot_whatsapp.dart' show numeroWhatsApp;
 import '../../edicion.dart';
 import '../../servicios/bot_en_celular.dart';
 import '../kit/kit_ns.dart';
 
 class SeccionBotEnCelularNs extends StatefulWidget {
-  const SeccionBotEnCelularNs({super.key, required this.bot, required this.numeroBot, this.ahora, this.enLaCompu});
+  const SeccionBotEnCelularNs({super.key, required this.bot, required this.numeroBot, this.ahora, this.enLaCompu, this.cambiarNumero});
 
   final BotEnCelular bot;
 
@@ -27,6 +31,10 @@ class SeccionBotEnCelularNs extends StatefulWidget {
 
   /// Si corre en la compu (vincula con el QR). Null: lo que diga la edición instalada. Para las pruebas, que no corren en Windows.
   final bool? enLaCompu;
+
+  /// Guarda otro WhatsApp del local en la configuración (true si quedó). Sin esto, "Vincular otro número" usa el número nuevo
+  /// solo para vincular.
+  final Future<bool> Function(String numero)? cambiarNumero;
 
   @override
   State<SeccionBotEnCelularNs> createState() => _SeccionBotEnCelularNsState();
@@ -117,6 +125,73 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
     });
   }
 
+  Future<bool> _confirmar(String titulo, String texto, String si) async =>
+      await mostrarHojaNs<bool>(
+        context,
+        builder: (ctx) => HojaNs(
+          titulo: titulo,
+          texto: texto,
+          botones: [
+            BotonNs.primario(ctx, si, () => Navigator.of(ctx).pop(true)),
+            BotonNs.secundario(ctx, 'Volver', () => Navigator.of(ctx).pop(false)),
+          ],
+        ),
+      ) ==
+      true;
+
+  Future<void> _reiniciar() async {
+    final numero = _numeroParaVincular;
+    if (numero == null) {
+      setState(() => _error = 'Cargá arriba el WhatsApp del local y guardá.');
+      return;
+    }
+    await _hacer(() => widget.bot.reiniciar(numero: numero));
+  }
+
+  Future<void> _desvincular() async {
+    if (!await _confirmar(
+      '¿Desvincular de WhatsApp?',
+      'El bot se apaga y deja de atender. Para volver a usarlo hay que vincularlo de nuevo. Acordate de borrarlo también en '
+          'WhatsApp › Dispositivos vinculados.',
+      'Desvincular',
+    )) {
+      return;
+    }
+    await _hacer(() async {
+      await widget.bot.desvincular();
+      return null;
+    });
+    if (mounted && _error == null) mostrarAvisoNs(context, 'Desvinculado. Para usarlo, encendelo y vinculalo de nuevo.');
+  }
+
+  /// En la compu no hace falta el número (se escanea el QR con el WhatsApp que se quiera); en el celular se pide.
+  Future<void> _vincularOtro() async {
+    if (_enLaCompu) {
+      if (!await _confirmar('¿Vincular otro WhatsApp?', 'Se suelta el actual y aparece un QR nuevo para escanear con el otro.', 'Vincular otro')) return;
+      await _hacer(() => widget.bot.vincularDeNuevo(numero: ''));
+      return;
+    }
+    final numero = await mostrarHojaNs<String>(context, builder: (_) => const _HojaOtroNumero());
+    if (numero == null || !mounted) return;
+    final cambiar = widget.cambiarNumero;
+    if (cambiar != null && !await cambiar(numero)) {
+      setState(() => _error = 'No se pudo guardar el número nuevo: revisá la configuración de arriba.');
+      return;
+    }
+    await _hacer(() => widget.bot.vincularDeNuevo(numero: numero));
+  }
+
+  Future<void> _copiarRegistro() async {
+    final lineas = await widget.bot.ultimasLineas(400);
+    if (!mounted) return;
+    if (lineas.isEmpty) {
+      mostrarAvisoNs(context, 'El registro está vacío');
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: lineas.join('\n')));
+    if (mounted) mostrarAvisoNs(context, 'Registro copiado: pegalo en WhatsApp o donde quieras');
+  }
+
   Future<void> _vincularDeNuevo() async {
     final numero = _numeroParaVincular;
     if (numero == null) {
@@ -142,6 +217,10 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
       children: [
         Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs(_enLaCompu ? 'En esta compu' : 'En este celular')),
         InfoNs(textoDelBot(fase, _estado, ahora), key: const Key('bot_celular_estado'), tono: tono, icono: icono),
+        if (!_enLaCompu && widget.numeroBot != null && _encendido) ...[
+          const SizedBox(height: 6),
+          Text('WhatsApp del bot: ${_numeroLegible(widget.numeroBot!)}', key: const Key('bot_celular_numero'), textAlign: TextAlign.center, style: estiloNs(14, color: ns.mute)),
+        ],
         if (fase == FaseBot.vincular && _enLaCompu && _estado?.qr != null) ...[
           const SizedBox(height: 12),
           Container(
@@ -237,6 +316,23 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
             child: BotonNs.secundario(context, 'Apagar el bot', _trabajando ? null : _apagar),
           ),
         ],
+        Padding(padding: const EdgeInsets.only(top: 22, bottom: 10), child: SeccionNs('Control del bot')),
+        if (_encendido) ...[
+          KeyedSubtree(
+            key: const Key('bot_celular_reiniciar'),
+            child: BotonNs.secundario(context, _trabajando ? 'Un momento…' : 'Reiniciar (sin desvincular)', _trabajando ? null : _reiniciar),
+          ),
+          const SizedBox(height: 8),
+        ],
+        KeyedSubtree(
+          key: const Key('bot_celular_otro_numero'),
+          child: BotonNs.secundario(context, _enLaCompu ? 'Vincular otro WhatsApp' : 'Vincular otro número', _trabajando ? null : _vincularOtro),
+        ),
+        const SizedBox(height: 8),
+        KeyedSubtree(
+          key: const Key('bot_celular_desvincular'),
+          child: BotonNs.secundario(context, 'Desvincular de WhatsApp', _trabajando ? null : _desvincular),
+        ),
         const SizedBox(height: 8),
         TextButton(
           onPressed: () async {
@@ -245,6 +341,14 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
           },
           child: Text(_verRegistro ? 'Ocultar el registro' : 'Ver el registro del bot', style: estiloNs(14, color: ns.mute)),
         ),
+        if (_verRegistro) ...[
+          // Para mandárselo a quien da soporte (El dueño, 2026-10-21): más líneas que las que se ven.
+          KeyedSubtree(
+            key: const Key('bot_celular_copiar_registro'),
+            child: BotonNs.secundario(context, 'Copiar el registro', _copiarRegistro, alto: 44, tamanio: 15),
+          ),
+          const SizedBox(height: 8),
+        ],
         if (_verRegistro)
           Container(
             constraints: const BoxConstraints(maxHeight: 320),
@@ -262,6 +366,53 @@ class _SeccionBotEnCelularNsState extends State<SeccionBotEnCelularNs> {
                     ),
                   ),
           ),
+      ],
+    );
+  }
+}
+
+/// "2944 50-7225" para leerlo; si no tiene la forma de siempre, tal cual.
+String _numeroLegible(String n) => n.startsWith('549') && n.length == 13 ? '${n.substring(3, 7)} ${n.substring(7, 9)}-${n.substring(9)}' : n;
+
+/// Pide el número nuevo, como se escribe siempre ("2944 123456"). Devuelve el número normalizado, o null si se canceló.
+class _HojaOtroNumero extends StatefulWidget {
+  const _HojaOtroNumero();
+
+  @override
+  State<_HojaOtroNumero> createState() => _HojaOtroNumeroState();
+}
+
+class _HojaOtroNumeroState extends State<_HojaOtroNumero> {
+  final _numero = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _numero.dispose();
+    super.dispose();
+  }
+
+  void _listo() {
+    final n = numeroWhatsApp(_numero.text);
+    if (n == null) {
+      setState(() => _error = 'Ese número no parece de WhatsApp. Escribilo con la característica: 2944 123456.');
+      return;
+    }
+    Navigator.of(context).pop(n);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HojaNs(
+      titulo: 'Vincular otro número',
+      texto: 'El bot suelta el WhatsApp de ahora y te da un código para vincular el nuevo. Atiende un número a la vez.',
+      bloques: [
+        CampoNs(etiqueta: 'WhatsApp nuevo del local', controller: _numero, placeholder: 'Ej: 2944 123456', teclado: TextInputType.phone, autofoco: true, onSubmit: (_) => _listo()),
+        if (_error != null) InfoNs(_error!, tono: TonoNs.bad),
+      ],
+      botones: [
+        BotonNs.primario(context, 'Vincular este número', _listo),
+        BotonNs.secundario(context, 'Volver', () => Navigator.of(context).pop()),
       ],
     );
   }

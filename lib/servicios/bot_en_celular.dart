@@ -201,6 +201,13 @@ class BotEnCelular {
   /// Borra la sesión de WhatsApp (la desvincularon, o se quiere usar otro número) y lo vuelve a encender: pide un código (o un
   /// QR) nuevo.
   Future<String?> vincularDeNuevo({required String numero}) async {
+    await desvincular();
+    return encender(numero: numero);
+  }
+
+  /// Lo apaga y borra la sesión de WhatsApp: queda apagado y, al encenderlo, pide vincular de nuevo. Para soltar el número sin
+  /// usar otro, o cuando la sesión quedó rota (El dueño, 2026-10-21: "eliminé el dispositivo y sigue intentando reconectar").
+  Future<void> desvincular() async {
     await apagar();
     final d = await datos();
     // Que Node termine de parar antes de borrarle la sesión.
@@ -210,6 +217,12 @@ class BotEnCelular {
         if (x.existsSync()) x.deleteSync(recursive: true);
       } catch (_) {}
     }
+  }
+
+  /// Apagar y encender con el mismo número, sin tocar la vinculación: para cuando se traba reconectando.
+  Future<String?> reiniciar({required String numero}) async {
+    await apagar();
+    await Future<void>.delayed(_motor.esperaAlApagar);
     return encender(numero: numero);
   }
 

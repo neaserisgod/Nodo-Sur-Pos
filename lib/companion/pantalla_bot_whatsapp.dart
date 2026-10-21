@@ -33,7 +33,8 @@ class PantallaBotWhatsApp extends StatefulWidget {
 
   /// Nodo Sur Servicios, que trae el bot adentro: en vez de cómo instalarlo en Termux, el bot de este celular. Recibe el WhatsApp
   /// del local como está escrito arriba (normalizado; null si falta).
-  final Widget Function(BuildContext context, String? numeroBot)? enEsteCelular;
+  /// `cambiarNumero` guarda otro WhatsApp del local en la configuración (true si quedó guardado): lo usa "Vincular otro número".
+  final Widget Function(BuildContext context, String? numeroBot, Future<bool> Function(String numero) cambiarNumero)? enEsteCelular;
 
   @override
   State<PantallaBotWhatsApp> createState() => _PantallaBotWhatsAppState();
@@ -147,24 +148,34 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
     pausaMinutos: _pausa,
   );
 
-  Future<void> _guardar() async {
+  /// True si quedó guardada.
+  Future<bool> _guardar() async {
     final negocio = _negocio;
-    if (negocio == null) return;
+    if (negocio == null) return false;
     final c = _editada;
     final problemas = problemasConfigBot(c, nombreNegocio: negocio.nombreComercio, rubro: negocio.rubro ?? rubroDeEdicion);
     setState(() => _problemas = problemas);
-    if (problemas.isNotEmpty) return;
+    if (problemas.isNotEmpty) return false;
     setState(() => _guardando = true);
     try {
       final config = configBotParaGuardar(c, nombreNegocio: negocio.nombreComercio, rubro: (negocio.rubro ?? rubroDeEdicion)!, anterior: _anterior);
       await widget.acceso.guardarConfig(config);
       _anterior = config;
       if (mounted) mostrarAvisoNs(context, 'Guardado. El bot lo toma solo, sin reiniciarlo.');
+      return true;
     } catch (e) {
       if (mounted) setState(() => _problemas = [mensajeDeError(e)]);
+      return false;
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
+  }
+
+  /// "Vincular otro número" (`SeccionBotEnCelularNs`): el número nuevo queda en la configuración, que es la que dice cuál es el
+  /// WhatsApp del local (el link del catálogo, los avisos).
+  Future<bool> _cambiarNumero(String numero) async {
+    setState(() => _numeroBot.text = _legible(numero));
+    return _guardar();
   }
 
   /// Las preguntas se guardan en la misma configuración: al volver se relee, así "Guardar" de acá no las pisa con la vieja.
@@ -394,7 +405,7 @@ class _PantallaBotWhatsAppState extends State<PantallaBotWhatsApp> {
                   _salud(e),
                   if (e.puedeConfigurar) ...[
                     ..._configuracion(),
-                    if (widget.enEsteCelular case final enEste?) enEste(context, numeroWhatsApp(_numeroBot.text)) else ..._instalar(),
+                    if (widget.enEsteCelular case final enEste?) enEste(context, numeroWhatsApp(_numeroBot.text), _cambiarNumero) else ..._instalar(),
                   ] else ...[
                     const SizedBox(height: 12),
                     const InfoNs('La configuración y la instalación las hace quien administra el negocio.'),
