@@ -251,7 +251,7 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
                     key: const Key('pedidos_catalogo'),
                     etiqueta: 'Tengo catálogo de WhatsApp Business',
                     descripcion: _catalogo
-                        ? 'El bot manda el link del catálogo y le copia la carta: los platos, precios y lo que no hay.'
+                        ? 'El bot manda el link de tu catálogo y toma los pedidos del carrito. Los platos los cargás vos en WhatsApp Business, con el mismo nombre que en la carta.'
                         : 'El bot manda la carta escrita.',
                     encendido: _catalogo,
                     onCambio: (v) => setState(() => _catalogo = v),

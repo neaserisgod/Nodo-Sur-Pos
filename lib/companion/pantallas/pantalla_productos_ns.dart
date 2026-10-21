@@ -9,9 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../edicion.dart' show esEdicionGastronomia;
 import '../app_ns.dart';
-import '../bot_celular.dart' show accesoBotDelCelular;
 import '../cambios_companion.dart';
 import '../cliente_companion.dart';
 import '../escanear_codigo.dart';
@@ -189,8 +187,7 @@ class _PantallaProductosNsState extends State<PantallaProductosNs> {
     final s = app.servicio;
     final u = app.usuarioId;
     if (s == null || u == null) return;
-    final r = await mostrarHojaCambiarPrecio(context, servicio: s, usuarioId: u, producto: p, nombreProveedor: _nombreProveedor(p.proveedorId),
-        bot: esEdicionGastronomia ? accesoBotDelCelular : null);
+    final r = await mostrarHojaCambiarPrecio(context, servicio: s, usuarioId: u, producto: p, nombreProveedor: _nombreProveedor(p.proveedorId));
     if (!mounted) return;
     if (r == false) {
       final guardo = await mostrarFormularioProducto(context, cliente: s, usuarioId: u, proveedores: _proveedores, categorias: _categorias, producto: p);

@@ -4,10 +4,7 @@ import 'package:la_plazoleta/companion/kit/barra_inferior_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_servicios_ns.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
-import 'package:la_plazoleta/data/repositorio_pedidos_gastronomia.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
-import 'package:la_plazoleta/domain/bot_whatsapp.dart';
-import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
 import 'package:la_plazoleta/domain/servicios.dart';
@@ -15,7 +12,6 @@ import 'package:la_plazoleta/servicios/modulos_activos.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
-import '../helpers/sitio_bot_falso.dart';
 
 /// Servicios en el celular (`docs/PLAN-SERVICIOS.md`, etapa 2): la lista con costo y "alcanza para", los insumos y el
 /// creador con el calculador, sobre la base del celular.
@@ -171,45 +167,6 @@ void main() {
 
   test('la barra dice Servicios en un negocio de servicios', () {
     expect(const BarraInferiorNs(activa: PestaniaNs.inicio, onSeleccionar: _nada, conServicios: true).conServicios, isTrue);
-  });
-
-  testWidgets('Carta con catálogo de WhatsApp: trae lo que no está, sin lo escondido marcado, y crea los platos', (tester) async {
-    modulosActuales.value = const ModulosNegocio({}, forma: FormaDeTrabajo.gastronomia);
-    final sitio = SitioBotFalso()
-      ..catalogoWa = [
-        const ProductoWhatsapp(waId: '1', nombre: 'Milanesa con papas', precioCentavos: 650000),
-        const ProductoWhatsapp(waId: '2', nombre: 'Tarta de verdura', descripcion: 'Acelga y huevo', precioCentavos: 500000),
-        const ProductoWhatsapp(waId: '3', nombre: 'Flan casero', precioCentavos: 300000, oculto: true),
-      ];
-    await tester.runAsync(() async {
-      await crearServicio(db, nombre: 'Milanesa con papas', precioCentavos: 650000, duracionMinutos: 20, usuarioId: usuario);
-    });
-    tester.view.physicalSize = const Size(430, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(theme: TemaCompanion.claro, home: Scaffold(body: PantallaServiciosNs(db: db, usuarioId: usuario, bot: sitio))));
-    await esperar(tester);
-    expect(find.byKey(const Key('traer_whatsapp')), findsNothing, reason: 'sin catálogo de WhatsApp no se ofrece');
-
-    await tester.runAsync(() => guardarConfigPedidos(db, const ConfigPedidos(catalogoWhatsapp: true)));
-    modulosActuales.value = ModulosNegocio(const {}, forma: FormaDeTrabajo.gastronomia);
-    await esperar(tester);
-    await tester.tap(find.byKey(const Key('traer_whatsapp')));
-    await esperar(tester);
-    expect(sitio.pedidosCatalogoWa, 1, reason: 'le pide al bot que lo lea');
-    expect(find.byKey(const ValueKey('wa-1')), findsNothing, reason: 'la milanesa ya está en la carta');
-    expect(find.text('Tarta de verdura'), findsOneWidget);
-    expect(find.text('Escondido en WhatsApp'), findsOneWidget);
-    expect(find.text('Traer 1 plato'), findsOneWidget, reason: 'lo escondido viene sin marcar');
-
-    await tester.tap(find.byKey(const ValueKey('wa-3')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Traer 2 platos'));
-    await esperar(tester);
-    final platos = await tester.runAsync(() => listarServicios(db, conManoDeObra: false));
-    expect([for (final p in platos!) p.producto.nombre]..sort(), ['Flan casero', 'Milanesa con papas', 'Tarta de verdura']);
-    expect(platos.firstWhere((p) => p.producto.nombre == 'Tarta de verdura').producto.precioCentavos, 500000);
-    await tester.pump(const Duration(seconds: 3)); // que se vaya el aviso
   });
 }
 
