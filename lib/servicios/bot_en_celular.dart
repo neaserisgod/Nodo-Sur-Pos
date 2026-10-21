@@ -232,7 +232,24 @@ class BotEnCelular {
   Future<void> pedirSinRestriccionesDeBateria() => _motor.pedirSinRestriccionesDeBateria();
 
   /// Descomprime el bot en `bot/<huella>` si no está. Devuelve la carpeta.
-  Future<Directory> preparar() async {
+  /// Una sola preparación a la vez (primer celular real, 2026-10-21): al abrir la app [ponerAlDia] descomprime el bot y, si en
+  /// ese momento se toca "Encender" o "Vincular", una segunda llamada veía la carpeta a medias, la borraba y la primera le
+  /// ponía `.listo` a lo que quedaba. El bot arrancaba sin piezas ("Cannot find package 'protobufjs'") y no se arreglaba solo.
+  Future<Directory>? _preparando;
+
+  Future<Directory> preparar() {
+    final enCurso = _preparando;
+    if (enCurso != null) return enCurso;
+    final f = _preparar();
+    _preparando = f;
+    f.whenComplete(() => _preparando = null).ignore();
+    return f;
+  }
+
+  /// Lo que no puede faltar: si falta, la carpeta quedó incompleta aunque diga `.listo`, y se descomprime de nuevo.
+  static const _piezas = ['src/index.js', 'node_modules/@whiskeysockets/baileys/package.json', 'node_modules/protobufjs/package.json'];
+
+  Future<Directory> _preparar() async {
     final datosZip = await _zip();
     final bytes = datosZip.buffer.asUint8List(datosZip.offsetInBytes, datosZip.lengthInBytes);
     final extras = await _motor.extras();
@@ -241,7 +258,7 @@ class BotEnCelular {
     final huella = sha1.convert([...bytes, ...utf8.encode(firmaExtras)]).toString().substring(0, 12);
     final dir = Directory(p.join((await _soporte()).path, 'bot', huella));
     final listo = File(p.join(dir.path, '.listo'));
-    if (listo.existsSync()) return dir;
+    if (listo.existsSync() && _piezas.every((x) => File(p.join(dir.path, x)).existsSync())) return dir;
     if (dir.existsSync()) dir.deleteSync(recursive: true); // quedó a medias
     dir.createSync(recursive: true);
     for (final f in ZipDecoder().decodeBytes(bytes).files) {

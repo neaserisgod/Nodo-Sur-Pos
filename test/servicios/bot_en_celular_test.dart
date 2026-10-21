@@ -17,6 +17,9 @@ ByteData _zipCon(Map<String, String> archivos) {
   return ByteData.sublistView(bytes);
 }
 
+// Lo mínimo para que una carpeta cuente como completa (`BotEnCelular._piezas`).
+const _piezas = {'node_modules/@whiskeysockets/baileys/package.json': '{}', 'node_modules/protobufjs/package.json': '{}'};
+
 void main() {
   late Directory tmp;
   setUp(() => tmp = Directory.systemTemp.createTempSync('bot_celular'));
@@ -26,15 +29,33 @@ void main() {
 
   test('descomprime una vez por versión; otra versión va a otra carpeta; nada se escapa de la carpeta', () async {
     final sitio = SitioBotFalso();
-    final v1 = await bot(sitio, _zipCon({'src/index.js': 'uno', '../afuera.js': 'no'})).preparar();
+    final v1 = await bot(sitio, _zipCon({'src/index.js': 'uno', '../afuera.js': 'no', ..._piezas})).preparar();
     expect(File(p.join(v1.path, 'src/index.js')).readAsStringSync(), 'uno');
     expect(File(p.join(tmp.path, 'bot', 'afuera.js')).existsSync(), isFalse);
     expect(File(p.join(tmp.path, 'afuera.js')).existsSync(), isFalse);
     File(p.join(v1.path, 'src/index.js')).writeAsStringSync('tocado');
-    expect((await bot(sitio, _zipCon({'src/index.js': 'uno', '../afuera.js': 'no'})).preparar()).path, v1.path);
+    expect((await bot(sitio, _zipCon({'src/index.js': 'uno', '../afuera.js': 'no', ..._piezas})).preparar()).path, v1.path);
     expect(File(p.join(v1.path, 'src/index.js')).readAsStringSync(), 'tocado', reason: 'ya estaba: no la vuelve a escribir');
-    final v2 = await bot(sitio, _zipCon({'src/index.js': 'dos'})).preparar();
+    final v2 = await bot(sitio, _zipCon({'src/index.js': 'dos', ..._piezas})).preparar();
     expect(v2.path, isNot(v1.path));
+  });
+
+  test('una carpeta marcada como lista pero sin piezas se descomprime de nuevo (primer celular real, 2026-10-21)', () async {
+    final zip = _zipCon({'src/index.js': 'uno', ..._piezas});
+    final b = bot(SitioBotFalso(), zip);
+    final v = await b.preparar();
+    File(p.join(v.path, 'node_modules/protobufjs/package.json')).deleteSync();
+    await b.preparar();
+    expect(File(p.join(v.path, 'node_modules/protobufjs/package.json')).existsSync(), isTrue);
+  });
+
+  test('dos preparaciones a la vez son la misma: una no le borra la carpeta a la otra', () async {
+    final b = bot(SitioBotFalso(), _zipCon({'src/index.js': 'uno', ..._piezas}));
+    final a = b.preparar();
+    final c = b.preparar();
+    expect(identical(a, c), isTrue);
+    final dir = await a;
+    expect(File(p.join(dir.path, 'node_modules/protobufjs/package.json')).existsSync(), isTrue);
   });
 
   test('el token del bot: se pide una vez, se conserva lo que anotó el bot y se renueva cerca de vencer', () async {
