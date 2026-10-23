@@ -260,7 +260,7 @@ void main() {
   });
 
   group('pedidos del bot pagados por transferencia (El dueño, 2026-10-23: quedaban trabados en "sin pagar")', () {
-    Future<PedidoBot> delBot(int id) async {
+    Future<PedidoBot> delBot(int id, {String pago = 'alias'}) async {
       final gid = (await db.select(db.productos).get()).firstWhere((p) => p.globalId != null).globalId!;
       return PedidoBot(
         id: id,
@@ -275,7 +275,7 @@ void main() {
         direccion: 'Mitre 150',
         zona: 'Bariloche',
         costoEnvioCentavos: 250000,
-        pago: 'alias',
+        pago: pago,
       );
     }
 
@@ -299,6 +299,15 @@ void main() {
       final p = await leer(id);
       expect(EstadoPedido.desdeClave(p.estado), EstadoPedido.porHacer);
       expect(p.pagado, isTrue);
+    });
+
+    test('pagado por Mercado Pago entra directo a la cocina aunque el local confirme cada pedido', () async {
+      final id = await importarPedidoDelBot(db, await delBot(3, pago: 'mp'), usuarioId: usuarioId);
+      final p = await leer(id);
+      expect(EstadoPedido.desdeClave(p.estado), EstadoPedido.porHacer);
+      expect(p.pagado, isTrue);
+      expect(p.nota, 'Especial: sin cebolla');
+      expect(estadoParaElSitio(p), 'aceptado', reason: 'el bot le avisa al cliente que ya está en marcha');
     });
   });
 }

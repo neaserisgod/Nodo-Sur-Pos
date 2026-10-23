@@ -297,9 +297,13 @@ Future<int> importarPedidoDelBot(AppDatabase db, PedidoBot p, {required int usua
     final porAlias = p.pago == 'alias';
     final pagaAdelantado = p.pago == 'mp' || porAlias;
     final pagado = p.pago == 'mp';
-    final estado = porAlias && config.confirmacionAutomatica
-        ? EstadoPedido.esperandoPago
-        : estadoInicial(canal: CanalPedido.whatsapp, config: config, pagaAdelantado: false);
+    // Por Mercado Pago la plata ya está: entra "por hacer" aunque el local confirme cada pedido, y el cliente no espera a que lo
+    // vean (El dueño, 2026-10-23: "cuando Mercado Pago registre el pago ya se confirma automáticamente").
+    final estado = pagado
+        ? EstadoPedido.porHacer
+        : porAlias && config.confirmacionAutomatica
+            ? EstadoPedido.esperandoPago
+            : estadoInicial(canal: CanalPedido.whatsapp, config: config, pagaAdelantado: false);
     final nota = [if (porAlias) '💸 Paga por transferencia: fijate que haya llegado (el comprobante te lo reenvía el bot)', if (p.nota != null && p.nota!.trim().isNotEmpty) p.nota!.trim()].join(' · ');
     final momento = p.creado.millisecondsSinceEpoch > 0 ? p.creado : DateTime.now();
     return db.into(db.pedidosGastronomia).insert(PedidosGastronomiaCompanion.insert(
