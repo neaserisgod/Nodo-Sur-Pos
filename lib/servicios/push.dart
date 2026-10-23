@@ -38,9 +38,8 @@ const opcionesFirebase = OpcionesFirebase(
 // Nodo Sur Servicios es otra app para Firebase (otro applicationId, `com.laplazoleta.servicios`): tiene su propio id de app en el
 // mismo proyecto (el `mobilesdk_app_id` de su google-services.json, El dueño, 2026-10-10).
 const _appIdServicios = '1:831126263942:android:212f489bb142cb40a81907';
-// Nodo Gastro (`com.laplazoleta.gastronomia`) todavía no está registrada en Firebase: sin su id de app no se registra
-// (`OpcionesFirebase.cargadas`) y no llegan notificaciones con la app cerrada. Cuando el dueño la registre, va acá.
-const _appIdGastronomia = '';
+// Nodo Gastro (`com.laplazoleta.gastronomia`), su id de app en el mismo proyecto (El dueño, 2026-10-23).
+const _appIdGastronomia = '1:831126263942:android:81c5a5a87e8c6824a81907';
 OpcionesFirebase get opcionesFirebaseDeEdicion => switch (edicionActual) {
       Edicion.servicios => OpcionesFirebase(apiKey: opcionesFirebase.apiKey, appId: _appIdServicios, senderId: opcionesFirebase.senderId, projectId: opcionesFirebase.projectId),
       Edicion.gastronomia => OpcionesFirebase(apiKey: opcionesFirebase.apiKey, appId: _appIdGastronomia, senderId: opcionesFirebase.senderId, projectId: opcionesFirebase.projectId),

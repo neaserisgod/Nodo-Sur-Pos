@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:la_plazoleta/edicion.dart';
 import 'package:la_plazoleta/servicios/cuenta_nube.dart';
 import 'package:la_plazoleta/servicios/push.dart';
 
@@ -63,4 +64,17 @@ void main() {
     expect(await RegistroPush(cliente: cliente, opciones: opciones, canal: canal, esAndroid: true).registrarSiHaceFalta('tok-cuenta'), isFalse);
     expect(registrados, isEmpty);
   });
+
+  test('cada edición tiene su id de app de Firebase (Nodo Gastro desde el 2026-10-23)', () {
+    final ids = <String>{};
+    for (final e in Edicion.values) {
+      edicionActual = e;
+      final o = opcionesFirebaseDeEdicion;
+      expect(o.cargadas, isTrue, reason: e.name);
+      ids.add(o.appId);
+    }
+    edicionActual = Edicion.almacen;
+    expect(ids, hasLength(Edicion.values.length), reason: 'cada app es otra para Firebase');
+  });
 }
+

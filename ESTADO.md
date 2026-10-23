@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (23/10/2026)
 
+- **Notificaciones en Nodo Gastro** (El dueño, 23/10: "la app ya está registrada en Firebase"): con su id de app
+  (`push.dart`), el celular registra su token y le llegan los pedidos del bot con la app cerrada, como en Servicios. **Sin probar
+  en un celular real.**
 - **El bot ofrece los combos de Nodo Gastro** (El dueño, 23/10): van en el catálogo del bot ("hay" si alcanzan sus bebidas; los
   de solo platos, siempre), y el pedido se cobra abriendo el combo en sus platos y bebidas. En modo simple el bot no dice "no
   hay" de nada (no se cuenta el stock). El almacén sigue sin promos en el bot. Sin cambios en `botdemo`. **Sin probar con un
