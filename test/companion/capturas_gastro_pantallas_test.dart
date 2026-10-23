@@ -12,6 +12,7 @@ import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
+import 'package:la_plazoleta/companion/pantalla_promos.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_caja_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_cierre_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_mas_ns.dart';
@@ -173,6 +174,27 @@ void main() {
       await sembrar(tester);
       await abrir(tester, PantallaCierreNs(servicio: servicio, usuarioId: usuario), oscuro: oscuro);
       await guardar(tester, 'cierre', oscuro: oscuro);
+    });
+    testWidgets('modo simple: Carta sin Stock, plato con "Te cuesta" y combo con precio a mano$s', (tester) async {
+      await sembrar(tester);
+      await tester.runAsync(() => crearServicio(db, nombre: 'Milanesa napolitana', precioCentavos: 1100000, duracionMinutos: 30, costoAManoCentavos: 450000, usuarioId: usuario));
+      modulosActuales.value = modulosActuales.value.conModoSimpleGastro(simple: true);
+      await abrir(tester, PantallaServiciosNs(db: db, usuarioId: usuario), oscuro: oscuro, barra: PestaniaNs.productos);
+      expect(find.text('Stock'), findsNothing);
+      expect(find.text('gana 59 %'), findsOneWidget, reason: 'la milanesa: \$ 11.000 con \$ 4.500 de costo a mano');
+      await guardar(tester, 'simple-carta', oscuro: oscuro);
+
+      await abrir(tester, PantallaEditorServicioNs(db: db, usuarioId: usuario), oscuro: oscuro);
+      expect(find.text('Preparación (min)'), findsNothing);
+      expect(find.byKey(const Key('plato_costo_a_mano')), findsOneWidget);
+      await guardar(tester, 'simple-plato-nuevo', oscuro: oscuro);
+
+      await abrir(tester, PantallaPromos(db: db, usuarioId: usuario), oscuro: oscuro);
+      await tester.tap(find.text('Nuevo combo'));
+      await esperar(tester);
+      expect(find.byKey(const Key('combo_precio_a_mano')), findsOneWidget);
+      expect(find.text('Ganancia (sobre el precio, a la centena)'), findsNothing);
+      await guardar(tester, 'simple-combo-nuevo', oscuro: oscuro);
     });
     testWidgets('más$s', (tester) async {
       await sembrar(tester);

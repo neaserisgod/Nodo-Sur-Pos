@@ -28,7 +28,8 @@ import 'pantalla_asistente_ia_ns.dart';
 import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
-import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../../data/repositorio_configuracion.dart' show configurarModoSimpleGastro;
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo, modulosActuales;
 import '../../servicios/sonidos.dart';
 import '../../plataforma.dart';
 
@@ -46,7 +47,7 @@ class PantallaMasNs extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: Listenable.merge([app.pendientes, modoTemaNs, estadoBotCelular]),
+          listenable: Listenable.merge([app.pendientes, modoTemaNs, estadoBotCelular, modulosActuales]),
           builder: (context, _) {
             final pend = app.pendientes.value;
             final nombre = app.nombreUsuario ?? '';
@@ -130,6 +131,17 @@ class PantallaMasNs extends StatelessWidget {
                         BotonNs.primario(context, 'Descargarla', () => launchUrl(Uri.parse('https://horsepos.com/descargar/'), mode: LaunchMode.externalApplication), alto: 48, tamanio: 15),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                // Modo simple o completo de Nodo Gastro (El dueño, 2026-10-23): un interruptor, no la lista de módulos.
+                if (esEdicionGastronomia && !app.pcEmparejada) ...[
+                  InterruptorNs(
+                    key: const Key('mas_modo_completo'),
+                    etiqueta: 'Modo completo',
+                    descripcion: 'Recetas con insumos, stock de lo que comprás y gastos fijos. Apagado, cargás cada plato con su precio y lo que te cuesta, y listo.',
+                    encendido: !modulosActuales.value.esModoSimpleGastro,
+                    onCambio: (completo) => configurarModoSimpleGastro(baseLocalCompanion(), simple: !completo),
                   ),
                   const SizedBox(height: 12),
                 ],

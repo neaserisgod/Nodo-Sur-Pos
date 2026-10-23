@@ -137,13 +137,17 @@ class CostoDeServicio {
 
 /// El costo de un servicio. Sin mano de obra (el servicio no la suma, o el módulo está apagado), [valorHoraCentavos] es
 /// null y esa parte es 0.
+///
+/// Sin receta, la parte de insumos es [costoAManoCentavos]: lo que el local dice que le cuesta el plato (modo simple de Nodo
+/// Gastro, El dueño, 2026-10-23: "debo seguir viendo cuánto gano en los platos"). Con receta manda la receta.
 CostoDeServicio costoDeServicio({
   required List<UsoDeInsumo> receta,
   required int duracionMinutos,
   int? valorHoraCentavos,
+  int? costoAManoCentavos,
 }) {
   return CostoDeServicio(
-    insumosCentavos: costoInsumosCentavos(receta),
+    insumosCentavos: receta.isEmpty ? (costoAManoCentavos ?? 0) : costoInsumosCentavos(receta),
     manoDeObraCentavos: valorHoraCentavos == null
         ? 0
         : costoManoDeObraCentavos(duracionMinutos: duracionMinutos, valorHoraCentavos: valorHoraCentavos),

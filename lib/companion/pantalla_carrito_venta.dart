@@ -45,7 +45,7 @@ import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
 import '../edicion.dart';
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios, esNegocioGastronomico;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, esNegocioGastronomico, modulosActuales;
 import '../servicios/preferencia_qr.dart';
 import 'modo_uso.dart';
 import 'terminal_mp.dart';
@@ -349,6 +349,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _sumarAlCarrito(lineaDeProducto(producto));
     final linea = widget.carrito.firstWhere((l) => l.productoId == '${producto.id}');
     final enCarrito = linea is LineaVentaPorUnidad ? linea.cantidad : 1;
+    if (modulosActuales.value.esModoSimpleGastro) return; // el modo simple no lleva el stock
     if (avisoDeStockAlVender(stock: producto.stock, enCarrito: enCarrito) case final aviso?) mostrarAvisoNs(context, '$aviso: se vende igual');
   }
 

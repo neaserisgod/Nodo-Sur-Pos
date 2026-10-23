@@ -2808,3 +2808,18 @@ distintas; las promos y los proveedores estaban en Más; una promo no podía lle
   buscador del almacén ni el escáner (Gastro no usa códigos de barras).
 - Servicios (Nodo Estudio) no cambia: la pantalla es la misma, con las solapas de siempre.
 
+## Nodo Gastro: modo simple (El dueño, 2026-10-23)
+
+El dueño: "un modo simple que, en vez de tener tanto en cuenta los gastos, el stock, cargás los platos como si fuese un
+producto". Eligió: apagar insumos, stock y gastos **pero seguir viendo cuánto gana cada plato**; combos con precio a mano;
+negocio nuevo en simple con un interruptor a completo.
+
+- **Son módulos, no un dato nuevo**: simple = `insumos`, `manoDeObra` y `equilibrio` apagados (`modulosDelModoCompletoGastro`).
+  Así no hay migración, viaja por la sync como cualquier módulo y volver a completo encuentra recetas y stock como estaban. La
+  solapa Stock y los avisos de stock siguen a la receta: sin recetas no hay qué contar.
+- **Costo a mano en `productos.costo_centavos` del plato**: lo usa `costoDeServicio` solo si no hay receta, así hay una sola
+  cuenta del costo del plato (Carta, venta y combos). Se descartó un "precio sugerido" en simple: sin costos fiables suma ruido.
+- **Combo a mano** (`guardarPromo(precioAManoCentavos:)`): sin porcentaje; se bloquea solo si el precio no cubre lo que sí se
+  sabe que cuesta. Avisa si sale más caro que suelto.
+- Solo los negocios nuevos arrancan simple: a uno que ya existe no se le esconden cosas al actualizar.
+

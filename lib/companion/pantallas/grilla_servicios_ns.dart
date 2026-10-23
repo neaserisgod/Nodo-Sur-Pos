@@ -84,6 +84,9 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
 
   bool get _conCarta => widget.onElegirProducto != null;
 
+  /// El modo simple de Nodo Gastro no lleva el stock: no avisa "Sin stock".
+  bool get _sinStock => modulosActuales.value.esModoSimpleGastro;
+
   @override
   void initState() {
     super.initState();
@@ -135,7 +138,7 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
             precio: p.precioCentavos ?? 0,
             categoria: _categorias[p.categoriaId] ?? 'Bebidas y otros',
             onTap: () => widget.onElegirProducto!(p),
-            aviso: p.stock <= 0 ? 'Sin stock' : null,
+            aviso: !_sinStock && p.stock <= 0 ? 'Sin stock' : null,
           ),
         for (final c in _combos)
           _Mosaico(
@@ -145,7 +148,7 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
             categoria: 'Combos',
             // El stock que alcanza viaja en el producto: así "Cobrar" avisa si falta una bebida, como con las sueltas.
             onTap: () => widget.onElegirProducto!(c.promo.copyWith(stock: c.stock)),
-            aviso: c.stock <= 0 ? 'Sin stock' : null,
+            aviso: !_sinStock && c.stock <= 0 ? 'Sin stock' : null,
           ),
       ];
 

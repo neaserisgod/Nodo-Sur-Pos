@@ -18,6 +18,7 @@ import '../domain/promo.dart' show atajosPorcentajePromo, porcentajePromoPorDefe
 import '../servicios/asistente_promos.dart';
 import '../servicios/gemini.dart';
 import '../edicion.dart';
+import '../servicios/modulos_activos.dart' show modulosActuales;
 import 'base_local.dart';
 import 'emparejamiento.dart';
 import 'kit/kit_ns.dart';
@@ -212,22 +213,30 @@ class _SelectorPorcentaje extends StatelessWidget {
 
 /// Lo que va a costar la promo con lo elegido: sueltos, promo, ahorro del cliente y lo que te queda. Mismos textos que la PC.
 class _Calculo extends StatelessWidget {
-  const _Calculo(this.calculo);
+  const _Calculo(this.calculo, {this.aMano = false});
   final PrecioDePromoCalculado? calculo;
+
+  /// El precio lo puso el local (modo simple de Nodo Gastro): no se repite y "te quedan" solo si se sabe algún costo.
+  final bool aMano;
 
   @override
   Widget build(BuildContext context) {
     final c = calculo;
-    if (c == null) return const InfoNs('Elegí al menos dos artículos con costo y precio.', tamanio: 13, vertical: 10);
+    if (c == null) {
+      return InfoNs(aMano ? 'Elegí al menos dos cosas y poné el precio del combo.' : 'Elegí al menos dos artículos con costo y precio.', tamanio: 13, vertical: 10);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilaClaveValorNs(clave: _p('Precio de la promo', 'Precio del combo'), valor: plataNs(c.precioCentavos), tamanioValor: 24),
+        if (!aMano) FilaClaveValorNs(clave: _p('Precio de la promo', 'Precio del combo'), valor: plataNs(c.precioCentavos), tamanioValor: 24),
         FilaClaveValorNs(clave: 'Sueltos', valor: plataNs(c.listaCentavos), tamanioValor: 16),
-        FilaClaveValorNs(clave: 'El cliente ahorra', valor: plataNs(c.listaCentavos - c.precioCentavos), tamanioValor: 16),
-        FilaClaveValorNs(clave: _p('Te quedan por promo', 'Te quedan por combo'), valor: plataNs(c.precioCentavos - c.costoCentavos), tamanioValor: 16, sinLinea: true),
+        FilaClaveValorNs(clave: 'El cliente ahorra', valor: plataNs(c.listaCentavos - c.precioCentavos), tamanioValor: 16, sinLinea: aMano && c.costoCentavos == 0),
+        if (!aMano || c.costoCentavos > 0)
+          FilaClaveValorNs(clave: _p('Te quedan por promo', 'Te quedan por combo'), valor: plataNs(c.precioCentavos - c.costoCentavos), tamanioValor: 16, sinLinea: true),
         if (c.topeadoPorLista) const InfoNs('Con ese porcentaje no baja del precio de lista: no hay descuento para el cliente.', tono: TonoNs.warn, tamanio: 13, vertical: 10),
-        if (!c.cubreElCosto) InfoNs(_p('Con ese porcentaje la promo no cubre su costo.', 'Con ese porcentaje el combo no cubre su costo.'), tono: TonoNs.bad, tamanio: 13, vertical: 10),
+        if (aMano && c.precioCentavos > c.listaCentavos) const InfoNs('Sale más caro que pedir todo suelto.', tono: TonoNs.warn, tamanio: 13, vertical: 10),
+        if (!c.cubreElCosto)
+          InfoNs(aMano ? 'Con ese precio el combo no cubre lo que cuesta.' : _p('Con ese porcentaje la promo no cubre su costo.', 'Con ese porcentaje el combo no cubre su costo.'), tono: TonoNs.bad, tamanio: 13, vertical: 10),
       ],
     );
   }
@@ -261,10 +270,20 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
   bool _guardando = false;
   String? _error;
 
+  /// El modo simple de Nodo Gastro pone el precio del combo a mano (El dueño, 2026-10-23): sin costos cargados no hay
+  /// porcentaje que aplicar.
+  final bool _aMano = modulosActuales.value.esModoSimpleGastro;
+  late final _precioAMano = TextEditingController(text: _aMano && widget.existente != null ? '${(widget.existente!.promo.precioCentavos ?? 0) ~/ 100}' : '');
+
+  int? get _precioAManoCentavos {
+    final pesos = int.tryParse(_precioAMano.text.trim());
+    return pesos == null || pesos <= 0 ? null : pesos * 100;
+  }
+
   @override
   void initState() {
     super.initState();
-    productosParaPromo(widget.db).then((e) {
+    productosParaPromo(widget.db, sinCosto: _aMano).then((e) {
       if (mounted) setState(() => _elegibles = e);
     });
   }
@@ -273,10 +292,16 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
   void dispose() {
     _nombre.dispose();
     _buscar.dispose();
+    _precioAMano.dispose();
     super.dispose();
   }
 
-  PrecioDePromoCalculado? get _calculo => calcularPromo([for (final e in _elegidos) ComponenteDePromo(producto: e.producto, cantidad: e.cantidad)], _bp);
+  PrecioDePromoCalculado? get _calculo {
+    final componentes = [for (final e in _elegidos) ComponenteDePromo(producto: e.producto, cantidad: e.cantidad)];
+    if (!_aMano) return calcularPromo(componentes, _bp);
+    final precio = _precioAManoCentavos;
+    return precio == null ? null : calcularPromoAMano(componentes, precio);
+  }
 
   List<Producto> get _resultados {
     final texto = normalizarTexto(_buscar.text);
@@ -302,6 +327,7 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
         nombre: _nombre.text,
         articulos: [for (final e in _elegidos) (productoId: e.producto.id, cantidad: e.cantidad)],
         gananciaBp: _bp,
+        precioAManoCentavos: _aMano ? _precioAManoCentavos : null,
         usuarioId: widget.usuarioId,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -370,13 +396,26 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
               ),
             ),
           if (_buscar.text.trim().isNotEmpty && _resultados.isEmpty)
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text(_p('Sin coincidencias (por unidad, sin cigarrillos, con costo y precio)', 'Sin coincidencias: un plato necesita sus insumos cargados y una bebida su costo'), style: estiloNs(13, color: ns.mute))),
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(_aMano ? 'Sin coincidencias' : _p('Sin coincidencias (por unidad, sin cigarrillos, con costo y precio)', 'Sin coincidencias: un plato necesita lo que cuesta cargado, y una bebida también'), style: estiloNs(13, color: ns.mute))),
           const SizedBox(height: 16),
-          const SeccionNs('Ganancia (sobre el precio, a la centena)'),
-          const SizedBox(height: 8),
-          _SelectorPorcentaje(bp: _bp, onCambio: (v) => setState(() => _bp = v)),
+          if (_aMano)
+            CampoNs(
+              key: const Key('combo_precio_a_mano'),
+              etiqueta: 'Precio del combo',
+              controller: _precioAMano,
+              grande: true,
+              placeholder: r'$ 0',
+              teclado: TextInputType.number,
+              formatos: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() => _error = null),
+            )
+          else ...[
+            const SeccionNs('Ganancia (sobre el precio, a la centena)'),
+            const SizedBox(height: 8),
+            _SelectorPorcentaje(bp: _bp, onCambio: (v) => setState(() => _bp = v)),
+          ],
           const SizedBox(height: 12),
-          _Calculo(_calculo),
+          _Calculo(_calculo, aMano: _aMano),
           const SizedBox(height: 12),
         ],
       ),

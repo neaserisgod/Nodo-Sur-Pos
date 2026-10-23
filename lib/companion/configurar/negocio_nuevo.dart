@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/database.dart';
 import '../../data/repositorio_configuracion.dart';
 import '../../data/repositorio_productos.dart' as repo_productos;
+import '../../domain/forma_de_trabajo.dart';
 import '../../domain/modulos.dart';
 import '../../domain/plantillas_rubro.dart';
 import '../../servicios/sync_nube.dart';
@@ -98,6 +99,10 @@ Future<void> prepararNegocioNuevo(AppDatabase db) async {
 Future<void> guardarNegocio(AppDatabase db, {required String nombre, required PlantillaRubro rubro}) async {
   await prepararNegocioNuevo(db);
   await db.transaction(() async {
+    // Un local gastronómico nuevo arranca en modo simple (El dueño, 2026-10-23): platos con precio, sin recetas ni stock;
+    // el completo se prende en Más. Solo la primera vez: volver a pasar por el alta no le cambia el modo a quien ya eligió.
+    final rubroAnterior = (await configuracionNegocioActual(db)).rubro;
+    if (rubroAnterior.isEmpty && rubro.forma == FormaDeTrabajo.gastronomia) await configurarModoSimpleGastro(db, simple: true);
     await configurarNombreComercio(db, nombre);
     // Desde la v63 el rubro queda guardado (lo usa el bot de WhatsApp, `docs/PLAN-BOT.md`).
     await configurarRubro(db, rubro);

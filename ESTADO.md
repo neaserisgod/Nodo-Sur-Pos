@@ -138,6 +138,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (23/10/2026)
 
+- **Nodo Gastro, modo simple** (El dueño, 23/10: "cargás los platos como si fuese un producto y ya los tenés en el catálogo").
+  Un local nuevo arranca simple: cada plato es nombre, categoría, precio y **"Te cuesta" a mano** (se sigue viendo cuánto se gana),
+  sin recetas, sin solapa Stock, sin avisos de stock y sin gastos fijos; los **combos llevan precio a mano**. Más › **Modo completo**
+  prende recetas, stock y gastos (y apagarlo no borra nada). Los negocios que ya existen quedan en completo. **Sin probar en un
+  celular real.**
 - **Nodo Gastro, la Carta ordenada** (El dueño, 23/10: "se me mezcla mucho, no hay una división clara entre promos, productos").
   La pestaña Carta tiene dos solapas: **Carta** (lo que se vende: platos, bebidas y combos, con un solo "+ Agregar") y **Stock**
   (lo que se compra: insumos y bebidas juntos, lo que se acaba primero arriba, un solo "Cargar compra" y Proveedores). Las

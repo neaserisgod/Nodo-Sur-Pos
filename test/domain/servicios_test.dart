@@ -58,6 +58,12 @@ void main() {
       expect(c.manoDeObraCentavos, 0);
       expect(c.totalCentavos, 57000);
     });
+
+    test('sin receta, lo que el local dice que le cuesta (el plato del modo simple de Gastro); con receta, manda la receta', () {
+      expect(costoDeServicio(receta: const [], duracionMinutos: 20, costoAManoCentavos: 350000).insumosCentavos, 350000);
+      expect(costoDeServicio(receta: const [], duracionMinutos: 20).insumosCentavos, 0);
+      expect(costoDeServicio(receta: [_uso(_semi, 600)], duracionMinutos: 60, costoAManoCentavos: 350000).insumosCentavos, 57000);
+    });
   });
 
   group('precio sugerido — ganancia buscada de cada servicio, a la centena (Regla 14)', () {

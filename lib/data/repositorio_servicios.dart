@@ -107,6 +107,10 @@ void _validarServicio({required int precioCentavos, required int duracionMinutos
   }
 }
 
+void _validarCostoAMano(int? centavos) {
+  if (centavos != null && centavos < 0) throw ArgumentError('El costo no puede ser negativo');
+}
+
 Future<Producto> _producto(AppDatabase db, int id) => (db.select(db.productos)..where((p) => p.id.equals(id))).getSingle();
 
 // --- Insumos ------------------------------------------------------------------------------------------------------------
@@ -326,8 +330,11 @@ Future<int> crearServicio(
   int? gananciaBuscadaBp,
   int? categoriaId,
   bool pideSena = false,
+  // Lo que cuesta un plato sin receta, a mano (modo simple de Nodo Gastro): con receta no se usa.
+  int? costoAManoCentavos,
   required int usuarioId,
 }) {
+  _validarCostoAMano(costoAManoCentavos);
   _validarNombre(nombre);
   _validarServicio(precioCentavos: precioCentavos, duracionMinutos: duracionMinutos, receta: receta, gananciaBuscadaBp: gananciaBuscadaBp);
   return db.transaction(() async {
@@ -336,6 +343,7 @@ Future<int> crearServicio(
       nombre: nombre.trim(),
       categoriaId: categoriaId,
       precioCentavos: precioCentavos,
+      costoCentavos: costoAManoCentavos,
       usuarioId: usuarioId,
     );
     await (db.update(db.productos)..where((p) => p.id.equals(id))).write(
@@ -366,8 +374,11 @@ Future<void> editarServicio(
   int? categoriaId,
   // Null: no se toca (quien edita sin mirar la seña no la cambia).
   bool? pideSena,
+  // Ausente: no se toca (el modo completo edita la receta, no el costo a mano).
+  Value<int?> costoAManoCentavos = const Value.absent(),
   required int usuarioId,
 }) {
+  _validarCostoAMano(costoAManoCentavos.present ? costoAManoCentavos.value : null);
   _validarNombre(nombre);
   _validarServicio(precioCentavos: precioCentavos, duracionMinutos: duracionMinutos, receta: receta, gananciaBuscadaBp: gananciaBuscadaBp);
   return db.transaction(() async {
@@ -383,6 +394,7 @@ Future<void> editarServicio(
         gananciaBuscadaBp: Value(gananciaBuscadaBp),
         categoriaId: Value(categoriaId),
         pideSena: pideSena == null ? const Value.absent() : Value(pideSena),
+        costoCentavos: costoAManoCentavos,
         actualizadoEn: Value(DateTime.now()),
       ),
     );
@@ -392,7 +404,7 @@ Future<void> editarServicio(
       usuarioId: usuarioId,
       anterior: anterior,
       precioCentavos: precioCentavos,
-      costoCentavos: anterior.costoCentavos,
+      costoCentavos: costoAManoCentavos.present ? costoAManoCentavos.value : anterior.costoCentavos,
       precioPorKiloCentavos: anterior.precioPorKiloCentavos,
       costoPorKiloCentavos: anterior.costoPorKiloCentavos,
     );
@@ -455,6 +467,7 @@ Future<List<ServicioListado>> listarServicios(AppDatabase db, {bool incluirInact
       receta: usos,
       duracionMinutos: s.duracionMinutos ?? 0,
       valorHoraCentavos: s.sumaManoDeObra ? valorHora : null,
+      costoAManoCentavos: s.costoCentavos,
     );
     final primero = seAcabaPrimero(usos);
     resultado.add(
@@ -515,7 +528,8 @@ Future<int> costoInsumosDeServicio(AppDatabase db, Producto servicio) async {
     for (final r in await _recetaResuelta(db, servicio))
       if ((r.insumo.contenidoEnvaseMilesimas ?? 0) > 0) UsoDeInsumo(insumo: _paraCalculo(r.insumo), cantidadMilesimas: r.milesimas),
   ];
-  return costoInsumosCentavos(usos);
+  // Sin receta, el costo a mano del plato (modo simple de Nodo Gastro): la misma cuenta que la lista (`costoDeServicio`).
+  return costoDeServicio(receta: usos, duracionMinutos: 0, costoAManoCentavos: servicio.costoCentavos).insumosCentavos;
 }
 
 /// Descuenta los insumos de [cantidad] veces [servicio], con un movimiento `VENTA` por insumo atado a la venta. El stock

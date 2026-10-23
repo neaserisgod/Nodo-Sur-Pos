@@ -117,9 +117,27 @@ PrecioDePromoCalculado? calcularPromo(List<ComponenteDePromo> componentes, int g
   );
 }
 
+/// La promo con el precio puesto a mano: el costo es la suma de los artículos que lo tienen cargado (los demás cuentan 0).
+/// Null sin artículos o si alguno no tiene precio de lista.
+PrecioDePromoCalculado? calcularPromoAMano(List<ComponenteDePromo> componentes, int precioCentavos) {
+  if (componentes.isEmpty) return null;
+  if (componentes.any((c) => c.producto.precioCentavos == null)) return null;
+  final lista = componentes.fold(0, (a, c) => a + c.listaCentavos);
+  return PrecioDePromoCalculado(
+    costoCentavos: componentes.fold(0, (a, c) => a + c.costoCentavos),
+    listaCentavos: lista,
+    precioCentavos: precioCentavos,
+    topeadoPorLista: false,
+  );
+}
+
 /// Crea (o, con [promoId], rehace) una promo. Reglas: al menos dos artículos
 /// distintos, todos por unidad, con costo y precio, sin cigarrillos, "Varios"
 /// ni otras promos; y el precio resultante tiene que cubrir el costo.
+///
+/// Con [precioAManoCentavos] (el combo del modo simple de Nodo Gastro, El dueño, 2026-10-23: "precio a mano") el precio es
+/// ese y los artículos no necesitan costo: el costo del combo es la suma de los que lo tienen, y el precio igual tiene que
+/// cubrirlo. [gananciaBp] no se usa.
 ///
 /// Devuelve el id de la promo.
 Future<int> guardarPromo(
@@ -128,8 +146,11 @@ Future<int> guardarPromo(
   required String nombre,
   required List<({int productoId, int cantidad})> articulos,
   required int gananciaBp,
+  int? precioAManoCentavos,
   required int usuarioId,
 }) {
+  final aMano = precioAManoCentavos != null;
+  if (aMano && precioAManoCentavos <= 0) throw ArgumentError('Falta el precio del combo');
   return db.transaction(() async {
     final nombreLimpio = nombre.trim();
     if (nombreLimpio.isEmpty) throw ArgumentError('Falta el nombre de la promo');
@@ -144,14 +165,14 @@ Future<int> guardarPromo(
       if (p.esPesable) throw ArgumentError('"${p.nombre}" es pesable: una promo lleva solo artículos por unidad');
       if (p.tipoCigarrillo != 'ninguno') throw ArgumentError('Los cigarrillos no entran en una promo');
       if (p.esVarios || p.esPromo || p.esInsumo) throw ArgumentError('"${p.nombre}" no puede formar parte de una promo');
-      if ((p.costoCentavos ?? 0) <= 0) throw ArgumentError('"${p.nombre}" no tiene costo cargado');
+      if (!aMano && (p.costoCentavos ?? 0) <= 0) throw ArgumentError('"${p.nombre}" no tiene costo cargado');
       if (p.precioCentavos == null) throw ArgumentError('"${p.nombre}" no tiene precio cargado');
       componentes.add(ComponenteDePromo(producto: p, cantidad: a.cantidad));
     }
 
-    final calculo = calcularPromo(componentes, gananciaBp)!;
+    final calculo = aMano ? calcularPromoAMano(componentes, precioAManoCentavos)! : calcularPromo(componentes, gananciaBp)!;
     if (!calculo.cubreElCosto) {
-      throw ArgumentError('El precio de lista de los artículos no cubre su costo: la promo perdería plata');
+      throw ArgumentError(aMano ? 'Con ese precio el combo no cubre lo que cuesta: perdería plata' : 'El precio de lista de los artículos no cubre su costo: la promo perdería plata');
     }
 
     final anterior = promoId == null
@@ -268,7 +289,9 @@ Future<void> reconstruirComponentesDePromo(AppDatabase db, {required int promoId
 /// Los productos que pueden entrar en una promo (las reglas de [guardarPromo]): por unidad, sin cigarrillos, "Varios" ni otras
 /// promos, con costo y precio; y los platos activos con insumos cargados (su costo es el de la receta). Lo usan el creador de
 /// la PC y el del celular.
-Future<List<Producto>> productosParaPromo(AppDatabase db) async {
+///
+/// Con [sinCosto] (el combo a mano del modo simple) alcanza con el precio.
+Future<List<Producto>> productosParaPromo(AppDatabase db, {bool sinCosto = false}) async {
   // `listarProductos` ya deja afuera "Varios", las promos, los insumos y los platos.
   final platos = await (db.select(db.productos)..where((p) => p.esServicio.equals(true) & p.activo.equals(true))).get();
   final todos = [
@@ -277,7 +300,7 @@ Future<List<Producto>> productosParaPromo(AppDatabase db) async {
   ]..sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
   return [
     for (final p in todos)
-      if (!p.esPesable && p.tipoCigarrillo == 'ninguno' && (p.costoCentavos ?? 0) > 0 && p.precioCentavos != null) p,
+      if (!p.esPesable && p.tipoCigarrillo == 'ninguno' && (sinCosto || (p.costoCentavos ?? 0) > 0) && p.precioCentavos != null) p,
   ];
 }
 

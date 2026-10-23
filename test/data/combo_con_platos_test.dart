@@ -2,6 +2,7 @@
 // el de sus insumos de hoy, el plato no limita cuántos combos alcanzan, y al cobrarlo se gastan sus insumos (anular los
 // devuelve), como cuando se vende suelto.
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_edicion_venta.dart';
@@ -107,5 +108,32 @@ void main() {
     expect((await listarPromos(db)).single.stock, stockPromoSinTope);
     final catalogo = await catalogoConStockDePromos(db);
     expect(catalogo.singleWhere((p) => p.esPromo).stock, stockPromoSinTope);
+  });
+
+  group('modo simple (El dueño, 2026-10-23): platos sin receta, con lo que cuestan a mano', () {
+    test('el plato sin receta cuesta lo que se cargó a mano: se ve la ganancia y la venta lo guarda como costo-foto', () async {
+      final milanesa = await crearServicio(db, nombre: 'Milanesa', precioCentavos: 900000, duracionMinutos: 20, costoAManoCentavos: 350000, usuarioId: usuarioId);
+      final listado = (await listarServicios(db, conManoDeObra: false)).singleWhere((s) => s.producto.id == milanesa);
+      expect(listado.costo.totalCentavos, 350000);
+      expect(await costoInsumosDeServicio(db, await producto(milanesa)), 350000);
+
+      await editarServicio(db, id: milanesa, nombre: 'Milanesa', precioCentavos: 900000, duracionMinutos: 20, costoAManoCentavos: const Value(400000), usuarioId: usuarioId);
+      expect((await producto(milanesa)).costoCentavos, 400000);
+    });
+
+    test('combo con precio a mano: los artículos no necesitan costo, y el precio tiene que cubrir lo que sí se sabe', () async {
+      final elegibles = {for (final p in await productosParaPromo(db, sinCosto: true)) p.id};
+      expect(elegibles, contains(sinReceta));
+
+      final id = await guardarPromo(db, nombre: 'Docena y Coca', articulos: [(productoId: sinReceta, cantidad: 12), (productoId: coca, cantidad: 1)], gananciaBp: 0, precioAManoCentavos: 1800000, usuarioId: usuarioId);
+      final combo = await producto(id);
+      expect(combo.precioCentavos, 1800000);
+      expect(combo.costoCentavos, 240000, reason: 'solo la bebida tiene costo');
+
+      expect(
+        () => guardarPromo(db, nombre: 'Regalado', articulos: [(productoId: sinReceta, cantidad: 1), (productoId: coca, cantidad: 1)], gananciaBp: 0, precioAManoCentavos: 100000, usuarioId: usuarioId),
+        throwsArgumentError,
+      );
+    });
   });
 }
