@@ -109,6 +109,18 @@ Future<void> configurarModulo(AppDatabase db, Modulo modulo, {required bool acti
       );
 }
 
+/// Pasa Nodo Gastro a modo simple o completo (`ModulosNegocio.conModoSimpleGastro`): una sola escritura, así la sync no ve
+/// tres cambios a medias.
+Future<void> configurarModoSimpleGastro(AppDatabase db, {required bool simple}) async {
+  final actuales = await modulosNegocioActuales(db);
+  await escribirConfiguracionNegocio(db,
+        ConfiguracionNegocioTablaCompanion(
+          modulosDesactivados: Value(actuales.conModoSimpleGastro(simple: simple).aTexto()),
+          actualizadoEn: Value(DateTime.now()),
+        ),
+      );
+}
+
 Future<void> configurarNombreComercio(AppDatabase db, String nombre) {
   return escribirConfiguracionNegocio(db, 
         ConfiguracionNegocioTablaCompanion(

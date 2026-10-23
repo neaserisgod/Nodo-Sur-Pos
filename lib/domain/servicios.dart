@@ -137,13 +137,17 @@ class CostoDeServicio {
 
 /// El costo de un servicio. Sin mano de obra (el servicio no la suma, o el módulo está apagado), [valorHoraCentavos] es
 /// null y esa parte es 0.
+///
+/// Sin receta, la parte de insumos es [costoAManoCentavos]: lo que el local dice que le cuesta el plato (modo simple de Nodo
+/// Gastro, El dueño, 2026-10-23: "debo seguir viendo cuánto gano en los platos"). Con receta manda la receta.
 CostoDeServicio costoDeServicio({
   required List<UsoDeInsumo> receta,
   required int duracionMinutos,
   int? valorHoraCentavos,
+  int? costoAManoCentavos,
 }) {
   return CostoDeServicio(
-    insumosCentavos: costoInsumosCentavos(receta),
+    insumosCentavos: receta.isEmpty ? (costoAManoCentavos ?? 0) : costoInsumosCentavos(receta),
     manoDeObraCentavos: valorHoraCentavos == null
         ? 0
         : costoManoDeObraCentavos(duracionMinutos: duracionMinutos, valorHoraCentavos: valorHoraCentavos),
@@ -216,6 +220,14 @@ String textoDeMilesimas(int milesimas) {
   final resto = abs % milesimasPorUnidad;
   final decimales = resto == 0 ? '' : ',${resto.toString().padLeft(3, '0').replaceFirst(RegExp(r'0+$'), '')}';
   return '${negativo ? '-' : ''}$enteros$decimales';
+}
+
+/// Lo que hay de un insumo para leer de un vistazo: desde 1 kg o 1 L se pasa a kilos o litros ("18 kg" en vez de "18000 g").
+/// Las cuentas y los campos siguen en la unidad del insumo.
+String textoCantidadDeInsumo(int milesimas, UnidadInsumo unidad) {
+  final grande = switch (unidad) { UnidadInsumo.g => 'kg', UnidadInsumo.ml => 'L', UnidadInsumo.u => null };
+  if (grande != null && milesimas.abs() >= 1000 * milesimasPorUnidad) return '${textoDeMilesimas(milesimas ~/ 1000)} $grande';
+  return '${textoDeMilesimas(milesimas)} ${unidad.abreviatura}';
 }
 
 /// El aviso al sumar al cobro un producto que vende un negocio de servicios (shampoo, cera, cremas), o null si alcanza.

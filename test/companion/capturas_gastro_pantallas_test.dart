@@ -12,6 +12,7 @@ import 'package:la_plazoleta/companion/base_local.dart';
 import 'package:la_plazoleta/companion/kit/kit_ns.dart';
 import 'package:la_plazoleta/companion/modo_uso.dart';
 import 'package:la_plazoleta/companion/pantalla_carrito_venta.dart';
+import 'package:la_plazoleta/companion/pantalla_promos.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_caja_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_cierre_ns.dart';
 import 'package:la_plazoleta/companion/pantallas/pantalla_mas_ns.dart';
@@ -19,6 +20,7 @@ import 'package:la_plazoleta/companion/pantallas/pantalla_servicios_ns.dart';
 import 'package:la_plazoleta/companion/puerto_local.dart';
 import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
+import 'package:la_plazoleta/data/repositorio_promos.dart';
 import 'package:la_plazoleta/data/repositorio_servicios.dart';
 import 'package:la_plazoleta/domain/forma_de_trabajo.dart';
 import 'package:la_plazoleta/domain/modulos.dart';
@@ -72,11 +74,12 @@ void main() {
       final papa = await insumo('Papa', UnidadInsumo.g, 1000, 150000, 18000);
       final muzza = await insumo('Muzzarella', UnidadInsumo.g, 1000, 940000, 2100, 3000);
       final acelga = await insumo('Acelga (atado)', UnidadInsumo.u, 1, 150000, 2, 4);
-      await crearServicio(db, nombre: 'Pollo al spiedo', precioCentavos: 1400000, duracionMinutos: 15, receta: [(insumoId: pollo, milesimas: 1600000)], usuarioId: usuario);
+      final spiedo = await crearServicio(db, nombre: 'Pollo al spiedo', precioCentavos: 1400000, duracionMinutos: 15, receta: [(insumoId: pollo, milesimas: 1600000)], usuarioId: usuario);
       await crearServicio(db, nombre: 'Papas fritas grandes', precioCentavos: 600000, duracionMinutos: 10, receta: [(insumoId: papa, milesimas: 600000)], usuarioId: usuario);
       await crearServicio(db, nombre: 'Pizza muzzarella', precioCentavos: 1200000, duracionMinutos: 18, receta: [(insumoId: muzza, milesimas: 350000)], usuarioId: usuario);
       await crearServicio(db, nombre: 'Tarta de verdura', precioCentavos: 900000, duracionMinutos: 25, receta: [(insumoId: acelga, milesimas: 1000)], usuarioId: usuario);
-      await crearProductoDeVenta(db, nombre: 'Coca-Cola 1,5 L', precioCentavos: 380000, costoCentavos: 240000, stockInicial: 24, usuarioId: usuario);
+      final coca = await crearProductoDeVenta(db, nombre: 'Coca-Cola 1,5 L', precioCentavos: 380000, costoCentavos: 240000, stockInicial: 24, usuarioId: usuario);
+      await guardarPromo(db, nombre: 'Combo pollo', articulos: [(productoId: spiedo, cantidad: 1), (productoId: coca, cantidad: 1)], gananciaBp: 3000, usuarioId: usuario);
     });
     edicionActual = Edicion.gastronomia;
     modulosActuales.value = const ModulosNegocio({Modulo.cajaAparte}, forma: FormaDeTrabajo.gastronomia); // sin la lata de cigarrillos
@@ -143,14 +146,19 @@ void main() {
       await sembrar(tester);
       await abrir(tester, PantallaServiciosNs(db: db, usuarioId: usuario), oscuro: oscuro, barra: PestaniaNs.productos);
       await guardar(tester, 'carta', oscuro: oscuro);
-      await tester.tap(find.text('Insumos'));
+      await tester.tap(find.text('Stock'));
       await esperar(tester);
-      await guardar(tester, 'carta-insumos', oscuro: oscuro);
+      await guardar(tester, 'carta-stock', oscuro: oscuro);
     });
     testWidgets('editor de plato$s', (tester) async {
       await sembrar(tester);
       await abrir(tester, PantallaEditorServicioNs(db: db, usuarioId: usuario), oscuro: oscuro);
       await guardar(tester, 'carta-plato-nuevo', oscuro: oscuro);
+    });
+    testWidgets('vender vacío$s', (tester) async {
+      await sembrar(tester);
+      await abrir(tester, PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: usuario, carrito: const []), oscuro: oscuro, barra: PestaniaNs.vender);
+      await guardar(tester, 'vender-vacio', oscuro: oscuro);
     });
     testWidgets('vender$s', (tester) async {
       await sembrar(tester);
@@ -166,6 +174,27 @@ void main() {
       await sembrar(tester);
       await abrir(tester, PantallaCierreNs(servicio: servicio, usuarioId: usuario), oscuro: oscuro);
       await guardar(tester, 'cierre', oscuro: oscuro);
+    });
+    testWidgets('modo simple: Carta sin Stock, plato con "Te cuesta" y combo con precio a mano$s', (tester) async {
+      await sembrar(tester);
+      await tester.runAsync(() => crearServicio(db, nombre: 'Milanesa napolitana', precioCentavos: 1100000, duracionMinutos: 30, costoAManoCentavos: 450000, usuarioId: usuario));
+      modulosActuales.value = modulosActuales.value.conModoSimpleGastro(simple: true);
+      await abrir(tester, PantallaServiciosNs(db: db, usuarioId: usuario), oscuro: oscuro, barra: PestaniaNs.productos);
+      expect(find.text('Stock'), findsNothing);
+      expect(find.text('gana 59 %'), findsOneWidget, reason: 'la milanesa: \$ 11.000 con \$ 4.500 de costo a mano');
+      await guardar(tester, 'simple-carta', oscuro: oscuro);
+
+      await abrir(tester, PantallaEditorServicioNs(db: db, usuarioId: usuario), oscuro: oscuro);
+      expect(find.text('Preparación (min)'), findsNothing);
+      expect(find.byKey(const Key('plato_costo_a_mano')), findsOneWidget);
+      await guardar(tester, 'simple-plato-nuevo', oscuro: oscuro);
+
+      await abrir(tester, PantallaPromos(db: db, usuarioId: usuario), oscuro: oscuro);
+      await tester.tap(find.text('Nuevo combo'));
+      await esperar(tester);
+      expect(find.byKey(const Key('combo_precio_a_mano')), findsOneWidget);
+      expect(find.text('Ganancia (sobre el precio, a la centena)'), findsNothing);
+      await guardar(tester, 'simple-combo-nuevo', oscuro: oscuro);
     });
     testWidgets('más$s', (tester) async {
       await sembrar(tester);

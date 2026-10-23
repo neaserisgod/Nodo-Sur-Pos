@@ -185,4 +185,31 @@ void main() {
       }
     });
   });
+
+  group('modo simple de Nodo Gastro (El dueño, 2026-10-23: "cargás los platos como si fuese un producto")', () {
+    const completo = ModulosNegocio({}, forma: FormaDeTrabajo.gastronomia);
+
+    test('apaga recetas, mano de obra y gastos fijos; deja pedidos, combos y caja', () {
+      final simple = completo.conModoSimpleGastro(simple: true);
+      expect(simple.esModoSimpleGastro, isTrue);
+      for (final m in modulosDelModoCompletoGastro) {
+        expect(simple.estaActivo(m), isFalse, reason: m.clave);
+      }
+      expect(simple.estaActivo(Modulo.pedidos), isTrue);
+      expect(simple.estaActivo(Modulo.promos), isTrue);
+    });
+
+    test('volver al completo los prende y no toca lo demás que estaba apagado', () {
+      final simple = completo.conModulo(Modulo.fiado, activo: false).conModoSimpleGastro(simple: true);
+      final otraVez = simple.conModoSimpleGastro(simple: false);
+      expect(otraVez.esModoSimpleGastro, isFalse);
+      expect(otraVez.estaActivo(Modulo.insumos), isTrue);
+      expect(otraVez.estaActivo(Modulo.fiado), isFalse);
+    });
+
+    test('un almacén o un negocio de servicios nunca está en modo simple', () {
+      expect(const ModulosNegocio({Modulo.insumos}, forma: FormaDeTrabajo.servicios).esModoSimpleGastro, isFalse);
+      expect(const ModulosNegocio({}).esModoSimpleGastro, isFalse);
+    });
+  });
 }

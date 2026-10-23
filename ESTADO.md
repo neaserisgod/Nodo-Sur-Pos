@@ -136,6 +136,24 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (23/10/2026)
+
+- **El bot ofrece los combos de Nodo Gastro** (El dueño, 23/10): van en el catálogo del bot ("hay" si alcanzan sus bebidas; los
+  de solo platos, siempre), y el pedido se cobra abriendo el combo en sus platos y bebidas. En modo simple el bot no dice "no
+  hay" de nada (no se cuenta el stock). El almacén sigue sin promos en el bot. Sin cambios en `botdemo`. **Sin probar con un
+  WhatsApp real.**
+- **Nodo Gastro, modo simple** (El dueño, 23/10: "cargás los platos como si fuese un producto y ya los tenés en el catálogo").
+  Un local nuevo arranca simple: cada plato es nombre, categoría, precio y **"Te cuesta" a mano** (se sigue viendo cuánto se gana),
+  sin recetas, sin solapa Stock, sin avisos de stock y sin gastos fijos; los **combos llevan precio a mano**. Más › **Modo completo**
+  prende recetas, stock y gastos (y apagarlo no borra nada). Los negocios que ya existen quedan en completo. **Sin probar en un
+  celular real.**
+- **Nodo Gastro, la Carta ordenada** (El dueño, 23/10: "se me mezcla mucho, no hay una división clara entre promos, productos").
+  La pestaña Carta tiene dos solapas: **Carta** (lo que se vende: platos, bebidas y combos, con un solo "+ Agregar") y **Stock**
+  (lo que se compra: insumos y bebidas juntos, lo que se acaba primero arriba, un solo "Cargar compra" y Proveedores). Las
+  promos se llaman **combos** y **pueden llevar platos** (antes solo bebidas; `REGLAS-NEGOCIO.md` §22). **Vender** muestra todo
+  en una grilla (sin escáner, sin minutos, sin el botón "+ Bebida u otro"); antes los combos no aparecían. Promos y Proveedores
+  salen de Más. Insumos en kg/L. **Sin probar en un celular real.**
+
 ## Últimos cambios (21/10/2026)
 
 - **Preguntas frecuentes del bot desde la app** (El dueño, 21/10: "quiero que cubra todas las posibles preguntas acerca de las

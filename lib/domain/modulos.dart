@@ -126,6 +126,12 @@ enum Modulo {
   }
 }
 
+/// Lo que el modo simple de Nodo Gastro apaga (El dueño, 2026-10-23: "en vez de tener tanto en cuenta los gastos, el stock,
+/// cargás los platos como si fuese un producto"): las recetas con sus insumos (y con ellas la solapa Stock), la mano de obra
+/// y los gastos fijos. El modo completo los vuelve a prender. No es un dato aparte: son módulos, así lo que se apaga se
+/// conserva y vuelve tal cual.
+const modulosDelModoCompletoGastro = {Modulo.insumos, Modulo.manoDeObra, Modulo.equilibrio};
+
 /// Qué módulos tiene apagados un comercio, y su forma de trabajar. Inmutable.
 class ModulosNegocio {
   const ModulosNegocio(this.desactivados, {this.forma = FormaDeTrabajo.productos, this.soloEstos});
@@ -202,6 +208,14 @@ class ModulosNegocio {
     }
     return ModulosNegocio(nuevos, forma: forma, soloEstos: soloEstos);
   }
+
+  /// Nodo Gastro en modo simple: platos con precio y lo que cuestan a mano, sin recetas, stock ni gastos fijos. Lo marca la
+  /// receta apagada: es lo que cambia la Carta.
+  bool get esModoSimpleGastro => forma == FormaDeTrabajo.gastronomia && !estaActivo(Modulo.insumos);
+
+  /// Copia en modo simple o completo: apaga o prende [modulosDelModoCompletoGastro] y nada más.
+  ModulosNegocio conModoSimpleGastro({required bool simple}) =>
+      modulosDelModoCompletoGastro.fold(this, (m, modulo) => m.conModulo(modulo, activo: !simple));
 
   /// Texto para guardar: siempre en el orden de [Modulo.values], sin
   /// repetidos, así dos dispositivos que apagan lo mismo escriben lo mismo

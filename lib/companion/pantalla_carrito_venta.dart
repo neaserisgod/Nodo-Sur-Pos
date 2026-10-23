@@ -45,7 +45,7 @@ import 'pantallas/hoja_abrir_caja_ns.dart';
 import 'puerto_local.dart';
 import 'servicio_companion.dart';
 import '../edicion.dart';
-import '../servicios/modulos_activos.dart' show esNegocioDeServicios, esNegocioGastronomico;
+import '../servicios/modulos_activos.dart' show esNegocioDeServicios, esNegocioGastronomico, modulosActuales;
 import '../servicios/preferencia_qr.dart';
 import 'modo_uso.dart';
 import 'terminal_mp.dart';
@@ -349,6 +349,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     _sumarAlCarrito(lineaDeProducto(producto));
     final linea = widget.carrito.firstWhere((l) => l.productoId == '${producto.id}');
     final enCarrito = linea is LineaVentaPorUnidad ? linea.cantidad : 1;
+    if (modulosActuales.value.esModoSimpleGastro) return; // el modo simple no lleva el stock
     if (avisoDeStockAlVender(stock: producto.stock, enCarrito: enCarrito) case final aviso?) mostrarAvisoNs(context, '$aviso: se vende igual');
   }
 
@@ -364,14 +365,27 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
   }
 
   Future<void> _elegirOtroServicio() async {
-    final elegido = await mostrarHojaNs<ServicioListado>(
+    final gastro = esNegocioGastronomico();
+    // En Nodo Gastro la hoja trae toda la carta (platos, bebidas y combos): un solo "+ Agregar".
+    final elegido = await mostrarHojaNs<Object>(
       context,
       builder: (ctx) => HojaNs(
-        titulo: esNegocioGastronomico() ? 'Plato' : 'Otro servicio',
-        bloques: [GrillaServiciosNs(onElegir: (s) => Navigator.of(ctx).pop(s))],
+        titulo: gastro ? 'Agregar' : 'Otro servicio',
+        bloques: [
+          GrillaServiciosNs(
+            onElegir: (s) => Navigator.of(ctx).pop(s),
+            onElegirProducto: gastro ? (p) => Navigator.of(ctx).pop(p) : null,
+          ),
+        ],
       ),
     );
-    if (elegido != null && mounted) _agregarServicio(elegido);
+    if (!mounted) return;
+    switch (elegido) {
+      case ServicioListado s:
+        _agregarServicio(s);
+      case Producto p:
+        _agregarProducto(p);
+    }
   }
 
   /// La propina (§20): entra a la caja con el medio con que se pagó, como ingreso a nombre de quien atendió. No es venta
@@ -1105,8 +1119,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     final ns = context.ns;
     final n = widget.carrito.length;
     final servicios = esNegocioDeServicios();
-    // En servicios no se busca ni se escanea: se toca el servicio en la grilla (mock de servicios, "Cobrar").
-    final buscando = !servicios && _busquedaCtrl.text.trim().isNotEmpty;
+    final gastro = esNegocioGastronomico();
+    // En servicios y en Gastro no se busca ni se escanea arriba: se toca en la grilla, que trae su propio buscador.
+    final porGrilla = servicios || gastro;
+    final buscando = !porGrilla && _busquedaCtrl.text.trim().isNotEmpty;
     // Con el teclado abierto se esconde todo lo que no sea buscar o el carrito (El dueño, 2026-10-09: "arriba del
     // teclado hay una franja muy grande que tapa la lista"): el título, el espacio de la barra de pestañas (que también
     // se esconde) y el descuento.
@@ -1128,10 +1144,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Expanded(child: Text(servicios ? 'Cobrar' : 'Venta', style: tituloNs(40, color: ns.ink))),
+                    Expanded(child: Text(servicios ? 'Cobrar' : gastro ? 'Vender' : 'Venta', style: tituloNs(40, color: ns.ink))),
                     if (n > 0)
                       Text(
-                        servicios ? (n == 1 ? '1 ítem' : '$n ítems') : (n == 1 ? '1 producto' : '$n productos'),
+                        porGrilla ? (n == 1 ? '1 ítem' : '$n ítems') : (n == 1 ? '1 producto' : '$n productos'),
                         style: estiloNs(15, peso: FontWeight.w600, color: ns.mute),
                       ),
                   ],
@@ -1139,7 +1155,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
               ),
             ),
           ),
-          if (!servicios) _FilaBuscador(
+          if (!porGrilla) _FilaBuscador(
             controller: _busquedaCtrl,
             foco: _busquedaFocus,
             escaneando: _escaneando,
@@ -1209,22 +1225,24 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
               Text(gastro ? 'Vender' : 'Cobrar', style: tituloNs(40, color: ns.ink)),
               const SizedBox(height: 14),
               if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
-              GrillaServiciosNs(onElegir: _agregarServicio),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(
-                  width: 260,
-                  child: BotonNs(
-                      key: const Key('cobrar_mas_producto'),
-                      texto: gastro ? '+ Bebida u otro' : '+ Producto',
-                      onTap: _elegirProducto,
-                      alto: 52,
-                      tamanio: 15,
-                      fondo: ns.s,
-                      color: ns.i),
+              GrillaServiciosNs(onElegir: _agregarServicio, onElegirProducto: gastro ? _agregarProducto : null),
+              if (!gastro) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 260,
+                    child: BotonNs(
+                        key: const Key('cobrar_mas_producto'),
+                        texto: '+ Producto',
+                        onTap: _elegirProducto,
+                        alto: 52,
+                        tamanio: 15,
+                        fondo: ns.s,
+                        color: ns.i),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -1260,7 +1278,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                       ],
                       Expanded(
                         child: n == 0
-                            ? Text(gastro ? 'Tocá un plato o una bebida para sumarlo.' : 'Tocá un servicio o un producto para sumarlo.',
+                            ? Text(gastro ? 'Tocá un plato, una bebida o un combo para sumarlo.' : 'Tocá un servicio o un producto para sumarlo.',
                                 style: estiloNs(15, color: ns.mute))
                             : _lineas(context),
                       ),
@@ -1278,20 +1296,23 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     // Un negocio de servicios cobra tocando el servicio: sin más vendidos ni encargues de productos. En un local
     // gastronómico la grilla son los platos de la carta (§22): sin ella había que buscar cada plato por nombre.
     if (esNegocioDeServicios() || esNegocioGastronomico()) {
+      final gastro = esNegocioGastronomico();
       return ListView(
         padding: EdgeInsets.zero,
         children: [
           if (_cobrado != null) ...[_ultimaVenta(context), const SizedBox(height: 14)],
-          GrillaServiciosNs(onElegir: _agregarServicio),
-          const SizedBox(height: 12),
-          BotonNs(
-              key: const Key('cobrar_mas_producto'),
-              texto: esNegocioGastronomico() ? '+ Bebida u otro' : '+ Producto',
-              onTap: _elegirProducto,
-              alto: 52,
-              tamanio: 15,
-              fondo: ns.s,
-              color: ns.i),
+          GrillaServiciosNs(onElegir: _agregarServicio, onElegirProducto: gastro ? _agregarProducto : null),
+          if (!gastro) ...[
+            const SizedBox(height: 12),
+            BotonNs(
+                key: const Key('cobrar_mas_producto'),
+                texto: '+ Producto',
+                onTap: _elegirProducto,
+                alto: 52,
+                tamanio: 15,
+                fondo: ns.s,
+                color: ns.i),
+          ],
         ],
       );
     }
@@ -1376,13 +1397,23 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         if (i == n) {
           // En la compu Gastro ya tiene la grilla de platos a la vista: los botones serían lo mismo dos veces.
           final gastro = esNegocioGastronomico() && !ConMenuLateralNs.de(context);
-          if (esNegocioDeServicios() || gastro) {
+          if (gastro) {
+            return BotonNs(
+                key: const Key('cobrar_otro_servicio'),
+                texto: '+ Agregar',
+                onTap: _elegirOtroServicio,
+                alto: 52,
+                tamanio: 15,
+                fondo: context.ns.s,
+                color: context.ns.i);
+          }
+          if (esNegocioDeServicios()) {
             return Row(
               children: [
                 Expanded(
                     child: BotonNs(
                         key: const Key('cobrar_otro_servicio'),
-                        texto: gastro ? '+ Plato' : '+ Otro servicio',
+                        texto: '+ Otro servicio',
                         onTap: _elegirOtroServicio,
                         alto: 52,
                         tamanio: 15,
@@ -1391,7 +1422,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
                 const SizedBox(width: 10),
                 Expanded(
                     child: BotonNs(
-                        texto: gastro ? '+ Bebida u otro' : '+ Producto',
+                        texto: '+ Producto',
                         onTap: _elegirProducto,
                         alto: 52,
                         tamanio: 15,
@@ -1825,7 +1856,7 @@ class _CajaCerrada extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(esEdicionServicios ? 'Cobrar' : 'Venta', style: tituloNs(40, color: ns.ink)),
+          Text(esEdicionServicios ? 'Cobrar' : esEdicionGastronomia ? 'Vender' : 'Venta', style: tituloNs(40, color: ns.ink)),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

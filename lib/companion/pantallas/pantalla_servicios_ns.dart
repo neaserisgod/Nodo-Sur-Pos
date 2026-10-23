@@ -3,16 +3,22 @@
 // cuántos alcanza), Productos (lo que se vende aparte: shampoo, ceras, cremas; El dueño, 2026-10-14) e Insumos (por
 // acabarse primero, cargar compra y contar). El creador de servicio calcula el costo en vivo y sugiere el precio.
 //
+// En Nodo Gastro es la Carta, con dos solapas que no se mezclan (El dueño, 2026-10-23: "no hay una división clara entre
+// promos, productos..."): **Carta**, lo que se vende (platos, bebidas y combos), y **Stock**, lo que se compra (insumos y
+// bebidas, lo que se acaba primero arriba, una sola "Cargar compra" y los proveedores).
+//
 // Trabaja sobre la base del celular, como Promos: la etapa 2 es solo para "Solo celular" (con la PC, las pantallas de
 // servicios de la PC llegan después). Las cuentas son las de `domain/servicios.dart`, por `data/repositorio_servicios.dart`.
 
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart' show cambiarActivo, listarCategorias;
+import '../../data/repositorio_promos.dart' show PromoConComponentes, listarPromos;
 import '../../data/repositorio_servicios.dart';
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/ganancia.dart' show gananciaBpDesdeCostoYPrecio;
@@ -27,6 +33,8 @@ import '../emparejamiento.dart';
 import '../guardar_una_vez.dart';
 import '../kit/kit_ns.dart';
 import '../modo_uso.dart';
+import '../pantalla_promos.dart' show PantallaPromos, abrirCreadorDePromo;
+import '../pantalla_proveedores.dart';
 
 /// En un local gastronómico (Nodo Gastro, §22) esta pantalla es la Carta: un plato es un servicio sin turno (receta, sin
 /// stock), y su "duración" es lo que tarda en prepararse, que es lo que suma la mano de obra.
@@ -52,6 +60,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
   List<ServicioListado>? _servicios;
   List<InsumoListado> _insumos = const [];
   List<Producto> _productos = const [];
+  List<PromoConComponentes> _combos = const [];
   Map<int, String> _categorias = const {};
   int? _usuarioId;
   StreamSubscription<void>? _sub;
@@ -60,10 +69,13 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
 
-  List<String> get _solapas => [_t('Servicios', 'Platos'), _t('Productos', 'Bebidas'), if (_conInsumos) 'Insumos'];
+  bool get _conCombos => _esCarta && moduloActivo(Modulo.promos);
 
-  /// Qué muestra la solapa elegida, sin importar cómo se llama en cada edición (en la Carta, "Productos" es "Bebidas").
-  String get _nombreSolapa => const ['Servicios', 'Productos', 'Insumos'][_solapa.clamp(0, _solapas.length - 1)];
+  // En modo simple no hay Stock: la Carta sola, sin solapas.
+  List<String> get _solapas => _esCarta ? (_conInsumos ? const ['Carta', 'Stock'] : const ['Carta']) : ['Servicios', 'Productos', if (_conInsumos) 'Insumos'];
+
+  /// Qué muestra la solapa elegida.
+  String get _nombreSolapa => _solapas[_solapa.clamp(0, _solapas.length - 1)];
 
   @override
   void initState() {
@@ -92,6 +104,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       listarInsumos(_db),
       listarCategorias(_db),
       listarProductosDeVenta(_db),
+      if (_conCombos) listarPromos(_db),
     ]);
     if (!mounted) return;
     setState(() {
@@ -99,6 +112,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       _insumos = r[1] as List<InsumoListado>;
       _categorias = {for (final c in r[2] as List<Categoria>) c.id: c.nombre};
       _productos = r[3] as List<Producto>;
+      _combos = r.length > 4 ? r[4] as List<PromoConComponentes> : const [];
       if (_solapa >= _solapas.length) _solapa = 0;
     });
   }
@@ -126,12 +140,14 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
 
-  Future<void> _hojaCompra({InsumoListado? insumo}) => _conUsuario((u) async {
+  /// [solo]: ya se eligió qué se compró (Stock de la Carta), sin la fila de chips para cambiarlo.
+  Future<void> _hojaCompra({InsumoListado? insumo, bool solo = false}) => _conUsuario((u) async {
     if (_insumos.isEmpty) {
       mostrarAvisoNs(context, 'Primero cargá un insumo');
       return;
     }
-    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaCompra(db: _db, usuarioId: u, insumos: _insumos, elegido: insumo ?? _porAcabarse.first));
+    final elegido = insumo ?? _porAcabarse.first;
+    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaCompra(db: _db, usuarioId: u, insumos: solo ? [elegido] : _insumos, elegido: elegido));
     await _recargar();
     if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
@@ -148,12 +164,13 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
 
-  Future<void> _hojaCompraProducto({Producto? producto}) => _conUsuario((u) async {
+  Future<void> _hojaCompraProducto({Producto? producto, bool solo = false}) => _conUsuario((u) async {
     if (_productos.isEmpty) {
       mostrarAvisoNs(context, 'Primero cargá un producto');
       return;
     }
-    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaCompraProducto(db: _db, usuarioId: u, productos: _productos, elegido: producto ?? _productos.first));
+    final elegido = producto ?? _productos.first;
+    final listo = await mostrarHojaNs<String>(context, builder: (_) => _HojaCompraProducto(db: _db, usuarioId: u, productos: solo ? [elegido] : _productos, elegido: elegido));
     await _recargar();
     if (listo != null && mounted) mostrarAvisoNs(context, listo);
   });
@@ -190,10 +207,15 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               Row(
                 children: [
                   Expanded(child: Text(_t('Servicios', 'Carta'), style: tituloNs(42, track: -0.055, color: ns.ink))),
-                  if (!conPc)
+                  if (!conPc && !(_nombreSolapa == 'Stock' && !_conInsumos))
                     BotonNs(
-                      texto: switch (_nombreSolapa) { 'Productos' => '+ Producto', 'Insumos' => '+ Insumo', _ => '+ Nuevo' },
-                      onTap: switch (_nombreSolapa) { 'Productos' => () => _hojaProducto(), 'Insumos' => () => _hojaInsumo(), _ => () => _abrirEditor() },
+                      texto: switch (_nombreSolapa) { 'Productos' => '+ Producto', 'Insumos' || 'Stock' => '+ Insumo', 'Carta' => '+ Agregar', _ => '+ Nuevo' },
+                      onTap: switch (_nombreSolapa) {
+                        'Productos' => () => _hojaProducto(),
+                        'Insumos' || 'Stock' => () => _hojaInsumo(),
+                        'Carta' => _agregarALaCarta,
+                        _ => () => _abrirEditor(),
+                      },
                       alto: 44,
                       tamanio: 15,
                       fondo: ns.acento,
@@ -207,14 +229,18 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               if (conPc)
                 InfoNs('Con la PC, los ${_t('servicios', 'platos')} todavía se cargan solo en "Solo celular". Las pantallas de la PC llegan más adelante.', icono: IconoNs.computadora)
               else ...[
-                SegmentoNs(opciones: _solapas, indice: _solapa.clamp(0, _solapas.length - 1), onCambio: (i) => setState(() => _solapa = i)),
-                const SizedBox(height: 14),
+                if (_solapas.length > 1) ...[
+                  SegmentoNs(opciones: _solapas, indice: _solapa.clamp(0, _solapas.length - 1), onCambio: (i) => setState(() => _solapa = i)),
+                  const SizedBox(height: 14),
+                ],
                 if (_servicios == null)
                   const EsqueletoListaNs()
                 else
                   ...switch (_nombreSolapa) {
                     'Productos' => _listaProductos(context),
                     'Insumos' => _listaInsumos(context),
+                    'Carta' => _listaCarta(context),
+                    'Stock' => _listaStock(context),
                     _ => _listaServicios(context),
                   },
               ],
@@ -238,7 +264,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     }
     final porCategoria = <String, List<ServicioListado>>{};
     for (final s in servicios) {
-      porCategoria.putIfAbsent(_categorias[s.producto.categoriaId] ?? 'Sin categoría', () => []).add(s);
+      porCategoria.putIfAbsent(_categorias[s.producto.categoriaId] ?? _t('Sin categoría', 'Platos'), () => []).add(s);
     }
     return [
       for (final MapEntry(key: categoria, value: lista) in porCategoria.entries) ...[
@@ -251,7 +277,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
               TarjetaFilaNs(
                 key: ValueKey('servicio-${s.producto.id}'),
                 titulo: s.producto.nombre,
-                subtitulo: _subtituloServicio(s),
+                subtitulo: _esCarta ? _subtituloPlato(s) : _subtituloServicio(s),
                 chevron: false,
                 radio: 0,
                 onTap: () => _abrirEditor(existente: s),
@@ -259,7 +285,7 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(plataNs(s.producto.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w600, color: ns.ink)),
-                    if (_conInsumos && (s.producto.precioCentavos ?? 0) > 0) _TextoGanancia(precio: s.producto.precioCentavos!, costo: s.costo.totalCentavos, buscadaBp: s.gananciaBuscadaBp),
+                    if ((_conInsumos || (_esCarta && s.costo.totalCentavos > 0)) && (s.producto.precioCentavos ?? 0) > 0) _TextoGanancia(precio: s.producto.precioCentavos!, costo: s.costo.totalCentavos, buscadaBp: s.gananciaBuscadaBp),
                   ],
                 ),
               ),
@@ -285,6 +311,16 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
     );
   }
 
+  /// En la Carta, lo que sirve para fijar el precio; lo que dura y para cuántos alcanza se ve en el Stock y al cobrar.
+  String? _subtituloPlato(ServicioListado s) {
+    final partes = [
+      if (s.costo.totalCentavos > 0) 'cuesta ${plataNs(s.costo.totalCentavos)}',
+      if (_conInsumos && s.alcanzaPara != null && s.alcanzaPara! < 1) 'no alcanzan los insumos',
+      if (_conInsumos && s.faltantes > 0) 'faltan datos de ${s.faltantes} insumo${s.faltantes == 1 ? '' : 's'}',
+    ];
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
+
   String _subtituloServicio(ServicioListado s) {
     final partes = [duracionTextoNs(s.producto.duracionMinutos ?? 0)];
     if (_conInsumos) {
@@ -294,6 +330,188 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       if (s.faltantes > 0) partes.add('faltan datos de ${s.faltantes} insumo${s.faltantes == 1 ? '' : 's'}');
     }
     return partes.join(' · ');
+  }
+
+  // ───────────── Nodo Gastro: Carta (lo que se vende) y Stock (lo que se compra) ─────────────
+
+  Future<void> _agregarALaCarta() async {
+    final elegido = await mostrarHojaNs<String>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '¿Qué agregás?',
+        botones: [
+          BotonNs.primario(ctx, 'Un plato', () => Navigator.of(ctx).pop('plato'), icono: IconoNs.producto),
+          BotonNs.secundario(ctx, 'Una bebida u otro que se vende como viene', () => Navigator.of(ctx).pop('bebida')),
+          if (_conCombos) BotonNs.secundario(ctx, 'Un combo', () => Navigator.of(ctx).pop('combo'), icono: IconoNs.porcentaje),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (elegido) {
+      case 'plato':
+        await _abrirEditor();
+      case 'bebida':
+        await _hojaProducto();
+      case 'combo':
+        await _abrirCombo();
+    }
+  }
+
+  Future<void> _abrirCombo({PromoConComponentes? existente}) => _conUsuario((u) async {
+    final guardo = await abrirCreadorDePromo(context, db: _db, usuarioId: u, existente: existente);
+    await _recargar();
+    if (guardo && mounted) mostrarAvisoNs(context, existente == null ? 'Combo creado' : 'Combo guardado');
+  });
+
+  List<Widget> _listaCarta(BuildContext context) {
+    final ns = context.ns;
+    if (_servicios!.isEmpty && _productos.isEmpty && _combos.isEmpty) {
+      return [const InfoNs('Tu carta está vacía. Con "+ Agregar" sumás un plato, una bebida o un combo, y aparecen en Vender.')];
+    }
+    return [
+      ..._filasServicios(context),
+      if (_productos.isNotEmpty) ...[
+        const SeccionNs('Bebidas y otros'),
+        const SizedBox(height: 8),
+        _grupo(context, [
+          for (final p in _productos)
+            TarjetaFilaNs(
+              key: ValueKey('carta-producto-${p.id}'),
+              titulo: p.nombre,
+              subtitulo: p.costoCentavos == null ? null : 'cuesta ${plataNs(p.costoCentavos!)}',
+              chevron: false,
+              radio: 0,
+              onTap: () => _hojaProducto(existente: p),
+              derecha: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(plataNs(p.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w600, color: ns.ink)),
+                  if ((p.costoCentavos ?? 0) > 0 && (p.precioCentavos ?? 0) > 0) _TextoGanancia(precio: p.precioCentavos!, costo: p.costoCentavos!, buscadaBp: 0),
+                ],
+              ),
+            ),
+        ]),
+        const SizedBox(height: 16),
+      ],
+      if (_conCombos) ...[
+        SeccionNs(
+          'Combos',
+          derecha: PresionNs(
+            onTap: () => AppNs.of(context).irA((_) => const PantallaPromos()),
+            etiqueta: 'Sugerir y apagar combos',
+            child: Text('Sugerir y apagar', style: estiloNs(14, peso: FontWeight.w600, color: ns.i)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (_combos.isEmpty)
+          const InfoNs('Un combo junta platos y bebidas a un precio (pollo + papas + gaseosa). Armalo con "+ Agregar".')
+        else
+          _grupo(context, [
+            for (final c in _combos)
+              TarjetaFilaNs(
+                key: ValueKey('carta-combo-${c.promo.id}'),
+                titulo: c.promo.nombre,
+                subtitulo: [
+                  c.componentes.map((x) => x.cantidad > 1 ? '${x.cantidad} × ${x.producto.nombre}' : x.producto.nombre).join(' + '),
+                  if (!c.promo.activo) 'apagado',
+                ].join(' · '),
+                colorTexto: c.promo.activo ? null : ns.mute,
+                chevron: false,
+                radio: 0,
+                onTap: () => _abrirCombo(existente: c),
+                derecha: Text(plataNs(c.promo.precioCentavos ?? 0), style: estiloNs(17, peso: FontWeight.w600, color: c.promo.activo ? ns.ink : ns.mute)),
+              ),
+          ]),
+      ],
+    ];
+  }
+
+  /// Insumos y bebidas en una sola lista, lo que se acaba primero arriba: lo que se compra, todo junto.
+  List<_ItemStock> get _itemsStock {
+    // Sin stock va primero; después, el que menos tiene contra su mínimo; sin mínimo, al final.
+    double clave(num stock, num minimo) => stock <= 0 ? -1 : minimo > 0 ? stock / minimo : 1e9 + stock;
+    final items = [
+      if (_conInsumos)
+        for (final i in _insumos)
+          _ItemStock(
+            clave: ValueKey('stock-insumo-${i.producto.id}'),
+            nombre: i.producto.nombre,
+            cuanto: textoCantidadDeInsumo(i.stockMilesimas, i.unidad),
+            aviso: i.stockMilesimas <= 0 ? 'Sin stock' : i.pocoStock ? 'Poco stock' : null,
+            orden: clave(i.stockMilesimas, i.producto.stockMinimoMilesimas ?? 0),
+            acciones: () => _accionesInsumo(i),
+            compra: () => _hojaCompra(insumo: i, solo: true),
+          ),
+      for (final p in _productos)
+        _ItemStock(
+          clave: ValueKey('stock-producto-${p.id}'),
+          nombre: p.nombre,
+          cuanto: p.stock == 1 ? 'Queda 1' : 'Quedan ${p.stock}',
+          aviso: p.stock <= 0 ? 'Sin stock' : p.stock <= p.stockMinimo ? 'Poco stock' : null,
+          orden: clave(p.stock, p.stockMinimo),
+          acciones: () => _accionesProducto(p),
+          compra: () => _hojaCompraProducto(producto: p, solo: true),
+        ),
+    ];
+    return items..sort((a, b) => a.orden.compareTo(b.orden));
+  }
+
+  Future<void> _elegirCompra() async {
+    final items = _itemsStock;
+    if (items.isEmpty) {
+      mostrarAvisoNs(context, _conInsumos ? 'Primero cargá un insumo o una bebida' : 'Primero cargá una bebida en la Carta');
+      return;
+    }
+    final elegido = await mostrarHojaNs<_ItemStock>(
+      context,
+      builder: (ctx) => HojaNs(
+        titulo: '¿Qué compraste?',
+        bloques: [
+          ListaAgrupadaNs(filas: [
+            for (final i in items)
+              TarjetaFilaNs(titulo: i.nombre, subtitulo: i.cuanto, chevron: false, radio: 0, onTap: () => Navigator.of(ctx).pop(i)),
+          ]),
+        ],
+      ),
+    );
+    if (elegido != null && mounted) await elegido.compra();
+  }
+
+  List<Widget> _listaStock(BuildContext context) {
+    final ns = context.ns;
+    final items = _itemsStock;
+    return [
+      Row(children: [Expanded(child: BotonNs.primario(context, 'Cargar compra', _elegirCompra, icono: IconoNs.masMas, alto: 52, tamanio: 15))]),
+      const SizedBox(height: 16),
+      if (items.isEmpty)
+        InfoNs(_conInsumos
+            ? 'Acá ves lo que comprás: los insumos de la cocina (el pollo, la harina, el aceite) y las bebidas. Cargá un insumo con "+ Insumo"; las bebidas, en la Carta.'
+            : 'Acá ves lo que comprás. Las bebidas se cargan en la Carta.')
+      else ...[
+        const SeccionNs('Por acabarse primero'),
+        const SizedBox(height: 8),
+        _grupo(context, [
+          for (final i in items)
+            TarjetaFilaNs(
+              key: i.clave,
+              titulo: i.nombre,
+              subtitulo: i.cuanto,
+              chevron: false,
+              radio: 0,
+              onTap: i.acciones,
+              derecha: i.aviso == null ? null : Text(i.aviso!, style: estiloNs(13, peso: FontWeight.w600, color: ns.w)),
+            ),
+        ]),
+      ],
+      const SizedBox(height: 16),
+      TarjetaFilaNs(
+        key: const Key('stock_proveedores'),
+        titulo: 'Proveedores',
+        subtitulo: 'A quién le comprás, lo que les debés y los pagos',
+        icono: IconoNs.camion,
+        onTap: () => AppNs.of(context).irA((_) => const PantallaProveedores()),
+      ),
+    ];
   }
 
   List<Widget> _listaInsumos(BuildContext context) {
@@ -306,7 +524,8 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
       ),
       const SizedBox(height: 16),
       if (_insumos.isEmpty)
-        const InfoNs('Todavía no hay insumos. Un insumo es lo que comprás y gastás de a poco: un frasco de top coat, una caja de guantes. Cargalo con "+ Insumo".')
+        InfoNs(_t('Todavía no hay insumos. Un insumo es lo que comprás y gastás de a poco: un frasco de top coat, una caja de guantes. Cargalo con "+ Insumo".',
+            'Todavía no hay insumos. Un insumo es lo que comprás y gastás de a poco: el pollo, la harina, el aceite. Cargalo con "+ Insumo".'))
       else ...[
         const SeccionNs('Por acabarse primero'),
         const SizedBox(height: 8),
@@ -420,6 +639,18 @@ class _PantallaServiciosNsState extends State<PantallaServiciosNs> {
         await _hojaInsumo(existente: i);
     }
   }
+}
+
+/// Una fila del Stock de la Carta: un insumo o una bebida, con lo que hay y qué hacer al tocarla.
+class _ItemStock {
+  const _ItemStock({required this.clave, required this.nombre, required this.cuanto, required this.aviso, required this.orden, required this.acciones, required this.compra});
+  final Key clave;
+  final String nombre;
+  final String cuanto;
+  final String? aviso;
+  final double orden;
+  final Future<void> Function() acciones;
+  final Future<void> Function() compra;
 }
 
 /// "gana 62 %", en verde si llega a la buscada y en amarillo si no.
@@ -768,8 +999,9 @@ class _HojaProductoState extends State<_HojaProducto> with GuardarUnaVezNs {
     final precio = _plata(_precio.text);
     final costo = _plata(_costo.text);
     return HojaNs(
-      titulo: widget.existente == null ? 'Nuevo producto' : 'Editar producto',
-      texto: _t('Lo que vendés aparte de los servicios. Se suma al cobrar con "+ Producto".', 'Lo que vendés aparte de los platos. Al cobrar se busca en Vender.'),
+      titulo: widget.existente == null ? _t('Nuevo producto', 'Bebida u otro') : _t('Editar producto', 'Editar ${widget.existente!.nombre}'),
+      texto: _t('Lo que vendés aparte de los servicios. Se suma al cobrar con "+ Producto".',
+          'Lo que se vende como viene: una gaseosa, un vino, un postre de heladera. Aparece en Vender junto a los platos.'),
       bloques: [
         CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: _t('Ej.: Shampoo 500 ml', 'Ej.: Gaseosa 1,5 L'), autofoco: widget.existente == null),
         Row(
@@ -780,12 +1012,13 @@ class _HojaProductoState extends State<_HojaProducto> with GuardarUnaVezNs {
           ],
         ),
         if (precio != null && precio > 0 && costo != null && costo > 0) _TextoGanancia(precio: precio, costo: costo, buscadaBp: 0),
-        if (widget.existente == null)
+        // En el modo simple de Nodo Gastro no se cuenta el stock.
+        if (widget.existente == null && !modulosActuales.value.esModoSimpleGastro)
           CampoNs(key: const Key('producto_tengo'), etiqueta: 'Lo que tenés ahora', controller: _tengo, placeholder: 'Ej.: 3', teclado: TextInputType.number, formatos: soloDigitosNs),
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
       ],
       botones: [
-        BotonNs.primario(context, 'Guardar producto', guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
+        BotonNs.primario(context, _t('Guardar producto', 'Guardar'), guardando ? null : _guardar, habilitado: !guardando, icono: IconoNs.tilde),
         if (widget.existente != null) BotonNs.secundario(context, 'Ya no lo vendo', guardando ? null : _darDeBaja),
       ],
     );
@@ -928,6 +1161,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
   late final _nombre = TextEditingController(text: widget.existente?.producto.nombre ?? '');
   late final _duracion = TextEditingController(text: '${widget.existente?.producto.duracionMinutos ?? 30}');
   late final _precio = TextEditingController(text: _plataEnCampo(widget.existente?.producto.precioCentavos));
+  late final _costoAMano = TextEditingController(text: _plataEnCampo(widget.existente?.producto.costoCentavos));
   late final List<_LineaEditable> _receta = [for (final u in widget.existente?.receta ?? const <UsoListado>[]) _LineaEditable(u.insumo, u.milesimas)];
   late bool _manoDeObra = widget.existente?.producto.sumaManoDeObra ?? false;
   late bool _pideSena = widget.existente?.producto.pideSena ?? false;
@@ -939,6 +1173,9 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
 
   bool get _conInsumos => moduloActivo(Modulo.insumos);
   bool get _conManoDeObra => _conInsumos && moduloActivo(Modulo.manoDeObra);
+
+  /// Modo simple de Nodo Gastro: el plato es nombre, categoría, precio y lo que cuesta a mano, sin receta ni tiempos.
+  bool get _simple => modulosActuales.value.esModoSimpleGastro;
   int get _gananciaBuscadaBp => widget.existente?.gananciaBuscadaBp ?? gananciaBuscadaPorDefectoBp;
 
   @override
@@ -963,6 +1200,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
     _nombre.dispose();
     _duracion.dispose();
     _precio.dispose();
+    _costoAMano.dispose();
     super.dispose();
   }
 
@@ -977,6 +1215,7 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
     receta: _usos,
     duracionMinutos: _minutos,
     valorHoraCentavos: _conManoDeObra && _manoDeObra ? _valorHora : null,
+    costoAManoCentavos: _simple ? _plata(_costoAMano.text) : widget.existente?.producto.costoCentavos,
   );
 
   /// Cuánto sube o baja cada toque de +/−: de a una unidad lo que se cuenta por unidad; de a 0,1 lo demás.
@@ -1049,10 +1288,12 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
       final e = widget.existente;
       if (e == null) {
         await crearServicio(widget.db, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
-            sumaManoDeObra: _manoDeObra, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
+            sumaManoDeObra: _manoDeObra, categoriaId: _categoriaId, pideSena: _pideSena,
+            costoAManoCentavos: _simple ? _plata(_costoAMano.text) : null, usuarioId: widget.usuarioId);
       } else {
         await editarServicio(widget.db, id: e.producto.id, nombre: _nombre.text, precioCentavos: precio, duracionMinutos: _minutos, receta: receta,
-            sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, pideSena: _pideSena, usuarioId: widget.usuarioId);
+            sumaManoDeObra: _manoDeObra, gananciaBuscadaBp: e.producto.gananciaBuscadaBp, categoriaId: _categoriaId, pideSena: _pideSena,
+            costoAManoCentavos: _simple ? Value(_plata(_costoAMano.text)) : const Value.absent(), usuarioId: widget.usuarioId);
       }
       if (mounted) Navigator.of(context).pop(e == null ? _t('Servicio creado', 'Plato creado') : _t('Servicio guardado', 'Plato guardado'));
     }, alFallar: (m) => setState(() => _error = m));
@@ -1077,8 +1318,11 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
         padding: EdgeInsets.zero,
         children: [
           CampoNs(etiqueta: 'Nombre', controller: _nombre, placeholder: _t('Ej.: Corte clásico', 'Ej.: Milanesa con papas'), onChanged: (_) => setState(() => _error = null)),
-          const SizedBox(height: 10),
-          CampoNs(etiqueta: _t('Duración (min)', 'Preparación (min)'), controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+          // En modo simple no se pide el tiempo: solo suma a la mano de obra, que ahí no se usa.
+          if (!_simple) ...[
+            const SizedBox(height: 10),
+            CampoNs(etiqueta: _t('Duración (min)', 'Preparación (min)'), controller: _duracion, teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() {})),
+          ],
           if (_categorias.isNotEmpty) ...[
             const SizedBox(height: 14),
             const SeccionNs('Categoría'),
@@ -1143,6 +1387,26 @@ class _PantallaEditorServicioNsState extends State<PantallaEditorServicioNs> wit
           ],
           const SizedBox(height: 12),
           CampoNs(etiqueta: 'Precio al cliente', controller: _precio, grande: true, placeholder: r'$ 0', teclado: TextInputType.number, formatos: soloDigitosNs, onChanged: (_) => setState(() => _error = null)),
+          if (_simple) ...[
+            const SizedBox(height: 10),
+            CampoNs(
+              key: const Key('plato_costo_a_mano'),
+              etiqueta: 'Te cuesta (opcional)',
+              controller: _costoAMano,
+              placeholder: r'$ 0',
+              teclado: TextInputType.number,
+              formatos: soloDigitosNs,
+              onChanged: (_) => setState(() {}),
+            ),
+            if (precio != null && precio > 0 && costo.totalCentavos > 0)
+              FilaClaveValorNs(
+                clave: 'Ganancia por plato',
+                valor: '${plataNs(precio - costo.totalCentavos)} · ${(gananciaBpDesdeCostoYPrecio(costo.totalCentavos, precio) / 100).round()} %',
+                colorValor: precio > costo.totalCentavos ? ns.g : ns.w,
+                tamanioValor: 16,
+                sinLinea: true,
+              ),
+          ],
           if (_conInsumos) ...[
             if (precio != null && precio > 0)
               FilaClaveValorNs(

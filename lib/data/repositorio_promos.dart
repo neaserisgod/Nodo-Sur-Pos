@@ -4,6 +4,9 @@
 // la búsqueda y la grilla como un producto más; sus artículos viven en
 // `promo_componentes`. Al cobrarla se abre en ellos (`registrarPromoEnVenta`,
 // repositorio_ventas.dart), así descuenta el stock de cada artículo.
+//
+// En Nodo Gastro un combo lleva platos (El dueño, 2026-10-23: "pollo + papas + Coca"): el costo de un plato es lo que cuestan
+// hoy sus insumos (el mismo de cuando se vende suelto) y no limita cuántos combos alcanzan, porque no tiene stock propio.
 
 import 'dart:convert';
 
@@ -14,6 +17,7 @@ import '../domain/promo.dart';
 import 'database.dart';
 import 'identidad_sync.dart';
 import 'repositorio_productos.dart' show listarProductos, registrarCambioDePrecio;
+import 'repositorio_servicios.dart' show costoInsumosDeServicio;
 
 class ComponenteDePromo {
   const ComponenteDePromo({required this.producto, required this.cantidad});
@@ -42,8 +46,8 @@ class PromoConComponentes {
   /// artículo después de armarla): hay que revisarla.
   bool get pasaDeLista => (promo.precioCentavos ?? 0) > listaCentavos;
 
-  /// Cuántas promos alcanzan con el stock de hoy.
-  int get stock => stockDePromo([for (final c in componentes) (stock: c.producto.stock, cantidadPorPromo: c.cantidad)]);
+  /// Cuántas promos alcanzan con el stock de hoy ([stockPromoSinTope] si son todos platos).
+  int get stock => stockDePromo([for (final c in componentes) (stock: stockComoArticuloDePromo(c.producto), cantidadPorPromo: c.cantidad)]);
 }
 
 /// Las promos con sus artículos, por nombre. [soloActivas] las de la venta.
@@ -64,11 +68,18 @@ Future<List<ComponenteDePromo>> _componentesDe(AppDatabase db, int promoId) asyn
   return [
     for (final f in filas)
       ComponenteDePromo(
-        producto: await (db.select(db.productos)..where((p) => p.id.equals(f.productoId))).getSingle(),
+        producto: await _conCostoDeHoy(db, await (db.select(db.productos)..where((p) => p.id.equals(f.productoId))).getSingle()),
         cantidad: f.cantidad,
       ),
   ];
 }
+
+/// El stock con el que un artículo cuenta en una promo: null si es un plato (no tiene stock propio y no la limita).
+int? stockComoArticuloDePromo(Producto p) => p.esServicio ? null : p.stock;
+
+/// Un plato no guarda costo: el suyo es lo que cuestan hoy sus insumos (`costoInsumosDeServicio`). El resto, como está.
+Future<Producto> _conCostoDeHoy(AppDatabase db, Producto p) async =>
+    p.esServicio ? p.copyWith(costoCentavos: Value(await costoInsumosDeServicio(db, p))) : p;
 
 /// Qué precio le tocaría a una promo con estos artículos y este porcentaje —
 /// lo que muestra el creador mientras se arma, antes de guardar.
@@ -106,9 +117,27 @@ PrecioDePromoCalculado? calcularPromo(List<ComponenteDePromo> componentes, int g
   );
 }
 
+/// La promo con el precio puesto a mano: el costo es la suma de los artículos que lo tienen cargado (los demás cuentan 0).
+/// Null sin artículos o si alguno no tiene precio de lista.
+PrecioDePromoCalculado? calcularPromoAMano(List<ComponenteDePromo> componentes, int precioCentavos) {
+  if (componentes.isEmpty) return null;
+  if (componentes.any((c) => c.producto.precioCentavos == null)) return null;
+  final lista = componentes.fold(0, (a, c) => a + c.listaCentavos);
+  return PrecioDePromoCalculado(
+    costoCentavos: componentes.fold(0, (a, c) => a + c.costoCentavos),
+    listaCentavos: lista,
+    precioCentavos: precioCentavos,
+    topeadoPorLista: false,
+  );
+}
+
 /// Crea (o, con [promoId], rehace) una promo. Reglas: al menos dos artículos
 /// distintos, todos por unidad, con costo y precio, sin cigarrillos, "Varios"
 /// ni otras promos; y el precio resultante tiene que cubrir el costo.
+///
+/// Con [precioAManoCentavos] (el combo del modo simple de Nodo Gastro, El dueño, 2026-10-23: "precio a mano") el precio es
+/// ese y los artículos no necesitan costo: el costo del combo es la suma de los que lo tienen, y el precio igual tiene que
+/// cubrirlo. [gananciaBp] no se usa.
 ///
 /// Devuelve el id de la promo.
 Future<int> guardarPromo(
@@ -117,8 +146,11 @@ Future<int> guardarPromo(
   required String nombre,
   required List<({int productoId, int cantidad})> articulos,
   required int gananciaBp,
+  int? precioAManoCentavos,
   required int usuarioId,
 }) {
+  final aMano = precioAManoCentavos != null;
+  if (aMano && precioAManoCentavos <= 0) throw ArgumentError('Falta el precio del combo');
   return db.transaction(() async {
     final nombreLimpio = nombre.trim();
     if (nombreLimpio.isEmpty) throw ArgumentError('Falta el nombre de la promo');
@@ -129,18 +161,18 @@ Future<int> guardarPromo(
     final componentes = <ComponenteDePromo>[];
     for (final a in articulos) {
       if (a.cantidad < 1) throw ArgumentError('La cantidad de cada artículo tiene que ser al menos 1');
-      final p = await (db.select(db.productos)..where((t) => t.id.equals(a.productoId))).getSingle();
+      final p = await _conCostoDeHoy(db, await (db.select(db.productos)..where((t) => t.id.equals(a.productoId))).getSingle());
       if (p.esPesable) throw ArgumentError('"${p.nombre}" es pesable: una promo lleva solo artículos por unidad');
       if (p.tipoCigarrillo != 'ninguno') throw ArgumentError('Los cigarrillos no entran en una promo');
-      if (p.esVarios || p.esPromo) throw ArgumentError('"${p.nombre}" no puede formar parte de una promo');
-      if ((p.costoCentavos ?? 0) <= 0) throw ArgumentError('"${p.nombre}" no tiene costo cargado');
+      if (p.esVarios || p.esPromo || p.esInsumo) throw ArgumentError('"${p.nombre}" no puede formar parte de una promo');
+      if (!aMano && (p.costoCentavos ?? 0) <= 0) throw ArgumentError('"${p.nombre}" no tiene costo cargado');
       if (p.precioCentavos == null) throw ArgumentError('"${p.nombre}" no tiene precio cargado');
       componentes.add(ComponenteDePromo(producto: p, cantidad: a.cantidad));
     }
 
-    final calculo = calcularPromo(componentes, gananciaBp)!;
+    final calculo = aMano ? calcularPromoAMano(componentes, precioAManoCentavos)! : calcularPromo(componentes, gananciaBp)!;
     if (!calculo.cubreElCosto) {
-      throw ArgumentError('El precio de lista de los artículos no cubre su costo: la promo perdería plata');
+      throw ArgumentError(aMano ? 'Con ese precio el combo no cubre lo que cuesta: perdería plata' : 'El precio de lista de los artículos no cubre su costo: la promo perdería plata');
     }
 
     final anterior = promoId == null
@@ -255,13 +287,20 @@ Future<void> reconstruirComponentesDePromo(AppDatabase db, {required int promoId
 }
 
 /// Los productos que pueden entrar en una promo (las reglas de [guardarPromo]): por unidad, sin cigarrillos, "Varios" ni otras
-/// promos, con costo y precio. Lo usan el creador de la PC y el del celular.
-Future<List<Producto>> productosParaPromo(AppDatabase db) async {
-  // `listarProductos` ya deja afuera "Varios" y las promos.
-  final todos = await listarProductos(db);
+/// promos, con costo y precio; y los platos activos con insumos cargados (su costo es el de la receta). Lo usan el creador de
+/// la PC y el del celular.
+///
+/// Con [sinCosto] (el combo a mano del modo simple) alcanza con el precio.
+Future<List<Producto>> productosParaPromo(AppDatabase db, {bool sinCosto = false}) async {
+  // `listarProductos` ya deja afuera "Varios", las promos, los insumos y los platos.
+  final platos = await (db.select(db.productos)..where((p) => p.esServicio.equals(true) & p.activo.equals(true))).get();
+  final todos = [
+    ...await listarProductos(db),
+    for (final p in platos) await _conCostoDeHoy(db, p),
+  ]..sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
   return [
     for (final p in todos)
-      if (!p.esPesable && p.tipoCigarrillo == 'ninguno' && (p.costoCentavos ?? 0) > 0 && p.precioCentavos != null) p,
+      if (!p.esPesable && p.tipoCigarrillo == 'ninguno' && (sinCosto || (p.costoCentavos ?? 0) > 0) && p.precioCentavos != null) p,
   ];
 }
 
@@ -272,7 +311,7 @@ Future<List<Producto>> catalogoConStockDePromos(AppDatabase db) async {
   final catalogo = await db.select(db.productos).get();
   final componentes = await componentesDePromos(db);
   if (componentes.isEmpty) return catalogo;
-  final stockPorId = {for (final p in catalogo) p.id: p.stock};
+  final stockPorId = {for (final p in catalogo) p.id: stockComoArticuloDePromo(p)};
   return [
     for (final p in catalogo)
       if (!p.esPromo)
@@ -281,7 +320,7 @@ Future<List<Producto>> catalogoConStockDePromos(AppDatabase db) async {
         p.copyWith(
           stock: stockDePromo([
             for (final c in componentes[p.id] ?? const <({int productoId, int cantidad})>[])
-              (stock: stockPorId[c.productoId] ?? 0, cantidadPorPromo: c.cantidad),
+              (stock: stockPorId.containsKey(c.productoId) ? stockPorId[c.productoId] : 0, cantidadPorPromo: c.cantidad),
           ]),
         ),
   ];

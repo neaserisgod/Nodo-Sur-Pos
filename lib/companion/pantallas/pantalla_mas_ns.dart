@@ -28,7 +28,8 @@ import 'pantalla_asistente_ia_ns.dart';
 import 'seccion_bot_en_celular_ns.dart';
 import '../../edicion.dart';
 import '../../domain/modulos.dart' show Modulo;
-import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo;
+import '../../data/repositorio_configuracion.dart' show configurarModoSimpleGastro;
+import '../../servicios/modulos_activos.dart' show esNegocioDeServicios, moduloActivo, modulosActuales;
 import '../../servicios/sonidos.dart';
 import '../../plataforma.dart';
 
@@ -46,7 +47,7 @@ class PantallaMasNs extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: Listenable.merge([app.pendientes, modoTemaNs, estadoBotCelular]),
+          listenable: Listenable.merge([app.pendientes, modoTemaNs, estadoBotCelular, modulosActuales]),
           builder: (context, _) {
             final pend = app.pendientes.value;
             final nombre = app.nombreUsuario ?? '';
@@ -104,7 +105,7 @@ class PantallaMasNs extends StatelessWidget {
                   builder: (context, activos, _) => InterruptorNs(
                     key: const Key('mas_sonidos'),
                     etiqueta: 'Sonidos',
-                    descripcion: 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido',
+                    descripcion: esEdicionGastronomia ? 'Cuando se aprueba un pago y cuando llega un pedido' : 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido',
                     encendido: activos,
                     onCambio: sonidos.guardarActivos,
                   ),
@@ -133,6 +134,17 @@ class PantallaMasNs extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                 ],
+                // Modo simple o completo de Nodo Gastro (El dueño, 2026-10-23): un interruptor, no la lista de módulos.
+                if (esEdicionGastronomia && !app.pcEmparejada) ...[
+                  InterruptorNs(
+                    key: const Key('mas_modo_completo'),
+                    etiqueta: 'Modo completo',
+                    descripcion: 'Recetas con insumos, stock de lo que comprás y gastos fijos. Apagado, cargás cada plato con su precio y lo que te cuesta, y listo.',
+                    encendido: !modulosActuales.value.esModoSimpleGastro,
+                    onCambio: (completo) => configurarModoSimpleGastro(baseLocalCompanion(), simple: !completo),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 const SeccionNs('Negocio'),
                 const SizedBox(height: 12),
                 ListaAgrupadaNs(
@@ -149,8 +161,9 @@ class PantallaMasNs extends StatelessWidget {
                     if (!esEdicionAparte) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
                     // servicios no los usa.
-                    if (moduloActivo(Modulo.promos)) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
-                    if (!esEdicionServicios || moduloActivo(Modulo.insumos)) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios || esEdicionGastronomia ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    // En Nodo Gastro los combos y los proveedores viven en la Carta (Carta y Stock), no acá.
+                    if (moduloActivo(Modulo.promos) && !esEdicionGastronomia) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
+                    if (!esEdicionGastronomia && (!esEdicionServicios || moduloActivo(Modulo.insumos))) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
                     // El bot en Termux; Nodo Sur Servicios lo trae adentro.
                     if (!esEdicionAparte && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(

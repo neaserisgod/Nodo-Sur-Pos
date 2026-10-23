@@ -557,6 +557,9 @@ Future<List<ActualizacionStock>> registrarPromoEnVenta(
   for (var i = 0; i < articulos.length; i++) {
     final articulo = articulos[i];
     final unidades = componentes[i].cantidad * linea.cantidad;
+    // Un plato del combo (Nodo Gastro): costo-foto = sus insumos de hoy, y se gastan sus insumos en vez de un stock que no
+    // tiene, como cuando se vende suelto.
+    final costo = articulo.esServicio ? await costoInsumosDeServicio(db, articulo) : articulo.costoCentavos;
     for (final tanda in dividirEnUnidades(partes[i], unidades)) {
       await db.into(db.lineasDeVenta).insert(
             LineasDeVentaCompanion.insert(
@@ -567,7 +570,7 @@ Future<List<ActualizacionStock>> registrarPromoEnVenta(
               tipoCigarrillo: const Value('ninguno'),
               cantidad: Value(tanda.cantidad),
               precioUnitarioCentavos: tanda.precioUnitarioCentavos,
-              costoUnitarioCentavos: Value(articulo.costoCentavos),
+              costoUnitarioCentavos: Value(costo),
               globalId: Value(generarGlobalId()),
               origenDispositivo: Value(idDispositivoActual),
               actualizadoEn: Value(DateTime.now()),
@@ -575,6 +578,10 @@ Future<List<ActualizacionStock>> registrarPromoEnVenta(
           );
     }
     if (!afectaStock) continue;
+    if (articulo.esServicio) {
+      await consumirInsumosDeServicio(db, servicio: articulo, cantidad: unidades, ventaId: ventaId, usuarioId: usuarioId);
+      continue;
+    }
     final anterior = articulo.stock;
     final posterior = anterior - unidades;
     await (db.update(db.productos)..where((p) => p.id.equals(articulo.id))).write(ProductosCompanion(stock: Value(posterior)));

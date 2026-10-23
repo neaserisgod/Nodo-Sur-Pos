@@ -2,6 +2,8 @@
 // activar y "Sugerir promos" —, con las mismas cuentas y reglas: `calcularPromo`/`guardarPromo` (`data/repositorio_promos.dart`),
 // `sugerirPromos` (`data/repositorio_sugerencia_promos.dart`) y los nombres con la IA (`servicios/asistente_promos.dart`).
 //
+// En Nodo Gastro se llaman combos y pueden llevar platos (El dueño, 2026-10-23); se arman desde la Carta.
+//
 // Trabaja sobre la base del celular, como Cargar factura: la promo y sus artículos viajan a la PC por la sync (v62).
 
 import 'package:flutter/material.dart';
@@ -12,12 +14,21 @@ import '../data/database.dart';
 import '../data/normalizacion_texto.dart';
 import '../data/repositorio_promos.dart';
 import '../data/repositorio_sugerencia_promos.dart';
-import '../domain/promo.dart' show atajosPorcentajePromo, porcentajePromoPorDefectoBp, textoPorcentajeBp;
+import '../domain/promo.dart' show atajosPorcentajePromo, porcentajePromoPorDefectoBp, stockPromoSinTope, textoPorcentajeBp;
 import '../servicios/asistente_promos.dart';
 import '../servicios/gemini.dart';
+import '../edicion.dart';
+import '../servicios/modulos_activos.dart' show modulosActuales;
 import 'base_local.dart';
 import 'emparejamiento.dart';
 import 'kit/kit_ns.dart';
+
+/// El texto del almacén o el de Nodo Gastro, donde una promo es un combo.
+String _p(String promo, String combo) => esEdicionGastronomia ? combo : promo;
+
+/// Abre el creador de una promo (o, con [existente], la edita). True si se guardó. Lo usa también la Carta de Nodo Gastro.
+Future<bool> abrirCreadorDePromo(BuildContext context, {required AppDatabase db, required int usuarioId, PromoConComponentes? existente}) async =>
+    await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => _PantallaCrearPromo(db: db, usuarioId: usuarioId, existente: existente))) == true;
 
 class PantallaPromos extends StatefulWidget {
   /// [db], [usuarioId] y [clienteIa] son para tests.
@@ -64,7 +75,7 @@ class _PantallaPromosState extends State<PantallaPromos> {
     );
     if (guardo == true) {
       await _recargar();
-      if (mounted) mostrarAvisoNs(context, existente == null ? 'Promo creada' : 'Promo guardada');
+      if (mounted) mostrarAvisoNs(context, existente == null ? _p('Promo creada', 'Combo creado') : _p('Promo guardada', 'Combo guardado'));
     }
   }
 
@@ -85,21 +96,21 @@ class _PantallaPromosState extends State<PantallaPromos> {
     final ns = context.ns;
     final promos = _promos;
     return PaginaNs(
-      titulo: 'Promos',
+      titulo: _p('Promos', 'Combos'),
       cuerpo: promos == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: EdgeInsets.zero,
               children: [
-                Text('Se venden como un producto más y descuentan el stock de cada artículo.', style: estiloNs(15, altura: 1.4, color: ns.mute)),
+                Text(_p('Se venden como un producto más y descuentan el stock de cada artículo.', 'Se venden como un plato más: descuentan las bebidas y los insumos de cada plato.'), style: estiloNs(15, altura: 1.4, color: ns.mute)),
                 const SizedBox(height: 12),
-                BotonNs.secundario(context, 'Sugerir promos', _abrirSugerencias, icono: IconoNs.porcentaje),
+                BotonNs.secundario(context, _p('Sugerir promos', 'Sugerir combos'), _abrirSugerencias, icono: IconoNs.porcentaje),
                 const SizedBox(height: 12),
-                if (promos.isEmpty) const InfoNs('Todavía no armaste ninguna. Con "Nueva promo" elegís dos o más artículos y el porcentaje.'),
+                if (promos.isEmpty) InfoNs(_p('Todavía no armaste ninguna. Con "Nueva promo" elegís dos o más artículos y el porcentaje.', 'Todavía no armaste ninguno. Con "Nuevo combo" elegís platos y bebidas y el porcentaje.')),
                 for (final p in promos) _TarjetaPromo(p: p, onEditar: () => _abrirCreador(existente: p), onAlternar: () => _alternar(p)),
               ],
             ),
-      botones: [BotonNs.primario(context, 'Nueva promo', () => _abrirCreador(), icono: IconoNs.masMas)],
+      botones: [BotonNs.primario(context, _p('Nueva promo', 'Nuevo combo'), () => _abrirCreador(), icono: IconoNs.masMas)],
     );
   }
 }
@@ -131,7 +142,7 @@ class _TarjetaPromo extends StatelessWidget {
           const SizedBox(height: 4),
           Text(p.componentes.map((c) => c.cantidad > 1 ? '${c.cantidad} × ${c.producto.nombre}' : c.producto.nombre).join(' + '),
               style: estiloNs(14, altura: 1.3, color: ns.mute)),
-          Text('Costo ${plataNs(p.costoCentavos)} · sueltos ${plataNs(p.listaCentavos)} · alcanzan ${p.stock}', style: estiloNs(13, color: ns.mute)),
+          Text('Costo ${plataNs(p.costoCentavos)} · sueltos ${plataNs(p.listaCentavos)}${p.stock == stockPromoSinTope ? '' : ' · alcanzan ${p.stock}'}', style: estiloNs(13, color: ns.mute)),
           if (apagada) ...[const SizedBox(height: 8), const InfoNs('Desactivada: no aparece en la venta.', tamanio: 13, vertical: 10)],
           if (p.pasaDeLista) ...[
             const SizedBox(height: 8),
@@ -202,22 +213,30 @@ class _SelectorPorcentaje extends StatelessWidget {
 
 /// Lo que va a costar la promo con lo elegido: sueltos, promo, ahorro del cliente y lo que te queda. Mismos textos que la PC.
 class _Calculo extends StatelessWidget {
-  const _Calculo(this.calculo);
+  const _Calculo(this.calculo, {this.aMano = false});
   final PrecioDePromoCalculado? calculo;
+
+  /// El precio lo puso el local (modo simple de Nodo Gastro): no se repite y "te quedan" solo si se sabe algún costo.
+  final bool aMano;
 
   @override
   Widget build(BuildContext context) {
     final c = calculo;
-    if (c == null) return const InfoNs('Elegí al menos dos artículos con costo y precio.', tamanio: 13, vertical: 10);
+    if (c == null) {
+      return InfoNs(aMano ? 'Elegí al menos dos cosas y poné el precio del combo.' : 'Elegí al menos dos artículos con costo y precio.', tamanio: 13, vertical: 10);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilaClaveValorNs(clave: 'Precio de la promo', valor: plataNs(c.precioCentavos), tamanioValor: 24),
+        if (!aMano) FilaClaveValorNs(clave: _p('Precio de la promo', 'Precio del combo'), valor: plataNs(c.precioCentavos), tamanioValor: 24),
         FilaClaveValorNs(clave: 'Sueltos', valor: plataNs(c.listaCentavos), tamanioValor: 16),
-        FilaClaveValorNs(clave: 'El cliente ahorra', valor: plataNs(c.listaCentavos - c.precioCentavos), tamanioValor: 16),
-        FilaClaveValorNs(clave: 'Te quedan por promo', valor: plataNs(c.precioCentavos - c.costoCentavos), tamanioValor: 16, sinLinea: true),
+        FilaClaveValorNs(clave: 'El cliente ahorra', valor: plataNs(c.listaCentavos - c.precioCentavos), tamanioValor: 16, sinLinea: aMano && c.costoCentavos == 0),
+        if (!aMano || c.costoCentavos > 0)
+          FilaClaveValorNs(clave: _p('Te quedan por promo', 'Te quedan por combo'), valor: plataNs(c.precioCentavos - c.costoCentavos), tamanioValor: 16, sinLinea: true),
         if (c.topeadoPorLista) const InfoNs('Con ese porcentaje no baja del precio de lista: no hay descuento para el cliente.', tono: TonoNs.warn, tamanio: 13, vertical: 10),
-        if (!c.cubreElCosto) const InfoNs('Con ese porcentaje la promo no cubre su costo.', tono: TonoNs.bad, tamanio: 13, vertical: 10),
+        if (aMano && c.precioCentavos > c.listaCentavos) const InfoNs('Sale más caro que pedir todo suelto.', tono: TonoNs.warn, tamanio: 13, vertical: 10),
+        if (!c.cubreElCosto)
+          InfoNs(aMano ? 'Con ese precio el combo no cubre lo que cuesta.' : _p('Con ese porcentaje la promo no cubre su costo.', 'Con ese porcentaje el combo no cubre su costo.'), tono: TonoNs.bad, tamanio: 13, vertical: 10),
       ],
     );
   }
@@ -251,10 +270,20 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
   bool _guardando = false;
   String? _error;
 
+  /// El modo simple de Nodo Gastro pone el precio del combo a mano (El dueño, 2026-10-23): sin costos cargados no hay
+  /// porcentaje que aplicar.
+  final bool _aMano = modulosActuales.value.esModoSimpleGastro;
+  late final _precioAMano = TextEditingController(text: _aMano && widget.existente != null ? '${(widget.existente!.promo.precioCentavos ?? 0) ~/ 100}' : '');
+
+  int? get _precioAManoCentavos {
+    final pesos = int.tryParse(_precioAMano.text.trim());
+    return pesos == null || pesos <= 0 ? null : pesos * 100;
+  }
+
   @override
   void initState() {
     super.initState();
-    productosParaPromo(widget.db).then((e) {
+    productosParaPromo(widget.db, sinCosto: _aMano).then((e) {
       if (mounted) setState(() => _elegibles = e);
     });
   }
@@ -263,10 +292,16 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
   void dispose() {
     _nombre.dispose();
     _buscar.dispose();
+    _precioAMano.dispose();
     super.dispose();
   }
 
-  PrecioDePromoCalculado? get _calculo => calcularPromo([for (final e in _elegidos) ComponenteDePromo(producto: e.producto, cantidad: e.cantidad)], _bp);
+  PrecioDePromoCalculado? get _calculo {
+    final componentes = [for (final e in _elegidos) ComponenteDePromo(producto: e.producto, cantidad: e.cantidad)];
+    if (!_aMano) return calcularPromo(componentes, _bp);
+    final precio = _precioAManoCentavos;
+    return precio == null ? null : calcularPromoAMano(componentes, precio);
+  }
 
   List<Producto> get _resultados {
     final texto = normalizarTexto(_buscar.text);
@@ -292,6 +327,7 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
         nombre: _nombre.text,
         articulos: [for (final e in _elegidos) (productoId: e.producto.id, cantidad: e.cantidad)],
         gananciaBp: _bp,
+        precioAManoCentavos: _aMano ? _precioAManoCentavos : null,
         usuarioId: widget.usuarioId,
       );
       if (mounted) Navigator.of(context).pop(true);
@@ -306,13 +342,13 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
   Widget build(BuildContext context) {
     final ns = context.ns;
     return PaginaNs(
-      titulo: widget.existente == null ? 'Nueva promo' : 'Editar promo',
+      titulo: widget.existente == null ? _p('Nueva promo', 'Nuevo combo') : _p('Editar promo', 'Editar combo'),
       cuerpo: ListView(
         padding: EdgeInsets.zero,
         children: [
-          CampoNs(etiqueta: 'Nombre de la promo', controller: _nombre, placeholder: 'Ej: Merienda', onChanged: (_) => setState(() => _error = null)),
+          CampoNs(etiqueta: _p('Nombre de la promo', 'Nombre del combo'), controller: _nombre, placeholder: _p('Ej: Merienda', 'Ej.: Pollo con papas'), onChanged: (_) => setState(() => _error = null)),
           const SizedBox(height: 14),
-          const SeccionNs('Artículos (al menos dos)'),
+          SeccionNs(_p('Artículos (al menos dos)', 'Qué lleva (al menos dos)')),
           const SizedBox(height: 8),
           for (final e in _elegidos)
             Container(
@@ -341,7 +377,7 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
                 ],
               ),
             ),
-          CampoNs(etiqueta: 'Agregar artículo', controller: _buscar, placeholder: 'Buscá por nombre', onChanged: (_) => setState(() {})),
+          CampoNs(etiqueta: _p('Agregar artículo', 'Agregar un plato o una bebida'), controller: _buscar, placeholder: 'Buscá por nombre', onChanged: (_) => setState(() {})),
           for (final p in _resultados)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -360,19 +396,32 @@ class _PantallaCrearPromoState extends State<_PantallaCrearPromo> {
               ),
             ),
           if (_buscar.text.trim().isNotEmpty && _resultados.isEmpty)
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text('Sin coincidencias (por unidad, sin cigarrillos, con costo y precio)', style: estiloNs(13, color: ns.mute))),
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(_aMano ? 'Sin coincidencias' : _p('Sin coincidencias (por unidad, sin cigarrillos, con costo y precio)', 'Sin coincidencias: un plato necesita lo que cuesta cargado, y una bebida también'), style: estiloNs(13, color: ns.mute))),
           const SizedBox(height: 16),
-          const SeccionNs('Ganancia (sobre el precio, a la centena)'),
-          const SizedBox(height: 8),
-          _SelectorPorcentaje(bp: _bp, onCambio: (v) => setState(() => _bp = v)),
+          if (_aMano)
+            CampoNs(
+              key: const Key('combo_precio_a_mano'),
+              etiqueta: 'Precio del combo',
+              controller: _precioAMano,
+              grande: true,
+              placeholder: r'$ 0',
+              teclado: TextInputType.number,
+              formatos: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() => _error = null),
+            )
+          else ...[
+            const SeccionNs('Ganancia (sobre el precio, a la centena)'),
+            const SizedBox(height: 8),
+            _SelectorPorcentaje(bp: _bp, onCambio: (v) => setState(() => _bp = v)),
+          ],
           const SizedBox(height: 12),
-          _Calculo(_calculo),
+          _Calculo(_calculo, aMano: _aMano),
           const SizedBox(height: 12),
         ],
       ),
       botones: [
         if (_error != null) InfoNs(_error!, tono: TonoNs.bad, icono: IconoNs.alertaCirculo),
-        BotonNs.primario(context, _guardando ? 'Guardando…' : 'Guardar promo', _sePuedeGuardar && !_guardando ? _guardar : null, habilitado: _sePuedeGuardar && !_guardando),
+        BotonNs.primario(context, _guardando ? 'Guardando…' : _p('Guardar promo', 'Guardar combo'), _sePuedeGuardar && !_guardando ? _guardar : null, habilitado: _sePuedeGuardar && !_guardando),
       ],
     );
   }
@@ -429,7 +478,7 @@ class _PantallaSugerenciasState extends State<_PantallaSugerencias> {
     final ns = context.ns;
     final sugerencias = _sugerencias;
     return PaginaNs(
-      titulo: 'Promos sugeridas',
+      titulo: _p('Promos sugeridas', 'Combos sugeridos'),
       cuerpo: sugerencias == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -471,7 +520,7 @@ class _PantallaSugerenciasState extends State<_PantallaSugerencias> {
           const SizedBox(height: 8),
           _Calculo(calculo),
           const SizedBox(height: 8),
-          BotonNs.primario(context, 'Crear esta promo', cubre ? () => Navigator.of(context).pop<_SugerenciaElegida>((sugerencia: s, nombre: nombre, bp: bp)) : null,
+          BotonNs.primario(context, _p('Crear esta promo', 'Crear este combo'), cubre ? () => Navigator.of(context).pop<_SugerenciaElegida>((sugerencia: s, nombre: nombre, bp: bp)) : null,
               habilitado: cubre, alto: 50, tamanio: 15),
         ],
       ),

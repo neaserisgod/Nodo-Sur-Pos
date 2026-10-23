@@ -114,6 +114,17 @@ void main() {
       expect(nuevas.every((c) => c.globalId != null && c.actualizadoEn != null), isTrue);
     });
 
+    test('un local gastronómico nuevo arranca en modo simple; volver a pasar por el alta no le cambia el modo', () async {
+      final db = await _baseDeCelularNuevo();
+      addTearDown(db.close);
+      await guardarNegocio(db, nombre: 'Lo de Ana', rubro: PlantillaRubro.rotiseria);
+      expect((await modulosNegocioActuales(db)).esModoSimpleGastro, isTrue);
+
+      await configurarModoSimpleGastro(db, simple: false);
+      await guardarNegocio(db, nombre: 'Lo de Ana', rubro: PlantillaRubro.rotiseria);
+      expect((await modulosNegocioActuales(db)).esModoSimpleGastro, isFalse);
+    });
+
     test('una barbería: guarda el rubro, siembra sus categorías y la app pasa a ser de servicios', () async {
       final db = await _baseDeCelularNuevo();
       addTearDown(db.close);

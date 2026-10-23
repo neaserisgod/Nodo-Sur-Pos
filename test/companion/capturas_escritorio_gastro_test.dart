@@ -190,12 +190,12 @@ void main() {
       await abrir(tester, PestaniaNs.vender,
           PantallaCarritoVenta(cliente: null, servicio: servicio, usuarioId: usuario, carrito: carrito), oscuro: oscuro);
       // La grilla de platos y el cobro al costado, como el Cobrar de servicios.
-      expect(find.text('Tocá un plato o una bebida para sumarlo.'), findsOneWidget);
+      expect(find.text('Tocá un plato, una bebida o un combo para sumarlo.'), findsOneWidget);
       await guardar(tester, 'vender', oscuro: oscuro);
       await tester.tap(find.text('Smash doble').first);
       await tester.tap(find.text('Papas fritas').first);
       await esperar(tester);
-      expect(find.text('Tocá un plato o una bebida para sumarlo.'), findsNothing);
+      expect(find.text('Tocá un plato, una bebida o un combo para sumarlo.'), findsNothing);
       await guardar(tester, 'vender-cobro', oscuro: oscuro);
     });
   }
