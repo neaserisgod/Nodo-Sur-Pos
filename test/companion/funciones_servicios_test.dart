@@ -55,6 +55,6 @@ void main() {
       expect(buscarFunciones(s), isNotEmpty, reason: s);
     }
     final encabezados = todasLasFunciones().map((r) => r.encabezado).whereType<String>().toList();
-    expect(encabezados, ['Vender', 'Carta e insumos', 'Caja', 'Configuración y cuenta']);
+    expect(encabezados, ['Vender', 'Carta y stock', 'Caja', 'Configuración y cuenta']);
   });
 }

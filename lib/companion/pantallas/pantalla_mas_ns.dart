@@ -104,7 +104,7 @@ class PantallaMasNs extends StatelessWidget {
                   builder: (context, activos, _) => InterruptorNs(
                     key: const Key('mas_sonidos'),
                     etiqueta: 'Sonidos',
-                    descripcion: 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido',
+                    descripcion: esEdicionGastronomia ? 'Cuando se aprueba un pago y cuando llega un pedido' : 'Cuando se aprueba un pago o una seña, y cuando llega un turno o un pedido',
                     encendido: activos,
                     onCambio: sonidos.guardarActivos,
                   ),
@@ -149,8 +149,9 @@ class PantallaMasNs extends StatelessWidget {
                     if (!esEdicionAparte) _Fila(icono: IconoNs.producto, titulo: 'Encargues', detalle: 'Lo apartado para clientes', onTap: alAbrirEncargues ?? () => app.irA((_) => PantallaEncarguesCompanion(servicio: app.servicio!, usuarioId: app.usuarioId ?? 0, sesionCajaId: app.sesion?.id, bot: accesoBotDelCelular, registroBot: RegistroPedidosBotPrefs()))),
                     // Promos y carga histórica son de productos (combos de artículos, planillas con productos): un negocio de
                     // servicios no los usa.
-                    if (moduloActivo(Modulo.promos)) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
-                    if (!esEdicionServicios || moduloActivo(Modulo.insumos)) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios || esEdicionGastronomia ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
+                    // En Nodo Gastro los combos y los proveedores viven en la Carta (Carta y Stock), no acá.
+                    if (moduloActivo(Modulo.promos) && !esEdicionGastronomia) _Fila(icono: IconoNs.porcentaje, titulo: 'Promos', detalle: 'Armá combos y mirá cuáles te sugiere la app', onTap: () => app.irA((_) => const PantallaPromos())),
+                    if (!esEdicionGastronomia && (!esEdicionServicios || moduloActivo(Modulo.insumos))) _Fila(icono: IconoNs.camion, titulo: 'Proveedores', detalle: servicios ? 'A quién le comprás los insumos, lo que les debés y pagos' : 'Altas, lo que les debés, pagos y facturas', onTap: () => app.irA((_) => const PantallaProveedores())),
                     // El bot en Termux; Nodo Sur Servicios lo trae adentro.
                     if (!esEdicionAparte && estadoBotCelular.value?.tieneBot == true && app.servicio != null)
                       _Fila(

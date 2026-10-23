@@ -42,7 +42,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 700));
   }
 
-  testWidgets('con el carrito vacío se ven los platos; tocar uno lo suma y quedan "+ Plato" y "+ Bebida u otro"', (t) async {
+  testWidgets('con el carrito vacío se ve toda la carta; tocar un plato lo suma y queda un solo "+ Agregar"', (t) async {
     SharedPreferences.setMockInitialValues({});
     t.view.physicalSize = const Size(390 * 2, 844 * 2);
     t.view.devicePixelRatio = 2;
@@ -80,16 +80,16 @@ void main() {
 
     expect(find.text('Smash doble'), findsWidgets);
     expect(find.text('Más vendidos'), findsNothing);
-    expect(find.text('+ Bebida u otro'), findsOneWidget);
+    expect(find.text('+ Bebida u otro'), findsNothing);
 
     await t.tap(find.text('Smash doble').first);
     await esperar(t);
     expect(carrito, hasLength(1));
-    expect(find.text('+ Plato'), findsOneWidget);
-    expect(find.text('+ Bebida u otro'), findsOneWidget);
+    expect(find.text('+ Agregar'), findsOneWidget);
+    expect(find.text('+ Bebida u otro'), findsNothing);
 
-    // "+ Plato" abre la misma grilla en una hoja.
-    await t.tap(find.text('+ Plato'));
+    // "+ Agregar" abre la misma grilla en una hoja.
+    await t.tap(find.text('+ Agregar'));
     await esperar(t);
     await t.tap(find.text('Papas fritas').last);
     await esperar(t);

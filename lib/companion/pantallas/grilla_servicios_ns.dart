@@ -6,7 +6,8 @@
 // Lee la base del celular, como la pestaña Servicios: cobrar servicios es solo para "Solo celular" (etapa 3).
 //
 // Los productos que el negocio vende aparte (El dueño, 2026-10-14) se eligen de una lista con buscador
-// ([ListaProductosParaCobrarNs]) y se venden igual sin stock, con aviso (`avisoDeStockAlVender`).
+// ([ListaProductosParaCobrarNs]) y se venden igual sin stock, con aviso (`avisoDeStockAlVender`). En Nodo Gastro van en la
+// misma grilla que los platos, con los combos.
 
 import 'dart:async';
 
@@ -14,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../data/repositorio_productos.dart' show listarCategorias;
+import '../../data/repositorio_promos.dart' show PromoConComponentes, listarPromos;
 import '../../data/repositorio_servicios.dart';
 import '../../data/repositorio_ventas.dart' show lineaDesdeProducto;
 import '../../domain/normalizacion_texto.dart' show normalizarTexto;
@@ -46,22 +48,41 @@ String? avisoDeInsumos(ServicioListado s) {
 }
 
 class GrillaServiciosNs extends StatefulWidget {
-  /// [db] es para tests.
-  const GrillaServiciosNs({super.key, required this.onElegir, this.db});
+  /// [db] es para tests. Con [onElegirProducto] (Nodo Gastro) la grilla trae también las bebidas y los combos: todo lo de
+  /// la carta en un solo lugar, sin un botón aparte para cada cosa (El dueño, 2026-10-23).
+  const GrillaServiciosNs({super.key, required this.onElegir, this.onElegirProducto, this.db});
 
   final ValueChanged<ServicioListado> onElegir;
+  final ValueChanged<Producto>? onElegirProducto;
   final AppDatabase? db;
 
   @override
   State<GrillaServiciosNs> createState() => _GrillaServiciosNsState();
 }
 
+/// Un mosaico de la grilla: un plato (o servicio), una bebida o un combo.
+class _Mosaico {
+  const _Mosaico({required this.clave, required this.nombre, required this.precio, required this.categoria, required this.onTap, this.detalle, this.aviso});
+  final Key clave;
+  final String nombre;
+  final int precio;
+  final String categoria;
+  final VoidCallback onTap;
+  final String? detalle;
+  final String? aviso;
+}
+
 class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
   late final AppDatabase _db = widget.db ?? baseLocalCompanion();
   List<ServicioListado>? _servicios;
+  List<Producto> _productos = const [];
+  List<PromoConComponentes> _combos = const [];
   Map<int, String> _categorias = const {};
   String? _categoria;
+  final _buscar = TextEditingController();
   StreamSubscription<void>? _sub;
+
+  bool get _conCarta => widget.onElegirProducto != null;
 
   @override
   void initState() {
@@ -73,33 +94,85 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
   @override
   void dispose() {
     _sub?.cancel();
+    _buscar.dispose();
     super.dispose();
   }
 
   Future<void> _cargar() async {
-    final r = await Future.wait([listarServicios(_db, conManoDeObra: false), listarCategorias(_db)]);
+    final r = await Future.wait([
+      listarServicios(_db, conManoDeObra: false),
+      listarCategorias(_db),
+      if (_conCarta) listarProductosDeVenta(_db),
+      if (_conCarta && moduloActivo(Modulo.promos)) listarPromos(_db, soloActivas: true),
+    ]);
     if (!mounted) return;
     setState(() {
       _servicios = [for (final s in r[0] as List<ServicioListado>) if ((s.producto.precioCentavos ?? 0) > 0) s];
       _categorias = {for (final c in r[1] as List<Categoria>) c.id: c.nombre};
+      if (r.length > 2) _productos = [for (final p in r[2] as List<Producto>) if (!p.esPesable && (p.precioCentavos ?? 0) > 0) p];
+      if (r.length > 3) _combos = r[3] as List<PromoConComponentes>;
     });
   }
 
-  String _categoriaDe(ServicioListado s) => _categorias[s.producto.categoriaId] ?? 'Sin categoría';
+  String _categoriaDe(ServicioListado s) => _categorias[s.producto.categoriaId] ?? (_conCarta ? 'Platos' : 'Sin categoría');
+
+  List<_Mosaico> get _mosaicos => [
+        for (final s in _servicios!)
+          _Mosaico(
+            clave: ValueKey('cobrar-servicio-${s.producto.id}'),
+            nombre: s.producto.nombre,
+            precio: s.producto.precioCentavos ?? 0,
+            categoria: _categoriaDe(s),
+            onTap: () => widget.onElegir(s),
+            // Lo que tarda un plato no le sirve a quien cobra; lo que dura un servicio, sí (arma la agenda).
+            detalle: _conCarta ? null : '${s.producto.duracionMinutos ?? 0} min',
+            aviso: avisoDeInsumos(s),
+          ),
+        for (final p in _productos)
+          _Mosaico(
+            clave: ValueKey('cobrar-producto-${p.id}'),
+            nombre: p.nombre,
+            precio: p.precioCentavos ?? 0,
+            categoria: _categorias[p.categoriaId] ?? 'Bebidas y otros',
+            onTap: () => widget.onElegirProducto!(p),
+            aviso: p.stock <= 0 ? 'Sin stock' : null,
+          ),
+        for (final c in _combos)
+          _Mosaico(
+            clave: ValueKey('cobrar-combo-${c.promo.id}'),
+            nombre: c.promo.nombre,
+            precio: c.promo.precioCentavos ?? 0,
+            categoria: 'Combos',
+            // El stock que alcanza viaja en el producto: así "Cobrar" avisa si falta una bebida, como con las sueltas.
+            onTap: () => widget.onElegirProducto!(c.promo.copyWith(stock: c.stock)),
+            aviso: c.stock <= 0 ? 'Sin stock' : null,
+          ),
+      ];
 
   @override
   Widget build(BuildContext context) {
     final ns = context.ns;
-    final servicios = _servicios;
-    if (servicios == null) return const EsqueletoListaNs();
-    if (servicios.isEmpty) {
-      return const InfoNs('Todavía no hay servicios con precio. Cargalos en la pestaña Servicios y aparecen acá para cobrar.');
+    if (_servicios == null) return const EsqueletoListaNs();
+    final todos = _mosaicos;
+    if (todos.isEmpty) {
+      return InfoNs(_conCarta
+          ? 'Todavía no hay nada en la carta con precio. Cargalo en la pestaña Carta y aparece acá para vender.'
+          : 'Todavía no hay servicios con precio. Cargalos en la pestaña Servicios y aparecen acá para cobrar.');
     }
-    final categorias = {for (final s in servicios) _categoriaDe(s)}.toList();
-    final visibles = [for (final s in servicios) if (_categoria == null || _categoriaDe(s) == _categoria) s];
+    final categorias = {for (final m in todos) m.categoria}.toList();
+    final texto = normalizarTexto(_buscar.text.trim());
+    final visibles = [
+      for (final m in todos)
+        if ((_categoria == null || m.categoria == _categoria) && (texto.isEmpty || normalizarTexto(m.nombre).contains(texto))) m,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Con una carta larga, buscar es más rápido que recorrer las categorías.
+        if (todos.length > 12) ...[
+          BuscadorNs(controller: _buscar, placeholder: 'Buscar en la carta', onChanged: (_) => setState(() {}), conBorrar: _buscar.text.isNotEmpty, onBorrar: () => setState(_buscar.clear)),
+          const SizedBox(height: 12),
+        ],
         if (categorias.length > 1) ...[
           Wrap(
             spacing: 8,
@@ -111,43 +184,46 @@ class _GrillaServiciosNsState extends State<GrillaServiciosNs> {
           ),
           const SizedBox(height: 12),
         ],
-        // Dos columnas en el celular; en la compu (Cobrar a lo ancho) entran más, del mismo tamaño que en el celular.
-        LayoutBuilder(builder: (context, caja) => GridView.count(
-          crossAxisCount: (caja.maxWidth / 200).floor().clamp(2, 6),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 165 / 96,
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            for (final s in visibles)
-              PresionNs(
-                key: ValueKey('cobrar-servicio-${s.producto.id}'),
-                onTap: () => widget.onElegir(s),
-                etiqueta: s.producto.nombre,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(24)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(s.producto.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, peso: FontWeight.w500, altura: 1.2, color: ns.ink)),
-                      Row(
-                        children: [
-                          Expanded(child: Text(plataNs(s.producto.precioCentavos ?? 0), style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true))),
-                          Text('${s.producto.duracionMinutos ?? 0} min', style: estiloNs(13, color: ns.mute)),
-                        ],
-                      ),
-                      if (avisoDeInsumos(s) case final aviso?)
-                        Text(aviso, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(12, peso: FontWeight.w600, color: ns.w)),
-                    ],
+        if (visibles.isEmpty)
+          const InfoNs('Sin coincidencias')
+        else
+          // Dos columnas en el celular; en la compu (Cobrar a lo ancho) entran más, del mismo tamaño que en el celular.
+          LayoutBuilder(builder: (context, caja) => GridView.count(
+            crossAxisCount: (caja.maxWidth / 200).floor().clamp(2, 6),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 165 / 96,
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              for (final m in visibles)
+                PresionNs(
+                  key: m.clave,
+                  onTap: m.onTap,
+                  etiqueta: m.nombre,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(color: ns.s, borderRadius: BorderRadius.circular(24)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(m.nombre, maxLines: 2, overflow: TextOverflow.ellipsis, style: estiloNs(15, peso: FontWeight.w500, altura: 1.2, color: ns.ink)),
+                        Row(
+                          children: [
+                            Expanded(child: Text(plataNs(m.precio), style: estiloNs(15, peso: FontWeight.w600, color: ns.ink, tabular: true))),
+                            if (m.detalle != null) Text(m.detalle!, style: estiloNs(13, color: ns.mute)),
+                          ],
+                        ),
+                        if (m.aviso != null)
+                          Text(m.aviso!, maxLines: 1, overflow: TextOverflow.ellipsis, style: estiloNs(12, peso: FontWeight.w600, color: ns.w)),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
-        )),
+            ],
+          )),
       ],
     );
   }

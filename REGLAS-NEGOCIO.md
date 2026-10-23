@@ -737,6 +737,10 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   (nombre, precio, escondido si no hay) y la Carta de la app ofrece "Traer de mi catálogo de WhatsApp" lo que el local cargó
   allá y no está en la carta (entra con nombre y precio; insumos y tiempo se cargan después). Un mismo plato no se duplica:
   se reconoce por el nombre (sin mayúsculas ni tildes). Si los precios no coinciden, **manda la app**.
+- **Combos** (El dueño, 2026-10-23: "pollo + papas + Coca"): son las promos del almacén, y pueden llevar platos. El costo de un
+  plato en el combo es lo que cuestan hoy sus insumos (un plato sin insumos cargados no entra: no hay con qué calcular el
+  precio). El plato no limita cuántos combos alcanzan (no tiene stock); la bebida sí. Al cobrar el combo, el plato gasta sus
+  insumos como si se vendiera suelto, y anular la venta los devuelve.
 
 ---
 

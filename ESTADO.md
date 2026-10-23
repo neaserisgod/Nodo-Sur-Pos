@@ -136,6 +136,15 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
+## Últimos cambios (23/10/2026)
+
+- **Nodo Gastro, la Carta ordenada** (El dueño, 23/10: "se me mezcla mucho, no hay una división clara entre promos, productos").
+  La pestaña Carta tiene dos solapas: **Carta** (lo que se vende: platos, bebidas y combos, con un solo "+ Agregar") y **Stock**
+  (lo que se compra: insumos y bebidas juntos, lo que se acaba primero arriba, un solo "Cargar compra" y Proveedores). Las
+  promos se llaman **combos** y **pueden llevar platos** (antes solo bebidas; `REGLAS-NEGOCIO.md` §22). **Vender** muestra todo
+  en una grilla (sin escáner, sin minutos, sin el botón "+ Bebida u otro"); antes los combos no aparecían. Promos y Proveedores
+  salen de Más. Insumos en kg/L. **Sin probar en un celular real.**
+
 ## Últimos cambios (21/10/2026)
 
 - **Preguntas frecuentes del bot desde la app** (El dueño, 21/10: "quiero que cubra todas las posibles preguntas acerca de las

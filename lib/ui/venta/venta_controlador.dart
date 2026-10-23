@@ -27,7 +27,7 @@ import '../../data/repositorio_productos.dart' show listarCategorias;
 import '../../data/repositorio_ventas.dart';
 import '../../domain/caja.dart' show necesitaArqueoIntermedio;
 import '../../domain/cobro_posnet.dart';
-import '../../data/repositorio_promos.dart' show componentesDePromos;
+import '../../data/repositorio_promos.dart' show componentesDePromos, stockComoArticuloDePromo;
 import '../../data/repositorio_ventas_abiertas.dart';
 import '../../domain/descuento.dart';
 import '../../domain/promo.dart' show stockDePromo;
@@ -1201,14 +1201,14 @@ class VentaControlador extends ChangeNotifier {
   /// con el stock actual de sus artículos.
   void _recalcularStockDePromos() {
     if (_componentesPromos.isEmpty) return;
-    final stockPorId = {for (final p in _catalogo) p.id: p.stock};
+    final stockPorId = {for (final p in _catalogo) p.id: stockComoArticuloDePromo(p)};
     _catalogo = [
       for (final p in _catalogo)
         if (p.esPromo)
           p.copyWith(
             stock: stockDePromo([
               for (final c in _componentesPromos[p.id] ?? const <({int productoId, int cantidad})>[])
-                (stock: stockPorId[c.productoId] ?? 0, cantidadPorPromo: c.cantidad),
+                (stock: stockPorId.containsKey(c.productoId) ? stockPorId[c.productoId] : 0, cantidadPorPromo: c.cantidad),
             ]),
           )
         else

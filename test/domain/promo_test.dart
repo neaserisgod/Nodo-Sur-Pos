@@ -53,5 +53,13 @@ void main() {
     test('sin artículos no hay promo', () {
       expect(stockDePromo(const []), 0);
     });
+
+    test('un plato (sin stock propio) no limita: manda la bebida', () {
+      expect(stockDePromo([(stock: null, cantidadPorPromo: 1), (stock: 6, cantidadPorPromo: 2)]), 3);
+    });
+
+    test('un combo solo de platos no tiene tope', () {
+      expect(stockDePromo([(stock: null, cantidadPorPromo: 1), (stock: null, cantidadPorPromo: 2)]), stockPromoSinTope);
+    });
   });
 }

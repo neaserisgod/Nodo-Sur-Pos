@@ -37,16 +37,25 @@ List<({int cantidad, int precioUnitarioCentavos})> dividirEnUnidades(int totalCe
   ];
 }
 
+/// Lo que alcanza un combo hecho solo de platos: nada lo limita (un plato no tiene stock propio).
+const stockPromoSinTope = 1 << 30;
+
 /// Cuántas promos se pueden armar con el stock actual: el mínimo, entre sus
 /// artículos, de `stock ~/ unidades por promo`. Nunca negativo (un artículo
 /// con stock negativo deja la promo en 0). Sin artículos, 0.
-int stockDePromo(List<({int stock, int cantidadPorPromo})> componentes) {
+///
+/// Un artículo con `stock` null es un plato de Nodo Gastro (§22): no tiene stock
+/// propio y no limita el combo; si le faltan insumos, la venta avisa y cobra
+/// igual (§20), como cuando se vende suelto.
+int stockDePromo(List<({int? stock, int cantidadPorPromo})> componentes) {
   if (componentes.isEmpty) return 0;
-  var minimo = 1 << 30;
+  var minimo = stockPromoSinTope;
   for (final c in componentes) {
+    final stock = c.stock;
+    if (stock == null) continue;
     // Un artículo sin cantidad por promo (dato roto) deja la promo en 0 en vez
     // de dividir por cero.
-    final alcanza = c.stock <= 0 || c.cantidadPorPromo <= 0 ? 0 : c.stock ~/ c.cantidadPorPromo;
+    final alcanza = stock <= 0 || c.cantidadPorPromo <= 0 ? 0 : stock ~/ c.cantidadPorPromo;
     if (alcanza < minimo) minimo = alcanza;
   }
   return minimo;

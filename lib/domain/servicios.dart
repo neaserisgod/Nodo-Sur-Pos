@@ -218,6 +218,14 @@ String textoDeMilesimas(int milesimas) {
   return '${negativo ? '-' : ''}$enteros$decimales';
 }
 
+/// Lo que hay de un insumo para leer de un vistazo: desde 1 kg o 1 L se pasa a kilos o litros ("18 kg" en vez de "18000 g").
+/// Las cuentas y los campos siguen en la unidad del insumo.
+String textoCantidadDeInsumo(int milesimas, UnidadInsumo unidad) {
+  final grande = switch (unidad) { UnidadInsumo.g => 'kg', UnidadInsumo.ml => 'L', UnidadInsumo.u => null };
+  if (grande != null && milesimas.abs() >= 1000 * milesimasPorUnidad) return '${textoDeMilesimas(milesimas ~/ 1000)} $grande';
+  return '${textoDeMilesimas(milesimas)} ${unidad.abreviatura}';
+}
+
 /// El aviso al sumar al cobro un producto que vende un negocio de servicios (shampoo, cera, cremas), o null si alcanza.
 /// [enCarrito] cuenta el que se acaba de sumar. Se vende igual aunque no alcance (El dueño, 2026-10-14): cobrar nunca se
 /// frena por el stock, como con los insumos; el aviso es para que se sepa que hay que reponer o contar.

@@ -150,7 +150,7 @@ void main() {
     expect(p.stock, 5);
   });
 
-  testWidgets('en la Carta, la solapa Bebidas muestra las bebidas y "+ Producto" (no los platos)', (tester) async {
+  testWidgets('en Gastro, la Carta muestra platos y bebidas juntos, y Stock solo lo que se compra (con Proveedores)', (tester) async {
     modulosActuales.value = const ModulosNegocio({}, forma: FormaDeTrabajo.gastronomia);
     await tester.runAsync(() async {
       await crearServicio(db, nombre: 'Milanesa con papas', precioCentavos: 650000, duracionMinutos: 20, usuarioId: usuario);
@@ -158,11 +158,14 @@ void main() {
     });
     await abrir(tester);
     expect(find.text('Milanesa con papas'), findsOneWidget);
-    await tester.tap(find.text('Bebidas'));
+    expect(find.text('Coca-Cola 1,5 L'), findsOneWidget);
+    expect(find.text('+ Agregar'), findsOneWidget);
+    await tester.tap(find.text('Stock'));
     await tester.pumpAndSettle();
     expect(find.text('Coca-Cola 1,5 L'), findsOneWidget);
+    expect(find.text('Quedan 12'), findsOneWidget);
     expect(find.text('Milanesa con papas'), findsNothing);
-    expect(find.text('+ Producto'), findsOneWidget);
+    expect(find.text('Proveedores'), findsOneWidget);
   });
 
   test('la barra dice Servicios en un negocio de servicios', () {

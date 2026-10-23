@@ -2793,3 +2793,18 @@ que pagos, envíos, horarios y ubicación); la app las conservaba pero no tenía
   una persona). Sin respuesta cargada sigue yendo a una persona, como antes.
 - `CampoNs` suma `lineas` (texto de varios renglones) para las respuestas.
 
+## Nodo Gastro: Carta y Stock separados, combos con platos (El dueño, 2026-10-23)
+
+El dueño: "siento que se me mezcla mucho, no hay una división clara entre promos, productos… simplificá sin perder funciones".
+La Carta mezclaba lo que se vende (Platos, Bebidas) con lo que se compra (Insumos) en tres solapas, con dos "Cargar compra"
+distintas; las promos y los proveedores estaban en Más; una promo no podía llevar platos y las promos no aparecían en Vender.
+
+- **Dos solapas, por qué se hace con cada cosa**: Carta (vender) y Stock (comprar). Elegido por el dueño contra una pestaña
+  propia (la barra pasaba a 6) o dentro de Caja (ya está cargada). La bebida aparece en las dos: se vende y se compra.
+- **Combos con platos** (elegido por el dueño): el costo del plato es el de su receta (`costoInsumosDeServicio`, el mismo de la
+  venta suelta) y no limita el stock del combo (`stockDePromo` con `stock: null`). Se descartó un precio a mano: el creador de
+  promos ya calcula costo + % con tope en la lista, y así hay una sola fórmula.
+- **Vender en una grilla**: platos, bebidas y combos juntos con chips por categoría y buscador propio si hay más de 12; sin el
+  buscador del almacén ni el escáner (Gastro no usa códigos de barras).
+- Servicios (Nodo Estudio) no cambia: la pantalla es la misma, con las solapas de siempre.
+

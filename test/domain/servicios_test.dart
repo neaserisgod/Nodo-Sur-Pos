@@ -121,6 +121,16 @@ void main() {
       expect(textoDeMilesimas(-300), '-0,3');
     });
 
+    test('lo que hay de un insumo, en kilos o litros cuando llega a uno', () {
+      expect(textoCantidadDeInsumo(18000000, UnidadInsumo.g), '18 kg');
+      expect(textoCantidadDeInsumo(2100000, UnidadInsumo.g), '2,1 kg');
+      expect(textoCantidadDeInsumo(350000, UnidadInsumo.g), '350 g');
+      expect(textoCantidadDeInsumo(1500000, UnidadInsumo.ml), '1,5 L');
+      expect(textoCantidadDeInsumo(-2000000, UnidadInsumo.ml), '-2 L');
+      expect(textoCantidadDeInsumo(2000, UnidadInsumo.u), '2 u');
+      expect(textoCantidadDeInsumo(5000000, UnidadInsumo.u), '5000 u');
+    });
+
     test('las claves de unidad no cambian (se guardan en la base)', () {
       expect(UnidadInsumo.values.map((u) => u.clave), ['ml', 'g', 'u']);
       expect(UnidadInsumo.desdeClave('ml'), UnidadInsumo.ml);

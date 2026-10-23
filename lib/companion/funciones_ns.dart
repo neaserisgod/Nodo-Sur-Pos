@@ -153,7 +153,8 @@ bool _noEsDeGastronomia(FuncionNs f) =>
       AccionFuncion.diasAnteriores,
       AccionFuncion.desconectar,
     }.contains(f.accion) ||
-    const {'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría', 'Estado de la conexión con la PC'}
+    // Promos y Proveedores tienen su versión de Gastro (en la Carta), abajo.
+    const {'Recargo de cigarrillos', 'Producto para dar de vuelto', 'Ganancia de referencia por categoría', 'Estado de la conexión con la PC', 'Promos', 'Proveedores'}
         .contains(f.titulo);
 
 /// En un local gastronómico (§22): los pedidos, la carta con sus insumos y cómo se toman los pedidos.
@@ -161,9 +162,11 @@ const List<FuncionNs> _funcionesDeGastronomia = [
   FuncionNs(seccion: 0, titulo: 'Pedidos: por confirmar, por hacer y listos', ruta: 'Pedidos', claves: 'pedido whatsapp cocina demora pausar envio retiro delivery comanda', icono: IconoNs.portapapeles, accion: AccionFuncion.irAPedidos),
   FuncionNs(seccion: 0, titulo: 'Tomar un pedido de mostrador o por teléfono', ruta: 'Pedidos › +', claves: 'nuevo cargar llamada telefono mostrador', icono: IconoNs.portapapeles, accion: AccionFuncion.irAPedidos),
   FuncionNs(seccion: 1, titulo: 'Platos y lo que cuestan', ruta: 'Carta', claves: 'carta menu precio costo ganancia receta comida', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
-  FuncionNs(seccion: 1, titulo: 'Agregar un plato nuevo', ruta: 'Carta › + Nuevo', claves: 'alta agregar crear cargar', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
-  FuncionNs(seccion: 1, titulo: 'Bebidas y otros', ruta: 'Carta › Bebidas', claves: 'gaseosa vino cerveza agua postre producto', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
-  FuncionNs(seccion: 1, titulo: 'Insumos: comprar y contar', ruta: 'Carta › Insumos', claves: 'stock carne harina aceite verdura compra envase reponer receta', icono: IconoNs.portapapeles, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Agregar un plato nuevo', ruta: 'Carta › + Agregar', claves: 'alta agregar crear cargar', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Bebidas y otros', ruta: 'Carta › + Agregar', claves: 'gaseosa vino cerveza agua postre producto', icono: IconoNs.producto, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Combos', ruta: 'Carta › Combos', claves: 'promo promocion combo oferta descuento sugerir armar', icono: IconoNs.porcentaje, accion: AccionFuncion.promos),
+  FuncionNs(seccion: 1, titulo: 'Stock: cargar compra y contar', ruta: 'Carta › Stock', claves: 'insumos stock carne harina aceite verdura bebida compra envase reponer receta', icono: IconoNs.portapapeles, accion: AccionFuncion.productosCatalogo),
+  FuncionNs(seccion: 1, titulo: 'Proveedores', ruta: 'Carta › Stock › Proveedores', claves: 'alta nuevo agregar editar whatsapp deuda pago distribuidora', icono: IconoNs.camion, accion: AccionFuncion.proveedores),
   FuncionNs(seccion: 3, titulo: 'Configurar los pedidos', ruta: 'Más › Configuración › Pedidos', claves: 'entrega envio retiro zonas cadete reparto delivery cobro cocina tiempo catalogo', icono: IconoNs.ajustes, accion: AccionFuncion.configurarPedidos),
   FuncionNs(seccion: 3, titulo: 'Horario y alias para transferencias', ruta: 'Más › Configuración › Horario y transferencias', claves: 'horario abre cierra dias alias cbu transferencia', icono: IconoNs.reloj, accion: AccionFuncion.horarioPedidos),
   FuncionNs(seccion: 3, titulo: 'Bot de WhatsApp', ruta: 'Más › Bot de WhatsApp', claves: 'whatsapp bot contesta solo mensajes clientes', icono: IconoNs.ajustes, accion: AccionFuncion.irAMas),
@@ -184,7 +187,7 @@ List<FuncionNs> funcionesDelNegocio({bool servicios = false}) {
 }
 
 String nombreDeSeccion(int seccion, {bool servicios = false}) => esEdicionGastronomia && seccion == 1
-    ? 'Carta e insumos'
+    ? 'Carta y stock'
     : !servicios
     ? seccionesFunciones[seccion]
     : switch (seccion) {
@@ -196,7 +199,7 @@ String nombreDeSeccion(int seccion, {bool servicios = false}) => esEdicionGastro
 /// Sugerencias del estado inicial y de "sin resultados".
 const List<String> sugerenciasFunciones = ['Cerrar caja', 'Controlar stock', 'Subir precios', 'Imprimir ticket'];
 const List<String> sugerenciasFuncionesServicios = ['Cerrar el día', 'Insumos', 'Agregar un servicio', 'Gasto'];
-const List<String> sugerenciasFuncionesGastronomia = ['Pedidos', 'Agregar un plato', 'Insumos', 'Cerrar caja'];
+const List<String> sugerenciasFuncionesGastronomia = ['Pedidos', 'Agregar un plato', 'Stock', 'Cerrar caja'];
 
 /// Minúsculas, sin tildes ni diacríticos, sin espacios de más.
 String normalizarNs(String texto) {
