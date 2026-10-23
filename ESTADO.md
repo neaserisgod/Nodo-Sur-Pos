@@ -138,6 +138,10 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (23/10/2026)
 
+- **El bot ofrece los combos de Nodo Gastro** (El dueño, 23/10): van en el catálogo del bot ("hay" si alcanzan sus bebidas; los
+  de solo platos, siempre), y el pedido se cobra abriendo el combo en sus platos y bebidas. En modo simple el bot no dice "no
+  hay" de nada (no se cuenta el stock). El almacén sigue sin promos en el bot. Sin cambios en `botdemo`. **Sin probar con un
+  WhatsApp real.**
 - **Nodo Gastro, modo simple** (El dueño, 23/10: "cargás los platos como si fuese un producto y ya los tenés en el catálogo").
   Un local nuevo arranca simple: cada plato es nombre, categoría, precio y **"Te cuesta" a mano** (se sigue viendo cuánto se gana),
   sin recetas, sin solapa Stock, sin avisos de stock y sin gastos fijos; los **combos llevan precio a mano**. Más › **Modo completo**

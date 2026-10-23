@@ -3,9 +3,11 @@
 
 import '../domain/bot_whatsapp.dart';
 import 'database.dart';
+import 'repositorio_promos.dart' show catalogoConStockDePromos;
 
 Future<List<ProductoParaBot>> productosParaBot(AppDatabase db) async {
-  final filas = await db.select(db.productos).get();
+  // Con el stock de cada combo ya calculado con el de sus artículos: es su "hay".
+  final filas = await catalogoConStockDePromos(db);
   return [
     for (final p in filas)
       ProductoParaBot(

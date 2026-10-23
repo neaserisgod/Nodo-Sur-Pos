@@ -85,6 +85,13 @@ void main() {
       expect(c.last.hay, isFalse);
     });
 
+    test('Nodo Gastro ofrece los combos (hay si alcanza con sus artículos); en modo simple todo hay', () {
+      final productos = [_p('Combo pollo', gid: 'g-combo', promo: true, stock: 0), _p('Coca', gid: 'g-coca', stock: 0)];
+      expect(catalogoParaBot(productos, conCombos: true).map((x) => (x.nombre, x.hay)), [('Coca', false), ('Combo pollo', false)]);
+      expect(catalogoParaBot(productos, conCombos: true, sinStock: true).every((x) => x.hay), isTrue);
+      expect(catalogoParaBot(productos).map((x) => x.nombre), ['Coca'], reason: 'el almacén sigue sin promos en el bot');
+    });
+
     test('quedan afuera: inactivos, promos, sin global_id, sin precio o sin nombre', () {
       expect(
         catalogoParaBot([

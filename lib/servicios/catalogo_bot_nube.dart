@@ -9,7 +9,10 @@ import 'dart:convert';
 
 import '../data/database.dart';
 import '../data/repositorio_bot.dart';
+import '../data/repositorio_configuracion.dart' show modulosNegocioActuales;
 import '../domain/bot_whatsapp.dart';
+import '../domain/forma_de_trabajo.dart';
+import '../domain/modulos.dart';
 import 'cuenta_nube.dart';
 
 class PublicadorCatalogoBot {
@@ -34,7 +37,12 @@ class PublicadorCatalogoBot {
         _planRevisado = ahora;
       }
       if (_tieneBot != true) return false;
-      final items = catalogoParaBot(await productosParaBot(db));
+      final modulos = await modulosNegocioActuales(db);
+      final items = catalogoParaBot(
+        await productosParaBot(db),
+        conCombos: modulos.forma == FormaDeTrabajo.gastronomia && modulos.estaActivo(Modulo.promos),
+        sinStock: modulos.esModoSimpleGastro,
+      );
       final huella = jsonEncode([for (final x in items) x.toJson()]);
       if (huella == _ultimo) return false;
       await cliente.publicarCatalogoBot(token, items);

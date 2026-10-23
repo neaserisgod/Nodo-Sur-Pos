@@ -60,21 +60,25 @@ class ProductoParaBot {
 /// celular, Regla 14), los insumos y "Varios". Un pesable va con su precio por kilo y lo dice en el nombre. "Hay" = stock mayor
 /// a cero (Regla 8: sin stock no se vende), salvo un plato (o servicio), que se hace en el momento y no lleva stock (§22).
 /// Ordenado por nombre para que el catálogo sea el mismo si nada cambió.
-List<ItemCatalogoBot> catalogoParaBot(Iterable<ProductoParaBot> productos) {
+///
+/// En Nodo Gastro ([conCombos], El dueño, 2026-10-23) los combos sí van: el pedido se cobra como cualquier venta, que abre el
+/// combo en sus platos y bebidas; su "hay" es el stock que alcanza con sus artículos (lo trae `stock`). En el modo simple
+/// ([sinStock]) no se cuenta nada: todo hay.
+List<ItemCatalogoBot> catalogoParaBot(Iterable<ProductoParaBot> productos, {bool conCombos = false, bool sinStock = false}) {
   final items = <ItemCatalogoBot>[];
   for (final p in productos) {
     final gid = p.globalId;
-    if (!p.activo || p.esPromo || p.esInsumo || p.esVarios || gid == null || gid.isEmpty) continue;
+    if (!p.activo || (p.esPromo && !conCombos) || p.esInsumo || p.esVarios || gid == null || gid.isEmpty) continue;
     final nombre = p.nombre.trim();
     if (nombre.isEmpty) continue;
     if (p.esPesable) {
       final precio = p.precioPorKiloCentavos;
       if (precio == null || precio <= 0) continue;
-      items.add(ItemCatalogoBot(gid: gid, nombre: '$nombre (por kg)', precioCentavos: precio, hay: (p.stockGramos ?? 0) > 0));
+      items.add(ItemCatalogoBot(gid: gid, nombre: '$nombre (por kg)', precioCentavos: precio, hay: sinStock || (p.stockGramos ?? 0) > 0));
     } else {
       final precio = p.precioCentavos;
       if (precio == null || precio <= 0) continue;
-      items.add(ItemCatalogoBot(gid: gid, nombre: nombre, precioCentavos: precio, hay: p.esServicio || p.stock > 0));
+      items.add(ItemCatalogoBot(gid: gid, nombre: nombre, precioCentavos: precio, hay: sinStock || p.esServicio || p.stock > 0));
     }
   }
   items.sort((a, b) => a.nombre.compareTo(b.nombre) != 0 ? a.nombre.compareTo(b.nombre) : a.gid.compareTo(b.gid));
