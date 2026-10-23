@@ -10,6 +10,7 @@ import 'package:la_plazoleta/data/repositorio_sincronizacion.dart';
 import 'package:la_plazoleta/data/repositorio_ventas.dart';
 import 'package:la_plazoleta/domain/medio_pago.dart';
 import 'package:la_plazoleta/domain/venta.dart';
+import 'package:la_plazoleta/domain/bot_whatsapp.dart';
 import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
 
 import '../helpers/base_para_tests.dart';
@@ -255,6 +256,49 @@ void main() {
         registrarVentaSegunMedio(db, lineas: lineas, medio: ComposicionPago.efectivo, sesionCajaId: sesion, usuarioId: usuarioId, pedidoId: otro),
         throwsA(isA<PedidoYaCobrado>()),
       );
+    });
+  });
+
+  group('pedidos del bot pagados por transferencia (El dueño, 2026-10-23: quedaban trabados en "sin pagar")', () {
+    Future<PedidoBot> delBot(int id) async {
+      final gid = (await db.select(db.productos).get()).firstWhere((p) => p.globalId != null).globalId!;
+      return PedidoBot(
+        id: id,
+        estado: EstadoPedidoBot.porConfirmar,
+        clienteNombre: 'Lucas',
+        clienteTelefono: '5492944555111',
+        items: [ItemPedidoBot(gid: gid, nombre: 'Especial', cantidad: 1, precioCentavos: 1850000)],
+        nota: 'Especial: sin cebolla',
+        creado: ahora,
+        actualizado: 1,
+        formaEntrega: 'CADETE',
+        direccion: 'Mitre 150',
+        zona: 'Bariloche',
+        costoEnvioCentavos: 250000,
+        pago: 'alias',
+      );
+    }
+
+    test('si el local confirma cada pedido, entra "por confirmar" con la nota de la transferencia', () async {
+      final id = await importarPedidoDelBot(db, await delBot(1), usuarioId: usuarioId);
+      final p = await leer(id);
+      expect(EstadoPedido.desdeClave(p.estado), EstadoPedido.porConfirmar);
+      expect(p.pagaAdelantado, isTrue);
+      expect(p.pagado, isFalse);
+      expect(p.nota, startsWith('💸 Paga por transferencia'));
+      expect(p.nota, endsWith('Especial: sin cebolla'));
+      await avanzarPedido(db, id, EstadoPedido.porHacer);
+      expect(EstadoPedido.desdeClave((await leer(id)).estado), EstadoPedido.porHacer);
+    });
+
+    test('si entran solos, espera el pago y "Llegó el pago" lo manda a la cocina', () async {
+      await guardarConfigPedidos(db, const ConfigPedidos(cadetePropio: true, zonas: [centro], confirmacionAutomatica: true));
+      final id = await importarPedidoDelBot(db, await delBot(2), usuarioId: usuarioId);
+      expect(EstadoPedido.desdeClave((await leer(id)).estado), EstadoPedido.esperandoPago);
+      await registrarPagoAdelantado(db, id);
+      final p = await leer(id);
+      expect(EstadoPedido.desdeClave(p.estado), EstadoPedido.porHacer);
+      expect(p.pagado, isTrue);
     });
   });
 }

@@ -290,12 +290,17 @@ Future<int> importarPedidoDelBot(AppDatabase db, PedidoBot p, {required int usua
     }
     final config = await configPedidosActual(db);
     final forma = FormaEntrega.desdeClave(p.formaEntrega ?? FormaEntrega.retiro.clave);
-    // Pagó por Mercado Pago: el bot lo manda recién con el pago acreditado. Por alias, espera que el local vea el comprobante.
-    final pagaAdelantado = p.pago == 'mp' || p.pago == 'alias';
+    // Pagó por Mercado Pago: el bot lo manda recién con el pago acreditado. Por alias, el local tiene que ver el comprobante (el bot
+    // se lo reenvía): si confirma cada pedido, entra "por confirmar" y lo acepta cuando vio la plata; si entran solos, espera en
+    // "sin pagar" hasta que toque "Llegó el pago" (`registrarPagoAdelantado`). Antes esperaba siempre, y no había con qué
+    // destrabarlo (El dueño, 2026-10-23, prueba de punta a punta con Groove).
+    final porAlias = p.pago == 'alias';
+    final pagaAdelantado = p.pago == 'mp' || porAlias;
     final pagado = p.pago == 'mp';
-    final estado = pagaAdelantado && !pagado
+    final estado = porAlias && config.confirmacionAutomatica
         ? EstadoPedido.esperandoPago
         : estadoInicial(canal: CanalPedido.whatsapp, config: config, pagaAdelantado: false);
+    final nota = [if (porAlias) '💸 Paga por transferencia: fijate que haya llegado (el comprobante te lo reenvía el bot)', if (p.nota != null && p.nota!.trim().isNotEmpty) p.nota!.trim()].join(' · ');
     final momento = p.creado.millisecondsSinceEpoch > 0 ? p.creado : DateTime.now();
     return db.into(db.pedidosGastronomia).insert(PedidosGastronomiaCompanion.insert(
           numero: await siguienteNumeroDePedido(db),
@@ -308,7 +313,7 @@ Future<int> importarPedidoDelBot(AppDatabase db, PedidoBot p, {required int usua
           zona: Value(forma.esEnvio ? p.zona : null),
           costoEnvioCentavos: Value(forma.esEnvio ? p.costoEnvioCentavos : 0),
           lineasJson: jsonEncode([for (final l in lineas) l.toJson()]),
-          nota: Value(p.nota),
+          nota: Value(nota.isEmpty ? null : nota),
           horaEstimada: Value(p.horaEstimada),
           programado: Value(p.programado),
           pagaAdelantado: Value(pagaAdelantado),

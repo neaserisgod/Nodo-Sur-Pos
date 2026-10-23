@@ -138,6 +138,9 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (23/10/2026)
 
+- **Pedidos del bot pagados por transferencia** (prueba de punta a punta con Groove, 23/10): quedaban en "sin pagar" sin
+  ningún botón para destrabarlos. Ahora, si el local confirma cada pedido, entran "por confirmar" con la nota "💸 Paga por
+  transferencia" (el comprobante lo reenvía el bot); si entran solos, esperan y la tarjeta tiene **"Llegó el pago"**.
 - **Notificaciones en Nodo Gastro** (El dueño, 23/10: "la app ya está registrada en Firebase"): con su id de app
   (`push.dart`), el celular registra su token y le llegan los pedidos del bot con la app cerrada, como en Servicios. **Sin probar
   en un celular real.**
