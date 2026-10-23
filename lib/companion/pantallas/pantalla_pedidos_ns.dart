@@ -137,6 +137,13 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     if (problema != null && mounted) mostrarAvisoNs(context, problema, largo: true);
   }
 
+  /// "Llegó el pago": la transferencia ya está, el pedido sigue como si recién entrara.
+  Future<void> _llegoElPago(PedidoGastronomia pedido) async {
+    await registrarPagoAdelantado(_db, pedido.id);
+    await _recargar();
+    if (mounted) mostrarAvisoNs(context, 'Pago anotado: el pedido ${pedido.numero} sigue');
+  }
+
   Future<void> _avanzar(PedidoGastronomia pedido, EstadoPedido nuevo) async {
     try {
       await avanzarPedido(_db, pedido.id, nuevo);
@@ -201,7 +208,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
             if (pedido.pagaAdelantado)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(pedido.pagado ? 'Pagado por Mercado Pago' : 'Esperando el pago por Mercado Pago',
+                child: Text(pedido.pagado ? 'Pagado por adelantado' : 'Paga por adelantado: fijate que haya llegado',
                     style: estiloNs(14, peso: FontWeight.w600, color: pedido.pagado ? ns.g : ns.w)),
               ),
           ],
@@ -421,6 +428,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
           onVer: () => _verPedido(p),
           onPaso: (nuevo) => _avanzar(p, nuevo),
           onCobrar: () => _cobrar(p),
+          onPago: () => _llegoElPago(p),
         );
     // En la compu (menú lateral): cada estado en su columna, uno al lado del otro, como un tablero de cocina. Se ve todo sin
     // cambiar de filtro. En camino y sin pagar aparecen solo si hay alguno.
@@ -839,13 +847,16 @@ class _Filtro extends StatelessWidget {
 }
 
 class _TarjetaPedido extends StatelessWidget {
-  const _TarjetaPedido({required this.pedido, required this.faltan, required this.onVer, required this.onPaso, required this.onCobrar});
+  const _TarjetaPedido({required this.pedido, required this.faltan, required this.onVer, required this.onPaso, required this.onCobrar, required this.onPago});
 
   final PedidoGastronomia pedido;
   final int? faltan;
   final VoidCallback onVer;
   final ValueChanged<EstadoPedido> onPaso;
   final VoidCallback onCobrar;
+
+  /// Llegó el pago adelantado (una transferencia que el local ya vio).
+  final VoidCallback onPago;
 
   @override
   Widget build(BuildContext context) {
@@ -860,6 +871,7 @@ class _TarjetaPedido extends StatelessWidget {
     final cobrable = pedido.ventaId == null && (estado == EstadoPedido.porHacer || estado == EstadoPedido.listo || estado == EstadoPedido.enCamino);
     // Un botón principal por pedido; el resto, secundarios. Rechazar va como texto, para no tocarlo sin querer.
     final principal = <(String, VoidCallback)>[
+      if (estado == EstadoPedido.esperandoPago) ('Llegó el pago', onPago),
       if (cobrable && !forma.esEnvio && estado == EstadoPedido.listo) ('Cobrar', onCobrar),
       for (final p in pasos)
         if (p != EstadoPedido.rechazado) (_textoPaso(p), () => onPaso(p)),
@@ -969,7 +981,7 @@ class _TarjetaPedido extends StatelessWidget {
             ],
             if (estado == EstadoPedido.esperandoPago) ...[
               const SizedBox(height: 10),
-              Text('Tiene el link de Mercado Pago. Se cocina cuando pague.', style: estiloNs(14, color: ns.mute)),
+              Text('Se cocina cuando llegue el pago. Si ya lo viste, tocá "Llegó el pago".', style: estiloNs(14, color: ns.mute)),
             ],
             const SizedBox(height: 12),
             Row(
