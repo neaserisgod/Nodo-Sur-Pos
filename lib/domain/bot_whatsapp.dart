@@ -583,7 +583,8 @@ Map<String, dynamic> configBotConServicios(
 /// Cómo trabaja un local gastronómico, para el bot (§22): qué entregas tiene y con qué zonas (los montos en pesos enteros, como el
 /// resto de la configuración del bot), cómo cobra, cuánto tarda la cocina y cómo está ahora, si lo de WhatsApp entra solo, y el
 /// horario de atención (fuera de hora el bot programa el pedido). El alias es el mismo de la seña. El resto de [anterior] (los
-/// números, los textos) queda igual.
+/// números, los textos) queda igual. [nombreNegocio] (el de Configuración del negocio), si no está vacío, es el nombre con el que
+/// saluda: antes solo se tomaba al guardar en "Bot de WhatsApp", y cambiarlo no llegaba al bot (El dueño, 2026-10-23).
 Map<String, dynamic> configBotConPedidos(
   Map<String, dynamic> anterior, {
   required ConfigPedidos config,
@@ -591,8 +592,10 @@ Map<String, dynamic> configBotConPedidos(
   required HorarioAtencion horario,
   required String alias,
   required String titular,
+  String nombreNegocio = '',
 }) => {
       ...anterior,
+      if (nombreNegocio.trim().isNotEmpty) 'negocio': {...((anterior['negocio'] as Map?) ?? const {}), 'nombre': nombreNegocio.trim()},
       'horarios': horario.toJson(),
       'pedidos': {
         'retiro': config.retiro,
