@@ -729,7 +729,8 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   como programado, con esa hora. El horario es el mismo de la Agenda (uno solo por negocio).
 - **Pago adelantado, por las dos vías:** el link de Mercado Pago (el pedido entra recién cuando se acredita, como la seña de
   Servicios) y la transferencia al alias del negocio (el mismo alias de la seña), con el comprobante que revisa alguien del
-  local.
+  local. Pagado por Mercado Pago **entra directo a la cocina** ("por hacer"), aunque el local confirme cada pedido: la plata
+  ya está (El dueño, 2026-10-23).
 - **La carta, de las dos formas:** si el local tiene catálogo de WhatsApp Business, el bot manda el link; si no, la carta
   escrita en el chat, con números para elegir. (El dueño, 2026-10-16.)
 - **Carta y catálogo de WhatsApp, en los dos sentidos** (El dueño, 2026-10-17: "dejá cargar el catálogo de WhatsApp desde la
