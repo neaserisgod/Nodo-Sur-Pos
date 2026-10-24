@@ -1,6 +1,7 @@
 // Más › Configuración › Pedidos, o el engranaje de Pedidos (`REGLAS-NEGOCIO.md` §22): cómo trabaja el local los pedidos. Qué
 // entregas tiene (retiro, cadete propio, servicio de reparto, todas opcionales), las zonas de envío con su costo y su demora,
-// cómo se cobra, cuánto tarda la cocina normal y con demora, y si lo de WhatsApp entra solo. El bot lo toma de acá.
+// cómo se cobra, cuánto tarda la cocina normal y con demora, y si lo de WhatsApp entra solo. El bot lo toma de acá. Abajo, si este
+// equipo imprime las comandas en la terminal Point (eso es del equipo, no del negocio: se guarda al tocarlo).
 
 import 'package:flutter/material.dart';
 
@@ -8,14 +9,17 @@ import '../../data/database.dart';
 import '../../data/repositorio_pedidos_gastronomia.dart';
 import '../../domain/dinero.dart' show parsearARS;
 import '../../domain/pedido_gastronomico.dart';
+import '../../servicios/comandera_point.dart';
 import '../base_local.dart';
+import '../comandera.dart' show comanderaDelCelular;
 import '../kit/kit_ns.dart';
 import '../mensaje_error.dart';
 
 class PantallaConfigPedidosNs extends StatefulWidget {
-  /// [db] es para tests.
-  const PantallaConfigPedidosNs({super.key, this.db});
+  /// [db] y [comandera] son para tests.
+  const PantallaConfigPedidosNs({super.key, this.db, this.comandera});
   final AppDatabase? db;
+  final ComanderaPoint? comandera;
 
   @override
   State<PantallaConfigPedidosNs> createState() => _PantallaConfigPedidosNsState();
@@ -50,10 +54,14 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
   final _demorada = TextEditingController();
   final List<_ZonaEditable> _zonas = [];
   String? _error;
+  bool _comandas = false;
 
   @override
   void initState() {
     super.initState();
+    (widget.comandera?.registro ?? const RegistroComandasPrefs()).activa().then((v) {
+      if (mounted) setState(() => _comandas = v);
+    });
     configPedidosActual(_db).then(_mostrar, onError: (Object e) {
       if (!mounted) return;
       _mostrar(const ConfigPedidos());
@@ -132,6 +140,19 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
       Navigator.of(context).pop();
     } catch (e) {
       if (mounted) setState(() => _error = 'No se pudo guardar: ${mensajeDeError(e)}');
+    }
+  }
+
+  /// Del equipo, no del negocio: vale al tocarlo, sin "Guardar".
+  Future<void> _cambiarComandas(bool v) async {
+    setState(() => _comandas = v);
+    try {
+      await (widget.comandera ?? comanderaDelCelular()).activar(v);
+      if (mounted) mostrarAvisoNs(context, v ? 'Listo: las comandas salen en la terminal desde este equipo' : 'Este equipo ya no imprime comandas');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _comandas = !v);
+      mostrarAvisoNs(context, 'No se pudo cambiar: ${mensajeDeError(e)}', largo: true);
     }
   }
 
@@ -255,6 +276,18 @@ class _PantallaConfigPedidosNsState extends State<PantallaConfigPedidosNs> {
                         : 'El bot manda la carta escrita.',
                     encendido: _catalogo,
                     onCambio: (v) => setState(() => _catalogo = v),
+                  ),
+                  const SizedBox(height: 22),
+                  const SeccionNs('Comandas'),
+                  const SizedBox(height: 8),
+                  InterruptorNs(
+                    key: const Key('pedidos_comandas_point'),
+                    etiqueta: 'Imprimir las comandas en la terminal Point',
+                    descripcion: _comandas
+                        ? 'Cada pedido confirmado (del mostrador, aceptado o que entró solo del bot) sale impreso en la terminal de esta sucursal. Prendelo en un solo equipo: con dos, sale dos veces.'
+                        : 'Prendelo en el equipo que va a imprimir: cada pedido confirmado sale en la terminal. Necesita Mercado Pago conectado y una terminal elegida en horsepos.com/negocio.',
+                    encendido: _comandas,
+                    onCambio: _cambiarComandas,
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),

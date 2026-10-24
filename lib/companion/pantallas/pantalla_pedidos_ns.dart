@@ -15,11 +15,13 @@ import '../../data/repositorio_configuracion.dart' show configuracionNegocioActu
 import '../../data/repositorio_pedidos_gastronomia.dart';
 import '../../domain/pedido_gastronomico.dart';
 import '../../domain/pedido_whatsapp.dart' show normalizarWhatsapp, urlWhatsapp;
+import '../../servicios/comandera_point.dart' show ComanderaPoint, errorComanda;
 import '../../servicios/pedidos_bot_nube.dart' show pedidosBotSinCargar;
 import '../../servicios/registro_errores.dart' show registrarSiNoEsDeRed;
 import '../app_ns.dart';
 import '../base_local.dart';
 import '../cambios_companion.dart';
+import '../comandera.dart' show comanderaDelCelular;
 import '../emparejamiento.dart';
 import '../configurar/pendientes_en_inicio.dart';
 import '../kit/kit_ns.dart';
@@ -48,12 +50,13 @@ String _textoPaso(EstadoPedido estado) => switch (estado) {
     };
 
 class PantallaPedidosNs extends StatefulWidget {
-  /// [db], [usuarioId] y [ahora] son para tests.
-  const PantallaPedidosNs({super.key, this.db, this.usuarioId, this.ahora});
+  /// [db], [usuarioId], [ahora] y [comandera] son para tests.
+  const PantallaPedidosNs({super.key, this.db, this.usuarioId, this.ahora, this.comandera});
 
   final AppDatabase? db;
   final int? usuarioId;
   final DateTime? ahora;
+  final ComanderaPoint? comandera;
 
   @override
   State<PantallaPedidosNs> createState() => _PantallaPedidosNsState();
@@ -82,6 +85,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     }
     _sub = avisosCambiosCompanion.listen((_) => _recargar());
     pedidosBotSinCargar.addListener(_alCambiarSinCargar);
+    errorComanda.addListener(_alCambiarSinCargar);
     _recargar();
   }
 
@@ -92,6 +96,7 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
   @override
   void dispose() {
     pedidosBotSinCargar.removeListener(_alCambiarSinCargar);
+    errorComanda.removeListener(_alCambiarSinCargar);
     _sub?.cancel();
     super.dispose();
   }
@@ -217,6 +222,8 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
               BotonNs.secundario(ctx, 'Escribirle por WhatsApp', () => Navigator.pop(ctx, 'whatsapp'), icono: IconoNs.celular),
               const SizedBox(height: 10),
             ],
+            BotonNs.secundario(ctx, 'Imprimir comanda', () => Navigator.pop(ctx, 'comanda'), icono: IconoNs.imprimir),
+            const SizedBox(height: 10),
             if (sePuedeCancelar(estado)) BotonNs.secundario(ctx, 'Cancelar el pedido', () => Navigator.pop(ctx, 'cancelar')),
           ],
         );
@@ -224,9 +231,20 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
     );
     if (!mounted) return;
     if (accion == 'cancelar') await _avanzar(pedido, EstadoPedido.cancelado);
+    if (accion == 'comanda') await _imprimirComanda(pedido);
     if (accion == 'whatsapp') {
       final numero = normalizarWhatsapp(pedido.telefono ?? '');
       if (numero != null) await launchUrl(urlWhatsapp(numero, 'Hola ${pedido.nombreCliente}, te escribimos de $_nombreLocal por tu pedido ${pedido.numero}.'), mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// Otra copia de la comanda en la terminal, aunque este equipo no sea la comandera (se perdió el papel, otra para el cadete).
+  Future<void> _imprimirComanda(PedidoGastronomia pedido) async {
+    try {
+      await (widget.comandera ?? comanderaDelCelular()).imprimirDeNuevo(pedido);
+      if (mounted) mostrarAvisoNs(context, 'Comanda de ${pedido.numero} enviada a la terminal');
+    } catch (e) {
+      if (mounted) mostrarAvisoNs(context, 'No salió la comanda: ${mensajeDeError(e)}', largo: true);
     }
   }
 
@@ -420,6 +438,11 @@ class _PantallaPedidosNsState extends State<PantallaPedidosNs> {
         for (final motivo in pedidosBotSinCargar.value.take(3)) ...[
           const SizedBox(height: 10),
           InfoNs(motivo, tono: TonoNs.warn, icono: IconoNs.alerta),
+        ],
+        // La comandera de este equipo no pudo imprimir (sin internet, la terminal apagada): reintenta sola cada minuto.
+        if (errorComanda.value != null) ...[
+          const SizedBox(height: 10),
+          InfoNs(errorComanda.value!, tono: TonoNs.warn, icono: IconoNs.alerta),
         ],
     ];
     Widget tarjeta(PedidoGastronomia p) => _TarjetaPedido(

@@ -76,6 +76,7 @@ import 'pantallas/pantalla_mas_ns.dart';
 import 'pantallas/pantalla_productos_ns.dart';
 import 'pantallas/pantalla_servicios_ns.dart';
 import 'base_local.dart';
+import 'comandera.dart' show comanderaDelCelular;
 import 'cliente_companion.dart';
 import 'emparejamiento.dart';
 import 'navegacion.dart';
@@ -295,6 +296,8 @@ class _PantallaMenuCompanionState extends State<PantallaMenuCompanion>
     _modulosSub = conexion == null ? seguirModulos(baseLocalCompanion()) : null;
     if (conexion != null) modulosActuales.value = ModulosNegocio.todosActivos;
     unawaited(_iniciarAvisosMp(modo));
+    // La Point como comandera (Nodo Gastro): solo sin PC, que en Gastro es siempre. Si este equipo no la tiene prendida, no hace nada.
+    if (esEdicionGastronomia && conexion == null) unawaited(comanderaDelCelular().iniciar());
     // Sync instantánea por wifi (2026-09-28): con la PC emparejada, queda
     // escuchando sus avisos — cualquier cambio en la PC (abrir la caja, una
     // venta, un precio) llega en el momento, sin reiniciar la app.
