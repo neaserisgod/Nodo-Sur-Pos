@@ -73,12 +73,31 @@ void main() {
       expect(t, isNot(contains('Mitre')));
       expect(t, contains('{w}COMANDA K7-P0042{/w}'));
       expect(t, contains('RETIRA EN EL LOCAL'));
-      expect(t, contains('WhatsApp · entró 24/10 20:05'));
+      expect(t, contains('WhatsApp - entró 24/10 20:05'), reason: 'la Point no imprime "·"');
       expect(t, contains('Para las 20:45'));
-      expect(t, contains('{w}2 x Milanesa napolitana{/w}'));
+      expect(t, contains('{b}2 x Milanesa napolitana{/b}'), reason: 'no entra en grande');
       expect(t, contains('{w}500 g Papas{/w}'));
       expect(t, contains(r'A COBRAR $21.000'));
       expect(t, isNot(contains(r'$9.000')), reason: 'la cocina no necesita los precios');
+    });
+
+    test('el plato sin la descripción entre paréntesis; si no entra en grande, va en negrita', () {
+      expect(nombreParaComanda('Bacon Cheese (medallón, cheddar y panceta, con papas fritas)'), 'Bacon Cheese');
+      expect(nombreParaComanda('(sin nombre)'), '(sin nombre)');
+      final t = contenidoComandaPosnetMp(DatosComanda(
+        numero: 'BD-P0007',
+        canal: CanalPedido.mostrador,
+        forma: FormaEntrega.retiro,
+        nombreCliente: 'Churri',
+        fecha: DateTime(2026, 10, 23, 23, 6),
+        lineas: const [
+          LineaPedido(gid: 'a', nombre: 'Bacon Cheese (medallón, cheddar y panceta, con papas fritas)', cantidad: 1, precioCentavos: 1),
+          LineaPedido(gid: 'b', nombre: 'Bacon Cheese Doble (doble medallón)', cantidad: 1, precioCentavos: 1),
+        ],
+      ));
+      expect(t, contains('{w}1 x Bacon Cheese{/w}'));
+      expect(t, contains('{b}1 x Bacon Cheese Doble{/b}'));
+      expect(t, isNot(contains('medallón')));
     });
 
     test('envío con dirección y zona; pagado no pide cobrar', () {

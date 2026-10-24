@@ -2843,4 +2843,6 @@ comanda"*. El cobro con la Point ya estaba en Gastro (Vender y Cobrar de un pedi
 - **Lo que no salió se reintenta cada minuto** y Pedidos dice por qué. Cada reintento va con otra clave de idempotencia (Mercado
   Pago puede guardar la respuesta de error de una clave); a cambio, un corte justo después de imprimir puede dar una copia de más,
   que es mejor que una comanda que no sale. "Imprimir comanda" en el detalle saca otra copia desde cualquier equipo.
-- **Sin probar con una Point real**: el largo del papel y cómo se ve `{w}` en los nombres largos.
+- **Probada con una Point real (2026-10-24)**: salió entera, pero los platos en `{w}` quedaron más chicos que el resto (en grande
+  entran 16 caracteres; más largo, la Point achica) y el "·" no se imprime. Quedó así: el plato **sin la descripción entre
+  paréntesis** (el dueño: "sin descripción mejor"), en grande si entra en 16 caracteres y en negrita si no; guion en vez de "·".
