@@ -86,6 +86,18 @@ String _dia(DateTime d) => '${_dos(d.day)}/${_dos(d.month)}';
 
 const _raya = '--------------------------------{br}';
 
+/// Cuántos caracteres entran en un renglón con `{w}`: "COMANDA BD-P0007" (16) llena el ancho en una Point real.
+const anchoLetraGrande = 16;
+
+/// El nombre del plato sin la descripción entre paréntesis (El dueño, 2026-10-24: "sin descripción mejor"): la cocina ya sabe
+/// qué lleva una "Bacon Cheese". Si el nombre es todo paréntesis, va entero.
+String nombreParaComanda(String nombre) {
+  final limpio = _limpio(nombre);
+  final i = limpio.indexOf('(');
+  final corto = i < 0 ? limpio : limpio.substring(0, i).trim();
+  return corto.isEmpty ? limpio : corto;
+}
+
 /// El contenido para `POST /terminals/v1/actions` (type "print"). Sin la hora de ahora adentro: el mismo pedido da siempre el
 /// mismo texto, así el reintento con la misma clave de idempotencia es el mismo pedido para Mercado Pago.
 String contenidoComandaPosnetMp(DatosComanda c, {String encabezadoNegocio = ''}) {
@@ -94,7 +106,8 @@ String contenidoComandaPosnetMp(DatosComanda c, {String encabezadoNegocio = ''})
   if (local.isNotEmpty) b.write('{center}{s}$local{/s}{/center}{br}');
   b.write('{center}{w}COMANDA ${_limpio(c.numero)}{/w}{/center}{br}');
   b.write('{center}{b}${c.forma.esEnvio ? 'ENVIO' : 'RETIRA EN EL LOCAL'}{/b}{/center}{br}');
-  b.write('{center}{s}${c.canal.etiqueta} · entró ${_dia(c.fecha)} ${_hora(c.fecha)}{/s}{/center}{br}');
+  // Guion y no "·": la Point no tiene ese carácter y deja un hueco (visto en una Point real, 2026-10-24).
+  b.write('{center}{s}${c.canal.etiqueta} - entró ${_dia(c.fecha)} ${_hora(c.fecha)}{/s}{/center}{br}');
   final hora = c.horaEstimada;
   if (hora != null) {
     b.write(c.programado
@@ -104,7 +117,9 @@ String contenidoComandaPosnetMp(DatosComanda c, {String encabezadoNegocio = ''})
   b.write(_raya);
   for (final l in c.lineas) {
     final cuanto = l.gramos != null ? '${l.gramos} g' : '${l.cantidad} x';
-    b.write('{w}$cuanto ${_limpio(l.nombre)}{/w}{br}');
+    final renglon = '$cuanto ${nombreParaComanda(l.nombre)}';
+    // En grande entran pocos caracteres: un renglón más largo la Point lo achica, y quedaba más chico que el resto.
+    b.write(renglon.length <= anchoLetraGrande ? '{w}$renglon{/w}{br}' : '{b}$renglon{/b}{br}');
   }
   b.write(_raya);
   final nota = c.nota == null ? '' : _limpio(c.nota!);
