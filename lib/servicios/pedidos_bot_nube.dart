@@ -19,7 +19,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database.dart';
-import '../data/repositorio_configuracion.dart' show modulosNegocioActuales;
+import '../data/repositorio_configuracion.dart' show configuracionNegocioActual, modulosNegocioActuales;
 import '../data/repositorio_pedidos_gastronomia.dart';
 import '../data/repositorio_turnos.dart' show configAgendaActual;
 import '../domain/bot_whatsapp.dart';
@@ -181,7 +181,8 @@ class SincronizadorPedidosBot {
     final config = await configPedidosActual(db);
     final cocina = await estadoCocinaActual(db);
     final agenda = await configAgendaActual(db);
-    final entrada = jsonEncode([config.toJson(), cocina.clave, agenda.horario.toJson(), agenda.aliasSena, agenda.titularSena]);
+    final nombre = (await configuracionNegocioActual(db)).nombreComercio;
+    final entrada = jsonEncode([config.toJson(), cocina.clave, agenda.horario.toJson(), agenda.aliasSena, agenda.titularSena, nombre]);
     if (entrada == _ultimaConfig) return;
     final actual = await cliente.configBot(token);
     // Sin la configuración básica (los números) el bot no puede arrancar: eso se carga una vez en Más › Bot de WhatsApp.
@@ -194,6 +195,7 @@ class SincronizadorPedidosBot {
       horario: agenda.horario,
       alias: agenda.aliasSena,
       titular: agenda.titularSena,
+      nombreNegocio: nombre,
     );
     if (jsonEncode(nueva) != jsonEncode(anterior)) await cliente.guardarConfigBot(token, nueva);
     _ultimaConfig = entrada;

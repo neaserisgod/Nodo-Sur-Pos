@@ -2,6 +2,8 @@
 // el estado y la configuración que se le carga desde la app.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:la_plazoleta/domain/bot_whatsapp.dart';
+import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
+import 'package:la_plazoleta/domain/turnos.dart';
 
 ProductoParaBot _p(String nombre, {String? gid = 'g', bool activo = true, bool pesable = false, bool promo = false, int? precio = 1000, int? porKilo, int stock = 3, int? gramos}) =>
     ProductoParaBot(
@@ -375,5 +377,19 @@ void main() {
       expect(ProductoWhatsapp.desdeJson({'waId': '9', 'nombre': 'x', 'precioCentavos': -1}), isNull);
       expect(ProductoWhatsapp.desdeJson({'waId': '9', 'retailerId': '', 'nombre': 'x', 'precioCentavos': 1})!.retailerId, isNull);
     });
+  });
+
+  test('la configuración de pedidos lleva el nombre del negocio: cambiarlo llega al bot sin guardar en "Bot de WhatsApp"', () {
+    Map<String, dynamic> con(String nombre) => configBotConPedidos(
+          {'negocio': {'nombre': 'Lo de Churro', 'rubro': 'rotiseria', 'direccion': 'Mitre 1'}, 'numero_actual': '549'},
+          config: const ConfigPedidos(),
+          cocina: EstadoCocina.normal,
+          horario: HorarioAtencion.porDefecto,
+          alias: '',
+          titular: '',
+          nombreNegocio: nombre,
+        );
+    expect(con(' Groove Burgers ')['negocio'], {'nombre': 'Groove Burgers', 'rubro': 'rotiseria', 'direccion': 'Mitre 1'});
+    expect(con('')['negocio']['nombre'], 'Lo de Churro', reason: 'sin nombre cargado no lo borra');
   });
 }
