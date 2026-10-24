@@ -43,6 +43,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
   int valorDescuento = 0,
   int? encargueId,
   int? pedidoId,
+  String? pedidoDeMostrador,
   int? montoEfectivoMixtoCentavos,
 }) {
   return mostrarHojaNs<({int ventaId, int totalCentavos, bool aMano})?>(
@@ -59,6 +60,7 @@ Future<({int ventaId, int totalCentavos, bool aMano})?> mostrarDialogoCobroPosne
       valorDescuento: valorDescuento,
       encargueId: encargueId,
       pedidoId: pedidoId,
+      pedidoDeMostrador: pedidoDeMostrador,
       montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
     ),
   );
@@ -88,6 +90,7 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
     this.valorDescuento = 0,
     this.encargueId,
     this.pedidoId,
+    this.pedidoDeMostrador,
     this.montoEfectivoMixtoCentavos,
   });
 
@@ -105,6 +108,9 @@ class _DialogoCobroPosnetCompanion extends StatefulWidget {
 
   /// El pedido de un local gastronómico que este cobro cobra (§22).
   final int? pedidoId;
+
+  /// Vender en un local gastronómico: el pedido de mostrador que arma la venta si lleva un plato (`armarPedidoDeMostrador`).
+  final String? pedidoDeMostrador;
 
   /// Con valor, la venta es mixta: [montoCentavos] es solo la parte que va a la terminal.
   final int? montoEfectivoMixtoCentavos;
@@ -249,6 +255,7 @@ class _DialogoCobroPosnetCompanionState
           montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
           encargueId: widget.encargueId,
           pedidoId: widget.pedidoId,
+          pedidoDeMostrador: widget.pedidoDeMostrador,
         );
         _resultadoAprobado = (ventaId: r.ventaId, totalCentavos: r.totalCentavos, aMano: false);
         sonidos.sonar(Sonido.pago);
@@ -332,6 +339,7 @@ class _DialogoCobroPosnetCompanionState
         montoEfectivoMixtoCentavos: widget.montoEfectivoMixtoCentavos,
         encargueId: widget.encargueId,
         pedidoId: widget.pedidoId,
+        pedidoDeMostrador: widget.pedidoDeMostrador,
       );
       if (mounted) Navigator.of(context).pop((ventaId: resultado.ventaId, totalCentavos: resultado.totalCentavos, aMano: true));
     } catch (e) {

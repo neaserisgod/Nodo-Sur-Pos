@@ -487,6 +487,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) => _local.cobrarVirtualAMano(
@@ -498,6 +499,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     valorDescuento: valorDescuento,
     encargueId: encargueId,
     pedidoId: pedidoId,
+    pedidoDeMostrador: pedidoDeMostrador,
     montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
   );
 
@@ -533,6 +535,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     int? montoEfectivoMixtoCentavos,
   }) => _local.confirmarCobroPosnet(
     ordenPendienteId: ordenPendienteId,
@@ -544,6 +547,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     valorDescuento: valorDescuento,
     encargueId: encargueId,
     pedidoId: pedidoId,
+    pedidoDeMostrador: pedidoDeMostrador,
     montoEfectivoMixtoCentavos: montoEfectivoMixtoCentavos,
   );
 
@@ -635,6 +639,7 @@ class ServicioCompanionOffline implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
   }) => _local.cobrarEfectivo(
     lineas: lineas,
@@ -644,5 +649,6 @@ class ServicioCompanionOffline implements ServicioCompanion {
     valorDescuento: valorDescuento,
     encargueId: encargueId,
     pedidoId: pedidoId,
+    pedidoDeMostrador: pedidoDeMostrador,
   );
 }

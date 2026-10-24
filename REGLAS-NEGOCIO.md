@@ -751,6 +751,9 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   aceptado por el local o del bot (entró solo o pagado por Mercado Pago), sale su comanda impresa en la terminal de la sucursal,
   una sola vez, en el equipo que la tiene prendida. Lleva lo que la cocina necesita (qué, para quién, para cuándo) y si está pagado
   o cuánto falta cobrar; no los precios por línea.
+- **Vender pasa por la cocina** (El dueño, 2026-10-24: "vender es como si se vendiera un producto"): lo que se cobra en Vender
+  con un plato (suelto o en un combo) es un pedido de mostrador, para retirar, ya cobrado y "por hacer" (sale la comanda y se ve
+  en Pedidos). Lleva todo lo vendido, bebidas incluidas. Una venta de solo bebidas no arma pedido: no hay nada que cocinar.
 ---
 
 ## Anexo: lecciones del sistema anterior

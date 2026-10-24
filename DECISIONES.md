@@ -118,6 +118,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Importar una base en el celular, sin cerrar la app (El dueño, 2026-10-21)](#importar-una-base-en-el-celular-sin-cerrar-la-app-el-dueño-2026-10-21)
 - [Preguntas frecuentes del bot desde la app (El dueño, 2026-10-21)](#preguntas-frecuentes-del-bot-desde-la-app-el-dueño-2026-10-21)
 - [Nodo Gastro: la terminal Point como comandera (El dueño, 2026-10-24)](#nodo-gastro-la-terminal-point-como-comandera-el-dueño-2026-10-24)
+- [Nodo Gastro: Vender arma un pedido de mostrador (El dueño, 2026-10-24)](#nodo-gastro-vender-arma-un-pedido-de-mostrador-el-dueño-2026-10-24)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2846,3 +2847,23 @@ comanda"*. El cobro con la Point ya estaba en Gastro (Vender y Cobrar de un pedi
 - **Probada con una Point real (2026-10-24)**: salió entera, pero los platos en `{w}` quedaron más chicos que el resto (en grande
   entran 16 caracteres; más largo, la Point achica) y el "·" no se imprime. Quedó así: el plato **sin la descripción entre
   paréntesis** (el dueño: "sin descripción mejor"), en grande si entra en 16 caracteres y en negrita si no; guion en vez de "·".
+
+## Nodo Gastro: Vender arma un pedido de mostrador (El dueño, 2026-10-24)
+
+El dueño: *"el apartado vender debería ser igual al de pedido en gastro, ya que vender es como si se vendiera un producto"*. Entre
+"solo cómo se ve", "que sea un pedido" y "las dos cosas", eligió **que sea un pedido**: un plato no se vende sin que la cocina se
+entere. Antes, lo cobrado en Vender no llegaba a la cocina ni a Pedidos.
+
+- **Se cobra al tomarlo y queda en la lista.** La venta graba, en la MISMA transacción (`registrarVenta`, parámetro
+  `pedidoDeMostrador`), un pedido de mostrador, para retirar, ligado a la venta y "por hacer". Así sale la comanda por el camino de
+  siempre (`ComanderaPoint` mira los "por hacer") y en Pedidos se ve como cobrado: listo → entregado, sin botón de cobrar. Si el
+  cobro falla (o la Point lo rechaza) no queda ni venta ni pedido, ni comanda de algo que no se pagó.
+- **Va a la cocina si lleva un plato**, suelto o dentro de un combo; lleva todo lo vendido (es lo que se le entrega al cliente).
+  Solo bebidas no arma pedido. Es para retirar aunque el local no tenga "Retiro" prendido: el cliente está en el mostrador.
+- **La comanda dice PAGADO** también para lo que tiene venta (`datosComandaDe`): antes solo miraba el pago adelantado.
+- **Sin nombre por ahora**: sale "Mostrador" con su número (el que llama la cocina). Pedir "a nombre de quién" en Vender queda para
+  cuando el dueño lo pida.
+- **Con la PC no se arma** (`ClienteCompanion` no lo manda): la PC no tiene los pedidos, como pasa con cobrar un pedido, y frenar la
+  venta dejaría sin vender. Cobrar un pedido que ya existe o entregar un encargue tampoco arma otro.
+- **Pendiente**: anular la venta no cancela su pedido (pasa lo mismo con un pedido cobrado desde Pedidos).
+

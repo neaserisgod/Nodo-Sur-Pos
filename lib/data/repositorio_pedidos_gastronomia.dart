@@ -270,6 +270,66 @@ Future<void> marcarPedidoCobrado(AppDatabase db, int pedidoId, {required int ven
       ));
 }
 
+/// Vender, en un local gastronómico, pasa por la cocina como un pedido (El dueño, 2026-10-24: "vender es como si se tomara un
+/// pedido"; un plato no se vende sin que la cocina se entere). Si la venta [ventaId] lleva un plato, o un combo con un plato,
+/// queda un pedido de mostrador para retirar, ya cobrado y "por hacer": sale su comanda y se ve en Pedidos hasta que se entrega.
+/// Lleva todo lo vendido, bebidas incluidas, porque es lo que se le da al cliente; solo bebidas no arma nada (no hay qué
+/// cocinar). Es para retirar aunque el local no tenga prendido "Retiro": el cliente está en el mostrador. Se llama DENTRO de la
+/// transacción de `registrarVenta`. Devuelve el id del pedido, o null si no hizo falta.
+Future<int?> armarPedidoDeMostrador(
+  AppDatabase db,
+  List<LineaVenta> lineas, {
+  required int ventaId,
+  required String nombreCliente,
+  required int usuarioId,
+  DateTime? ahora,
+}) async {
+  final delPedido = <LineaPedido>[];
+  var llevaPlato = false;
+  for (final l in lineas) {
+    if (l is LineaVentaPorUnidad && l.esVarios) continue;
+    final id = int.tryParse(l.productoId);
+    final producto = id == null ? null : await (db.select(db.productos)..where((p) => p.id.equals(id))).getSingleOrNull();
+    final gid = producto?.globalId;
+    if (producto == null || gid == null) continue;
+    llevaPlato = llevaPlato || producto.esServicio || (producto.esPromo && await _comboConPlato(db, producto.id));
+    delPedido.add(switch (l) {
+      LineaVentaPorUnidad() => LineaPedido(gid: gid, nombre: l.nombreProducto, cantidad: l.cantidad, precioCentavos: l.precioUnitarioCentavos),
+      LineaVentaPesable() => LineaPedido(gid: gid, nombre: l.nombreProducto, gramos: l.gramos, precioCentavos: l.precioPorKiloCentavos),
+    });
+  }
+  if (!llevaPlato) return null;
+
+  final momento = ahora ?? DateTime.now();
+  final config = await configPedidosActual(db);
+  final cocina = await estadoCocinaActual(db);
+  const canal = CanalPedido.mostrador;
+  return db.into(db.pedidosGastronomia).insert(
+        PedidosGastronomiaCompanion.insert(
+          numero: await siguienteNumeroDePedido(db),
+          canal: canal.clave,
+          estado: estadoInicial(canal: canal, config: config, pagaAdelantado: false).clave,
+          formaEntrega: Value(FormaEntrega.retiro.clave),
+          nombreCliente: nombreCliente.trim().isEmpty ? canal.etiqueta : nombreCliente.trim(),
+          lineasJson: jsonEncode([for (final l in delPedido) l.toJson()]),
+          horaEstimada: Value(horaEstimada(ahora: momento, cocina: cocina, config: config, forma: FormaEntrega.retiro)),
+          ventaId: Value(ventaId),
+          fechaCreacion: Value(momento),
+          usuarioId: usuarioId,
+          globalId: Value(generarGlobalId()),
+          origenDispositivo: Value(idDispositivoActual),
+          actualizadoEn: Value(momento),
+        ),
+      );
+}
+
+Future<bool> _comboConPlato(AppDatabase db, int promoId) async {
+  final q = db.select(db.promoComponentes).join([innerJoin(db.productos, db.productos.id.equalsExp(db.promoComponentes.productoId))])
+    ..where(db.promoComponentes.promoId.equals(promoId) & db.productos.esServicio.equals(true))
+    ..limit(1);
+  return (await q.getSingleOrNull()) != null;
+}
+
 /// Pone en la lista un pedido que tomó el bot de WhatsApp (§22) y devuelve su id, o el del que ya estaba (el mismo pedido no entra
 /// dos veces: `idRemoto`). Lo que dijo el bot vale tal cual (la entrega, la zona y su costo, la hora que le prometió al cliente):
 /// ya se lo confirmó al cliente con la configuración de ese momento, así que no se vuelve a validar contra la de ahora. Lo que

@@ -869,6 +869,10 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
     }
   }
 
+  /// Vender en un local gastronómico pasa por la cocina como un pedido de mostrador (El dueño, 2026-10-24), salvo que ya se
+  /// esté cobrando un pedido o entregando un encargue. Sin nombre por ahora: el pedido sale como "Mostrador" con su número.
+  String? get _pedidoDeMostrador => esNegocioGastronomico() && _pedido.value == null && _encargue.value == null ? '' : null;
+
   Future<void> _cobrarEfectivo() async {
     final sesionId = AppNs.of(context).sesion?.id;
     if (sesionId == null) return;
@@ -885,6 +889,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         pedidoId: _pedido.value?.id,
+        pedidoDeMostrador: _pedidoDeMostrador,
         claveCobro: _claveCobro,
       );
       await _ventaCobrada(r.ventaId, r.totalCentavos);
@@ -938,6 +943,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         pedidoId: _pedido.value?.id,
+        pedidoDeMostrador: _pedidoDeMostrador,
         montoEfectivoMixtoCentavos: efectivoMixto,
       );
       if (resultado != null) {
@@ -979,6 +985,7 @@ class _PantallaCarritoVentaState extends State<PantallaCarritoVenta> {
         valorDescuento: _valorDescuento,
         encargueId: _encargue.value,
         pedidoId: _pedido.value?.id,
+        pedidoDeMostrador: _pedidoDeMostrador,
         claveCobro: _claveCobro,
         montoEfectivoMixtoCentavos: efectivoMixto,
       );

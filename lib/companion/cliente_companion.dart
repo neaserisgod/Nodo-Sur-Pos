@@ -1340,8 +1340,10 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
   }) async {
+    // [pedidoDeMostrador] no viaja: la PC no tiene los pedidos (como [pedidoId]), y frenar la venta por eso dejaría sin vender.
     if (pedidoId != null) throw const ErrorCompanion(400, 'Los pedidos se cobran en el celular: la PC todavía no los tiene.');
     final r = await _client.post(
       conexion._url('/ventas/cobrar'),
@@ -1381,6 +1383,7 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   }) async {
@@ -1470,6 +1473,7 @@ class ClienteCompanion implements ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     int? montoEfectivoMixtoCentavos,
   }) async {
     if (pedidoId != null) throw const ErrorCompanion(400, 'Los pedidos se cobran en el celular: la PC todavía no los tiene.');

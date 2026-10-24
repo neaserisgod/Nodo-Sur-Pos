@@ -138,6 +138,11 @@ Pendiente / ideas (sin hacer):
 
 ## Últimos cambios (24/10/2026)
 
+- **Vender de Nodo Gastro pasa por la cocina** (El dueño, 24/10: "vender es como si se vendiera un producto"; eligió "que sea un
+  pedido"): una venta con un plato (o un combo con un plato) deja, en la misma transacción, un pedido de mostrador para retirar,
+  ya cobrado y "por hacer": sale la comanda ("PAGADO") y se ve en Pedidos hasta que se entrega. Solo bebidas no arma pedido.
+  `armarPedidoDeMostrador` en `data/repositorio_pedidos_gastronomia.dart`. Por ahora sin nombre (sale "Mostrador" con su número).
+  **Sin probar en un equipo real.**
 - **La Point como comandera en Nodo Gastro** (El dueño, 24/10: "como si fuese una comandera… la misma función que tiene almacén";
   "cuando un pedido se confirma como tal, debe imprimir la comanda"): cada pedido que queda "por hacer" (mostrador, aceptado,
   entró solo del bot o pagado por Mercado Pago, o bajado por la sync) sale impreso en la terminal de la sucursal, por el mismo

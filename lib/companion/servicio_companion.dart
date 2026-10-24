@@ -355,6 +355,7 @@ abstract class ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
     int? montoEfectivoMixtoCentavos,
   });
@@ -385,6 +386,7 @@ abstract class ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     int? montoEfectivoMixtoCentavos,
   });
 
@@ -460,6 +462,7 @@ abstract class ServicioCompanion {
     int valorDescuento = 0,
     int? encargueId,
     int? pedidoId,
+    String? pedidoDeMostrador,
     String? claveCobro,
   });
 }

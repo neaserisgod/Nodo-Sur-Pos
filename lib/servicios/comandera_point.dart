@@ -101,7 +101,8 @@ DatosComanda datosComandaDe(PedidoGastronomia p) {
     fecha: p.fechaCreacion,
     horaEstimada: p.horaEstimada,
     programado: p.programado,
-    pagado: p.pagado,
+    // Cobrado al tomarlo (Vender, `armarPedidoDeMostrador`) también está pagado: decir "A COBRAR" haría cobrarlo dos veces.
+    pagado: p.pagado || p.ventaId != null,
     totalCentavos: totalPedidoCentavos(lineas, costoEnvioCentavos: p.costoEnvioCentavos),
   );
 }

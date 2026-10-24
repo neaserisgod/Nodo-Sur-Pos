@@ -18,7 +18,7 @@ import 'identidad_sync.dart';
 import 'repositorio_configuracion.dart' show configuracionNegocioActual;
 import 'repositorio_turnos.dart' show senaPendienteDeTurno, marcarTurnoAtendido;
 import 'repositorio_encargues.dart' show EncargueConSena, liberarEncargueEntregado, registrarDevolucionSena, senaPendienteDe;
-import 'repositorio_pedidos_gastronomia.dart' show marcarPedidoCobrado;
+import 'repositorio_pedidos_gastronomia.dart' show armarPedidoDeMostrador, marcarPedidoCobrado;
 import 'repositorio_servicios.dart' show consumirInsumosDeServicio, costoInsumosDeServicio;
 
 // ─── Sesión de caja ──────────────────────────────────────────────────────
@@ -306,6 +306,9 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
   // El pedido de un local gastronómico que esta venta cobra (`repositorio_pedidos_gastronomia.dart`, §22): queda ligado en la MISMA
   // transacción, y uno ya cobrado frena la venta (la misma plata no entra dos veces).
   int? pedidoId,
+  // Vender en un local gastronómico: a nombre de quién va el pedido de mostrador que arma esta venta si lleva un plato
+  // (`armarPedidoDeMostrador`), en la MISMA transacción. Null en cualquier otra venta, y si ya cobra un pedido ([pedidoId]).
+  String? pedidoDeMostrador,
 }) {
   return db.transaction(() async {
     // Un pago negativo no es plata que entró: restaría del esperado de su caja (revisión 2026-10-03: un mixto cuyo
@@ -453,7 +456,11 @@ Future<(int ventaId, List<ActualizacionStock> stockActualizado)> registrarVenta(
       );
     }
 
-    if (pedidoId != null) await marcarPedidoCobrado(db, pedidoId, ventaId: ventaId);
+    if (pedidoId != null) {
+      await marcarPedidoCobrado(db, pedidoId, ventaId: ventaId);
+    } else if (pedidoDeMostrador != null) {
+      await armarPedidoDeMostrador(db, venta.lineas, ventaId: ventaId, nombreCliente: pedidoDeMostrador, usuarioId: usuarioId, ahora: fecha);
+    }
 
     if (ordenCobroPendienteId != null) {
       final filas = await (db.update(db.ordenesCobroPendientes)..where((o) => o.id.equals(ordenCobroPendienteId))).write(
@@ -881,6 +888,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
   int? ordenCobroPendienteId,
   int? montoEfectivoMixtoCentavos,
   int? pedidoId,
+  String? pedidoDeMostrador,
 }) {
   return db.transaction(() async {
     if (ordenCobroPendienteId != null) {
@@ -930,6 +938,7 @@ Future<({int ventaId, int totalCentavos})> registrarVentaSegunMedio(
       turnoId: turnoId,
       ordenCobroPendienteId: ordenCobroPendienteId,
       pedidoId: pedidoId,
+      pedidoDeMostrador: pedidoDeMostrador,
     );
     return (ventaId: ventaId, totalCentavos: resultado.totalCentavos);
   });
