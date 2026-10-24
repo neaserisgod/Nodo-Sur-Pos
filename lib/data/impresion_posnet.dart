@@ -65,8 +65,26 @@ Future<void> imprimirEnPosnet({
   required Ticket ticket,
   required String encabezadoNegocio,
   http.Client? client,
+}) =>
+    imprimirContenidoEnPosnet(
+      accessToken: accessToken,
+      terminalId: terminalId,
+      terminalCobroId: terminalCobroId,
+      contenido: contenidoTicketPosnetMp(ticket, encabezadoNegocio: encabezadoNegocio),
+      client: client,
+    );
+
+/// Imprime [contenido] (ya en el lenguaje de tags de la terminal) tal cual: el ticket de una venta o la comanda de un pedido
+/// (`domain/comanda.dart`). [idempotencyKey] fija hace que un reintento no imprima dos veces; sin ella, cada llamada imprime.
+Future<void> imprimirContenidoEnPosnet({
+  required String accessToken,
+  required String terminalId,
+  String? terminalCobroId,
+  required String contenido,
+  String? idempotencyKey,
+  String? externalReference,
+  http.Client? client,
 }) async {
-  final contenido = contenidoTicketPosnetMp(ticket, encabezadoNegocio: encabezadoNegocio);
   final cliente = client ?? http.Client();
 
   try {
@@ -74,12 +92,12 @@ Future<void> imprimirEnPosnet({
       Uri.parse('https://api.mercadopago.com/terminals/v1/actions'),
       headers: {
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': _claveIdempotencia(),
+        'X-Idempotency-Key': idempotencyKey ?? _claveIdempotencia(),
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
         'type': 'print',
-        'external_reference': 'ticket_${DateTime.now().millisecondsSinceEpoch}',
+        'external_reference': externalReference ?? 'ticket_${DateTime.now().millisecondsSinceEpoch}',
         'config': {
           'point': {'terminal_id': terminalParaImprimir(terminalId, terminalCobroId), 'subtype': 'custom'},
         },

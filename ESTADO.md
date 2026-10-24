@@ -136,7 +136,16 @@ Pendiente / ideas (sin hacer):
 - **Promos**: "Promo Fernet Coca" está cargada sin componentes (`promo_componentes` vacía): no descuenta el Fernet ni la Coca.
 - **Reporte "ventas desde el último ingreso de stock"**: ofrecido, sin hacer.
 
-## Últimos cambios (23/10/2026)
+## Últimos cambios (24/10/2026)
+
+- **La Point como comandera en Nodo Gastro** (El dueño, 24/10: "como si fuese una comandera… la misma función que tiene almacén";
+  "cuando un pedido se confirma como tal, debe imprimir la comanda"): cada pedido que queda "por hacer" (mostrador, aceptado,
+  entró solo del bot o pagado por Mercado Pago, o bajado por la sync) sale impreso en la terminal de la sucursal, por el mismo
+  camino que el ticket del almacén. Se prende por equipo en Configuración › Pedidos › Comandas (apagado de fábrica); el detalle
+  del pedido tiene "Imprimir comanda". `servicios/comandera_point.dart`, `domain/comanda.dart`. Sin cambios en el sitio ni en el
+  bot. **Sin probar con una Point real** (cuánto papel usa, cómo se ve la letra grande).
+
+## Cambios del 23/10/2026
 
 - **Pedidos del bot pagados por transferencia** (prueba de punta a punta con Groove, 23/10): quedaban en "sin pagar" sin
   ningún botón para destrabarlos. Ahora, si el local confirma cada pedido, entran "por confirmar" con la nota "💸 Paga por

@@ -28,14 +28,40 @@ Future<void> imprimirTicketPosnet({
   AlmacenCuenta? almacen,
   ClienteNube? cliente,
   http.Client? client,
+}) =>
+    imprimirContenidoPosnet(
+      contenido: contenidoTicketPosnetMp(ticket, encabezadoNegocio: encabezadoNegocio),
+      accessToken: accessToken,
+      terminalId: terminalId,
+      terminalCobroId: terminalCobroId,
+      forzarNube: forzarNube,
+      almacen: almacen,
+      cliente: cliente,
+      client: client,
+    );
+
+/// Lo mismo con un [contenido] ya armado (la comanda de un pedido, `domain/comanda.dart`). Con [idempotencyKey] fija un
+/// reintento no imprime dos veces; sin ella, cada llamada imprime.
+Future<void> imprimirContenidoPosnet({
+  required String contenido,
+  String? idempotencyKey,
+  String? externalReference,
+  String? accessToken,
+  String? terminalId,
+  String? terminalCobroId,
+  bool forzarNube = false,
+  AlmacenCuenta? almacen,
+  ClienteNube? cliente,
+  http.Client? client,
 }) async {
   if (imprimeDirecto(accessToken: accessToken, terminalId: terminalId, forzarNube: forzarNube)) {
-    return imprimirEnPosnet(
+    return imprimirContenidoEnPosnet(
       accessToken: accessToken!,
       terminalId: terminalId!,
       terminalCobroId: terminalCobroId,
-      ticket: ticket,
-      encabezadoNegocio: encabezadoNegocio,
+      contenido: contenido,
+      idempotencyKey: idempotencyKey,
+      externalReference: externalReference,
       client: client,
     );
   }
@@ -49,9 +75,9 @@ Future<void> imprimirTicketPosnet({
   try {
     await cliente.imprimirTicketPoint(
       cuenta.token,
-      externalReference: 'ticket_${DateTime.now().millisecondsSinceEpoch}',
-      idempotencyKey: _clave(),
-      contenido: contenidoTicketPosnetMp(ticket, encabezadoNegocio: encabezadoNegocio),
+      externalReference: externalReference ?? 'ticket_${DateTime.now().millisecondsSinceEpoch}',
+      idempotencyKey: idempotencyKey ?? _clave(),
+      contenido: contenido,
     );
   } on ErrorNube catch (e) {
     throw ImpresionPosnetException(e.pideVincularDeNuevo ? 'Este dispositivo ya no está vinculado a la cuenta. Volvé a vincularlo para imprimir.' : e.mensaje);

@@ -90,7 +90,9 @@ La frase de venta: *"Tu WhatsApp contesta solo, al toque, y te deja el pedido li
 **Alta y pantallas (2026-10-18):** sin elegir rubro (uno solo, "Gastronomía"); el asistente suma lo más rompedor (bot,
    catálogo de WhatsApp, cobro adelantado, la cocina que frena al bot) y las entregas con su primera zona; Configuración › "Horario y transferencias" (el horario y el alias que usa el bot); sin lata ni cigarrillos;
    menú lateral y buscador propios.
-6. **Después:** teléfono, link propio, mesas (comandas, cocina, mozos, propinas).
+6. **Comanda en la Point ✅ (2026-10-24):** cada pedido confirmado sale impreso en la terminal de la sucursal, con el mismo camino
+   que el ticket del almacén (`servicios/comandera_point.dart`, `DECISIONES.md`). Se prende por equipo en Configurar pedidos.
+7. **Después:** teléfono, link propio, mesas (comandas por mesa, cocina, mozos, propinas).
 
 ## Nodo Gastro en Windows (El dueño, 2026-10-20)
 

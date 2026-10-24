@@ -23,6 +23,7 @@ import 'base_local.dart';
 import 'borrar_base_navegador.dart';
 import 'bot_celular.dart';
 import '../servicios/registro_errores.dart';
+import 'comandera.dart' show soltarComandera;
 import 'cuentas_del_celular.dart';
 import 'escucha_pc.dart';
 import 'sync_nube_companion.dart';
@@ -57,6 +58,7 @@ Future<void> frenarLoQueEscribe() async {
   final avisos = avisosMpCompanion;
   avisosMpCompanion = null;
   await frenar('los avisos de Mercado Pago', () => avisos?.detener());
+  await frenar('la comandera', soltarComandera);
   await frenar('la escucha de la PC', () {
     escuchaPcCompanion?.detener();
     escuchaPcCompanion = null;

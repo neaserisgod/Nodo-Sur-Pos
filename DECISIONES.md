@@ -117,6 +117,7 @@ Las entradas de abajo van en el orden en que se tomaron; esto las agrupa para ir
 - [Nodo Gastro: otra edición del mismo código, como Servicios (El dueño, 2026-10-16)](#nodo-sur-gastronomía-otra-edición-del-mismo-código-como-servicios-el-dueño-2026-10-16)
 - [Importar una base en el celular, sin cerrar la app (El dueño, 2026-10-21)](#importar-una-base-en-el-celular-sin-cerrar-la-app-el-dueño-2026-10-21)
 - [Preguntas frecuentes del bot desde la app (El dueño, 2026-10-21)](#preguntas-frecuentes-del-bot-desde-la-app-el-dueño-2026-10-21)
+- [Nodo Gastro: la terminal Point como comandera (El dueño, 2026-10-24)](#nodo-gastro-la-terminal-point-como-comandera-el-dueño-2026-10-24)
 
 **IA (promos y facturas) y blindaje técnico**
 
@@ -2823,3 +2824,23 @@ negocio nuevo en simple con un interruptor a completo.
   sabe que cuesta. Avisa si sale más caro que suelto.
 - Solo los negocios nuevos arrancan simple: a uno que ya existe no se le esconden cosas al actualizar.
 
+## Nodo Gastro: la terminal Point como comandera (El dueño, 2026-10-24)
+
+El dueño: *"implementá el postnet de Mercado Pago… como si fuese una comandera, nada de desarrollar app, sino usar la misma función
+o similar que la que tiene almacén"* y *"debe estar linkeado con el bot… cuando un pedido se confirma como tal, debe imprimir la
+comanda"*. El cobro con la Point ya estaba en Gastro (Vender y Cobrar de un pedido); faltaba que la Point imprima la comanda.
+
+- **El mismo camino que el ticket del almacén** (`imprimirContenidoPosnet`, `/api/mp/imprimir` del sitio, la terminal elegida
+  para la sucursal en horsepos.com/negocio). Nada que instalar en la Point ni cambios en el sitio o el bot. Lo nuevo es el texto
+  (`domain/comanda.dart`): número grande, retiro o envío, para qué hora (o PROGRAMADO con el día), lo pedido en letra grande, la
+  nota, el cliente, la dirección y el teléfono, y "PAGADO" o "A COBRAR $X". Sin precios por línea: es para la cocina.
+- **Sale al quedar "por hacer"**, llegue como llegue. Por eso `ComanderaPoint` mira la tabla de pedidos en vez de engancharse en
+  cada lugar que confirma: lo carga el local, lo acepta, entra solo del bot o pagado por Mercado Pago, o baja por la sync (el bot
+  lo puede bajar un celular y la comanda salir en la compu del mostrador).
+- **Se prende por equipo, apagada de fábrica** (Configuración › Pedidos › Comandas, vale al tocarlo): los pedidos viajan por la
+  sync y con dos equipos prendidos saldría dos veces. Lo impreso se anota en el equipo (3 días) y al abrir la app sale lo
+  confirmado con la comandera apagada en las últimas 12 horas. Al prenderla, lo que ya estaba en la cocina no sale de golpe.
+- **Lo que no salió se reintenta cada minuto** y Pedidos dice por qué. Cada reintento va con otra clave de idempotencia (Mercado
+  Pago puede guardar la respuesta de error de una clave); a cambio, un corte justo después de imprimir puede dar una copia de más,
+  que es mejor que una comanda que no sale. "Imprimir comanda" en el detalle saca otra copia desde cualquier equipo.
+- **Sin probar con una Point real**: el largo del papel y cómo se ve `{w}` en los nombres largos.

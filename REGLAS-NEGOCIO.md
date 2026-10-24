@@ -747,6 +747,10 @@ Rotisería y comida para llevar primero; las mesas después. Plan en `docs/PLAN-
   apagan, no se borran). El combo lleva el precio a mano y tiene que cubrir lo que se sabe que cuesta. Un plato sin receta usa
   ese costo a mano también en el modo completo; con receta, manda la receta.
 
+- **Comanda en la terminal Point** (El dueño, 2026-10-24): cuando un pedido queda confirmado ("por hacer"), sea del mostrador,
+  aceptado por el local o del bot (entró solo o pagado por Mercado Pago), sale su comanda impresa en la terminal de la sucursal,
+  una sola vez, en el equipo que la tiene prendida. Lleva lo que la cocina necesita (qué, para quién, para cuándo) y si está pagado
+  o cuánto falta cobrar; no los precios por línea.
 ---
 
 ## Anexo: lecciones del sistema anterior

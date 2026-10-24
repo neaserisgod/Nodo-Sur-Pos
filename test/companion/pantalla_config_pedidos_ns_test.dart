@@ -5,6 +5,7 @@ import 'package:la_plazoleta/companion/tema/tema_companion.dart';
 import 'package:la_plazoleta/data/database.dart';
 import 'package:la_plazoleta/data/repositorio_pedidos_gastronomia.dart';
 import 'package:la_plazoleta/domain/pedido_gastronomico.dart';
+import 'package:la_plazoleta/servicios/comandera_point.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/base_para_tests.dart';
@@ -25,7 +26,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> abrir(WidgetTester tester) async {
+  Future<void> abrir(WidgetTester tester, {ComanderaPoint? comandera}) async {
     tester.view.physicalSize = const Size(430, 2600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -35,7 +36,7 @@ void main() {
         builder: (context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PantallaConfigPedidosNs(db: db))),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PantallaConfigPedidosNs(db: db, comandera: comandera))),
               child: const Text('abrir'),
             ),
           ),
@@ -98,5 +99,20 @@ void main() {
     await esperar(tester);
     expect(find.textContaining('al menos una forma de entrega'), findsOneWidget);
     expect((await tester.runAsync(() => configPedidosActual(db)))!.retiro, isTrue, reason: 'no se guardó nada');
+  });
+
+  testWidgets('las comandas en la Point se prenden en este equipo al tocarlas, sin Guardar', (tester) async {
+    final registro = RegistroComandasEnMemoria();
+    final comandera = ComanderaPoint(db: db, registro: registro, imprimir: (_, {required idempotencyKey, required externalReference}) async {});
+    await abrir(tester, comandera: comandera);
+    expect(find.text('Imprimir las comandas en la terminal Point'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('pedidos_comandas_point')));
+    await tester.tap(find.byKey(const Key('pedidos_comandas_point')));
+    await esperar(tester);
+    expect(registro.prendida, isTrue);
+    expect(comandera.andando, isTrue);
+    expect(find.textContaining('Prendelo en un solo equipo'), findsOneWidget);
+    comandera.detener(); // su reintento de cada minuto es un Timer: el test no termina con uno vivo
+    await tester.pumpAndSettle(const Duration(seconds: 5));
   });
 }
